@@ -27,3 +27,7 @@ Packages/
 
 # Sensitive
 *.env
+
+# Supabase local/link cache
+supabase/.temp/
+supabase/supabase/
