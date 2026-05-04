@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var app: AppState
     @State private var showPaywall = false
+    @State private var stats: ProfileStats? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,6 +31,12 @@ struct ProfileView: View {
             }
         }
         .background(Color.rdPaper)
+        .task {
+            await loadStats()
+        }
+        .onChange(of: app.auth.session?.user.id) { _ in
+            Task { await loadStats() }
+        }
         .fullScreenCover(isPresented: $showPaywall) {
             PaywallView(onClose: { showPaywall = false },
                         onSubscribe: {
@@ -73,15 +80,17 @@ struct ProfileView: View {
     // MARK: - Stats
 
     private struct Stat { let value: String; let label: String }
-    private let stats: [Stat] = [
-        .init(value: "128", label: "Analiz"),
-        .init(value: "47",  label: "Rapor"),
-        .init(value: "21",  label: "Bu hafta")
-    ]
+    private var statCards: [Stat] {
+        [
+            .init(value: stats.map { "\($0.analysisCount)" } ?? "—", label: "Analiz"),
+            .init(value: stats.map { "\($0.reportCount)" } ?? "—", label: "Rapor"),
+            .init(value: stats.map { "\($0.weeklyAnalysisCount)" } ?? "—", label: "Bu hafta")
+        ]
+    }
 
     private var statsRow: some View {
         HStack(spacing: 8) {
-            ForEach(Array(stats.enumerated()), id: \.offset) { _, s in
+            ForEach(Array(statCards.enumerated()), id: \.offset) { _, s in
                 VStack(spacing: 2) {
                     Text(s.value)
                         .rdMono(size: 22, weight: .bold)
@@ -119,7 +128,7 @@ struct ProfileView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 10) {
                         RDProBadge(small: true)
-                        Text("Aktif · Yıllık plan")
+                        Text("Aktif · \(subscriptionPeriodLabel)")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.7))
                     }
@@ -129,7 +138,7 @@ struct ProfileView: View {
                         .foregroundStyle(.white)
                         .padding(.top, 4)
 
-                    Text("02 Mayıs 2027 · ₺1.799,99")
+                    Text(subscriptionRenewalLabel)
                         .rdMono(size: 13, weight: .medium)
                         .foregroundStyle(.white.opacity(0.7))
 
@@ -179,9 +188,9 @@ struct ProfileView: View {
         VStack(alignment: .leading, spacing: 6) {
             sectionHeader("Hesap")
             VStack(spacing: 0) {
-                ProfileRow(icon: "doc.text", title: "Geçmiş analizler", detail: "128")
+                ProfileRow(icon: "doc.text", title: "Geçmiş analizler", detail: stats.map { "\($0.analysisCount)" } ?? "—")
                 Divider().background(Color.rdLine).padding(.leading, 60)
-                ProfileRow(icon: "arrow.down.to.line", title: "Raporlarım", detail: "47")
+                ProfileRow(icon: "arrow.down.to.line", title: "Raporlarım", detail: stats.map { "\($0.reportCount)" } ?? "—")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 ProfileRow(icon: "bell", title: "Bildirimler")
             }
@@ -243,6 +252,45 @@ struct ProfileView: View {
             .foregroundStyle(Color.rdSlate)
             .frame(maxWidth: .infinity)
             .padding(.top, 6)
+    }
+
+    private var subscriptionPeriodLabel: String {
+        switch app.profile?.subscriptionPeriod {
+        case "monthly": return "Aylık plan"
+        case "yearly": return "Yıllık plan"
+        case .some(let value): return value.capitalized
+        case .none: return "Pro plan"
+        }
+    }
+
+    private var subscriptionRenewalLabel: String {
+        guard let raw = app.profile?.subscriptionRenewalAt,
+              let date = parseISODate(raw)
+        else {
+            return "Yenileme bilgisi bekleniyor"
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMMM yyyy"
+        return "\(formatter.string(from: date))"
+    }
+
+    private func parseISODate(_ raw: String) -> Date? {
+        let withFraction = ISO8601DateFormatter()
+        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return withFraction.date(from: raw) ?? plain.date(from: raw)
+    }
+
+    private func loadStats() async {
+        guard app.auth.session != nil else { return }
+        do {
+            stats = try await AnalysisService.shared.profileStats()
+        } catch {
+            stats = nil
+        }
     }
 }
 

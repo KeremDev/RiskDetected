@@ -1,10 +1,15 @@
 import SwiftUI
 
 struct HistoryView: View {
+    @EnvironmentObject var app: AppState
     @State private var search: String = ""
     @State private var activeChip: String = "Tümü"
     @State private var showFilter: Bool = false
-    @State private var selectedItem: HistoryItem? = nil
+    @State private var items: [HistoryItem] = []
+    @State private var analysisResult: AnalysisResultBundle? = nil
+    @State private var showResult = false
+    @State private var analysisError: String? = nil
+    @State private var openingItemID: UUID? = nil
 
     private let chips = ["Tümü", "Bu hafta", "Kritik", "KKD", "Genel"]
 
@@ -64,9 +69,16 @@ struct HistoryView: View {
             // List
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: 10) {
-                    ForEach(HistoryItem.mock) { item in
-                        HistoryRow(item: item) {
-                            selectedItem = item
+                    if filteredItems.isEmpty {
+                        emptyState
+                    } else {
+                        ForEach(filteredItems) { item in
+                            HistoryRow(
+                                item: item,
+                                isLoading: openingItemID == item.id
+                            ) {
+                                openAnalysis(item)
+                            }
                         }
                     }
                 }
@@ -75,10 +87,35 @@ struct HistoryView: View {
             }
         }
         .background(Color.rdPaper)
+        .task {
+            await loadItems()
+        }
+        .onChange(of: app.auth.session?.user.id) { _ in
+            Task { await loadItems() }
+        }
         .sheet(isPresented: $showFilter) {
             FilterSheet { showFilter = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        .fullScreenCover(isPresented: $showResult) {
+            ResultView(
+                bundle: analysisResult,
+                onClose: {
+                    showResult = false
+                    analysisResult = nil
+                    Task { await loadItems() }
+                }
+            )
+            .environmentObject(app)
+        }
+        .alert("Analiz Hatası", isPresented: .init(
+            get: { analysisError != nil },
+            set: { if !$0 { analysisError = nil } }
+        )) {
+            Button("Tamam") { analysisError = nil }
+        } message: {
+            Text(analysisError ?? "")
         }
     }
 
@@ -119,18 +156,93 @@ struct HistoryView: View {
         }
         .buttonStyle(RDPressableButtonStyle())
     }
+
+    private var filteredItems: [HistoryItem] {
+        let needle = search.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return items.filter { item in
+            let matchesSearch = needle.isEmpty
+                || item.title.lowercased().contains(needle)
+                || item.kind.lowercased().contains(needle)
+
+            let matchesChip: Bool
+            switch activeChip {
+            case "Bu hafta":
+                matchesChip = isThisWeek(item.createdAt)
+            case "Kritik":
+                matchesChip = item.level == .critical
+            case "KKD":
+                matchesChip = item.kind.localizedCaseInsensitiveContains("KKD")
+            case "Genel":
+                matchesChip = item.kind.localizedCaseInsensitiveContains("Genel")
+            default:
+                matchesChip = true
+            }
+
+            return matchesSearch && matchesChip
+        }
+    }
+
+    private var emptyState: some View {
+        RDCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Analiz bulunamadı")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Color.rdBlack)
+                Text("Filtreyi değiştir veya yeni bir saha taraması başlat.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.rdSlate)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func loadItems() async {
+        guard app.auth.session != nil else { return }
+        do {
+            let rows = try await AnalysisService.shared.listRecent(limit: 50)
+            let paths = try await AnalysisService.shared.firstPhotoPaths(analysisIDs: rows.map(\.id))
+            items = rows.map { row in
+                HistoryItem(row: row, photoPath: paths[row.id])
+            }
+        } catch {
+            analysisError = error.localizedDescription
+            items = []
+        }
+    }
+
+    private func openAnalysis(_ item: HistoryItem) {
+        guard openingItemID == nil else { return }
+        openingItemID = item.id
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        Task {
+            do {
+                analysisResult = try await AnalysisService.shared.result(analysisID: item.id)
+                showResult = true
+            } catch {
+                analysisError = error.localizedDescription
+            }
+            openingItemID = nil
+        }
+    }
+
+    private func isThisWeek(_ date: Date?) -> Bool {
+        guard let date else { return false }
+        return Calendar.current.isDate(date, equalTo: Date(), toGranularity: .weekOfYear)
+    }
 }
 
 // MARK: - History Row
 
 private struct HistoryRow: View {
     let item: HistoryItem
+    var isLoading: Bool = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 12) {
-                RDPlaceholderPhoto(cornerRadius: 10)
+                AnalysisThumbnail(path: item.photoPath, cornerRadius: 10)
                     .frame(width: 56, height: 56)
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -154,13 +266,19 @@ private struct HistoryRow: View {
                     .font(.system(size: 12))
                     .foregroundStyle(Color.rdSlate)
 
-                    Text(item.status.rawValue)
+                        Text(item.status.rawValue)
                         .font(.system(size: 11, weight: .semibold))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .foregroundStyle(item.status.textColor)
                         .background(item.status.bgColor)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.top, 2)
                 }
             }
             .padding(14)

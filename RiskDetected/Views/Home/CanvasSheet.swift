@@ -2,7 +2,7 @@ import SwiftUI
 
 /// AI Odaklı Analiz canvas seçim sheet'i — 3×2 grid, PRO kartlar ayrıca vurgulu.
 struct CanvasSheet: View {
-    @Binding var selected: AnalysisCanvas
+    @Binding var selected: Set<AnalysisCanvas>
     var isUserPro: Bool = false
     var onConfirm: () -> Void
     var onUpgradeRequested: () -> Void = {}
@@ -36,14 +36,18 @@ struct CanvasSheet: View {
                 ForEach(AnalysisCanvas.all) { canvas in
                     CanvasCard(
                         canvas: canvas,
-                        isActive: selected == canvas
+                        isActive: selected.contains(canvas)
                     ) {
                         if canvas.isPro && !isUserPro {
                             onUpgradeRequested()
                         } else {
                             UISelectionFeedbackGenerator().selectionChanged()
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
-                                selected = canvas
+                                if selected.contains(canvas) {
+                                    if selected.count > 1 { selected.remove(canvas) }
+                                } else {
+                                    selected.insert(canvas)
+                                }
                             }
                         }
                     }
@@ -76,14 +80,6 @@ private struct CanvasCard: View {
     var body: some View {
         Button(action: action) {
             ZStack(alignment: .topTrailing) {
-                if canvas.isPro {
-                    // sağ üst köşe yeşil halo
-                    Circle()
-                        .fill(Color.rdGreen.opacity(0.18))
-                        .frame(width: 48, height: 48)
-                        .offset(x: 16, y: -16)
-                }
-
                 VStack(alignment: .leading, spacing: 6) {
                     iconBadge
                     Text(canvas.title)
@@ -111,7 +107,7 @@ private struct CanvasCard: View {
                     .fill(backgroundColor)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(borderColor, lineWidth: 1)
+                            .stroke(borderColor, lineWidth: borderWidth)
                     )
             )
             .shadow(color: shadowColor, radius: 14, x: 0, y: 4)
@@ -148,49 +144,48 @@ private struct CanvasCard: View {
     // MARK: - Style helpers
 
     private var backgroundColor: Color {
-        if isActive { return Color.rdBlack }
-        if canvas.isPro { return Color(hex: "#0B0D0E") }
-        return Color.rdWhite
+        isActive ? Color.rdBlack : Color.rdWhite
     }
 
     private var textColor: Color {
-        if isActive || canvas.isPro { return .white }
-        return Color.rdBlack
+        isActive ? .white : Color.rdBlack
     }
 
     private var secondaryTextColor: Color {
-        if isActive { return Color.white.opacity(0.7) }
-        if canvas.isPro { return Color.white.opacity(0.65) }
-        return Color.rdSlate
+        isActive ? Color.white.opacity(0.7) : Color.rdSlate
     }
 
     private var borderColor: Color {
         if isActive { return Color.rdBlack }
-        if canvas.isPro { return Color(hex: "#0B0D0E") }
+        if canvas.isPro { return Color.rdGreen.opacity(0.55) }
         return Color.rdLine
+    }
+
+    private var borderWidth: CGFloat {
+        canvas.isPro && !isActive ? 1.5 : 1
     }
 
     private var iconBg: Color {
         if isActive { return Color.rdGreen }
-        if canvas.isPro { return Color.rdGreen }
+        if canvas.isPro { return Color.rdGreenSoft }
         return Color.rdFog
     }
 
     private var iconColor: Color {
-        if isActive || canvas.isPro { return .white }
+        if isActive { return .white }
+        if canvas.isPro { return Color.rdGreenDark }
         return Color.rdBlack
     }
 
     private var shadowColor: Color {
-        if canvas.isPro && !isActive {
-            return Color.rdGreen.opacity(0.18)
-        }
+        if isActive { return Color.black.opacity(0.12) }
+        if canvas.isPro { return Color.rdGreen.opacity(0.14) }
         return .clear
     }
 }
 
 #Preview {
-    StatefulPreviewWrapper(AnalysisCanvas.general) { binding in
+    StatefulPreviewWrapper(Set([AnalysisCanvas.general])) { binding in
         CanvasSheet(
             selected: binding,
             isUserPro: false,

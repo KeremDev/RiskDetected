@@ -4,12 +4,13 @@ import PencilKit
 struct AnnotateView: View {
     var initialImage: UIImage? = nil
     var onCancel: () -> Void
-    var onAnalyze: ([ShapeAnnotation], PKDrawing) -> Void
+    var onAnalyze: (UIImage) -> Void
 
     @State private var tool: AnnotationTool = .rect
     @State private var color: AnnotationColor = .green
     @State private var shapes: [ShapeAnnotation] = []
     @State private var pkCanvas = PKCanvasView()
+    @State private var photoSize: CGSize = .zero
 
     // İn-progress drag preview (oransal)
     @State private var dragStart: CGPoint? = nil
@@ -104,6 +105,13 @@ struct AnnotateView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 18))
             .gesture(shapeDragGesture(size: geo.size))
+            .background(
+                GeometryReader { g in
+                    Color.clear
+                        .onAppear { photoSize = g.size }
+                        .onChange(of: g.size) { photoSize = $0 }
+                }
+            )
         }
         .padding(.horizontal, 12)
         .padding(.top, 8)
@@ -172,7 +180,7 @@ struct AnnotateView: View {
 
     private var bottomCTA: some View {
         RDButton(title: "İşaretli alanları analiz et", style: .detect, icon: "sparkles") {
-            onAnalyze(shapes, pkCanvas.drawing)
+            onAnalyze(flattenedImage())
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -203,6 +211,103 @@ struct AnnotateView: View {
                 dragStart = nil
                 dragEnd = nil
             }
+    }
+
+    // MARK: - Flatten annotated image
+
+    /// `.scaledToFit` ile aynı aspect-fit rect — fotoğrafın ekranda göründüğü alan.
+    private func aspectFitRect(imageSize: CGSize, in container: CGSize) -> CGRect {
+        guard imageSize.width > 0, imageSize.height > 0 else {
+            return CGRect(origin: .zero, size: container)
+        }
+        let imageAR     = imageSize.width / imageSize.height
+        let containerAR = container.width / container.height
+        if imageAR > containerAR {
+            let h = container.width / imageAR
+            return CGRect(x: 0, y: (container.height - h) / 2,
+                          width: container.width, height: h)
+        } else {
+            let w = container.height * imageAR
+            return CGRect(x: (container.width - w) / 2, y: 0,
+                          width: w, height: container.height)
+        }
+    }
+
+    private func flattenedImage() -> UIImage {
+        let size = photoSize.width > 0 ? photoSize : CGSize(width: 1080, height: 1080)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { ctx in
+            let cgCtx = ctx.cgContext
+
+            // 0. Siyah arka plan (letterbox alanı)
+            cgCtx.setFillColor(UIColor.black.cgColor)
+            cgCtx.fill(CGRect(origin: .zero, size: size))
+
+            // 1. Base photo — ekrandaki scaledToFit ile aynı rect
+            if let img = initialImage {
+                let fitRect = aspectFitRect(imageSize: img.size, in: size)
+                img.draw(in: fitRect)
+            }
+
+            // 2. PK drawing (pen strokes) — container koordinatlarında
+            let pkImg = pkCanvas.drawing.image(from: CGRect(origin: .zero, size: size),
+                                               scale: UIScreen.main.scale)
+            pkImg.draw(in: CGRect(origin: .zero, size: size))
+
+            // 3. Shape annotations
+            for s in shapes {
+                let sx = s.start.x * size.width, sy = s.start.y * size.height
+                let ex = s.end.x * size.width, ey = s.end.y * size.height
+                let start = CGPoint(x: sx, y: sy)
+                let end   = CGPoint(x: ex, y: ey)
+                let rect  = CGRect(x: min(sx, ex), y: min(sy, ey),
+                                   width: abs(ex - sx), height: abs(ey - sy))
+                let uiColor = s.color.uiColor
+
+                switch s.tool {
+                case .rect:
+                    cgCtx.setFillColor(uiColor.withAlphaComponent(0.12).cgColor)
+                    cgCtx.setStrokeColor(uiColor.cgColor)
+                    cgCtx.setLineWidth(3)
+                    let path = UIBezierPath(roundedRect: rect, cornerRadius: 6)
+                    cgCtx.addPath(path.cgPath)
+                    cgCtx.drawPath(using: .fillStroke)
+
+                case .circle:
+                    cgCtx.setFillColor(uiColor.withAlphaComponent(0.10).cgColor)
+                    cgCtx.setStrokeColor(uiColor.cgColor)
+                    cgCtx.setLineWidth(3)
+                    cgCtx.addEllipse(in: rect)
+                    cgCtx.drawPath(using: .fillStroke)
+
+                case .arrow:
+                    cgCtx.setStrokeColor(uiColor.cgColor)
+                    cgCtx.setLineWidth(3)
+                    cgCtx.setLineCap(.round)
+                    cgCtx.move(to: start)
+                    cgCtx.addLine(to: end)
+                    cgCtx.strokePath()
+                    // Arrowhead
+                    let angle = atan2(end.y - start.y, end.x - start.x)
+                    let arrowSize: CGFloat = 12
+                    let a1 = angle + .pi - .pi / 7
+                    let a2 = angle + .pi + .pi / 7
+                    cgCtx.setFillColor(uiColor.cgColor)
+                    let head = UIBezierPath()
+                    head.move(to: end)
+                    head.addLine(to: CGPoint(x: end.x + cos(a1) * arrowSize,
+                                             y: end.y + sin(a1) * arrowSize))
+                    head.addLine(to: CGPoint(x: end.x + cos(a2) * arrowSize,
+                                             y: end.y + sin(a2) * arrowSize))
+                    head.close()
+                    cgCtx.addPath(head.cgPath)
+                    cgCtx.fillPath()
+
+                case .pen:
+                    break
+                }
+            }
+        }
     }
 
     private func undoLast() {
@@ -282,5 +387,5 @@ private struct ArrowHead: View {
 }
 
 #Preview {
-    AnnotateView(onCancel: {}, onAnalyze: { _, _ in })
+    AnnotateView(onCancel: {}, onAnalyze: { _ in })
 }

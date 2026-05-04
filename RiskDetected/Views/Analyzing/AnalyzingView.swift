@@ -1,7 +1,12 @@
 import SwiftUI
 
 struct AnalyzingView: View {
-    var onComplete: () -> Void
+    /// Parent'tan binding — dismiss için daha güvenilir (iOS 26 fullScreenCover).
+    @Binding var isPresented: Bool
+    /// nil = preview / mock modu; set edilirse gerçek analiz çalıştırılır.
+    var asyncWork: (() async throws -> AnalysisResultBundle)? = nil
+    var onComplete: (AnalysisResultBundle?) -> Void = { _ in }
+    var onError: (String) -> Void = { _ in }
 
     private let steps: [String] = [
         "Görüntü kalitesi okunuyor",
@@ -12,7 +17,11 @@ struct AnalyzingView: View {
 
     @State private var currentStep: Int = 0
     @State private var scanY: CGFloat = -1
-    @State private var task: Task<Void, Never>?
+    @State private var animTask: Task<Void, Never>?
+    @State private var workTask: Task<Void, Never>?
+    @State private var workDone = false
+    @State private var workResult: AnalysisResultBundle? = nil
+    @State private var animDone = false
 
     var body: some View {
         ZStack {
@@ -36,8 +45,14 @@ struct AnalyzingView: View {
             }
             .padding(.horizontal, 28)
         }
-        .onAppear { startTimers() }
-        .onDisappear { task?.cancel() }
+        .onAppear {
+            // animTask nil kontrolü: iOS 26'da fullScreenCover animation sırasında
+            // onDisappear/onAppear döngüsü oluşuyor. didStart bayrağı yerine
+            // task varlığını kontrol et — daha güvenilir.
+            guard animTask == nil else { return }
+            startAnimation()
+            startWork()
+        }
     }
 
     // MARK: - Scan card
@@ -64,7 +79,6 @@ struct AnalyzingView: View {
                 }
             }
 
-            // Inner glow border
             RoundedRectangle(cornerRadius: 22)
                 .stroke(Color.rdGreen.opacity(0.7), lineWidth: 2)
                 .shadow(color: Color.rdGreen.opacity(0.3), radius: 12)
@@ -114,24 +128,60 @@ struct AnalyzingView: View {
         .frame(width: 22, height: 22)
     }
 
-    // MARK: - Step ilerletici
+    // MARK: - Animasyon (minimum görünüm süresi)
 
-    private func startTimers() {
-        task?.cancel()
+    private func startAnimation() {
+        animTask?.cancel()
         currentStep = 0
-        task = Task { @MainActor in
+        animDone = false
+        animTask = Task.detached { @MainActor [self] in
             for i in 1...steps.count {
                 try? await Task.sleep(nanoseconds: 700_000_000)
                 if Task.isCancelled { return }
-                currentStep = min(i, steps.count - 1)
+                self.currentStep = min(i, steps.count - 1)
             }
             try? await Task.sleep(nanoseconds: 700_000_000)
             if Task.isCancelled { return }
-            onComplete()
+            self.animDone = true
+            self.finishIfReady()
         }
+    }
+
+    // MARK: - Gerçek iş
+
+    private func startWork() {
+        guard let work = asyncWork else {
+            // Mock mod: iş yok, sadece animasyon.
+            workDone = true
+            return
+        }
+        workTask = Task { @MainActor in
+            do {
+                let result = try await work()
+                if Task.isCancelled { return }
+                workResult = result
+                workDone = true
+                finishIfReady()
+            } catch {
+                if Task.isCancelled { return }
+                workDone = true
+                animTask?.cancel()
+                let msg = error.localizedDescription
+                isPresented = false
+                onError(msg)
+            }
+        }
+    }
+
+    /// Hem animasyon hem iş bitince onComplete'i tetikle.
+    private func finishIfReady() {
+        guard animDone && workDone else { return }
+        let result = workResult
+        isPresented = false
+        onComplete(result)
     }
 }
 
 #Preview {
-    AnalyzingView(onComplete: {})
+    AnalyzingView(isPresented: .constant(true))
 }

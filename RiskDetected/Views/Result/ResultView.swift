@@ -2,10 +2,23 @@ import SwiftUI
 
 struct ResultView: View {
     @EnvironmentObject var app: AppState
+    var bundle: AnalysisResultBundle? = nil
     var onClose: () -> Void = {}
     var onPdf: () -> Void = {}
 
-    var findings: [Finding] = Finding.mock
+    private var findings: [Finding] {
+        bundle?.findings.map { $0.asFinding } ?? []
+    }
+    private var analysisTitle: String {
+        bundle?.analysis.title ?? "Analiz Sonucu"
+    }
+    private var canvasLabel: String {
+        let id = bundle?.analysis.canvas ?? "general"
+        return AnalysisCanvas.all.first { $0.id == id }?.title ?? id
+    }
+    private var photoPath: String? {
+        bundle?.photos.first?.storagePath
+    }
 
     @State private var method: RiskMethod = .fineKinney
     @State private var selectedFinding: Finding? = nil
@@ -20,10 +33,14 @@ struct ResultView: View {
                     photoMetaCard
                     methodSelector
                     methodologySummary
-                    findingsSection
-                    if app.isPro { riskMatrixCard } else { proUpsellCard }
-                    actionButtons
-                    methodFootnote
+                    if findings.isEmpty {
+                        emptyFindingsCard
+                    } else {
+                        findingsSection
+                        if app.isPro { riskMatrixCard } else { proUpsellCard }
+                        actionButtons
+                        methodFootnote
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -84,14 +101,14 @@ struct ResultView: View {
     private var photoMetaCard: some View {
         RDCard {
             HStack(alignment: .top, spacing: 12) {
-                RDPlaceholderPhoto(cornerRadius: 12)
+                AnalysisThumbnail(path: photoPath, cornerRadius: 12)
                     .frame(width: 92, height: 92)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("3. Kat şantiye girişi")
+                    Text(analysisTitle)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Color.rdBlack)
-                    Text("02 May 2026 · 14:22 · KKD Bazlı")
+                    Text("\(formattedDate) · \(canvasLabel)")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.rdSlate)
                         .padding(.bottom, 6)
@@ -120,6 +137,17 @@ struct ResultView: View {
     private var averageConfidence: Double {
         guard !findings.isEmpty else { return 0 }
         return findings.map(\.confidence).reduce(0, +) / Double(findings.count)
+    }
+
+    private var formattedDate: String {
+        let raw = bundle?.analysis.createdAt ?? ""
+        let isoFmt = ISO8601DateFormatter()
+        isoFmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = isoFmt.date(from: raw) ?? Date()
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "tr_TR")
+        fmt.dateFormat = "d MMM · HH:mm"
+        return fmt.string(from: date)
     }
 
     // MARK: - Method selector
@@ -261,6 +289,26 @@ struct ResultView: View {
     }
 
     // MARK: - Findings list
+
+    private var emptyFindingsCard: some View {
+        RDCard {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark.shield.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color.rdGreenDark)
+                    Text("Tehlike tespit edilmedi")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color.rdBlack)
+                }
+
+                Text("Bu analiz için raporlanabilir bir uygunsuzluk bulunmadı. Görsel veya metin yeterince açık değilse farklı bir açıdan tekrar tarama yapılabilir.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.rdSlate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
 
     private var findingsSection: some View {
         VStack(alignment: .leading, spacing: 10) {

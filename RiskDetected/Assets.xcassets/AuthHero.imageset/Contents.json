@@ -1,12 +1,11 @@
 {
   "images" : [
     {
-      "filename" : "logo.png",
+      "filename" : "auth_hero.jpg",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "logo@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
@@ -18,5 +17,8 @@
   "info" : {
     "author" : "xcode",
     "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : false
   }
 }

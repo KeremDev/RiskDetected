@@ -4,10 +4,8 @@ import Supabase
 
 /// Analiz akışını orkestre eder:
 /// 1. `analyses` kaydı oluştur (status: pending)
-/// 2. (Foto modu için) JPEG'leri Storage `photos` bucket'ına yükle
-/// 3. `photos` tablosuna meta yaz
-/// 4. Edge Function `analyze`'i çağır — Claude bulguları üretir, DB'ye yazılır
-/// 5. Tamamlanan analizi (analyses + findings) çek ve döndür
+/// 2. Edge Function `analyze`'i çağır — Gemini bulguları üretir, DB'ye yazılır
+/// 3. Tamamlanan analizi (analyses + findings) çek ve döndür
 @MainActor
 final class AnalysisService {
     static let shared = AnalysisService()
@@ -20,6 +18,7 @@ final class AnalysisService {
         case aiFailed(String)
         case storageFailed(String)
         case databaseFailed(String)
+        case invalidInput(String)
 
         var errorDescription: String? {
             switch self {
@@ -29,6 +28,7 @@ final class AnalysisService {
             case .aiFailed(let msg):              return "AI hatası: \(msg)"
             case .storageFailed(let msg):         return "Yükleme hatası: \(msg)"
             case .databaseFailed(let msg):        return "Veritabanı hatası: \(msg)"
+            case .invalidInput(let msg):          return msg
             }
         }
     }
@@ -37,37 +37,39 @@ final class AnalysisService {
 
     /// Foto bazlı analiz akışı.
     func runPhotoAnalysis(
+        userID: UUID,
         images: [UIImage],
-        canvas: AnalysisCanvas,
+        canvases: [AnalysisCanvas],
         title: String? = nil
     ) async throws -> AnalysisResultBundle {
-        guard let userID = supabase.currentUserID else { throw AnalysisError.notAuthenticated }
+        guard !canvases.isEmpty else {
+            throw AnalysisError.invalidInput("En az bir analiz odağı seçmelisin.")
+        }
+        guard !images.isEmpty else {
+            throw AnalysisError.invalidInput("Analiz için bir fotoğraf seçmelisin.")
+        }
 
         // 1) Analyses kaydı (kind=photo, status=pending)
         let analysisID = try await createAnalysis(
             userID: userID,
             kind: "photo",
-            canvas: canvas,
-            title: title ?? defaultTitle(for: canvas),
+            canvases: canvases,
+            title: title ?? defaultTitle(for: canvases),
             textInput: nil
         )
 
-        // 2) Foto upload + photos tablosu
-        var photoPaths: [String] = []
-        for (index, image) in images.enumerated() {
-            let path = "\(userID.uuidString)/\(analysisID.uuidString)/p\(index + 1).jpg"
-            try await uploadJPEG(image: image, to: path)
-            try await insertPhotoMeta(
-                analysisID: analysisID, userID: userID, path: path,
-                size: image.size
-            )
-            photoPaths.append(path)
+        // 2) Fotoğrafları Edge Function'a inline base64 gönder.
+        // Storage RLS client upload akışını kırdığı için analiz yolu Storage'a bağımlı değil.
+        let photoParts = try images.map { try inlineJPEGPart(from: $0) }
+        let totalPayloadBytes = photoParts.reduce(0) { $0 + $1.encodedByteCount }
+        if totalPayloadBytes > Self.maxInlinePhotoPayloadBytes {
+            throw AnalysisError.invalidInput("Fotoğraf paketi çok büyük. Lütfen daha az fotoğraf veya daha düşük çözünürlüklü görsel dene.")
         }
 
         // 3) Edge function
         try await invokeAnalyze(
-            analysisID: analysisID, canvas: canvas,
-            textInput: nil, photoPaths: photoPaths
+            analysisID: analysisID, canvases: canvases,
+            textInput: nil, photoPaths: [], photoBase64Parts: photoParts
         )
 
         // 4) Sonucu çek
@@ -75,20 +77,25 @@ final class AnalysisService {
     }
 
     /// Metin bazlı analiz akışı.
-    func runTextAnalysis(text: String, canvas: AnalysisCanvas) async throws -> AnalysisResultBundle {
-        guard let userID = supabase.currentUserID else { throw AnalysisError.notAuthenticated }
+    func runTextAnalysis(userID: UUID, text: String, canvases: [AnalysisCanvas]) async throws -> AnalysisResultBundle {
+        guard !canvases.isEmpty else {
+            throw AnalysisError.invalidInput("En az bir analiz odağı seçmelisin.")
+        }
+        guard text.trimmingCharacters(in: .whitespacesAndNewlines).count >= 10 else {
+            throw AnalysisError.invalidInput("Analiz için en az 10 karakterlik açıklama girmelisin.")
+        }
 
         let analysisID = try await createAnalysis(
             userID: userID,
             kind: "text",
-            canvas: canvas,
-            title: defaultTitle(for: canvas),
+            canvases: canvases,
+            title: defaultTitle(for: canvases),
             textInput: text
         )
 
         try await invokeAnalyze(
-            analysisID: analysisID, canvas: canvas,
-            textInput: text, photoPaths: []
+            analysisID: analysisID, canvases: canvases,
+            textInput: text, photoPaths: [], photoBase64Parts: []
         )
 
         return try await fetchResult(analysisID: analysisID)
@@ -111,12 +118,96 @@ final class AnalysisService {
         }
     }
 
+    /// Tek bir tamamlanmış analizin sonucunu detay ekranı için getirir.
+    func result(analysisID: UUID) async throws -> AnalysisResultBundle {
+        try await fetchResult(analysisID: analysisID)
+    }
+
+    /// Liste kartları için ilk fotoğraf path'lerini getirir.
+    func firstPhotoPaths(analysisIDs: [UUID]) async throws -> [UUID: String] {
+        guard !analysisIDs.isEmpty else { return [:] }
+        do {
+            let rows: [AnalysisPhotoRow] = try await supabase.client
+                .from("photos")
+                .select("analysis_id,storage_path")
+                .in("analysis_id", values: analysisIDs.map { $0.uuidString })
+                .order("storage_path", ascending: true)
+                .execute()
+                .value
+
+            var paths: [UUID: String] = [:]
+            for row in rows where paths[row.analysisID] == nil {
+                paths[row.analysisID] = row.storagePath
+            }
+            return paths
+        } catch {
+            throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
+    /// Storage'dan güvenli fotoğraf indirir.
+    func photoData(path: String) async throws -> Data {
+        do {
+            return try await supabase.storage
+                .from(RDConfig.Bucket.photos)
+                .download(path: path)
+        } catch {
+            throw AnalysisError.storageFailed(error.localizedDescription)
+        }
+    }
+
+    /// Profil ekranı için canlı sayaçlar.
+    func profileStats() async throws -> ProfileStats {
+        let startOfWeek = Calendar.current.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+        let weekStart = ISO8601DateFormatter().string(from: startOfWeek)
+
+        async let totalAnalyses = countRows(
+            table: "analyses",
+            filters: { $0.eq("status", value: "completed") }
+        )
+        async let weeklyAnalyses = countRows(
+            table: "analyses",
+            filters: { $0.eq("status", value: "completed").gte("created_at", value: weekStart) }
+        )
+        async let reportCount = countRowsOrZero(table: "reports")
+
+        return try await ProfileStats(
+            analysisCount: totalAnalyses,
+            reportCount: reportCount,
+            weeklyAnalysisCount: weeklyAnalyses
+        )
+    }
+
     // MARK: - Private steps
+
+    private static let maxInlinePhotoBytes = 1_500_000
+    private static let maxInlinePhotoPayloadBytes = 4_500_000
+
+    private func countRows(
+        table: String,
+        filters: (PostgrestFilterBuilder) -> PostgrestFilterBuilder = { $0 }
+    ) async throws -> Int {
+        let response: PostgrestResponse<Void> = try await filters(
+            supabase.client
+                .from(table)
+                .select("id", head: true, count: .exact)
+        )
+        .execute()
+        return response.count ?? 0
+    }
+
+    private func countRowsOrZero(table: String) async -> Int {
+        do {
+            return try await countRows(table: table)
+        } catch {
+            return 0
+        }
+    }
 
     private func createAnalysis(
         userID: UUID,
         kind: String,
-        canvas: AnalysisCanvas,
+        canvases: [AnalysisCanvas],
         title: String,
         textInput: String?
     ) async throws -> UUID {
@@ -128,10 +219,14 @@ final class AnalysisService {
             let text_input: String?
             let status: String
         }
+        // `canvas` field = primary (first sorted) id — legacy single-id contract korunuyor.
+        // Çoklu seçim backend hazır olunca `canvases` array üzerinden işlenecek.
+        let sortedIDs  = canvases.map(\.id).sorted()
+        let primaryID  = sortedIDs.first ?? canvases[0].id
         let payload = InsertPayload(
             user_id: userID.uuidString,
             kind: kind,
-            canvas: canvas.id,
+            canvas: primaryID,
             title: title,
             text_input: textInput,
             status: "pending"
@@ -150,66 +245,63 @@ final class AnalysisService {
         }
     }
 
-    private func uploadJPEG(image: UIImage, to path: String) async throws {
-        guard let data = image.jpegData(compressionQuality: 0.85) else {
-            throw AnalysisError.storageFailed("JPEG dönüştürme başarısız")
-        }
-        do {
-            _ = try await supabase.storage
-                .from(RDConfig.Bucket.photos)
-                .upload(
-                    path: path,
-                    file: data,
-                    options: FileOptions(contentType: "image/jpeg", upsert: true)
-                )
-        } catch {
-            throw AnalysisError.storageFailed(error.localizedDescription)
+    private struct InlinePhotoPart: Encodable {
+        let mime_type: String
+        let data: String
+
+        var encodedByteCount: Int {
+            data.utf8.count
         }
     }
 
-    private func insertPhotoMeta(analysisID: UUID, userID: UUID, path: String, size: CGSize) async throws {
-        struct PhotoRow: Encodable {
-            let analysis_id: String
-            let user_id: String
-            let storage_path: String
-            let width: Int
-            let height: Int
-            let mime_type: String
+    private func inlineJPEGPart(from image: UIImage) throws -> InlinePhotoPart {
+        let renderSizes: [CGFloat] = [1400, 1200, 1000]
+        let qualities: [CGFloat] = [0.72, 0.60, 0.48]
+
+        var lastData: Data?
+        for maxDimension in renderSizes {
+            let normalized = image.resizedToFit(maxDimension: maxDimension)
+            for quality in qualities {
+                guard let data = normalized.jpegData(compressionQuality: quality) else { continue }
+                lastData = data
+                if data.count <= Self.maxInlinePhotoBytes {
+                    return InlinePhotoPart(mime_type: "image/jpeg", data: data.base64EncodedString())
+                }
+            }
         }
-        do {
-            _ = try await supabase.client
-                .from("photos")
-                .insert(PhotoRow(
-                    analysis_id: analysisID.uuidString,
-                    user_id: userID.uuidString,
-                    storage_path: path,
-                    width: Int(size.width),
-                    height: Int(size.height),
-                    mime_type: "image/jpeg"
-                ))
-                .execute()
-        } catch {
-            throw AnalysisError.databaseFailed(error.localizedDescription)
+
+        if let lastData, lastData.count <= Self.maxInlinePhotoBytes * 2 {
+            return InlinePhotoPart(mime_type: "image/jpeg", data: lastData.base64EncodedString())
         }
+
+        throw AnalysisError.invalidInput("Fotoğraf dosyası analiz için çok büyük. Lütfen daha küçük bir görsel seç.")
     }
 
     private func invokeAnalyze(
         analysisID: UUID,
-        canvas: AnalysisCanvas,
+        canvases: [AnalysisCanvas],
         textInput: String?,
-        photoPaths: [String]
+        photoPaths: [String],
+        photoBase64Parts: [InlinePhotoPart]
     ) async throws {
         struct Body: Encodable {
             let analysis_id: String
             let canvas: String
+            let canvases: [String]
             let text_input: String?
             let photo_paths: [String]
+            let photo_base64_parts: [InlinePhotoPart]
         }
+        // `canvas` = primary sorted id (tek-canvas contract).
+        // `canvases` = tüm seçimler — Edge Function çoklu desteğe geçince kullanılır.
+        let sortedCanvasIDs = canvases.map(\.id).sorted()
         let body = Body(
             analysis_id: analysisID.uuidString,
-            canvas: canvas.id,
+            canvas: sortedCanvasIDs.first ?? canvases[0].id,
+            canvases: sortedCanvasIDs,
             text_input: textInput,
-            photo_paths: photoPaths
+            photo_paths: photoPaths,
+            photo_base64_parts: photoBase64Parts
         )
         do {
             try await supabase.functions.invoke(
@@ -249,17 +341,47 @@ final class AnalysisService {
                 .execute()
                 .value
 
-            return AnalysisResultBundle(analysis: analysis, findings: findings)
+            let photos: [AnalysisPhotoRow] = try await supabase.client
+                .from("photos")
+                .select("analysis_id,storage_path,width,height,mime_type")
+                .eq("analysis_id", value: analysisID.uuidString)
+                .order("storage_path", ascending: true)
+                .execute()
+                .value
+
+            return AnalysisResultBundle(analysis: analysis, findings: findings, photos: photos)
         } catch {
             throw AnalysisError.databaseFailed(error.localizedDescription)
         }
     }
 
-    private func defaultTitle(for canvas: AnalysisCanvas) -> String {
+    private func defaultTitle(for canvases: [AnalysisCanvas]) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "tr_TR")
         formatter.dateFormat = "d MMM HH:mm"
-        return "\(canvas.title) · \(formatter.string(from: Date()))"
+        let label = canvases.count == 1
+            ? canvases[0].title
+            : canvases.map(\.title).joined(separator: " + ")
+        return "\(label) · \(formatter.string(from: Date()))"
+    }
+}
+
+private extension UIImage {
+    func resizedToFit(maxDimension: CGFloat) -> UIImage {
+        let longest = max(size.width, size.height)
+        guard longest > maxDimension else { return self }
+
+        let scale = maxDimension / longest
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+
+        return UIGraphicsImageRenderer(size: newSize, format: format).image { _ in
+            UIColor.black.setFill()
+            UIBezierPath(rect: CGRect(origin: .zero, size: newSize)).fill()
+            draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 }
 
@@ -268,6 +390,29 @@ final class AnalysisService {
 struct AnalysisResultBundle: Equatable {
     let analysis: AnalysisRow
     let findings: [FindingRow]
+    let photos: [AnalysisPhotoRow]
+}
+
+struct AnalysisPhotoRow: Codable, Equatable {
+    let analysisID: UUID
+    let storagePath: String
+    let width: Int?
+    let height: Int?
+    let mimeType: String?
+
+    enum CodingKeys: String, CodingKey {
+        case analysisID = "analysis_id"
+        case storagePath = "storage_path"
+        case width
+        case height
+        case mimeType = "mime_type"
+    }
+}
+
+struct ProfileStats: Equatable {
+    let analysisCount: Int
+    let reportCount: Int
+    let weeklyAnalysisCount: Int
 }
 
 struct AnalysisRow: Codable, Identifiable, Equatable {

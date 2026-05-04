@@ -22,22 +22,69 @@ enum HistoryStatus: String, CaseIterable {
 }
 
 struct HistoryItem: Identifiable, Hashable {
-    let id: Int
+    let id: UUID
     let title: String
     let date: String
     let kind: String
     let level: RiskLevel
     let count: Int
     let status: HistoryStatus
+    let createdAt: Date?
+    let photoPath: String?
 }
 
 extension HistoryItem {
     static let mock: [HistoryItem] = [
-        .init(id: 1, title: "3. Kat şantiye girişi",  date: "Bugün 14:22",  kind: "KKD Bazlı", level: .critical, count: 5, status: .open),
-        .init(id: 2, title: "Elektrik panosu çevresi", date: "Bugün 09:14",  kind: "Genel",     level: .high,     count: 3, status: .reviewed),
-        .init(id: 3, title: "Depo yangın çıkışı",      date: "Dün 16:42",     kind: "Acil risk", level: .medium,   count: 2, status: .closed),
-        .init(id: 4, title: "Kazan dairesi prosedür kontrol", date: "Dün 11:08", kind: "Prosedür", level: .low,    count: 1, status: .closed),
-        .init(id: 5, title: "Forklift trafik alanı",   date: "30 Nis · 14:55", kind: "Sektör",   level: .high,     count: 4, status: .reviewed),
-        .init(id: 6, title: "Yüksekte çalışma platformu", date: "29 Nis · 08:30", kind: "KKD Bazlı", level: .critical, count: 6, status: .open),
+        .init(id: UUID(), title: "3. Kat şantiye girişi",  date: "Bugün 14:22",  kind: "KKD Bazlı", level: .critical, count: 5, status: .open, createdAt: Date(), photoPath: nil),
+        .init(id: UUID(), title: "Elektrik panosu çevresi", date: "Bugün 09:14",  kind: "Genel",     level: .high,     count: 3, status: .reviewed, createdAt: Date(), photoPath: nil),
+        .init(id: UUID(), title: "Depo yangın çıkışı",      date: "Dün 16:42",     kind: "Acil risk", level: .medium,   count: 2, status: .closed, createdAt: Date(), photoPath: nil),
+        .init(id: UUID(), title: "Kazan dairesi prosedür kontrol", date: "Dün 11:08", kind: "Prosedür", level: .low,    count: 1, status: .closed, createdAt: Date(), photoPath: nil),
+        .init(id: UUID(), title: "Forklift trafik alanı",   date: "30 Nis · 14:55", kind: "Sektör",   level: .high,     count: 4, status: .reviewed, createdAt: Date(), photoPath: nil),
+        .init(id: UUID(), title: "Yüksekte çalışma platformu", date: "29 Nis · 08:30", kind: "KKD Bazlı", level: .critical, count: 6, status: .open, createdAt: Date(), photoPath: nil),
     ]
+}
+
+extension HistoryItem {
+    init(row: AnalysisRow, photoPath: String? = nil) {
+        let level = RiskLevel(rawValue: row.highestBandFK ?? row.highestBandM5 ?? "unknown") ?? .unknown
+        let canvasTitle = AnalysisCanvas.all.first { $0.id == row.canvas }?.title ?? row.canvas
+        let status: HistoryStatus = row.status == "completed" ? .reviewed : .open
+        let createdAt = Self.parseDate(row.createdAt)
+
+        self.init(
+            id: row.id,
+            title: row.title,
+            date: Self.dateLabel(createdAt),
+            kind: canvasTitle,
+            level: level,
+            count: row.findingCount,
+            status: status,
+            createdAt: createdAt,
+            photoPath: photoPath
+        )
+    }
+
+    private static func parseDate(_ raw: String?) -> Date? {
+        guard let raw else { return nil }
+        let withFraction = ISO8601DateFormatter()
+        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return withFraction.date(from: raw) ?? plain.date(from: raw)
+    }
+
+    private static func dateLabel(_ date: Date?) -> String {
+        guard let date else { return "" }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        if Calendar.current.isDateInToday(date) {
+            formatter.dateFormat = "Bugün HH:mm"
+        } else if Calendar.current.isDateInYesterday(date) {
+            formatter.dateFormat = "Dün HH:mm"
+        } else {
+            formatter.dateFormat = "d MMM · HH:mm"
+        }
+        return formatter.string(from: date)
+    }
 }

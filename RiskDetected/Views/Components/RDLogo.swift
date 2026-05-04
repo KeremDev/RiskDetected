@@ -6,6 +6,8 @@ import SwiftUI
 struct RDLogo: View {
     var size: CGFloat = 18
     var mono: Bool = false
+    /// Koyu / fotoğraf arka plan üstünde: template + beyaz render
+    var onDark: Bool = false
 
     private static let aspectRatio: CGFloat = 2101.0 / 748.0
     private static let capHeightRatio: CGFloat = 0.44
@@ -16,11 +18,11 @@ struct RDLogo: View {
     var body: some View {
         Image("RDLogo")
             .resizable()
-            .renderingMode(mono ? .template : .original)
+            .renderingMode(onDark ? .template : (mono ? .template : .original))
             .interpolation(.high)
             .scaledToFit()
             .frame(width: imageWidth, height: imageHeight)
-            .foregroundStyle(mono ? Color.rdBlack : Color.rdBlack)
+            .foregroundStyle(onDark ? Color.white : Color.rdBlack)
             .accessibilityLabel("RiskDetected")
     }
 }

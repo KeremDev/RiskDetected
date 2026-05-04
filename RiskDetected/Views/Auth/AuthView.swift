@@ -5,76 +5,92 @@ struct AuthView: View {
     @State private var phase: AuthPhase = .options
     @State private var phone: String = ""
     @State private var code: [String] = ["", "", "", ""]
-    @State private var heroVariant: HeroVariant = .photo
     @State private var isSigningIn: Bool = false
     @State private var authError: String?
 
     enum AuthPhase { case options, phone, otp }
-    enum HeroVariant: String { case photo, mascot }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            Color.rdPaper.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                AuthHero(variant: heroVariant)
-                    .frame(height: 360)
+        GeometryReader { geo in
+            ZStack(alignment: .bottom) {
+                // MARK: Full-screen hero photo
+                Image("AuthHero")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
                     .clipped()
-                    .ignoresSafeArea(edges: .top)
+                    .ignoresSafeArea()
 
-                VStack(spacing: 8) {
-                    RDLogo(size: 24)
+                // MARK: Bottom gradient overlay (photo → paper)
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear,                           location: 0.0),
+                        .init(color: .clear,                           location: 0.22),
+                        .init(color: Color.rdPaper.opacity(0.30),      location: 0.38),
+                        .init(color: Color.rdPaper.opacity(0.78),      location: 0.52),
+                        .init(color: Color.rdPaper.opacity(0.97),      location: 0.62),
+                        .init(color: Color.rdPaper,                    location: 0.70),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                // MARK: Top gradient overlay (paper → clear) for status bar legibility
+                LinearGradient(
+                    stops: [
+                        .init(color: Color.rdPaper.opacity(0.72),      location: 0.0),
+                        .init(color: Color.rdPaper.opacity(0.30),      location: 0.06),
+                        .init(color: .clear,                           location: 0.14),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+
+                // MARK: Logo + subtitle — gradient'ın açık bölgesinde
+                VStack(spacing: 10) {
+                    RDLogo(size: 38)
                     Text("Saha için yapay zekâ destekli iş güvenliği asistanı")
-                        .font(.system(size: 14))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
-                        .frame(maxWidth: 280)
+                        .frame(maxWidth: 260)
                 }
-                .padding(.top, -76)
-                .zIndex(2)
+                .padding(.bottom, formHeight + 32)
+                .frame(maxWidth: .infinity)
 
-                Spacer(minLength: 0)
-
-                form
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 28)
-            }
-
-            // Variant toggle (top-left)
-            HStack(spacing: 0) {
-                ForEach([HeroVariant.photo, HeroVariant.mascot], id: \.self) { v in
-                    Text(v == .photo ? "Foto" : "Maskot")
-                        .font(.system(size: 11, weight: .heavy))
-                        .tracking(0.4)
-                        .padding(.horizontal, 10)
-                        .frame(height: 24)
-                        .background(heroVariant == v ? Color.rdBlack : Color.clear)
-                        .foregroundStyle(heroVariant == v ? .white : Color.rdCharcoal)
-                        .clipShape(Capsule())
-                        .onTapGesture { withAnimation(.easeInOut) { heroVariant = v } }
+                // MARK: Form — alttan sabit
+                VStack(spacing: 0) {
+                    form
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, max(28, geo.safeAreaInsets.bottom))
+                        .padding(.top, 8)
                 }
+                .frame(height: formHeight)
+                .background(Color.rdPaper)
             }
-            .padding(3)
-            .background(Color.white.opacity(0.85))
-            .background(.ultraThinMaterial)
-            .clipShape(Capsule())
-            .overlay(Capsule().stroke(.black.opacity(0.06), lineWidth: 1))
-            .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
-            .padding(.leading, 16)
-            .padding(.top, 56)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .ignoresSafeArea()
+        .background(Color.rdPaper)
+    }
+
+    // Form yüksekliği phase'e göre değişmez, badge pozisyonu için sabit referans
+    private var formHeight: CGFloat {
+        switch phase {
+        case .options: return 300
+        case .phone:   return 220
+        case .otp:     return 280
         }
     }
 
     @ViewBuilder
     private var form: some View {
         switch phase {
-        case .options:
-            optionsForm
-        case .phone:
-            phoneForm
-        case .otp:
-            otpForm
+        case .options: optionsForm
+        case .phone:   phoneForm
+        case .otp:     otpForm
         }
     }
 
@@ -83,19 +99,19 @@ struct AuthView: View {
     private var optionsForm: some View {
         VStack(spacing: 10) {
             RDButton(title: "Apple ile devam et", style: .primary, icon: "applelogo") {
-                // TODO: ASAuthorizationAppleIDProvider entegrasyonu
+                // TODO: ASAuthorizationAppleIDProvider
             }
             RDButton(title: "Google ile devam et", style: .secondary, icon: "g.circle.fill") {
-                // TODO: GoogleSignIn SDK entegrasyonu
+                // TODO: GoogleSignIn SDK
             }
             HStack(spacing: 12) {
                 Rectangle().fill(Color.rdLine).frame(height: 1)
                 Text("veya").font(.system(size: 12)).foregroundStyle(Color.rdSlate)
                 Rectangle().fill(Color.rdLine).frame(height: 1)
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 2)
             RDButton(title: "Telefon numarası ile", style: .secondary, icon: "phone.fill") {
-                withAnimation { phase = .phone }
+                withAnimation(.easeInOut(duration: 0.22)) { phase = .phone }
             }
 
             #if DEBUG
@@ -106,7 +122,6 @@ struct AuthView: View {
             ) {
                 runDemoSignIn()
             }
-            .padding(.top, 6)
             .opacity(isSigningIn ? 0.6 : 1)
             #endif
 
@@ -115,22 +130,21 @@ struct AuthView: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
-                    .padding(.top, 4)
+                    .padding(.top, 2)
             }
             if let svcErr = app.authError {
                 Text("⚠️ \(svcErr)")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
-                    .padding(.top, 2)
             }
 
             Text("Devam ederek/Kaydolarak Kullanım Şartları ve Gizlilik Politikası'nı kabul etmiş olursun.")
-                .font(.system(size: 12))
+                .font(.system(size: 11))
                 .foregroundStyle(Color.rdSlate)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
-                .padding(.top, 14)
+                .padding(.top, 6)
         }
     }
 
@@ -159,14 +173,16 @@ struct AuthView: View {
             }
             RDButton(title: "Kod gönder", style: .primary, trailingIcon: "arrow.right") {
                 if phone.filter(\.isNumber).count >= 10 {
-                    withAnimation { phase = .otp }
+                    withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
                 }
             }
-            Button("← Diğer giriş yöntemleri") { withAnimation { phase = .options } }
-                .font(.system(size: 14))
-                .foregroundStyle(Color.rdSlate)
-                .frame(maxWidth: .infinity)
-                .padding(8)
+            Button("← Diğer giriş yöntemleri") {
+                withAnimation(.easeInOut(duration: 0.22)) { phase = .options }
+            }
+            .font(.system(size: 14))
+            .foregroundStyle(Color.rdSlate)
+            .frame(maxWidth: .infinity)
+            .padding(8)
         }
     }
 
@@ -207,15 +223,15 @@ struct AuthView: View {
                 .foregroundStyle(Color.rdSlate)
                 .frame(maxWidth: .infinity)
 
-            RDButton(title: "Doğrula ve giriş yap", style: .detect) {
-                // TODO: SMS provider konfig sonrası verifyPhoneOTP çağrısı
-            }
+            RDButton(title: "Doğrula ve giriş yap", style: .detect) {}
 
-            Button("← Numarayı değiştir") { withAnimation { phase = .phone } }
-                .font(.system(size: 14))
-                .foregroundStyle(Color.rdSlate)
-                .frame(maxWidth: .infinity)
-                .padding(8)
+            Button("← Numarayı değiştir") {
+                withAnimation(.easeInOut(duration: 0.22)) { phase = .phone }
+            }
+            .font(.system(size: 14))
+            .foregroundStyle(Color.rdSlate)
+            .frame(maxWidth: .infinity)
+            .padding(8)
         }
     }
 
@@ -231,128 +247,10 @@ struct AuthView: View {
                     email: "demo@riskdetected.app",
                     password: "demo123456"
                 )
-                // AppState session değişimini gözlemleyip flow=.main yapacak.
             } catch {
                 authError = "Giriş başarısız: \(error.localizedDescription)"
             }
             isSigningIn = false
-        }
-    }
-}
-
-struct AuthHero: View {
-    let variant: AuthView.HeroVariant
-
-    var body: some View {
-        ZStack {
-            if variant == .photo {
-                heroPhoto
-            } else {
-                heroMascot
-            }
-
-            // Top fade
-            LinearGradient(
-                colors: [Color.rdPaper, Color.rdPaper.opacity(0.85), Color.rdPaper.opacity(0)],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: 110)
-            .frame(maxHeight: .infinity, alignment: .top)
-            .allowsHitTesting(false)
-
-            // Bottom fade
-            LinearGradient(
-                colors: [Color.rdPaper.opacity(0), Color.rdPaper.opacity(0.85), Color.rdPaper],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: 160)
-            .frame(maxHeight: .infinity, alignment: .bottom)
-            .allowsHitTesting(false)
-
-            // Floating "scan complete" badge
-            HStack(spacing: 8) {
-                ZStack {
-                    Circle().fill(Color.rdGreen).frame(width: 22, height: 22)
-                    Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
-                }
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("SAHA TARAMASI")
-                        .font(.system(size: 10, weight: .semibold))
-                        .tracking(0.4)
-                        .foregroundStyle(Color.rdSlate)
-                    Text("3 risk tespit edildi")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color.rdBlack)
-                }
-            }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(Color.white.opacity(0.95))
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(.black.opacity(0.04), lineWidth: 1))
-            .shadow(color: .black.opacity(0.12), radius: 20, y: 6)
-            .padding(.trailing, 18).padding(.top, 78)
-            .frame(maxWidth: .infinity, alignment: .topTrailing)
-        }
-        .frame(height: 360)
-    }
-
-    @ViewBuilder
-    private var heroPhoto: some View {
-        ZStack {
-            // Sky gradient
-            LinearGradient(
-                colors: [Color(hex: "#A8C5DA"), Color(hex: "#E8EFF4")],
-                startPoint: .top, endPoint: .bottom
-            )
-
-            // Construction silhouette
-            GeometryReader { geo in
-                let w = geo.size.width
-                let h = geo.size.height
-                Path { p in
-                    p.move(to: CGPoint(x: 0, y: h))
-                    p.addLine(to: CGPoint(x: 0, y: h * 0.75))
-                    p.addLine(to: CGPoint(x: w * 0.18, y: h * 0.55))
-                    p.addLine(to: CGPoint(x: w * 0.30, y: h * 0.62))
-                    p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.48))
-                    p.addLine(to: CGPoint(x: w * 0.55, y: h * 0.55))
-                    p.addLine(to: CGPoint(x: w * 0.70, y: h * 0.40))
-                    p.addLine(to: CGPoint(x: w * 0.85, y: h * 0.50))
-                    p.addLine(to: CGPoint(x: w, y: h * 0.45))
-                    p.addLine(to: CGPoint(x: w, y: h))
-                    p.closeSubpath()
-                }
-                .fill(LinearGradient(
-                    colors: [Color(hex: "#1F2D3D"), Color(hex: "#0B1218")],
-                    startPoint: .top, endPoint: .bottom
-                ))
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var heroMascot: some View {
-        ZStack {
-            LinearGradient(
-                colors: [Color(hex: "#EAF8EE"), Color.rdPaper],
-                startPoint: .top, endPoint: .bottom
-            )
-            // Helmet mascot — basit SwiftUI çizimi
-            ZStack {
-                Capsule()
-                    .fill(Color.rdGreen)
-                    .frame(width: 180, height: 110)
-                    .offset(y: 6)
-                Capsule()
-                    .fill(Color.rdGreenDark)
-                    .frame(width: 200, height: 18)
-                    .offset(y: 60)
-                Image(systemName: "checkmark.shield.fill")
-                    .font(.system(size: 56, weight: .bold))
-                    .foregroundStyle(.white)
-                    .offset(y: 4)
-            }
         }
     }
 }

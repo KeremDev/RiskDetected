@@ -1,14 +1,23 @@
 import SwiftUI
 
+// MARK: - AnalysisJob
+
+/// iOS 26 SwiftUI bug workaround: fullScreenCover(isPresented:) captures stale @State
+/// value when two state vars are set in same sync frame. Using fullScreenCover(item:)
+/// guarantees the closure captures the live item at presentation time.
+struct AnalysisJob: Identifiable {
+    let id = UUID()
+    let work: () async throws -> AnalysisResultBundle
+}
+
 struct HomeView: View {
     @EnvironmentObject var app: AppState
 
     @State private var mode: HomeMode = .photo
     @State private var text: String = ""
-    @State private var selectedCanvas: AnalysisCanvas = .general
+    @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
     @State private var showCanvasSheet = false
     @State private var showAnnotate = false
-    @State private var showAnalyzing = false
     @State private var showResult = false
 
     // Foto akışı state
@@ -16,6 +25,13 @@ struct HomeView: View {
     @State private var showCameraPicker = false
     @State private var showGalleryPicker = false
     @State private var selectedImage: UIImage? = nil
+
+    // Analiz state
+    @State private var analysisResult: AnalysisResultBundle? = nil
+    @State private var analysisError: String? = nil
+    @State private var pendingJob: AnalysisJob? = nil
+    @State private var recentItems: [RecentAnalysis] = []
+    @State private var openingRecentID: UUID? = nil
 
     enum HomeMode: String, CaseIterable {
         case photo, text
@@ -46,8 +62,6 @@ struct HomeView: View {
                     }
                     .frame(height: 56)
                     .padding(.top, 14)
-                    .opacity(canStartAnalysis ? 1 : 0.5)
-                    .disabled(!canStartAnalysis)
 
                     recentSection
                         .padding(.top, 28)
@@ -58,6 +72,12 @@ struct HomeView: View {
             }
         }
         .background(Color.rdPaper)
+        .task {
+            await loadRecentItems()
+        }
+        .onChange(of: app.auth.session?.user.id) { _ in
+            Task { await loadRecentItems() }
+        }
         .confirmationDialog("Saha fotoğrafı", isPresented: $showSourceDialog, titleVisibility: .visible) {
             Button("Kamera ile çek") {
                 if UIImagePickerController.isSourceTypeAvailable(.camera) {
@@ -74,12 +94,11 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showCanvasSheet) {
             CanvasSheet(
-                selected: $selectedCanvas,
+                selected: $selectedCanvases,
                 isUserPro: app.isPro,
                 onConfirm: {
                     showCanvasSheet = false
-                    // Sheet kapanması bittikten sonra analizi başlat
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         runAnalysis()
                     }
                 },
@@ -116,23 +135,51 @@ struct HomeView: View {
             AnnotateView(
                 initialImage: selectedImage,
                 onCancel: { showAnnotate = false },
-                onAnalyze: { _, _ in
+                onAnalyze: { annotated in
+                    selectedImage = annotated
                     showAnnotate = false
                 }
             )
         }
-        .fullScreenCover(isPresented: $showAnalyzing) {
-            AnalyzingView(onComplete: {
-                showAnalyzing = false
-                // Sheet kapanır kapanmaz açılmaya çalışırsa transition'ları kaybeder; küçük bir gecikme ekle.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                    showResult = true
+        .fullScreenCover(item: $pendingJob) { job in
+            AnalyzingView(
+                isPresented: Binding(
+                    get: { pendingJob != nil },
+                    set: { if !$0 { pendingJob = nil } }
+                ),
+                asyncWork: job.work,
+                onComplete: { result in
+                    analysisResult = result
+                    pendingJob = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        showResult = true
+                    }
+                },
+                onError: { msg in
+                    analysisError = msg
+                    pendingJob = nil
                 }
-            })
+            )
         }
         .fullScreenCover(isPresented: $showResult) {
-            ResultView(onClose: { showResult = false })
-                .environmentObject(app)
+            ResultView(
+                bundle: analysisResult,
+                onClose: {
+                    showResult = false
+                    selectedImage = nil
+                    analysisResult = nil
+                    Task { await loadRecentItems() }
+                }
+            )
+            .environmentObject(app)
+        }
+        .alert("Analiz Hatası", isPresented: .init(
+            get: { analysisError != nil },
+            set: { if !$0 { analysisError = nil } }
+        )) {
+            Button("Tamam") { analysisError = nil }
+        } message: {
+            Text(analysisError ?? "")
         }
     }
 
@@ -250,15 +297,33 @@ struct HomeView: View {
                         }
                 } else {
                     ZStack {
+                        // İçerik
                         VStack(spacing: 10) {
+                            // Kamera ikonu — katmanlı gölge ile boyut
                             ZStack {
+                                // Dış glow halkası
+                                RoundedRectangle(cornerRadius: 18)
+                                    .fill(Color.rdGreen.opacity(0.12))
+                                    .frame(width: 68, height: 68)
+                                    .blur(radius: 6)
+                                    .offset(y: 3)
+
                                 RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.rdGreenSoft)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.rdGreenSoft, Color.rdGreen.opacity(0.22)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 56, height: 56)
+                                    .shadow(color: Color.rdGreen.opacity(0.3), radius: 8, x: 0, y: 4)
+
                                 Image(systemName: "camera.fill")
                                     .font(.system(size: 26, weight: .semibold))
                                     .foregroundStyle(Color.rdGreenDark)
                             }
-                            .frame(width: 56, height: 56)
+                            .frame(width: 68, height: 68)
 
                             Text("Saha fotoğrafı yükle")
                                 .font(.system(size: 17, weight: .semibold))
@@ -273,21 +338,44 @@ struct HomeView: View {
                             Spacer()
                             Text("JPG · PNG · HEIC")
                                 .rdMono(size: 11, weight: .medium)
-                                .foregroundStyle(Color.rdSlate)
+                                .foregroundStyle(Color.rdSlate.opacity(0.7))
                                 .padding(.bottom, 14)
                         }
                     }
                     .frame(height: 220)
                     .frame(maxWidth: .infinity)
                     .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.rdWhite)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
-                                    .foregroundStyle(Color.rdLine)
-                            )
+                        ZStack {
+                            // Kart zemini — üstten alta hafif gradient
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.rdWhite, Color.rdGreen.opacity(0.04)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+
+                            // Dashed border — hafif yeşil tint
+                            RoundedRectangle(cornerRadius: 20)
+                                .strokeBorder(
+                                    style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
+                                )
+                                .foregroundStyle(Color.rdGreen.opacity(0.35))
+                        }
                     )
+                    // Çift katman gölge: ambient + directional
+                    .shadow(color: Color.black.opacity(0.04), radius: 1, x: 0, y: 1)
+                    .shadow(color: Color.black.opacity(0.07), radius: 14, x: 0, y: 6)
+                    // Alt yeşil glow
+                    .overlay(alignment: .bottom) {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.rdGreen.opacity(0.08))
+                            .frame(height: 60)
+                            .blur(radius: 12)
+                            .offset(y: 10)
+                            .allowsHitTesting(false)
+                    }
                 }
             }
         }
@@ -357,8 +445,40 @@ struct HomeView: View {
                     .foregroundStyle(Color.rdBlack)
             }
 
-            ForEach(RecentAnalysis.mock) { item in
-                RecentAnalysisCard(item: item) { /* navigate to result */ }
+            if recentItems.isEmpty {
+                emptyRecentCard
+            } else {
+                ForEach(recentItems) { item in
+                    RecentAnalysisCard(
+                        item: item,
+                        isLoading: openingRecentID == item.id
+                    ) {
+                        openRecentAnalysis(item)
+                    }
+                }
+            }
+        }
+    }
+
+    private var emptyRecentCard: some View {
+        RDCard {
+            HStack(spacing: 12) {
+                Image(systemName: "clock.badge.checkmark")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.rdGreenDark)
+                    .frame(width: 42, height: 42)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Henüz tamamlanmış analiz yok")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.rdBlack)
+                    Text("İlk tarama tamamlandığında burada listelenecek.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.rdSlate)
+                }
+                Spacer(minLength: 0)
             }
         }
     }
@@ -372,23 +492,89 @@ struct HomeView: View {
         return formatter.string(from: Date())
     }
 
-    private var canStartAnalysis: Bool {
-        switch mode {
-        case .photo: return selectedImage != nil
-        case .text:  return text.trimmingCharacters(in: .whitespacesAndNewlines).count >= 10
-        }
-    }
-
-    /// "Taramayı Başlat" basıldığında: önce AI Canvas seçimi için bottom sheet aç.
+    /// "Taramayı Başlat" → foto yoksa picker; varsa canvas sheet.
     private func startAnalysisFlow() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if mode == .photo && selectedImage == nil {
+            showSourceDialog = true
+            return
+        }
+        if mode == .text && text.trimmingCharacters(in: .whitespacesAndNewlines).count < 10 {
+            // Minimum içerik yok — kullanıcı text alanına odaklanacak (keyboard zaten açık)
+            return
+        }
         showCanvasSheet = true
     }
 
-    /// Canvas seçildikten sonra çağrılır → asıl analiz/yükleme akışını başlatır.
+    /// Canvas seçimi onaylandıktan sonra çağrılır.
+    /// async closure oluştur → AnalyzingView'a ilet → o çalıştırır.
     private func runAnalysis() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        showAnalyzing = true
+
+        // AuthService.session authStateChanges'ten geliyor — currentSession'dan daha güvenilir.
+        guard let userID = app.auth.session?.user.id else {
+            analysisError = "Oturum bulunamadı. Lütfen tekrar giriş yapın."
+            return
+        }
+        let canvases = Array(selectedCanvases)
+        let capturedImage = selectedImage
+        let capturedText = text
+
+        switch mode {
+        case .photo:
+            guard let img = capturedImage else {
+                return
+            }
+            pendingJob = AnalysisJob {
+                try await AnalysisService.shared.runPhotoAnalysis(
+                    userID: userID,
+                    images: [img],
+                    canvases: canvases
+                )
+            }
+        case .text:
+            let trimmed = capturedText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else {
+                return
+            }
+            pendingJob = AnalysisJob {
+                try await AnalysisService.shared.runTextAnalysis(
+                    userID: userID,
+                    text: trimmed,
+                    canvases: canvases
+                )
+            }
+        }
+    }
+
+    private func loadRecentItems() async {
+        guard app.auth.session != nil else { return }
+        do {
+            let rows = try await AnalysisService.shared.listRecent(limit: 3)
+            let paths = try await AnalysisService.shared.firstPhotoPaths(analysisIDs: rows.map(\.id))
+            recentItems = rows.map { row in
+                RecentAnalysis(row: row, photoPath: paths[row.id])
+            }
+        } catch {
+            recentItems = []
+        }
+    }
+
+    private func openRecentAnalysis(_ item: RecentAnalysis) {
+        guard openingRecentID == nil else { return }
+        openingRecentID = item.id
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        Task {
+            do {
+                let result = try await AnalysisService.shared.result(analysisID: item.id)
+                analysisResult = result
+                showResult = true
+            } catch {
+                analysisError = error.localizedDescription
+            }
+            openingRecentID = nil
+        }
     }
 }
 
@@ -420,14 +606,14 @@ private struct HomeHeader: View {
 
 struct RecentAnalysisCard: View {
     let item: RecentAnalysis
+    var isLoading: Bool = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                RDPlaceholderPhoto()
+                AnalysisThumbnail(path: item.photoPath, cornerRadius: 12)
                     .frame(width: 58, height: 58)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(item.title)
@@ -452,9 +638,14 @@ struct RecentAnalysisCard: View {
                         .rdMono(size: 11, weight: .semibold)
                         .foregroundStyle(Color.rdSlate)
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.rdSlate)
+                    if isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.rdSlate)
+                    }
                 }
             }
             .padding(12)
