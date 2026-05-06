@@ -15,8 +15,7 @@ struct RiskDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
 
-                photoCard
-                methodologyCard
+                photoScoreCard
                 comparisonCard
 
                 section("Tehlike açıklaması", body: finding.description)
@@ -73,38 +72,58 @@ struct RiskDetailView: View {
         }
     }
 
-    private var photoCard: some View {
-        ResultDetailPhoto(image: localPreviewImage, path: photoPath)
-            .frame(height: 180)
+    private var photoScoreCard: some View {
+        ZStack(alignment: .bottom) {
+            ResultDetailPhoto(image: localPreviewImage, path: photoPath)
+                .frame(height: 210)
+
+            methodologyOverlay
+                .padding(.horizontal, 14)
+                .padding(.bottom, 12)
+        }
     }
 
     // MARK: - Methodology
 
-    private var methodologyCard: some View {
+    private var methodologyOverlay: some View {
         let band = finding.band(for: method)
         let score = finding.score(for: method)
 
-        return RDCard(padding: 14, cornerRadius: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(method.fullName.uppercased())
-                    .font(.system(size: 10, weight: .bold))
-                    .tracking(0.6)
-                    .foregroundStyle(Color.rdSlate)
-
-                HStack(alignment: .lastTextBaseline, spacing: 8) {
+        return HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .lastTextBaseline, spacing: 7) {
                     Text("\(Int(score))")
-                        .font(.system(size: 30, weight: .heavy, design: .monospaced))
+                        .font(.system(size: 28, weight: .heavy, design: .monospaced))
                         .foregroundStyle(band.color)
                         .tracking(-0.6)
                     Text("R = \(finding.formula(for: method))")
-                        .rdMono(size: 11, weight: .semibold)
+                        .rdMono(size: 10.5, weight: .semibold)
                         .foregroundStyle(Color.rdSlate)
+                        .lineLimit(1)
                 }
+
                 Text(band.action)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(band.color)
             }
+            Spacer(minLength: 6)
+            Text(method.fullName.uppercased())
+                .font(.system(size: 9, weight: .bold))
+                .tracking(0.6)
+                .foregroundStyle(Color.rdSlate)
+                .lineLimit(2)
+                .multilineTextAlignment(.trailing)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial.opacity(0.86))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.52), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.16), radius: 14, x: 0, y: 8)
     }
 
     private var comparisonCard: some View {
