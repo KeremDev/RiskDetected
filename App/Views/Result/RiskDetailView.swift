@@ -98,29 +98,37 @@ struct RiskDetailView: View {
                         .tracking(-0.6)
                     Text("R = \(finding.formula(for: method))")
                         .rdMono(size: 10.5, weight: .semibold)
-                        .foregroundStyle(Color.rdSlate)
+                        .foregroundStyle(Color.rdBlack.opacity(0.78))
                         .lineLimit(1)
                 }
 
                 Text(band.action)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(band.color)
             }
             Spacer(minLength: 6)
             Text(method.fullName.uppercased())
                 .font(.system(size: 9, weight: .bold))
                 .tracking(0.6)
-                .foregroundStyle(Color.rdSlate)
+                .foregroundStyle(Color.rdBlack.opacity(0.72))
                 .lineLimit(2)
                 .multilineTextAlignment(.trailing)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity)
-        .background(.ultraThinMaterial.opacity(0.86))
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.50))
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.82)
+            }
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.52), lineWidth: 1)
+                .stroke(Color.white.opacity(0.72), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.16), radius: 14, x: 0, y: 8)
