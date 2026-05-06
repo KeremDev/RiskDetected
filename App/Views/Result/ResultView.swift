@@ -637,7 +637,7 @@ struct ResultView: View {
 
 // MARK: - Report Settings
 
-private struct ReportSettingsSheet: View {
+struct ReportSettingsSheet: View {
     @Binding var options: PDFReportOptions
     @Binding var companyLogo: UIImage?
     let profile: UserProfile?

@@ -13,6 +13,9 @@ struct ReportView: View {
     @State private var isGeneratingPDF = false
     @State private var errorMessage: String?
     @State private var showPaywall = false
+    @State private var showReportSettings = false
+    @State private var reportOptions = PDFReportOptions()
+    @State private var reportCompanyLogo: UIImage?
     @State private var shareItem: ShareItem?
 
     var body: some View {
@@ -54,6 +57,20 @@ struct ReportView: View {
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
         }
+        .sheet(isPresented: $showReportSettings) {
+            ReportSettingsSheet(
+                options: $reportOptions,
+                companyLogo: $reportCompanyLogo,
+                profile: app.profile,
+                onGenerate: {
+                    showReportSettings = false
+                    generateSelectedReport(options: reportOptions, companyLogo: reportCompanyLogo)
+                },
+                onClose: { showReportSettings = false }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     private var header: some View {
@@ -87,19 +104,45 @@ struct ReportView: View {
         HStack(spacing: 8) {
             RDButton(
                 title: isGeneratingPDF ? "PDF hazırlanıyor..." : "PDF oluştur",
-                style: .secondary,
+                style: .primary,
                 icon: isGeneratingPDF ? "hourglass" : "doc.richtext",
                 height: 52
             ) {
                 generateSelectedReport()
             }
             .disabled(isGeneratingPDF)
-                .frame(maxWidth: .infinity)
-            RDButton(title: "Paylaş", style: .primary, icon: "square.and.arrow.up", height: 52) {
-                generateSelectedReport()
+            .frame(maxWidth: .infinity)
+
+            Button {
+                if app.isPro {
+                    reportOptions = defaultReportOptions(kind: reportOptions.kind == .standard ? .riskAnalysis : reportOptions.kind)
+                    showReportSettings = true
+                } else {
+                    showPaywall = true
+                }
+            } label: {
+                ZStack(alignment: .topTrailing) {
+                    VStack(spacing: 4) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 19, weight: .bold))
+                        Text("Ayarlar")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundStyle(Color.rdBlack)
+                    .frame(width: 78, height: 52)
+                    .background(Color.rdWhite)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.rdLine, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                    RDProBadge(small: true)
+                        .scaleEffect(0.72)
+                        .offset(x: 9, y: -9)
+                }
             }
-            .disabled(isGeneratingPDF)
-                .frame(maxWidth: .infinity)
+            .buttonStyle(RDPressableButtonStyle())
         }
     }
 
@@ -273,7 +316,7 @@ struct ReportView: View {
         }
     }
 
-    private func generateSelectedReport() {
+    private func generateSelectedReport(options: PDFReportOptions? = nil, companyLogo: UIImage? = nil) {
         guard !isGeneratingPDF else { return }
         guard let selectedBundle else {
             errorMessage = "PDF oluşturmak için tamamlanmış bir analiz seçmelisin."
@@ -288,13 +331,14 @@ struct ReportView: View {
         Task {
             do {
                 let reportImage = try await loadReportImage(for: selectedBundle)
+                let resolvedOptions = options ?? PDFReportOptions.standard(method: .fineKinney)
                 let input = PDFReportService.ReportInput(
                     bundle: selectedBundle,
-                    findings: selectedBundle.findings.map(\.asFinding),
+                    findings: sortedFindings(selectedBundle.findings.map(\.asFinding), method: resolvedOptions.method),
                     profile: app.profile,
                     image: reportImage,
-                    companyLogo: nil,
-                    options: PDFReportOptions.standard(method: .fineKinney)
+                    companyLogo: companyLogo,
+                    options: resolvedOptions
                 )
                 let url = try PDFReportService.shared.generate(input: input)
                 do {
@@ -302,8 +346,8 @@ struct ReportView: View {
                         userID: userID,
                         bundle: selectedBundle,
                         fileURL: url,
-                        kind: .standard,
-                        method: .fineKinney
+                        kind: resolvedOptions.kind,
+                        method: resolvedOptions.method
                     )
                     storedReports = (try? await AnalysisService.shared.listReports(limit: 20)) ?? storedReports
                 } catch {
@@ -340,6 +384,39 @@ struct ReportView: View {
             throw AnalysisService.AnalysisError.storageFailed("Analiz fotoğrafı indirildi ancak görüntü formatı açılamadı.")
         }
         return image
+    }
+
+    private func defaultReportOptions(kind: PDFReportKind = .standard) -> PDFReportOptions {
+        PDFReportOptions(
+            kind: kind,
+            method: .fineKinney,
+            preparedBy: app.profile?.displayName ?? "",
+            companyName: app.profile?.companyName ?? ""
+        )
+    }
+
+    private func sortedFindings(_ findings: [Finding], method: RiskMethod) -> [Finding] {
+        findings.sorted {
+            let leftRank = rankFor($0.band(for: method).level)
+            let rightRank = rankFor($1.band(for: method).level)
+            if leftRank != rightRank { return leftRank > rightRank }
+
+            let leftScore = $0.score(for: method)
+            let rightScore = $1.score(for: method)
+            if leftScore != rightScore { return leftScore > rightScore }
+
+            return $0.confidence > $1.confidence
+        }
+    }
+
+    private func rankFor(_ level: RiskLevel) -> Int {
+        switch level {
+        case .critical: return 4
+        case .high:     return 3
+        case .medium:   return 2
+        case .low:      return 1
+        case .unknown:  return 0
+        }
     }
 }
 

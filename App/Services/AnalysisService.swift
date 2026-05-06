@@ -189,8 +189,8 @@ final class AnalysisService {
             throw AnalysisError.storageFailed("PDF dosyası okunamadı: \(error.localizedDescription)")
         }
 
-        let fileName = fileURL.lastPathComponent
-        let storagePath = "\(userID.uuidString)/\(bundle.analysis.id.uuidString)/\(fileName)"
+        let fileName = Self.safeReportFileName(for: bundle.analysis, kind: kind, method: method)
+        let storagePath = "\(userID.uuidString.lowercased())/\(bundle.analysis.id.uuidString.lowercased())/\(fileName)"
 
         do {
             _ = try await supabase.storage
@@ -207,6 +207,8 @@ final class AnalysisService {
         struct UpsertPayload: Encodable {
             let user_id: String
             let analysis_id: String
+            let document_no: String
+            let format: String
             let kind: String
             let method: String
             let title: String
@@ -214,18 +216,25 @@ final class AnalysisService {
             let file_name: String
             let mime_type: String
             let file_size: Int
+            let size_bytes: Int
+            let page_count: Int
         }
 
+        let fileSize = data.count
         let payload = UpsertPayload(
             user_id: userID.uuidString,
             analysis_id: bundle.analysis.id.uuidString,
+            document_no: String(bundle.analysis.id.uuidString.prefix(8)).uppercased(),
+            format: "pdf",
             kind: kind.rawValue,
-            method: method.rawValue,
+            method: Self.databaseReportMethodValue(method),
             title: bundle.analysis.title,
             storage_path: storagePath,
             file_name: fileName,
             mime_type: "application/pdf",
-            file_size: data.count
+            file_size: fileSize,
+            size_bytes: fileSize,
+            page_count: Self.estimatedPageCount(for: kind, findingCount: bundle.findings.count)
         )
 
         do {
@@ -512,6 +521,44 @@ final class AnalysisService {
         }
 
         return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    private static func safeReportFileName(for analysis: AnalysisRow, kind: PDFReportKind, method: RiskMethod) -> String {
+        let normalizedTitle = analysis.title
+            .folding(options: [.diacriticInsensitive, .widthInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .lowercased()
+        let safeTitle = normalizedTitle
+            .map { character -> Character in
+                if character.isLetter || character.isNumber { return character }
+                if character == "-" || character == "_" { return character }
+                return "_"
+            }
+            .reduce(into: "") { partial, character in
+                if character == "_" && partial.last == "_" { return }
+                partial.append(character)
+            }
+            .trimmingCharacters(in: CharacterSet(charactersIn: "_-"))
+        let titlePart = safeTitle.isEmpty ? "analysis" : String(safeTitle.prefix(48))
+        let shortID = String(analysis.id.uuidString.prefix(8)).lowercased()
+        return "riskdetected_\(titlePart)_\(kind.rawValue)_\(databaseReportMethodValue(method))_\(shortID).pdf"
+    }
+
+    private static func databaseReportMethodValue(_ method: RiskMethod) -> String {
+        switch method {
+        case .fineKinney:
+            return "fine_kinney"
+        case .matrix5x5:
+            return "matrix_5x5"
+        }
+    }
+
+    private static func estimatedPageCount(for kind: PDFReportKind, findingCount: Int) -> Int {
+        switch kind {
+        case .standard:
+            return 1 + max(Int(ceil(Double(max(findingCount, 1)) / 5.0)), 1)
+        case .riskAnalysis:
+            return 1 + max(Int(ceil(Double(max(findingCount, 1)) / 5.0)), 1)
+        }
     }
 }
 

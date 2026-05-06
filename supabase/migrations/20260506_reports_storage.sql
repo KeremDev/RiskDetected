@@ -24,6 +24,56 @@ create table if not exists public.reports (
   unique (user_id, storage_path)
 );
 
+alter table public.reports
+  add column if not exists user_id uuid references auth.users(id) on delete cascade,
+  add column if not exists analysis_id uuid references public.analyses(id) on delete cascade,
+  add column if not exists document_no text,
+  add column if not exists format text,
+  add column if not exists kind text not null default 'standard',
+  add column if not exists method text not null default 'fine_kinney',
+  add column if not exists title text not null default 'RiskDetected Report',
+  add column if not exists storage_path text,
+  add column if not exists file_name text,
+  add column if not exists mime_type text not null default 'application/pdf',
+  add column if not exists file_size integer,
+  add column if not exists size_bytes integer,
+  add column if not exists page_count integer,
+  add column if not exists created_at timestamptz not null default now();
+
+update public.reports
+set document_no = coalesce(document_no, upper(left(analysis_id::text, 8))),
+    format = coalesce(format, 'pdf'),
+    file_name = coalesce(file_name, split_part(storage_path, '/', array_length(string_to_array(storage_path, '/'), 1))),
+    mime_type = coalesce(mime_type, 'application/pdf'),
+    file_size = coalesce(file_size, size_bytes),
+    size_bytes = coalesce(size_bytes, file_size)
+where document_no is null
+   or format is null
+   or file_name is null
+   or mime_type is null
+   or file_size is null
+   or size_bytes is null;
+
+alter table public.reports
+  alter column storage_path set not null,
+  alter column file_name set not null,
+  alter column document_no set not null,
+  alter column format set not null,
+  alter column format set default 'pdf';
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'reports_user_storage_path_key'
+      and conrelid = 'public.reports'::regclass
+  ) then
+    alter table public.reports
+      add constraint reports_user_storage_path_key unique (user_id, storage_path);
+  end if;
+end $$;
+
 alter table public.reports enable row level security;
 
 drop policy if exists "Users read own reports" on public.reports;
@@ -64,7 +114,7 @@ create policy "Users read own report files"
   using (
     bucket_id = 'reports'
     and auth.role() = 'authenticated'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and lower((storage.foldername(name))[1]) = auth.uid()::text
   );
 
 drop policy if exists "Users insert own report files" on storage.objects;
@@ -73,7 +123,7 @@ create policy "Users insert own report files"
   with check (
     bucket_id = 'reports'
     and auth.role() = 'authenticated'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and lower((storage.foldername(name))[1]) = auth.uid()::text
   );
 
 drop policy if exists "Users update own report files" on storage.objects;
@@ -82,12 +132,12 @@ create policy "Users update own report files"
   using (
     bucket_id = 'reports'
     and auth.role() = 'authenticated'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and lower((storage.foldername(name))[1]) = auth.uid()::text
   )
   with check (
     bucket_id = 'reports'
     and auth.role() = 'authenticated'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and lower((storage.foldername(name))[1]) = auth.uid()::text
   );
 
 drop policy if exists "Users delete own report files" on storage.objects;
@@ -96,5 +146,5 @@ create policy "Users delete own report files"
   using (
     bucket_id = 'reports'
     and auth.role() = 'authenticated'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and lower((storage.foldername(name))[1]) = auth.uid()::text
   );
