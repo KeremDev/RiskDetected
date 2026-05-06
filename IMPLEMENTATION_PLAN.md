@@ -39,6 +39,7 @@
   - Legal notice/link copy is shown on the login screen and Home screen instead.
   - Users are informed that signing in, registering or starting analysis means accepting the terms and relevant data processing notices.
   - Login/session creates a non-blocking background `consents` audit row with legal versions, timestamp, app version and device id when missing.
+  - Client photo preparation re-renders selected images before analysis/upload so EXIF/location/camera metadata is stripped.
 
 ## Partially Done - Revision Queue
 
@@ -117,7 +118,7 @@ These items exist in some form, but need revision before we treat them as produc
    - login/session creates a non-blocking background audit row with legal versions, timestamp, app version and device id when missing.
    - Follow-up: replace summary copy with lawyer-reviewed final KVKK/terms text and add full document links.
 2. Visual data policy:
-   - EXIF cleanup;
+   - Done: client-side EXIF cleanup by pixel-only re-render before AI analysis/upload;
    - face blur;
    - company logo blur;
    - cleaned-image-only storage policy where practical.

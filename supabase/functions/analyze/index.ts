@@ -7,7 +7,7 @@
  *   canvases     : string[] (all selected — for future multi-canvas backend)
  *   text_input   : string | null
  *   photo_paths  : string[] (Storage paths in "photos" bucket)
- *   photo_base64_parts: { mime_type: string; data: string }[] (inline photos)
+ *   photo_base64_parts: { mime_type: string; data: string; width?: number; height?: number }[] (inline photos)
  *
  * Schema notes (v4):
  *   - profiles.tier        enum: free | pro
@@ -392,8 +392,8 @@ serve(async (req: Request) => {
         analysis_id,
         user_id: user.id,
         storage_path: storagePath,
-        width: 0,
-        height: 0,
+        width: Number.isFinite(part.width) ? Math.round(part.width) : 0,
+        height: Number.isFinite(part.height) ? Math.round(part.height) : 0,
         mime_type: mimeType,
       });
 

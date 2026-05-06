@@ -387,6 +387,8 @@ final class AnalysisService {
     private struct InlinePhotoPart: Encodable {
         let mime_type: String
         let data: String
+        let width: Int
+        let height: Int
 
         var encodedByteCount: Int {
             data.utf8.count
@@ -397,20 +399,31 @@ final class AnalysisService {
         let renderSizes: [CGFloat] = [1400, 1200, 1000]
         let qualities: [CGFloat] = [0.72, 0.60, 0.48]
 
-        var lastData: Data?
+        var lastPhoto: SanitizedPhoto?
         for maxDimension in renderSizes {
-            let normalized = image.resizedToFit(maxDimension: maxDimension)
+            let normalized = image.sanitizedForAnalysis(maxDimension: maxDimension)
             for quality in qualities {
-                guard let data = normalized.jpegData(compressionQuality: quality) else { continue }
-                lastData = data
+                guard let data = normalized.image.jpegData(compressionQuality: quality) else { continue }
+                let photo = SanitizedPhoto(data: data, size: normalized.size)
+                lastPhoto = photo
                 if data.count <= Self.maxInlinePhotoBytes {
-                    return InlinePhotoPart(mime_type: "image/jpeg", data: data.base64EncodedString())
+                    return InlinePhotoPart(
+                        mime_type: "image/jpeg",
+                        data: data.base64EncodedString(),
+                        width: photo.width,
+                        height: photo.height
+                    )
                 }
             }
         }
 
-        if let lastData, lastData.count <= Self.maxInlinePhotoBytes * 2 {
-            return InlinePhotoPart(mime_type: "image/jpeg", data: lastData.base64EncodedString())
+        if let lastPhoto, lastPhoto.data.count <= Self.maxInlinePhotoBytes * 2 {
+            return InlinePhotoPart(
+                mime_type: "image/jpeg",
+                data: lastPhoto.data.base64EncodedString(),
+                width: lastPhoto.width,
+                height: lastPhoto.height
+            )
         }
 
         throw AnalysisError.invalidInput("Fotoğraf dosyası analiz için çok büyük. Lütfen daha küçük bir görsel seç.")
@@ -562,22 +575,39 @@ final class AnalysisService {
     }
 }
 
-private extension UIImage {
-    func resizedToFit(maxDimension: CGFloat) -> UIImage {
-        let longest = max(size.width, size.height)
-        guard longest > maxDimension else { return self }
+private struct SanitizedImage {
+    let image: UIImage
+    let size: CGSize
+}
 
-        let scale = maxDimension / longest
-        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+private struct SanitizedPhoto {
+    let data: Data
+    let size: CGSize
+
+    var width: Int { Int(size.width.rounded()) }
+    var height: Int { Int(size.height.rounded()) }
+}
+
+private extension UIImage {
+    /// Produces a pixel-only render for analysis/upload. Re-rendering through
+    /// UIGraphics drops EXIF/location/camera metadata and normalizes orientation.
+    func sanitizedForAnalysis(maxDimension: CGFloat) -> SanitizedImage {
+        let longest = max(size.width, size.height)
+        let scale = longest > maxDimension ? maxDimension / longest : 1
+        let targetSize = CGSize(
+            width: max((size.width * scale).rounded(), 1),
+            height: max((size.height * scale).rounded(), 1)
+        )
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         format.opaque = true
 
-        return UIGraphicsImageRenderer(size: newSize, format: format).image { _ in
+        let rendered = UIGraphicsImageRenderer(size: targetSize, format: format).image { _ in
             UIColor.black.setFill()
-            UIBezierPath(rect: CGRect(origin: .zero, size: newSize)).fill()
-            draw(in: CGRect(origin: .zero, size: newSize))
+            UIBezierPath(rect: CGRect(origin: .zero, size: targetSize)).fill()
+            draw(in: CGRect(origin: .zero, size: targetSize))
         }
+        return SanitizedImage(image: rendered, size: targetSize)
     }
 }
 
