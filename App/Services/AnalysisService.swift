@@ -157,6 +157,112 @@ final class AnalysisService {
         }
     }
 
+    /// Kullanıcının kayıtlı PDF raporlarını listeler.
+    func listReports(limit: Int = 20) async throws -> [ReportRow] {
+        do {
+            let rows: [ReportRow] = try await supabase.client
+                .from("reports")
+                .select()
+                .order("created_at", ascending: false)
+                .limit(limit)
+                .execute()
+                .value
+            return rows
+        } catch {
+            throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
+    /// Oluşturulan PDF'i Storage'a yükler ve `reports` kaydını yazar.
+    @discardableResult
+    func storeReport(
+        userID: UUID,
+        bundle: AnalysisResultBundle,
+        fileURL: URL,
+        kind: PDFReportKind,
+        method: RiskMethod
+    ) async throws -> ReportRow {
+        let data: Data
+        do {
+            data = try Data(contentsOf: fileURL)
+        } catch {
+            throw AnalysisError.storageFailed("PDF dosyası okunamadı: \(error.localizedDescription)")
+        }
+
+        let fileName = fileURL.lastPathComponent
+        let storagePath = "\(userID.uuidString)/\(bundle.analysis.id.uuidString)/\(fileName)"
+
+        do {
+            _ = try await supabase.storage
+                .from(RDConfig.Bucket.reports)
+                .upload(
+                    storagePath,
+                    data: data,
+                    options: FileOptions(contentType: "application/pdf", upsert: true)
+                )
+        } catch {
+            throw AnalysisError.storageFailed(error.localizedDescription)
+        }
+
+        struct UpsertPayload: Encodable {
+            let user_id: String
+            let analysis_id: String
+            let kind: String
+            let method: String
+            let title: String
+            let storage_path: String
+            let file_name: String
+            let mime_type: String
+            let file_size: Int
+        }
+
+        let payload = UpsertPayload(
+            user_id: userID.uuidString,
+            analysis_id: bundle.analysis.id.uuidString,
+            kind: kind.rawValue,
+            method: method.rawValue,
+            title: bundle.analysis.title,
+            storage_path: storagePath,
+            file_name: fileName,
+            mime_type: "application/pdf",
+            file_size: data.count
+        )
+
+        do {
+            let row: ReportRow = try await supabase.client
+                .from("reports")
+                .upsert(payload, onConflict: "user_id,storage_path")
+                .select()
+                .single()
+                .execute()
+                .value
+            return row
+        } catch {
+            throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
+    /// Storage'daki PDF raporu indirir ve geçici dosya URL'i döndürür.
+    func reportFileURL(for report: ReportRow) async throws -> URL {
+        let data: Data
+        do {
+            data = try await supabase.storage
+                .from(RDConfig.Bucket.reports)
+                .download(path: report.storagePath)
+        } catch {
+            throw AnalysisError.storageFailed(error.localizedDescription)
+        }
+
+        let safeName = report.fileName.isEmpty ? "RiskDetected_Report_\(report.id.uuidString.prefix(8)).pdf" : report.fileName
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(safeName)
+        do {
+            try data.write(to: url, options: .atomic)
+            return url
+        } catch {
+            throw AnalysisError.storageFailed("PDF dosyası hazırlanamadı: \(error.localizedDescription)")
+        }
+    }
+
     /// Profil ekranı için canlı sayaçlar.
     func profileStats() async throws -> ProfileStats {
         let startOfWeek = Calendar.current.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
@@ -468,6 +574,34 @@ struct DailyQuotaUsage: Equatable {
 
     var isExhausted: Bool {
         remaining == 0
+    }
+}
+
+struct ReportRow: Codable, Identifiable, Equatable {
+    let id: UUID
+    let userID: UUID
+    let analysisID: UUID?
+    let kind: String
+    let method: String
+    let title: String
+    let storagePath: String
+    let fileName: String
+    let mimeType: String
+    let fileSize: Int?
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case analysisID = "analysis_id"
+        case kind
+        case method
+        case title
+        case storagePath = "storage_path"
+        case fileName = "file_name"
+        case mimeType = "mime_type"
+        case fileSize = "file_size"
+        case createdAt = "created_at"
     }
 }
 

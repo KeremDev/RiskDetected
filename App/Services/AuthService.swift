@@ -32,21 +32,11 @@ final class AuthService: ObservableObject {
     /// signIn'in döndürdüğü Session'dan user ID'yi alıyor — currentSession race condition yok.
     func signInWithPassword(email: String, password: String) async throws {
         lastError = nil
-        print("[AuthService] 🔑 signIn başlıyor email=\(email)")
-
         let signedInSession = try await supabase.auth.signIn(email: email, password: password)
-        print("[AuthService] ✅ signIn başarılı user.id=\(signedInSession.user.id)")
-
         self.session = signedInSession
 
         // Profili response'taki user ID ile direkt fetch et
         await fetchProfile(userID: signedInSession.user.id)
-
-        if profile == nil {
-            print("[AuthService] ⚠️ signIn tamam ama profile NIL — lastError=\(lastError ?? "yok")")
-        } else {
-            print("[AuthService] 🎉 Profile aktif: tier=\(profile!.tier.rawValue), name=\(profile!.displayName)")
-        }
     }
 
     /// E-posta adresine sihirli link gönderir (passwordless).
@@ -88,7 +78,6 @@ final class AuthService: ObservableObject {
     /// Aktif kullanıcının profilini yeniler (currentUserID üzerinden — observer fallback).
     func refreshProfile() async {
         guard let userID = supabase.currentUserID else {
-            print("[AuthService] refreshProfile — currentUserID nil, profile temizleniyor")
             self.profile = nil
             return
         }
@@ -99,7 +88,6 @@ final class AuthService: ObservableObject {
 
     /// Profile fetch'in tek kaynağı. Hatayı `lastError`'a yazıyor ki UI gösterebilsin.
     private func fetchProfile(userID: UUID) async {
-        print("[AuthService] 🔍 fetchProfile başlıyor userID=\(userID.uuidString)")
         do {
             let row: UserProfile = try await supabase.client
                 .from("profiles")
@@ -111,25 +99,19 @@ final class AuthService: ObservableObject {
 
             self.profile = row
             self.lastError = nil
-            print("[AuthService] ✅ Profile decode tamam: tier=\(row.tier.rawValue), name=\(row.displayName), pro=\(row.isPro)")
         } catch let DecodingError.keyNotFound(key, context) {
             let msg = "missing key '\(key.stringValue)' at \(context.codingPath.map(\.stringValue))"
-            print("[AuthService] ❌ Decode keyNotFound: \(msg)")
             self.lastError = "Profile decode (key): \(msg)"
         } catch let DecodingError.typeMismatch(type, context) {
             let msg = "type \(type) mismatch at \(context.codingPath.map(\.stringValue))"
-            print("[AuthService] ❌ Decode typeMismatch: \(msg)")
             self.lastError = "Profile decode (type): \(msg)"
         } catch let DecodingError.valueNotFound(type, context) {
             let msg = "value \(type) not found at \(context.codingPath.map(\.stringValue))"
-            print("[AuthService] ❌ Decode valueNotFound: \(msg)")
             self.lastError = "Profile decode (val): \(msg)"
         } catch let DecodingError.dataCorrupted(context) {
             let msg = "data corrupted at \(context.codingPath.map(\.stringValue)): \(context.debugDescription)"
-            print("[AuthService] ❌ Decode dataCorrupted: \(msg)")
             self.lastError = "Profile decode (corrupt): \(msg)"
         } catch {
-            print("[AuthService] ❌ Profile fetch error: \(error)")
             self.lastError = "Profile fetch: \(error.localizedDescription)"
         }
     }
@@ -139,8 +121,6 @@ final class AuthService: ObservableObject {
             guard let self else { return }
             for await change in supabase.auth.authStateChanges {
                 let newSession = change.session
-                let eventName = String(describing: change.event)
-                print("[AuthService] 🔔 event=\(eventName) session=\(newSession != nil)")
 
                 await MainActor.run {
                     self.session = newSession

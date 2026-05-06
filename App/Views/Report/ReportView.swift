@@ -4,12 +4,16 @@ struct ReportView: View {
     @EnvironmentObject private var app: AppState
 
     @State private var analyses: [AnalysisRow] = []
+    @State private var storedReports: [ReportRow] = []
     @State private var selectedBundle: AnalysisResultBundle?
     @State private var selectedID: UUID?
     @State private var isLoading = false
     @State private var loadingID: UUID?
+    @State private var downloadingID: UUID?
+    @State private var isGeneratingPDF = false
     @State private var errorMessage: String?
     @State private var showPaywall = false
+    @State private var shareItem: ShareItem?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -22,6 +26,7 @@ struct ReportView: View {
                     } else if let selectedBundle {
                         ReportPreview(bundle: selectedBundle, profile: app.profile)
                         reportActions
+                        storedReportsSection
                         analysisSelector
                     } else {
                         emptyState
@@ -45,6 +50,9 @@ struct ReportView: View {
             Button("Tamam") { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
+        }
+        .sheet(item: $shareItem) { item in
+            ShareSheet(items: [item.url])
         }
     }
 
@@ -77,12 +85,70 @@ struct ReportView: View {
 
     private var reportActions: some View {
         HStack(spacing: 8) {
-            RDButton(title: "PDF yakında", style: .secondary, icon: "doc.richtext", height: 52) {}
+            RDButton(
+                title: isGeneratingPDF ? "PDF hazırlanıyor..." : "PDF oluştur",
+                style: .secondary,
+                icon: isGeneratingPDF ? "hourglass" : "doc.richtext",
+                height: 52
+            ) {
+                generateSelectedReport()
+            }
+            .disabled(isGeneratingPDF)
                 .frame(maxWidth: .infinity)
-            RDButton(title: "Paylaş", style: .primary, icon: "square.and.arrow.up", height: 52) {}
+            RDButton(title: "Paylaş", style: .primary, icon: "square.and.arrow.up", height: 52) {
+                generateSelectedReport()
+            }
+            .disabled(isGeneratingPDF)
                 .frame(maxWidth: .infinity)
         }
-        .opacity(0.65)
+    }
+
+    private var storedReportsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("KAYITLI PDF RAPORLAR")
+                    .font(.system(size: 12, weight: .bold))
+                    .tracking(1.3)
+                    .foregroundStyle(Color.rdSlate)
+                Spacer()
+                Text("\(storedReports.count) dosya")
+                    .rdMono(size: 11, weight: .semibold)
+                    .foregroundStyle(Color.rdSlate)
+            }
+
+            if storedReports.isEmpty {
+                RDCard {
+                    HStack(spacing: 10) {
+                        Image(systemName: "tray")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(Color.rdSlate)
+                            .frame(width: 36, height: 36)
+                            .background(Color.rdFog)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Henüz kayıtlı PDF yok")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(Color.rdBlack)
+                            Text("PDF oluşturduğunda dosya Supabase rapor arşivine kaydedilecek.")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.rdSlate)
+                        }
+                        Spacer()
+                    }
+                }
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(storedReports) { report in
+                        StoredReportRow(
+                            report: report,
+                            isLoading: downloadingID == report.id
+                        ) {
+                            download(report)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private var analysisSelector: some View {
@@ -157,6 +223,7 @@ struct ReportView: View {
     private func loadReports() async {
         guard app.auth.session != nil else {
             analyses = []
+            storedReports = []
             selectedBundle = nil
             selectedID = nil
             return
@@ -166,7 +233,10 @@ struct ReportView: View {
         defer { isLoading = false }
 
         do {
-            let rows = try await AnalysisService.shared.listRecent(limit: 12)
+            async let analysisRows = AnalysisService.shared.listRecent(limit: 12)
+            async let reportRows = AnalysisService.shared.listReports(limit: 20)
+            let rows = try await analysisRows
+            storedReports = (try? await reportRows) ?? []
             analyses = rows
 
             guard let first = rows.first else {
@@ -181,6 +251,7 @@ struct ReportView: View {
         } catch {
             errorMessage = error.localizedDescription
             analyses = []
+            storedReports = []
             selectedBundle = nil
             selectedID = nil
         }
@@ -200,6 +271,75 @@ struct ReportView: View {
             }
             loadingID = nil
         }
+    }
+
+    private func generateSelectedReport() {
+        guard !isGeneratingPDF else { return }
+        guard let selectedBundle else {
+            errorMessage = "PDF oluşturmak için tamamlanmış bir analiz seçmelisin."
+            return
+        }
+        guard let userID = app.auth.session?.user.id else {
+            errorMessage = "Rapor kaydetmek için yeniden giriş yapmalısın."
+            return
+        }
+
+        isGeneratingPDF = true
+        Task {
+            do {
+                let reportImage = try await loadReportImage(for: selectedBundle)
+                let input = PDFReportService.ReportInput(
+                    bundle: selectedBundle,
+                    findings: selectedBundle.findings.map(\.asFinding),
+                    profile: app.profile,
+                    image: reportImage,
+                    companyLogo: nil,
+                    options: PDFReportOptions.standard(method: .fineKinney)
+                )
+                let url = try PDFReportService.shared.generate(input: input)
+                do {
+                    _ = try await AnalysisService.shared.storeReport(
+                        userID: userID,
+                        bundle: selectedBundle,
+                        fileURL: url,
+                        kind: .standard,
+                        method: .fineKinney
+                    )
+                    storedReports = (try? await AnalysisService.shared.listReports(limit: 20)) ?? storedReports
+                } catch {
+                    errorMessage = "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)"
+                }
+                shareItem = ShareItem(url: url)
+                isGeneratingPDF = false
+            } catch {
+                errorMessage = error.localizedDescription
+                isGeneratingPDF = false
+            }
+        }
+    }
+
+    private func download(_ report: ReportRow) {
+        guard downloadingID == nil else { return }
+        downloadingID = report.id
+
+        Task {
+            do {
+                let url = try await AnalysisService.shared.reportFileURL(for: report)
+                shareItem = ShareItem(url: url)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            downloadingID = nil
+        }
+    }
+
+    private func loadReportImage(for bundle: AnalysisResultBundle) async throws -> UIImage? {
+        guard let path = bundle.photos.first?.storagePath else { return nil }
+        let data = try await AnalysisService.shared.photoData(path: path)
+        guard let image = UIImage(data: data) else {
+            throw AnalysisService.AnalysisError.storageFailed("Analiz fotoğrafı indirildi ancak görüntü formatı açılamadı.")
+        }
+        return image
     }
 }
 
@@ -503,6 +643,90 @@ private struct ReportAnalysisRow: View {
 
     private var dateText: String {
         guard let date = row.createdAt.flatMap(Self.parseDate) else { return "Tarih yok" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMM HH:mm"
+        return formatter.string(from: date)
+    }
+
+    private static func parseDate(_ raw: String) -> Date? {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: raw) { return date }
+        return ISO8601DateFormatter().date(from: raw)
+    }
+}
+
+private struct StoredReportRow: View {
+    let report: ReportRow
+    let isLoading: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: iconName)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.rdGreen)
+                    .frame(width: 42, height: 42)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(report.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.rdBlack)
+                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(kindLabel)
+                        Text("·")
+                        Text(dateText)
+                        if let sizeText {
+                            Text("·")
+                            Text(sizeText)
+                        }
+                    }
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.rdSlate)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "arrow.down.to.line")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.rdSlate)
+                }
+            }
+            .padding(12)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+    }
+
+    private var iconName: String {
+        report.kind == PDFReportKind.riskAnalysis.rawValue ? "tablecells" : "doc.richtext"
+    }
+
+    private var kindLabel: String {
+        report.kind == PDFReportKind.riskAnalysis.rawValue ? "Risk analizi" : "Standart PDF"
+    }
+
+    private var sizeText: String? {
+        guard let fileSize = report.fileSize else { return nil }
+        let kb = max(Int((Double(fileSize) / 1024.0).rounded()), 1)
+        return "\(kb) KB"
+    }
+
+    private var dateText: String {
+        guard let date = report.createdAt.flatMap(Self.parseDate) else { return "Tarih yok" }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "tr_TR")
         formatter.dateFormat = "d MMM HH:mm"

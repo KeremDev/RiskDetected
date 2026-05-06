@@ -60,9 +60,7 @@ final class AppState: ObservableObject {
 
     func signOut() {
         Task {
-            do { try await auth.signOut() } catch {
-                print("signOut failed: \(error)")
-            }
+            try? await auth.signOut()
         }
     }
 
@@ -79,7 +77,6 @@ final class AppState: ObservableObject {
                 guard let self else { return }
                 self.profile = newProfile
                 self.isPro = newProfile?.isPro ?? false
-                print("[AppState] 📦 profile mirror: name=\(newProfile?.displayName ?? "nil") pro=\(self.isPro)")
             }
             .store(in: &cancellables)
 
@@ -90,11 +87,9 @@ final class AppState: ObservableObject {
                 guard let self else { return }
                 if session != nil {
                     if self.flow != .main {
-                        print("[AppState] 🚀 session aktif → flow=.main")
                         self.flow = .main
                     }
                 } else if self.flow == .main {
-                    print("[AppState] 🚪 session yok → flow=.auth")
                     self.flow = .auth
                 }
             }

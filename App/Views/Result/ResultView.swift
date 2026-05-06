@@ -561,6 +561,19 @@ struct ResultView: View {
                     options: resolvedOptions
                 )
                 let url = try PDFReportService.shared.generate(input: input)
+                if let userID = app.auth.session?.user.id {
+                    do {
+                        _ = try await AnalysisService.shared.storeReport(
+                            userID: userID,
+                            bundle: bundle,
+                            fileURL: url,
+                            kind: resolvedOptions.kind,
+                            method: resolvedOptions.method
+                        )
+                    } catch {
+                        pdfError = "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)"
+                    }
+                }
                 shareItem = ShareItem(url: url)
                 isGeneratingPDF = false
             } catch {

@@ -117,7 +117,7 @@ class GeminiAPIError extends Error {
 }
 
 function buildSystemPrompt(canvases: string[], isPro: boolean): string {
-  const maxHazards = isPro ? 12 : 8;
+  const maxHazards = isPro ? 14 : 4;
   const focusLines = canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") || CANVAS_FOCUS["general"];
   return `Sen deneyimli bir iş güvenliği (HSE/İSG) uzmanısın. Görevin: verilen görsel ve/veya metin girdisinden İSG tehlikelerini ve risklerini tespit etmek.
 
@@ -428,7 +428,6 @@ serve(async (req: Request) => {
     text_input_present: Boolean(text_input),
     model,
   };
-  console.log("RiskDetected analyze input audit", JSON.stringify({ analysis_id, ...inputAudit }));
 
   // deno-lint-ignore no-explicit-any
   let geminiResult: any;

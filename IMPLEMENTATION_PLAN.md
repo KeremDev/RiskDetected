@@ -26,6 +26,12 @@
   - The photo upload area also communicates the exhausted limit instead of letting the user start a blocked photo flow.
   - Header Pro CTA is visible as a lightweight conversion entry point.
 - PDF/plan comparison completed against `RiskDetected Is Plani.pdf`.
+- P0 plan alignment started:
+  - Edge Function hazard budget aligned to Free max 4 and Pro max 14.
+  - `reports` table + private `reports` Storage bucket migration added and applied to the linked Supabase project.
+  - Generated PDFs are uploaded to Storage and written to `reports` metadata when possible.
+  - Reports tab can regenerate a standard PDF for the selected analysis and download/share stored PDF reports.
+  - Stale auth/app debug prints and normal Edge Function audit logs were removed.
 
 ## Partially Done - Revision Queue
 
@@ -82,13 +88,17 @@ These items exist in some form, but need revision before we treat them as produc
 
 ### P0 - Stabilize MVP and Plan Alignment
 
-1. Change Free/Pro hazard limits to Free max 4 and Pro max 14.
-2. Persist report metadata/files:
+1. Done: Change Free/Pro hazard limits to Free max 4 and Pro max 14.
+2. Done: Persist report metadata/files:
    - create/verify `reports` table fields;
    - upload generated PDF to Storage;
    - show downloadable report rows in Reports tab.
-3. Add real report regeneration/download flow from Reports tab.
-4. Remove remaining stale/debug logs once analysis/report flow is stable.
+3. Done: Add real report regeneration/download flow from Reports tab.
+4. Done: Remove remaining stale/debug logs once analysis/report flow is stable.
+5. Follow-up verification: run an end-to-end simulator test after the next build/install:
+   - generate a PDF from ResultView;
+   - confirm it appears in Reports tab;
+   - download/share the stored PDF from Reports tab.
 
 ### P1 - Privacy, Legal and Trust
 
@@ -176,3 +186,12 @@ These items exist in some form, but need revision before we treat them as produc
 3. Which paid Pro AI model/provider becomes the primary production route?
 4. How strict should image retention be for KVKK and user trust?
 5. Is Free max 4 / Pro max 14 the final business rule, or should we A/B test it later?
+
+## Deployment Notes
+
+- Supabase CLI is available through `npx supabase`.
+- Remote migration history contains older timestamped migrations from the previous setup that are not fully mirrored locally, so `supabase db push` reports a history mismatch.
+- For the P0 reports migration, SQL was applied with:
+  - `npx supabase db query --linked -f supabase/migrations/20260506_reports_storage.sql`
+- Edge Function deploy was completed with:
+  - `npx supabase functions deploy analyze --use-api`
