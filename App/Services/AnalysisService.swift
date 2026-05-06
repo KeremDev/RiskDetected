@@ -9,6 +9,7 @@ import Supabase
 @MainActor
 final class AnalysisService {
     static let shared = AnalysisService()
+    static let freeDailyLimit = 2
     private let supabase = SupabaseService.shared
 
     enum AnalysisError: LocalizedError {
@@ -178,6 +179,29 @@ final class AnalysisService {
         )
     }
 
+    /// Free kullanıcı için günlük analiz kullanımını verir.
+    func dailyQuotaUsage() async throws -> DailyQuotaUsage {
+        let utcDay = DateFormatter()
+        utcDay.calendar = Calendar(identifier: .gregorian)
+        utcDay.locale = Locale(identifier: "en_US_POSIX")
+        utcDay.timeZone = TimeZone(secondsFromGMT: 0)
+        utcDay.dateFormat = "yyyy-MM-dd"
+        let dayStart = "\(utcDay.string(from: Date()))T00:00:00Z"
+
+        let used = try await countRows(
+            table: "analyses",
+            filters: {
+                $0.eq("status", value: "completed")
+                    .gte("created_at", value: dayStart)
+            }
+        )
+
+        return DailyQuotaUsage(
+            used: used,
+            limit: Self.freeDailyLimit
+        )
+    }
+
     // MARK: - Private steps
 
     private static let maxInlinePhotoBytes = 1_500_000
@@ -309,14 +333,19 @@ final class AnalysisService {
                 options: FunctionInvokeOptions(body: body)
             )
         } catch let FunctionsError.httpError(code, data) {
-            let msg = String(data: data, encoding: .utf8) ?? ""
+            let msg = Self.functionErrorMessage(from: data)
             switch code {
             case 429:
-                throw AnalysisError.quotaExceeded(remaining: 0, tier: "free")
+                if msg.localizedCaseInsensitiveContains("günlük kota") || msg.localizedCaseInsensitiveContains("analiz/gün") {
+                    throw AnalysisError.quotaExceeded(remaining: 0, tier: "free")
+                }
+                throw AnalysisError.aiFailed(msg.isEmpty ? "Gemini kotası doldu. Lütfen daha sonra tekrar dene." : msg)
+            case 503:
+                throw AnalysisError.aiFailed(msg.isEmpty ? "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene." : msg)
             case 409:
                 throw AnalysisError.alreadyCompleted
             default:
-                throw AnalysisError.aiFailed("HTTP \(code): \(msg)")
+                throw AnalysisError.aiFailed(msg.isEmpty ? "HTTP \(code)" : msg)
             }
         } catch {
             throw AnalysisError.aiFailed(error.localizedDescription)
@@ -363,6 +392,20 @@ final class AnalysisService {
             ? canvases[0].title
             : canvases.map(\.title).joined(separator: " + ")
         return "\(label) · \(formatter.string(from: Date()))"
+    }
+
+    private static func functionErrorMessage(from data: Data) -> String {
+        struct FunctionErrorBody: Decodable {
+            let error: String?
+        }
+
+        if let body = try? JSONDecoder().decode(FunctionErrorBody.self, from: data),
+           let error = body.error,
+           !error.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return error
+        }
+
+        return String(data: data, encoding: .utf8) ?? ""
     }
 }
 
@@ -413,6 +456,19 @@ struct ProfileStats: Equatable {
     let analysisCount: Int
     let reportCount: Int
     let weeklyAnalysisCount: Int
+}
+
+struct DailyQuotaUsage: Equatable {
+    let used: Int
+    let limit: Int
+
+    var remaining: Int {
+        max(limit - used, 0)
+    }
+
+    var isExhausted: Bool {
+        remaining == 0
+    }
 }
 
 struct AnalysisRow: Codable, Identifiable, Equatable {

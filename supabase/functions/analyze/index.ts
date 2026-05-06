@@ -32,7 +32,7 @@ const MODEL_FREE      = "gemini-2.5-flash";
 // Gemini Pro model free quota bu API key'de 0 dönebiliyor.
 // Ücretli Google AI planı açılana kadar PRO kullanıcıyı da Flash üzerinde çalıştırıyoruz.
 const MODEL_PRO       = "gemini-2.5-flash";
-const FREE_DAILY_LIMIT = 5;
+const FREE_DAILY_LIMIT = 2;
 
 const CANVAS_FOCUS: Record<string, string> = {
   general:   "Tüm iş güvenliği uygunsuzluklarını geniş kapsamlı tara.",
@@ -105,6 +105,17 @@ const RESPONSE_SCHEMA = {
   required: ["hazards", "ai_summary"],
 };
 
+class GeminiAPIError extends Error {
+  status: number;
+  body: string;
+
+  constructor(status: number, body: string) {
+    super(`Gemini HTTP ${status}: ${body}`);
+    this.status = status;
+    this.body = body;
+  }
+}
+
 function buildSystemPrompt(canvases: string[], isPro: boolean): string {
   const maxHazards = isPro ? 12 : 8;
   const focusLines = canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") || CANVAS_FOCUS["general"];
@@ -162,7 +173,7 @@ async function callGemini(
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Gemini HTTP ${res.status}: ${errText}`);
+    throw new GeminiAPIError(res.status, errText);
   }
 
   const json = await res.json();
@@ -176,6 +187,71 @@ async function callGemini(
     inputTokens:  json.usageMetadata?.promptTokenCount     ?? 0,
     outputTokens: json.usageMetadata?.candidatesTokenCount ?? 0,
   };
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function userFacingAIError(err: unknown): { status: number; message: string } {
+  if (err instanceof GeminiAPIError) {
+    if (err.status === 429) {
+      return {
+        status: 429,
+        message: "Gemini kotası doldu. Google AI kullanım limitini veya faturalandırma planını kontrol etmek gerekiyor.",
+      };
+    }
+    if (err.status === 503) {
+      return {
+        status: 503,
+        message: "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.",
+      };
+    }
+    return {
+      status: 502,
+      message: `Gemini servis hatası (${err.status}).`,
+    };
+  }
+
+  return {
+    status: 502,
+    message: "AI analizi tamamlanamadı. Lütfen tekrar dene.",
+  };
+}
+
+async function callGeminiWithFallback(
+  apiKey: string,
+  preferredModel: string,
+  systemPrompt: string,
+  userText: string | null,
+  imageBase64Parts: { mimeType: string; data: string }[],
+) {
+  const models = preferredModel === MODEL_FREE_LITE
+    ? [MODEL_FREE_LITE, MODEL_FREE]
+    : [preferredModel, MODEL_FREE_LITE];
+
+  let lastError: unknown = null;
+  for (const model of [...new Set(models)]) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const out = await callGemini(apiKey, model, systemPrompt, userText, imageBase64Parts);
+        return { ...out, modelUsed: model };
+      } catch (err) {
+        lastError = err;
+        const retryable = err instanceof GeminiAPIError && [429, 500, 502, 503, 504].includes(err.status);
+        console.error("Gemini attempt failed", JSON.stringify({
+          model,
+          attempt,
+          retryable,
+          error: String(err),
+        }));
+        if (!retryable) throw err;
+        if (attempt < 2) await delay(900);
+      }
+    }
+  }
+
+  throw lastError ?? new Error("Gemini analizi başarısız.");
 }
 
 function errorResponse(status: number, message: string): Response {
@@ -358,23 +434,27 @@ serve(async (req: Request) => {
   let geminiResult: any;
   let inputTokens = 0, outputTokens = 0;
   let aiError: string | null = null;
+  let modelUsed = model;
 
   try {
-    const out = await callGemini(geminiKey, model, systemPrompt, text_input ?? null, imageBase64Parts);
+    const out = await callGeminiWithFallback(geminiKey, model, systemPrompt, text_input ?? null, imageBase64Parts);
     geminiResult = out.result;
     inputTokens = out.inputTokens;
     outputTokens = out.outputTokens;
+    modelUsed = out.modelUsed;
+    inputAudit.model = out.modelUsed;
   } catch (err) {
     aiError = String(err);
+    const cleanError = userFacingAIError(err);
     await supabase.from("analyses")
-      .update({ status: "failed", status_message: aiError })
+      .update({ status: "failed", status_message: cleanError.message })
       .eq("id", analysis_id);
     await logUsage(supabase, {
       analysis_id, user_id: user.id, provider: "gemini", model,
       tokens_in: 0, tokens_out: 0,
       duration_ms: Date.now() - startMs, error: aiError, user_plan: isPro ? "pro" : "free",
     });
-    return errorResponse(502, `AI hatası: ${aiError}`);
+    return errorResponse(cleanError.status, cleanError.message);
   }
 
   const hazards = geminiResult.hazards ?? [];
@@ -432,7 +512,7 @@ serve(async (req: Request) => {
 
   await supabase.from("analyses").update({
     status:           "completed",
-    status_message:   `Gemini ${model} · ${imageBase64Parts.length} foto · ${text_input ? "metin var" : "metin yok"}`,
+    status_message:   `Gemini ${modelUsed} · ${imageBase64Parts.length} foto · ${text_input ? "metin var" : "metin yok"}`,
     completed_at:     new Date().toISOString(),
     ai_summary:       geminiResult.ai_summary,
     total_score_fk:   totalScoreFK,
@@ -441,11 +521,11 @@ serve(async (req: Request) => {
     highest_band_m5:  highestBandM5,
     finding_count:    findingRows.length,
     raw_ai_response:  { ...geminiResult, _input_audit: inputAudit },
-    ai_models_used:   [model],
+    ai_models_used:   [modelUsed],
   }).eq("id", analysis_id);
 
   await logUsage(supabase, {
-    analysis_id, user_id: user.id, provider: "gemini", model,
+    analysis_id, user_id: user.id, provider: "gemini", model: modelUsed,
     tokens_in: inputTokens, tokens_out: outputTokens,
     duration_ms: Date.now() - startMs, error: null, user_plan: isPro ? "pro" : "free",
   });

@@ -1,8 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct RiskDetailView: View {
     let finding: Finding
     var method: RiskMethod = .fineKinney
+    var photoPath: String? = nil
+    var localPreviewImage: UIImage? = nil
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -49,7 +52,7 @@ struct RiskDetailView: View {
 
             HStack(spacing: 6) {
                 RDChip(level: band.level, label: band.label)
-                Text("%\(Int(finding.confidence * 100)) güven")
+                Text("AI güveni %\(Int(finding.confidence * 100))")
                     .rdMono(size: 11, weight: .semibold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -62,7 +65,7 @@ struct RiskDetailView: View {
     }
 
     private var photoCard: some View {
-        RDPlaceholderPhoto(label: "Bulgu detayı", cornerRadius: 16)
+        ResultDetailPhoto(image: localPreviewImage, path: photoPath)
             .frame(height: 180)
     }
 
@@ -182,4 +185,23 @@ struct RiskDetailView: View {
 
 #Preview {
     RiskDetailView(finding: Finding.mock[0], method: .fineKinney)
+}
+
+private struct ResultDetailPhoto: View {
+    let image: UIImage?
+    let path: String?
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                AnalysisThumbnail(path: path, cornerRadius: 16)
+            }
+        }
+        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
 }

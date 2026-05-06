@@ -7,6 +7,7 @@ import SwiftUI
 /// guarantees the closure captures the live item at presentation time.
 struct AnalysisJob: Identifiable {
     let id = UUID()
+    let previewImage: UIImage?
     let work: () async throws -> AnalysisResultBundle
 }
 
@@ -32,6 +33,8 @@ struct HomeView: View {
     @State private var pendingJob: AnalysisJob? = nil
     @State private var recentItems: [RecentAnalysis] = []
     @State private var openingRecentID: UUID? = nil
+    @State private var quotaUsage: DailyQuotaUsage? = nil
+    @State private var showPaywall = false
 
     enum HomeMode: String, CaseIterable {
         case photo, text
@@ -74,9 +77,16 @@ struct HomeView: View {
         .background(Color.rdPaper)
         .task {
             await loadRecentItems()
+            await loadQuotaUsage()
         }
         .onChange(of: app.auth.session?.user.id) { _ in
-            Task { await loadRecentItems() }
+            Task {
+                await loadRecentItems()
+                await loadQuotaUsage()
+            }
+        }
+        .onChange(of: app.isPro) { _ in
+            Task { await loadQuotaUsage() }
         }
         .confirmationDialog("Saha fotoğrafı", isPresented: $showSourceDialog, titleVisibility: .visible) {
             Button("Kamera ile çek") {
@@ -102,7 +112,7 @@ struct HomeView: View {
                         runAnalysis()
                     }
                 },
-                onUpgradeRequested: { /* TODO: PaywallView */ }
+                onUpgradeRequested: { showPaywall = true }
             )
             .presentationDetents([.fraction(0.55), .large])
             .presentationDragIndicator(.visible)
@@ -148,6 +158,7 @@ struct HomeView: View {
                     set: { if !$0 { pendingJob = nil } }
                 ),
                 asyncWork: job.work,
+                previewImage: job.previewImage,
                 onComplete: { result in
                     analysisResult = result
                     pendingJob = nil
@@ -156,7 +167,7 @@ struct HomeView: View {
                     }
                 },
                 onError: { msg in
-                    analysisError = msg
+                    handleAnalysisError(msg)
                     pendingJob = nil
                 }
             )
@@ -164,14 +175,27 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showResult) {
             ResultView(
                 bundle: analysisResult,
+                localPreviewImage: selectedImage,
                 onClose: {
                     showResult = false
                     selectedImage = nil
                     analysisResult = nil
-                    Task { await loadRecentItems() }
+                    Task {
+                        await loadRecentItems()
+                        await loadQuotaUsage()
+                    }
                 }
             )
             .environmentObject(app)
+        }
+        .fullScreenCover(isPresented: $showPaywall) {
+            PaywallView(
+                onClose: { showPaywall = false },
+                onSubscribe: {
+                    showPaywall = false
+                    Task { await app.auth.refreshProfile() }
+                }
+            )
         }
         .alert("Analiz Hatası", isPresented: .init(
             get: { analysisError != nil },
@@ -251,6 +275,10 @@ struct HomeView: View {
     private var photoUploadCard: some View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            if isFreeQuotaExhausted {
+                showPaywall = true
+                return
+            }
             if selectedImage != nil {
                 // Mevcut foto varsa direkt çizim ekranına dön
                 showAnnotate = true
@@ -295,6 +323,8 @@ struct HomeView: View {
                             .clipShape(Capsule())
                             .padding(10)
                         }
+                } else if isFreeQuotaExhausted {
+                    lockedPhotoUploadContent
                 } else {
                     ZStack {
                         // İçerik
@@ -382,53 +412,188 @@ struct HomeView: View {
         .buttonStyle(RDPressableButtonStyle())
     }
 
-    private var textInputArea: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ZStack(alignment: .topLeading) {
-                if text.isEmpty {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Saha gözlemini yaz veya prosedür metnini yapıştır...")
-                        Text("Örn: \"Yüksekte çalışma alanında korkuluk eksik, işçi paraşüt tipi emniyet kemeri kullanmıyor.\"")
-                            .padding(.top, 4)
-                    }
-                    .font(.system(size: 15))
-                    .foregroundStyle(Color.rdSlate)
-                    .padding(.horizontal, 14)
-                    .padding(.top, 14)
-                    .allowsHitTesting(false)
-                }
-                TextEditor(text: $text)
-                    .font(.system(size: 15))
-                    .foregroundStyle(Color.rdBlack)
-                    .scrollContentBackground(.hidden)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .frame(minHeight: 160)
-                    .onChange(of: text) { new in
-                        if new.count > 2000 {
-                            text = String(new.prefix(2000))
-                        }
-                    }
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.rdWhite)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.rdLine, lineWidth: 1)
-                    )
-            )
+    private var lockedPhotoUploadContent: some View {
+        ZStack {
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(Color.rdCritical.opacity(0.10))
+                        .frame(width: 74, height: 74)
+                        .shadow(color: Color.rdCritical.opacity(0.18), radius: 16, x: 0, y: 8)
 
-            HStack {
-                Text("Maks. 2000 karakter")
-                    .font(.system(size: 12))
-                Spacer()
-                Text("\(text.count)/2000")
-                    .rdMono(size: 12, weight: .medium)
+                    Circle()
+                        .stroke(Color.rdCritical, lineWidth: 6)
+                        .frame(width: 56, height: 56)
+
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(Color.rdCritical)
+                }
+                .frame(width: 82, height: 82)
+
+                Text("Günlük free limit doldu")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Color.rdBlack)
+                Text("Yeni fotoğraf analizi için yarın tekrar dene veya PRO ile sınırsız taramaya geç.")
+                    .font(.system(size: 13))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.rdSlate)
+                    .frame(maxWidth: 280)
+
+                HStack(spacing: 5) {
+                    Text("PRO'ya geç")
+                        .font(.system(size: 12, weight: .heavy))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .bold))
+                }
+                .foregroundStyle(Color.rdCritical)
+                .padding(.top, 4)
             }
-            .foregroundStyle(Color.rdSlate)
-            .padding(.horizontal, 2)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(height: 220)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.rdWhite, Color.rdCriticalBg.opacity(0.68)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .strokeBorder(
+                            style: StrokeStyle(lineWidth: 1.7, dash: [6, 4])
+                        )
+                        .foregroundStyle(Color.rdCritical.opacity(0.38))
+                )
+        )
+        .shadow(color: Color.rdCritical.opacity(0.10), radius: 16, x: 0, y: 8)
+    }
+
+    private var textInputArea: some View {
+        Group {
+            if isFreeQuotaExhausted {
+                Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    showPaywall = true
+                } label: {
+                    lockedInputContent(
+                        title: "Günlük free limit doldu",
+                        subtitle: "Yeni metin analizi için yarın tekrar dene veya PRO ile sınırsız taramaya geç.",
+                        icon: "text.badge.xmark"
+                    )
+                }
+                .buttonStyle(RDPressableButtonStyle())
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    ZStack(alignment: .topLeading) {
+                        if text.isEmpty {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Saha gözlemini yaz veya prosedür metnini yapıştır...")
+                                Text("Örn: \"Yüksekte çalışma alanında korkuluk eksik, işçi paraşüt tipi emniyet kemeri kullanmıyor.\"")
+                                    .padding(.top, 4)
+                            }
+                            .font(.system(size: 15))
+                            .foregroundStyle(Color.rdSlate)
+                            .padding(.horizontal, 14)
+                            .padding(.top, 14)
+                            .allowsHitTesting(false)
+                        }
+                        TextEditor(text: $text)
+                            .font(.system(size: 15))
+                            .foregroundStyle(Color.rdBlack)
+                            .scrollContentBackground(.hidden)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .frame(minHeight: 160)
+                            .onChange(of: text) { new in
+                                if new.count > 2000 {
+                                    text = String(new.prefix(2000))
+                                }
+                            }
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color.rdWhite)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color.rdLine, lineWidth: 1)
+                            )
+                    )
+
+                    HStack {
+                        Text("Maks. 2000 karakter")
+                            .font(.system(size: 12))
+                        Spacer()
+                        Text("\(text.count)/2000")
+                            .rdMono(size: 12, weight: .medium)
+                    }
+                    .foregroundStyle(Color.rdSlate)
+                    .padding(.horizontal, 2)
+                }
+            }
+        }
+    }
+
+    private func lockedInputContent(title: String, subtitle: String, icon: String) -> some View {
+        VStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.rdCritical.opacity(0.10))
+                    .frame(width: 68, height: 68)
+                    .shadow(color: Color.rdCritical.opacity(0.18), radius: 16, x: 0, y: 8)
+
+                Circle()
+                    .stroke(Color.rdCritical, lineWidth: 5)
+                    .frame(width: 52, height: 52)
+
+                Image(systemName: icon)
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(Color.rdCritical)
+            }
+
+            Text(title)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Color.rdBlack)
+
+            Text(subtitle)
+                .font(.system(size: 13))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Color.rdSlate)
+                .frame(maxWidth: 290)
+
+            HStack(spacing: 5) {
+                Text("PRO'ya geç")
+                    .font(.system(size: 12, weight: .heavy))
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .bold))
+            }
+            .foregroundStyle(Color.rdCritical)
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 190)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.rdWhite, Color.rdCriticalBg.opacity(0.68)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(
+                            style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
+                        )
+                        .foregroundStyle(Color.rdCritical.opacity(0.38))
+                )
+        )
+        .shadow(color: Color.rdCritical.opacity(0.08), radius: 14, x: 0, y: 6)
     }
 
     private var recentSection: some View {
@@ -492,9 +657,17 @@ struct HomeView: View {
         return formatter.string(from: Date())
     }
 
+    private var isFreeQuotaExhausted: Bool {
+        !app.isPro && quotaUsage?.isExhausted == true
+    }
+
     /// "Taramayı Başlat" → foto yoksa picker; varsa canvas sheet.
     private func startAnalysisFlow() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if !app.isPro, quotaUsage?.isExhausted == true {
+            showPaywall = true
+            return
+        }
         if mode == .photo && selectedImage == nil {
             showSourceDialog = true
             return
@@ -525,7 +698,7 @@ struct HomeView: View {
             guard let img = capturedImage else {
                 return
             }
-            pendingJob = AnalysisJob {
+            pendingJob = AnalysisJob(previewImage: img) {
                 try await AnalysisService.shared.runPhotoAnalysis(
                     userID: userID,
                     images: [img],
@@ -537,13 +710,23 @@ struct HomeView: View {
             guard !trimmed.isEmpty else {
                 return
             }
-            pendingJob = AnalysisJob {
+            pendingJob = AnalysisJob(previewImage: nil) {
                 try await AnalysisService.shared.runTextAnalysis(
                     userID: userID,
                     text: trimmed,
                     canvases: canvases
                 )
             }
+        }
+    }
+
+    private func handleAnalysisError(_ msg: String) {
+        if msg.localizedCaseInsensitiveContains("kota") || msg.localizedCaseInsensitiveContains("analiz/gün") {
+            analysisError = nil
+            showPaywall = true
+            Task { await loadQuotaUsage() }
+        } else {
+            analysisError = msg
         }
     }
 
@@ -557,6 +740,18 @@ struct HomeView: View {
             }
         } catch {
             recentItems = []
+        }
+    }
+
+    private func loadQuotaUsage() async {
+        guard app.auth.session != nil, !app.isPro else {
+            quotaUsage = nil
+            return
+        }
+        do {
+            quotaUsage = try await AnalysisService.shared.dailyQuotaUsage()
+        } catch {
+            quotaUsage = nil
         }
     }
 
@@ -582,23 +777,26 @@ struct HomeView: View {
 
 private struct HomeHeader: View {
     @EnvironmentObject var app: AppState
+    @State private var showPaywall = false
 
     var body: some View {
         HStack {
             RDLogo(size: 18)
             Spacer()
-            HStack(spacing: 8) {
-                if app.isPro { RDProBadge(small: true) }
-                RDAvatar(
-                    initials: app.profile?.displayInitials ?? "—",
-                    size: 36,
-                    pro: app.isPro
-                )
+            RDHeaderAccountCTA {
+                showPaywall = true
             }
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
+        .fullScreenCover(isPresented: $showPaywall) {
+            PaywallView(onClose: { showPaywall = false },
+                        onSubscribe: {
+                            showPaywall = false
+                            Task { await app.auth.refreshProfile() }
+                        })
+        }
     }
 }
 

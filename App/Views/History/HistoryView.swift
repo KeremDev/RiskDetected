@@ -10,6 +10,7 @@ struct HistoryView: View {
     @State private var showResult = false
     @State private var analysisError: String? = nil
     @State private var openingItemID: UUID? = nil
+    @State private var showPaywall = false
 
     private let chips = ["Tümü", "Bu hafta", "Kritik", "KKD", "Genel"]
 
@@ -22,6 +23,9 @@ struct HistoryView: View {
                     .tracking(-0.6)
                     .foregroundStyle(Color.rdBlack)
                 Spacer()
+                RDHeaderAccountCTA {
+                    showPaywall = true
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -97,6 +101,13 @@ struct HistoryView: View {
             FilterSheet { showFilter = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        .fullScreenCover(isPresented: $showPaywall) {
+            PaywallView(onClose: { showPaywall = false },
+                        onSubscribe: {
+                            showPaywall = false
+                            Task { await app.auth.refreshProfile() }
+                        })
         }
         .fullScreenCover(isPresented: $showResult) {
             ResultView(

@@ -1,13 +1,31 @@
 import SwiftUI
+import UIKit
+import PhotosUI
 
 struct ResultView: View {
     @EnvironmentObject var app: AppState
     var bundle: AnalysisResultBundle? = nil
+    var localPreviewImage: UIImage? = nil
     var onClose: () -> Void = {}
     var onPdf: () -> Void = {}
 
     private var findings: [Finding] {
         bundle?.findings.map { $0.asFinding } ?? []
+    }
+    private var sortedFindings: [Finding] {
+        findings.sorted {
+            let leftBand = $0.band(for: method).level
+            let rightBand = $1.band(for: method).level
+            let leftRank = rankFor(leftBand)
+            let rightRank = rankFor(rightBand)
+            if leftRank != rightRank { return leftRank > rightRank }
+
+            let leftScore = $0.score(for: method)
+            let rightScore = $1.score(for: method)
+            if leftScore != rightScore { return leftScore > rightScore }
+
+            return $0.confidence > $1.confidence
+        }
     }
     private var analysisTitle: String {
         bundle?.analysis.title ?? "Analiz Sonucu"
@@ -23,6 +41,12 @@ struct ResultView: View {
     @State private var method: RiskMethod = .fineKinney
     @State private var selectedFinding: Finding? = nil
     @State private var showPaywall: Bool = false
+    @State private var isGeneratingPDF: Bool = false
+    @State private var pdfError: String?
+    @State private var shareItem: ShareItem?
+    @State private var showReportSettings: Bool = false
+    @State private var reportOptions = PDFReportOptions()
+    @State private var reportCompanyLogo: UIImage?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -37,7 +61,7 @@ struct ResultView: View {
                         emptyFindingsCard
                     } else {
                         findingsSection
-                        if app.isPro { riskMatrixCard } else { proUpsellCard }
+                        if !app.isPro { proUpsellCard }
                         actionButtons
                         methodFootnote
                     }
@@ -49,15 +73,45 @@ struct ResultView: View {
         }
         .background(Color.rdPaper)
         .sheet(item: $selectedFinding) { finding in
-            RiskDetailView(finding: finding, method: method)
+            RiskDetailView(
+                finding: finding,
+                method: method,
+                photoPath: photoPath,
+                localPreviewImage: localPreviewImage
+            )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $shareItem) { item in
+            ShareSheet(items: [item.url])
+        }
+        .sheet(isPresented: $showReportSettings) {
+            ReportSettingsSheet(
+                options: $reportOptions,
+                companyLogo: $reportCompanyLogo,
+                profile: app.profile,
+                onGenerate: {
+                    showReportSettings = false
+                    generateAndSharePDF(options: reportOptions)
+                },
+                onClose: { showReportSettings = false }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .alert("PDF Hatası", isPresented: Binding(
+            get: { pdfError != nil },
+            set: { if !$0 { pdfError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) { pdfError = nil }
+        } message: {
+            Text(pdfError ?? "")
         }
         .fullScreenCover(isPresented: $showPaywall) {
             PaywallView(onClose: { showPaywall = false },
                         onSubscribe: {
-                            app.isPro = true
                             showPaywall = false
+                            Task { await app.auth.refreshProfile() }
                         })
         }
     }
@@ -71,7 +125,9 @@ struct ResultView: View {
             Text("Analiz Sonucu")
                 .font(.system(size: 15, weight: .semibold))
             Spacer()
-            roundIconButton(systemName: "square.and.arrow.up", action: onPdf)
+            roundIconButton(systemName: "square.and.arrow.up") {
+                generateAndSharePDF()
+            }
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -101,7 +157,7 @@ struct ResultView: View {
     private var photoMetaCard: some View {
         RDCard {
             HStack(alignment: .top, spacing: 12) {
-                AnalysisThumbnail(path: photoPath, cornerRadius: 12)
+                ResultPhotoThumbnail(image: localPreviewImage, path: photoPath, cornerRadius: 12)
                     .frame(width: 92, height: 92)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -115,13 +171,38 @@ struct ResultView: View {
 
                     HStack(spacing: 6) {
                         metaChip("\(findings.count) bulgu", bg: .rdFog, fg: .rdCharcoal)
-                        metaChip("%\(Int(averageConfidence * 100)) güven",
-                                 bg: .rdGreenSoft, fg: .rdGreenDark)
+                        confidenceChip
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+    }
+
+    private var confidenceChip: some View {
+        let value = Int(averageConfidence * 100)
+        let text = app.isPro ? "Pro AI güveni %\(value)" : "AI güveni %\(value)"
+        let icon = app.isPro ? "sparkles" : "arrow.up.circle.fill"
+
+        return Button {
+            if !app.isPro {
+                showPaywall = true
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 10, weight: .bold))
+                Text(text)
+                    .rdMono(size: 11, weight: .semibold)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .foregroundStyle(app.isPro ? Color.rdGreenDark : Color.rdHighText)
+            .background(app.isPro ? Color.rdGreenSoft : Color.rdHighBg)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(app.isPro ? "Pro analiz güven göstergesi" : "Pro ile daha kapsamlı analiz bilgisi")
     }
 
     private func metaChip(_ text: String, bg: Color, fg: Color) -> some View {
@@ -192,7 +273,7 @@ struct ResultView: View {
     private var methodologySummary: some View {
         let topScore = findings.map { $0.score(for: method) }.max() ?? 0
         let topBand = findings.map { $0.band(for: method) }
-            .max(by: { rankFor($0) < rankFor($1) }) ?? RiskBands.fineKinney(0)
+            .max(by: { rankFor($0.level) < rankFor($1.level) }) ?? RiskBands.fineKinney(0)
         let totalScore = findings.map { $0.score(for: method) }.reduce(0, +)
         let counts = countsByLevel(method: method)
 
@@ -318,25 +399,10 @@ struct ResultView: View {
                 .foregroundStyle(Color.rdSlate)
                 .padding(.leading, 4)
 
-            ForEach(Array(findings.enumerated()), id: \.element.id) { index, finding in
+            ForEach(Array(sortedFindings.enumerated()), id: \.element.id) { index, finding in
                 FindingCard(finding: finding, index: index + 1, method: method) {
                     selectedFinding = finding
                 }
-            }
-        }
-    }
-
-    // MARK: - Risk matrix card
-
-    private var riskMatrixCard: some View {
-        RDCard {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
-                    RDProBadge(small: true)
-                    Text("Risk matrisi · Olasılık × Etki")
-                        .font(.system(size: 14, weight: .bold))
-                }
-                RiskMatrix(findings: findings, method: method)
             }
         }
     }
@@ -372,15 +438,71 @@ struct ResultView: View {
 
     private var actionButtons: some View {
         HStack(spacing: 8) {
-            RDButton(title: "PDF Rapor", style: .primary, icon: "arrow.down.to.line", height: 56,
-                     action: onPdf)
+            RDButton(
+                title: isGeneratingPDF ? "PDF hazırlanıyor..." : "Standart PDF",
+                style: .primary,
+                icon: isGeneratingPDF ? "hourglass" : "arrow.down.to.line",
+                height: 56,
+                action: { generateAndSharePDF() }
+            )
             .frame(maxWidth: .infinity)
             .layoutPriority(2)
 
-            RDButton(title: "Excel", style: .secondary, icon: "doc.fill", height: 56) {}
-                .frame(maxWidth: .infinity)
-                .layoutPriority(1)
+            reportSettingsButton
         }
+    }
+
+    private var reportSettingsButton: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            if app.isPro {
+                reportOptions = defaultReportOptions(kind: reportOptions.kind == .standard ? .riskAnalysis : reportOptions.kind)
+                showReportSettings = true
+            } else {
+                showPaywall = true
+            }
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                VStack(spacing: 3) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .frame(width: 42, height: 34)
+                        .foregroundStyle(app.isPro ? Color.rdBlack : Color.rdSlate)
+                    Text(app.isPro ? "Risk Analizi" : "Ayarlar")
+                        .font(.system(size: app.isPro ? 9.5 : 11, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .foregroundStyle(app.isPro ? Color.rdBlack : Color.rdHighText)
+                }
+                .frame(width: 86, height: 56)
+                .background(app.isPro ? Color.rdFog : Color.rdHighBg)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(app.isPro ? Color.rdLine : Color(hex: "#F6C343"), lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                HStack(spacing: 2) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 7, weight: .heavy))
+                    Text("PRO")
+                        .font(.system(size: 7, weight: .heavy))
+                        .tracking(0.4)
+                }
+                .padding(.horizontal, 5)
+                .frame(height: 15)
+                .foregroundStyle(Color(hex: "#3A2A00"))
+                .background(Color(hex: "#FFE08A"))
+                .overlay(
+                    Capsule()
+                        .stroke(Color(hex: "#F6C343"), lineWidth: 1)
+                )
+                .clipShape(Capsule())
+                .offset(x: 6, y: -6)
+            }
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel(app.isPro ? "Rapor ayarları" : "Pro rapor ayarları")
     }
 
     private var methodFootnote: some View {
@@ -408,13 +530,348 @@ struct ResultView: View {
         return dict
     }
 
-    private func rankFor(_ band: RiskBand) -> Int {
-        switch band.level {
+    private func rankFor(_ level: RiskLevel) -> Int {
+        switch level {
         case .critical: return 4
         case .high:     return 3
         case .medium:   return 2
         case .low:      return 1
         case .unknown:  return 0
+        }
+    }
+
+    private func generateAndSharePDF(options: PDFReportOptions? = nil) {
+        guard !isGeneratingPDF else { return }
+        guard let bundle else {
+            pdfError = "PDF oluşturmak için tamamlanmış bir analiz bulunamadı."
+            return
+        }
+
+        isGeneratingPDF = true
+        Task {
+            do {
+                let reportImage = try await loadReportImage()
+                let resolvedOptions = options ?? PDFReportOptions.standard(method: method)
+                let input = PDFReportService.ReportInput(
+                    bundle: bundle,
+                    findings: sortedFindings(for: resolvedOptions.method),
+                    profile: app.profile,
+                    image: reportImage,
+                    companyLogo: options == nil ? nil : reportCompanyLogo,
+                    options: resolvedOptions
+                )
+                let url = try PDFReportService.shared.generate(input: input)
+                shareItem = ShareItem(url: url)
+                isGeneratingPDF = false
+            } catch {
+                pdfError = error.localizedDescription
+                isGeneratingPDF = false
+            }
+        }
+    }
+
+    private func loadReportImage() async throws -> UIImage? {
+        if let localPreviewImage {
+            return localPreviewImage
+        }
+
+        let resolvedPath: String?
+        if let photoPath {
+            resolvedPath = photoPath
+        } else if let analysisID = bundle?.analysis.id {
+            let paths = try await AnalysisService.shared.firstPhotoPaths(analysisIDs: [analysisID])
+            resolvedPath = paths[analysisID]
+        } else {
+            resolvedPath = nil
+        }
+
+        guard let resolvedPath else {
+            return nil
+        }
+
+        let data = try await AnalysisService.shared.photoData(path: resolvedPath)
+        guard let image = UIImage(data: data) else {
+            throw AnalysisService.AnalysisError.storageFailed("Analiz fotoğrafı indirildi ancak görüntü formatı açılamadı.")
+        }
+        return image
+    }
+
+    private func sortedFindings(for reportMethod: RiskMethod) -> [Finding] {
+        findings.sorted {
+            let leftBand = $0.band(for: reportMethod).level
+            let rightBand = $1.band(for: reportMethod).level
+            let leftRank = rankFor(leftBand)
+            let rightRank = rankFor(rightBand)
+            if leftRank != rightRank { return leftRank > rightRank }
+
+            let leftScore = $0.score(for: reportMethod)
+            let rightScore = $1.score(for: reportMethod)
+            if leftScore != rightScore { return leftScore > rightScore }
+
+            return $0.confidence > $1.confidence
+        }
+    }
+
+    private func defaultReportOptions(kind: PDFReportKind = .standard) -> PDFReportOptions {
+        PDFReportOptions(
+            kind: kind,
+            method: method,
+            preparedBy: app.profile?.displayName ?? "",
+            companyName: app.profile?.companyName ?? ""
+        )
+    }
+}
+
+// MARK: - Report Settings
+
+private struct ReportSettingsSheet: View {
+    @Binding var options: PDFReportOptions
+    @Binding var companyLogo: UIImage?
+    let profile: UserProfile?
+    let onGenerate: () -> Void
+    let onClose: () -> Void
+    @State private var selectedLogoItem: PhotosPickerItem?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 16) {
+                    proHeader
+                    reportTypeSection
+                    methodSection
+                    identitySection
+                    companyLogoSection
+
+                    RDButton(title: "Bu ayarlarla PDF oluştur",
+                             style: .detect,
+                             icon: "doc.richtext.fill",
+                             height: 54,
+                             action: onGenerate)
+                        .padding(.top, 4)
+                }
+                .padding(20)
+                .padding(.bottom, 24)
+            }
+            .background(Color.rdPaper)
+            .navigationTitle("Rapor Ayarları")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Kapat", action: onClose)
+                        .font(.system(size: 14, weight: .semibold))
+                }
+            }
+        }
+    }
+
+    private var proHeader: some View {
+        RDCard {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 18, weight: .heavy))
+                    .foregroundStyle(Color(hex: "#F5B700"))
+                    .frame(width: 42, height: 42)
+                    .background(Color(hex: "#FFF7D6"))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        Text("PRO rapor çıktısı")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundStyle(Color.rdBlack)
+                        RDProBadge(small: true)
+                    }
+                    Text("Standart PDF yanında firma bilgili ve metoda özel detaylı risk analizi çıktısı oluşturabilirsin.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private var reportTypeSection: some View {
+        settingsSection(title: "RAPOR TİPİ") {
+            VStack(spacing: 8) {
+                ForEach(PDFReportKind.allCases) { kind in
+                    optionRow(
+                        title: kind.title,
+                        subtitle: kind.subtitle,
+                        icon: kind == .standard ? "doc.text" : "tablecells",
+                        active: options.kind == kind
+                    ) {
+                        options.kind = kind
+                    }
+                }
+            }
+        }
+    }
+
+    private var methodSection: some View {
+        settingsSection(title: "RİSK METODU") {
+            HStack(spacing: 8) {
+                ForEach(RiskMethod.allCases) { method in
+                    let active = options.method == method
+                    Button {
+                        options.method = method
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    } label: {
+                        VStack(spacing: 4) {
+                            Text(method.label)
+                                .font(.system(size: 13, weight: .bold))
+                            Text("R = \(method.formula)")
+                                .rdMono(size: 10)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .foregroundStyle(active ? Color.rdBlack : Color.rdSlate)
+                        .background(active ? Color.rdWhite : Color.rdFog)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(active ? Color.rdBlack : Color.rdLine, lineWidth: active ? 1.5 : 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var identitySection: some View {
+        settingsSection(title: "RAPOR BİLGİLERİ") {
+            VStack(spacing: 10) {
+                labeledField("Hazırlayan", text: $options.preparedBy, placeholder: profile?.displayName ?? "Ad Soyad")
+                labeledField("Firma", text: $options.companyName, placeholder: profile?.companyName ?? "Firma adı")
+            }
+        }
+    }
+
+    private var companyLogoSection: some View {
+        settingsSection(title: "FİRMA LOGOSU") {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.rdWhite)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.rdLine, lineWidth: 1)
+                        )
+                    if let companyLogo {
+                        Image(uiImage: companyLogo)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(8)
+                    } else {
+                        Image(systemName: "building.2.crop.circle")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(Color.rdSlate)
+                    }
+                }
+                .frame(width: 68, height: 58)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(companyLogo == nil ? "Logo seçilmedi" : "Logo rapora eklenecek")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Color.rdBlack)
+                    Text("Seçilen logo bu PDF çıktısında kullanılır. Profilde kalıcı logo kaydı sonraki adımda eklenecek.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                PhotosPicker(selection: $selectedLogoItem, matching: .images) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .bold))
+                        .frame(width: 34, height: 34)
+                        .foregroundStyle(Color.rdGreenDark)
+                        .background(Color.rdGreenSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+            }
+            .padding(12)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .onChange(of: selectedLogoItem) { newItem in
+                guard let newItem else { return }
+                Task {
+                    if let data = try? await newItem.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        companyLogo = image
+                    }
+                }
+            }
+        }
+    }
+
+    private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 11, weight: .bold))
+                .tracking(0.8)
+                .foregroundStyle(Color.rdSlate)
+                .padding(.leading, 4)
+            content()
+        }
+    }
+
+    private func optionRow(title: String, subtitle: String, icon: String, active: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(active ? Color.rdGreenDark : Color.rdSlate)
+                    .frame(width: 38, height: 38)
+                    .background(active ? Color.rdGreenSoft : Color.rdFog)
+                    .clipShape(RoundedRectangle(cornerRadius: 11))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(subtitle)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                Image(systemName: active ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(active ? Color.rdGreen : Color.rdSlate.opacity(0.35))
+            }
+            .padding(12)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(active ? Color.rdGreen.opacity(0.45) : Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func labeledField(_ title: String, text: Binding<String>, placeholder: String) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.rdSlate)
+            TextField(placeholder, text: text)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Color.rdBlack)
+                .textInputAutocapitalization(.words)
+                .padding(.horizontal, 12)
+                .frame(height: 44)
+                .background(Color.rdWhite)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
 }
@@ -546,6 +1003,26 @@ struct FindingCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.rdGreenSoft)
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+private struct ResultPhotoThumbnail: View {
+    let image: UIImage?
+    let path: String?
+    var cornerRadius: CGFloat
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                AnalysisThumbnail(path: path, cornerRadius: cornerRadius)
+            }
+        }
+        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
 }
 

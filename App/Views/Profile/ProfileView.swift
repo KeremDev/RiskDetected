@@ -10,6 +10,9 @@ struct ProfileView: View {
             HStack {
                 RDLogo(size: 18)
                 Spacer()
+                RDHeaderAccountCTA {
+                    showPaywall = true
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -40,8 +43,11 @@ struct ProfileView: View {
         .fullScreenCover(isPresented: $showPaywall) {
             PaywallView(onClose: { showPaywall = false },
                         onSubscribe: {
-                            app.isPro = true
                             showPaywall = false
+                            Task {
+                                await app.auth.refreshProfile()
+                                await loadStats()
+                            }
                         })
         }
     }

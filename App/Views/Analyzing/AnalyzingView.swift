@@ -1,10 +1,12 @@
 import SwiftUI
+import UIKit
 
 struct AnalyzingView: View {
     /// Parent'tan binding — dismiss için daha güvenilir (iOS 26 fullScreenCover).
     @Binding var isPresented: Bool
     /// nil = preview / mock modu; set edilirse gerçek analiz çalıştırılır.
     var asyncWork: (() async throws -> AnalysisResultBundle)? = nil
+    var previewImage: UIImage? = nil
     var onComplete: (AnalysisResultBundle?) -> Void = { _ in }
     var onError: (String) -> Void = { _ in }
 
@@ -59,7 +61,16 @@ struct AnalyzingView: View {
 
     private var scanCard: some View {
         ZStack {
-            RDPlaceholderPhoto(label: "Analiz ediliyor", cornerRadius: 22)
+            if let previewImage {
+                Image(uiImage: previewImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 240, height: 240)
+                    .clipped()
+                    .overlay(Color.black.opacity(0.14))
+            } else {
+                RDPlaceholderPhoto(label: "Analiz ediliyor", cornerRadius: 22)
+            }
 
             // Scan beam
             GeometryReader { geo in

@@ -5,10 +5,50 @@ struct AuthView: View {
     @State private var phase: AuthPhase = .options
     @State private var phone: String = ""
     @State private var code: [String] = ["", "", "", ""]
-    @State private var isSigningIn: Bool = false
+    @State private var signingInDemo: DemoAccount?
     @State private var authError: String?
 
     enum AuthPhase { case options, phone, otp }
+    enum DemoAccount: String {
+        case pro, free
+
+        var title: String {
+            switch self {
+            case .pro: return "Pro demo"
+            case .free: return "Free demo"
+            }
+        }
+
+        var email: String {
+            switch self {
+            case .pro: return "demo@riskdetected.app"
+            case .free: return "free@riskdetected.app"
+            }
+        }
+
+        var password: String {
+            switch self {
+            case .pro: return "demo123456"
+            case .free: return "free123456"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .pro: return "star.fill"
+            case .free: return "person.crop.circle"
+            }
+        }
+
+        var tint: Color {
+            switch self {
+            case .pro: return Color.rdGreen
+            case .free: return Color.rdBlack
+            }
+        }
+    }
+
+    private var isSigningIn: Bool { signingInDemo != nil }
 
     var body: some View {
         GeometryReader { geo in
@@ -115,12 +155,9 @@ struct AuthView: View {
             }
 
             #if DEBUG
-            RDButton(
-                title: isSigningIn ? "Giriş yapılıyor..." : "Demo hesap ile gir",
-                style: .ghost,
-                icon: "person.crop.circle.badge.checkmark"
-            ) {
-                runDemoSignIn()
+            HStack(spacing: 8) {
+                demoButton(.pro)
+                demoButton(.free)
             }
             .opacity(isSigningIn ? 0.6 : 1)
             #endif
@@ -237,20 +274,45 @@ struct AuthView: View {
 
     // MARK: - Demo sign-in
 
-    private func runDemoSignIn() {
+    private func demoButton(_ account: DemoAccount) -> some View {
+        Button {
+            runDemoSignIn(account)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: signingInDemo == account ? "hourglass" : account.icon)
+                    .font(.system(size: 12, weight: .bold))
+                Text(signingInDemo == account ? "Giriş..." : account.title)
+                    .font(.system(size: 12, weight: .bold))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 42)
+            .foregroundStyle(account.tint)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(account.tint.opacity(account == .pro ? 0.45 : 0.18), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .disabled(isSigningIn)
+    }
+
+    private func runDemoSignIn(_ account: DemoAccount) {
         guard !isSigningIn else { return }
-        isSigningIn = true
+        signingInDemo = account
         authError = nil
         Task {
             do {
                 try await app.auth.signInWithPassword(
-                    email: "demo@riskdetected.app",
-                    password: "demo123456"
+                    email: account.email,
+                    password: account.password
                 )
             } catch {
                 authError = "Giriş başarısız: \(error.localizedDescription)"
             }
-            isSigningIn = false
+            signingInDemo = nil
         }
     }
 }
