@@ -6,7 +6,9 @@ struct RiskDetailView: View {
     var method: RiskMethod = .fineKinney
     var photoPath: String? = nil
     var localPreviewImage: UIImage? = nil
+    @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
+    @State private var showPaywall = false
 
     var body: some View {
         ScrollView {
@@ -21,9 +23,7 @@ struct RiskDetailView: View {
                 section("Önerilen önlem", body: finding.action,
                         accent: Color.rdGreenSoft, accentText: Color.rdGreenDark,
                         icon: "shield.lefthalf.filled")
-                section("Standart referansları", body: finding.references,
-                        accent: Color.rdFog, accentText: Color.rdGraphite,
-                        icon: "books.vertical")
+                referenceSection
 
                 Color.clear.frame(height: 12)
             }
@@ -32,6 +32,15 @@ struct RiskDetailView: View {
             .padding(.bottom, 24)
         }
         .background(Color.rdPaper)
+        .fullScreenCover(isPresented: $showPaywall) {
+            PaywallView(
+                onClose: { showPaywall = false },
+                onSubscribe: {
+                    showPaywall = false
+                    Task { await app.auth.refreshProfile() }
+                }
+            )
+        }
     }
 
     // MARK: - Header
@@ -75,24 +84,24 @@ struct RiskDetailView: View {
         let band = finding.band(for: method)
         let score = finding.score(for: method)
 
-        return RDCard {
-            VStack(alignment: .leading, spacing: 10) {
+        return RDCard(padding: 14, cornerRadius: 16) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(method.fullName.uppercased())
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                     .tracking(0.6)
                     .foregroundStyle(Color.rdSlate)
 
                 HStack(alignment: .lastTextBaseline, spacing: 8) {
                     Text("\(Int(score))")
-                        .font(.system(size: 36, weight: .heavy, design: .monospaced))
+                        .font(.system(size: 30, weight: .heavy, design: .monospaced))
                         .foregroundStyle(band.color)
                         .tracking(-0.6)
                     Text("R = \(finding.formula(for: method))")
-                        .rdMono(size: 12, weight: .semibold)
+                        .rdMono(size: 11, weight: .semibold)
                         .foregroundStyle(Color.rdSlate)
                 }
                 Text(band.action)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(band.color)
             }
         }
@@ -181,10 +190,70 @@ struct RiskDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
+
+    @ViewBuilder
+    private var referenceSection: some View {
+        if app.isPro {
+            section("Standart referansları", body: finding.references,
+                    accent: Color.rdFog, accentText: Color.rdGraphite,
+                    icon: "books.vertical")
+        } else {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Text("Standart referansları".uppercased())
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(0.6)
+                        .foregroundStyle(Color.rdSlate)
+                    RDProBadge(small: true)
+                }
+
+                Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    showPaywall = true
+                } label: {
+                    HStack(alignment: .center, spacing: 10) {
+                        Image(systemName: "books.vertical")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color.rdBlack)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Standart referansları PRO'da açıktır")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(Color.rdBlack)
+                            Text("Mevzuat, standart ve kaynak bağlantılarını görmek için yükselt.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.rdSlate)
+                                .lineLimit(2)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 10, weight: .heavy))
+                            Text("PRO")
+                                .font(.system(size: 11, weight: .heavy))
+                        }
+                        .foregroundStyle(Color(hex: "#8A5A00"))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(Color(hex: "#FFF3C4"))
+                        .clipShape(Capsule())
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.rdFog)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
 }
 
 #Preview {
     RiskDetailView(finding: Finding.mock[0], method: .fineKinney)
+        .environmentObject(AppState())
 }
 
 private struct ResultDetailPhoto: View {
