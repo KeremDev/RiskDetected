@@ -125,7 +125,7 @@ struct AuthView: View {
     // Form yüksekliği phase'e göre değişmez, badge pozisyonu için sabit referans
     private var formHeight: CGFloat {
         switch phase {
-        case .options: return 318
+        case .options: return 326
         case .phone:   return 220
         case .otp:     return 280
         }
@@ -160,6 +160,8 @@ struct AuthView: View {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .phone }
             }
 
+            legalNotice
+
             #if DEBUG
             HStack(spacing: 8) {
                 demoButton(.pro)
@@ -181,30 +183,29 @@ struct AuthView: View {
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
             }
-
-            legalNotice
         }
     }
 
     private var legalNotice: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 3) {
             Text("Üye olarak veya giriş yaparak RiskDetected kullanım koşullarını kabul etmiş sayılırsın.")
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(Color.rdSlate)
                 .multilineTextAlignment(.center)
+                .lineLimit(2)
 
             Button {
                 showLegalInfo = true
             } label: {
                 Text("KVKK · Kullanım koşulları · AI veri işleme")
-                    .font(.system(size: 10.5, weight: .semibold))
+                    .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(Color.rdGreenDark)
                     .underline()
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 8)
-        .padding(.top, 4)
+        .padding(.vertical, 2)
     }
 
     // MARK: - Phone

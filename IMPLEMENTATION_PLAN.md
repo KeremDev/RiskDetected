@@ -38,6 +38,7 @@
   - Blocking first-analysis consent was removed for better UX.
   - Legal notice/link copy is shown on the login screen and Home screen instead.
   - Users are informed that signing in, registering or starting analysis means accepting the terms and relevant data processing notices.
+  - Login/session creates a non-blocking background `consents` audit row with legal versions, timestamp, app version and device id when missing.
 
 ## Partially Done - Revision Queue
 
@@ -112,8 +113,9 @@ These items exist in some form, but need revision before we treat them as produc
    - login screen includes legal acceptance notice and a legal information link;
    - Home screen includes legal acceptance notice and a legal information link;
    - blocking first-analysis consent was intentionally removed for lower friction;
-   - versioned `consents` table exists with RLS and minimum grants for a future explicit-consent/audit flow if needed.
-   - Follow-up: replace summary copy with lawyer-reviewed final KVKK/terms text, add full document links and decide whether signup should persist accepted legal version.
+   - versioned `consents` table exists with RLS and minimum grants;
+   - login/session creates a non-blocking background audit row with legal versions, timestamp, app version and device id when missing.
+   - Follow-up: replace summary copy with lawyer-reviewed final KVKK/terms text and add full document links.
 2. Visual data policy:
    - EXIF cleanup;
    - face blur;

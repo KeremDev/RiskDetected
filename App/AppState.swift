@@ -85,7 +85,11 @@ final class AppState: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] session in
                 guard let self else { return }
-                if session != nil {
+                if let session {
+                    Task {
+                        await LegalAcceptanceService.shared
+                            .recordLoginNoticeAcceptanceIfNeeded(userID: session.user.id)
+                    }
                     if self.flow != .main {
                         self.flow = .main
                     }
