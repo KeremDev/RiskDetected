@@ -35,8 +35,9 @@
 - P1 privacy/legal work started:
   - `consents` table migration added and applied to the linked Supabase project.
   - RLS enabled; authenticated users can only read/insert their own consent rows.
-  - First-analysis consent sheet added in iOS before photo/text analysis starts.
-  - KVKK, terms and explicit AI visual/text processing consent versions are stored with timestamp, app version and device id.
+  - Blocking first-analysis consent was removed for better UX.
+  - Legal notice/link copy is shown on the login screen and Home screen instead.
+  - Users are informed that signing in, registering or starting analysis means accepting the terms and relevant data processing notices.
 
 ## Partially Done - Revision Queue
 
@@ -107,12 +108,12 @@ These items exist in some form, but need revision before we treat them as produc
 
 ### P1 - Privacy, Legal and Trust
 
-1. Done: KVKK/Terms/Consent flow:
-   - first-analysis blocking consent screen;
-   - versioned `consents` table;
-   - store accepted KVKK/terms/explicit AI processing versions with timestamp;
-   - RLS and minimum grants on `consents`.
-   - Follow-up: replace summary copy with lawyer-reviewed final KVKK/terms text and add full-document links.
+1. Partially done: KVKK/Terms/Consent visibility:
+   - login screen includes legal acceptance notice and a legal information link;
+   - Home screen includes legal acceptance notice and a legal information link;
+   - blocking first-analysis consent was intentionally removed for lower friction;
+   - versioned `consents` table exists with RLS and minimum grants for a future explicit-consent/audit flow if needed.
+   - Follow-up: replace summary copy with lawyer-reviewed final KVKK/terms text, add full document links and decide whether signup should persist accepted legal version.
 2. Visual data policy:
    - EXIF cleanup;
    - face blur;

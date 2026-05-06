@@ -35,9 +35,7 @@ struct HomeView: View {
     @State private var openingRecentID: UUID? = nil
     @State private var quotaUsage: DailyQuotaUsage? = nil
     @State private var showPaywall = false
-    @State private var showConsentSheet = false
-    @State private var isCheckingConsent = false
-    @State private var isSavingConsent = false
+    @State private var showLegalInfo = false
 
     enum HomeMode: String, CaseIterable {
         case photo, text
@@ -68,6 +66,9 @@ struct HomeView: View {
                     }
                     .frame(height: 56)
                     .padding(.top, 14)
+
+                    legalNotice
+                        .padding(.top, 10)
 
                     recentSection
                         .padding(.top, 28)
@@ -200,13 +201,9 @@ struct HomeView: View {
                 }
             )
         }
-        .sheet(isPresented: $showConsentSheet) {
-            ConsentSheet(
-                isSaving: isSavingConsent,
-                onAccept: { acceptConsentAndContinue() },
-                onClose: { showConsentSheet = false }
-            )
-            .presentationDetents([.large])
+        .sheet(isPresented: $showLegalInfo) {
+            LegalInfoSheet(onClose: { showLegalInfo = false })
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
         .alert("Analiz Hatası", isPresented: .init(
@@ -660,6 +657,27 @@ struct HomeView: View {
         }
     }
 
+    private var legalNotice: some View {
+        VStack(spacing: 4) {
+            Text("Devam ederek RiskDetected kullanım koşullarını kabul etmiş sayılırsın.")
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(Color.rdSlate)
+                .multilineTextAlignment(.center)
+
+            Button {
+                showLegalInfo = true
+            } label: {
+                Text("KVKK · Kullanım koşulları · AI veri işleme")
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundStyle(Color.rdGreenDark)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+    }
+
     // MARK: - Helpers
 
     private var currentDateLabel: String {
@@ -680,25 +698,6 @@ struct HomeView: View {
             showPaywall = true
             return
         }
-        guard let userID = app.auth.session?.user.id else {
-            analysisError = "Oturum bulunamadı. Lütfen tekrar giriş yapın."
-            return
-        }
-        guard !isCheckingConsent else { return }
-
-        isCheckingConsent = true
-        Task {
-            let hasConsent = await ConsentService.shared.hasRequiredConsent(userID: userID)
-            isCheckingConsent = false
-            if hasConsent {
-                continueAnalysisFlowAfterConsent()
-            } else {
-                showConsentSheet = true
-            }
-        }
-    }
-
-    private func continueAnalysisFlowAfterConsent() {
         if mode == .photo && selectedImage == nil {
             showSourceDialog = true
             return
@@ -708,27 +707,6 @@ struct HomeView: View {
             return
         }
         showCanvasSheet = true
-    }
-
-    private func acceptConsentAndContinue() {
-        guard let userID = app.auth.session?.user.id else {
-            showConsentSheet = false
-            analysisError = "Oturum bulunamadı. Lütfen tekrar giriş yapın."
-            return
-        }
-        guard !isSavingConsent else { return }
-
-        isSavingConsent = true
-        Task {
-            do {
-                try await ConsentService.shared.acceptRequiredConsent(userID: userID)
-                showConsentSheet = false
-                continueAnalysisFlowAfterConsent()
-            } catch {
-                analysisError = "Yasal onay kaydedilemedi: \(error.localizedDescription)"
-            }
-            isSavingConsent = false
-        }
     }
 
     /// Canvas seçimi onaylandıktan sonra çağrılır.

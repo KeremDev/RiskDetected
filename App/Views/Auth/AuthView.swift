@@ -7,6 +7,7 @@ struct AuthView: View {
     @State private var code: [String] = ["", "", "", ""]
     @State private var signingInDemo: DemoAccount?
     @State private var authError: String?
+    @State private var showLegalInfo = false
 
     enum AuthPhase { case options, phone, otp }
     enum DemoAccount: String {
@@ -114,12 +115,17 @@ struct AuthView: View {
         }
         .ignoresSafeArea()
         .background(Color.rdPaper)
+        .sheet(isPresented: $showLegalInfo) {
+            LegalInfoSheet(onClose: { showLegalInfo = false })
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // Form yüksekliği phase'e göre değişmez, badge pozisyonu için sabit referans
     private var formHeight: CGFloat {
         switch phase {
-        case .options: return 300
+        case .options: return 318
         case .phone:   return 220
         case .otp:     return 280
         }
@@ -176,13 +182,29 @@ struct AuthView: View {
                     .multilineTextAlignment(.center)
             }
 
-            Text("Devam ederek/Kaydolarak Kullanım Şartları ve Gizlilik Politikası'nı kabul etmiş olursun.")
-                .font(.system(size: 11))
+            legalNotice
+        }
+    }
+
+    private var legalNotice: some View {
+        VStack(spacing: 4) {
+            Text("Üye olarak veya giriş yaparak RiskDetected kullanım koşullarını kabul etmiş sayılırsın.")
+                .font(.system(size: 10.5, weight: .medium))
                 .foregroundStyle(Color.rdSlate)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 8)
-                .padding(.top, 6)
+
+            Button {
+                showLegalInfo = true
+            } label: {
+                Text("KVKK · Kullanım koşulları · AI veri işleme")
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundStyle(Color.rdGreenDark)
+                    .underline()
+            }
+            .buttonStyle(.plain)
         }
+        .padding(.horizontal, 8)
+        .padding(.top, 4)
     }
 
     // MARK: - Phone
