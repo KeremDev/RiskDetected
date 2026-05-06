@@ -35,6 +35,9 @@ struct HomeView: View {
     @State private var openingRecentID: UUID? = nil
     @State private var quotaUsage: DailyQuotaUsage? = nil
     @State private var showPaywall = false
+    @State private var showConsentSheet = false
+    @State private var isCheckingConsent = false
+    @State private var isSavingConsent = false
 
     enum HomeMode: String, CaseIterable {
         case photo, text
@@ -196,6 +199,15 @@ struct HomeView: View {
                     Task { await app.auth.refreshProfile() }
                 }
             )
+        }
+        .sheet(isPresented: $showConsentSheet) {
+            ConsentSheet(
+                isSaving: isSavingConsent,
+                onAccept: { acceptConsentAndContinue() },
+                onClose: { showConsentSheet = false }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .alert("Analiz Hatası", isPresented: .init(
             get: { analysisError != nil },
@@ -668,6 +680,25 @@ struct HomeView: View {
             showPaywall = true
             return
         }
+        guard let userID = app.auth.session?.user.id else {
+            analysisError = "Oturum bulunamadı. Lütfen tekrar giriş yapın."
+            return
+        }
+        guard !isCheckingConsent else { return }
+
+        isCheckingConsent = true
+        Task {
+            let hasConsent = await ConsentService.shared.hasRequiredConsent(userID: userID)
+            isCheckingConsent = false
+            if hasConsent {
+                continueAnalysisFlowAfterConsent()
+            } else {
+                showConsentSheet = true
+            }
+        }
+    }
+
+    private func continueAnalysisFlowAfterConsent() {
         if mode == .photo && selectedImage == nil {
             showSourceDialog = true
             return
@@ -677,6 +708,27 @@ struct HomeView: View {
             return
         }
         showCanvasSheet = true
+    }
+
+    private func acceptConsentAndContinue() {
+        guard let userID = app.auth.session?.user.id else {
+            showConsentSheet = false
+            analysisError = "Oturum bulunamadı. Lütfen tekrar giriş yapın."
+            return
+        }
+        guard !isSavingConsent else { return }
+
+        isSavingConsent = true
+        Task {
+            do {
+                try await ConsentService.shared.acceptRequiredConsent(userID: userID)
+                showConsentSheet = false
+                continueAnalysisFlowAfterConsent()
+            } catch {
+                analysisError = "Yasal onay kaydedilemedi: \(error.localizedDescription)"
+            }
+            isSavingConsent = false
+        }
     }
 
     /// Canvas seçimi onaylandıktan sonra çağrılır.
