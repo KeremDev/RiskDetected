@@ -268,6 +268,127 @@ function base64ToBytes(base64: string): Uint8Array {
   return bytes;
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function stripJPEGMetadata(bytes: Uint8Array): Uint8Array {
+  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return bytes;
+
+  const chunks: Uint8Array[] = [bytes.subarray(0, 2)];
+  let offset = 2;
+
+  while (offset + 4 <= bytes.length) {
+    if (bytes[offset] !== 0xff) return bytes;
+
+    let markerOffset = offset;
+    while (markerOffset < bytes.length && bytes[markerOffset] === 0xff) markerOffset++;
+    if (markerOffset >= bytes.length) return bytes;
+
+    const marker = bytes[markerOffset];
+    offset = markerOffset + 1;
+
+    // Start of Scan: compressed image data follows; copy the rest as-is.
+    if (marker === 0xda) {
+      chunks.push(bytes.subarray(markerOffset - 1));
+      return concatBytes(chunks);
+    }
+
+    // Standalone markers without payload length.
+    if (marker === 0xd9 || (marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) {
+      chunks.push(bytes.subarray(markerOffset - 1, offset));
+      continue;
+    }
+
+    if (offset + 2 > bytes.length) return bytes;
+    const length = (bytes[offset] << 8) | bytes[offset + 1];
+    if (length < 2 || offset + length > bytes.length) return bytes;
+
+    const segmentStart = markerOffset - 1;
+    const segmentEnd = offset + length;
+    const isAppSegment = marker >= 0xe0 && marker <= 0xef;
+    const isComment = marker === 0xfe;
+
+    // APPn segments commonly carry EXIF/GPS/XMP/JFIF metadata; COM carries comments.
+    if (!isAppSegment && !isComment) {
+      chunks.push(bytes.subarray(segmentStart, segmentEnd));
+    }
+
+    offset = segmentEnd;
+  }
+
+  return concatBytes(chunks);
+}
+
+function stripPNGMetadata(bytes: Uint8Array): Uint8Array {
+  const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (bytes.length < signature.length || !signature.every((b, i) => bytes[i] === b)) return bytes;
+
+  const chunks: Uint8Array[] = [bytes.subarray(0, 8)];
+  let offset = 8;
+  const metadataChunkTypes = new Set(["eXIf", "tEXt", "zTXt", "iTXt", "tIME"]);
+
+  while (offset + 12 <= bytes.length) {
+    const length =
+      (bytes[offset] << 24) |
+      (bytes[offset + 1] << 16) |
+      (bytes[offset + 2] << 8) |
+      bytes[offset + 3];
+    if (length < 0) return bytes;
+
+    const chunkEnd = offset + 12 + length;
+    if (chunkEnd > bytes.length) return bytes;
+
+    const type = String.fromCharCode(
+      bytes[offset + 4],
+      bytes[offset + 5],
+      bytes[offset + 6],
+      bytes[offset + 7],
+    );
+
+    if (!metadataChunkTypes.has(type)) {
+      chunks.push(bytes.subarray(offset, chunkEnd));
+    }
+
+    offset = chunkEnd;
+    if (type === "IEND") break;
+  }
+
+  return concatBytes(chunks);
+}
+
+function concatBytes(parts: Uint8Array[]): Uint8Array {
+  const total = parts.reduce((sum, part) => sum + part.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const part of parts) {
+    out.set(part, offset);
+    offset += part.length;
+  }
+  return out;
+}
+
+function normalizedImageMimeType(value: unknown): "image/jpeg" | "image/png" {
+  const raw = typeof value === "string" ? value.toLowerCase() : "";
+  return raw.includes("png") ? "image/png" : "image/jpeg";
+}
+
+function stripImageMetadata(bytes: Uint8Array, mimeType: string): Uint8Array {
+  if (mimeType === "image/png") return stripPNGMetadata(bytes);
+  return stripJPEGMetadata(bytes);
+}
+
+function sanitizedDimension(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? Math.round(value)
+    : 0;
+}
+
 // deno-lint-ignore no-explicit-any
 async function logUsage(supabase: any, data: any) {
   try { await supabase.from("ai_usage_logs").insert(data); }
@@ -350,35 +471,50 @@ serve(async (req: Request) => {
 
   // Storage → base64
   const imageBase64Parts: { mimeType: string; data: string }[] = [];
+  const sanitizedInlinePhotos: {
+    mimeType: "image/jpeg" | "image/png";
+    bytes: Uint8Array;
+    data: string;
+    width: number;
+    height: number;
+  }[] = [];
   const inlinePhotoCount = Array.isArray(photo_base64_parts) ? photo_base64_parts.length : 0;
   const storagePhotoCount = Array.isArray(photo_paths) ? photo_paths.length : 0;
 
   for (const part of photo_base64_parts) {
     if (!part?.data) continue;
+    const mimeType = normalizedImageMimeType(part.mime_type ?? part.mimeType);
+    const rawBytes = base64ToBytes(part.data);
+    const bytes = stripImageMetadata(rawBytes, mimeType);
+    const data = bytesToBase64(bytes);
+    sanitizedInlinePhotos.push({
+      mimeType,
+      bytes,
+      data,
+      width: sanitizedDimension(part.width),
+      height: sanitizedDimension(part.height),
+    });
     imageBase64Parts.push({
-      mimeType: part.mime_type ?? part.mimeType ?? "image/jpeg",
-      data: part.data,
+      mimeType,
+      data,
     });
   }
 
   // Inline gelen fotoğrafları kalıcı olarak Storage + photos tablosuna yaz.
   // Client tarafında Storage RLS'e takılmamak için bu işi service role ile Edge Function yapıyor.
   const persistedPhotoPaths: string[] = [];
-  if (Array.isArray(photo_base64_parts) && photo_base64_parts.length > 0) {
+  if (sanitizedInlinePhotos.length > 0) {
     await supabase.from("photos").delete().eq("analysis_id", analysis_id);
 
-    for (let i = 0; i < photo_base64_parts.length; i++) {
-      const part = photo_base64_parts[i];
-      if (!part?.data) continue;
-
-      const mimeType = part.mime_type ?? part.mimeType ?? "image/jpeg";
+    for (let i = 0; i < sanitizedInlinePhotos.length; i++) {
+      const part = sanitizedInlinePhotos[i];
+      const mimeType = part.mimeType;
       const ext = mimeType.includes("png") ? "png" : "jpg";
       const storagePath = `${user.id}/${analysis_id}/p${i + 1}.${ext}`;
-      const bytes = base64ToBytes(part.data);
 
       const { error: uploadErr } = await supabase.storage
         .from("photos")
-        .upload(storagePath, new Blob([bytes], { type: mimeType }), {
+        .upload(storagePath, new Blob([part.bytes], { type: mimeType }), {
           contentType: mimeType,
           upsert: true,
         });
@@ -392,8 +528,8 @@ serve(async (req: Request) => {
         analysis_id,
         user_id: user.id,
         storage_path: storagePath,
-        width: Number.isFinite(part.width) ? Math.round(part.width) : 0,
-        height: Number.isFinite(part.height) ? Math.round(part.height) : 0,
+        width: part.width,
+        height: part.height,
         mime_type: mimeType,
       });
 

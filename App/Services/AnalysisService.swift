@@ -61,7 +61,7 @@ final class AnalysisService {
 
         // 2) Fotoğrafları Edge Function'a inline base64 gönder.
         // Storage RLS client upload akışını kırdığı için analiz yolu Storage'a bağımlı değil.
-        let photoParts = try images.map { try inlineJPEGPart(from: $0) }
+        let photoParts = try await Self.makeInlineJPEGParts(from: images)
         let totalPayloadBytes = photoParts.reduce(0) { $0 + $1.encodedByteCount }
         if totalPayloadBytes > Self.maxInlinePhotoPayloadBytes {
             throw AnalysisError.invalidInput("Fotoğraf paketi çok büyük. Lütfen daha az fotoğraf veya daha düşük çözünürlüklü görsel dene.")
@@ -384,7 +384,7 @@ final class AnalysisService {
         }
     }
 
-    private struct InlinePhotoPart: Encodable {
+    private struct InlinePhotoPart: Encodable, Sendable {
         let mime_type: String
         let data: String
         let width: Int
@@ -395,7 +395,13 @@ final class AnalysisService {
         }
     }
 
-    private func inlineJPEGPart(from image: UIImage) throws -> InlinePhotoPart {
+    nonisolated private static func makeInlineJPEGParts(from images: [UIImage]) async throws -> [InlinePhotoPart] {
+        try await Task.detached(priority: .userInitiated) {
+            try images.map { try inlineJPEGPart(from: $0) }
+        }.value
+    }
+
+    nonisolated private static func inlineJPEGPart(from image: UIImage) throws -> InlinePhotoPart {
         let renderSizes: [CGFloat] = [1400, 1200, 1000]
         let qualities: [CGFloat] = [0.72, 0.60, 0.48]
 
@@ -406,7 +412,7 @@ final class AnalysisService {
                 guard let data = normalized.image.jpegData(compressionQuality: quality) else { continue }
                 let photo = SanitizedPhoto(data: data, size: normalized.size)
                 lastPhoto = photo
-                if data.count <= Self.maxInlinePhotoBytes {
+                if data.count <= maxInlinePhotoBytes {
                     return InlinePhotoPart(
                         mime_type: "image/jpeg",
                         data: data.base64EncodedString(),
@@ -417,7 +423,7 @@ final class AnalysisService {
             }
         }
 
-        if let lastPhoto, lastPhoto.data.count <= Self.maxInlinePhotoBytes * 2 {
+        if let lastPhoto, lastPhoto.data.count <= maxInlinePhotoBytes * 2 {
             return InlinePhotoPart(
                 mime_type: "image/jpeg",
                 data: lastPhoto.data.base64EncodedString(),

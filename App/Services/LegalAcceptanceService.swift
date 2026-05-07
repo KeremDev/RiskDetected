@@ -1,9 +1,11 @@
 import Foundation
+import OSLog
 import UIKit
 
 @MainActor
 final class LegalAcceptanceService {
     static let shared = LegalAcceptanceService()
+    private static let logger = Logger(subsystem: "com.riskdetected.app", category: "LegalAcceptance")
 
     static let kvkkVersion = "kvkk-2026-05-06"
     static let termsVersion = "terms-2026-05-06"
@@ -12,11 +14,17 @@ final class LegalAcceptanceService {
     private let supabase = SupabaseService.shared
     private var recordedUsers = Set<UUID>()
     private var recordingUsers = Set<UUID>()
+    private var failedAttempts: [UUID: Int] = [:]
+    private var nextRetryAt: [UUID: Date] = [:]
 
     private init() {}
 
     func recordLoginNoticeAcceptanceIfNeeded(userID: UUID) async {
         guard !recordedUsers.contains(userID), !recordingUsers.contains(userID) else { return }
+        if let retryAt = nextRetryAt[userID], retryAt > Date() {
+            return
+        }
+
         recordingUsers.insert(userID)
         defer { recordingUsers.remove(userID) }
 
@@ -33,6 +41,8 @@ final class LegalAcceptanceService {
                 .value
 
             if !existing.isEmpty {
+                failedAttempts[userID] = nil
+                nextRetryAt[userID] = nil
                 recordedUsers.insert(userID)
                 return
             }
@@ -62,10 +72,18 @@ final class LegalAcceptanceService {
                 .insert(payload)
                 .execute()
 
+            failedAttempts[userID] = nil
+            nextRetryAt[userID] = nil
             recordedUsers.insert(userID)
         } catch {
             // Legal audit logging must never block login or analysis. The notice stays visible
-            // in the UI; a later session can retry the background record.
+            // in the UI; a later session can retry the background record. We still log and
+            // back off so audit issues do not silently disappear during testing/operations.
+            let attempts = (failedAttempts[userID] ?? 0) + 1
+            failedAttempts[userID] = attempts
+            let retryDelay = min(pow(2.0, Double(attempts)), 300)
+            nextRetryAt[userID] = Date().addingTimeInterval(retryDelay)
+            Self.logger.error("Consent audit record failed. user=\(userID.uuidString, privacy: .private(mask: .hash)) attempt=\(attempts) retryDelay=\(retryDelay, format: .fixed(precision: 0))s error=\(error.localizedDescription, privacy: .public)")
         }
     }
 

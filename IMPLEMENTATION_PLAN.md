@@ -39,7 +39,9 @@
   - Legal notice/link copy is shown on the login screen and Home screen instead.
   - Users are informed that signing in, registering or starting analysis means accepting the terms and relevant data processing notices.
   - Login/session creates a non-blocking background `consents` audit row with legal versions, timestamp, app version and device id when missing.
+  - Consent audit failures are logged with retry backoff instead of being silently swallowed.
   - Client photo preparation re-renders selected images before analysis/upload so EXIF/location/camera metadata is stripped.
+  - Edge Function also strips common JPEG/PNG metadata from inline images before sending them to Gemini and before persisting them to Storage.
 
 ## Partially Done - Revision Queue
 
@@ -62,8 +64,8 @@ These items exist in some form, but need revision before we treat them as produc
      - Pro: strongest available Gemini paid model -> Claude/OpenAI/OpenRouter fallback, depending on cost and API availability.
 
 4. Image preprocessing
-   - Current state: iOS resizes/compresses images before inline upload.
-   - Target: backend preprocessing pipeline for EXIF removal, standard resize/quality, face blur and logo blur.
+   - Current state: iOS resizes/compresses images before inline upload; Edge Function strips common JPEG/PNG metadata chunks/segments before AI + Storage persistence.
+   - Target: full backend preprocessing pipeline for standard resize/quality, face blur and logo blur.
    - Storage rule target: store only cleaned/blurred images when possible; avoid long-term original image storage.
 
 5. Error handling
@@ -116,9 +118,11 @@ These items exist in some form, but need revision before we treat them as produc
    - blocking first-analysis consent was intentionally removed for lower friction;
    - versioned `consents` table exists with RLS and minimum grants;
    - login/session creates a non-blocking background audit row with legal versions, timestamp, app version and device id when missing.
+   - Done: consent audit failures are logged with retry backoff;
    - Follow-up: replace summary copy with lawyer-reviewed final KVKK/terms text and add full document links.
 2. Visual data policy:
    - Done: client-side EXIF cleanup by pixel-only re-render before AI analysis/upload;
+   - Done: Edge Function strips common JPEG/PNG metadata before Gemini and Storage persistence;
    - face blur;
    - company logo blur;
    - cleaned-image-only storage policy where practical.
@@ -206,3 +210,4 @@ These items exist in some form, but need revision before we treat them as produc
   - `npx supabase db query --linked -f supabase/migrations/20260506_reports_storage.sql`
 - Edge Function deploy was completed with:
   - `npx supabase functions deploy analyze --use-api`
+  - `supabase functions deploy analyze --use-api`
