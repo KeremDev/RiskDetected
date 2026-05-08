@@ -4,6 +4,24 @@ import Supabase
 import Vision
 import OSLog
 
+struct AnalysisProgressUpdate: Equatable {
+    let title: String
+    let message: String
+    let icon: String
+
+    static let retryingAI = AnalysisProgressUpdate(
+        title: "AI servisi yoğun",
+        message: "Model yanıt vermedi. Aynı analizi otomatik tekrar deniyoruz.",
+        icon: "arrow.clockwise"
+    )
+
+    static let fallbackModel = AnalysisProgressUpdate(
+        title: "Alternatif model deneniyor",
+        message: "Analizi tamamlamak için uygun yedek model devreye alındı.",
+        icon: "sparkles"
+    )
+}
+
 /// Analiz akışını orkestre eder:
 /// 1. `analyses` kaydı oluştur (status: pending)
 /// 2. Edge Function `analyze`'i çağır — Gemini bulguları üretir, DB'ye yazılır
@@ -45,7 +63,8 @@ final class AnalysisService {
         images: [UIImage],
         canvases: [AnalysisCanvas],
         title: String? = nil,
-        userPrompt: String = ""
+        userPrompt: String = "",
+        onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
     ) async throws -> AnalysisResultBundle {
         guard !canvases.isEmpty else {
             throw AnalysisError.invalidInput("En az bir analiz odağı seçmelisin.")
@@ -75,7 +94,8 @@ final class AnalysisService {
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
             textInput: nil, photoPaths: [], photoBase64Parts: photoParts,
-            userPrompt: userPrompt
+            userPrompt: userPrompt,
+            onProgress: onProgress
         )
 
         // 4) Sonucu çek
@@ -83,7 +103,13 @@ final class AnalysisService {
     }
 
     /// Metin bazlı analiz akışı.
-    func runTextAnalysis(userID: UUID, text: String, canvases: [AnalysisCanvas], userPrompt: String = "") async throws -> AnalysisResultBundle {
+    func runTextAnalysis(
+        userID: UUID,
+        text: String,
+        canvases: [AnalysisCanvas],
+        userPrompt: String = "",
+        onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
+    ) async throws -> AnalysisResultBundle {
         guard !canvases.isEmpty else {
             throw AnalysisError.invalidInput("En az bir analiz odağı seçmelisin.")
         }
@@ -102,7 +128,8 @@ final class AnalysisService {
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
             textInput: text, photoPaths: [], photoBase64Parts: [],
-            userPrompt: userPrompt
+            userPrompt: userPrompt,
+            onProgress: onProgress
         )
 
         return try await fetchResult(analysisID: analysisID)
@@ -700,7 +727,8 @@ final class AnalysisService {
         textInput: String?,
         photoPaths: [String],
         photoBase64Parts: [InlinePhotoPart],
-        userPrompt: String
+        userPrompt: String,
+        onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)?
     ) async throws {
         struct Body: Encodable {
             let analysis_id: String
@@ -730,31 +758,54 @@ final class AnalysisService {
             photo_paths: photoPaths,
             photo_base64_parts: photoBase64Parts
         )
-        do {
-            try await supabase.functions.invoke(
-                RDConfig.analyzeFunctionName,
-                options: FunctionInvokeOptions(body: body)
-            )
-        } catch let FunctionsError.httpError(code, data) {
-            let payload = Self.functionErrorPayload(from: data)
-            let msg = payload.message
-            let remoteSupportID = payload.supportID ?? supportID
-            let messageWithSupport = Self.appendSupportID(remoteSupportID, to: msg)
-            switch code {
-            case 429:
-                if msg.localizedCaseInsensitiveContains("günlük kota") || msg.localizedCaseInsensitiveContains("analiz/gün") {
+        let maxAttempts = 2
+        for attempt in 1...maxAttempts {
+            do {
+                try await supabase.functions.invoke(
+                    RDConfig.analyzeFunctionName,
+                    options: FunctionInvokeOptions(body: body)
+                )
+                return
+            } catch let FunctionsError.httpError(code, data) {
+                let payload = Self.functionErrorPayload(from: data)
+                let msg = payload.message
+                let errorCode = payload.code ?? ""
+                let remoteSupportID = payload.supportID ?? supportID
+
+                if code == 429,
+                   msg.localizedCaseInsensitiveContains("günlük kota") || msg.localizedCaseInsensitiveContains("analiz/gün") || errorCode == "quota_exceeded" {
                     throw AnalysisError.quotaExceeded(remaining: 0, tier: "free")
                 }
-                throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "Gemini kotası doldu. Lütfen daha sonra tekrar dene.") : messageWithSupport)
-            case 503:
-                throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.") : messageWithSupport)
-            case 409:
-                throw AnalysisError.alreadyCompleted
-            default:
-                throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "HTTP \(code)") : messageWithSupport)
+                if code == 409 {
+                    throw AnalysisError.alreadyCompleted
+                }
+
+                let retryable = [429, 500, 502, 503, 504].contains(code)
+                if retryable, attempt < maxAttempts {
+                    onProgress?(.retryingAI)
+                    Self.logger.info("Analyze invoke retry support=\(remoteSupportID, privacy: .public) request=\(requestID, privacy: .public) attempt=\(attempt) http=\(code)")
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    continue
+                }
+
+                let messageWithSupport = Self.appendSupportID(remoteSupportID, to: msg)
+                switch code {
+                case 429:
+                    throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "Gemini kotası doldu. Lütfen daha sonra tekrar dene.") : messageWithSupport)
+                case 503:
+                    throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.") : messageWithSupport)
+                default:
+                    throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "HTTP \(code)") : messageWithSupport)
+                }
+            } catch {
+                if attempt < maxAttempts {
+                    onProgress?(.retryingAI)
+                    Self.logger.info("Analyze invoke network retry support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) attempt=\(attempt) error=\(error.localizedDescription, privacy: .public)")
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    continue
+                }
+                throw AnalysisError.aiFailed(error.localizedDescription)
             }
-        } catch {
-            throw AnalysisError.aiFailed(error.localizedDescription)
         }
     }
 
@@ -800,21 +851,22 @@ final class AnalysisService {
         return "\(label) · \(formatter.string(from: Date()))"
     }
 
-    private static func functionErrorPayload(from data: Data) -> (message: String, supportID: String?) {
+    private static func functionErrorPayload(from data: Data) -> (message: String, supportID: String?, code: String?) {
         struct FunctionErrorBody: Decodable {
             let error: String?
             let message: String?
             let support_id: String?
+            let code: String?
         }
 
         if let body = try? JSONDecoder().decode(FunctionErrorBody.self, from: data) {
             let message = (body.error ?? body.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             if !message.isEmpty {
-                return (message, body.support_id)
+                return (message, body.support_id, body.code)
             }
         }
 
-        return (String(data: data, encoding: .utf8) ?? "", nil)
+        return (String(data: data, encoding: .utf8) ?? "", nil, nil)
     }
 
     private static func appendSupportID(_ supportID: String, to message: String) -> String {

@@ -28,28 +28,31 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const GEMINI_API_BASE =
+  "https://generativelanguage.googleapis.com/v1beta/models";
 
 const MODEL_FREE_LITE = "gemini-2.5-flash-lite";
-const MODEL_FREE      = "gemini-2.5-flash";
+const MODEL_FREE = "gemini-2.5-flash";
 // Gemini Pro model free quota bu API key'de 0 dönebiliyor.
 // Ücretli Google AI planı açılana kadar PRO kullanıcıyı da Flash üzerinde çalıştırıyoruz.
-const MODEL_PRO       = "gemini-2.5-flash";
+const MODEL_PRO = "gemini-2.5-flash";
 const FREE_DAILY_LIMIT = 2;
 
 const CANVAS_FOCUS: Record<string, string> = {
-  general:   "Tüm iş güvenliği uygunsuzluklarını geniş kapsamlı tara.",
-  ppe:       "Baret, gözlük, eldiven, emniyet kemeri ve yelek (KKD) kontrolüne odaklan.",
-  mark:      "Yalnızca fotoğraf üzerinde işaretlenmiş alanları analiz et.",
-  sector:    "İnşaat, üretim, depo veya ofis bağlamına göre sektöre özgü risklere odaklan.",
-  urgent:    "Yalnızca kritik ve yüksek seviye anlık riskleri öne çıkar.",
+  general: "Tüm iş güvenliği uygunsuzluklarını geniş kapsamlı tara.",
+  ppe:
+    "Baret, gözlük, eldiven, emniyet kemeri ve yelek (KKD) kontrolüne odaklan.",
+  mark: "Yalnızca fotoğraf üzerinde işaretlenmiş alanları analiz et.",
+  sector:
+    "İnşaat, üretim, depo veya ofis bağlamına göre sektöre özgü risklere odaklan.",
+  urgent: "Yalnızca kritik ve yüksek seviye anlık riskleri öne çıkar.",
   procedure: "Standart İSG prosedürlerine uyumsuzlukları tespit et.",
 };
 
 // DB constraint ile birebir uyumlu Fine-Kinney ölçekleri
 const FK_PROBABILITY_VALUES = [0.2, 0.5, 1, 3, 6, 10];
-const FK_FREQUENCY_VALUES   = [0.5, 1, 2, 3, 6, 10];
-const FK_SEVERITY_VALUES    = [1, 3, 7, 15, 40, 100];
+const FK_FREQUENCY_VALUES = [0.5, 1, 2, 3, 6, 10];
+const FK_SEVERITY_VALUES = [1, 3, 7, 15, 40, 100];
 
 function clampFK(value: number, allowed: number[]): number {
   return allowed.reduce((prev, curr) =>
@@ -59,7 +62,7 @@ function clampFK(value: number, allowed: number[]): number {
 
 // Fine-Kinney skor → risk_level enum
 function fkBand(score: number): "low" | "medium" | "high" | "critical" {
-  if (score < 70)  return "low";
+  if (score < 70) return "low";
   if (score < 200) return "medium";
   if (score < 400) return "high";
   return "critical";
@@ -67,8 +70,8 @@ function fkBand(score: number): "low" | "medium" | "high" | "critical" {
 
 // 5×5 skor → risk_level enum
 function m5Band(score: number): "low" | "medium" | "high" | "critical" {
-  if (score <= 4)  return "low";
-  if (score <= 9)  return "medium";
+  if (score <= 4) return "low";
+  if (score <= 9) return "medium";
   if (score <= 16) return "high";
   return "critical";
 }
@@ -81,28 +84,35 @@ const RESPONSE_SCHEMA = {
       items: {
         type: "OBJECT",
         properties: {
-          title:              { type: "STRING" },
-          category:           { type: "STRING" },
-          observed_evidence:  { type: "STRING" },
-          description:        { type: "STRING" },
+          title: { type: "STRING" },
+          category: { type: "STRING" },
+          observed_evidence: { type: "STRING" },
+          description: { type: "STRING" },
           recommended_action: { type: "STRING" },
-          references:         { type: "STRING" },
-          confidence:         { type: "NUMBER" },
-          fk_probability:     { type: "NUMBER" },
-          fk_frequency:       { type: "NUMBER" },
-          fk_severity:        { type: "NUMBER" },
-          m5_probability:     { type: "NUMBER" },
-          m5_severity:        { type: "NUMBER" },
+          references: { type: "STRING" },
+          confidence: { type: "NUMBER" },
+          fk_probability: { type: "NUMBER" },
+          fk_frequency: { type: "NUMBER" },
+          fk_severity: { type: "NUMBER" },
+          m5_probability: { type: "NUMBER" },
+          m5_severity: { type: "NUMBER" },
         },
         required: [
-          "title", "category", "observed_evidence", "description",
-          "recommended_action", "confidence",
-          "fk_probability", "fk_frequency", "fk_severity",
-          "m5_probability", "m5_severity",
+          "title",
+          "category",
+          "observed_evidence",
+          "description",
+          "recommended_action",
+          "confidence",
+          "fk_probability",
+          "fk_frequency",
+          "fk_severity",
+          "m5_probability",
+          "m5_severity",
         ],
       },
     },
-    ai_summary:  { type: "STRING" },
+    ai_summary: { type: "STRING" },
     limitations: { type: "STRING" },
   },
   required: ["hazards", "ai_summary"],
@@ -119,9 +129,79 @@ class GeminiAPIError extends Error {
   }
 }
 
+type AISimulationMode = "429" | "500" | "502" | "503" | "504" | "invalid_json";
+
+type AISimulationConfig = {
+  enabled: boolean;
+  mode: AISimulationMode | null;
+  once: boolean;
+  remainingFailures: number;
+};
+
+function aiSimulationConfig(): AISimulationConfig {
+  const enabled =
+    Deno.env.get("RISKDETECTED_ENABLE_TEST_SIMULATION") === "true";
+  const rawMode = Deno.env.get("SIMULATE_AI_ERROR_CODE")?.trim().toLowerCase();
+  const validModes = new Set<AISimulationMode>([
+    "429",
+    "500",
+    "502",
+    "503",
+    "504",
+    "invalid_json",
+  ]);
+  const mode = validModes.has(rawMode as AISimulationMode)
+    ? rawMode as AISimulationMode
+    : null;
+  const once = Deno.env.get("SIMULATE_AI_ERROR_ONCE") !== "false";
+
+  return {
+    enabled: enabled && mode !== null,
+    mode,
+    once,
+    remainingFailures: once ? 1 : Number.POSITIVE_INFINITY,
+  };
+}
+
+function maybeSimulateAIError(simulation?: AISimulationConfig) {
+  if (
+    !simulation?.enabled || !simulation.mode ||
+    simulation.remainingFailures <= 0
+  ) {
+    return;
+  }
+
+  simulation.remainingFailures -= 1;
+  console.warn(
+    "RiskDetected AI simulation triggered",
+    JSON.stringify({
+      mode: simulation.mode,
+      once: simulation.once,
+    }),
+  );
+
+  if (simulation.mode === "invalid_json") {
+    throw new SyntaxError("Simulated invalid AI JSON response.");
+  }
+
+  const status = Number(simulation.mode);
+  throw new GeminiAPIError(
+    status,
+    JSON.stringify({
+      error: {
+        code: status,
+        message: `Simulated Gemini HTTP ${status}`,
+        status: status === 429 ? "RESOURCE_EXHAUSTED" : "UNAVAILABLE",
+      },
+    }),
+  );
+}
+
 function buildSystemPrompt(canvases: string[], isPro: boolean): string {
   const maxHazards = isPro ? 14 : 4;
-  const focusLines = canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") || CANVAS_FOCUS["general"];
+  const focusLines =
+    canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") ||
+    CANVAS_FOCUS["general"];
   return `Sen deneyimli bir iş güvenliği (HSE/İSG) uzmanısın. Görevin: verilen görsel ve/veya metin girdisinden İSG tehlikelerini ve risklerini tespit etmek.
 
 ODAK: ${focusLines}
@@ -146,14 +226,18 @@ async function callGemini(
   userText: string | null,
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
+  simulation?: AISimulationConfig,
 ) {
+  maybeSimulateAIError(simulation);
+
   const parts: unknown[] = [];
   for (const img of imageBase64Parts) {
     parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
   }
   if (userPrompt) {
     parts.push({
-      text: `Kullanıcının özel analiz talebi: ${userPrompt}\nBu talebi yalnızca görsel/metin kanıtları destekliyorsa önceliklendir; kanıt yoksa uydurma.`,
+      text:
+        `Kullanıcının özel analiz talebi: ${userPrompt}\nBu talebi yalnızca görsel/metin kanıtları destekliyorsa önceliklendir; kanıt yoksa uydurma.`,
     });
   }
   if (userText) {
@@ -193,7 +277,7 @@ async function callGemini(
 
   return {
     result: JSON.parse(text),
-    inputTokens:  json.usageMetadata?.promptTokenCount     ?? 0,
+    inputTokens: json.usageMetadata?.promptTokenCount ?? 0,
     outputTokens: json.usageMetadata?.candidatesTokenCount ?? 0,
   };
 }
@@ -202,13 +286,16 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function userFacingAIError(err: unknown): { status: number; code: string; message: string } {
+function userFacingAIError(
+  err: unknown,
+): { status: number; code: string; message: string } {
   if (err instanceof GeminiAPIError) {
     if (err.status === 429) {
       return {
         status: 429,
         code: "ai_rate_limited",
-        message: "Gemini kotası doldu. Google AI kullanım limitini veya faturalandırma planını kontrol etmek gerekiyor.",
+        message:
+          "Gemini kotası doldu. Google AI kullanım limitini veya faturalandırma planını kontrol etmek gerekiyor.",
       };
     }
     if (err.status === 503) {
@@ -222,6 +309,14 @@ function userFacingAIError(err: unknown): { status: number; code: string; messag
       status: 502,
       code: "ai_provider_error",
       message: `Gemini servis hatası (${err.status}).`,
+    };
+  }
+
+  if (err instanceof SyntaxError) {
+    return {
+      status: 502,
+      code: "ai_invalid_response",
+      message: "AI yanıtı işlenemedi. Lütfen aynı analizi tekrar dene.",
     };
   }
 
@@ -239,6 +334,7 @@ async function callGeminiWithFallback(
   userText: string | null,
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
+  simulation?: AISimulationConfig,
 ) {
   const models = preferredModel === MODEL_FREE_LITE
     ? [MODEL_FREE_LITE, MODEL_FREE]
@@ -248,17 +344,29 @@ async function callGeminiWithFallback(
   for (const model of [...new Set(models)]) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        const out = await callGemini(apiKey, model, systemPrompt, userText, userPrompt, imageBase64Parts);
+        const out = await callGemini(
+          apiKey,
+          model,
+          systemPrompt,
+          userText,
+          userPrompt,
+          imageBase64Parts,
+          simulation,
+        );
         return { ...out, modelUsed: model };
       } catch (err) {
         lastError = err;
-        const retryable = err instanceof GeminiAPIError && [429, 500, 502, 503, 504].includes(err.status);
-        console.error("Gemini attempt failed", JSON.stringify({
-          model,
-          attempt,
-          retryable,
-          error: String(err),
-        }));
+        const retryable = err instanceof GeminiAPIError &&
+          [429, 500, 502, 503, 504].includes(err.status);
+        console.error(
+          "Gemini attempt failed",
+          JSON.stringify({
+            model,
+            attempt,
+            retryable,
+            error: String(err),
+          }),
+        );
         if (!retryable) throw err;
         if (attempt < 2) await delay(900);
       }
@@ -284,16 +392,19 @@ function errorResponse(status: number, message: string, meta?: {
   supportID?: string;
 }): Response {
   const supportID = meta?.supportID ?? newSupportID();
-  return new Response(JSON.stringify({
-    error: message,
-    message,
-    code: meta?.code ?? "unknown",
-    request_id: meta?.requestID ?? null,
-    support_id: supportID,
-  }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({
+      error: message,
+      message,
+      code: meta?.code ?? "unknown",
+      request_id: meta?.requestID ?? null,
+      support_id: supportID,
+    }),
+    {
+      status,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 }
 
 function base64ToBytes(base64: string): Uint8Array {
@@ -322,7 +433,9 @@ function stripJPEGMetadata(bytes: Uint8Array): Uint8Array {
     if (bytes[offset] !== 0xff) return bytes;
 
     let markerOffset = offset;
-    while (markerOffset < bytes.length && bytes[markerOffset] === 0xff) markerOffset++;
+    while (markerOffset < bytes.length && bytes[markerOffset] === 0xff) {
+      markerOffset++;
+    }
     if (markerOffset >= bytes.length) return bytes;
 
     const marker = bytes[markerOffset];
@@ -335,7 +448,9 @@ function stripJPEGMetadata(bytes: Uint8Array): Uint8Array {
     }
 
     // Standalone markers without payload length.
-    if (marker === 0xd9 || (marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) {
+    if (
+      marker === 0xd9 || (marker >= 0xd0 && marker <= 0xd7) || marker === 0x01
+    ) {
       chunks.push(bytes.subarray(markerOffset - 1, offset));
       continue;
     }
@@ -362,15 +477,17 @@ function stripJPEGMetadata(bytes: Uint8Array): Uint8Array {
 
 function stripPNGMetadata(bytes: Uint8Array): Uint8Array {
   const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-  if (bytes.length < signature.length || !signature.every((b, i) => bytes[i] === b)) return bytes;
+  if (
+    bytes.length < signature.length ||
+    !signature.every((b, i) => bytes[i] === b)
+  ) return bytes;
 
   const chunks: Uint8Array[] = [bytes.subarray(0, 8)];
   let offset = 8;
   const metadataChunkTypes = new Set(["eXIf", "tEXt", "zTXt", "iTXt", "tIME"]);
 
   while (offset + 12 <= bytes.length) {
-    const length =
-      (bytes[offset] << 24) |
+    const length = (bytes[offset] << 24) |
       (bytes[offset + 1] << 16) |
       (bytes[offset + 2] << 8) |
       bytes[offset + 3];
@@ -436,18 +553,27 @@ function sanitizedUserPrompt(value: unknown): string | null {
 
 // deno-lint-ignore no-explicit-any
 async function logUsage(supabase: any, data: any) {
-  try { await supabase.from("ai_usage_logs").insert(data); }
-  catch (e) { console.error("Usage log insert failed:", e); }
+  try {
+    await supabase.from("ai_usage_logs").insert(data);
+  } catch (e) {
+    console.error("Usage log insert failed:", e);
+  }
 }
 
-const BAND_RANK: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
+const BAND_RANK: Record<string, number> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+  critical: 3,
+};
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
       headers: {
-        "Access-Control-Allow-Origin":  "*",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers":
+          "authorization, x-client-info, apikey, content-type",
       },
     });
   }
@@ -460,38 +586,84 @@ serve(async (req: Request) => {
   );
 
   const fallbackRequestID = crypto.randomUUID();
-  let requestID = normalizedTraceValue(req.headers.get("x-request-id"), fallbackRequestID);
-  let supportID = normalizedTraceValue(req.headers.get("x-support-id"), newSupportID());
+  let requestID = normalizedTraceValue(
+    req.headers.get("x-request-id"),
+    fallbackRequestID,
+  );
+  let supportID = normalizedTraceValue(
+    req.headers.get("x-support-id"),
+    newSupportID(),
+  );
 
   const geminiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!geminiKey) return errorResponse(500, "GEMINI_API_KEY secret eksik.", { code: "missing_secret", requestID, supportID });
+  if (!geminiKey) {
+    return errorResponse(500, "GEMINI_API_KEY secret eksik.", {
+      code: "missing_secret",
+      requestID,
+      supportID,
+    });
+  }
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return errorResponse(401, "Authorization header eksik.", { code: "auth_required", requestID, supportID });
+  if (!authHeader) {
+    return errorResponse(401, "Authorization header eksik.", {
+      code: "auth_required",
+      requestID,
+      supportID,
+    });
+  }
 
-  // deno-lint-ignore no-explicit-any
   const { data: { user }, error: authErr } = await supabase.auth.getUser(
     authHeader.replace("Bearer ", ""),
   );
-  if (authErr || !user) return errorResponse(401, "Geçersiz token.", { code: "auth_invalid", requestID, supportID });
+  if (authErr || !user) {
+    return errorResponse(401, "Geçersiz token.", {
+      code: "auth_invalid",
+      requestID,
+      supportID,
+    });
+  }
 
   // deno-lint-ignore no-explicit-any
   let body: any;
-  try { body = await req.json(); }
-  catch { return errorResponse(400, "Geçersiz JSON body.", { code: "invalid_json", requestID, supportID }); }
+  try {
+    body = await req.json();
+  } catch {
+    return errorResponse(400, "Geçersiz JSON body.", {
+      code: "invalid_json",
+      requestID,
+      supportID,
+    });
+  }
 
-  const { analysis_id, canvas, canvases, text_input, photo_paths = [], photo_base64_parts = [] } = body;
+  const {
+    analysis_id,
+    canvas,
+    canvases,
+    text_input,
+    photo_paths = [],
+    photo_base64_parts = [],
+  } = body;
   requestID = normalizedTraceValue(body.request_id, requestID);
   supportID = normalizedTraceValue(body.support_id, supportID);
   const userPrompt = sanitizedUserPrompt(body.user_prompt);
-  if (!analysis_id) return errorResponse(400, "analysis_id zorunlu.", { code: "validation_failed", requestID, supportID });
+  if (!analysis_id) {
+    return errorResponse(400, "analysis_id zorunlu.", {
+      code: "validation_failed",
+      requestID,
+      supportID,
+    });
+  }
 
-  console.log("Analyze request started", JSON.stringify({
-    request_id: requestID,
-    support_id: supportID,
-    analysis_id,
-    user_id: user.id,
-  }));
+  console.log(
+    "Analyze request started",
+    JSON.stringify({
+      request_id: requestID,
+      support_id: supportID,
+      analysis_id,
+      user_id: user.id,
+    }),
+  );
 
   // Profil + tier
   const { data: profile } = await supabase
@@ -513,13 +685,21 @@ serve(async (req: Request) => {
 
     if ((count ?? 0) >= FREE_DAILY_LIMIT) {
       await supabase.from("analyses")
-        .update({ status: "failed", status_message: `Günlük kota doldu (${FREE_DAILY_LIMIT}/gün). Destek kodu: ${supportID}` })
+        .update({
+          status: "failed",
+          status_message:
+            `Günlük kota doldu (${FREE_DAILY_LIMIT}/gün). Destek kodu: ${supportID}`,
+        })
         .eq("id", analysis_id);
-      return errorResponse(429, `Günlük kota doldu (${FREE_DAILY_LIMIT} analiz/gün).`, {
-        code: "quota_exceeded",
-        requestID,
-        supportID,
-      });
+      return errorResponse(
+        429,
+        `Günlük kota doldu (${FREE_DAILY_LIMIT} analiz/gün).`,
+        {
+          code: "quota_exceeded",
+          requestID,
+          supportID,
+        },
+      );
     }
   }
 
@@ -530,7 +710,9 @@ serve(async (req: Request) => {
 
   const model = isPro
     ? MODEL_PRO
-    : (canvas === "urgent" || canvas === "procedure" ? MODEL_FREE : MODEL_FREE_LITE);
+    : (canvas === "urgent" || canvas === "procedure"
+      ? MODEL_FREE
+      : MODEL_FREE_LITE);
 
   // Storage → base64
   const imageBase64Parts: { mimeType: string; data: string }[] = [];
@@ -541,7 +723,9 @@ serve(async (req: Request) => {
     width: number;
     height: number;
   }[] = [];
-  const inlinePhotoCount = Array.isArray(photo_base64_parts) ? photo_base64_parts.length : 0;
+  const inlinePhotoCount = Array.isArray(photo_base64_parts)
+    ? photo_base64_parts.length
+    : 0;
   const storagePhotoCount = Array.isArray(photo_paths) ? photo_paths.length : 0;
 
   for (const part of photo_base64_parts) {
@@ -606,18 +790,26 @@ serve(async (req: Request) => {
   }
 
   for (const path of photo_paths) {
-    const { data: fileData, error: storageErr } = await supabase.storage.from("photos").download(path);
-    if (storageErr || !fileData) { console.error("Storage download error:", storageErr); continue; }
+    const { data: fileData, error: storageErr } = await supabase.storage.from(
+      "photos",
+    ).download(path);
+    if (storageErr || !fileData) {
+      console.error("Storage download error:", storageErr);
+      continue;
+    }
     const buffer = await fileData.arrayBuffer();
     const bytes = new Uint8Array(buffer);
     let binary = "";
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
     const base64 = btoa(binary);
     const mimeType = path.endsWith(".png") ? "image/png" : "image/jpeg";
     imageBase64Parts.push({ mimeType, data: base64 });
   }
 
   const systemPrompt = buildSystemPrompt(canvases ?? [canvas], isPro);
+  const aiSimulation = aiSimulationConfig();
   const inputAudit = {
     input_mode: imageBase64Parts.length > 0 ? "photo" : "text",
     inline_photo_count: inlinePhotoCount,
@@ -630,6 +822,8 @@ serve(async (req: Request) => {
     request_id: requestID,
     support_id: supportID,
     model,
+    test_simulation_enabled: aiSimulation.enabled,
+    test_simulation_mode: aiSimulation.enabled ? aiSimulation.mode : null,
   };
 
   // deno-lint-ignore no-explicit-any
@@ -639,7 +833,15 @@ serve(async (req: Request) => {
   let modelUsed = model;
 
   try {
-    const out = await callGeminiWithFallback(geminiKey, model, systemPrompt, text_input ?? null, userPrompt, imageBase64Parts);
+    const out = await callGeminiWithFallback(
+      geminiKey,
+      model,
+      systemPrompt,
+      text_input ?? null,
+      userPrompt,
+      imageBase64Parts,
+      aiSimulation,
+    );
     geminiResult = out.result;
     inputTokens = out.inputTokens;
     outputTokens = out.outputTokens;
@@ -649,14 +851,26 @@ serve(async (req: Request) => {
     aiError = String(err);
     const cleanError = userFacingAIError(err);
     await supabase.from("analyses")
-      .update({ status: "failed", status_message: `${cleanError.message} Destek kodu: ${supportID}` })
+      .update({
+        status: "failed",
+        status_message: `${cleanError.message} Destek kodu: ${supportID}`,
+      })
       .eq("id", analysis_id);
     await logUsage(supabase, {
-      analysis_id, user_id: user.id, provider: "gemini", model,
-      tokens_in: 0, tokens_out: 0,
-      duration_ms: Date.now() - startMs, error: aiError, user_plan: isPro ? "pro" : "free",
-      request_id: requestID, support_id: supportID, error_code: cleanError.code,
-      http_status: cleanError.status, fallback_source: modelUsed === model ? null : modelUsed,
+      analysis_id,
+      user_id: user.id,
+      provider: "gemini",
+      model,
+      tokens_in: 0,
+      tokens_out: 0,
+      duration_ms: Date.now() - startMs,
+      error: aiError,
+      user_plan: isPro ? "pro" : "free",
+      request_id: requestID,
+      support_id: supportID,
+      error_code: cleanError.code,
+      http_status: cleanError.status,
+      fallback_source: modelUsed === model ? null : modelUsed,
     });
     return errorResponse(cleanError.status, cleanError.message, {
       code: cleanError.code,
@@ -675,44 +889,49 @@ serve(async (req: Request) => {
   // deno-lint-ignore no-explicit-any
   const findingRows = hazards.map((h: any, i: number) => {
     const fkP = clampFK(h.fk_probability, FK_PROBABILITY_VALUES);
-    const fkF = clampFK(h.fk_frequency,   FK_FREQUENCY_VALUES);
-    const fkS = clampFK(h.fk_severity,    FK_SEVERITY_VALUES);
+    const fkF = clampFK(h.fk_frequency, FK_FREQUENCY_VALUES);
+    const fkS = clampFK(h.fk_severity, FK_SEVERITY_VALUES);
     const fkSc = fkP * fkF * fkS;
-    const fkB  = fkBand(fkSc);
-    const m5P  = Math.max(1, Math.min(5, Math.round(h.m5_probability)));
-    const m5S  = Math.max(1, Math.min(5, Math.round(h.m5_severity)));
+    const fkB = fkBand(fkSc);
+    const m5P = Math.max(1, Math.min(5, Math.round(h.m5_probability)));
+    const m5S = Math.max(1, Math.min(5, Math.round(h.m5_severity)));
     const m5Sc = m5P * m5S;
-    const m5B  = m5Band(m5Sc);
+    const m5B = m5Band(m5Sc);
     totalScoreFK += fkSc;
     totalScoreM5 += m5Sc;
     if (BAND_RANK[fkB] > BAND_RANK[highestBandFK]) highestBandFK = fkB;
     if (BAND_RANK[m5B] > BAND_RANK[highestBandM5]) highestBandM5 = m5B;
     return {
       analysis_id,
-      user_id:           user.id,
-      ordinal:           i + 1,
-      title:             h.title,
-      category:          h.category ?? "",
-      description:       `${h.observed_evidence}\n\n${h.description}`.trim(),
+      user_id: user.id,
+      ordinal: i + 1,
+      title: h.title,
+      category: h.category ?? "",
+      description: `${h.observed_evidence}\n\n${h.description}`.trim(),
       recommended_action: h.recommended_action,
-      references_text:   h.references ?? "",
-      confidence:        Math.max(0, Math.min(1, h.confidence)),
-      fk_probability:    fkP,
-      fk_frequency:      fkF,
-      fk_severity:       fkS,
-      fk_band:           fkB,
-      m5_probability:    m5P,
-      m5_severity:       m5S,
-      m5_band:           m5B,
+      references_text: h.references ?? "",
+      confidence: Math.max(0, Math.min(1, h.confidence)),
+      fk_probability: fkP,
+      fk_frequency: fkF,
+      fk_severity: fkS,
+      fk_band: fkB,
+      m5_probability: m5P,
+      m5_severity: m5S,
+      m5_band: m5B,
     };
   });
 
   if (findingRows.length > 0) {
-    const { error: findingsErr } = await supabase.from("findings").insert(findingRows);
+    const { error: findingsErr } = await supabase.from("findings").insert(
+      findingRows,
+    );
     if (findingsErr) {
       console.error("Findings insert error:", findingsErr);
       await supabase.from("analyses")
-        .update({ status: "failed", status_message: `Findings DB hatası. Destek kodu: ${supportID}` })
+        .update({
+          status: "failed",
+          status_message: `Findings DB hatası. Destek kodu: ${supportID}`,
+        })
         .eq("id", analysis_id);
       return errorResponse(500, "Bulgular kaydedilemedi.", {
         code: "findings_insert_failed",
@@ -723,29 +942,45 @@ serve(async (req: Request) => {
   }
 
   await supabase.from("analyses").update({
-    status:           "completed",
-    status_message:   `Gemini ${modelUsed} · ${imageBase64Parts.length} foto · ${text_input ? "metin var" : "metin yok"} · ${supportID}`,
-    completed_at:     new Date().toISOString(),
-    ai_summary:       geminiResult.ai_summary,
-    total_score_fk:   totalScoreFK,
-    total_score_m5:   totalScoreM5,
-    highest_band_fk:  highestBandFK,
-    highest_band_m5:  highestBandM5,
-    finding_count:    findingRows.length,
-    raw_ai_response:  { ...geminiResult, _input_audit: inputAudit },
-    ai_models_used:   [modelUsed],
+    status: "completed",
+    status_message: `Gemini ${modelUsed} · ${imageBase64Parts.length} foto · ${
+      text_input ? "metin var" : "metin yok"
+    } · ${supportID}`,
+    completed_at: new Date().toISOString(),
+    ai_summary: geminiResult.ai_summary,
+    total_score_fk: totalScoreFK,
+    total_score_m5: totalScoreM5,
+    highest_band_fk: highestBandFK,
+    highest_band_m5: highestBandM5,
+    finding_count: findingRows.length,
+    raw_ai_response: { ...geminiResult, _input_audit: inputAudit },
+    ai_models_used: [modelUsed],
   }).eq("id", analysis_id);
 
   await logUsage(supabase, {
-    analysis_id, user_id: user.id, provider: "gemini", model: modelUsed,
-    tokens_in: inputTokens, tokens_out: outputTokens,
-    duration_ms: Date.now() - startMs, error: null, user_plan: isPro ? "pro" : "free",
-    request_id: requestID, support_id: supportID, error_code: null, http_status: 200,
+    analysis_id,
+    user_id: user.id,
+    provider: "gemini",
+    model: modelUsed,
+    tokens_in: inputTokens,
+    tokens_out: outputTokens,
+    duration_ms: Date.now() - startMs,
+    error: null,
+    user_plan: isPro ? "pro" : "free",
+    request_id: requestID,
+    support_id: supportID,
+    error_code: null,
+    http_status: 200,
     fallback_source: modelUsed === model ? null : modelUsed,
   });
 
   return new Response(
-    JSON.stringify({ ok: true, finding_count: findingRows.length, request_id: requestID, support_id: supportID }),
+    JSON.stringify({
+      ok: true,
+      finding_count: findingRows.length,
+      request_id: requestID,
+      support_id: supportID,
+    }),
     { headers: { "Content-Type": "application/json" } },
   );
 });

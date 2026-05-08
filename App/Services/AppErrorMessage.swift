@@ -8,6 +8,7 @@ struct AppErrorMessage: Equatable {
         case storageDenied
         case aiRateLimited
         case aiUnavailable
+        case aiInvalidResponse
         case reportArchiveFailed
         case pdfRenderFailed
         case validationFailed
@@ -45,7 +46,11 @@ struct AppErrorMessage: Equatable {
         let lower = raw.lowercased(with: Locale(identifier: "tr_TR"))
         let supportID = Self.existingSupportID(in: raw) ?? Self.newSupportID()
 
-        if lower.contains("kota") || lower.contains("analiz/gün") || lower.contains("quota") {
+        let isDailyQuota = lower.contains("günlük kota") ||
+            lower.contains("analiz/gün") ||
+            lower.contains("quota_exceeded") ||
+            lower.contains("ücretsiz analiz hakk")
+        if isDailyQuota {
             return AppErrorMessage(
                 title: "Günlük limit doldu",
                 message: "Bugünkü ücretsiz analiz hakkın dolmuş görünüyor.",
@@ -55,7 +60,12 @@ struct AppErrorMessage: Equatable {
             )
         }
 
-        if lower.contains("429") || lower.contains("rate") || lower.contains("resource_exhausted") {
+        if lower.contains("429") ||
+            lower.contains("rate") ||
+            lower.contains("resource_exhausted") ||
+            lower.contains("gemini kotası") ||
+            lower.contains("ai sağlayıcısı")
+        {
             return AppErrorMessage(
                 title: "AI servisi yoğun",
                 message: "AI sağlayıcısı şu anda isteği kabul etmedi. Bu genellikle geçici kota veya yoğunluk durumlarında olur.",
@@ -71,6 +81,20 @@ struct AppErrorMessage: Equatable {
                 message: "Analiz modeli şu anda yoğun veya geçici olarak erişilemiyor.",
                 action: "Kısa süre sonra tekrar dene. Fotoğraf ve seçtiğin analiz odağı korunuyorsa işlemi yeniden başlatabilirsin.",
                 category: .aiUnavailable,
+                supportID: supportID
+            )
+        }
+
+        if lower.contains("yanıtı işlenemedi") ||
+            lower.contains("yaniti islenemedi") ||
+            lower.contains("ai_invalid_response") ||
+            lower.contains("json") && lower.contains("ai")
+        {
+            return AppErrorMessage(
+                title: "AI yanıtı işlenemedi",
+                message: "Analiz modeli yanıt verdi ancak sonuç beklenen formatta işlenemedi.",
+                action: "Aynı analizi tekrar dene. Tekrar ederse destek koduyla birlikte bildir.",
+                category: .aiInvalidResponse,
                 supportID: supportID
             )
         }

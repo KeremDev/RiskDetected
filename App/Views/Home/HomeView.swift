@@ -8,7 +8,7 @@ import SwiftUI
 struct AnalysisJob: Identifiable {
     let id = UUID()
     let previewImage: UIImage?
-    let work: () async throws -> AnalysisResultBundle
+    let work: (@escaping @MainActor (AnalysisProgressUpdate) -> Void) async throws -> AnalysisResultBundle
 }
 
 struct HomeView: View {
@@ -699,11 +699,13 @@ struct HomeView: View {
                 return
             }
             pendingJob = AnalysisJob(previewImage: img) {
+                progress in
                 try await AnalysisService.shared.runPhotoAnalysis(
                     userID: userID,
                     images: [img],
                     canvases: canvases,
-                    userPrompt: capturedPrompt
+                    userPrompt: capturedPrompt,
+                    onProgress: progress
                 )
             }
         case .text:
@@ -712,11 +714,13 @@ struct HomeView: View {
                 return
             }
             pendingJob = AnalysisJob(previewImage: nil) {
+                progress in
                 try await AnalysisService.shared.runTextAnalysis(
                     userID: userID,
                     text: trimmed,
                     canvases: canvases,
-                    userPrompt: capturedPrompt
+                    userPrompt: capturedPrompt,
+                    onProgress: progress
                 )
             }
         }

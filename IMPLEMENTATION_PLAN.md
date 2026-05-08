@@ -197,12 +197,19 @@ These items exist in some form, but need revision before we treat them as produc
    - pass request id to Edge Function and log it in `ai_usage_logs` / report metadata where relevant;
    - log normalized error code, provider/model, status code, latency and retry/fallback outcome.
 4. Retry and fallback UX:
+   - Started: iOS analysis flow retries transient Edge Function / Gemini failures once for the same analysis record instead of creating duplicate analyses;
+   - Started: Analyzing screen can show a compact "AI servisi yoğun, tekrar deneniyor" status card while retrying;
+   - Started: retry attempts are logged with request/support ids in app logs;
    - add controlled retry for Gemini 429/503/timeouts;
    - show "tekrar deneniyor" / fallback provider state when applicable;
    - avoid duplicate analysis/report creation on retry.
 5. QA and simulator test matrix:
-   - create a checklist to manually trigger quota full, offline/network fail, invalid API key, Gemini 429/503, Storage policy failure, PDF archive failure, missing photo and expired session;
+   - Started: QA matrix created at `QA/P1_5_Error_Test_Matrix.md`;
+   - checklist covers quota full, offline/network fail, expired session, Gemini 429/503, invalid AI response, Storage policy failure, PDF render/archive failure, report download/delete failure, missing photo/text validation and data/account actions;
    - verify each case displays the intended message and does not leave the UI stuck.
+   - Done: deterministic test-only Edge Function flags added and deployed for AI 429/500/502/503/504 and invalid JSON simulation; guarded by `RISKDETECTED_ENABLE_TEST_SIMULATION=true`.
+   - Done: simulator verified AI 429, AI 503 and invalid AI JSON paths; alerts show normalized Turkish messages and `ai_usage_logs` contains matching `support_id` rows.
+   - Follow-up: add deterministic test-only report/archive failure simulation so PDF Storage and reports metadata paths can be tested without changing production policies.
 
 ### P2 - Auth and Subscription
 

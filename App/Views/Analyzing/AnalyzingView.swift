@@ -5,7 +5,7 @@ struct AnalyzingView: View {
     /// Parent'tan binding — dismiss için daha güvenilir (iOS 26 fullScreenCover).
     @Binding var isPresented: Bool
     /// nil = preview / mock modu; set edilirse gerçek analiz çalıştırılır.
-    var asyncWork: (() async throws -> AnalysisResultBundle)? = nil
+    var asyncWork: ((@escaping @MainActor (AnalysisProgressUpdate) -> Void) async throws -> AnalysisResultBundle)? = nil
     var previewImage: UIImage? = nil
     var onComplete: (AnalysisResultBundle?) -> Void = { _ in }
     var onError: (String) -> Void = { _ in }
@@ -24,6 +24,7 @@ struct AnalyzingView: View {
     @State private var workDone = false
     @State private var workResult: AnalysisResultBundle? = nil
     @State private var animDone = false
+    @State private var progressUpdate: AnalysisProgressUpdate?
 
     var body: some View {
         ZStack {
@@ -39,7 +40,13 @@ struct AnalyzingView: View {
                     .font(.system(size: 22, weight: .bold))
                     .tracking(-0.4)
                     .foregroundStyle(Color.rdBlack)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, progressUpdate == nil ? 24 : 12)
+
+                if let progressUpdate {
+                    progressStatus(progressUpdate)
+                        .padding(.bottom, 18)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
 
                 stepsList
 
@@ -117,6 +124,35 @@ struct AnalyzingView: View {
         .frame(maxWidth: 320)
     }
 
+    private func progressStatus(_ update: AnalysisProgressUpdate) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: update.icon)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(Color.rdGreen)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(update.title)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.rdBlack)
+                Text(update.message)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.rdSlate)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: 320, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.rdGreenSoft.opacity(0.7))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.rdGreen.opacity(0.16), lineWidth: 1)
+                )
+        )
+    }
+
     @ViewBuilder
     private func stepDot(index: Int) -> some View {
         ZStack {
@@ -168,7 +204,11 @@ struct AnalyzingView: View {
         }
         workTask = Task { @MainActor in
             do {
-                let result = try await work()
+                let result = try await work { update in
+                    withAnimation(.easeInOut(duration: 0.22)) {
+                        progressUpdate = update
+                    }
+                }
                 if Task.isCancelled { return }
                 workResult = result
                 workDone = true
