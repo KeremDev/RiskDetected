@@ -13,6 +13,8 @@ struct ReportView: View {
     @State private var deletingReportID: UUID?
     @State private var reportPendingDelete: ReportRow?
     @State private var isGeneratingPDF = false
+    @State private var pdfProgress: Double = 0
+    @State private var pdfProgressTask: Task<Void, Never>?
     @State private var errorMessage: String?
     @State private var showPaywall = false
     @State private var showReportSettings = false
@@ -42,6 +44,13 @@ struct ReportView: View {
             }
         }
         .background(Color.rdCloud)
+        .overlay {
+            if isGeneratingPDF {
+                PDFGenerationOverlay(progress: pdfProgress)
+                    .zIndex(20)
+            }
+        }
+        .animation(.easeInOut(duration: 0.22), value: isGeneratingPDF)
         .task {
             await loadReports()
         }
@@ -351,10 +360,11 @@ struct ReportView: View {
             return
         }
 
-        isGeneratingPDF = true
+        startPDFProgress()
         Task {
             do {
                 let reportImage = try await loadReportImage(for: selectedBundle)
+                advancePDFProgress(to: 0.23)
                 let resolvedOptions = options ?? PDFReportOptions.standard(method: .fineKinney)
                 let input = PDFReportService.ReportInput(
                     bundle: selectedBundle,
@@ -364,7 +374,8 @@ struct ReportView: View {
                     companyLogo: companyLogo,
                     options: resolvedOptions
                 )
-                let url = try PDFReportService.shared.generate(input: input)
+                let url = try await PDFReportService.shared.generateAsync(input: input)
+                advancePDFProgress(to: 0.71)
                 do {
                     _ = try await AnalysisService.shared.storeReport(
                         userID: userID,
@@ -373,19 +384,75 @@ struct ReportView: View {
                         kind: resolvedOptions.kind,
                         method: resolvedOptions.method
                     )
+                    advancePDFProgress(to: 0.88)
                     storedReports = (try? await AnalysisService.shared.listReports(limit: 20)) ?? storedReports
+                    advancePDFProgress(to: 0.94)
                 } catch {
-                    errorMessage = "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)"
-                    isGeneratingPDF = false
+                    stopPDFGenerationWithError("PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)")
                     return
                 }
-                shareItem = ShareItem(url: url)
-                isGeneratingPDF = false
+                await completePDFGeneration(url: url)
             } catch {
-                errorMessage = error.localizedDescription
-                isGeneratingPDF = false
+                stopPDFGenerationWithError(error.localizedDescription)
             }
         }
+    }
+
+    @MainActor
+    private func startPDFProgress() {
+        pdfProgressTask?.cancel()
+        pdfProgress = 0.07
+        isGeneratingPDF = true
+
+        pdfProgressTask = Task { @MainActor in
+            let waypoints: [Double] = [0.12, 0.18, 0.23, 0.31, 0.38, 0.46, 0.54, 0.61, 0.68, 0.71, 0.76, 0.81, 0.86, 0.90]
+            for point in waypoints {
+                try? await Task.sleep(nanoseconds: 420_000_000)
+                guard !Task.isCancelled else { return }
+                advancePDFProgress(to: point)
+            }
+
+            while !Task.isCancelled && pdfProgress < 0.94 {
+                try? await Task.sleep(nanoseconds: 850_000_000)
+                guard !Task.isCancelled else { return }
+                advancePDFProgress(to: min(pdfProgress + 0.01, 0.94))
+            }
+        }
+    }
+
+    @MainActor
+    private func advancePDFProgress(to value: Double) {
+        guard isGeneratingPDF else { return }
+        let nextValue = max(pdfProgress, min(max(value, 0), 0.98))
+        withAnimation(.easeInOut(duration: 0.28)) {
+            pdfProgress = nextValue
+        }
+    }
+
+    @MainActor
+    private func completePDFGeneration(url: URL) async {
+        pdfProgressTask?.cancel()
+        pdfProgressTask = nil
+        withAnimation(.easeInOut(duration: 0.24)) {
+            pdfProgress = 0.98
+        }
+        try? await Task.sleep(nanoseconds: 220_000_000)
+        withAnimation(.easeInOut(duration: 0.22)) {
+            pdfProgress = 1
+        }
+        try? await Task.sleep(nanoseconds: 260_000_000)
+        shareItem = ShareItem(url: url)
+        isGeneratingPDF = false
+        pdfProgress = 0
+    }
+
+    @MainActor
+    private func stopPDFGenerationWithError(_ message: String) {
+        pdfProgressTask?.cancel()
+        pdfProgressTask = nil
+        errorMessage = message
+        isGeneratingPDF = false
+        pdfProgress = 0
     }
 
     private func download(_ report: ReportRow) {

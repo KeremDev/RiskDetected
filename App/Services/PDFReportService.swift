@@ -49,8 +49,7 @@ struct PDFReportOptions: Equatable {
     }
 }
 
-@MainActor
-final class PDFReportService {
+final class PDFReportService: @unchecked Sendable {
     static let shared = PDFReportService()
 
     private init() {}
@@ -62,6 +61,21 @@ final class PDFReportService {
         let image: UIImage?
         let companyLogo: UIImage?
         let options: PDFReportOptions
+    }
+
+    func generateAsync(input: ReportInput) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async { [self] in
+                do {
+                    let url = try autoreleasepool {
+                        try generate(input: input)
+                    }
+                    continuation.resume(returning: url)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
     }
 
     func generate(input: ReportInput) throws -> URL {
