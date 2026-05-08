@@ -359,7 +359,7 @@ struct ProfileView: View {
         pendingDataAction = nil
 
         guard let userID = app.auth.session?.user.id else {
-            dataMessage = "Bu işlem için yeniden giriş yapmalısın."
+            dataMessage = AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated, context: "Veri işlemi yapılamadı").fullText
             return
         }
 
@@ -387,7 +387,7 @@ struct ProfileView: View {
                     dataMessage = "Hesap silme talebin kaydedildi. Bu işlem yetkili backend/admin süreciyle tamamlanacak."
                 }
             } catch {
-                dataMessage = error.localizedDescription
+                dataMessage = AppErrorMessage.make(error, context: "Veri işlemi tamamlanamadı", fallbackTitle: "Veri işlemi tamamlanamadı").fullText
             }
             dataActionInProgress = nil
         }

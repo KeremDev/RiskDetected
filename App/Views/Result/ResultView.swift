@@ -553,10 +553,16 @@ struct ResultView: View {
     private func generateAndSharePDF(options: PDFReportOptions? = nil) {
         guard !pdfGeneration.isActive else { return }
         guard let bundle else {
-            pdfError = "PDF oluşturmak için tamamlanmış bir analiz bulunamadı."
+            pdfError = AppErrorMessage.make(
+                AnalysisService.AnalysisError.invalidInput("PDF oluşturmak için tamamlanmış bir analiz bulunamadı."),
+                context: "PDF oluşturulamadı",
+                fallbackTitle: "PDF oluşturulamadı"
+            ).fullText
             return
         }
 
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
         pdfGeneration.start()
         Task {
             do {
@@ -580,12 +586,18 @@ struct ResultView: View {
                             bundle: bundle,
                             fileURL: url,
                             kind: resolvedOptions.kind,
-                            method: resolvedOptions.method
+                            method: resolvedOptions.method,
+                            requestID: requestID,
+                            supportID: supportID
                         )
                         pdfGeneration.advance(to: 0.92)
                     } catch {
                         pdfGeneration.stop()
-                        pdfError = "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)"
+                        pdfError = AppErrorMessage.make(
+                            rawMessage: "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)\nDestek kodu: \(supportID)",
+                            context: "Rapor arşive kaydedilemedi",
+                            fallbackTitle: "Rapor arşive kaydedilemedi"
+                        ).fullText
                         return
                     }
                 }
@@ -593,7 +605,11 @@ struct ResultView: View {
                 shareItem = ShareItem(url: url)
             } catch {
                 pdfGeneration.stop()
-                pdfError = error.localizedDescription
+                pdfError = AppErrorMessage.make(
+                    rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                    context: "PDF oluşturulamadı",
+                    fallbackTitle: "PDF oluşturulamadı"
+                ).fullText
             }
         }
     }

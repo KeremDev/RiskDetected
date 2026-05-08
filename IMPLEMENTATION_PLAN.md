@@ -3,7 +3,7 @@
 ## Current Phase
 
 - FAZ 1: iOS app MVP + Supabase/Gemini analysis flow.
-- Current focus: finish P1 privacy/legal trust work, then move into auth/subscription hardening and AI reliability.
+- Current focus: finish P1 privacy/legal trust work, then move into error/message hardening, auth/subscription hardening and AI reliability.
 - Product scope: individual HSE/ISG expert workflow. OSGB/corporate multi-tenant panels are out of scope for now.
 
 ## Completed
@@ -75,9 +75,18 @@ These items exist in some form, but need revision before we treat them as produc
    - Target: full backend preprocessing pipeline for standard resize/quality, face blur and logo blur.
    - Storage rule target: store only cleaned/blurred images when possible; avoid long-term original image storage.
 
-4. Error handling
-   - Current state: quota, Gemini 429 and Gemini 503 are mapped to user-facing messages.
-   - Target: structured error UX with "what happened", "what to do", support request id and retry/fallback state.
+4. Error handling and error-message system
+   - Current state: quota, Gemini 429/503 and several PDF/report errors are mapped to user-facing messages, but the system is still fragmented.
+   - Target: comprehensive error research and implementation pass across iOS, Supabase, Storage, Edge Functions, Gemini, PDF generation and auth.
+   - Scope:
+     - inventory every known error source and user-visible failure path;
+     - normalize technical errors into stable app error categories;
+     - show clear Turkish user messages with "ne oldu", "ne yapmalisin" and optional retry/pro action;
+     - keep raw technical detail out of normal alerts, but attach support/debug id for follow-up;
+     - record provider/status/request ids in logs where available;
+     - handle retry/fallback states for AI 429/503/timeouts and invalid JSON;
+     - improve PDF/report archive errors so user sees whether local PDF was created, upload failed or DB metadata failed;
+     - add QA checklist for forcing each error path in simulator and Supabase logs.
 
 5. Pro AI confidence upgrade
    - Current state: confidence is displayed and Pro copy exists.
@@ -164,6 +173,36 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: scheduled daily execution through Supabase Cron (`riskdetected-retention-cleanup-daily`, `15 2 * * *`);
    - Done: Profile > Verilerim section added for JSON export, bulk report delete, bulk analysis delete and account deletion request capture;
    - Follow-up: implement privileged backend/admin completion flow for account deletion requests.
+
+### P1.5 - Error Handling, Messages and Supportability
+
+1. Error inventory and taxonomy:
+   - Started: central `AppErrorMessage` taxonomy added on iOS for primary user-facing categories and support codes;
+   - map all app error sources: auth, profile, quota, photo picker/camera permission, preprocessing/face blur, Storage upload/download, Supabase RLS/DB, Edge Function, Gemini, JSON decoding, PDF generation, report archive upload, network/offline and subscription state;
+   - create stable categories such as `quotaExceeded`, `authRequired`, `networkUnavailable`, `storageDenied`, `aiRateLimited`, `aiUnavailable`, `reportArchiveFailed`, `pdfRenderFailed`, `validationFailed`, `unknown`;
+   - define which errors are user-actionable, retryable, support-only or silently logged.
+2. User-facing message rewrite:
+   - Started: Home, Auth, History, Result, Report and Profile data-action alerts now route major failures through normalized Turkish messages instead of raw backend text;
+   - replace raw backend/HTTP/enum/RLS messages in alerts with short Turkish product messages;
+   - include one clear next action: retry, choose another photo, sign in again, upgrade to Pro, wait and retry, or contact support;
+   - keep technical details behind a collapsible/debug copy action or support id, not in the main alert.
+3. Error logging and support ids:
+   - Started: iOS analysis requests now send `request_id` and `support_id` to the `analyze` Edge Function;
+   - Started: `analyze` returns `request_id`, `support_id` and normalized `code` in function-level error JSON;
+   - Started: `ai_usage_logs` now has `request_id`, `support_id`, `error_code`, `http_status` and `fallback_source` columns;
+   - Started: Edge Function writes trace/support metadata into AI usage logs and raw analysis input audit;
+   - Started: generated PDF reports now write `request_id` and `support_id` into `reports` metadata;
+   - Started: PDF Storage upload, report metadata save, stored report download and single report delete paths share the same support code between app logs and user-facing messages;
+   - generate a client-side request/support id for analysis and PDF flows;
+   - pass request id to Edge Function and log it in `ai_usage_logs` / report metadata where relevant;
+   - log normalized error code, provider/model, status code, latency and retry/fallback outcome.
+4. Retry and fallback UX:
+   - add controlled retry for Gemini 429/503/timeouts;
+   - show "tekrar deneniyor" / fallback provider state when applicable;
+   - avoid duplicate analysis/report creation on retry.
+5. QA and simulator test matrix:
+   - create a checklist to manually trigger quota full, offline/network fail, invalid API key, Gemini 429/503, Storage policy failure, PDF archive failure, missing photo and expired session;
+   - verify each case displays the intended message and does not leave the UI stuck.
 
 ### P2 - Auth and Subscription
 

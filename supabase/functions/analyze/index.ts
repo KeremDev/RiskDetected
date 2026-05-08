@@ -7,6 +7,8 @@
  *   canvases     : string[] (all selected — for future multi-canvas backend)
  *   text_input   : string | null
  *   user_prompt  : string | null (optional, max 100 chars; user focus note)
+ *   request_id   : string | null (client trace id)
+ *   support_id   : string | null (user-facing support code)
  *   photo_paths  : string[] (Storage paths in "photos" bucket)
  *   photo_base64_parts: { mime_type: string; data: string; width?: number; height?: number }[] (inline photos)
  *
@@ -200,28 +202,32 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function userFacingAIError(err: unknown): { status: number; message: string } {
+function userFacingAIError(err: unknown): { status: number; code: string; message: string } {
   if (err instanceof GeminiAPIError) {
     if (err.status === 429) {
       return {
         status: 429,
+        code: "ai_rate_limited",
         message: "Gemini kotası doldu. Google AI kullanım limitini veya faturalandırma planını kontrol etmek gerekiyor.",
       };
     }
     if (err.status === 503) {
       return {
         status: 503,
+        code: "ai_unavailable",
         message: "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.",
       };
     }
     return {
       status: 502,
+      code: "ai_provider_error",
       message: `Gemini servis hatası (${err.status}).`,
     };
   }
 
   return {
     status: 502,
+    code: "ai_failed",
     message: "AI analizi tamamlanamadı. Lütfen tekrar dene.",
   };
 }
@@ -262,8 +268,29 @@ async function callGeminiWithFallback(
   throw lastError ?? new Error("Gemini analizi başarısız.");
 }
 
-function errorResponse(status: number, message: string): Response {
-  return new Response(JSON.stringify({ error: message }), {
+function newSupportID(): string {
+  return `RD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+function normalizedTraceValue(value: unknown, fallback: string): string {
+  if (typeof value !== "string") return fallback;
+  const clean = value.trim().replace(/[^a-zA-Z0-9._:-]/g, "").slice(0, 80);
+  return clean.length > 0 ? clean : fallback;
+}
+
+function errorResponse(status: number, message: string, meta?: {
+  code?: string;
+  requestID?: string;
+  supportID?: string;
+}): Response {
+  const supportID = meta?.supportID ?? newSupportID();
+  return new Response(JSON.stringify({
+    error: message,
+    message,
+    code: meta?.code ?? "unknown",
+    request_id: meta?.requestID ?? null,
+    support_id: supportID,
+  }), {
     status,
     headers: { "Content-Type": "application/json" },
   });
@@ -432,26 +459,39 @@ serve(async (req: Request) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
+  const fallbackRequestID = crypto.randomUUID();
+  let requestID = normalizedTraceValue(req.headers.get("x-request-id"), fallbackRequestID);
+  let supportID = normalizedTraceValue(req.headers.get("x-support-id"), newSupportID());
+
   const geminiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!geminiKey) return errorResponse(500, "GEMINI_API_KEY secret eksik.");
+  if (!geminiKey) return errorResponse(500, "GEMINI_API_KEY secret eksik.", { code: "missing_secret", requestID, supportID });
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return errorResponse(401, "Authorization header eksik.");
+  if (!authHeader) return errorResponse(401, "Authorization header eksik.", { code: "auth_required", requestID, supportID });
 
   // deno-lint-ignore no-explicit-any
   const { data: { user }, error: authErr } = await supabase.auth.getUser(
     authHeader.replace("Bearer ", ""),
   );
-  if (authErr || !user) return errorResponse(401, "Geçersiz token.");
+  if (authErr || !user) return errorResponse(401, "Geçersiz token.", { code: "auth_invalid", requestID, supportID });
 
   // deno-lint-ignore no-explicit-any
   let body: any;
   try { body = await req.json(); }
-  catch { return errorResponse(400, "Geçersiz JSON body."); }
+  catch { return errorResponse(400, "Geçersiz JSON body.", { code: "invalid_json", requestID, supportID }); }
 
   const { analysis_id, canvas, canvases, text_input, photo_paths = [], photo_base64_parts = [] } = body;
+  requestID = normalizedTraceValue(body.request_id, requestID);
+  supportID = normalizedTraceValue(body.support_id, supportID);
   const userPrompt = sanitizedUserPrompt(body.user_prompt);
-  if (!analysis_id) return errorResponse(400, "analysis_id zorunlu.");
+  if (!analysis_id) return errorResponse(400, "analysis_id zorunlu.", { code: "validation_failed", requestID, supportID });
+
+  console.log("Analyze request started", JSON.stringify({
+    request_id: requestID,
+    support_id: supportID,
+    analysis_id,
+    user_id: user.id,
+  }));
 
   // Profil + tier
   const { data: profile } = await supabase
@@ -473,9 +513,13 @@ serve(async (req: Request) => {
 
     if ((count ?? 0) >= FREE_DAILY_LIMIT) {
       await supabase.from("analyses")
-        .update({ status: "failed", status_message: `Günlük kota doldu (${FREE_DAILY_LIMIT}/gün).` })
+        .update({ status: "failed", status_message: `Günlük kota doldu (${FREE_DAILY_LIMIT}/gün). Destek kodu: ${supportID}` })
         .eq("id", analysis_id);
-      return errorResponse(429, `Günlük kota doldu (${FREE_DAILY_LIMIT} analiz/gün).`);
+      return errorResponse(429, `Günlük kota doldu (${FREE_DAILY_LIMIT} analiz/gün).`, {
+        code: "quota_exceeded",
+        requestID,
+        supportID,
+      });
     }
   }
 
@@ -583,6 +627,8 @@ serve(async (req: Request) => {
     text_input_present: Boolean(text_input),
     user_prompt_present: Boolean(userPrompt),
     user_prompt: userPrompt,
+    request_id: requestID,
+    support_id: supportID,
     model,
   };
 
@@ -603,14 +649,20 @@ serve(async (req: Request) => {
     aiError = String(err);
     const cleanError = userFacingAIError(err);
     await supabase.from("analyses")
-      .update({ status: "failed", status_message: cleanError.message })
+      .update({ status: "failed", status_message: `${cleanError.message} Destek kodu: ${supportID}` })
       .eq("id", analysis_id);
     await logUsage(supabase, {
       analysis_id, user_id: user.id, provider: "gemini", model,
       tokens_in: 0, tokens_out: 0,
       duration_ms: Date.now() - startMs, error: aiError, user_plan: isPro ? "pro" : "free",
+      request_id: requestID, support_id: supportID, error_code: cleanError.code,
+      http_status: cleanError.status, fallback_source: modelUsed === model ? null : modelUsed,
     });
-    return errorResponse(cleanError.status, cleanError.message);
+    return errorResponse(cleanError.status, cleanError.message, {
+      code: cleanError.code,
+      requestID,
+      supportID,
+    });
   }
 
   const hazards = geminiResult.hazards ?? [];
@@ -660,15 +712,19 @@ serve(async (req: Request) => {
     if (findingsErr) {
       console.error("Findings insert error:", findingsErr);
       await supabase.from("analyses")
-        .update({ status: "failed", status_message: `Findings DB hatası: ${findingsErr.message}` })
+        .update({ status: "failed", status_message: `Findings DB hatası. Destek kodu: ${supportID}` })
         .eq("id", analysis_id);
-      return errorResponse(500, `DB hatası: ${findingsErr.message}`);
+      return errorResponse(500, "Bulgular kaydedilemedi.", {
+        code: "findings_insert_failed",
+        requestID,
+        supportID,
+      });
     }
   }
 
   await supabase.from("analyses").update({
     status:           "completed",
-    status_message:   `Gemini ${modelUsed} · ${imageBase64Parts.length} foto · ${text_input ? "metin var" : "metin yok"}`,
+    status_message:   `Gemini ${modelUsed} · ${imageBase64Parts.length} foto · ${text_input ? "metin var" : "metin yok"} · ${supportID}`,
     completed_at:     new Date().toISOString(),
     ai_summary:       geminiResult.ai_summary,
     total_score_fk:   totalScoreFK,
@@ -684,10 +740,12 @@ serve(async (req: Request) => {
     analysis_id, user_id: user.id, provider: "gemini", model: modelUsed,
     tokens_in: inputTokens, tokens_out: outputTokens,
     duration_ms: Date.now() - startMs, error: null, user_plan: isPro ? "pro" : "free",
+    request_id: requestID, support_id: supportID, error_code: null, http_status: 200,
+    fallback_source: modelUsed === model ? null : modelUsed,
   });
 
   return new Response(
-    JSON.stringify({ ok: true, finding_count: findingRows.length }),
+    JSON.stringify({ ok: true, finding_count: findingRows.length, request_id: requestID, support_id: supportID }),
     { headers: { "Content-Type": "application/json" } },
   );
 });

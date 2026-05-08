@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import Supabase
 import Vision
+import OSLog
 
 /// Analiz akışını orkestre eder:
 /// 1. `analyses` kaydı oluştur (status: pending)
@@ -11,6 +12,7 @@ import Vision
 final class AnalysisService {
     static let shared = AnalysisService()
     static let freeDailyLimit = 2
+    private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AnalysisService")
     private let supabase = SupabaseService.shared
 
     enum AnalysisError: LocalizedError {
@@ -184,13 +186,16 @@ final class AnalysisService {
         bundle: AnalysisResultBundle,
         fileURL: URL,
         kind: PDFReportKind,
-        method: RiskMethod
+        method: RiskMethod,
+        requestID: String,
+        supportID: String
     ) async throws -> ReportRow {
         let data: Data
         do {
             data = try Data(contentsOf: fileURL)
         } catch {
-            throw AnalysisError.storageFailed("PDF dosyası okunamadı: \(error.localizedDescription)")
+            Self.logger.error("Report read failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.storageFailed("PDF dosyası okunamadı. Destek kodu: \(supportID)")
         }
 
         let fileName = Self.safeReportFileName(for: bundle.analysis, kind: kind, method: method)
@@ -205,7 +210,8 @@ final class AnalysisService {
                     options: FileOptions(contentType: "application/pdf", upsert: true)
                 )
         } catch {
-            throw AnalysisError.storageFailed(error.localizedDescription)
+            Self.logger.error("Report upload failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) path=\(storagePath, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.storageFailed("PDF dosyası rapor arşivine yüklenemedi. Destek kodu: \(supportID)")
         }
 
         struct UpsertPayload: Encodable {
@@ -222,6 +228,8 @@ final class AnalysisService {
             let file_size: Int
             let size_bytes: Int
             let page_count: Int
+            let request_id: String
+            let support_id: String
         }
 
         let fileSize = data.count
@@ -238,7 +246,9 @@ final class AnalysisService {
             mime_type: "application/pdf",
             file_size: fileSize,
             size_bytes: fileSize,
-            page_count: Self.estimatedPageCount(for: kind, findingCount: bundle.findings.count)
+            page_count: Self.estimatedPageCount(for: kind, findingCount: bundle.findings.count),
+            request_id: requestID,
+            support_id: supportID
         )
 
         do {
@@ -251,19 +261,21 @@ final class AnalysisService {
                 .value
             return row
         } catch {
-            throw AnalysisError.databaseFailed(error.localizedDescription)
+            Self.logger.error("Report metadata save failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.databaseFailed("PDF oluşturuldu ancak rapor arşiv kaydı tamamlanamadı. Destek kodu: \(supportID)")
         }
     }
 
     /// Storage'daki PDF raporu indirir ve geçici dosya URL'i döndürür.
-    func reportFileURL(for report: ReportRow) async throws -> URL {
+    func reportFileURL(for report: ReportRow, requestID: String, supportID: String) async throws -> URL {
         let data: Data
         do {
             data = try await supabase.storage
                 .from(RDConfig.Bucket.reports)
                 .download(path: report.storagePath)
         } catch {
-            throw AnalysisError.storageFailed(error.localizedDescription)
+            Self.logger.error("Report download failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.storageFailed("PDF raporu indirilemedi. Destek kodu: \(supportID)")
         }
 
         let safeName = report.fileName.isEmpty ? "RiskDetected_Report_\(report.id.uuidString.prefix(8)).pdf" : report.fileName
@@ -272,18 +284,20 @@ final class AnalysisService {
             try data.write(to: url, options: .atomic)
             return url
         } catch {
-            throw AnalysisError.storageFailed("PDF dosyası hazırlanamadı: \(error.localizedDescription)")
+            Self.logger.error("Report local file write failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.storageFailed("PDF dosyası paylaşım için hazırlanamadı. Destek kodu: \(supportID)")
         }
     }
 
     /// Kullanıcının seçtiği tek PDF raporu ve ilişkili Storage dosyasını siler.
-    func deleteReport(_ report: ReportRow) async throws {
+    func deleteReport(_ report: ReportRow, requestID: String, supportID: String) async throws {
         do {
             _ = try await supabase.storage
                 .from(RDConfig.Bucket.reports)
                 .remove(paths: [report.storagePath])
         } catch {
-            throw AnalysisError.storageFailed(error.localizedDescription)
+            Self.logger.error("Report file delete failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.storageFailed("PDF dosyası silinemedi. Destek kodu: \(supportID)")
         }
 
         do {
@@ -293,7 +307,8 @@ final class AnalysisService {
                 .eq("id", value: report.id.uuidString)
                 .execute()
         } catch {
-            throw AnalysisError.databaseFailed(error.localizedDescription)
+            Self.logger.error("Report metadata delete failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.databaseFailed("PDF rapor kaydı silinemedi. Destek kodu: \(supportID)")
         }
     }
 
@@ -693,6 +708,8 @@ final class AnalysisService {
             let canvases: [String]
             let text_input: String?
             let user_prompt: String?
+            let request_id: String
+            let support_id: String
             let photo_paths: [String]
             let photo_base64_parts: [InlinePhotoPart]
         }
@@ -700,12 +717,16 @@ final class AnalysisService {
         // `canvases` = tüm seçimler — Edge Function çoklu desteğe geçince kullanılır.
         let sortedCanvasIDs = canvases.map(\.id).sorted()
         let cleanPrompt = String(userPrompt.trimmingCharacters(in: .whitespacesAndNewlines).prefix(100))
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
         let body = Body(
             analysis_id: analysisID.uuidString,
             canvas: sortedCanvasIDs.first ?? canvases[0].id,
             canvases: sortedCanvasIDs,
             text_input: textInput,
             user_prompt: cleanPrompt.isEmpty ? nil : cleanPrompt,
+            request_id: requestID,
+            support_id: supportID,
             photo_paths: photoPaths,
             photo_base64_parts: photoBase64Parts
         )
@@ -715,19 +736,22 @@ final class AnalysisService {
                 options: FunctionInvokeOptions(body: body)
             )
         } catch let FunctionsError.httpError(code, data) {
-            let msg = Self.functionErrorMessage(from: data)
+            let payload = Self.functionErrorPayload(from: data)
+            let msg = payload.message
+            let remoteSupportID = payload.supportID ?? supportID
+            let messageWithSupport = Self.appendSupportID(remoteSupportID, to: msg)
             switch code {
             case 429:
                 if msg.localizedCaseInsensitiveContains("günlük kota") || msg.localizedCaseInsensitiveContains("analiz/gün") {
                     throw AnalysisError.quotaExceeded(remaining: 0, tier: "free")
                 }
-                throw AnalysisError.aiFailed(msg.isEmpty ? "Gemini kotası doldu. Lütfen daha sonra tekrar dene." : msg)
+                throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "Gemini kotası doldu. Lütfen daha sonra tekrar dene.") : messageWithSupport)
             case 503:
-                throw AnalysisError.aiFailed(msg.isEmpty ? "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene." : msg)
+                throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.") : messageWithSupport)
             case 409:
                 throw AnalysisError.alreadyCompleted
             default:
-                throw AnalysisError.aiFailed(msg.isEmpty ? "HTTP \(code)" : msg)
+                throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "HTTP \(code)") : messageWithSupport)
             }
         } catch {
             throw AnalysisError.aiFailed(error.localizedDescription)
@@ -776,18 +800,27 @@ final class AnalysisService {
         return "\(label) · \(formatter.string(from: Date()))"
     }
 
-    private static func functionErrorMessage(from data: Data) -> String {
+    private static func functionErrorPayload(from data: Data) -> (message: String, supportID: String?) {
         struct FunctionErrorBody: Decodable {
             let error: String?
+            let message: String?
+            let support_id: String?
         }
 
-        if let body = try? JSONDecoder().decode(FunctionErrorBody.self, from: data),
-           let error = body.error,
-           !error.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return error
+        if let body = try? JSONDecoder().decode(FunctionErrorBody.self, from: data) {
+            let message = (body.error ?? body.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if !message.isEmpty {
+                return (message, body.support_id)
+            }
         }
 
-        return String(data: data, encoding: .utf8) ?? ""
+        return (String(data: data, encoding: .utf8) ?? "", nil)
+    }
+
+    private static func appendSupportID(_ supportID: String, to message: String) -> String {
+        let clean = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.localizedCaseInsensitiveContains("destek kodu") else { return clean }
+        return "\(clean)\nDestek kodu: \(supportID)"
     }
 
     private static func safeReportFileName(for analysis: AnalysisRow, kind: PDFReportKind, method: RiskMethod) -> String {
@@ -990,6 +1023,8 @@ struct ReportRow: Codable, Identifiable, Equatable {
     let fileName: String
     let mimeType: String
     let fileSize: Int?
+    let requestID: String?
+    let supportID: String?
     let createdAt: String?
 
     enum CodingKeys: String, CodingKey {
@@ -1003,6 +1038,8 @@ struct ReportRow: Codable, Identifiable, Equatable {
         case fileName = "file_name"
         case mimeType = "mime_type"
         case fileSize = "file_size"
+        case requestID = "request_id"
+        case supportID = "support_id"
         case createdAt = "created_at"
     }
 }

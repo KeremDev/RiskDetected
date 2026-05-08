@@ -685,7 +685,7 @@ struct HomeView: View {
 
         // AuthService.session authStateChanges'ten geliyor — currentSession'dan daha güvenilir.
         guard let userID = app.auth.session?.user.id else {
-            analysisError = "Oturum bulunamadı. Lütfen tekrar giriş yapın."
+            analysisError = AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated).fullText
             return
         }
         let canvases = Array(selectedCanvases)
@@ -723,12 +723,13 @@ struct HomeView: View {
     }
 
     private func handleAnalysisError(_ msg: String) {
-        if msg.localizedCaseInsensitiveContains("kota") || msg.localizedCaseInsensitiveContains("analiz/gün") {
+        let normalized = AppErrorMessage.make(rawMessage: msg, context: "Analiz tamamlanamadı", fallbackTitle: "Analiz tamamlanamadı")
+        if normalized.category == .quotaExceeded {
             analysisError = nil
             showPaywall = true
             Task { await loadQuotaUsage() }
         } else {
-            analysisError = msg
+            analysisError = normalized.fullText
         }
     }
 
@@ -768,7 +769,7 @@ struct HomeView: View {
                 analysisResult = result
                 showResult = true
             } catch {
-                analysisError = error.localizedDescription
+                analysisError = AppErrorMessage.make(error, context: "Analiz açılamadı", fallbackTitle: "Analiz açılamadı").fullText
             }
             openingRecentID = nil
         }

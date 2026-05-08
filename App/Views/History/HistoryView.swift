@@ -240,7 +240,7 @@ struct HistoryView: View {
                 HistoryItem(row: row, photoPath: paths[row.id])
             }
         } catch {
-            analysisError = error.localizedDescription
+            analysisError = AppErrorMessage.make(error, context: "Analizler yüklenemedi", fallbackTitle: "Analizler yüklenemedi").fullText
             items = []
         }
     }
@@ -255,7 +255,7 @@ struct HistoryView: View {
                 analysisResult = try await AnalysisService.shared.result(analysisID: item.id)
                 showResult = true
             } catch {
-                analysisError = error.localizedDescription
+                analysisError = AppErrorMessage.make(error, context: "Analiz açılamadı", fallbackTitle: "Analiz açılamadı").fullText
             }
             openingItemID = nil
         }
@@ -275,7 +275,7 @@ struct HistoryView: View {
                     showResult = false
                 }
             } catch {
-                analysisError = error.localizedDescription
+                analysisError = AppErrorMessage.make(error, context: "Analiz silinemedi", fallbackTitle: "Analiz silinemedi").fullText
             }
             deletingItemID = nil
         }

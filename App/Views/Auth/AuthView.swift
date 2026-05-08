@@ -333,7 +333,7 @@ struct AuthView: View {
                     password: account.password
                 )
             } catch {
-                authError = "Giriş başarısız: \(error.localizedDescription)"
+                authError = AppErrorMessage.make(error, context: "Giriş yapılamadı", fallbackTitle: "Giriş yapılamadı").fullText
             }
             signingInDemo = nil
         }

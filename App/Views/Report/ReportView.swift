@@ -326,7 +326,7 @@ struct ReportView: View {
             selectedID = targetID
             selectedBundle = try await AnalysisService.shared.result(analysisID: targetID)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = AppErrorMessage.make(error, context: "Raporlar yüklenemedi", fallbackTitle: "Raporlar yüklenemedi").fullText
             analyses = []
             storedReports = []
             selectedBundle = nil
@@ -344,7 +344,7 @@ struct ReportView: View {
             do {
                 selectedBundle = try await AnalysisService.shared.result(analysisID: row.id)
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = AppErrorMessage.make(error, context: "Analiz rapora açılamadı", fallbackTitle: "Analiz rapora açılamadı").fullText
             }
             loadingID = nil
         }
@@ -353,14 +353,20 @@ struct ReportView: View {
     private func generateSelectedReport(options: PDFReportOptions? = nil, companyLogo: UIImage? = nil) {
         guard !pdfGeneration.isActive else { return }
         guard let selectedBundle else {
-            errorMessage = "PDF oluşturmak için tamamlanmış bir analiz seçmelisin."
+            errorMessage = AppErrorMessage.make(
+                AnalysisService.AnalysisError.invalidInput("PDF oluşturmak için tamamlanmış bir analiz seçmelisin."),
+                context: "PDF oluşturulamadı",
+                fallbackTitle: "PDF oluşturulamadı"
+            ).fullText
             return
         }
         guard let userID = app.auth.session?.user.id else {
-            errorMessage = "Rapor kaydetmek için yeniden giriş yapmalısın."
+            errorMessage = AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated, context: "Rapor kaydedilemedi").fullText
             return
         }
 
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
         pdfGeneration.start()
         Task {
             do {
@@ -383,21 +389,31 @@ struct ReportView: View {
                         bundle: selectedBundle,
                         fileURL: url,
                         kind: resolvedOptions.kind,
-                        method: resolvedOptions.method
+                        method: resolvedOptions.method,
+                        requestID: requestID,
+                        supportID: supportID
                     )
                     pdfGeneration.advance(to: 0.88)
                     storedReports = (try? await AnalysisService.shared.listReports(limit: 20)) ?? storedReports
                     pdfGeneration.advance(to: 0.94)
                 } catch {
                     pdfGeneration.stop()
-                    errorMessage = "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)"
+                    errorMessage = AppErrorMessage.make(
+                        rawMessage: "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)\nDestek kodu: \(supportID)",
+                        context: "Rapor arşive kaydedilemedi",
+                        fallbackTitle: "Rapor arşive kaydedilemedi"
+                    ).fullText
                     return
                 }
                 await pdfGeneration.complete()
                 shareItem = ShareItem(url: url)
             } catch {
                 pdfGeneration.stop()
-                errorMessage = error.localizedDescription
+                errorMessage = AppErrorMessage.make(
+                    rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                    context: "PDF oluşturulamadı",
+                    fallbackTitle: "PDF oluşturulamadı"
+                ).fullText
             }
         }
     }
@@ -405,13 +421,23 @@ struct ReportView: View {
     private func download(_ report: ReportRow) {
         guard downloadingID == nil else { return }
         downloadingID = report.id
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
 
         Task {
             do {
-                let url = try await AnalysisService.shared.reportFileURL(for: report)
+                let url = try await AnalysisService.shared.reportFileURL(
+                    for: report,
+                    requestID: requestID,
+                    supportID: supportID
+                )
                 shareItem = ShareItem(url: url)
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = AppErrorMessage.make(
+                    rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                    context: "Rapor indirilemedi",
+                    fallbackTitle: "Rapor indirilemedi"
+                ).fullText
             }
             downloadingID = nil
         }
@@ -421,13 +447,23 @@ struct ReportView: View {
         guard deletingReportID == nil else { return }
         reportPendingDelete = nil
         deletingReportID = report.id
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
 
         Task {
             do {
-                try await AnalysisService.shared.deleteReport(report)
+                try await AnalysisService.shared.deleteReport(
+                    report,
+                    requestID: requestID,
+                    supportID: supportID
+                )
                 storedReports.removeAll { $0.id == report.id }
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = AppErrorMessage.make(
+                    rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                    context: "Rapor silinemedi",
+                    fallbackTitle: "Rapor silinemedi"
+                ).fullText
             }
             deletingReportID = nil
         }
