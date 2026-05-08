@@ -56,11 +56,11 @@ Destek kodu: RD-1A2B3C4D
 | E08 | Gemini invalid JSON | Test-only invalid JSON response | Kullanıcıya “yanıt işlenemedi” mesajı, stuck yok | Edge logda request/support id ve normalized code | Geçti · 2026-05-08 · `RD-630E27BD` |
 | E09 | Analysis Storage upload RLS | Test bucket policy reddi veya test path | Ham “row-level security” görünmez | `storageDenied` veya `reportArchiveFailed` ayrımı doğru | Bekliyor |
 | E10 | Photo Storage download failure | Eski analizde photo path bozuk | Placeholder görünür, ekran açılır | App log support id ile photo load failure | Bekliyor |
-| E11 | Standard PDF render failure | Test-only invalid page/image input | PDF oluşturulmadı mesajı | `pdfRenderFailed`, local temp cleanup | Bekliyor |
-| E12 | PDF Storage upload failure | Reports bucket/policy test hatası | “PDF oluştu ama arşive kaydedilemedi” ayrımı | `reportArchiveFailed`, aynı support id Storage logda | Bekliyor |
-| E13 | Reports metadata insert failure | Test-only invalid report metadata veya DB constraint | PDF oluştuysa kullanıcıya açık ayrım | `reports` insert error normalized, ham column/enum metni yok | Bekliyor |
-| E14 | Stored report download failure | Reports row var, Storage object yok | “Rapor dosyası bulunamadı/indirilemedi” mesajı | support id app log + reports row id | Bekliyor |
-| E15 | Stored report delete failure | Storage object silme reddi | Delete başarısız, liste bozulmaz | `deleteReport` support id loglanır | Bekliyor |
+| E11 | Standard PDF render failure | Test-only invalid page/image input | PDF oluşturulmadı mesajı | `pdfRenderFailed`, local temp cleanup | Geçti · 2026-05-09 · `RD-78F66A41` |
+| E12 | PDF Storage upload failure | Reports bucket/policy test hatası | “PDF oluştu ama arşive kaydedilemedi” ayrımı | `reportArchiveFailed`, aynı support id Storage logda | Geçti · 2026-05-09 · `RD-2C149AAA` |
+| E13 | Reports metadata insert failure | Test-only invalid report metadata veya DB constraint | PDF oluştuysa kullanıcıya açık ayrım | `reports` insert error normalized, ham column/enum metni yok | Geçti · 2026-05-09 · `RD-2AB8255A` |
+| E14 | Stored report download failure | Reports row var, Storage object yok | “Rapor dosyası bulunamadı/indirilemedi” mesajı | support id app log + reports row id | Geçti · 2026-05-09 · `RD-7CEE5785` |
+| E15 | Stored report delete failure | Storage object silme reddi | Delete başarısız, liste bozulmaz | `deleteReport` support id loglanır | Geçti · 2026-05-09 · `RD-AC8ECC68` |
 | E16 | Analysis delete failure | Analyses tab delete RLS/network fail | Silinemedi mesajı, liste yanlış optimistic silinmez | Normalized delete error | Bekliyor |
 | E17 | Data export failure | Profile > Verilerim export sırasında network/DB fail | Export oluşturulamadı, tekrar dene mesajı | AppErrorMessage + support id | Bekliyor |
 | E18 | Account deletion request failure | Profile request insert/network fail | Talep alınamadı, tekrar dene | Support id loglanır | Bekliyor |
@@ -80,7 +80,12 @@ Güvenlik/operasyon kuralı:
 - `RISKDETECTED_ENABLE_TEST_SIMULATION=true` olmadan simülasyon çalışmaz.
 - Bayraklar production ortamında kapalı kalmalı.
 - `SIMULATE_AI_ERROR_ONCE` varsayılan olarak `true` kabul edilir; ilk AI denemesi hata üretir, retry/fallback akışı gerçek Gemini çağrısıyla devam eder.
-- Storage/report archive failure için ayrı bir test bayrağı henüz eklenmedi; bu P1.5 takip maddesi olarak duruyor.
+Report/PDF arşiv akışı için iOS DEBUG build içinde ek test bayrakları:
+
+- `RISKDETECTED_ENABLE_REPORT_TEST_SIMULATION=true`
+- `SIMULATE_REPORT_ERROR=pdf_render|storage_upload|metadata_insert|download|delete_storage|delete_metadata`
+
+Bu bayraklar sadece DEBUG build içinde okunur. Production/TestFlight release build davranışını etkilemez.
 
 ## Kapanış Kriterleri
 

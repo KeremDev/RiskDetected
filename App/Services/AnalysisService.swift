@@ -228,6 +228,12 @@ final class AnalysisService {
         let fileName = Self.safeReportFileName(for: bundle.analysis, kind: kind, method: method)
         let storagePath = "\(userID.uuidString.lowercased())/\(bundle.analysis.id.uuidString.lowercased())/\(fileName)"
 
+        if ReportFailureSimulation.isEnabled(.storageUpload) {
+            let error = ReportFailureSimulation.simulatedError(.storageUpload)
+            Self.logger.error("Report upload simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) path=\(storagePath, privacy: .private(mask: .hash))")
+            throw AnalysisError.storageFailed("PDF dosyası rapor arşivine yüklenemedi. Destek kodu: \(supportID). \(error.localizedDescription)")
+        }
+
         do {
             _ = try await supabase.storage
                 .from(RDConfig.Bucket.reports)
@@ -278,6 +284,12 @@ final class AnalysisService {
             support_id: supportID
         )
 
+        if ReportFailureSimulation.isEnabled(.metadataInsert) {
+            let error = ReportFailureSimulation.simulatedError(.metadataInsert)
+            Self.logger.error("Report metadata simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.databaseFailed("PDF oluşturuldu ancak rapor arşiv kaydı tamamlanamadı. Destek kodu: \(supportID)")
+        }
+
         do {
             let row: ReportRow = try await supabase.client
                 .from("reports")
@@ -296,6 +308,12 @@ final class AnalysisService {
     /// Storage'daki PDF raporu indirir ve geçici dosya URL'i döndürür.
     func reportFileURL(for report: ReportRow, requestID: String, supportID: String) async throws -> URL {
         let data: Data
+        if ReportFailureSimulation.isEnabled(.download) {
+            let error = ReportFailureSimulation.simulatedError(.download)
+            Self.logger.error("Report download simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.storageFailed("PDF raporu indirilemedi. Destek kodu: \(supportID)")
+        }
+
         do {
             data = try await supabase.storage
                 .from(RDConfig.Bucket.reports)
@@ -318,6 +336,18 @@ final class AnalysisService {
 
     /// Kullanıcının seçtiği tek PDF raporu ve ilişkili Storage dosyasını siler.
     func deleteReport(_ report: ReportRow, requestID: String, supportID: String) async throws {
+        if ReportFailureSimulation.isEnabled(.deleteStorage) {
+            let error = ReportFailureSimulation.simulatedError(.deleteStorage)
+            Self.logger.error("Report file delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.storageFailed("PDF dosyası silinemedi. Destek kodu: \(supportID)")
+        }
+
+        if ReportFailureSimulation.isEnabled(.deleteMetadata) {
+            let error = ReportFailureSimulation.simulatedError(.deleteMetadata)
+            Self.logger.error("Report metadata delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.databaseFailed("PDF rapor kaydı silinemedi. Destek kodu: \(supportID)")
+        }
+
         do {
             _ = try await supabase.storage
                 .from(RDConfig.Bucket.reports)

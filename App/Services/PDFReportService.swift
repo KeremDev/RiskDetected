@@ -79,6 +79,10 @@ final class PDFReportService: @unchecked Sendable {
     }
 
     func generate(input: ReportInput) throws -> URL {
+        if ReportFailureSimulation.isEnabled(.pdfRender) {
+            throw ReportFailureSimulation.simulatedError(.pdfRender)
+        }
+
         let fileURL = outputURL(for: input.bundle.analysis)
         let pageRect = CGRect(x: 0, y: 0, width: 842, height: 595) // A4 landscape @ 72 dpi
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)

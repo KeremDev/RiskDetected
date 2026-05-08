@@ -119,12 +119,42 @@ struct AppErrorMessage: Equatable {
             )
         }
 
+        if lower.contains("indirilemedi") || lower.contains("download") {
+            return AppErrorMessage(
+                title: context ?? "Rapor indirilemedi",
+                message: "Kayıtlı PDF raporu indirilemedi veya paylaşım için hazırlanamadı.",
+                action: "Bağlantını kontrol edip tekrar dene. Sorun devam ederse destek koduyla bildir.",
+                category: .reportArchiveFailed,
+                supportID: supportID
+            )
+        }
+
+        if lower.contains("silinemedi") || lower.contains("delete") {
+            return AppErrorMessage(
+                title: context ?? "Rapor silinemedi",
+                message: "PDF raporu veya rapor arşiv kaydı silinemedi.",
+                action: "Kısa süre sonra tekrar dene. Sorun devam ederse destek koduyla bildir.",
+                category: .reportArchiveFailed,
+                supportID: supportID
+            )
+        }
+
+        if lower.contains("arşiv") || lower.contains("archive") || lower.contains("kaydedilemedi") {
+            return AppErrorMessage(
+                title: context ?? "Rapor arşive kaydedilemedi",
+                message: "PDF oluşturuldu ancak rapor arşivine kaydedilemedi.",
+                action: "PDF açıldıysa dosyayı paylaşabilir, arşiv kaydı için daha sonra yeniden oluşturabilirsin.",
+                category: .reportArchiveFailed,
+                supportID: supportID
+            )
+        }
+
         if lower.contains("pdf") || lower.contains("rapor") {
             return AppErrorMessage(
                 title: context ?? "PDF oluşturulamadı",
-                message: "PDF hazırlanırken veya rapor arşivine kaydedilirken bir sorun oluştu.",
-                action: "Tekrar dene. PDF açıldıysa dosyayı paylaşabilir, arşiv kaydı için daha sonra yeniden oluşturabilirsin.",
-                category: lower.contains("arşiv") || lower.contains("archive") ? .reportArchiveFailed : .pdfRenderFailed,
+                message: "PDF hazırlanırken bir sorun oluştu.",
+                action: "Tekrar dene. Sorun devam ederse destek koduyla birlikte bildir.",
+                category: .pdfRenderFailed,
                 supportID: supportID
             )
         }

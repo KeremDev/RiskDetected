@@ -209,7 +209,10 @@ These items exist in some form, but need revision before we treat them as produc
    - verify each case displays the intended message and does not leave the UI stuck.
    - Done: deterministic test-only Edge Function flags added and deployed for AI 429/500/502/503/504 and invalid JSON simulation; guarded by `RISKDETECTED_ENABLE_TEST_SIMULATION=true`.
    - Done: simulator verified AI 429, AI 503 and invalid AI JSON paths; alerts show normalized Turkish messages and `ai_usage_logs` contains matching `support_id` rows.
-   - Follow-up: add deterministic test-only report/archive failure simulation so PDF Storage and reports metadata paths can be tested without changing production policies.
+   - Done: DEBUG-only iOS report failure simulation flags added for PDF render, Storage upload, reports metadata insert, stored report download and stored report delete paths.
+   - Done: simulator verified PDF render failure simulation with normalized `PDF Hatası` and support id.
+   - Done: simulator verified PDF Storage upload, reports metadata insert, stored report download and stored report delete simulations with normalized messages and support ids.
+   - Follow-up: continue remaining QA matrix rows E01-E05 and E09-E10/E16-E18.
 
 ### P2 - Auth and Subscription
 
