@@ -3,7 +3,12 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var app: AppState
     @State private var showPaywall = false
+    @State private var showDataControls = false
     @State private var stats: ProfileStats? = nil
+    @State private var dataActionInProgress: ProfileDataAction?
+    @State private var pendingDataAction: ProfileDataAction?
+    @State private var dataMessage: String?
+    @State private var shareItem: ShareItem?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,6 +54,49 @@ struct ProfileView: View {
                                 await loadStats()
                             }
                         })
+        }
+        .sheet(isPresented: $showDataControls) {
+            ProfileDataControlsSheet(
+                stats: stats,
+                actionInProgress: dataActionInProgress,
+                onExport: { runDataAction(.exportData) },
+                onDeleteReports: { pendingDataAction = .deleteReports },
+                onDeleteAnalyses: { pendingDataAction = .deleteAnalyses },
+                onRequestAccountDeletion: { pendingDataAction = .requestAccountDeletion },
+                onClose: { showDataControls = false }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $shareItem) { item in
+            ShareSheet(items: [item.url])
+        }
+        .confirmationDialog(
+            pendingDataAction?.confirmationTitle ?? "İşlem onayı",
+            isPresented: Binding(
+                get: { pendingDataAction != nil },
+                set: { if !$0 { pendingDataAction = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let action = pendingDataAction {
+                Button(action.confirmationButtonTitle, role: action.role) {
+                    runDataAction(action)
+                }
+            }
+            Button("Vazgeç", role: .cancel) {
+                pendingDataAction = nil
+            }
+        } message: {
+            Text(pendingDataAction?.confirmationMessage ?? "")
+        }
+        .alert("Verilerim", isPresented: Binding(
+            get: { dataMessage != nil },
+            set: { if !$0 { dataMessage = nil } }
+        )) {
+            Button("Tamam") { dataMessage = nil }
+        } message: {
+            Text(dataMessage ?? "")
         }
     }
 
@@ -215,6 +263,13 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 ProfileRow(icon: "gearshape", title: "Tercihler")
                 Divider().background(Color.rdLine).padding(.leading, 60)
+                Button {
+                    showDataControls = true
+                } label: {
+                    ProfileRow(icon: "externaldrive.badge.checkmark", title: "Verilerim", detail: "Dışa aktar / sil")
+                }
+                .buttonStyle(.plain)
+                Divider().background(Color.rdLine).padding(.leading, 60)
                 ProfileRow(icon: "lock", title: "Güvenlik ve gizlilik")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 ProfileRow(icon: "headphones", title: "Destek")
@@ -298,9 +353,252 @@ struct ProfileView: View {
             stats = nil
         }
     }
+
+    private func runDataAction(_ action: ProfileDataAction) {
+        guard dataActionInProgress == nil else { return }
+        pendingDataAction = nil
+
+        guard let userID = app.auth.session?.user.id else {
+            dataMessage = "Bu işlem için yeniden giriş yapmalısın."
+            return
+        }
+
+        dataActionInProgress = action
+
+        Task {
+            do {
+                switch action {
+                case .exportData:
+                    let url = try await AnalysisService.shared.exportUserData(userID: userID, profile: app.profile)
+                    shareItem = ShareItem(url: url)
+                case .deleteReports:
+                    try await AnalysisService.shared.deleteAllReports()
+                    dataMessage = "Tüm PDF raporların silindi."
+                    await loadStats()
+                case .deleteAnalyses:
+                    try await AnalysisService.shared.deleteAllAnalyses()
+                    dataMessage = "Tüm analizlerin ve ilişkili bulgular/fotoğraflar silindi."
+                    await loadStats()
+                case .requestAccountDeletion:
+                    try await AnalysisService.shared.requestAccountDeletion(
+                        userID: userID,
+                        email: app.profile?.email
+                    )
+                    dataMessage = "Hesap silme talebin kaydedildi. Bu işlem yetkili backend/admin süreciyle tamamlanacak."
+                }
+            } catch {
+                dataMessage = error.localizedDescription
+            }
+            dataActionInProgress = nil
+        }
+    }
 }
 
 // MARK: - ProfileRow
+
+private enum ProfileDataAction: Identifiable, Equatable {
+    case exportData
+    case deleteReports
+    case deleteAnalyses
+    case requestAccountDeletion
+
+    var id: String {
+        switch self {
+        case .exportData: return "exportData"
+        case .deleteReports: return "deleteReports"
+        case .deleteAnalyses: return "deleteAnalyses"
+        case .requestAccountDeletion: return "requestAccountDeletion"
+        }
+    }
+
+    var confirmationTitle: String {
+        switch self {
+        case .exportData:
+            return "Veriler dışa aktarılsın mı?"
+        case .deleteReports:
+            return "Tüm raporlar silinsin mi?"
+        case .deleteAnalyses:
+            return "Tüm analizler silinsin mi?"
+        case .requestAccountDeletion:
+            return "Hesap silme talebi oluşturulsun mu?"
+        }
+    }
+
+    var confirmationMessage: String {
+        switch self {
+        case .exportData:
+            return "Analiz, bulgu, fotoğraf yolu, rapor metadatası ve profil özetin JSON dosyası olarak hazırlanır."
+        case .deleteReports:
+            return "PDF rapor dosyaları ve rapor arşiv kayıtları silinir. Analiz sonuçların kalır."
+        case .deleteAnalyses:
+            return "Tüm analizler, bulgular, fotoğraf kayıtları ve bu analizlere bağlı raporlar silinir. Bu işlem geri alınamaz."
+        case .requestAccountDeletion:
+            return "Talep kaydedilir. Hesap silme işlemi güvenli backend/admin süreciyle tamamlanmalıdır."
+        }
+    }
+
+    var confirmationButtonTitle: String {
+        switch self {
+        case .exportData: return "Dışa aktar"
+        case .deleteReports: return "Tüm raporları sil"
+        case .deleteAnalyses: return "Tüm analizleri sil"
+        case .requestAccountDeletion: return "Talep oluştur"
+        }
+    }
+
+    var role: ButtonRole? {
+        switch self {
+        case .deleteReports, .deleteAnalyses, .requestAccountDeletion:
+            return .destructive
+        case .exportData:
+            return nil
+        }
+    }
+}
+
+private struct ProfileDataControlsSheet: View {
+    let stats: ProfileStats?
+    let actionInProgress: ProfileDataAction?
+    let onExport: () -> Void
+    let onDeleteReports: () -> Void
+    let onDeleteAnalyses: () -> Void
+    let onRequestAccountDeletion: () -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 14) {
+                    summaryCard
+                    dataActionButton(
+                        icon: "square.and.arrow.up",
+                        title: "Verilerimi dışa aktar",
+                        subtitle: "Analiz, bulgu, rapor ve profil özetini JSON dosyası olarak al.",
+                        action: .exportData,
+                        onTap: onExport
+                    )
+                    dataActionButton(
+                        icon: "doc.badge.minus",
+                        title: "Tüm raporlarımı sil",
+                        subtitle: "PDF dosyaları ve rapor arşiv kayıtları silinir. Analizler kalır.",
+                        action: .deleteReports,
+                        danger: true,
+                        onTap: onDeleteReports
+                    )
+                    dataActionButton(
+                        icon: "trash",
+                        title: "Tüm analizlerimi sil",
+                        subtitle: "Analizler, bulgular, fotoğraf kayıtları ve bağlı raporlar silinir.",
+                        action: .deleteAnalyses,
+                        danger: true,
+                        onTap: onDeleteAnalyses
+                    )
+                    dataActionButton(
+                        icon: "person.crop.circle.badge.xmark",
+                        title: "Hesabımı silme talebi",
+                        subtitle: "Talep kaydı oluşturulur; hesap silme backend/admin sürecinde tamamlanır.",
+                        action: .requestAccountDeletion,
+                        danger: true,
+                        onTap: onRequestAccountDeletion
+                    )
+
+                    Text("Not: Otomatik saklama politikası ayrıca çalışır. Free fotoğraflar 30 gün, Pro fotoğraflar 1 yıl saklanır; raporlar kullanıcı silene kadar kalır.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(12)
+                        .background(Color.rdFog)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(20)
+            }
+            .background(Color.rdPaper)
+            .navigationTitle("Verilerim")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Kapat", action: onClose)
+                }
+            }
+        }
+    }
+
+    private var summaryCard: some View {
+        HStack(spacing: 8) {
+            dataStat(value: stats.map { "\($0.analysisCount)" } ?? "—", label: "Analiz")
+            dataStat(value: stats.map { "\($0.reportCount)" } ?? "—", label: "Rapor")
+            dataStat(value: stats.map { "\($0.weeklyAnalysisCount)" } ?? "—", label: "Bu hafta")
+        }
+    }
+
+    private func dataStat(value: String, label: String) -> some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .rdMono(size: 18, weight: .bold)
+                .foregroundStyle(Color.rdBlack)
+            Text(label)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.rdSlate)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func dataActionButton(
+        icon: String,
+        title: String,
+        subtitle: String,
+        action: ProfileDataAction,
+        danger: Bool = false,
+        onTap: @escaping () -> Void
+    ) -> some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(danger ? Color.rdCriticalText : Color.rdGreen)
+                    .frame(width: 42, height: 42)
+                    .background(danger ? Color.rdCriticalBg : Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(danger ? Color.rdCriticalText : Color.rdBlack)
+                    Text(subtitle)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if actionInProgress == action {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.rdSlate)
+                }
+            }
+            .padding(14)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(danger ? Color.rdCritical.opacity(0.22) : Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .disabled(actionInProgress != nil)
+    }
+}
 
 struct ProfileRow: View {
     let icon: String

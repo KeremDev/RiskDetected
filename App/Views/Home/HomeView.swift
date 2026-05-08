@@ -35,7 +35,6 @@ struct HomeView: View {
     @State private var openingRecentID: UUID? = nil
     @State private var quotaUsage: DailyQuotaUsage? = nil
     @State private var showPaywall = false
-    @State private var showLegalInfo = false
 
     enum HomeMode: String, CaseIterable {
         case photo, text
@@ -49,9 +48,6 @@ struct HomeView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    greetingRow
-                        .padding(.bottom, 16)
-
                     modeSegment
                         .padding(.bottom, 14)
 
@@ -61,14 +57,18 @@ struct HomeView: View {
                         textInputArea
                     }
 
-                    RDButton(title: "Taramayı Başlat", style: .detect, icon: "sparkles") {
+                    RDButton(
+                        title: "Taramayı Başlat",
+                        style: .detect,
+                        icon: "sparkles",
+                        backgroundOverride: .rdBlack,
+                        foregroundOverride: .rdGreen,
+                        shadowOverride: Color.rdBlack.opacity(0.14)
+                    ) {
                         startAnalysisFlow()
                     }
                     .frame(height: 56)
                     .padding(.top, 14)
-
-                    legalNotice
-                        .padding(.top, 10)
 
                     recentSection
                         .padding(.top, 28)
@@ -76,9 +76,11 @@ struct HomeView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
                 .padding(.bottom, 110) // tab bar clearance
+                .background(Color.rdWhite)
             }
+            .background(Color.rdWhite)
         }
-        .background(Color.rdPaper)
+        .background(Color.rdWhite.ignoresSafeArea())
         .task {
             await loadRecentItems()
             await loadQuotaUsage()
@@ -152,6 +154,9 @@ struct HomeView: View {
                 onAnalyze: { annotated in
                     selectedImage = annotated
                     showAnnotate = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        continueFromAnnotatedPhoto()
+                    }
                 }
             )
         }
@@ -201,11 +206,6 @@ struct HomeView: View {
                 }
             )
         }
-        .sheet(isPresented: $showLegalInfo) {
-            LegalInfoSheet(onClose: { showLegalInfo = false })
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
         .alert("Analiz Hatası", isPresented: .init(
             get: { analysisError != nil },
             set: { if !$0 { analysisError = nil } }
@@ -217,31 +217,6 @@ struct HomeView: View {
     }
 
     // MARK: - Subviews
-
-    private var greetingRow: some View {
-        HStack {
-            HStack(spacing: 6) {
-                Circle().fill(Color.rdGreen).frame(width: 6, height: 6)
-                Text("Saha modu aktif")
-                    .font(.system(size: 12, weight: .semibold))
-            }
-            .padding(.horizontal, 10)
-            .frame(height: 28)
-            .foregroundStyle(Color.rdGreenDark)
-            .background(Color.rdGreenSoft)
-            .clipShape(Capsule())
-
-            Spacer()
-
-            HStack(spacing: 4) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 12, weight: .medium))
-                Text(currentDateLabel)
-                    .rdMono(size: 12, weight: .medium)
-            }
-            .foregroundStyle(Color.rdSlate)
-        }
-    }
 
     private var modeSegment: some View {
         HStack(spacing: 0) {
@@ -395,12 +370,12 @@ struct HomeView: View {
                                     )
                                 )
 
-                            // Dashed border — hafif yeşil tint
+                            // Dashed border — marka siyahıyla daha net bir çerçeve.
                             RoundedRectangle(cornerRadius: 20)
                                 .strokeBorder(
                                     style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
                                 )
-                                .foregroundStyle(Color.rdGreen.opacity(0.35))
+                                .foregroundStyle(Color.rdBlack)
                         }
                     )
                     // Çift katman gölge: ambient + directional
@@ -622,16 +597,25 @@ struct HomeView: View {
             if recentItems.isEmpty {
                 emptyRecentCard
             } else {
-                ForEach(recentItems) { item in
-                    RecentAnalysisCard(
-                        item: item,
-                        isLoading: openingRecentID == item.id
-                    ) {
-                        openRecentAnalysis(item)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 14) {
+                        ForEach(recentItems) { item in
+                            RecentAnalysisCard(
+                                item: item,
+                                isLoading: openingRecentID == item.id
+                            ) {
+                                openRecentAnalysis(item)
+                            }
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 4)
                 }
+                .padding(.horizontal, -20)
+                .background(Color.rdWhite)
             }
         }
+        .background(Color.rdWhite)
     }
 
     private var emptyRecentCard: some View {
@@ -657,35 +641,7 @@ struct HomeView: View {
         }
     }
 
-    private var legalNotice: some View {
-        VStack(spacing: 4) {
-            Text("Devam ederek RiskDetected kullanım koşullarını kabul etmiş sayılırsın.")
-                .font(.system(size: 10.5, weight: .medium))
-                .foregroundStyle(Color.rdSlate)
-                .multilineTextAlignment(.center)
-
-            Button {
-                showLegalInfo = true
-            } label: {
-                Text("KVKK · Kullanım koşulları · AI veri işleme")
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .foregroundStyle(Color.rdGreenDark)
-                    .underline()
-            }
-            .buttonStyle(.plain)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 16)
-    }
-
     // MARK: - Helpers
-
-    private var currentDateLabel: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMM · EEEE"
-        return formatter.string(from: Date())
-    }
 
     private var isFreeQuotaExhausted: Bool {
         !app.isPro && quotaUsage?.isExhausted == true
@@ -704,6 +660,17 @@ struct HomeView: View {
         }
         if mode == .text && text.trimmingCharacters(in: .whitespacesAndNewlines).count < 10 {
             // Minimum içerik yok — kullanıcı text alanına odaklanacak (keyboard zaten açık)
+            return
+        }
+        showCanvasSheet = true
+    }
+
+    /// AnnotateView'daki "İşaretli alanları analiz et" sonrası ana sayfada
+    /// bekletmeden doğrudan analiz odağı seçimine geçer.
+    private func continueFromAnnotatedPhoto() {
+        guard mode == .photo, selectedImage != nil else { return }
+        if !app.isPro, quotaUsage?.isExhausted == true {
+            showPaywall = true
             return
         }
         showCanvasSheet = true
@@ -763,7 +730,7 @@ struct HomeView: View {
     private func loadRecentItems() async {
         guard app.auth.session != nil else { return }
         do {
-            let rows = try await AnalysisService.shared.listRecent(limit: 3)
+            let rows = try await AnalysisService.shared.listRecent(limit: 8)
             let paths = try await AnalysisService.shared.firstPhotoPaths(analysisIDs: rows.map(\.id))
             recentItems = rows.map { row in
                 RecentAnalysis(row: row, photoPath: paths[row.id])
@@ -837,57 +804,77 @@ struct RecentAnalysisCard: View {
     var isLoading: Bool = false
     let action: () -> Void
 
+    private let ringSize: CGFloat = 94
+    private let innerPhotoSize: CGFloat = 78
+
+    private var primaryLevel: RiskLevel {
+        item.findings.first?.level ?? .unknown
+    }
+
+    private var primaryLabel: String {
+        item.findings.first?.title ?? primaryLevel.label
+    }
+
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                AnalysisThumbnail(path: item.photoPath, cornerRadius: 12)
-                    .frame(width: 58, height: 58)
+            ZStack(alignment: .bottomTrailing) {
+                ZStack {
+                    Circle()
+                        .stroke(
+                            AngularGradient(
+                                colors: [
+                                    Color.rdCritical.opacity(0.72),
+                                    Color.rdHigh.opacity(0.58),
+                                    Color.rdMedium.opacity(0.52),
+                                    Color.rdCritical.opacity(0.62),
+                                    Color(red: 0.93, green: 0.12, blue: 0.38).opacity(0.66),
+                                    Color.rdCritical.opacity(0.72)
+                                ],
+                                center: .center
+                            ),
+                            lineWidth: 3.5
+                        )
+                        .frame(width: ringSize, height: ringSize)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(item.title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.rdBlack)
-                        .lineLimit(1)
-                    Text(item.meta)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.rdSlate)
-                        .lineLimit(1)
+                    Circle()
+                        .fill(Color.rdWhite)
+                        .frame(width: ringSize - 9, height: ringSize - 9)
 
-                    FlowLayout(spacing: 4, lineSpacing: 4) {
-                        ForEach(item.findings) { finding in
-                            RDChip(level: finding.level, label: finding.title)
-                        }
-                    }
+                    AnalysisThumbnail(path: item.photoPath, cornerRadius: innerPhotoSize / 2)
+                        .frame(width: innerPhotoSize, height: innerPhotoSize)
+                        .clipShape(Circle())
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(width: ringSize, height: ringSize)
 
-                VStack(alignment: .trailing) {
-                    Text("\(item.count) bulgu")
-                        .rdMono(size: 11, weight: .semibold)
-                        .foregroundStyle(Color.rdSlate)
-                    Spacer()
-                    if isLoading {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.rdSlate)
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(Color.rdBlack)
+                        .frame(width: 30, height: 30)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .offset(x: 2, y: 2)
+                } else {
+                    HStack(spacing: 3) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 8.5, weight: .black))
+                        Text("\(item.count)")
+                            .rdMono(size: 10, weight: .black)
                     }
+                    .foregroundStyle(Color.rdBlack)
+                    .padding(.horizontal, 7)
+                    .frame(height: 24)
+                    .background(.ultraThinMaterial.opacity(0.96))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(Color.rdWhite.opacity(0.74), lineWidth: 1))
+                    .offset(x: 3, y: 3)
                 }
             }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.rdWhite)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.rdLine, lineWidth: 1)
-                    )
-            )
+            .frame(width: ringSize + 8, height: ringSize + 8)
         }
         .buttonStyle(RDPressableButtonStyle())
     }
+
 }
 
 // MARK: - FlowLayout

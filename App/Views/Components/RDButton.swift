@@ -14,6 +14,9 @@ struct RDButton: View {
     var icon: String? = nil
     var trailingIcon: String? = nil
     var height: CGFloat = 52
+    var backgroundOverride: Color? = nil
+    var foregroundOverride: Color? = nil
+    var shadowOverride: Color? = nil
     let action: () -> Void
 
     var body: some View {
@@ -38,6 +41,7 @@ struct RDButton: View {
     }
 
     private var background: Color {
+        if let backgroundOverride { return backgroundOverride }
         switch style {
         case .primary:     return .rdBlack
         case .detect:      return .rdGreen
@@ -48,6 +52,7 @@ struct RDButton: View {
     }
 
     private var textColor: Color {
+        if let foregroundOverride { return foregroundOverride }
         switch style {
         case .primary, .detect, .destructive: return .white
         case .secondary, .ghost: return .rdBlack
@@ -62,7 +67,8 @@ struct RDButton: View {
     }
 
     private var shadow: Color {
-        style == .detect ? Color.rdGreen.opacity(0.28) : .clear
+        if let shadowOverride { return shadowOverride }
+        return style == .detect ? Color.rdGreen.opacity(0.28) : .clear
     }
 }
 

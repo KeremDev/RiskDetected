@@ -10,6 +10,8 @@ struct HistoryView: View {
     @State private var showResult = false
     @State private var analysisError: String? = nil
     @State private var openingItemID: UUID? = nil
+    @State private var deletingItemID: UUID? = nil
+    @State private var itemPendingDelete: HistoryItem?
     @State private var showPaywall = false
 
     private let chips = ["Tümü", "Bu hafta", "Kritik", "KKD", "Genel"]
@@ -79,9 +81,12 @@ struct HistoryView: View {
                         ForEach(filteredItems) { item in
                             HistoryRow(
                                 item: item,
-                                isLoading: openingItemID == item.id
+                                isLoading: openingItemID == item.id,
+                                isDeleting: deletingItemID == item.id
                             ) {
                                 openAnalysis(item)
+                            } onDelete: {
+                                itemPendingDelete = item
                             }
                         }
                     }
@@ -119,6 +124,25 @@ struct HistoryView: View {
                 }
             )
             .environmentObject(app)
+        }
+        .confirmationDialog(
+            "Analiz silinsin mi?",
+            isPresented: Binding(
+                get: { itemPendingDelete != nil },
+                set: { if !$0 { itemPendingDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Analizi sil", role: .destructive) {
+                if let item = itemPendingDelete {
+                    deleteAnalysis(item)
+                }
+            }
+            Button("Vazgeç", role: .cancel) {
+                itemPendingDelete = nil
+            }
+        } message: {
+            Text("Analiz, bulgular, fotoğraf kaydı ve bu analize bağlı rapor kayıtları silinir.")
         }
         .alert("Analiz Hatası", isPresented: .init(
             get: { analysisError != nil },
@@ -237,6 +261,26 @@ struct HistoryView: View {
         }
     }
 
+    private func deleteAnalysis(_ item: HistoryItem) {
+        guard deletingItemID == nil else { return }
+        itemPendingDelete = nil
+        deletingItemID = item.id
+
+        Task {
+            do {
+                try await AnalysisService.shared.deleteAnalysis(analysisID: item.id)
+                items.removeAll { $0.id == item.id }
+                if analysisResult?.analysis.id == item.id {
+                    analysisResult = nil
+                    showResult = false
+                }
+            } catch {
+                analysisError = error.localizedDescription
+            }
+            deletingItemID = nil
+        }
+    }
+
     private func isThisWeek(_ date: Date?) -> Bool {
         guard let date else { return false }
         return Calendar.current.isDate(date, equalTo: Date(), toGranularity: .weekOfYear)
@@ -248,59 +292,113 @@ struct HistoryView: View {
 private struct HistoryRow: View {
     let item: HistoryItem
     var isLoading: Bool = false
+    var isDeleting: Bool = false
     let action: () -> Void
+    let onDelete: () -> Void
+    @State private var dragOffset: CGFloat = 0
+
+    private let revealWidth: CGFloat = 74
 
     var body: some View {
-        Button(action: action) {
-            HStack(alignment: .top, spacing: 12) {
-                AnalysisThumbnail(path: item.photoPath, cornerRadius: 10)
-                    .frame(width: 56, height: 56)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(alignment: .top, spacing: 6) {
-                        Text(item.title)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Color.rdBlack)
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        RDChip(level: item.level)
-                    }
-
-                    HStack(spacing: 6) {
-                        Text(item.date)
-                        Text("·")
-                        Text(item.kind)
-                        Text("·")
-                        Text("\(item.count) bulgu")
-                            .rdMono(size: 12)
-                    }
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.rdSlate)
-
-                        Text(item.status.rawValue)
-                        .font(.system(size: 11, weight: .semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .foregroundStyle(item.status.textColor)
-                        .background(item.status.bgColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+        ZStack(alignment: .trailing) {
+            Button(role: .destructive) {
+                onDelete()
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
+                    dragOffset = 0
                 }
-
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .padding(.top, 2)
+            } label: {
+                VStack(spacing: 5) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 17, weight: .semibold))
+                    Text("Sil")
+                        .font(.system(size: 11, weight: .bold))
                 }
+                .foregroundStyle(.white)
+                .frame(width: revealWidth, height: 84)
             }
-            .padding(14)
-            .background(Color.rdWhite)
-            .overlay(
-                RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .stroke(Color.rdLine, lineWidth: 1)
-            )
+            .background(Color.rdCritical)
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+            .opacity(dragOffset < -8 ? 1 : 0)
+
+            rowContent
+                .offset(x: dragOffset)
+                .gesture(
+                    DragGesture(minimumDistance: 12, coordinateSpace: .local)
+                        .onChanged { value in
+                            let horizontal = value.translation.width
+                            let vertical = abs(value.translation.height)
+                            guard abs(horizontal) > vertical else { return }
+                            dragOffset = min(0, max(-revealWidth, horizontal))
+                        }
+                        .onEnded { value in
+                            let shouldOpen = value.translation.width < -36
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
+                                dragOffset = shouldOpen ? -revealWidth : 0
+                            }
+                        }
+                )
         }
-        .buttonStyle(RDPressableButtonStyle())
+    }
+
+    private var rowContent: some View {
+        HStack(alignment: .top, spacing: 12) {
+            AnalysisThumbnail(path: item.photoPath, cornerRadius: 10)
+                .frame(width: 56, height: 56)
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 6) {
+                    Text(item.title)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.rdBlack)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    RDChip(level: item.level)
+                }
+
+                HStack(spacing: 6) {
+                    Text(item.date)
+                    Text("·")
+                    Text(item.kind)
+                    Text("·")
+                    Text("\(item.count) bulgu")
+                        .rdMono(size: 12)
+                }
+                .font(.system(size: 12))
+                .foregroundStyle(Color.rdSlate)
+
+                Text(item.status.rawValue)
+                    .font(.system(size: 11, weight: .semibold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .foregroundStyle(item.status.textColor)
+                    .background(item.status.bgColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if isLoading || isDeleting {
+                ProgressView()
+                    .controlSize(.small)
+                    .padding(.top, 2)
+            }
+        }
+        .padding(14)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: RDRadius.lg)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if dragOffset < 0 {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
+                    dragOffset = 0
+                }
+            } else {
+                action()
+            }
+        }
     }
 }
 

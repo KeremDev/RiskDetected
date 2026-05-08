@@ -289,12 +289,14 @@ private struct ResultDetailPhoto: View {
 
     var body: some View {
         ZStack {
-            if let image {
+            if let path {
+                AnalysisThumbnail(path: path, cornerRadius: 16)
+            } else if let image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
             } else {
-                AnalysisThumbnail(path: path, cornerRadius: 16)
+                AnalysisThumbnail(path: nil, cornerRadius: 16)
             }
         }
         .clipped()

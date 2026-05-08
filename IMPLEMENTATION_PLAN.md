@@ -3,7 +3,7 @@
 ## Current Phase
 
 - FAZ 1: iOS app MVP + Supabase/Gemini analysis flow.
-- Current focus: stabilize the real analysis/reporting flow, then harden privacy, auth, quota, provider fallback and Pro conversion.
+- Current focus: finish P1 privacy/legal trust work, then move into auth/subscription hardening and AI reliability.
 - Product scope: individual HSE/ISG expert workflow. OSGB/corporate multi-tenant panels are out of scope for now.
 
 ## Completed
@@ -26,7 +26,7 @@
   - The photo upload area also communicates the exhausted limit instead of letting the user start a blocked photo flow.
   - Header Pro CTA is visible as a lightweight conversion entry point.
 - PDF/plan comparison completed against `RiskDetected Is Plani.pdf`.
-- P0 plan alignment started:
+- P0 plan alignment completed for the current MVP scope:
   - Edge Function hazard budget aligned to Free max 4 and Pro max 14.
   - `reports` table + private `reports` Storage bucket migration added and applied to the linked Supabase project.
   - Generated PDFs are uploaded to Storage and written to `reports` metadata when possible.
@@ -42,50 +42,57 @@
   - Consent audit failures are logged with retry backoff instead of being silently swallowed.
   - Client photo preparation re-renders selected images before analysis/upload so EXIF/location/camera metadata is stripped.
   - Edge Function also strips common JPEG/PNG metadata from inline images before sending them to Gemini and before persisting them to Storage.
+  - Client-side face blur is applied before analysis/upload, and Result/Detail screens prefer the cleaned Storage image over the local original preview.
+  - Retention fields and cleanup function added on Supabase:
+    - Free analysis photos expire after 30 days.
+    - Pro analysis photos expire after 365 days.
+    - Raw AI responses expire after 30 days.
+    - Reports are not auto-deleted; they remain until the user deletes them.
+    - `retention-cleanup` Edge Function deployed for Storage API based photo cleanup.
+    - Supabase Cron runs `retention-cleanup` daily at 02:15 UTC.
+  - User-facing deletion started:
+    - Reports tab can delete stored PDF report files and metadata.
+    - Analyses tab can delete an analysis, its findings, photos and related report records/files.
+    - Profile > Verilerim provides export, bulk report delete, bulk analysis delete and account deletion request entry points.
 
 ## Partially Done - Revision Queue
 
 These items exist in some form, but need revision before we treat them as production-ready.
 
-1. Free/Pro hazard limits
-   - Current state: Edge Function uses a higher free output budget than the external plan intended.
-   - Target: Free returns max 4 hazards; Pro returns up to 14 hazards.
-   - Reason: clearer product difference and better Gemini cost control.
-
-2. AI usage logging
+1. AI usage logging
    - Current state: `ai_usage_logs` exists and logs core provider/model/token/error data.
    - Target additions: request/job id, latency, input image size, preprocessing version, estimated cost, fallback source, normalized fail reason.
 
-3. Provider fallback
+2. Provider fallback
    - Current state: Gemini model-level fallback exists.
    - Target: provider abstraction interface with health/fallback routing.
    - Initial chain:
      - Free: Gemini Flash-Lite -> Gemini Flash -> fallback vision provider.
      - Pro: strongest available Gemini paid model -> Claude/OpenAI/OpenRouter fallback, depending on cost and API availability.
 
-4. Image preprocessing
+3. Image preprocessing
    - Current state: iOS resizes/compresses images before inline upload; Edge Function strips common JPEG/PNG metadata chunks/segments before AI + Storage persistence.
    - Target: full backend preprocessing pipeline for standard resize/quality, face blur and logo blur.
    - Storage rule target: store only cleaned/blurred images when possible; avoid long-term original image storage.
 
-5. Error handling
+4. Error handling
    - Current state: quota, Gemini 429 and Gemini 503 are mapped to user-facing messages.
    - Target: structured error UX with "what happened", "what to do", support request id and retry/fallback state.
 
-6. Pro AI confidence upgrade
+5. Pro AI confidence upgrade
    - Current state: confidence is displayed and Pro copy exists.
    - Target: actually improve Pro analysis quality using stronger models, higher image budget, multi-pass validation, sector/procedure checklists and low-confidence re-checking.
    - Copy rule: do not promise a fixed score. Preferred wording: "Pro analizlerde daha kapsamli model ve dogrulama katmani ile daha yuksek guven hedeflenir."
 
-7. Pro report identity/logo
+6. Pro report identity/logo
    - Current state: per-report company logo and identity fields can be selected in the PDF settings flow.
    - Target: persist company logo and default report identity under Profile so the user does not reselect them each time.
 
-8. Reports tab and report storage
+7. Reports tab and report storage
    - Current state: generated PDFs are uploaded to Supabase Storage, metadata is written to `reports`, and the Reports tab can download/regenerate reports.
    - Target additions: report archive filtering/search, report status labels and better empty/error states.
 
-9. Phone auth
+8. Phone auth
    - Current state: basic auth service placeholders/OTP path exist, but production phone verification is not finalized.
    - Target: support phone number registration and login.
    - Preferred direction to research/implement: Firebase Auth phone verification for SMS, then bridge the verified Firebase user into Supabase session/profile flow.
@@ -93,6 +100,20 @@ These items exist in some form, but need revision before we treat them as produc
      - Option A: Firebase verifies phone, backend validates Firebase ID token, then creates/links a Supabase user/profile.
      - Option B: Supabase native phone OTP if Firebase bridge adds too much auth/session complexity.
    - Security rule: never trust phone number from client alone; backend must verify Firebase ID token or Supabase OTP result.
+
+9. App preferences
+   - Current state: Profile/Settings screen exists, but theme and language preferences are not implemented.
+   - Target: add persistent user preferences under Profile > Tercihler.
+   - Theme options:
+     - System / Cihaz ayarını kullan;
+     - Aydınlık;
+     - Karanlık.
+   - Language options:
+     - Türkçe;
+     - English;
+     - System / Cihaz dili.
+   - Persistence target: local app storage for instant UX, then optional Supabase profile preference sync after auth/subscription hardening.
+   - Product note: report language and app language may need separate control later; MVP can keep them tied unless user feedback says otherwise.
 
 ## Next Priority Backlog
 
@@ -109,26 +130,40 @@ These items exist in some form, but need revision before we treat them as produc
    - generate a PDF from ResultView;
    - confirm it appears in Reports tab;
    - download/share the stored PDF from Reports tab.
+6. Done: code review hardening pass:
+   - photo preprocessing moved off the main actor;
+   - Edge Function strips common inline image metadata before AI + Storage;
+   - consent audit failures log with retry backoff.
 
 ### P1 - Privacy, Legal and Trust
 
 1. Partially done: KVKK/Terms/Consent visibility:
    - login screen includes legal acceptance notice and a legal information link;
-   - Home screen includes legal acceptance notice and a legal information link;
+   - Home screen legal notice was removed because CTA altında tasarımı yoruyordu;
    - blocking first-analysis consent was intentionally removed for lower friction;
    - versioned `consents` table exists with RLS and minimum grants;
    - login/session creates a non-blocking background audit row with legal versions, timestamp, app version and device id when missing.
    - Done: consent audit failures are logged with retry backoff;
    - Follow-up: replace summary copy with lawyer-reviewed final KVKK/terms text and add full document links.
+   - Follow-up: find a calmer in-app placement for KVKK/terms access, likely Profile > Güvenlik ve gizlilik or first-run/account settings instead of Home CTA area.
 2. Visual data policy:
    - Done: client-side EXIF cleanup by pixel-only re-render before AI analysis/upload;
    - Done: Edge Function strips common JPEG/PNG metadata before Gemini and Storage persistence;
-   - face blur;
+   - Done: client-side face blur is applied to sanitized analysis/upload images using Vision face detection;
+   - Done: Result and detail screens prefer cleaned Storage thumbnails/images over local original previews;
    - company logo blur;
    - cleaned-image-only storage policy where practical.
 3. Clear retention/deletion policy:
-   - define how long images, reports and raw AI responses are stored;
-   - add user deletion/export path later.
+   - Done: policy defined as Free photos 30 days, Pro photos 365 days, raw AI responses 30 days, reports until user deletion;
+   - Done: `analyses.raw_ai_response_expires_at`, `photos.retention_expires_at` and `photos.retention_policy` added;
+   - Done: DB triggers automatically assign retention windows for new analyses/photos;
+   - Done: `private.cleanup_expired_retention(batch_size)` added for scheduled/admin cleanup;
+   - Done: `retention-cleanup` Edge Function deployed to delete expired Storage objects through the supported Storage API path;
+   - Done: Reports tab exposes per-report delete action;
+   - Done: Analyses tab exposes per-analysis delete action;
+   - Done: scheduled daily execution through Supabase Cron (`riskdetected-retention-cleanup-daily`, `15 2 * * *`);
+   - Done: Profile > Verilerim section added for JSON export, bulk report delete, bulk analysis delete and account deletion request capture;
+   - Follow-up: implement privileged backend/admin completion flow for account deletion requests.
 
 ### P2 - Auth and Subscription
 
@@ -137,6 +172,22 @@ These items exist in some form, but need revision before we treat them as produc
 3. Google Sign In production hardening.
 4. RevenueCat subscription integration.
 5. Replace local/mock Pro toggles with verified subscription/profile refresh only.
+
+### P2.5 - App Preferences and Localization
+
+1. Theme preference:
+   - add Profile > Tercihler screen;
+   - support System / Aydınlık / Karanlık;
+   - persist selected theme locally;
+   - apply theme consistently across app surfaces, PDF preview screens and paywall.
+2. Language preference:
+   - add Turkish / English / System language selector;
+   - introduce localized string structure before hardcoding grows further;
+   - first target screens: Auth, Home, Analysis, Result, Reports, Profile;
+   - later target: PDF/report output language selection.
+3. Preference sync:
+   - keep MVP local-first;
+   - later store preferred theme/language in `profiles` or a dedicated `user_preferences` table.
 
 ### P3 - AI Reliability and Cost Control
 
@@ -200,6 +251,7 @@ These items exist in some form, but need revision before we treat them as produc
 2. Use Firebase phone verification bridge or Supabase native phone OTP?
 3. Which paid Pro AI model/provider becomes the primary production route?
 4. How strict should image retention be for KVKK and user trust?
+   - Current decision: Free analysis photos 30 days, Pro analysis photos 365 days, raw AI responses 30 days, reports until user deletion.
 5. Is Free max 4 / Pro max 14 the final business rule, or should we A/B test it later?
 
 ## Deployment Notes
@@ -208,6 +260,20 @@ These items exist in some form, but need revision before we treat them as produc
 - Remote migration history contains older timestamped migrations from the previous setup that are not fully mirrored locally, so `supabase db push` reports a history mismatch.
 - For the P0 reports migration, SQL was applied with:
   - `npx supabase db query --linked -f supabase/migrations/20260506_reports_storage.sql`
+- For the P1 retention migration, SQL was applied with:
+  - `supabase db query --linked -f supabase/migrations/20260507221522_retention_policy.sql`
+- P1 retention Edge Function deploy:
+  - `supabase functions deploy retention-cleanup --use-api`
+  - `supabase functions deploy retention-cleanup --use-api --no-verify-jwt`
+- P1 retention Cron migration:
+  - `supabase db query --linked -f supabase/migrations/20260508021838_retention_cron_schedule.sql`
+- P1 account deletion request migration:
+  - `supabase db query --linked -f supabase/migrations/20260508022421_account_deletion_requests.sql`
 - Edge Function deploy was completed with:
   - `npx supabase functions deploy analyze --use-api`
   - `supabase functions deploy analyze --use-api`
+
+## Last Checkpoint
+
+- Last commit: `35b846c chore: harden photo privacy and consent audit`.
+- Working tree now contains P1 retention/visual privacy follow-up changes pending commit.

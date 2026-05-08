@@ -10,14 +10,16 @@ struct RecentAnalysis: Identifiable, Hashable {
     let id: UUID
     let title: String
     let meta: String
+    let timestamp: String
     let findings: [RecentFinding]
     let count: Int
     let photoPath: String?
 
-    init(id: UUID = UUID(), title: String, meta: String, findings: [RecentFinding], count: Int, photoPath: String? = nil) {
+    init(id: UUID = UUID(), title: String, meta: String, timestamp: String = "", findings: [RecentFinding], count: Int, photoPath: String? = nil) {
         self.id = id
         self.title = title
         self.meta = meta
+        self.timestamp = timestamp
         self.findings = findings
         self.count = count
         self.photoPath = photoPath
@@ -63,6 +65,7 @@ extension RecentAnalysis {
             id: row.id,
             title: row.title,
             meta: meta,
+            timestamp: Self.absoluteDateLabel(row.createdAt),
             findings: [RecentFinding(level: level, title: findingLabel)],
             count: row.findingCount,
             photoPath: photoPath
@@ -85,5 +88,23 @@ extension RecentAnalysis {
         formatter.locale = Locale(identifier: "tr_TR")
         formatter.unitsStyle = .short
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private static func absoluteDateLabel(_ raw: String?) -> String {
+        guard let raw else { return "" }
+        let isoWithFraction = ISO8601DateFormatter()
+        isoWithFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+
+        guard let date = isoWithFraction.date(from: raw) ?? iso.date(from: raw) else {
+            return ""
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMM · HH:mm"
+        return formatter.string(from: date)
     }
 }

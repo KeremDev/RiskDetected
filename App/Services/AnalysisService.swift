@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import Supabase
+import Vision
 
 /// Analiz akışını orkestre eder:
 /// 1. `analyses` kaydı oluştur (status: pending)
@@ -272,6 +273,246 @@ final class AnalysisService {
         }
     }
 
+    /// Kullanıcının seçtiği tek PDF raporu ve ilişkili Storage dosyasını siler.
+    func deleteReport(_ report: ReportRow) async throws {
+        do {
+            _ = try await supabase.storage
+                .from(RDConfig.Bucket.reports)
+                .remove(paths: [report.storagePath])
+        } catch {
+            throw AnalysisError.storageFailed(error.localizedDescription)
+        }
+
+        do {
+            try await supabase.client
+                .from("reports")
+                .delete()
+                .eq("id", value: report.id.uuidString)
+                .execute()
+        } catch {
+            throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
+    /// Analizi kullanıcı isteğiyle siler. DB cascade findings/photos/reports
+    /// kayıtlarını temizler; Storage dosyaları silme öncesi kaldırılır.
+    func deleteAnalysis(analysisID: UUID) async throws {
+        do {
+            async let photoRows: [AnalysisPhotoRow] = supabase.client
+                .from("photos")
+                .select("analysis_id,storage_path,width,height,mime_type")
+                .eq("analysis_id", value: analysisID.uuidString)
+                .execute()
+                .value
+
+            async let reportRows: [ReportRow] = supabase.client
+                .from("reports")
+                .select()
+                .eq("analysis_id", value: analysisID.uuidString)
+                .execute()
+                .value
+
+            let (photos, reports) = try await (photoRows, reportRows)
+            let photoPaths = photos.map(\.storagePath)
+            let reportPaths = reports.map(\.storagePath)
+
+            if !photoPaths.isEmpty {
+                _ = try await supabase.storage
+                    .from(RDConfig.Bucket.photos)
+                    .remove(paths: photoPaths)
+            }
+
+            if !reportPaths.isEmpty {
+                _ = try await supabase.storage
+                    .from(RDConfig.Bucket.reports)
+                    .remove(paths: reportPaths)
+            }
+
+            try await supabase.client
+                .from("analyses")
+                .delete()
+                .eq("id", value: analysisID.uuidString)
+                .execute()
+        } catch let error as AnalysisError {
+            throw error
+        } catch {
+            throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
+    /// Kullanıcının analiz/rapor özetini JSON olarak dışa aktarır.
+    func exportUserData(userID: UUID, profile: UserProfile?) async throws -> URL {
+        struct ExportPayload: Encodable {
+            let exported_at: String
+            let user_id: String
+            let profile: UserProfile?
+            let analyses: [AnalysisRow]
+            let findings: [FindingRow]
+            let photos: [AnalysisPhotoRow]
+            let reports: [ReportRow]
+        }
+
+        do {
+            async let analyses: [AnalysisRow] = supabase.client
+                .from("analyses")
+                .select()
+                .order("created_at", ascending: false)
+                .limit(1000)
+                .execute()
+                .value
+
+            async let findings: [FindingRow] = supabase.client
+                .from("findings")
+                .select()
+                .order("ordinal", ascending: true)
+                .limit(5000)
+                .execute()
+                .value
+
+            async let photos: [AnalysisPhotoRow] = supabase.client
+                .from("photos")
+                .select("analysis_id,storage_path,width,height,mime_type")
+                .order("created_at", ascending: false)
+                .limit(1000)
+                .execute()
+                .value
+
+            async let reports = listReports(limit: 1000)
+
+            let (analysisRows, findingRows, photoRows, reportRows) = try await (analyses, findings, photos, reports)
+
+            let payload = ExportPayload(
+                exported_at: ISO8601DateFormatter().string(from: Date()),
+                user_id: userID.uuidString,
+                profile: profile,
+                analyses: analysisRows,
+                findings: findingRows,
+                photos: photoRows,
+                reports: reportRows
+            )
+
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+            let data = try encoder.encode(payload)
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent("RiskDetected_Verilerim_\(String(userID.uuidString.prefix(8))).json")
+            try data.write(to: url, options: .atomic)
+            return url
+        } catch let error as AnalysisError {
+            throw error
+        } catch {
+            throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
+    /// Kullanıcının tüm PDF raporlarını ve Storage dosyalarını siler.
+    func deleteAllReports() async throws {
+        do {
+            let reports = try await listReports(limit: 1000)
+            guard !reports.isEmpty else { return }
+
+            let paths = reports.map(\.storagePath)
+
+            if !paths.isEmpty {
+                _ = try await supabase.storage
+                    .from(RDConfig.Bucket.reports)
+                    .remove(paths: paths)
+            }
+
+            try await supabase.client
+                .from("reports")
+                .delete()
+                .in("id", values: reports.map { $0.id.uuidString })
+                .execute()
+        } catch let error as AnalysisError {
+            throw error
+        } catch {
+            throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
+    /// Kullanıcının tüm analizlerini, ilişkili Storage dosyalarını ve cascade DB kayıtlarını siler.
+    func deleteAllAnalyses() async throws {
+        do {
+            let analyses: [AnalysisRow] = try await supabase.client
+                .from("analyses")
+                .select()
+                .order("created_at", ascending: false)
+                .limit(1000)
+                .execute()
+                .value
+
+            let ids = analyses.map(\.id)
+            guard !ids.isEmpty else { return }
+
+            async let photoRows: [AnalysisPhotoRow] = supabase.client
+                .from("photos")
+                .select("analysis_id,storage_path,width,height,mime_type")
+                .in("analysis_id", values: ids.map { $0.uuidString })
+                .execute()
+                .value
+
+            async let reportRows: [ReportRow] = supabase.client
+                .from("reports")
+                .select()
+                .in("analysis_id", values: ids.map { $0.uuidString })
+                .execute()
+                .value
+
+            let (photos, reports) = try await (photoRows, reportRows)
+            let photoPaths = photos.map(\.storagePath)
+            let reportPaths = reports.map(\.storagePath)
+
+            if !photoPaths.isEmpty {
+                _ = try await supabase.storage
+                    .from(RDConfig.Bucket.photos)
+                    .remove(paths: photoPaths)
+            }
+
+            if !reportPaths.isEmpty {
+                _ = try await supabase.storage
+                    .from(RDConfig.Bucket.reports)
+                    .remove(paths: reportPaths)
+            }
+
+            try await supabase.client
+                .from("analyses")
+                .delete()
+                .in("id", values: ids.map { $0.uuidString })
+                .execute()
+        } catch let error as AnalysisError {
+            throw error
+        } catch {
+            throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
+    /// Hesap silme talebini denetlenebilir şekilde kaydeder.
+    func requestAccountDeletion(userID: UUID, email: String?) async throws {
+        struct Payload: Encodable {
+            let user_id: String
+            let email: String?
+            let requested_scope: String
+            let note: String
+        }
+
+        let payload = Payload(
+            user_id: userID.uuidString,
+            email: email,
+            requested_scope: "account_and_data",
+            note: "User requested account and data deletion from iOS Profile > Verilerim."
+        )
+
+        do {
+            try await supabase.client
+                .from("account_deletion_requests")
+                .insert(payload)
+                .execute()
+        } catch {
+            throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
     /// Profil ekranı için canlı sayaçlar.
     func profileStats() async throws -> ProfileStats {
         let startOfWeek = Calendar.current.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
@@ -319,8 +560,8 @@ final class AnalysisService {
 
     // MARK: - Private steps
 
-    private static let maxInlinePhotoBytes = 1_500_000
-    private static let maxInlinePhotoPayloadBytes = 4_500_000
+    nonisolated private static let maxInlinePhotoBytes = 1_500_000
+    nonisolated private static let maxInlinePhotoPayloadBytes = 4_500_000
 
     private func countRows(
         table: String,
@@ -596,7 +837,8 @@ private struct SanitizedPhoto {
 
 private extension UIImage {
     /// Produces a pixel-only render for analysis/upload. Re-rendering through
-    /// UIGraphics drops EXIF/location/camera metadata and normalizes orientation.
+    /// UIGraphics drops EXIF/location/camera metadata, normalizes orientation and
+    /// applies lightweight privacy protection before AI/Storage use.
     func sanitizedForAnalysis(maxDimension: CGFloat) -> SanitizedImage {
         let longest = max(size.width, size.height)
         let scale = longest > maxDimension ? maxDimension / longest : 1
@@ -613,8 +855,63 @@ private extension UIImage {
             UIBezierPath(rect: CGRect(origin: .zero, size: targetSize)).fill()
             draw(in: CGRect(origin: .zero, size: targetSize))
         }
-        return SanitizedImage(image: rendered, size: targetSize)
+        return SanitizedImage(image: rendered.blurringDetectedFaces(), size: targetSize)
     }
+
+    private func blurringDetectedFaces() -> UIImage {
+        guard let cgImage else { return self }
+
+        let request = VNDetectFaceRectanglesRequest()
+        let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .up, options: [:])
+        do {
+            try handler.perform([request])
+        } catch {
+            return self
+        }
+
+        guard let faces = request.results, !faces.isEmpty else { return self }
+        guard let sourceCI = CIImage(image: self) else { return self }
+
+        let extent = sourceCI.extent
+        let clamped = sourceCI.clampedToExtent()
+        let blurred = clamped
+            .applyingFilter("CIGaussianBlur", parameters: ["inputRadius": 22])
+            .cropped(to: extent)
+
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
+
+            for face in faces {
+                let rect = Self.visionRect(face.boundingBox, imageSize: size)
+                    .insetBy(dx: -size.width * 0.018, dy: -size.height * 0.018)
+                    .intersection(CGRect(origin: .zero, size: size))
+
+                guard rect.width > 1, rect.height > 1 else { continue }
+
+                let ciRect = CGRect(
+                    x: rect.minX,
+                    y: size.height - rect.maxY,
+                    width: rect.width,
+                    height: rect.height
+                )
+
+                guard let crop = Self.ciContext.createCGImage(blurred, from: ciRect) else { continue }
+                UIImage(cgImage: crop).draw(in: rect)
+            }
+        }
+    }
+
+    private static func visionRect(_ normalizedRect: CGRect, imageSize: CGSize) -> CGRect {
+        CGRect(
+            x: normalizedRect.minX * imageSize.width,
+            y: (1 - normalizedRect.maxY) * imageSize.height,
+            width: normalizedRect.width * imageSize.width,
+            height: normalizedRect.height * imageSize.height
+        )
+    }
+
+    private static let ciContext = CIContext(options: [.cacheIntermediates: false])
 }
 
 // MARK: - Wire row types

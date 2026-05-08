@@ -10,6 +10,8 @@ struct ReportView: View {
     @State private var isLoading = false
     @State private var loadingID: UUID?
     @State private var downloadingID: UUID?
+    @State private var deletingReportID: UUID?
+    @State private var reportPendingDelete: ReportRow?
     @State private var isGeneratingPDF = false
     @State private var errorMessage: String?
     @State private var showPaywall = false
@@ -56,6 +58,25 @@ struct ReportView: View {
         }
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
+        }
+        .confirmationDialog(
+            "PDF raporu silinsin mi?",
+            isPresented: Binding(
+                get: { reportPendingDelete != nil },
+                set: { if !$0 { reportPendingDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Raporu sil", role: .destructive) {
+                if let report = reportPendingDelete {
+                    delete(report)
+                }
+            }
+            Button("Vazgeç", role: .cancel) {
+                reportPendingDelete = nil
+            }
+        } message: {
+            Text("PDF dosyası ve rapor arşiv kaydı silinir. Analiz sonucu silinmez.")
         }
         .sheet(isPresented: $showReportSettings) {
             ReportSettingsSheet(
@@ -184,9 +205,12 @@ struct ReportView: View {
                     ForEach(storedReports) { report in
                         StoredReportRow(
                             report: report,
-                            isLoading: downloadingID == report.id
+                            isLoading: downloadingID == report.id,
+                            isDeleting: deletingReportID == report.id
                         ) {
                             download(report)
+                        } onDelete: {
+                            reportPendingDelete = report
                         }
                     }
                 }
@@ -374,6 +398,22 @@ struct ReportView: View {
                 errorMessage = error.localizedDescription
             }
             downloadingID = nil
+        }
+    }
+
+    private func delete(_ report: ReportRow) {
+        guard deletingReportID == nil else { return }
+        reportPendingDelete = nil
+        deletingReportID = report.id
+
+        Task {
+            do {
+                try await AnalysisService.shared.deleteReport(report)
+                storedReports.removeAll { $0.id == report.id }
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            deletingReportID = nil
         }
     }
 
@@ -737,55 +777,108 @@ private struct ReportAnalysisRow: View {
 private struct StoredReportRow: View {
     let report: ReportRow
     let isLoading: Bool
+    let isDeleting: Bool
     let action: () -> Void
+    let onDelete: () -> Void
+    @State private var dragOffset: CGFloat = 0
+
+    private let revealWidth: CGFloat = 74
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: iconName)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.rdGreen)
-                    .frame(width: 42, height: 42)
-                    .background(Color.rdGreenSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(report.title)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.rdBlack)
-                        .lineLimit(1)
-                    HStack(spacing: 6) {
-                        Text(kindLabel)
-                        Text("·")
-                        Text(dateText)
-                        if let sizeText {
-                            Text("·")
-                            Text(sizeText)
-                        }
-                    }
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.rdSlate)
+        ZStack(alignment: .trailing) {
+            Button(role: .destructive) {
+                onDelete()
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
+                    dragOffset = 0
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                } else {
-                    Image(systemName: "arrow.down.to.line")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.rdSlate)
+            } label: {
+                VStack(spacing: 5) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 17, weight: .semibold))
+                    Text("Sil")
+                        .font(.system(size: 11, weight: .bold))
                 }
+                .foregroundStyle(.white)
+                .frame(width: revealWidth, height: 68)
             }
-            .padding(12)
-            .background(Color.rdWhite)
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.rdLine, lineWidth: 1)
-            )
+            .background(Color.rdCritical)
             .clipShape(RoundedRectangle(cornerRadius: 14))
+            .opacity(dragOffset < -8 ? 1 : 0)
+
+            rowContent
+                .offset(x: dragOffset)
+                .gesture(
+                    DragGesture(minimumDistance: 12, coordinateSpace: .local)
+                        .onChanged { value in
+                            let horizontal = value.translation.width
+                            let vertical = abs(value.translation.height)
+                            guard abs(horizontal) > vertical else { return }
+                            dragOffset = min(0, max(-revealWidth, horizontal))
+                        }
+                        .onEnded { value in
+                            let shouldOpen = value.translation.width < -36
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
+                                dragOffset = shouldOpen ? -revealWidth : 0
+                            }
+                        }
+                )
         }
-        .buttonStyle(RDPressableButtonStyle())
+    }
+
+    private var rowContent: some View {
+        HStack(spacing: 10) {
+            Image(systemName: iconName)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Color.rdGreen)
+                .frame(width: 42, height: 42)
+                .background(Color.rdGreenSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(report.title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.rdBlack)
+                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(kindLabel)
+                    Text("·")
+                    Text(dateText)
+                    if let sizeText {
+                        Text("·")
+                        Text(sizeText)
+                    }
+                }
+                .font(.system(size: 12))
+                .foregroundStyle(Color.rdSlate)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if isLoading || isDeleting {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                Image(systemName: "arrow.down.to.line")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.rdSlate)
+            }
+        }
+        .padding(12)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if dragOffset < 0 {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
+                    dragOffset = 0
+                }
+            } else {
+                action()
+            }
+        }
     }
 
     private var iconName: String {

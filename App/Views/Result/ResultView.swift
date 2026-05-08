@@ -77,7 +77,7 @@ struct ResultView: View {
                 finding: finding,
                 method: method,
                 photoPath: photoPath,
-                localPreviewImage: localPreviewImage
+                localPreviewImage: photoPath == nil ? localPreviewImage : nil
             )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
@@ -157,7 +157,7 @@ struct ResultView: View {
     private var photoMetaCard: some View {
         RDCard {
             HStack(alignment: .top, spacing: 12) {
-                ResultPhotoThumbnail(image: localPreviewImage, path: photoPath, cornerRadius: 12)
+                ResultPhotoThumbnail(image: photoPath == nil ? localPreviewImage : nil, path: photoPath, cornerRadius: 12)
                     .frame(width: 92, height: 92)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -584,10 +584,6 @@ struct ResultView: View {
     }
 
     private func loadReportImage() async throws -> UIImage? {
-        if let localPreviewImage {
-            return localPreviewImage
-        }
-
         let resolvedPath: String?
         if let photoPath {
             resolvedPath = photoPath
@@ -599,7 +595,7 @@ struct ResultView: View {
         }
 
         guard let resolvedPath else {
-            return nil
+            return localPreviewImage
         }
 
         let data = try await AnalysisService.shared.photoData(path: resolvedPath)
@@ -1026,12 +1022,14 @@ private struct ResultPhotoThumbnail: View {
 
     var body: some View {
         ZStack {
-            if let image {
+            if let path {
+                AnalysisThumbnail(path: path, cornerRadius: cornerRadius)
+            } else if let image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
             } else {
-                AnalysisThumbnail(path: path, cornerRadius: cornerRadius)
+                AnalysisThumbnail(path: nil, cornerRadius: cornerRadius)
             }
         }
         .clipped()
