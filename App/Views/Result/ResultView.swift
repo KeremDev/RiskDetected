@@ -77,7 +77,7 @@ struct ResultView: View {
                 finding: finding,
                 method: method,
                 photoPath: photoPath,
-                localPreviewImage: photoPath == nil ? localPreviewImage : nil
+                localPreviewImage: localPreviewImage
             )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
@@ -157,7 +157,7 @@ struct ResultView: View {
     private var photoMetaCard: some View {
         RDCard {
             HStack(alignment: .top, spacing: 12) {
-                ResultPhotoThumbnail(image: photoPath == nil ? localPreviewImage : nil, path: photoPath, cornerRadius: 12)
+                ResultPhotoThumbnail(image: localPreviewImage, path: photoPath, cornerRadius: 12)
                     .frame(width: 92, height: 92)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -572,6 +572,8 @@ struct ResultView: View {
                         )
                     } catch {
                         pdfError = "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)"
+                        isGeneratingPDF = false
+                        return
                     }
                 }
                 shareItem = ShareItem(url: url)
@@ -1019,11 +1021,15 @@ private struct ResultPhotoThumbnail: View {
     let image: UIImage?
     let path: String?
     var cornerRadius: CGFloat
+    @State private var remoteImage: UIImage?
+    @State private var loadedPath: String?
 
     var body: some View {
         ZStack {
-            if let path {
-                AnalysisThumbnail(path: path, cornerRadius: cornerRadius)
+            if let remoteImage {
+                Image(uiImage: remoteImage)
+                    .resizable()
+                    .scaledToFill()
             } else if let image {
                 Image(uiImage: image)
                     .resizable()
@@ -1034,6 +1040,22 @@ private struct ResultPhotoThumbnail: View {
         }
         .clipped()
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .task(id: path) {
+            await loadRemoteIfNeeded()
+        }
+    }
+
+    private func loadRemoteIfNeeded() async {
+        guard let path, loadedPath != path else { return }
+        loadedPath = path
+        do {
+            let data = try await AnalysisService.shared.photoData(path: path)
+            if let downloaded = UIImage(data: data) {
+                remoteImage = downloaded
+            }
+        } catch {
+            remoteImage = nil
+        }
     }
 }
 

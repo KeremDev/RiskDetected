@@ -399,7 +399,7 @@ final class PDFReportService {
         let y: CGFloat = 82
         let headerH: CGFloat = 44
         let rowH: CGFloat = 102
-        let widths: [CGFloat] = [26, 82, 150, 105, 30, 30, 30, 44, 70, 204, 62, 55]
+        let widths: [CGFloat] = [24, 66, 134, 82, 28, 28, 28, 40, 62, 186, 54, 46]
         let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "F", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Sorumlu", "Termin"]
 
         drawGridHeader(x: x, y: y, widths: widths, height: headerH, headers: headers, fill: .rdPDFTableBlue)
@@ -431,7 +431,7 @@ final class PDFReportService {
         let y: CGFloat = 82
         let headerH: CGFloat = 44
         let rowH: CGFloat = 84
-        let widths: [CGFloat] = [28, 92, 170, 116, 34, 34, 46, 76, 214, 70]
+        let widths: [CGFloat] = [24, 72, 150, 92, 30, 30, 42, 66, 220, 52]
         let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Termin"]
 
         drawGridHeader(x: x, y: y, widths: widths, height: headerH, headers: headers, fill: .rdPDFTableBlue)

@@ -376,6 +376,8 @@ struct ReportView: View {
                     storedReports = (try? await AnalysisService.shared.listReports(limit: 20)) ?? storedReports
                 } catch {
                     errorMessage = "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)"
+                    isGeneratingPDF = false
+                    return
                 }
                 shareItem = ShareItem(url: url)
                 isGeneratingPDF = false

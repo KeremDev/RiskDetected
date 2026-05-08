@@ -286,11 +286,15 @@ struct RiskDetailView: View {
 private struct ResultDetailPhoto: View {
     let image: UIImage?
     let path: String?
+    @State private var remoteImage: UIImage?
+    @State private var loadedPath: String?
 
     var body: some View {
         ZStack {
-            if let path {
-                AnalysisThumbnail(path: path, cornerRadius: 16)
+            if let remoteImage {
+                Image(uiImage: remoteImage)
+                    .resizable()
+                    .scaledToFill()
             } else if let image {
                 Image(uiImage: image)
                     .resizable()
@@ -301,5 +305,21 @@ private struct ResultDetailPhoto: View {
         }
         .clipped()
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .task(id: path) {
+            await loadRemoteIfNeeded()
+        }
+    }
+
+    private func loadRemoteIfNeeded() async {
+        guard let path, loadedPath != path else { return }
+        loadedPath = path
+        do {
+            let data = try await AnalysisService.shared.photoData(path: path)
+            if let downloaded = UIImage(data: data) {
+                remoteImage = downloaded
+            }
+        } catch {
+            remoteImage = nil
+        }
     }
 }

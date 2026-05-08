@@ -3,11 +3,13 @@ import SwiftUI
 /// AI Odaklı Analiz canvas seçim sheet'i — 3×2 grid, PRO kartlar ayrıca vurgulu.
 struct CanvasSheet: View {
     @Binding var selected: Set<AnalysisCanvas>
+    @Binding var userPrompt: String
     var isUserPro: Bool = false
     var onConfirm: () -> Void
     var onUpgradeRequested: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
+    private let promptLimit = 100
 
     private let columns: [GridItem] = Array(
         repeating: GridItem(.flexible(), spacing: 8),
@@ -56,6 +58,8 @@ struct CanvasSheet: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
 
+            promptInput
+
             // Onay butonu
             RDButton(title: "Onayla ve devam et", style: .primary) {
                 onConfirm()
@@ -67,6 +71,55 @@ struct CanvasSheet: View {
         }
         .padding(.top, 8)
         .background(Color.rdPaper)
+    }
+
+    private var promptInput: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Text("Özel analiz notu")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.rdBlack)
+                Spacer()
+                Text("\(userPrompt.count)/\(promptLimit)")
+                    .rdMono(size: 10, weight: .semibold)
+                    .foregroundStyle(userPrompt.count >= promptLimit ? Color.rdHigh : Color.rdSlate)
+            }
+
+            TextEditor(text: $userPrompt)
+                .font(.system(size: 13))
+                .foregroundStyle(Color.rdBlack)
+                .scrollContentBackground(.hidden)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(height: 64)
+                .background(Color.rdWhite)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+                .overlay(alignment: .topLeading) {
+                    if userPrompt.isEmpty {
+                        Text("Örn: sadece araç kasasında yolcu taşıma risklerine bak")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.rdSlate.opacity(0.72))
+                            .padding(.horizontal, 15)
+                            .padding(.vertical, 16)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .onChange(of: userPrompt) { newValue in
+                    if newValue.count > promptLimit {
+                        userPrompt = String(newValue.prefix(promptLimit))
+                    }
+                }
+
+            Text("Bu alanda ne istediğini belirtirsen daha net cevaplar alabilirsin.")
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(Color.rdSlate)
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 10)
     }
 }
 
@@ -188,6 +241,7 @@ private struct CanvasCard: View {
     StatefulPreviewWrapper(Set([AnalysisCanvas.general])) { binding in
         CanvasSheet(
             selected: binding,
+            userPrompt: .constant(""),
             isUserPro: false,
             onConfirm: {}
         )

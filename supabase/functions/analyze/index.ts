@@ -6,6 +6,7 @@
  *   canvas       : string (primary canvas id, single-value enum)
  *   canvases     : string[] (all selected — for future multi-canvas backend)
  *   text_input   : string | null
+ *   user_prompt  : string | null (optional, max 100 chars; user focus note)
  *   photo_paths  : string[] (Storage paths in "photos" bucket)
  *   photo_base64_parts: { mime_type: string; data: string; width?: number; height?: number }[] (inline photos)
  *
@@ -141,14 +142,20 @@ async function callGemini(
   model: string,
   systemPrompt: string,
   userText: string | null,
+  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
 ) {
   const parts: unknown[] = [];
   for (const img of imageBase64Parts) {
     parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
   }
+  if (userPrompt) {
+    parts.push({
+      text: `Kullanıcının özel analiz talebi: ${userPrompt}\nBu talebi yalnızca görsel/metin kanıtları destekliyorsa önceliklendir; kanıt yoksa uydurma.`,
+    });
+  }
   if (userText) {
-    parts.push({ text: `Kullanıcı notu: ${userText}` });
+    parts.push({ text: `Kullanıcı saha/metin girdisi: ${userText}` });
   } else if (imageBase64Parts.length === 0) {
     throw new Error("En az bir fotoğraf veya metin girdisi gerekli.");
   }
@@ -224,6 +231,7 @@ async function callGeminiWithFallback(
   preferredModel: string,
   systemPrompt: string,
   userText: string | null,
+  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
 ) {
   const models = preferredModel === MODEL_FREE_LITE
@@ -234,7 +242,7 @@ async function callGeminiWithFallback(
   for (const model of [...new Set(models)]) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        const out = await callGemini(apiKey, model, systemPrompt, userText, imageBase64Parts);
+        const out = await callGemini(apiKey, model, systemPrompt, userText, userPrompt, imageBase64Parts);
         return { ...out, modelUsed: model };
       } catch (err) {
         lastError = err;
@@ -389,6 +397,16 @@ function sanitizedDimension(value: unknown): number {
     : 0;
 }
 
+function sanitizedUserPrompt(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const cleaned = value
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 100);
+  return cleaned.length > 0 ? cleaned : null;
+}
+
 // deno-lint-ignore no-explicit-any
 async function logUsage(supabase: any, data: any) {
   try { await supabase.from("ai_usage_logs").insert(data); }
@@ -432,6 +450,7 @@ serve(async (req: Request) => {
   catch { return errorResponse(400, "Geçersiz JSON body."); }
 
   const { analysis_id, canvas, canvases, text_input, photo_paths = [], photo_base64_parts = [] } = body;
+  const userPrompt = sanitizedUserPrompt(body.user_prompt);
   if (!analysis_id) return errorResponse(400, "analysis_id zorunlu.");
 
   // Profil + tier
@@ -562,6 +581,8 @@ serve(async (req: Request) => {
     persisted_photo_count: persistedPhotoPaths.length,
     gemini_image_part_count: imageBase64Parts.length,
     text_input_present: Boolean(text_input),
+    user_prompt_present: Boolean(userPrompt),
+    user_prompt: userPrompt,
     model,
   };
 
@@ -572,7 +593,7 @@ serve(async (req: Request) => {
   let modelUsed = model;
 
   try {
-    const out = await callGeminiWithFallback(geminiKey, model, systemPrompt, text_input ?? null, imageBase64Parts);
+    const out = await callGeminiWithFallback(geminiKey, model, systemPrompt, text_input ?? null, userPrompt, imageBase64Parts);
     geminiResult = out.result;
     inputTokens = out.inputTokens;
     outputTokens = out.outputTokens;

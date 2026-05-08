@@ -17,6 +17,7 @@ struct HomeView: View {
     @State private var mode: HomeMode = .photo
     @State private var text: String = ""
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
+    @State private var analysisPrompt: String = ""
     @State private var showCanvasSheet = false
     @State private var showAnnotate = false
     @State private var showResult = false
@@ -111,6 +112,7 @@ struct HomeView: View {
         .sheet(isPresented: $showCanvasSheet) {
             CanvasSheet(
                 selected: $selectedCanvases,
+                userPrompt: $analysisPrompt,
                 isUserPro: app.isPro,
                 onConfirm: {
                     showCanvasSheet = false
@@ -120,7 +122,7 @@ struct HomeView: View {
                 },
                 onUpgradeRequested: { showPaywall = true }
             )
-            .presentationDetents([.fraction(0.55), .large])
+            .presentationDetents([.fraction(0.72), .large])
             .presentationDragIndicator(.visible)
         }
         .fullScreenCover(isPresented: $showCameraPicker) {
@@ -689,6 +691,7 @@ struct HomeView: View {
         let canvases = Array(selectedCanvases)
         let capturedImage = selectedImage
         let capturedText = text
+        let capturedPrompt = analysisPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
 
         switch mode {
         case .photo:
@@ -699,7 +702,8 @@ struct HomeView: View {
                 try await AnalysisService.shared.runPhotoAnalysis(
                     userID: userID,
                     images: [img],
-                    canvases: canvases
+                    canvases: canvases,
+                    userPrompt: capturedPrompt
                 )
             }
         case .text:
@@ -711,7 +715,8 @@ struct HomeView: View {
                 try await AnalysisService.shared.runTextAnalysis(
                     userID: userID,
                     text: trimmed,
-                    canvases: canvases
+                    canvases: canvases,
+                    userPrompt: capturedPrompt
                 )
             }
         }

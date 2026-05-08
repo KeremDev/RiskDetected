@@ -42,7 +42,8 @@ final class AnalysisService {
         userID: UUID,
         images: [UIImage],
         canvases: [AnalysisCanvas],
-        title: String? = nil
+        title: String? = nil,
+        userPrompt: String = ""
     ) async throws -> AnalysisResultBundle {
         guard !canvases.isEmpty else {
             throw AnalysisError.invalidInput("En az bir analiz odağı seçmelisin.")
@@ -71,7 +72,8 @@ final class AnalysisService {
         // 3) Edge function
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
-            textInput: nil, photoPaths: [], photoBase64Parts: photoParts
+            textInput: nil, photoPaths: [], photoBase64Parts: photoParts,
+            userPrompt: userPrompt
         )
 
         // 4) Sonucu çek
@@ -79,7 +81,7 @@ final class AnalysisService {
     }
 
     /// Metin bazlı analiz akışı.
-    func runTextAnalysis(userID: UUID, text: String, canvases: [AnalysisCanvas]) async throws -> AnalysisResultBundle {
+    func runTextAnalysis(userID: UUID, text: String, canvases: [AnalysisCanvas], userPrompt: String = "") async throws -> AnalysisResultBundle {
         guard !canvases.isEmpty else {
             throw AnalysisError.invalidInput("En az bir analiz odağı seçmelisin.")
         }
@@ -97,7 +99,8 @@ final class AnalysisService {
 
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
-            textInput: text, photoPaths: [], photoBase64Parts: []
+            textInput: text, photoPaths: [], photoBase64Parts: [],
+            userPrompt: userPrompt
         )
 
         return try await fetchResult(analysisID: analysisID)
@@ -225,7 +228,7 @@ final class AnalysisService {
         let payload = UpsertPayload(
             user_id: userID.uuidString,
             analysis_id: bundle.analysis.id.uuidString,
-            document_no: String(bundle.analysis.id.uuidString.prefix(8)).uppercased(),
+            document_no: Self.reportDocumentNo(for: bundle.analysis, kind: kind, method: method),
             format: "pdf",
             kind: kind.rawValue,
             method: Self.databaseReportMethodValue(method),
@@ -681,24 +684,28 @@ final class AnalysisService {
         canvases: [AnalysisCanvas],
         textInput: String?,
         photoPaths: [String],
-        photoBase64Parts: [InlinePhotoPart]
+        photoBase64Parts: [InlinePhotoPart],
+        userPrompt: String
     ) async throws {
         struct Body: Encodable {
             let analysis_id: String
             let canvas: String
             let canvases: [String]
             let text_input: String?
+            let user_prompt: String?
             let photo_paths: [String]
             let photo_base64_parts: [InlinePhotoPart]
         }
         // `canvas` = primary sorted id (tek-canvas contract).
         // `canvases` = tüm seçimler — Edge Function çoklu desteğe geçince kullanılır.
         let sortedCanvasIDs = canvases.map(\.id).sorted()
+        let cleanPrompt = String(userPrompt.trimmingCharacters(in: .whitespacesAndNewlines).prefix(100))
         let body = Body(
             analysis_id: analysisID.uuidString,
             canvas: sortedCanvasIDs.first ?? canvases[0].id,
             canvases: sortedCanvasIDs,
             text_input: textInput,
+            user_prompt: cleanPrompt.isEmpty ? nil : cleanPrompt,
             photo_paths: photoPaths,
             photo_base64_parts: photoBase64Parts
         )
@@ -809,6 +816,21 @@ final class AnalysisService {
             return "fine_kinney"
         case .matrix5x5:
             return "matrix_5x5"
+        }
+    }
+
+    private static func reportDocumentNo(for analysis: AnalysisRow, kind: PDFReportKind, method: RiskMethod) -> String {
+        let shortID = String(analysis.id.uuidString.prefix(8)).uppercased()
+        switch kind {
+        case .standard:
+            return "\(shortID)-STD"
+        case .riskAnalysis:
+            switch method {
+            case .fineKinney:
+                return "\(shortID)-FK"
+            case .matrix5x5:
+                return "\(shortID)-M5"
+            }
         }
     }
 
