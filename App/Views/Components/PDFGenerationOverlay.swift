@@ -1,5 +1,71 @@
 import SwiftUI
 
+@MainActor
+final class PDFGenerationProgressController: ObservableObject {
+    @Published private(set) var isActive = false
+    @Published private(set) var progress: Double = 0
+
+    private var progressTask: Task<Void, Never>?
+
+    func start() {
+        progressTask?.cancel()
+        progress = 0.07
+        isActive = true
+
+        progressTask = Task { @MainActor in
+            let waypoints: [Double] = [0.12, 0.18, 0.23, 0.31, 0.38, 0.46, 0.54, 0.61, 0.68, 0.71, 0.76, 0.81, 0.86, 0.90]
+            for point in waypoints {
+                try? await Task.sleep(nanoseconds: 420_000_000)
+                guard !Task.isCancelled else { return }
+                advance(to: point)
+            }
+
+            while !Task.isCancelled && progress < 0.94 {
+                try? await Task.sleep(nanoseconds: 850_000_000)
+                guard !Task.isCancelled else { return }
+                advance(to: min(progress + 0.01, 0.94))
+            }
+        }
+    }
+
+    func advance(to value: Double) {
+        guard isActive else { return }
+        let nextValue = max(progress, min(max(value, 0), 0.98))
+        withAnimation(.easeInOut(duration: 0.28)) {
+            progress = nextValue
+        }
+    }
+
+    func complete() async {
+        progressTask?.cancel()
+        progressTask = nil
+        withAnimation(.easeInOut(duration: 0.24)) {
+            progress = 0.98
+        }
+        try? await Task.sleep(nanoseconds: 220_000_000)
+        withAnimation(.easeInOut(duration: 0.22)) {
+            progress = 1
+        }
+        try? await Task.sleep(nanoseconds: 260_000_000)
+        reset()
+    }
+
+    func stop() {
+        reset()
+    }
+
+    func cancel() {
+        reset()
+    }
+
+    private func reset() {
+        progressTask?.cancel()
+        progressTask = nil
+        isActive = false
+        progress = 0
+    }
+}
+
 struct PDFGenerationOverlay: View {
     let progress: Double
 
@@ -106,6 +172,10 @@ struct PDFGenerationOverlay: View {
             .padding(.horizontal, 28)
         }
         .transition(.opacity.combined(with: .scale(scale: 0.96)))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("PDF hazırlanıyor")
+        .accessibilityValue("\(percentText), \(statusText)")
+        .accessibilityHint("Rapor oluşturulurken uygulamayı açık tut.")
         .onAppear {
             withAnimation(.easeInOut(duration: 1.15).repeatForever(autoreverses: true)) {
                 pulse = true
