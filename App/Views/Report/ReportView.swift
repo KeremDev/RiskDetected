@@ -83,7 +83,10 @@ struct ReportView: View {
                         generateSelectedReport(options: options, companyLogo: logo)
                     },
                     onPaywall: {
-                        showPaywall = true
+                        showSourceReportSheet = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+                            showPaywall = true
+                        }
                     }
                 )
                 .presentationDetents([.large])
@@ -298,7 +301,7 @@ struct ReportView: View {
 
         do {
             async let analysisRows = AnalysisService.shared.listRecent(limit: 12)
-            async let reportRows = AnalysisService.shared.listReports(limit: 20)
+            async let reportRows = AnalysisService.shared.listReports(limit: 100)
             let rows = try await analysisRows
             storedReports = (try? await reportRows) ?? []
             visibleReportCount = min(visibleReportCount, max(storedReports.count, 5))
@@ -375,7 +378,7 @@ struct ReportView: View {
                         supportID: supportID
                     )
                     pdfGeneration.advance(to: 0.88)
-                    storedReports = (try? await AnalysisService.shared.listReports(limit: 20)) ?? storedReports
+                    storedReports = (try? await AnalysisService.shared.listReports(limit: 100)) ?? storedReports
                     pdfGeneration.advance(to: 0.94)
                 } catch {
                     pdfGeneration.stop()

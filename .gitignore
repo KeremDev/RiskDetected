@@ -27,6 +27,8 @@ Packages/
 
 # Sensitive
 *.env
+App/GoogleService-Info.plist
+App/GoogleService-Info.plist.local
 
 # Supabase local/link cache
 supabase/.temp/

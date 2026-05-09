@@ -61,9 +61,10 @@ Bu nedenle güvenli üretim kararı:
 - Firebase iOS SDK paketleri projeye eklendi: `FirebaseCore`, `FirebaseAuth`.
 - App açılışında `FirebaseBootstrap.configureIfAvailable()` çalışır.
 - `GoogleService-Info.plist` bundle içinde yoksa Firebase sessizce devre dışı kalır; uygulama crash olmaz.
+- Güvenlik: gerçek `App/GoogleService-Info.plist` git dışında tutulur. Repo’da sadece `App/GoogleService-Info.plist.example` template’i bulunur.
 - `FirebasePhoneAuthService` SMS kod gönderme ve kod doğrulama/token alma işlemlerini hazırlar.
 - `RDConfig.Auth.useFirebasePhoneBridge = false`; kullanıcıya açık telefon girişi geçici olarak kapalıdır.
-- `firebase-phone-bridge` Edge Function deploy edildi ve JWT doğrulaması kapalıdır; kullanıcı henüz Supabase session sahibi olmadığı için bu gereklidir.
+- `firebase-phone-bridge` Edge Function deploy edildi ancak telefon auth kapalı olduğu için endpoint 410 dönecek şekilde devre dışı bırakıldı.
 - `firebase_phone_auth_links` tablosu remote Supabase veritabanına uygulandı.
 - `FIREBASE_PROJECT_ID=riskdetected` Supabase secret olarak eklendi.
 - Canlı endpoint sahte token için beklenen şekilde `invalid_token_format` döner; bu bridge'in config yüklü olduğunu gösterir.

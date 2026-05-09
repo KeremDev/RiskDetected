@@ -227,9 +227,10 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: `firebase_phone_auth_links` table applied to remote Supabase database.
    - Done: `firebase-phone-bridge` deployed with JWT verification disabled because callers do not have a Supabase session before login.
    - Done: Firebase iOS app created in project `riskdetected` for bundle id `com.riskdetected.app`.
-   - Done: `App/GoogleService-Info.plist` downloaded from Firebase and added to the app bundle.
+   - Done: `App/GoogleService-Info.plist.example` template added; real Firebase plist is kept out of git.
    - Done: `FIREBASE_PROJECT_ID=riskdetected` added to Supabase Edge Function secrets.
    - Current production flag: `RDConfig.Auth.useFirebasePhoneBridge = false`; phone login is not exposed in UI.
+   - Safety update: `firebase-phone-bridge` now returns 410 while phone auth is paused. Before reactivation, replace the old reusable email/password bridge with a short-lived exchange flow.
    - Previous fallback is no longer user-facing because the phone flow is paused.
    - Blocked external config: Firebase Auth initialize returned `BILLING_NOT_ENABLED`; enable the required Firebase billing/Identity Platform setup and Phone provider before removing the fallback.
    - Added: auth setup notes captured in `AUTH_SETUP.md`.
