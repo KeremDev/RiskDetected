@@ -216,9 +216,20 @@ These items exist in some form, but need revision before we treat them as produc
 
 1. Email OTP login + deferred Firebase phone bridge.
    - Decision update 2026-05-09: phone login is temporarily canceled for MVP; user-facing passwordless auth is Supabase Email OTP.
-   - Done: auth UI now shows "E-posta kodu ile devam et" instead of phone number login.
+   - Done: auth UI now shows "E-posta ile giriş yap" instead of phone number login.
    - Done: `AuthService.sendEmailOTP(email:)` and `verifyEmailOTP(email:token:)` are wired to Supabase Email OTP.
+   - Done: Supabase Email provider smoke test passed with `POST /auth/v1/otp` returning 200 for a valid mailbox-shaped address.
+   - Done: Auth session issuance verified through Admin `generate_link` + `/auth/v1/verify` token hash flow.
+   - Done: Email send rate-limit and invalid email errors are normalized into auth-specific Turkish user messages instead of generic AI/rate-limit messaging.
+   - Done: Auth screen visual polish pass:
+     - softened hero image to white transition;
+     - lifted logo/slogan block in the email entry state;
+     - changed Google button to a branded colored wordmark style;
+     - changed email placeholder to muted grey and made the "Diger giris yontemleri" link more readable.
    - Required external setup: Supabase Email provider and OTP email template must expose the 6-digit token.
+   - Required external setup: configure custom SMTP in Supabase Auth to avoid low built-in email rate limits and improve delivery.
+   - SMTP candidates: Resend, Postmark, SendGrid or Mailgun. Prefer verified-domain transactional SMTP before public launch.
+   - Remaining manual check: use a real accessible mailbox and confirm the Supabase email template renders the 6-digit OTP token.
    - Deferred: Firebase phone verification + Supabase bridge remains available in code for future reactivation.
    - Added: Firebase iOS SDK packages (`FirebaseCore`, `FirebaseAuth`) are wired into the Xcode project.
    - Added: `FirebaseBootstrap` configures Firebase only when `GoogleService-Info.plist` is present, so the app remains stable without Firebase config.

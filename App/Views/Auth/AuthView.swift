@@ -75,11 +75,12 @@ struct AuthView: View {
                 LinearGradient(
                     stops: [
                         .init(color: .clear,                           location: 0.0),
-                        .init(color: .clear,                           location: 0.22),
-                        .init(color: Color.rdPaper.opacity(0.30),      location: 0.38),
-                        .init(color: Color.rdPaper.opacity(0.78),      location: 0.52),
-                        .init(color: Color.rdPaper.opacity(0.97),      location: 0.62),
-                        .init(color: Color.rdPaper,                    location: 0.70),
+                        .init(color: .clear,                           location: 0.18),
+                        .init(color: Color.rdPaper.opacity(0.14),      location: 0.30),
+                        .init(color: Color.rdPaper.opacity(0.42),      location: 0.43),
+                        .init(color: Color.rdPaper.opacity(0.72),      location: 0.56),
+                        .init(color: Color.rdPaper.opacity(0.94),      location: 0.70),
+                        .init(color: Color.rdPaper,                    location: 0.84),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -99,27 +100,24 @@ struct AuthView: View {
                 .ignoresSafeArea()
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-                // MARK: Logo + subtitle — gradient'ın açık bölgesinde
-                VStack(spacing: 10) {
-                    RDLogo(size: 38)
-                    Text("Saha için yapay zekâ destekli iş güvenliği asistanı")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 260)
-                }
-                .padding(.bottom, formHeight + 32)
-                .frame(maxWidth: .infinity)
+                // MARK: Identity + form — daha yukarıda dengeli blok
+                VStack(spacing: phase == .email ? 18 : 20) {
+                    VStack(spacing: 10) {
+                        RDLogo(size: phase == .email ? 36 : 38)
+                        Text("Saha için yapay zekâ destekli iş güvenliği asistanı")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color.rdSlate)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: 270)
+                    }
 
-                // MARK: Form — alttan sabit
-                VStack(spacing: 0) {
                     form
                         .padding(.horizontal, 20)
-                        .padding(.bottom, max(28, geo.safeAreaInsets.bottom))
-                        .padding(.top, 8)
+                        .padding(.bottom, max(18, geo.safeAreaInsets.bottom))
                 }
-                .frame(height: formHeight)
-                .background(Color.rdPaper)
+                .padding(.bottom, max(22, geo.safeAreaInsets.bottom + 8))
+                .offset(y: phase == .email ? -24 : 0)
+                .frame(maxWidth: .infinity)
             }
         }
         .ignoresSafeArea()
@@ -135,7 +133,7 @@ struct AuthView: View {
     private var formHeight: CGFloat {
         switch phase {
         case .options: return 326
-        case .email:   return 220
+        case .email:   return authError == nil ? 246 : 332
         case .otp:     return 280
         }
     }
@@ -162,11 +160,7 @@ struct AuthView: View {
             }
             .disabled(isSigningInWithApple)
             .opacity(isSigningInWithApple ? 0.75 : 1)
-            RDButton(
-                title: isSigningInWithGoogle ? "Google ile bağlanıyor..." : "Google ile devam et",
-                style: .secondary,
-                icon: isSigningInWithGoogle ? "hourglass" : "g.circle.fill"
-            ) {
+            googleButton {
                 runGoogleSignIn()
             }
             .disabled(isSigningInWithGoogle)
@@ -177,7 +171,7 @@ struct AuthView: View {
                 Rectangle().fill(Color.rdLine).frame(height: 1)
             }
             .padding(.vertical, 2)
-            RDButton(title: "E-posta kodu ile devam et", style: .secondary, icon: "envelope.fill") {
+            RDButton(title: "E-posta ile giriş yap", style: .secondary, icon: "envelope.fill") {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
 
@@ -207,6 +201,40 @@ struct AuthView: View {
         }
     }
 
+    private func googleButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 9) {
+                if isSigningInWithGoogle {
+                    Image(systemName: "hourglass")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                } else {
+                    GoogleMark()
+                        .frame(width: 22, height: 22)
+                }
+
+                if isSigningInWithGoogle {
+                    Text("Google ile bağlanıyor...")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .tracking(-0.2)
+                } else {
+                    GoogleWordmark()
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .padding(.horizontal, 18)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+    }
+
     private var legalNotice: some View {
         VStack(spacing: 3) {
             Text("Üye olarak veya giriş yaparak RiskDetected kullanım koşullarını kabul etmiş sayılırsın.")
@@ -232,11 +260,28 @@ struct AuthView: View {
     @ViewBuilder
     private var authErrorText: some View {
         if let err = authError {
-            Text(err)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundStyle(Color.rdCritical)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdCritical)
+                    .padding(.top, 1)
+
+                Text(err)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdCritical)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.rdCriticalBg.opacity(0.72))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.rdCritical.opacity(0.14), lineWidth: 1)
+            )
         }
     }
 
@@ -255,11 +300,18 @@ struct AuthView: View {
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdLine, lineWidth: 1))
-                TextField("mail@ornek.com", text: $email)
+                TextField(
+                    "",
+                    text: $email,
+                    prompt: Text("mail@ornek.com")
+                        .foregroundColor(Color.rdSlate.opacity(0.55))
+                )
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .font(.system(size: 16, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .tint(Color.rdGreen)
                     .padding(.horizontal, 16)
                     .frame(height: 52)
                     .background(Color.white)
@@ -279,8 +331,8 @@ struct AuthView: View {
             Button("← Diğer giriş yöntemleri") {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .options }
             }
-            .font(.system(size: 14, design: .rounded))
-            .foregroundStyle(Color.rdSlate)
+            .font(.system(size: 14, weight: .semibold, design: .rounded))
+            .foregroundStyle(Color.rdInk)
             .frame(maxWidth: .infinity)
             .padding(8)
         }
@@ -446,6 +498,50 @@ struct AuthView: View {
             }
             isSigningInWithGoogle = false
         }
+    }
+}
+
+private struct GoogleMark: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.white)
+
+            Text("G")
+                .font(.system(size: 16, weight: .heavy, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            Color(hex: "#4285F4"),
+                            Color(hex: "#34A853"),
+                            Color(hex: "#FBBC05"),
+                            Color(hex: "#EA4335")
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        }
+        .overlay(
+            Circle()
+                .stroke(Color.rdLine, lineWidth: 0.8)
+        )
+    }
+}
+
+private struct GoogleWordmark: View {
+    var body: some View {
+        HStack(spacing: 0) {
+            Text("G").foregroundStyle(Color(hex: "#4285F4"))
+            Text("o").foregroundStyle(Color(hex: "#EA4335"))
+            Text("o").foregroundStyle(Color(hex: "#FBBC05"))
+            Text("g").foregroundStyle(Color(hex: "#4285F4"))
+            Text("l").foregroundStyle(Color(hex: "#34A853"))
+            Text("e").foregroundStyle(Color(hex: "#EA4335"))
+            Text(" ile devam et").foregroundStyle(Color.rdBlack)
+        }
+        .font(.system(size: 17, weight: .semibold, design: .rounded))
+        .tracking(-0.2)
     }
 }
 

@@ -75,6 +75,60 @@ struct AppErrorMessage: Equatable {
             )
         }
 
+        if lower.contains("email_address_invalid") ||
+            lower.contains("invalid email") ||
+            lower.contains("email address") && lower.contains("invalid")
+        {
+            return AppErrorMessage(
+                title: context ?? "E-posta adresi geçerli değil",
+                message: "E-posta adresi doğrulanamadı.",
+                action: "Geçerli ve erişebildiğin bir e-posta adresi girip tekrar kod gönder.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+        }
+
+        if lower.contains("over_email_send_rate_limit") ||
+            lower.contains("email rate limit") ||
+            lower.contains("email send rate") ||
+            lower.contains("too many requests") && lower.contains("email")
+        {
+            return AppErrorMessage(
+                title: context ?? "Kod gönderme sınırı",
+                message: "Kısa süre içinde çok fazla e-posta kodu istendiği için yeni kod gönderilemiyor.",
+                action: "Birkaç dakika bekleyip tekrar dene. Gerekirse son gönderilen kodu kontrol et.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+        }
+
+        if lower.contains("otp_expired") ||
+            lower.contains("token expired") ||
+            lower.contains("expired") && lower.contains("otp")
+        {
+            return AppErrorMessage(
+                title: context ?? "Kodun süresi doldu",
+                message: "Girdiğin doğrulama kodunun süresi dolmuş görünüyor.",
+                action: "Yeni bir kod isteyip gelen son kodla tekrar dene.",
+                category: .authRequired,
+                supportID: supportID
+            )
+        }
+
+        if lower.contains("invalid token") ||
+            lower.contains("token_invalid") ||
+            lower.contains("invalid otp") ||
+            lower.contains("otp") && lower.contains("invalid")
+        {
+            return AppErrorMessage(
+                title: context ?? "Kod doğrulanamadı",
+                message: "Girdiğin doğrulama kodu eşleşmedi.",
+                action: "Kodu e-postadaki son haliyle kontrol et veya yeni kod iste.",
+                category: .authRequired,
+                supportID: supportID
+            )
+        }
+
         if lower.contains("429") ||
             lower.contains("rate") ||
             lower.contains("resource_exhausted") ||

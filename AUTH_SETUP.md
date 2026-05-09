@@ -16,6 +16,7 @@ Authentication > Providers:
 
 - Email provider aktif olmalı.
 - Email OTP için mail şablonu kullanıcıya 6 haneli kodu göstermeli. Supabase şablonunda doğrulama kodu token değişkeni kullanılmalı (`{{ .Token }}`).
+- Production mail teslimatı ve rate-limit kontrolü için özel SMTP bağlanmalı. Önerilen sağlayıcılar: Resend, Postmark, SendGrid veya Mailgun.
 - Apple provider aktif olmalı.
   - Apple Services ID / Team ID / Key ID / private key Supabase tarafında tanımlanmalı.
 - Google provider aktif olmalı.
@@ -84,8 +85,16 @@ Bu nedenle güvenli üretim kararı:
 
 ## Sonraki Auth İşleri
 
+- Özel SMTP kurulumu:
+  - Supabase Dashboard > Authentication > SMTP Settings altında SMTP sağlayıcısı bağlanacak.
+  - Tercih edilen seçenek: Resend veya Postmark ile doğrulanmış domain üzerinden gönderim.
+  - Amaç: Supabase built-in mail servisinin düşük test limitlerine takılmamak ve gerçek kullanıcıya daha güvenilir kod teslimatı sağlamak.
 - Supabase dashboard provider ayarlarını tamamla.
-- Email OTP şablonunu doğrula ve gerçek e-posta ile kod girişini uçtan uca test et.
+- Email OTP canlı kontrolü:
+  - `POST /auth/v1/otp` geçerli Gmail formatlı test adresiyle `200` döndü; Email provider aktif.
+  - Admin `generate_link` + `/auth/v1/verify` token hash testi access token döndürdü; Supabase session üretimi çalışıyor.
+  - Çok sık test isteği sonrası Supabase `over_email_send_rate_limit` döndürdü; uygulama bunu kullanıcıya "Kod gönderme sınırı" olarak gösterecek şekilde normalize ediyor.
+  - Kalan manuel adım: gerçek erişilebilir e-posta kutusunda mail şablonunda 6 haneli kodun (`{{ .Token }}`) göründüğünü doğrula.
 - Gerçek Apple hesabıyla cihaz/simülatör doğrulaması yap.
 - Google OAuth redirect dönüşünü doğrula.
 - Telefon girişi tekrar açılacaksa Firebase Console'da billing/Identity Platform gereksinimi tamamlanmalı, Phone provider aktif edilmeli ve gerçek/test telefonla uçtan uca doğrulanmalı.
