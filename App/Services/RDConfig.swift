@@ -17,6 +17,7 @@ enum RDConfig {
     /// Edge Function endpoint adı.
     static let analyzeFunctionName = "analyze"
     static let firebasePhoneBridgeFunctionName = "firebase-phone-bridge"
+    static let sendPushNotificationFunctionName = "send-push-notification"
 
     /// Storage bucket adları.
     enum Bucket {

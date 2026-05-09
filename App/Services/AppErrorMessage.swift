@@ -188,6 +188,36 @@ struct AppErrorMessage: Equatable {
             )
         }
 
+        if lower.contains("fotoğraf") && (lower.contains("indirilemedi") || lower.contains("download")) {
+            return AppErrorMessage(
+                title: context ?? "Fotoğraf yüklenemedi",
+                message: "Analiz fotoğrafı şu anda indirilemedi. Ekran yedek görselle açılabilir.",
+                action: "Bağlantını kontrol edip tekrar dene. Sorun devam ederse destek koduyla bildir.",
+                category: .storageDenied,
+                supportID: supportID
+            )
+        }
+
+        if lower.contains("veri dışa aktar") || lower.contains("dışa aktarımı") || lower.contains("export") {
+            return AppErrorMessage(
+                title: context ?? "Veri dışa aktarımı oluşturulamadı",
+                message: "Verilerinin dışa aktarım dosyası hazırlanamadı.",
+                action: "Bağlantını kontrol edip tekrar dene. Sorun devam ederse destek koduyla bildir.",
+                category: .databaseFailed,
+                supportID: supportID
+            )
+        }
+
+        if lower.contains("hesap silme talebi") || lower.contains("account deletion") {
+            return AppErrorMessage(
+                title: context ?? "Hesap silme talebi kaydedilemedi",
+                message: "Hesap silme talebin sunucuya kaydedilemedi.",
+                action: "Kısa süre sonra tekrar dene. Sorun devam ederse destek koduyla bildir.",
+                category: .databaseFailed,
+                supportID: supportID
+            )
+        }
+
         if lower.contains("indirilemedi") || lower.contains("download") {
             return AppErrorMessage(
                 title: context ?? "Rapor indirilemedi",
@@ -198,7 +228,17 @@ struct AppErrorMessage: Equatable {
             )
         }
 
-        if lower.contains("silinemedi") || lower.contains("delete") {
+        if lower.contains("analiz") && (lower.contains("silinemedi") || lower.contains("delete")) {
+            return AppErrorMessage(
+                title: context ?? "Analiz silinemedi",
+                message: "Analiz ve ilişkili kayıtlar silinemedi.",
+                action: "Liste korunur. Kısa süre sonra tekrar dene; sorun devam ederse destek koduyla bildir.",
+                category: .databaseFailed,
+                supportID: supportID
+            )
+        }
+
+        if lower.contains("rapor") && (lower.contains("silinemedi") || lower.contains("delete")) {
             return AppErrorMessage(
                 title: context ?? "Rapor silinemedi",
                 message: "PDF raporu veya rapor arşiv kaydı silinemedi.",

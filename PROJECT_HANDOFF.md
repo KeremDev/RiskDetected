@@ -78,6 +78,9 @@ Core tables:
 - `ai_usage_logs`
 - `consents`
 - `firebase_phone_auth_links` (deferred phone bridge)
+- `push_device_tokens`
+- `notification_preferences`
+- `notification_events`
 
 Core buckets:
 
@@ -90,6 +93,7 @@ Important functions:
 - `analyze`
 - `retention-cleanup`
 - `firebase-phone-bridge` (currently disabled/paused)
+- `send-push-notification`
 
 Important migrations:
 
@@ -111,6 +115,21 @@ Known product note:
 
 - Do not promise fixed confidence such as "Pro is always 90%".
 - Preferred copy: Pro analyses use stronger model and validation layers to target higher confidence.
+
+Gemini reliability bridge:
+
+- User may provide up to three Gemini API keys from different Google accounts and different Google Cloud projects.
+- Important: multiple keys in the same Google Cloud project share quota and should not be treated as separate capacity.
+- `analyze` Edge Function key pool is implemented and deployed. Supported secrets:
+  - `GEMINI_API_KEY_PRIMARY`
+  - `GEMINI_API_KEY_SECONDARY`
+  - `GEMINI_API_KEY_TERTIARY`
+- Existing legacy `GEMINI_API_KEY` is treated as primary fallback for backward compatibility.
+- Retry/fallback only on retryable provider failures such as `429 RESOURCE_EXHAUSTED`, quota/rate-limit, 5xx and timeout.
+- Do not fallback on invalid input/user errors.
+- Logs store only key aliases (`gemini_primary`, `gemini_secondary`, `gemini_tertiary`), never raw keys.
+- `ai_usage_logs` includes `api_key_alias` and `attempt_count`.
+- This is an MVP launch buffer until paid quota/quota increase and broader provider fallback are added.
 
 ### Risk Methods
 
@@ -152,7 +171,7 @@ Required external auth work:
 - Configure custom SMTP in Supabase Auth.
   - Preferred: Resend or Postmark with verified domain.
   - Alternatives: SendGrid, Mailgun.
-- Verify real mailbox receives a 6-digit OTP using Supabase template token `{{ .Token }}`.
+- Replace Supabase `Confirm signup` and `Magic Link` email templates with the repo templates under `supabase/templates/`, so real mailboxes receive a 6-digit OTP using `{{ .Token }}` instead of a confirmation link.
 - Verify Apple provider with real Apple account.
 - Verify Google OAuth redirect.
 
@@ -209,6 +228,25 @@ Known follow-ups:
 - Persist default company logo/report identity in Profile so Pro users do not reselect each time.
 - Improve saved report filtering/search/status labels.
 - Continue PDF QA; this is a core feature and must remain stable.
+
+## Push Notification Status
+
+Push notification foundation is in place:
+
+- iOS uses APNs directly, not Firebase Messaging.
+- `NotificationService` requests notification permission, registers for APNs and stores the device token in Supabase.
+- Profile > Bildirimler opens a notification settings sheet.
+- Supabase migration `20260510002500_push_notifications.sql` creates token, preference and event tables with RLS.
+- Edge Function `send-push-notification` is deployed.
+- Simulator smoke test passed: settings sheet opens, permission flow enables, sandbox iOS token is stored, notification preferences are enabled.
+
+Required before real production push delivery:
+
+- Apple Developer > Keys: create APNs Auth Key (`.p8`).
+- Set Supabase Edge Function secrets: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, `APNS_PRIVATE_KEY`, `APNS_ENV`.
+- Use `APNS_ENV=sandbox` for development and `production` for production/TestFlight delivery.
+- Switch `aps-environment` entitlement from development to production/release signing configuration before release.
+- Add trusted backend calls/triggers for analysis complete, report ready and account/security updates.
 
 ## Privacy, Legal and Retention
 
@@ -385,4 +423,3 @@ Recent meaningful commits before this handoff included:
 - `81a4ae5 Refactor PDF progress handling`
 - `4828a56 Improve PDF generation progress`
 - `603e0af Fix risk analysis PDF reports`
-

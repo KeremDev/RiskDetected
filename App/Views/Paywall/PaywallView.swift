@@ -3,6 +3,7 @@ import SwiftUI
 struct PaywallView: View {
     var onClose: () -> Void
     var onSubscribe: () -> Void
+    var notice: String? = nil
 
     enum Plan: String, CaseIterable, Identifiable {
         case yearly, monthly
@@ -44,6 +45,9 @@ struct PaywallView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 18) {
                         hero
+                        if let notice {
+                            noticeCard(notice)
+                        }
                         features
                         plansSection
                         footnote
@@ -84,6 +88,26 @@ struct PaywallView: View {
                 .foregroundStyle(Color.rdSlate)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private func noticeCard(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdCritical)
+            Text(text)
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Color.rdCritical.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.rdCritical.opacity(0.18), lineWidth: 1)
+        )
     }
 
     private struct Feature {

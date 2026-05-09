@@ -1,5 +1,7 @@
 import Foundation
 import Supabase
+import OSLog
+import UIKit
 
 /// Auth orkestrasyonu — Apple, Google, Email OTP, sign-out.
 @MainActor
@@ -11,6 +13,7 @@ final class AuthService: ObservableObject {
 
     private let supabase = SupabaseService.shared
     private var stateTask: Task<Void, Never>?
+    private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AuthService")
 
     init() {
         // İlk başta cache'lenmiş session'ı oku
@@ -48,7 +51,7 @@ final class AuthService: ObservableObject {
     /// E-posta doğrulama kodunu onaylar ve Supabase oturumu açar.
     func verifyEmailOTP(email: String, token: String) async throws {
         lastError = nil
-        let response = try await supabase.auth.verifyOTP(email: email, token: token, type: .email)
+        let response = try await verifyEmailOTPWithSupportedTypes(email: email, token: token)
         if let verifiedSession = response.session {
             self.session = verifiedSession
             await fetchProfile(userID: verifiedSession.user.id)
@@ -152,6 +155,70 @@ final class AuthService: ObservableObject {
         await fetchProfile(userID: userID)
     }
 
+    func updateProfile(_ input: ProfileUpdateInput) async throws {
+        guard let user = supabase.auth.currentUser else {
+            throw NSError(
+                domain: "RiskDetected.AuthService",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Oturum bulunamadı."]
+            )
+        }
+
+        let payload = ProfileUpdatePayload(
+            id: user.id.uuidString,
+            email: user.email,
+            fullName: input.fullName.nilIfBlank,
+            initials: Self.initials(for: input.fullName),
+            title: input.title.nilIfBlank,
+            certificateNumber: input.certificateNumber.nilIfBlank,
+            companyName: input.companyName.nilIfBlank,
+            companyLogoURL: input.companyLogoPath,
+            phone: input.phone.nilIfBlank,
+            preferredMethod: input.preferredMethod?.rawValue
+        )
+
+        try await supabase.client
+            .from("profiles")
+            .upsert(payload, onConflict: "id")
+            .execute()
+
+        await fetchProfile(userID: user.id)
+    }
+
+    func uploadProfileLogo(_ image: UIImage) async throws -> String {
+        guard let userID = supabase.currentUserID else {
+            throw NSError(
+                domain: "RiskDetected.AuthService",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Oturum bulunamadı."]
+            )
+        }
+        guard let data = image.normalizedJPEG(maxDimension: 900, compressionQuality: 0.82) else {
+            throw NSError(
+                domain: "RiskDetected.AuthService",
+                code: -2,
+                userInfo: [NSLocalizedDescriptionKey: "Logo dosyası hazırlanamadı."]
+            )
+        }
+
+        let path = "\(userID.uuidString.lowercased())/profile-logo.jpg"
+        _ = try await supabase.storage
+            .from(RDConfig.Bucket.logos)
+            .upload(
+                path,
+                data: data,
+                options: FileOptions(contentType: "image/jpeg", upsert: true)
+            )
+        return path
+    }
+
+    func profileLogoImage(path: String) async throws -> UIImage? {
+        let data = try await supabase.storage
+            .from(RDConfig.Bucket.logos)
+            .download(path: path)
+        return UIImage(data: data)
+    }
+
     // MARK: - Private
 
     /// Profile fetch'in tek kaynağı. Hatayı `lastError`'a yazıyor ki UI gösterebilsin.
@@ -205,5 +272,110 @@ final class AuthService: ObservableObject {
 
     private func deepLinkURL() -> URL {
         URL(string: "io.supabase.riskdetected://login-callback")!
+    }
+
+    private func verifyEmailOTPWithSupportedTypes(email: String, token: String) async throws -> AuthResponse {
+        let types: [EmailOTPType] = [.signup, .magiclink, .email]
+        var lastError: Error?
+
+        for (index, type) in types.enumerated() {
+            do {
+                return try await supabase.auth.verifyOTP(email: email, token: token, type: type)
+            } catch {
+                lastError = error
+                guard index < types.count - 1, Self.canRetryEmailOTPType(after: error) else {
+                    break
+                }
+            }
+        }
+
+        throw lastError ?? NSError(
+            domain: "RiskDetected.AuthService",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "E-posta doğrulama kodu doğrulanamadı."]
+        )
+    }
+
+    private static func canRetryEmailOTPType(after error: Error) -> Bool {
+        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        if lower.contains("rate") ||
+            lower.contains("too many") ||
+            lower.contains("429") ||
+            lower.contains("expired") ||
+            lower.contains("over_email_send_rate_limit")
+        {
+            return false
+        }
+        return true
+    }
+
+    static func logAuthError(_ message: AppErrorMessage, operation: String, email: String? = nil) {
+        logger.error("Auth error support=\(message.supportID, privacy: .public) operation=\(operation, privacy: .public) category=\(message.category.rawValue, privacy: .public) email=\(email ?? "-", privacy: .private(mask: .hash)) message=\(message.message, privacy: .public)")
+    }
+
+    private static func initials(for name: String) -> String? {
+        let parts = name
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(separator: " ")
+            .prefix(2)
+        let initials = parts.compactMap { $0.first.map(String.init) }.joined().uppercased()
+        return initials.isEmpty ? nil : initials
+    }
+}
+
+struct ProfileUpdateInput {
+    var fullName: String
+    var title: String
+    var certificateNumber: String
+    var companyName: String
+    var phone: String
+    var preferredMethod: RiskMethodWire?
+    var companyLogoPath: String?
+}
+
+private struct ProfileUpdatePayload: Encodable {
+    let id: String
+    let email: String?
+    let fullName: String?
+    let initials: String?
+    let title: String?
+    let certificateNumber: String?
+    let companyName: String?
+    let companyLogoURL: String?
+    let phone: String?
+    let preferredMethod: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case email
+        case fullName = "full_name"
+        case initials
+        case title
+        case certificateNumber = "certificate_number"
+        case companyName = "company_name"
+        case companyLogoURL = "company_logo_url"
+        case phone
+        case preferredMethod = "preferred_method"
+    }
+}
+
+private extension String {
+    var nilIfBlank: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
+private extension UIImage {
+    func normalizedJPEG(maxDimension: CGFloat, compressionQuality: CGFloat) -> Data? {
+        let longest = max(size.width, size.height)
+        let scale = longest > maxDimension ? maxDimension / longest : 1
+        let targetSize = CGSize(width: size.width * scale, height: size.height * scale)
+
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let normalized = renderer.image { _ in
+            draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        return normalized.jpegData(compressionQuality: compressionQuality)
     }
 }

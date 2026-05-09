@@ -167,7 +167,12 @@ struct ResultView: View {
     private var photoMetaCard: some View {
         RDCard {
             HStack(alignment: .top, spacing: 12) {
-                ResultPhotoThumbnail(image: localPreviewImage, path: photoPath, cornerRadius: 12)
+                ResultPhotoThumbnail(
+                    image: localPreviewImage,
+                    path: photoPath,
+                    isTextAnalysis: bundle?.analysis.kind == "text",
+                    cornerRadius: 12
+                )
                     .frame(width: 92, height: 92)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -467,6 +472,7 @@ struct ResultView: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             if app.isPro {
                 reportOptions = defaultReportOptions(kind: reportOptions.kind == .standard ? .riskAnalysis : reportOptions.kind)
+                Task { _ = try? await loadProfileLogoIfNeeded() }
                 showReportSettings = true
             } else {
                 showPaywall = true
@@ -568,13 +574,14 @@ struct ResultView: View {
             do {
                 let reportImage = try await loadReportImage()
                 pdfGeneration.advance(to: 0.23)
-                let resolvedOptions = options ?? PDFReportOptions.standard(method: method)
+                let resolvedOptions = options ?? defaultReportOptions(kind: .standard)
+                let resolvedLogo = try await loadProfileLogoIfNeeded()
                 let input = PDFReportService.ReportInput(
                     bundle: bundle,
                     findings: sortedFindings(for: resolvedOptions.method),
                     profile: app.profile,
                     image: reportImage,
-                    companyLogo: options == nil ? nil : reportCompanyLogo,
+                    companyLogo: reportCompanyLogo ?? resolvedLogo,
                     options: resolvedOptions
                 )
                 let url = try await PDFReportService.shared.generateAsync(input: input)
@@ -659,6 +666,17 @@ struct ResultView: View {
             preparedBy: app.profile?.displayName ?? "",
             companyName: app.profile?.companyName ?? ""
         )
+    }
+
+    @discardableResult
+    private func loadProfileLogoIfNeeded() async throws -> UIImage? {
+        if let reportCompanyLogo { return reportCompanyLogo }
+        guard let path = app.profile?.companyLogoURL, !path.isEmpty else { return nil }
+        let image = try await app.auth.profileLogoImage(path: path)
+        await MainActor.run {
+            reportCompanyLogo = image
+        }
+        return image
     }
 }
 
@@ -814,7 +832,7 @@ struct ReportSettingsSheet: View {
                     Text(companyLogo == nil ? "Logo seçilmedi" : "Logo rapora eklenecek")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("Seçilen logo bu PDF çıktısında kullanılır. Profilde kalıcı logo kaydı sonraki adımda eklenecek.")
+                    Text("Profilindeki logo varsayılan gelir; istersen bu PDF için farklı logo seçebilirsin.")
                         .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1049,6 +1067,7 @@ struct FindingCard: View {
 private struct ResultPhotoThumbnail: View {
     let image: UIImage?
     let path: String?
+    let isTextAnalysis: Bool
     var cornerRadius: CGFloat
     @State private var remoteImage: UIImage?
     @State private var loadedPath: String?
@@ -1064,7 +1083,7 @@ private struct ResultPhotoThumbnail: View {
                     .resizable()
                     .scaledToFill()
             } else {
-                AnalysisThumbnail(path: nil, cornerRadius: cornerRadius)
+                AnalysisThumbnail(path: nil, isTextAnalysis: isTextAnalysis, cornerRadius: cornerRadius)
             }
         }
         .clipped()

@@ -30,6 +30,7 @@ struct AnalysisProgressUpdate: Equatable {
 final class AnalysisService {
     static let shared = AnalysisService()
     static let freeDailyLimit = 2
+    nonisolated static let maxTextInputCharacters = 100
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AnalysisService")
     private let supabase = SupabaseService.shared
 
@@ -113,7 +114,9 @@ final class AnalysisService {
         guard !canvases.isEmpty else {
             throw AnalysisError.invalidInput("En az bir analiz odağı seçmelisin.")
         }
-        guard text.trimmingCharacters(in: .whitespacesAndNewlines).count >= 10 else {
+        let trimmedText = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.maxTextInputCharacters))
+
+        guard trimmedText.count >= 10 else {
             throw AnalysisError.invalidInput("Analiz için en az 10 karakterlik açıklama girmelisin.")
         }
 
@@ -122,12 +125,12 @@ final class AnalysisService {
             kind: "text",
             canvases: canvases,
             title: defaultTitle(for: canvases),
-            textInput: text
+            textInput: trimmedText
         )
 
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
-            textInput: text, photoPaths: [], photoBase64Parts: [],
+            textInput: trimmedText, photoPaths: [], photoBase64Parts: [],
             userPrompt: userPrompt,
             onProgress: onProgress
         )
@@ -180,13 +183,23 @@ final class AnalysisService {
     }
 
     /// Storage'dan güvenli fotoğraf indirir.
-    func photoData(path: String) async throws -> Data {
+    func photoData(path: String, requestID: String? = nil, supportID: String? = nil) async throws -> Data {
+        let resolvedRequestID = requestID ?? UUID().uuidString
+        let resolvedSupportID = supportID ?? AppErrorMessage.newSupportID()
+
+        if DataActionFailureSimulation.isEnabled(.photoDownload) {
+            let error = DataActionFailureSimulation.simulatedError(.photoDownload)
+            Self.logger.error("Photo download simulation support=\(resolvedSupportID, privacy: .public) request=\(resolvedRequestID, privacy: .public) path=\(path, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.storageFailed("Analiz fotoğrafı indirilemedi. Destek kodu: \(resolvedSupportID)")
+        }
+
         do {
             return try await supabase.storage
                 .from(RDConfig.Bucket.photos)
                 .download(path: path)
         } catch {
-            throw AnalysisError.storageFailed(error.localizedDescription)
+            Self.logger.error("Photo download failed support=\(resolvedSupportID, privacy: .public) request=\(resolvedRequestID, privacy: .public) path=\(path, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.storageFailed("Analiz fotoğrafı indirilemedi. Destek kodu: \(resolvedSupportID)")
         }
     }
 
@@ -371,7 +384,7 @@ final class AnalysisService {
 
     /// Analizi kullanıcı isteğiyle siler. DB cascade findings/photos/reports
     /// kayıtlarını temizler; Storage dosyaları silme öncesi kaldırılır.
-    func deleteAnalysis(analysisID: UUID) async throws {
+    func deleteAnalysis(analysisID: UUID, requestID: String, supportID: String) async throws {
         do {
             async let photoRows: [AnalysisPhotoRow] = supabase.client
                 .from("photos")
@@ -392,6 +405,11 @@ final class AnalysisService {
             let reportPaths = reports.map(\.storagePath)
 
             if !photoPaths.isEmpty {
+                if DataActionFailureSimulation.isEnabled(.analysisDeleteStorage) {
+                    let error = DataActionFailureSimulation.simulatedError(.analysisDeleteStorage)
+                    Self.logger.error("Analysis photo delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                    throw AnalysisError.storageFailed("Analiz fotoğrafları silinemedi. Destek kodu: \(supportID)")
+                }
                 _ = try await supabase.storage
                     .from(RDConfig.Bucket.photos)
                     .remove(paths: photoPaths)
@@ -403,6 +421,12 @@ final class AnalysisService {
                     .remove(paths: reportPaths)
             }
 
+            if DataActionFailureSimulation.isEnabled(.analysisDeleteMetadata) {
+                let error = DataActionFailureSimulation.simulatedError(.analysisDeleteMetadata)
+                Self.logger.error("Analysis metadata delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                throw AnalysisError.databaseFailed("Analiz kaydı silinemedi. Destek kodu: \(supportID)")
+            }
+
             try await supabase.client
                 .from("analyses")
                 .delete()
@@ -411,12 +435,13 @@ final class AnalysisService {
         } catch let error as AnalysisError {
             throw error
         } catch {
-            throw AnalysisError.databaseFailed(error.localizedDescription)
+            Self.logger.error("Analysis delete failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.databaseFailed("Analiz silinemedi. Destek kodu: \(supportID)")
         }
     }
 
     /// Kullanıcının analiz/rapor özetini JSON olarak dışa aktarır.
-    func exportUserData(userID: UUID, profile: UserProfile?) async throws -> URL {
+    func exportUserData(userID: UUID, profile: UserProfile?, requestID: String, supportID: String) async throws -> URL {
         struct ExportPayload: Encodable {
             let exported_at: String
             let user_id: String
@@ -428,6 +453,12 @@ final class AnalysisService {
         }
 
         do {
+            if DataActionFailureSimulation.isEnabled(.dataExport) {
+                let error = DataActionFailureSimulation.simulatedError(.dataExport)
+                Self.logger.error("Data export simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                throw AnalysisError.databaseFailed("Veri dışa aktarımı oluşturulamadı. Destek kodu: \(supportID)")
+            }
+
             async let analyses: [AnalysisRow] = supabase.client
                 .from("analyses")
                 .select()
@@ -476,12 +507,13 @@ final class AnalysisService {
         } catch let error as AnalysisError {
             throw error
         } catch {
-            throw AnalysisError.databaseFailed(error.localizedDescription)
+            Self.logger.error("Data export failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.databaseFailed("Veri dışa aktarımı oluşturulamadı. Destek kodu: \(supportID)")
         }
     }
 
     /// Kullanıcının tüm PDF raporlarını ve Storage dosyalarını siler.
-    func deleteAllReports() async throws {
+    func deleteAllReports(requestID: String, supportID: String) async throws {
         do {
             let reports = try await listReports(limit: 1000)
             guard !reports.isEmpty else { return }
@@ -489,6 +521,11 @@ final class AnalysisService {
             let paths = reports.map(\.storagePath)
 
             if !paths.isEmpty {
+                if DataActionFailureSimulation.isEnabled(.bulkReportDelete) {
+                    let error = DataActionFailureSimulation.simulatedError(.bulkReportDelete)
+                    Self.logger.error("Bulk report delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                    throw AnalysisError.storageFailed("PDF rapor dosyaları silinemedi. Destek kodu: \(supportID)")
+                }
                 _ = try await supabase.storage
                     .from(RDConfig.Bucket.reports)
                     .remove(paths: paths)
@@ -502,12 +539,13 @@ final class AnalysisService {
         } catch let error as AnalysisError {
             throw error
         } catch {
-            throw AnalysisError.databaseFailed(error.localizedDescription)
+            Self.logger.error("Bulk report delete failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.databaseFailed("PDF raporları silinemedi. Destek kodu: \(supportID)")
         }
     }
 
     /// Kullanıcının tüm analizlerini, ilişkili Storage dosyalarını ve cascade DB kayıtlarını siler.
-    func deleteAllAnalyses() async throws {
+    func deleteAllAnalyses(requestID: String, supportID: String) async throws {
         do {
             let analyses: [AnalysisRow] = try await supabase.client
                 .from("analyses")
@@ -539,6 +577,11 @@ final class AnalysisService {
             let reportPaths = reports.map(\.storagePath)
 
             if !photoPaths.isEmpty {
+                if DataActionFailureSimulation.isEnabled(.bulkAnalysisDelete) {
+                    let error = DataActionFailureSimulation.simulatedError(.bulkAnalysisDelete)
+                    Self.logger.error("Bulk analysis delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                    throw AnalysisError.storageFailed("Analiz fotoğrafları silinemedi. Destek kodu: \(supportID)")
+                }
                 _ = try await supabase.storage
                     .from(RDConfig.Bucket.photos)
                     .remove(paths: photoPaths)
@@ -558,12 +601,13 @@ final class AnalysisService {
         } catch let error as AnalysisError {
             throw error
         } catch {
-            throw AnalysisError.databaseFailed(error.localizedDescription)
+            Self.logger.error("Bulk analysis delete failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.databaseFailed("Analizler silinemedi. Destek kodu: \(supportID)")
         }
     }
 
     /// Hesap silme talebini denetlenebilir şekilde kaydeder.
-    func requestAccountDeletion(userID: UUID, email: String?) async throws {
+    func requestAccountDeletion(userID: UUID, email: String?, requestID: String, supportID: String) async throws {
         struct Payload: Encodable {
             let user_id: String
             let email: String?
@@ -579,12 +623,19 @@ final class AnalysisService {
         )
 
         do {
+            if DataActionFailureSimulation.isEnabled(.accountDeletionRequest) {
+                let error = DataActionFailureSimulation.simulatedError(.accountDeletionRequest)
+                Self.logger.error("Account deletion request simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                throw AnalysisError.databaseFailed("Hesap silme talebi kaydedilemedi. Destek kodu: \(supportID)")
+            }
+
             try await supabase.client
                 .from("account_deletion_requests")
                 .insert(payload)
                 .execute()
         } catch {
-            throw AnalysisError.databaseFailed(error.localizedDescription)
+            Self.logger.error("Account deletion request failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.databaseFailed("Hesap silme talebi kaydedilemedi. Destek kodu: \(supportID)")
         }
     }
 
@@ -612,6 +663,13 @@ final class AnalysisService {
 
     /// Free kullanıcı için günlük analiz kullanımını verir.
     func dailyQuotaUsage() async throws -> DailyQuotaUsage {
+        if DataActionFailureSimulation.isEnabled(.quotaExceeded) {
+            return DailyQuotaUsage(
+                used: Self.freeDailyLimit,
+                limit: Self.freeDailyLimit
+            )
+        }
+
         let utcDay = DateFormatter()
         utcDay.calendar = Calendar(identifier: .gregorian)
         utcDay.locale = Locale(identifier: "en_US_POSIX")

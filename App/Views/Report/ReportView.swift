@@ -326,6 +326,8 @@ struct ReportView: View {
         Task {
             do {
                 selectedBundle = try await AnalysisService.shared.result(analysisID: row.id)
+                reportOptions = defaultReportOptions(kind: reportOptions.kind == .standard ? .riskAnalysis : reportOptions.kind)
+                _ = try? await loadProfileLogoIfNeeded()
                 showSourceReportSheet = true
             } catch {
                 errorMessage = AppErrorMessage.make(error, context: "Analiz rapora açılamadı", fallbackTitle: "Analiz rapora açılamadı").fullText
@@ -356,13 +358,14 @@ struct ReportView: View {
             do {
                 let reportImage = try await loadReportImage(for: selectedBundle)
                 pdfGeneration.advance(to: 0.23)
-                let resolvedOptions = options ?? PDFReportOptions.standard(method: .fineKinney)
+                let resolvedOptions = options ?? defaultReportOptions(kind: .standard)
+                let resolvedLogo = try await loadProfileLogoIfNeeded()
                 let input = PDFReportService.ReportInput(
                     bundle: selectedBundle,
                     findings: sortedFindings(selectedBundle.findings.map(\.asFinding), method: resolvedOptions.method),
                     profile: app.profile,
                     image: reportImage,
-                    companyLogo: companyLogo,
+                    companyLogo: companyLogo ?? resolvedLogo,
                     options: resolvedOptions
                 )
                 let url = try await PDFReportService.shared.generateAsync(input: input)
@@ -471,6 +474,17 @@ struct ReportView: View {
         )
     }
 
+    @discardableResult
+    private func loadProfileLogoIfNeeded() async throws -> UIImage? {
+        if let reportCompanyLogo { return reportCompanyLogo }
+        guard let path = app.profile?.companyLogoURL, !path.isEmpty else { return nil }
+        let image = try await app.auth.profileLogoImage(path: path)
+        await MainActor.run {
+            reportCompanyLogo = image
+        }
+        return image
+    }
+
     private func sortedFindings(_ findings: [Finding], method: RiskMethod) -> [Finding] {
         findings.sorted {
             let leftRank = rankFor($0.band(for: method).level)
@@ -503,6 +517,7 @@ private struct ReportPreview: View {
     private var analysis: AnalysisRow { bundle.analysis }
     private var findings: [Finding] { bundle.findings.map(\.asFinding) }
     private var photoPath: String? { bundle.photos.first?.storagePath }
+    private var isTextAnalysis: Bool { analysis.kind == "text" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -573,7 +588,7 @@ private struct ReportPreview: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            AnalysisThumbnail(path: photoPath, cornerRadius: 8)
+            AnalysisThumbnail(path: photoPath, isTextAnalysis: isTextAnalysis, cornerRadius: 8)
                 .frame(width: 64, height: 64)
         }
     }

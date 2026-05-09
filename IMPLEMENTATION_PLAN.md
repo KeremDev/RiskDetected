@@ -54,6 +54,11 @@
     - Reports tab can delete stored PDF report files and metadata.
     - Analyses tab can delete an analysis, its findings, photos and related report records/files.
     - Profile > Verilerim provides export, bulk report delete, bulk analysis delete and account deletion request entry points.
+  - Push notification foundation added:
+    - iOS APNs permission/token registration service;
+    - Profile > Bildirimler settings sheet;
+    - Supabase push token/preference/event tables with RLS;
+    - `send-push-notification` Edge Function deployed for APNs delivery after APNs secrets are configured.
 
 ## Partially Done - Revision Queue
 
@@ -210,7 +215,10 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: DEBUG-only iOS report failure simulation flags added for PDF render, Storage upload, reports metadata insert, stored report download and stored report delete paths.
    - Done: simulator verified PDF render failure simulation with normalized `PDF Hatası` and support id.
    - Done: simulator verified PDF Storage upload, reports metadata insert, stored report download and stored report delete simulations with normalized messages and support ids.
-   - Follow-up: continue remaining QA matrix rows E01-E05 and E09-E10/E16-E18.
+   - Added: DEBUG-only iOS data-action failure simulation flags for photo download, analysis delete, bulk report/analysis delete, data export and account deletion request paths.
+   - Added: support/request id logging now covers photo thumbnail download failures, single analysis delete failures and Profile > Verilerim data-action failures.
+   - Added: Free quota paywall route can show a quota notice with support id for traceable E01 verification.
+   - Follow-up: manually verify remaining QA matrix rows E01-E05 and E09-E10/E16-E18 in simulator; code support is ready for the full remaining set.
 
 ### P2 - Auth and Subscription
 
@@ -226,10 +234,18 @@ These items exist in some form, but need revision before we treat them as produc
      - lifted logo/slogan block in the email entry state;
      - changed Google button to a branded colored wordmark style;
      - changed email placeholder to muted grey and made the "Diger giris yontemleri" link more readable.
-   - Required external setup: Supabase Email provider and OTP email template must expose the 6-digit token.
+   - Required external setup: Supabase Email provider must be enabled, and both `Confirm signup` and `Magic Link` templates must expose the 6-digit token using the repo templates under `supabase/templates/`.
    - Required external setup: configure custom SMTP in Supabase Auth to avoid low built-in email rate limits and improve delivery.
    - SMTP candidates: Resend, Postmark, SendGrid or Mailgun. Prefer verified-domain transactional SMTP before public launch.
-   - Remaining manual check: use a real accessible mailbox and confirm the Supabase email template renders the 6-digit OTP token.
+   - Remaining manual check: use a real accessible mailbox and confirm new-user and existing-user emails render the 6-digit OTP token instead of a link.
+
+2. Push notifications.
+   - Done: APNs token registration and Supabase token/preference persistence.
+   - Done: Profile > Bildirimler settings sheet.
+   - Done: `send-push-notification` Edge Function scaffold deployed.
+   - Follow-up: configure Apple APNs Auth Key secrets in Supabase.
+   - Follow-up: connect trusted backend events for analysis complete, report ready and account/security updates.
+   - Follow-up: real-device/TestFlight delivery QA because APNs production delivery cannot be fully proven by simulator alone.
    - Deferred: Firebase phone verification + Supabase bridge remains available in code for future reactivation.
    - Added: Firebase iOS SDK packages (`FirebaseCore`, `FirebaseAuth`) are wired into the Xcode project.
    - Added: `FirebaseBootstrap` configures Firebase only when `GoogleService-Info.plist` is present, so the app remains stable without Firebase config.
@@ -282,6 +298,27 @@ These items exist in some form, but need revision before we treat them as produc
 
 ### P3 - AI Reliability and Cost Control
 
+0. Gemini multi-project API key pool for MVP launch buffer:
+   - Status: backend implemented; wait until the user provides the additional Gemini API keys.
+   - Context: keys will come from different Google accounts and different Google Cloud projects, so quota pools should be separate. Multiple keys in the same project would not increase quota.
+   - Done: `analyze` Edge Function key pool implemented and deployed.
+   - Done: `ai_usage_logs.api_key_alias` and `attempt_count` added.
+   - Supabase Edge Function secrets target:
+     - `GEMINI_API_KEY_PRIMARY`;
+     - `GEMINI_API_KEY_SECONDARY`;
+     - `GEMINI_API_KEY_TERTIARY`.
+   - Backward compatibility: existing `GEMINI_API_KEY` is treated as primary if `GEMINI_API_KEY_PRIMARY` is absent.
+   - Routing target:
+     - normal traffic starts with `gemini_primary`;
+     - on retryable provider failures such as `429 RESOURCE_EXHAUSTED`, quota/rate-limit, `503`, `500/502/504` or timeout, retry the same analysis record with `gemini_secondary`, then `gemini_tertiary`;
+     - do not fallback for user/input errors such as invalid payload, unsupported image, validation failure or non-retryable `400`.
+   - Logging target:
+     - never log or return real API keys;
+     - log only aliases such as `gemini_primary`, `gemini_secondary`, `gemini_tertiary`;
+     - write `attempt`, `provider`, `api_key_alias`, `model`, `http_status`, `error_code`, `fallback_source`, `latency_ms`, `request_id` and `support_id` into `ai_usage_logs` where possible.
+   - Operational guardrails:
+     - add Google Cloud budget alerts / quota monitoring per project before public traffic;
+     - treat this as a temporary MVP reliability bridge until paid quota, quota increase requests and broader provider fallback are in place.
 1. Provider abstraction interface:
    - `analyzePhoto`;
    - `analyzeText`;

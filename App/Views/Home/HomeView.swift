@@ -11,6 +11,13 @@ struct AnalysisJob: Identifiable {
     let work: (@escaping @MainActor (AnalysisProgressUpdate) -> Void) async throws -> AnalysisResultBundle
 }
 
+private struct PaywallPresentation: Identifiable {
+    let id = UUID()
+    let notice: String?
+}
+
+private let maxTextInputCharacters = AnalysisService.maxTextInputCharacters
+
 struct HomeView: View {
     @EnvironmentObject var app: AppState
 
@@ -35,7 +42,7 @@ struct HomeView: View {
     @State private var recentItems: [RecentAnalysis] = []
     @State private var openingRecentID: UUID? = nil
     @State private var quotaUsage: DailyQuotaUsage? = nil
-    @State private var showPaywall = false
+    @State private var paywallPresentation: PaywallPresentation? = nil
 
     enum HomeMode: String, CaseIterable {
         case photo, text
@@ -120,7 +127,9 @@ struct HomeView: View {
                         runAnalysis()
                     }
                 },
-                onUpgradeRequested: { showPaywall = true }
+                onUpgradeRequested: {
+                    showPlainPaywall()
+                }
             )
             .presentationDetents([.fraction(0.72), .large])
             .presentationDragIndicator(.visible)
@@ -199,13 +208,16 @@ struct HomeView: View {
             )
             .environmentObject(app)
         }
-        .fullScreenCover(isPresented: $showPaywall) {
+        .fullScreenCover(item: $paywallPresentation) { presentation in
             PaywallView(
-                onClose: { showPaywall = false },
+                onClose: {
+                    paywallPresentation = nil
+                },
                 onSubscribe: {
-                    showPaywall = false
+                    paywallPresentation = nil
                     Task { await app.auth.refreshProfile() }
-                }
+                },
+                notice: presentation.notice
             )
         }
         .alert("Analiz Hatası", isPresented: .init(
@@ -262,7 +274,7 @@ struct HomeView: View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             if isFreeQuotaExhausted {
-                showPaywall = true
+                showQuotaPaywall()
                 return
             }
             if selectedImage != nil {
@@ -434,7 +446,7 @@ struct HomeView: View {
             if isFreeQuotaExhausted {
                 Button {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    showPaywall = true
+                    showQuotaPaywall()
                 } label: {
                     lockedInputContent(
                         title: "Günlük free limit doldu",
@@ -448,8 +460,8 @@ struct HomeView: View {
                     ZStack(alignment: .topLeading) {
                         if text.isEmpty {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Saha gözlemini yaz veya prosedür metnini yapıştır...")
-                                Text("Örn: \"Yüksekte çalışma alanında korkuluk eksik, işçi paraşüt tipi emniyet kemeri kullanmıyor.\"")
+                                Text("Saha gözlemini kısa yaz...")
+                                Text("Örn: \"Korkuluk eksik, işçi emniyet kemeri kullanmıyor.\"")
                                     .padding(.top, 4)
                             }
                             .font(.system(size: 15, design: .rounded))
@@ -466,8 +478,8 @@ struct HomeView: View {
                             .padding(.vertical, 8)
                             .frame(minHeight: 160)
                             .onChange(of: text) { new in
-                                if new.count > 2000 {
-                                    text = String(new.prefix(2000))
+                                if new.count > maxTextInputCharacters {
+                                    text = String(new.prefix(maxTextInputCharacters))
                                 }
                             }
                     }
@@ -481,10 +493,10 @@ struct HomeView: View {
                     )
 
                     HStack {
-                        Text("Maks. 2000 karakter")
+                        Text("Maks. \(maxTextInputCharacters) karakter")
                             .font(.system(size: 12, design: .rounded))
                         Spacer()
-                        Text("\(text.count)/2000")
+                        Text("\(text.count)/\(maxTextInputCharacters)")
                             .rdMono(size: 12, weight: .medium)
                     }
                     .foregroundStyle(Color.rdSlate)
@@ -623,7 +635,7 @@ struct HomeView: View {
     private func startAnalysisFlow() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         if !app.isPro, quotaUsage?.isExhausted == true {
-            showPaywall = true
+            showQuotaPaywall()
             return
         }
         if mode == .photo && selectedImage == nil {
@@ -631,7 +643,11 @@ struct HomeView: View {
             return
         }
         if mode == .text && text.trimmingCharacters(in: .whitespacesAndNewlines).count < 10 {
-            // Minimum içerik yok — kullanıcı text alanına odaklanacak (keyboard zaten açık)
+            analysisError = AppErrorMessage.make(
+                AnalysisService.AnalysisError.invalidInput("Analiz için en az 10 karakterlik bir açıklama yazmalısın."),
+                context: "Eksik metin",
+                fallbackTitle: "Eksik metin"
+            ).fullText
             return
         }
         showCanvasSheet = true
@@ -642,7 +658,7 @@ struct HomeView: View {
     private func continueFromAnnotatedPhoto() {
         guard mode == .photo, selectedImage != nil else { return }
         if !app.isPro, quotaUsage?.isExhausted == true {
-            showPaywall = true
+            showQuotaPaywall()
             return
         }
         showCanvasSheet = true
@@ -700,11 +716,23 @@ struct HomeView: View {
         let normalized = AppErrorMessage.make(rawMessage: msg, context: "Analiz tamamlanamadı", fallbackTitle: "Analiz tamamlanamadı")
         if normalized.category == .quotaExceeded {
             analysisError = nil
-            showPaywall = true
+            showQuotaPaywall(supportID: normalized.supportID)
             Task { await loadQuotaUsage() }
         } else {
             analysisError = normalized.fullText
         }
+    }
+
+    private func quotaPaywallNotice(supportID: String = AppErrorMessage.newSupportID()) -> String {
+        "Bugünkü ücretsiz analiz hakkın doldu. Yarın tekrar deneyebilir veya Pro ile devam edebilirsin. Destek kodu: \(supportID)"
+    }
+
+    private func showQuotaPaywall(supportID: String = AppErrorMessage.newSupportID()) {
+        paywallPresentation = PaywallPresentation(notice: quotaPaywallNotice(supportID: supportID))
+    }
+
+    private func showPlainPaywall() {
+        paywallPresentation = PaywallPresentation(notice: nil)
     }
 
     private func loadRecentItems() async {
@@ -820,7 +848,11 @@ struct RecentAnalysisCard: View {
                         .fill(Color.rdWhite)
                         .frame(width: ringSize - 9, height: ringSize - 9)
 
-                    AnalysisThumbnail(path: item.photoPath, cornerRadius: innerPhotoSize / 2)
+                    AnalysisThumbnail(
+                        path: item.photoPath,
+                        isTextAnalysis: item.isTextAnalysis,
+                        cornerRadius: innerPhotoSize / 2
+                    )
                         .frame(width: innerPhotoSize, height: innerPhotoSize)
                         .clipShape(Circle())
                 }

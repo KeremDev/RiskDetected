@@ -129,6 +129,11 @@ class GeminiAPIError extends Error {
   }
 }
 
+type GeminiKeyConfig = {
+  alias: "gemini_primary" | "gemini_secondary" | "gemini_tertiary";
+  key: string;
+};
+
 type AISimulationMode = "429" | "500" | "502" | "503" | "504" | "invalid_json";
 
 type AISimulationConfig = {
@@ -286,6 +291,31 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function geminiKeyPool(): GeminiKeyConfig[] {
+  const primary = Deno.env.get("GEMINI_API_KEY_PRIMARY") ??
+    Deno.env.get("GEMINI_API_KEY");
+  const secondary = Deno.env.get("GEMINI_API_KEY_SECONDARY");
+  const tertiary = Deno.env.get("GEMINI_API_KEY_TERTIARY");
+
+  const keys = [
+    primary ? { alias: "gemini_primary" as const, key: primary } : null,
+    secondary ? { alias: "gemini_secondary" as const, key: secondary } : null,
+    tertiary ? { alias: "gemini_tertiary" as const, key: tertiary } : null,
+  ].filter((item): item is GeminiKeyConfig => item !== null);
+
+  const preferredAlias = Deno.env.get("GEMINI_PREFERRED_KEY_ALIAS")?.trim();
+  if (!preferredAlias) return keys;
+
+  const preferredIndex = keys.findIndex((item) => item.alias === preferredAlias);
+  if (preferredIndex < 0) return keys;
+
+  const preferred = keys[preferredIndex];
+  return [
+    preferred,
+    ...keys.filter((_, index) => index !== preferredIndex),
+  ];
+}
+
 function userFacingAIError(
   err: unknown,
 ): { status: number; code: string; message: string } {
@@ -328,7 +358,7 @@ function userFacingAIError(
 }
 
 async function callGeminiWithFallback(
-  apiKey: string,
+  keyPool: GeminiKeyConfig[],
   preferredModel: string,
   systemPrompt: string,
   userText: string | null,
@@ -341,11 +371,13 @@ async function callGeminiWithFallback(
     : [preferredModel, MODEL_FREE_LITE];
 
   let lastError: unknown = null;
-  for (const model of [...new Set(models)]) {
-    for (let attempt = 1; attempt <= 2; attempt++) {
+  let attempt = 0;
+  for (const keyConfig of keyPool) {
+    for (const model of [...new Set(models)]) {
+      attempt += 1;
       try {
         const out = await callGemini(
-          apiKey,
+          keyConfig.key,
           model,
           systemPrompt,
           userText,
@@ -353,7 +385,12 @@ async function callGeminiWithFallback(
           imageBase64Parts,
           simulation,
         );
-        return { ...out, modelUsed: model };
+        return {
+          ...out,
+          modelUsed: model,
+          apiKeyAlias: keyConfig.alias,
+          attempt,
+        };
       } catch (err) {
         lastError = err;
         const retryable = err instanceof GeminiAPIError &&
@@ -361,6 +398,7 @@ async function callGeminiWithFallback(
         console.error(
           "Gemini attempt failed",
           JSON.stringify({
+            apiKeyAlias: keyConfig.alias,
             model,
             attempt,
             retryable,
@@ -368,7 +406,7 @@ async function callGeminiWithFallback(
           }),
         );
         if (!retryable) throw err;
-        if (attempt < 2) await delay(900);
+        await delay(500);
       }
     }
   }
@@ -595,9 +633,9 @@ serve(async (req: Request) => {
     newSupportID(),
   );
 
-  const geminiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!geminiKey) {
-    return errorResponse(500, "GEMINI_API_KEY secret eksik.", {
+  const geminiKeys = geminiKeyPool();
+  if (geminiKeys.length === 0) {
+    return errorResponse(500, "Gemini API key secret eksik.", {
       code: "missing_secret",
       requestID,
       supportID,
@@ -810,7 +848,7 @@ serve(async (req: Request) => {
 
   const systemPrompt = buildSystemPrompt(canvases ?? [canvas], isPro);
   const aiSimulation = aiSimulationConfig();
-  const inputAudit = {
+  const inputAudit: Record<string, unknown> = {
     input_mode: imageBase64Parts.length > 0 ? "photo" : "text",
     inline_photo_count: inlinePhotoCount,
     storage_photo_count: storagePhotoCount,
@@ -822,6 +860,7 @@ serve(async (req: Request) => {
     request_id: requestID,
     support_id: supportID,
     model,
+    gemini_key_aliases_available: geminiKeys.map((item) => item.alias),
     test_simulation_enabled: aiSimulation.enabled,
     test_simulation_mode: aiSimulation.enabled ? aiSimulation.mode : null,
   };
@@ -831,10 +870,12 @@ serve(async (req: Request) => {
   let inputTokens = 0, outputTokens = 0;
   let aiError: string | null = null;
   let modelUsed = model;
+  let apiKeyAlias: string | null = null;
+  let attemptCount = 0;
 
   try {
     const out = await callGeminiWithFallback(
-      geminiKey,
+      geminiKeys,
       model,
       systemPrompt,
       text_input ?? null,
@@ -847,6 +888,10 @@ serve(async (req: Request) => {
     outputTokens = out.outputTokens;
     modelUsed = out.modelUsed;
     inputAudit.model = out.modelUsed;
+    apiKeyAlias = out.apiKeyAlias;
+    attemptCount = out.attempt;
+    inputAudit.api_key_alias = apiKeyAlias;
+    inputAudit.gemini_attempt_count = attemptCount;
   } catch (err) {
     aiError = String(err);
     const cleanError = userFacingAIError(err);
@@ -871,6 +916,8 @@ serve(async (req: Request) => {
       error_code: cleanError.code,
       http_status: cleanError.status,
       fallback_source: modelUsed === model ? null : modelUsed,
+      api_key_alias: apiKeyAlias,
+      attempt_count: attemptCount || null,
     });
     return errorResponse(cleanError.status, cleanError.message, {
       code: cleanError.code,
@@ -971,7 +1018,12 @@ serve(async (req: Request) => {
     support_id: supportID,
     error_code: null,
     http_status: 200,
-    fallback_source: modelUsed === model ? null : modelUsed,
+    fallback_source: [
+      modelUsed !== model ? modelUsed : null,
+      apiKeyAlias && apiKeyAlias !== "gemini_primary" ? apiKeyAlias : null,
+    ].filter(Boolean).join(" -> ") || null,
+    api_key_alias: apiKeyAlias,
+    attempt_count: attemptCount || null,
   });
 
   return new Response(

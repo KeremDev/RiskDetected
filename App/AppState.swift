@@ -89,6 +89,8 @@ final class AppState: ObservableObject {
                     Task {
                         await LegalAcceptanceService.shared
                             .recordLoginNoticeAcceptanceIfNeeded(userID: session.user.id)
+                        await NotificationService.shared.refreshSettings()
+                        NotificationService.shared.syncCurrentTokenIfPossible()
                     }
                     if self.flow != .main {
                         self.flow = .main

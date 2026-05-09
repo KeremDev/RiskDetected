@@ -265,17 +265,27 @@ struct HistoryView: View {
         guard deletingItemID == nil else { return }
         itemPendingDelete = nil
         deletingItemID = item.id
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
 
         Task {
             do {
-                try await AnalysisService.shared.deleteAnalysis(analysisID: item.id)
+                try await AnalysisService.shared.deleteAnalysis(
+                    analysisID: item.id,
+                    requestID: requestID,
+                    supportID: supportID
+                )
                 items.removeAll { $0.id == item.id }
                 if analysisResult?.analysis.id == item.id {
                     analysisResult = nil
                     showResult = false
                 }
             } catch {
-                analysisError = AppErrorMessage.make(error, context: "Analiz silinemedi", fallbackTitle: "Analiz silinemedi").fullText
+                analysisError = AppErrorMessage.make(
+                    rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                    context: "Analiz silinemedi",
+                    fallbackTitle: "Analiz silinemedi"
+                ).fullText
             }
             deletingItemID = nil
         }
@@ -342,7 +352,7 @@ private struct HistoryRow: View {
 
     private var rowContent: some View {
         HStack(alignment: .top, spacing: 12) {
-            AnalysisThumbnail(path: item.photoPath, cornerRadius: 10)
+            AnalysisThumbnail(path: item.photoPath, isTextAnalysis: item.isTextAnalysis, cornerRadius: 10)
                 .frame(width: 56, height: 56)
 
             VStack(alignment: .leading, spacing: 6) {

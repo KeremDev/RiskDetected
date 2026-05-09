@@ -15,7 +15,14 @@ Bu doküman iOS auth akışının üretime alınması için gereken ayarları tu
 Authentication > Providers:
 
 - Email provider aktif olmalı.
-- Email OTP için mail şablonu kullanıcıya 6 haneli kodu göstermeli. Supabase şablonunda doğrulama kodu token değişkeni kullanılmalı (`{{ .Token }}`).
+- Email OTP için mail şablonları kullanıcıya 6 haneli kodu göstermeli. Supabase şablonunda doğrulama kodu token değişkeni kullanılmalı (`{{ .Token }}`).
+- Supabase yeni kullanıcı için `Confirm signup`, mevcut kullanıcı için `Magic Link` şablonunu kullanabilir. Bu yüzden iki şablon da link yerine kod göstermeli:
+  - Authentication > Emails > Confirm signup
+    - Subject: `RiskDetected doğrulama kodun`
+    - Body: `supabase/templates/email-otp-confirmation.html`
+  - Authentication > Emails > Magic Link
+    - Subject: `RiskDetected giriş kodun`
+    - Body: `supabase/templates/email-otp-magic-link.html`
 - Production mail teslimatı ve rate-limit kontrolü için özel SMTP bağlanmalı. Önerilen sağlayıcılar: Resend, Postmark, SendGrid veya Mailgun.
 - Apple provider aktif olmalı.
   - Apple Services ID / Team ID / Key ID / private key Supabase tarafında tanımlanmalı.
@@ -94,7 +101,7 @@ Bu nedenle güvenli üretim kararı:
   - `POST /auth/v1/otp` geçerli Gmail formatlı test adresiyle `200` döndü; Email provider aktif.
   - Admin `generate_link` + `/auth/v1/verify` token hash testi access token döndürdü; Supabase session üretimi çalışıyor.
   - Çok sık test isteği sonrası Supabase `over_email_send_rate_limit` döndürdü; uygulama bunu kullanıcıya "Kod gönderme sınırı" olarak gösterecek şekilde normalize ediyor.
-  - Kalan manuel adım: gerçek erişilebilir e-posta kutusunda mail şablonunda 6 haneli kodun (`{{ .Token }}`) göründüğünü doğrula.
+  - Kalan manuel adım: Supabase Dashboard'da `Confirm signup` ve `Magic Link` şablonlarını repo'daki OTP şablonlarıyla değiştir; gerçek erişilebilir e-posta kutusunda 6 haneli kodun (`{{ .Token }}`) göründüğünü doğrula.
 - Gerçek Apple hesabıyla cihaz/simülatör doğrulaması yap.
 - Google OAuth redirect dönüşünü doğrula.
 - Telefon girişi tekrar açılacaksa Firebase Console'da billing/Identity Platform gereksinimi tamamlanmalı, Phone provider aktif edilmeli ve gerçek/test telefonla uçtan uca doğrulanmalı.

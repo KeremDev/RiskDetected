@@ -14,8 +14,9 @@ struct RecentAnalysis: Identifiable, Hashable {
     let findings: [RecentFinding]
     let count: Int
     let photoPath: String?
+    let isTextAnalysis: Bool
 
-    init(id: UUID = UUID(), title: String, meta: String, timestamp: String = "", findings: [RecentFinding], count: Int, photoPath: String? = nil) {
+    init(id: UUID = UUID(), title: String, meta: String, timestamp: String = "", findings: [RecentFinding], count: Int, photoPath: String? = nil, isTextAnalysis: Bool = false) {
         self.id = id
         self.title = title
         self.meta = meta
@@ -23,6 +24,7 @@ struct RecentAnalysis: Identifiable, Hashable {
         self.findings = findings
         self.count = count
         self.photoPath = photoPath
+        self.isTextAnalysis = isTextAnalysis
     }
 }
 
@@ -68,7 +70,8 @@ extension RecentAnalysis {
             timestamp: Self.absoluteDateLabel(row.createdAt),
             findings: [RecentFinding(level: level, title: findingLabel)],
             count: row.findingCount,
-            photoPath: photoPath
+            photoPath: photoPath,
+            isTextAnalysis: row.kind == "text"
         )
     }
 

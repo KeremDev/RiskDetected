@@ -138,6 +138,8 @@ final class PDFReportService: @unchecked Sendable {
 
         if let image = input.image {
             drawImage(image, in: CGRect(x: 548, y: contentTop, width: 252, height: 178), cornerRadius: 14)
+        } else if analysis.kind == "text" {
+            drawPlaceholder(in: CGRect(x: 548, y: contentTop, width: 252, height: 178), text: "Metin Analizi")
         } else {
             drawPlaceholder(in: CGRect(x: 548, y: contentTop, width: 252, height: 178), text: "Fotoğraf")
         }

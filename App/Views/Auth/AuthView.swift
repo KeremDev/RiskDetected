@@ -6,7 +6,7 @@ struct AuthView: View {
     @State private var email: String = ""
     @State private var code: [String] = Array(repeating: "", count: 6)
     @State private var signingInDemo: DemoAccount?
-    @State private var authError: String?
+    @State private var authError: AppErrorMessage?
     @State private var showLegalInfo = false
     @State private var isSendingEmailCode = false
     @State private var isVerifyingEmailCode = false
@@ -186,7 +186,7 @@ struct AuthView: View {
             #endif
 
             if let err = authError {
-                Text(err)
+                Text(err.message)
                     .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
@@ -266,7 +266,7 @@ struct AuthView: View {
                     .foregroundStyle(Color.rdCritical)
                     .padding(.top, 1)
 
-                Text(err)
+                Text(err.message)
                     .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.leading)
@@ -434,7 +434,7 @@ struct AuthView: View {
                     password: account.password
                 )
             } catch {
-                authError = AppErrorMessage.make(error, context: "Giriş yapılamadı", fallbackTitle: "Giriş yapılamadı").fullText
+                setAuthError(error, context: "Giriş yapılamadı", fallbackTitle: "Giriş yapılamadı", operation: "demo_sign_in", email: account.email)
             }
             signingInDemo = nil
         }
@@ -450,7 +450,7 @@ struct AuthView: View {
                 code = Array(repeating: "", count: 6)
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
             } catch {
-                authError = AppErrorMessage.make(error, context: "Kod gönderilemedi", fallbackTitle: "Kod gönderilemedi").fullText
+                setAuthError(error, context: "Kod gönderilemedi", fallbackTitle: "Kod gönderilemedi", operation: "send_email_otp", email: normalizedEmail)
             }
             isSendingEmailCode = false
         }
@@ -464,7 +464,7 @@ struct AuthView: View {
             do {
                 try await app.auth.verifyEmailOTP(email: normalizedEmail, token: otpCode)
             } catch {
-                authError = AppErrorMessage.make(error, context: "Kod doğrulanamadı", fallbackTitle: "Kod doğrulanamadı").fullText
+                setAuthError(error, context: "Kod doğrulanamadı", fallbackTitle: "Kod doğrulanamadı", operation: "verify_email_otp", email: normalizedEmail)
             }
             isVerifyingEmailCode = false
         }
@@ -480,7 +480,7 @@ struct AuthView: View {
                 try await app.auth.signInWithApple(idToken: result.idToken, nonce: result.nonce)
                 await app.auth.refreshProfile()
             } catch {
-                authError = AppErrorMessage.make(error, context: "Apple ile giriş yapılamadı", fallbackTitle: "Apple ile giriş yapılamadı").fullText
+                setAuthError(error, context: "Apple ile giriş yapılamadı", fallbackTitle: "Apple ile giriş yapılamadı", operation: "apple_sign_in")
             }
             isSigningInWithApple = false
         }
@@ -494,10 +494,22 @@ struct AuthView: View {
             do {
                 try await app.auth.signInWithGoogleOAuth()
             } catch {
-                authError = AppErrorMessage.make(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı").fullText
+                setAuthError(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı", operation: "google_sign_in")
             }
             isSigningInWithGoogle = false
         }
+    }
+
+    private func setAuthError(
+        _ error: Error,
+        context: String,
+        fallbackTitle: String,
+        operation: String,
+        email: String? = nil
+    ) {
+        let message = AppErrorMessage.make(error, context: context, fallbackTitle: fallbackTitle)
+        AuthService.logAuthError(message, operation: operation, email: email)
+        authError = message
     }
 }
 

@@ -1,8 +1,14 @@
 import SwiftUI
+import PhotosUI
+import UIKit
+import UserNotifications
 
 struct ProfileView: View {
     @EnvironmentObject var app: AppState
+    @StateObject private var notifications = NotificationService.shared
     @State private var showPaywall = false
+    @State private var showProfileEditor = false
+    @State private var showNotificationSettings = false
     @State private var showDataControls = false
     @State private var stats: ProfileStats? = nil
     @State private var dataActionInProgress: ProfileDataAction?
@@ -68,6 +74,26 @@ struct ProfileView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showProfileEditor) {
+            ProfileEditSheet(
+                profile: app.profile,
+                auth: app.auth,
+                onSaved: {
+                    showProfileEditor = false
+                },
+                onClose: { showProfileEditor = false }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showNotificationSettings) {
+            NotificationSettingsSheet(
+                notificationService: notifications,
+                onClose: { showNotificationSettings = false }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
         }
@@ -110,12 +136,9 @@ struct ProfileView: View {
                 pro: app.isPro
             )
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(app.profile?.displayName ?? "Kullanıcı")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                    if app.isPro { RDProBadge(small: true) }
-                }
+                Text(app.profile?.displayName ?? "Kullanıcı")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
                 if let title = app.profile?.title {
                     Text(title)
                         .font(.system(size: 13, design: .rounded))
@@ -170,48 +193,35 @@ struct ProfileView: View {
     // MARK: - Pro card
 
     private var proCard: some View {
-        Button {
-            showPaywall = true
-        } label: {
-            ZStack(alignment: .topLeading) {
-                Circle()
-                    .fill(Color.rdGreen.opacity(0.18))
-                    .frame(width: 120, height: 120)
-                    .offset(x: 230, y: -45)
+        ZStack(alignment: .topLeading) {
+            Circle()
+                .fill(Color.rdGreen.opacity(0.18))
+                .frame(width: 120, height: 120)
+                .offset(x: 230, y: -45)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 10) {
-                        RDProBadge(small: true)
-                        Text("Aktif · \(subscriptionPeriodLabel)")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-
-                    Text("Bir sonraki ödeme")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .padding(.top, 4)
-
-                    Text(subscriptionRenewalLabel)
-                        .rdMono(size: 13, weight: .medium)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    RDProBadge(small: true)
+                    Text("Aktif · \(subscriptionPeriodLabel)")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white.opacity(0.7))
-
-                    HStack(spacing: 4) {
-                        Text("Üyeliğimi yönet")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    }
-                    .foregroundStyle(Color.rdGreen)
-                    .padding(.top, 10)
                 }
-                .padding(16)
+
+                Text("Bir sonraki ödeme")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.top, 4)
+
+                Text(subscriptionRenewalLabel)
+                    .rdMono(size: 13, weight: .medium)
+                    .foregroundStyle(.white.opacity(0.7))
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.rdBlack)
-            .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+            .padding(16)
         }
-        .buttonStyle(RDPressableButtonStyle())
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.rdBlack)
+        .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+        .allowsHitTesting(false)
     }
 
     private var upsellCard: some View {
@@ -242,11 +252,23 @@ struct ProfileView: View {
         VStack(alignment: .leading, spacing: 6) {
             sectionHeader("Hesap")
             VStack(spacing: 0) {
+                Button {
+                    showProfileEditor = true
+                } label: {
+                    ProfileRow(icon: "person.text.rectangle", title: "Profil bilgileri", detail: "Doldur / güncelle")
+                }
+                .buttonStyle(.plain)
+                Divider().background(Color.rdLine).padding(.leading, 60)
                 ProfileRow(icon: "doc.text", title: "Geçmiş analizler", detail: stats.map { "\($0.analysisCount)" } ?? "—")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 ProfileRow(icon: "arrow.down.to.line", title: "Raporlarım", detail: stats.map { "\($0.reportCount)" } ?? "—")
                 Divider().background(Color.rdLine).padding(.leading, 60)
-                ProfileRow(icon: "bell", title: "Bildirimler")
+                Button {
+                    showNotificationSettings = true
+                } label: {
+                    ProfileRow(icon: "bell", title: "Bildirimler", detail: notificationStatusText)
+                }
+                .buttonStyle(.plain)
             }
             .background(Color.rdWhite)
             .overlay(
@@ -254,6 +276,19 @@ struct ProfileView: View {
                     .stroke(Color.rdLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+        }
+    }
+
+    private var notificationStatusText: String {
+        switch notifications.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            return "Açık"
+        case .denied:
+            return "Kapalı"
+        case .notDetermined:
+            return "Kur"
+        @unknown default:
+            return "Kontrol et"
         }
     }
 
@@ -267,6 +302,7 @@ struct ProfileView: View {
                     showDataControls = true
                 } label: {
                     ProfileRow(icon: "externaldrive.badge.checkmark", title: "Verilerim", detail: "Dışa aktar / sil")
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
@@ -364,30 +400,49 @@ struct ProfileView: View {
         }
 
         dataActionInProgress = action
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
 
         Task {
             do {
                 switch action {
                 case .exportData:
-                    let url = try await AnalysisService.shared.exportUserData(userID: userID, profile: app.profile)
+                    let url = try await AnalysisService.shared.exportUserData(
+                        userID: userID,
+                        profile: app.profile,
+                        requestID: requestID,
+                        supportID: supportID
+                    )
                     shareItem = ShareItem(url: url)
                 case .deleteReports:
-                    try await AnalysisService.shared.deleteAllReports()
+                    try await AnalysisService.shared.deleteAllReports(
+                        requestID: requestID,
+                        supportID: supportID
+                    )
                     dataMessage = "Tüm PDF raporların silindi."
                     await loadStats()
                 case .deleteAnalyses:
-                    try await AnalysisService.shared.deleteAllAnalyses()
+                    try await AnalysisService.shared.deleteAllAnalyses(
+                        requestID: requestID,
+                        supportID: supportID
+                    )
                     dataMessage = "Tüm analizlerin ve ilişkili bulgular/fotoğraflar silindi."
                     await loadStats()
                 case .requestAccountDeletion:
                     try await AnalysisService.shared.requestAccountDeletion(
                         userID: userID,
-                        email: app.profile?.email
+                        email: app.profile?.email,
+                        requestID: requestID,
+                        supportID: supportID
                     )
                     dataMessage = "Hesap silme talebin kaydedildi. Bu işlem yetkili backend/admin süreciyle tamamlanacak."
                 }
             } catch {
-                dataMessage = AppErrorMessage.make(error, context: "Veri işlemi tamamlanamadı", fallbackTitle: "Veri işlemi tamamlanamadı").fullText
+                dataMessage = AppErrorMessage.make(
+                    rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                    context: action.errorContext,
+                    fallbackTitle: action.errorContext
+                ).fullText
             }
             dataActionInProgress = nil
         }
@@ -446,6 +501,15 @@ private enum ProfileDataAction: Identifiable, Equatable {
         }
     }
 
+    var errorContext: String {
+        switch self {
+        case .exportData: return "Veri dışa aktarımı oluşturulamadı"
+        case .deleteReports: return "Raporlar silinemedi"
+        case .deleteAnalyses: return "Analizler silinemedi"
+        case .requestAccountDeletion: return "Hesap silme talebi kaydedilemedi"
+        }
+    }
+
     var role: ButtonRole? {
         switch self {
         case .deleteReports, .deleteAnalyses, .requestAccountDeletion:
@@ -453,6 +517,428 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .exportData:
             return nil
         }
+    }
+}
+
+private struct ProfileEditSheet: View {
+    let profile: UserProfile?
+    let auth: AuthService
+    let onSaved: () -> Void
+    let onClose: () -> Void
+
+    @State private var fullName = ""
+    @State private var title = ""
+    @State private var certificateNumber = ""
+    @State private var companyName = ""
+    @State private var phone = ""
+    @State private var preferredMethod: RiskMethodWire = .fineKinney
+    @State private var companyLogoPath: String?
+    @State private var companyLogo: UIImage?
+    @State private var selectedLogoItem: PhotosPickerItem?
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 16) {
+                    logoSection
+                    identitySection
+                    methodSection
+
+                    RDButton(
+                        title: isSaving ? "Kaydediliyor..." : "Profili kaydet",
+                        style: .detect,
+                        icon: isSaving ? "hourglass" : "checkmark.circle.fill",
+                        height: 54
+                    ) {
+                        save()
+                    }
+                    .disabled(isSaving)
+                    .opacity(isSaving ? 0.72 : 1)
+                }
+                .padding(20)
+                .padding(.bottom, 24)
+            }
+            .background(Color.rdPaper)
+            .navigationTitle("Profil Bilgileri")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Kapat", action: onClose)
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                }
+            }
+            .alert("Profil kaydedilemedi", isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
+                Button("Tamam", role: .cancel) { errorMessage = nil }
+            } message: {
+                Text(errorMessage ?? "")
+            }
+        }
+        .onAppear(perform: populate)
+        .onChange(of: selectedLogoItem) { newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    await MainActor.run { companyLogo = image }
+                }
+            }
+        }
+    }
+
+    private var logoSection: some View {
+        RDCard {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.rdWhite)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.rdLine, lineWidth: 1)
+                        )
+                    if let companyLogo {
+                        Image(uiImage: companyLogo)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(10)
+                    } else {
+                        Image(systemName: "building.2.crop.circle")
+                            .font(.system(size: 28, weight: .semibold, design: .rounded))
+                            .foregroundStyle(Color.rdSlate)
+                    }
+                }
+                .frame(width: 78, height: 68)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(companyLogo == nil ? "Logo ekle" : "Varsayılan rapor logosu")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text("Firma veya kişisel logon raporlarda varsayılan olarak kullanılır.")
+                        .font(.system(size: 12, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                PhotosPicker(selection: $selectedLogoItem, matching: .images) {
+                    Image(systemName: companyLogo == nil ? "plus" : "arrow.triangle.2.circlepath")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .frame(width: 36, height: 36)
+                        .foregroundStyle(Color.rdGreenDark)
+                        .background(Color.rdGreenSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .accessibilityLabel(companyLogo == nil ? "Logo seç" : "Logoyu değiştir")
+                .disabled(isSaving)
+            }
+        }
+    }
+
+    private var identitySection: some View {
+        profileSection("KİMLİK VE FİRMA") {
+            VStack(spacing: 10) {
+                field("Ad soyad", text: $fullName, placeholder: "Ad Soyad")
+                field("Ünvan / belge sınıfı", text: $title, placeholder: "İSG Uzmanı · A Sınıfı")
+                field("Sertifika no", text: $certificateNumber, placeholder: "Sertifika numarası")
+                field("Firma adı", text: $companyName, placeholder: "Firma adı")
+                field("Telefon", text: $phone, placeholder: "+90 5xx xxx xx xx", keyboard: .phonePad)
+            }
+        }
+    }
+
+    private var methodSection: some View {
+        profileSection("VARSAYILAN RİSK METODU") {
+            HStack(spacing: 8) {
+                methodButton(.fineKinney)
+                methodButton(.matrix5x5)
+            }
+        }
+    }
+
+    private func methodButton(_ method: RiskMethodWire) -> some View {
+        let active = preferredMethod == method
+        return Button {
+            preferredMethod = method
+            UISelectionFeedbackGenerator().selectionChanged()
+        } label: {
+            VStack(spacing: 4) {
+                Text(method.domain.label)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                Text("R = \(method.domain.formula)")
+                    .rdMono(size: 10)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .foregroundStyle(active ? Color.rdBlack : Color.rdSlate)
+            .background(active ? Color.rdWhite : Color.rdFog)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(active ? Color.rdBlack : Color.rdLine, lineWidth: active ? 1.5 : 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func profileSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .tracking(0.6)
+                .foregroundStyle(Color.rdSlate)
+                .padding(.leading, 4)
+            content()
+        }
+    }
+
+    private func field(
+        _ title: String,
+        text: Binding<String>,
+        placeholder: String,
+        keyboard: UIKeyboardType = .default
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+            TextField(placeholder, text: text)
+                .font(.system(size: 15, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .keyboardType(keyboard)
+                .textInputAutocapitalization(keyboard == .default ? .words : .never)
+                .autocorrectionDisabled(keyboard != .default)
+                .padding(.horizontal, 12)
+                .frame(height: 46)
+                .background(Color.rdWhite)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    private func populate() {
+        fullName = profile?.fullName ?? ""
+        title = profile?.title ?? ""
+        certificateNumber = profile?.certificateNumber ?? ""
+        companyName = profile?.companyName ?? ""
+        phone = profile?.phone ?? ""
+        preferredMethod = profile?.preferredMethod ?? .fineKinney
+        companyLogoPath = profile?.companyLogoURL
+
+        guard companyLogo == nil, let path = profile?.companyLogoURL, !path.isEmpty else { return }
+        Task {
+            if let image = try? await auth.profileLogoImage(path: path) {
+                await MainActor.run { companyLogo = image }
+            }
+        }
+    }
+
+    private func save() {
+        guard !isSaving else { return }
+        isSaving = true
+        errorMessage = nil
+
+        Task {
+            do {
+                var resolvedLogoPath = companyLogoPath
+                if let companyLogo {
+                    resolvedLogoPath = try await auth.uploadProfileLogo(companyLogo)
+                }
+                try await auth.updateProfile(
+                    ProfileUpdateInput(
+                        fullName: fullName,
+                        title: title,
+                        certificateNumber: certificateNumber,
+                        companyName: companyName,
+                        phone: phone,
+                        preferredMethod: preferredMethod,
+                        companyLogoPath: resolvedLogoPath
+                    )
+                )
+                onSaved()
+            } catch {
+                errorMessage = AppErrorMessage.make(
+                    error,
+                    context: "Profil kaydedilemedi",
+                    fallbackTitle: "Profil kaydedilemedi"
+                ).message
+            }
+            isSaving = false
+        }
+    }
+}
+
+private struct NotificationSettingsSheet: View {
+    @ObservedObject var notificationService: NotificationService
+    let onClose: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                RDCard {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: iconName)
+                            .font(.system(size: 22, weight: .semibold, design: .rounded))
+                            .foregroundStyle(iconColor)
+                            .frame(width: 48, height: 48)
+                            .background(iconColor.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(statusTitle)
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.rdBlack)
+                            Text(statusMessage)
+                                .font(.system(size: 13, design: .rounded))
+                                .foregroundStyle(Color.rdSlate)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+
+                VStack(spacing: 10) {
+                    notificationRow(icon: "checkmark.seal", title: "Analiz tamamlandı", subtitle: "Uzun süren analizlerde sonucu kaçırma.")
+                    notificationRow(icon: "doc.richtext", title: "Rapor hazır", subtitle: "PDF arşivleme ve paylaşım akışlarında haber ver.")
+                    notificationRow(icon: "person.crop.circle.badge.checkmark", title: "Hesap ve güvenlik", subtitle: "Oturum, profil ve önemli hesap durumları.")
+                }
+
+                if let lastError = notificationService.lastError {
+                    Text(lastError)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.rdCriticalText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                if notificationService.authorizationStatus == .denied {
+                    RDButton(
+                        title: "Ayarlar'dan aç",
+                        style: .primary,
+                        icon: "gearshape.fill",
+                        height: 52
+                    ) {
+                        openSystemSettings()
+                    }
+                } else if isEnabled {
+                    RDButton(
+                        title: "Bildirimleri kapat",
+                        style: .secondary,
+                        icon: "bell.slash",
+                        height: 52
+                    ) {
+                        notificationService.disableNotifications()
+                    }
+                } else {
+                    RDButton(
+                        title: notificationService.isRegistering ? "Bildirimler kuruluyor..." : "Bildirimleri aç",
+                        style: .detect,
+                        icon: notificationService.isRegistering ? "hourglass" : "bell.badge.fill",
+                        height: 52
+                    ) {
+                        notificationService.requestPermissionAndRegister()
+                    }
+                    .disabled(notificationService.isRegistering)
+                    .opacity(notificationService.isRegistering ? 0.72 : 1)
+                }
+            }
+            .padding(20)
+            .background(Color.rdPaper)
+            .navigationTitle("Bildirimler")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Kapat", action: onClose)
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                }
+            }
+            .task {
+                await notificationService.refreshSettings()
+            }
+        }
+    }
+
+    private var isEnabled: Bool {
+        switch notificationService.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private var statusTitle: String {
+        switch notificationService.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            return "Bildirimler açık"
+        case .denied:
+            return "Bildirim izni kapalı"
+        case .notDetermined:
+            return "Bildirimleri kur"
+        @unknown default:
+            return "Bildirim durumu kontrol edilemedi"
+        }
+    }
+
+    private var statusMessage: String {
+        switch notificationService.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            return "Cihaz kaydı Supabase ile eşleştiğinde analiz ve rapor durumları için bildirim alabileceksin."
+        case .denied:
+            return "iOS bildirim izni kapalı. RiskDetected bildirimlerini cihaz ayarlarından tekrar açabilirsin."
+        case .notDetermined:
+            return "Önemli analiz, rapor ve hesap durumlarını kaçırmamak için cihaz bildirim iznini aç."
+        @unknown default:
+            return "Bildirim ayarlarını yenileyip tekrar dene."
+        }
+    }
+
+    private var iconName: String {
+        isEnabled ? "bell.badge.fill" : "bell"
+    }
+
+    private var iconColor: Color {
+        isEnabled ? Color.rdGreen : Color.rdSlate
+    }
+
+    private func notificationRow(icon: String, title: String, subtitle: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdGreenDark)
+                .frame(width: 38, height: 38)
+                .background(Color.rdGreenSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 11))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text(subtitle)
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+        }
+        .padding(12)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func openSystemSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 }
 
@@ -634,6 +1120,7 @@ struct ProfileRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
+        .contentShape(Rectangle())
     }
 }
 
