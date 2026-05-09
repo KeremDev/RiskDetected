@@ -101,14 +101,12 @@ These items exist in some form, but need revision before we treat them as produc
    - Current state: generated PDFs are uploaded to Supabase Storage, metadata is written to `reports`, and the Reports tab can download/regenerate reports.
    - Target additions: report archive filtering/search, report status labels and better empty/error states.
 
-8. Phone auth
-   - Current state: basic auth service placeholders/OTP path exist, but production phone verification is not finalized.
-   - Target: support phone number registration and login.
-   - Preferred direction to research/implement: Firebase Auth phone verification for SMS, then bridge the verified Firebase user into Supabase session/profile flow.
-   - Decision checkpoint: verify the safest integration path before implementation:
-     - Option A: Firebase verifies phone, backend validates Firebase ID token, then creates/links a Supabase user/profile.
-     - Option B: Supabase native phone OTP if Firebase bridge adds too much auth/session complexity.
-   - Security rule: never trust phone number from client alone; backend must verify Firebase ID token or Supabase OTP result.
+8. Email OTP auth
+   - Current state: phone/Firebase auth is paused; the user-facing passwordless flow is Supabase Email OTP.
+   - Target: support registration and login with e-mail verification code, without forcing phone verification in MVP.
+   - Supabase requirement: Email provider enabled and OTP template shows the 6-digit token.
+   - Test requirement: verify send code -> enter code -> profile load -> main app flow with a real mailbox.
+   - Deferred phone auth: Firebase phone bridge code remains in the repo, but the UI is hidden until billing/Identity Platform and provider setup are production-ready.
 
 9. App preferences
    - Current state: Profile/Settings screen exists, but theme and language preferences are not implemented.
@@ -216,9 +214,41 @@ These items exist in some form, but need revision before we treat them as produc
 
 ### P2 - Auth and Subscription
 
-1. Firebase phone verification + Supabase user/profile bridge research and implementation.
+1. Email OTP login + deferred Firebase phone bridge.
+   - Decision update 2026-05-09: phone login is temporarily canceled for MVP; user-facing passwordless auth is Supabase Email OTP.
+   - Done: auth UI now shows "E-posta kodu ile devam et" instead of phone number login.
+   - Done: `AuthService.sendEmailOTP(email:)` and `verifyEmailOTP(email:token:)` are wired to Supabase Email OTP.
+   - Required external setup: Supabase Email provider and OTP email template must expose the 6-digit token.
+   - Deferred: Firebase phone verification + Supabase bridge remains available in code for future reactivation.
+   - Added: Firebase iOS SDK packages (`FirebaseCore`, `FirebaseAuth`) are wired into the Xcode project.
+   - Added: `FirebaseBootstrap` configures Firebase only when `GoogleService-Info.plist` is present, so the app remains stable without Firebase config.
+   - Added: `FirebasePhoneAuthService` can send SMS verification and return a Firebase ID token after code verification.
+   - Added: `firebase-phone-bridge` Edge Function validates Firebase phone ID tokens, creates/links Supabase Auth users and returns bridge credentials for a normal Supabase session.
+   - Done: `firebase_phone_auth_links` table applied to remote Supabase database.
+   - Done: `firebase-phone-bridge` deployed with JWT verification disabled because callers do not have a Supabase session before login.
+   - Done: Firebase iOS app created in project `riskdetected` for bundle id `com.riskdetected.app`.
+   - Done: `App/GoogleService-Info.plist` downloaded from Firebase and added to the app bundle.
+   - Done: `FIREBASE_PROJECT_ID=riskdetected` added to Supabase Edge Function secrets.
+   - Current production flag: `RDConfig.Auth.useFirebasePhoneBridge = false`; phone login is not exposed in UI.
+   - Previous fallback is no longer user-facing because the phone flow is paused.
+   - Blocked external config: Firebase Auth initialize returned `BILLING_NOT_ENABLED`; enable the required Firebase billing/Identity Platform setup and Phone provider before removing the fallback.
+   - Added: auth setup notes captured in `AUTH_SETUP.md`.
+   - Firebase bridge target:
+     - add Firebase iOS config (`GoogleService-Info.plist`) and FirebaseAuth SDK;
+     - verify the phone number with Firebase Auth on-device;
+     - send the Firebase ID token to a backend verification endpoint;
+     - backend validates the Firebase token and creates/links the matching Supabase user/profile;
+     - never trust phone number/client claims without backend token verification.
+   - Constraint: direct Firebase JWT as Supabase auth is not compatible with the current UUID `auth.uid()` RLS model without a deliberate schema/RLS redesign.
+   - Decision checkpoint: after Firebase project config is available, choose either Firebase-backed phone bridge for production SMS reliability or keep Supabase native phone OTP if the bridge adds too much session complexity.
 2. Apple Sign In production hardening.
+   - Started: iOS Apple Sign In service added with nonce hashing and Supabase `signInWithIdToken(provider: .apple)`.
+   - Started: Sign in with Apple entitlement added to the target.
+   - Follow-up: configure Apple provider credentials in Supabase Dashboard and Apple Developer portal, then verify on a real Apple account.
 3. Google Sign In production hardening.
+   - Started: Google button is wired to Supabase OAuth/PKCE web flow.
+   - Added: app URL scheme `io.supabase.riskdetected` is registered through `Config/RiskDetectedInfo.plist` for OAuth/magic-link callbacks.
+   - Follow-up: configure Google provider credentials and redirect URL in Supabase Dashboard; verify callback URL handling.
 4. RevenueCat subscription integration.
 5. Replace local/mock Pro toggles with verified subscription/profile refresh only.
 

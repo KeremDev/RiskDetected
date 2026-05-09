@@ -21,7 +21,7 @@ struct HistoryView: View {
             // Title
             HStack {
                 Text("Analizler")
-                    .font(.system(size: 30, weight: .bold))
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
                     .tracking(-0.6)
                     .foregroundStyle(Color.rdBlack)
                 Spacer()
@@ -51,7 +51,7 @@ struct HistoryView: View {
                             activeChip = c
                         } label: {
                             Text(c)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
                                 .padding(.horizontal, 12)
                                 .frame(height: 30)
                                 .foregroundStyle(active ? .white : Color.rdCharcoal)
@@ -157,10 +157,10 @@ struct HistoryView: View {
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
             TextField("Analiz ara", text: $search)
-                .font(.system(size: 14))
+                .font(.system(size: 14, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
         }
         .padding(.horizontal, 12)
@@ -179,7 +179,7 @@ struct HistoryView: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .frame(width: 40, height: 40)
                 .foregroundStyle(Color.rdBlack)
                 .background(Color.rdWhite)
@@ -221,10 +221,10 @@ struct HistoryView: View {
         RDCard {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Analiz bulunamadı")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text("Filtreyi değiştir veya yeni bir saha taraması başlat.")
-                    .font(.system(size: 13))
+                    .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -309,9 +309,9 @@ private struct HistoryRow: View {
             } label: {
                 VStack(spacing: 5) {
                     Image(systemName: "trash")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
                     Text("Sil")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
                 }
                 .foregroundStyle(.white)
                 .frame(width: revealWidth, height: 84)
@@ -348,7 +348,7 @@ private struct HistoryRow: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .top, spacing: 6) {
                     Text(item.title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -363,11 +363,11 @@ private struct HistoryRow: View {
                     Text("\(item.count) bulgu")
                         .rdMono(size: 12)
                 }
-                .font(.system(size: 12))
+                .font(.system(size: 12, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
 
                 Text(item.status.rawValue)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .foregroundStyle(item.status.textColor)

@@ -22,11 +22,11 @@ struct RDButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                if let icon { Image(systemName: icon).font(.system(size: 17, weight: .semibold)) }
+                if let icon { Image(systemName: icon).font(.system(size: 17, weight: .semibold, design: .rounded)) }
                 Text(title)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
                     .tracking(-0.2)
-                if let trailingIcon { Image(systemName: trailingIcon).font(.system(size: 17, weight: .semibold)) }
+                if let trailingIcon { Image(systemName: trailingIcon).font(.system(size: 17, weight: .semibold, design: .rounded)) }
             }
             .frame(maxWidth: .infinity)
             .frame(height: height)

@@ -13,10 +13,10 @@ struct RDUpgradeCTA: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "star.fill")
-                    .font(.system(size: 10, weight: .heavy))
+                    .font(.system(size: 10, weight: .heavy, design: .rounded))
                     .foregroundStyle(isPro ? .white : Color(hex: "#F5B700"))
                 Text(isPro ? "PRO" : "PRO")
-                    .font(.system(size: 10, weight: .heavy))
+                    .font(.system(size: 10, weight: .heavy, design: .rounded))
                     .tracking(0.7)
                     .foregroundStyle(isPro ? .white : Color(hex: "#3A2A00"))
             }

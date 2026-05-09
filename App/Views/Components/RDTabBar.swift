@@ -40,11 +40,11 @@ struct RDTabBar: View {
                 } label: {
                     VStack(spacing: 3) {
                         Image(systemName: tab.icon)
-                            .font(.system(size: 22, weight: isActive ? .bold : .regular))
+                            .font(.system(size: 22, weight: isActive ? .bold : .regular, design: .rounded))
                             .foregroundStyle(isActive ? Color.rdGreen : Color.rdSlate)
                             .frame(width: 26, height: 26)
                         Text(tab.label)
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
                             .foregroundStyle(isActive ? Color.rdBlack : Color.rdSlate)
                     }
                     .frame(maxWidth: .infinity)

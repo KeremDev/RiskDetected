@@ -16,11 +16,17 @@ enum RDConfig {
 
     /// Edge Function endpoint adı.
     static let analyzeFunctionName = "analyze"
+    static let firebasePhoneBridgeFunctionName = "firebase-phone-bridge"
 
     /// Storage bucket adları.
     enum Bucket {
         static let photos  = "photos"
         static let reports = "reports"
         static let logos   = "logos"
+    }
+
+    enum Auth {
+        /// Phone sign-in is currently hidden. Primary passwordless auth is email OTP.
+        static let useFirebasePhoneBridge = false
     }
 }

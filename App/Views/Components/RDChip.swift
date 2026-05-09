@@ -10,7 +10,7 @@ struct RDChip: View {
                 .fill(level.color)
                 .frame(width: 6, height: 6)
             Text(label ?? level.label)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .tracking(0.2)
         }
         .padding(.horizontal, 10)

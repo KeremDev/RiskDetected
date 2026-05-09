@@ -37,7 +37,7 @@ struct AnalyzingView: View {
                     .padding(.bottom, 24)
 
                 Text("Analiz devam ediyor")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                     .tracking(-0.4)
                     .foregroundStyle(Color.rdBlack)
                     .padding(.bottom, progressUpdate == nil ? 24 : 12)
@@ -114,7 +114,7 @@ struct AnalyzingView: View {
                 HStack(spacing: 10) {
                     stepDot(index: index)
                     Text(label)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdInk)
                 }
                 .opacity(index <= currentStep ? 1.0 : 0.35)
@@ -127,15 +127,15 @@ struct AnalyzingView: View {
     private func progressStatus(_ update: AnalysisProgressUpdate) -> some View {
         HStack(spacing: 10) {
             Image(systemName: update.icon)
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(size: 13, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(update.title)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(update.message)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
             }
@@ -164,7 +164,7 @@ struct AnalyzingView: View {
 
             if index < currentStep {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
             } else if index == currentStep {
                 Circle()

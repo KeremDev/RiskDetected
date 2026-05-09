@@ -58,7 +58,7 @@ struct PaywallView: View {
 
             Button(action: onClose) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
                     .frame(width: 36, height: 36)
                     .foregroundStyle(Color.rdBlack)
                     .background(Color.rdFog)
@@ -75,12 +75,12 @@ struct PaywallView: View {
         VStack(alignment: .leading, spacing: 12) {
             RDProBadge()
             Text("Sahanın profesyonel risk asistanı.")
-                .font(.system(size: 30, weight: .bold))
+                .font(.system(size: 30, weight: .bold, design: .rounded))
                 .tracking(-0.6)
                 .foregroundStyle(Color.rdBlack)
                 .fixedSize(horizontal: false, vertical: true)
             Text("PRO ile detaylı risk tabloları, sınırsız PDF rapor ve gelişmiş AI canvasları açılır.")
-                .font(.system(size: 15))
+                .font(.system(size: 15, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -108,17 +108,17 @@ struct PaywallView: View {
             ForEach(Array(featureList.enumerated()), id: \.offset) { _, f in
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: f.icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .frame(width: 36, height: 36)
                         .foregroundStyle(Color.rdGreenDark)
                         .background(Color.rdGreenSoft)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     VStack(alignment: .leading, spacing: 2) {
                         Text(f.title)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                         Text(f.detail)
-                            .font(.system(size: 13))
+                            .font(.system(size: 13, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                     }
                     Spacer()
@@ -153,10 +153,10 @@ struct PaywallView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(plan.label)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(plan.sub)
-                        .font(.system(size: 12))
+                        .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
 
@@ -179,7 +179,7 @@ struct PaywallView: View {
             .overlay(alignment: .topTrailing) {
                 if let badge = plan.badge {
                     Text(badge)
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
                         .tracking(0.4)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
@@ -196,7 +196,7 @@ struct PaywallView: View {
 
     private var footnote: some View {
         Text("7 gün ücretsiz dene · İlk ödeme öncesi hatırlatma")
-            .font(.system(size: 12))
+            .font(.system(size: 12, design: .rounded))
             .foregroundStyle(Color.rdSlate)
             .frame(maxWidth: .infinity)
     }
@@ -213,7 +213,7 @@ struct PaywallView: View {
             Text("Geri Yükle"); separator; Text("Şartlar"); separator; Text("Gizlilik")
             Spacer()
         }
-        .font(.system(size: 12))
+        .font(.system(size: 12, design: .rounded))
         .foregroundStyle(Color.rdSlate)
     }
 

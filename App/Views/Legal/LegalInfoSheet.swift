@@ -28,7 +28,7 @@ struct LegalInfoSheet: View {
                     )
 
                     Text("Üye olarak, giriş yaparak veya analiz başlatarak RiskDetected kullanım koşullarını ve ilgili veri işleme bilgilendirmelerini kabul etmiş sayılırsın.")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(14)
@@ -45,7 +45,7 @@ struct LegalInfoSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Kapat", action: onClose)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
                 }
             }
         }
@@ -55,7 +55,7 @@ struct LegalInfoSheet: View {
         RDCard {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "shield.lefthalf.filled")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 46, height: 46)
                     .background(Color.rdGreenSoft)
@@ -63,10 +63,10 @@ struct LegalInfoSheet: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Analiz akışını kesmeden açık bilgilendirme")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("Bu alan, sözleşme ve veri işleme özetini hızlıca görmen için eklendi. Nihai metinler yayın öncesi hukuki gözden geçirme gerektirir.")
-                        .font(.system(size: 13))
+                        .font(.system(size: 13, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -77,7 +77,7 @@ struct LegalInfoSheet: View {
     private func legalRow(icon: String, title: String, body: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
                 .frame(width: 34, height: 34)
                 .background(Color.rdGreenSoft)
@@ -85,10 +85,10 @@ struct LegalInfoSheet: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(body)
-                    .font(.system(size: 12))
+                    .font(.system(size: 12, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
             }

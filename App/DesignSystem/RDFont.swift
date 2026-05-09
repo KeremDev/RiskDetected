@@ -47,7 +47,7 @@ enum RDFontStyle {
     var design: Font.Design {
         switch self {
         case .data: return .monospaced
-        default:    return .default
+        default:    return .rounded
         }
     }
 }

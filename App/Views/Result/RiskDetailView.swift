@@ -48,12 +48,12 @@ struct RiskDetailView: View {
         let band = finding.band(for: method)
         return VStack(alignment: .leading, spacing: 8) {
             Text(finding.category.uppercased())
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 11, weight: .bold, design: .rounded))
                 .tracking(0.6)
                 .foregroundStyle(Color.rdSlate)
 
             Text(finding.title)
-                .font(.system(size: 22, weight: .bold))
+                .font(.system(size: 22, weight: .bold, design: .rounded))
                 .tracking(-0.4)
                 .foregroundStyle(Color.rdBlack)
                 .fixedSize(horizontal: false, vertical: true)
@@ -103,12 +103,12 @@ struct RiskDetailView: View {
                 }
 
                 Text(band.action)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(band.color)
             }
             Spacer(minLength: 6)
             Text(method.fullName.uppercased())
-                .font(.system(size: 9, weight: .bold))
+                .font(.system(size: 9, weight: .bold, design: .rounded))
                 .tracking(0.6)
                 .foregroundStyle(Color.rdBlack.opacity(0.72))
                 .lineLimit(2)
@@ -138,7 +138,7 @@ struct RiskDetailView: View {
         RDCard {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Yöntem karşılaştırması".uppercased())
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
                     .tracking(0.6)
                     .foregroundStyle(Color.rdSlate)
 
@@ -165,7 +165,7 @@ struct RiskDetailView: View {
     private func methodBox(title: String, formula: String, score: Int, band: RiskBand, active: Bool) -> some View {
         VStack(spacing: 6) {
             Text(title)
-                .font(.system(size: 12, weight: .bold))
+                .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(active ? Color.rdBlack : Color.rdSlate)
             Text("R = \(formula)")
                 .rdMono(size: 10)
@@ -180,7 +180,7 @@ struct RiskDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
 
             Text(band.label)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundStyle(band.color)
         }
         .padding(10)
@@ -198,16 +198,16 @@ struct RiskDetailView: View {
                          icon: String = "info.circle") -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title.uppercased())
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 11, weight: .bold, design: .rounded))
                 .tracking(0.6)
                 .foregroundStyle(Color.rdSlate)
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundStyle(accentText)
                     .padding(.top, 1)
                 Text(body)
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(accentText)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -228,7 +228,7 @@ struct RiskDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Text("Standart referansları".uppercased())
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
                         .tracking(0.6)
                         .foregroundStyle(Color.rdSlate)
                     RDProBadge(small: true)
@@ -240,15 +240,15 @@ struct RiskDetailView: View {
                 } label: {
                     HStack(alignment: .center, spacing: 10) {
                         Image(systemName: "books.vertical")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Standart referansları PRO'da açıktır")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             Text("Mevzuat, standart ve kaynak bağlantılarını görmek için yükselt.")
-                                .font(.system(size: 11))
+                                .font(.system(size: 11, design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                                 .lineLimit(2)
                         }
@@ -257,9 +257,9 @@ struct RiskDetailView: View {
 
                         HStack(spacing: 4) {
                             Image(systemName: "star.fill")
-                                .font(.system(size: 10, weight: .heavy))
+                                .font(.system(size: 10, weight: .heavy, design: .rounded))
                             Text("PRO")
-                                .font(.system(size: 11, weight: .heavy))
+                                .font(.system(size: 11, weight: .heavy, design: .rounded))
                         }
                         .foregroundStyle(Color(hex: "#8A5A00"))
                         .padding(.horizontal, 8)

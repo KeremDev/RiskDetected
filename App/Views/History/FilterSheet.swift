@@ -15,7 +15,7 @@ struct FilterSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Filtrele")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
                     .padding(.top, 6)
 
                 section("Tarih") {
@@ -70,7 +70,7 @@ struct FilterSheet: View {
     private func section<C: View>(_ title: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 11, weight: .bold, design: .rounded))
                 .tracking(0.6)
                 .foregroundStyle(Color.rdSlate)
             content()
@@ -88,7 +88,7 @@ struct FilterSheet: View {
                     onTap(opt)
                 } label: {
                     Text(opt)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .padding(.horizontal, 14)
                         .frame(height: 34)
                         .foregroundStyle(active ? .white : Color.rdCharcoal)
@@ -110,7 +110,7 @@ struct FilterSheet: View {
             HStack(spacing: 6) {
                 Circle().fill(level.color).frame(width: 8, height: 8)
                 Text(level.label)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
             }
             .padding(.horizontal, 12)
             .frame(height: 34)

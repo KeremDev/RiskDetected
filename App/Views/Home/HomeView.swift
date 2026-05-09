@@ -230,9 +230,9 @@ struct HomeView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: m.icon)
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
                         Text(m.label)
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 36)
@@ -288,7 +288,7 @@ struct HomeView: View {
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             } label: {
                                 Image(systemName: "xmark")
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
                                     .foregroundStyle(.white)
                                     .frame(width: 28, height: 28)
                                     .background(Color.black.opacity(0.55))
@@ -299,9 +299,9 @@ struct HomeView: View {
                         .overlay(alignment: .bottomLeading) {
                             HStack(spacing: 6) {
                                 Image(systemName: "pencil.tip.crop.circle")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                                 Text("İşaretlemeyi düzenle")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                             }
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
@@ -315,37 +315,26 @@ struct HomeView: View {
                     ZStack {
                         // İçerik
                         VStack(spacing: 10) {
-                            // Kamera ikonu — katmanlı gölge ile boyut
                             ZStack {
-                                // Dış glow halkası
                                 RoundedRectangle(cornerRadius: 18)
-                                    .fill(Color.rdGreen.opacity(0.12))
-                                    .frame(width: 68, height: 68)
-                                    .blur(radius: 6)
-                                    .offset(y: 3)
-
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.rdGreenSoft, Color.rdGreen.opacity(0.22)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
+                                    .fill(Color.rdWhite)
                                     .frame(width: 56, height: 56)
-                                    .shadow(color: Color.rdGreen.opacity(0.3), radius: 8, x: 0, y: 4)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 18)
+                                            .stroke(Color.rdLine, lineWidth: 1)
+                                    )
 
                                 Image(systemName: "camera.fill")
-                                    .font(.system(size: 26, weight: .semibold))
+                                    .font(.system(size: 26, weight: .semibold, design: .rounded))
                                     .foregroundStyle(Color.rdGreenDark)
                             }
                             .frame(width: 68, height: 68)
 
                             Text("Saha fotoğrafı yükle")
-                                .font(.system(size: 17, weight: .semibold))
+                                .font(.system(size: 17, weight: .semibold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             Text("Kamerayla çek veya galeriden seç")
-                                .font(.system(size: 13))
+                                .font(.system(size: 13, design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -362,15 +351,8 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
                     .background(
                         ZStack {
-                            // Kart zemini — üstten alta hafif gradient
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.rdWhite, Color.rdGreen.opacity(0.04)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
+                                .fill(Color.rdWhite)
 
                             // Dashed border — marka siyahıyla daha net bir çerçeve.
                             RoundedRectangle(cornerRadius: 20)
@@ -380,18 +362,6 @@ struct HomeView: View {
                                 .foregroundStyle(Color.rdBlack)
                         }
                     )
-                    // Çift katman gölge: ambient + directional
-                    .shadow(color: Color.black.opacity(0.04), radius: 1, x: 0, y: 1)
-                    .shadow(color: Color.black.opacity(0.07), radius: 14, x: 0, y: 6)
-                    // Alt yeşil glow
-                    .overlay(alignment: .bottom) {
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.rdGreen.opacity(0.08))
-                            .frame(height: 60)
-                            .blur(radius: 12)
-                            .offset(y: 10)
-                            .allowsHitTesting(false)
-                    }
                 }
             }
         }
@@ -412,25 +382,25 @@ struct HomeView: View {
                         .frame(width: 56, height: 56)
 
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdCritical)
                 }
                 .frame(width: 82, height: 82)
 
                 Text("Günlük free limit doldu")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text("Yeni fotoğraf analizi için yarın tekrar dene veya PRO ile sınırsız taramaya geç.")
-                    .font(.system(size: 13))
+                    .font(.system(size: 13, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Color.rdSlate)
                     .frame(maxWidth: 280)
 
                 HStack(spacing: 5) {
                     Text("PRO'ya geç")
-                        .font(.system(size: 12, weight: .heavy))
+                        .font(.system(size: 12, weight: .heavy, design: .rounded))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
                 }
                 .foregroundStyle(Color.rdCritical)
                 .padding(.top, 4)
@@ -482,14 +452,14 @@ struct HomeView: View {
                                 Text("Örn: \"Yüksekte çalışma alanında korkuluk eksik, işçi paraşüt tipi emniyet kemeri kullanmıyor.\"")
                                     .padding(.top, 4)
                             }
-                            .font(.system(size: 15))
+                            .font(.system(size: 15, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .padding(.horizontal, 14)
                             .padding(.top, 14)
                             .allowsHitTesting(false)
                         }
                         TextEditor(text: $text)
-                            .font(.system(size: 15))
+                            .font(.system(size: 15, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .scrollContentBackground(.hidden)
                             .padding(.horizontal, 10)
@@ -512,7 +482,7 @@ struct HomeView: View {
 
                     HStack {
                         Text("Maks. 2000 karakter")
-                            .font(.system(size: 12))
+                            .font(.system(size: 12, design: .rounded))
                         Spacer()
                         Text("\(text.count)/2000")
                             .rdMono(size: 12, weight: .medium)
@@ -537,25 +507,25 @@ struct HomeView: View {
                     .frame(width: 52, height: 52)
 
                 Image(systemName: icon)
-                    .font(.system(size: 19, weight: .bold))
+                    .font(.system(size: 19, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
             }
 
             Text(title)
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
 
             Text(subtitle)
-                .font(.system(size: 13))
+                .font(.system(size: 13, design: .rounded))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.rdSlate)
                 .frame(maxWidth: 290)
 
             HStack(spacing: 5) {
                 Text("PRO'ya geç")
-                    .font(.system(size: 12, weight: .heavy))
+                    .font(.system(size: 12, weight: .heavy, design: .rounded))
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
             }
             .foregroundStyle(Color.rdCritical)
             .padding(.top, 4)
@@ -586,13 +556,13 @@ struct HomeView: View {
         VStack(spacing: 10) {
             HStack {
                 Text("Son uygunsuzluklar")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .tracking(0.4)
                     .textCase(.uppercase)
                     .foregroundStyle(Color.rdSlate)
                 Spacer()
                 Button("Tümü") { /* navigate to history */ }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
             }
 
@@ -624,7 +594,7 @@ struct HomeView: View {
         RDCard {
             HStack(spacing: 12) {
                 Image(systemName: "clock.badge.checkmark")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 42, height: 42)
                     .background(Color.rdGreenSoft)
@@ -632,10 +602,10 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Henüz tamamlanmış analiz yok")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("İlk tarama tamamlandığında burada listelenecek.")
-                        .font(.system(size: 12))
+                        .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 Spacer(minLength: 0)
@@ -867,7 +837,7 @@ struct RecentAnalysisCard: View {
                 } else {
                     HStack(spacing: 3) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 8.5, weight: .black))
+                            .font(.system(size: 8.5, weight: .black, design: .rounded))
                         Text("\(item.count)")
                             .rdMono(size: 10, weight: .black)
                     }

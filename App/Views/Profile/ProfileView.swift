@@ -112,18 +112,18 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(app.profile?.displayName ?? "Kullanıcı")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     if app.isPro { RDProBadge(small: true) }
                 }
                 if let title = app.profile?.title {
                     Text(title)
-                        .font(.system(size: 13))
+                        .font(.system(size: 13, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 if let email = app.profile?.email {
                     Text(email)
-                        .font(.system(size: 12))
+                        .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
             }
@@ -150,7 +150,7 @@ struct ProfileView: View {
                         .rdMono(size: 22, weight: .bold)
                         .foregroundStyle(Color.rdBlack)
                     Text(s.label)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 .frame(maxWidth: .infinity)
@@ -183,12 +183,12 @@ struct ProfileView: View {
                     HStack(spacing: 10) {
                         RDProBadge(small: true)
                         Text("Aktif · \(subscriptionPeriodLabel)")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
                             .foregroundStyle(.white.opacity(0.7))
                     }
 
                     Text("Bir sonraki ödeme")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
                         .padding(.top, 4)
 
@@ -198,9 +198,9 @@ struct ProfileView: View {
 
                     HStack(spacing: 4) {
                         Text("Üyeliğimi yönet")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
                     }
                     .foregroundStyle(Color.rdGreen)
                     .padding(.top, 10)
@@ -221,11 +221,11 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: 6) {
                 RDProBadge()
                 Text("Pro'ya yükselt")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .padding(.top, 8)
                 Text("Sınırsız PDF rapor, gelişmiş AI canvasları ve risk matrisi.")
-                    .font(.system(size: 13))
+                    .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(.white.opacity(0.75))
             }
             .padding(16)
@@ -301,7 +301,7 @@ struct ProfileView: View {
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.system(size: 11, weight: .bold))
+            .font(.system(size: 11, weight: .bold, design: .rounded))
             .tracking(0.6)
             .foregroundStyle(Color.rdSlate)
             .padding(.leading, 4)
@@ -503,7 +503,7 @@ private struct ProfileDataControlsSheet: View {
                     )
 
                     Text("Not: Otomatik saklama politikası ayrıca çalışır. Free fotoğraflar 30 gün, Pro fotoğraflar 1 yıl saklanır; raporlar kullanıcı silene kadar kalır.")
-                        .font(.system(size: 12))
+                        .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(12)
@@ -537,7 +537,7 @@ private struct ProfileDataControlsSheet: View {
                 .rdMono(size: 18, weight: .bold)
                 .foregroundStyle(Color.rdBlack)
             Text(label)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity)
@@ -561,7 +561,7 @@ private struct ProfileDataControlsSheet: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
                     .foregroundStyle(danger ? Color.rdCriticalText : Color.rdGreen)
                     .frame(width: 42, height: 42)
                     .background(danger ? Color.rdCriticalBg : Color.rdGreenSoft)
@@ -569,10 +569,10 @@ private struct ProfileDataControlsSheet: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
                         .foregroundStyle(danger ? Color.rdCriticalText : Color.rdBlack)
                     Text(subtitle)
-                        .font(.system(size: 12))
+                        .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -583,7 +583,7 @@ private struct ProfileDataControlsSheet: View {
                         .controlSize(.small)
                 } else {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
             }
@@ -610,14 +610,14 @@ struct ProfileRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .frame(width: 32, height: 32)
                 .foregroundStyle(danger ? Color.rdCriticalText : Color.rdCharcoal)
                 .background(danger ? Color.rdCriticalBg : Color.rdFog)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Text(title)
-                .font(.system(size: 15, weight: .medium))
+                .font(.system(size: 15, weight: .medium, design: .rounded))
                 .foregroundStyle(danger ? Color.rdCriticalText : Color.rdBlack)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -628,7 +628,7 @@ struct ProfileRow: View {
             }
             if showsChevron {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
         }

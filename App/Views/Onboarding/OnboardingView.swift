@@ -28,7 +28,7 @@ struct OnboardingView: View {
                 RDLogo(size: 18)
                 Spacer()
                 Button("Atla") { app.finishOnboarding() }
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
             .padding(.horizontal, 20)
@@ -44,12 +44,12 @@ struct OnboardingView: View {
 
                 VStack(spacing: 14) {
                     Text(slides[step].title)
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
                         .tracking(-0.6)
                         .foregroundStyle(Color.rdBlack)
                         .multilineTextAlignment(.center)
                     Text(slides[step].body)
-                        .font(.system(size: 16))
+                        .font(.system(size: 16, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .lineSpacing(2)
@@ -138,8 +138,8 @@ struct OnboardingArt: View {
 
             // detected badge
             HStack(spacing: 6) {
-                Image(systemName: "sparkles").font(.system(size: 12, weight: .bold)).foregroundStyle(Color.rdGreen)
-                Text("Tehlike tespit edildi").font(.system(size: 11, weight: .semibold))
+                Image(systemName: "sparkles").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(Color.rdGreen)
+                Text("Tehlike tespit edildi").font(.system(size: 11, weight: .semibold, design: .rounded))
             }
             .padding(.horizontal, 10).padding(.vertical, 6)
             .background(Color.white)
@@ -162,11 +162,11 @@ struct OnboardingArt: View {
                 let c = cards[i]
                 VStack(alignment: .leading) {
                     Image(systemName: c.icon)
-                        .font(.system(size: 20))
+                        .font(.system(size: 20, design: .rounded))
                         .foregroundStyle(c.color)
                     Spacer()
                     Text(c.title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
                 }
                 .padding(14)
                 .frame(height: 100)
@@ -186,7 +186,7 @@ struct OnboardingArt: View {
     private var methodArt: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("RİSK HESAPLAMASI")
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 11, weight: .bold, design: .rounded))
                 .tracking(1)
                 .foregroundStyle(Color.rdSlate)
 
@@ -219,7 +219,7 @@ struct OnboardingArt: View {
         HStack(spacing: 10) {
             VStack(spacing: 2) {
                 Text(score).font(.system(size: 16, weight: .heavy, design: .monospaced))
-                Text(label).font(.system(size: 7, weight: .bold)).opacity(0.85)
+                Text(label).font(.system(size: 7, weight: .bold, design: .rounded)).opacity(0.85)
             }
             .frame(width: 48, height: 48)
             .background(scoreColor)
@@ -227,7 +227,7 @@ struct OnboardingArt: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 12, weight: .bold))
+                Text(title).font(.system(size: 12, weight: .bold, design: .rounded))
                 Text(formula).font(.system(size: 10, design: .monospaced)).foregroundStyle(Color.rdSlate)
                 HStack(spacing: 4) {
                     ForEach(0..<params.count, id: \.self) { i in
@@ -255,14 +255,14 @@ struct OnboardingArt: View {
         ]
         VStack(alignment: .leading, spacing: 10) {
             Text("TESPİT EDİLEN RİSKLER")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .tracking(1)
                 .foregroundStyle(Color.rdSlate)
             ForEach(0..<rows.count, id: \.self) { i in
                 HStack(spacing: 10) {
                     RDRiskDot(level: rows[i].level)
                     Text(rows[i].text)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
                     Spacer()
                     RDChip(level: rows[i].level)
                 }
@@ -286,7 +286,7 @@ struct OnboardingArt: View {
                 HStack {
                     RDLogo(size: 11)
                     Spacer()
-                    Text("Rapor #2841").font(.system(size: 8)).foregroundStyle(Color.rdSlate)
+                    Text("Rapor #2841").font(.system(size: 8, design: .rounded)).foregroundStyle(Color.rdSlate)
                 }
                 Rectangle().fill(Color.rdFog).frame(height: 6).clipShape(Capsule())
                 Rectangle().fill(Color.rdFog).frame(width: 140, height: 4).clipShape(Capsule())
@@ -317,7 +317,7 @@ struct OnboardingArt: View {
                     .fill(Color.rdGreen)
                     .frame(width: 48, height: 48)
                     .shadow(color: Color.rdGreen.opacity(0.4), radius: 20, y: 8)
-                Image(systemName: "arrow.down.to.line").font(.system(size: 20, weight: .bold)).foregroundStyle(.white)
+                Image(systemName: "arrow.down.to.line").font(.system(size: 20, weight: .bold, design: .rounded)).foregroundStyle(.white)
             }
             .padding(.trailing, 30).padding(.bottom, 36)
         }

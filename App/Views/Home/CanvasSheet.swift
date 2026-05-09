@@ -21,12 +21,12 @@ struct CanvasSheet: View {
             // Başlık
             VStack(alignment: .leading, spacing: 4) {
                 Text("AI Odaklı Analiz")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                     .tracking(-0.4)
                     .foregroundStyle(Color.rdBlack)
                     .padding(.top, 6)
                 Text("Analiz türünü seç. Her canvas, kendi alanı için özelleştirilmiş bir AI promptu kullanır.")
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -77,7 +77,7 @@ struct CanvasSheet: View {
         VStack(alignment: .leading, spacing: 7) {
             HStack {
                 Text("Özel analiz notu")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Spacer()
                 Text("\(userPrompt.count)/\(promptLimit)")
@@ -86,7 +86,7 @@ struct CanvasSheet: View {
             }
 
             TextEditor(text: $userPrompt)
-                .font(.system(size: 13))
+                .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .scrollContentBackground(.hidden)
                 .padding(.horizontal, 10)
@@ -101,7 +101,7 @@ struct CanvasSheet: View {
                 .overlay(alignment: .topLeading) {
                     if userPrompt.isEmpty {
                         Text("Örn: sadece araç kasasında yolcu taşıma risklerine bak")
-                            .font(.system(size: 13))
+                            .font(.system(size: 13, design: .rounded))
                             .foregroundStyle(Color.rdSlate.opacity(0.72))
                             .padding(.horizontal, 15)
                             .padding(.vertical, 16)
@@ -115,7 +115,7 @@ struct CanvasSheet: View {
                 }
 
             Text("Bu alanda ne istediğini belirtirsen daha net cevaplar alabilirsin.")
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.system(size: 10.5, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
         }
         .padding(.horizontal, 20)
@@ -136,11 +136,11 @@ private struct CanvasCard: View {
                 VStack(alignment: .leading, spacing: 6) {
                     iconBadge
                     Text(canvas.title)
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                     Text(canvas.short)
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, design: .rounded))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                         .foregroundStyle(secondaryTextColor)
@@ -173,7 +173,7 @@ private struct CanvasCard: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(iconBg)
             Image(systemName: canvas.icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(iconColor)
         }
         .frame(width: 28, height: 28)
@@ -182,9 +182,9 @@ private struct CanvasCard: View {
     private var proBadge: some View {
         HStack(spacing: 2) {
             Image(systemName: "star.fill")
-                .font(.system(size: 7))
+                .font(.system(size: 7, design: .rounded))
             Text("PRO")
-                .font(.system(size: 8, weight: .heavy))
+                .font(.system(size: 8, weight: .heavy, design: .rounded))
                 .tracking(0.6)
         }
         .padding(.horizontal, 5)

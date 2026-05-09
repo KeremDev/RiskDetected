@@ -15,7 +15,7 @@ struct RDAvatar: View {
             .clipShape(Circle())
 
             Text(initials)
-                .font(.system(size: size * 0.36, weight: .bold))
+                .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .tracking(-0.3)
         }
@@ -27,7 +27,7 @@ struct RDAvatar: View {
                     .frame(width: size * 0.5, height: size * 0.5)
                     .overlay {
                         Image(systemName: "star.fill")
-                            .font(.system(size: size * 0.22, weight: .bold))
+                            .font(.system(size: size * 0.22, weight: .bold, design: .rounded))
                             .foregroundStyle(Color(hex: "#FFD75A"))
                     }
                     .overlay(

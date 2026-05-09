@@ -20,6 +20,8 @@
 
 /* Begin PBXBuildFile section */
 		A1000001000000000000B001 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B101 /* Supabase */; };
+		A1000001000000000000B002 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B102 /* FirebaseAuth */; };
+		A1000001000000000000B003 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B103 /* FirebaseCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -28,6 +30,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000001000000000000B001 /* Supabase in Frameworks */,
+				A1000001000000000000B002 /* FirebaseAuth in Frameworks */,
+				A1000001000000000000B003 /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,6 +76,8 @@
 			name = RiskDetected;
 			packageProductDependencies = (
 				A1000001000000000000B101 /* Supabase */,
+				A1000001000000000000B102 /* FirebaseAuth */,
+				A1000001000000000000B103 /* FirebaseCore */,
 			);
 			productName = RiskDetected;
 			productReference = A1000001000000000000A200 /* RiskDetected.app */;
@@ -104,6 +110,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				A1000001000000000000B202 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A1000001000000000000A002 /* Products */;
@@ -124,6 +131,14 @@
 				minimumVersion = 2.24.0;
 			};
 		};
+		A1000001000000000000B202 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -131,6 +146,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		A1000001000000000000B102 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1000001000000000000B202 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		A1000001000000000000B103 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1000001000000000000B202 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 
@@ -301,11 +326,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = App/RiskDetected.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/RiskDetectedInfo.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "RiskDetected, saha fotoğrafları çekerek iş güvenliği analizi yapabilmek için kamerana ihtiyaç duyar.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Saha fotoğraflarını analiz edebilmek için galerine erişim izni gerekiyor.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -332,11 +359,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = App/RiskDetected.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/RiskDetectedInfo.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "RiskDetected, saha fotoğrafları çekerek iş güvenliği analizi yapabilmek için kamerana ihtiyaç duyar.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Saha fotoğraflarını analiz edebilmek için galerine erişim izni gerekiyor.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

@@ -3,13 +3,18 @@ import SwiftUI
 struct AuthView: View {
     @EnvironmentObject var app: AppState
     @State private var phase: AuthPhase = .options
-    @State private var phone: String = ""
-    @State private var code: [String] = ["", "", "", ""]
+    @State private var email: String = ""
+    @State private var code: [String] = Array(repeating: "", count: 6)
     @State private var signingInDemo: DemoAccount?
     @State private var authError: String?
     @State private var showLegalInfo = false
+    @State private var isSendingEmailCode = false
+    @State private var isVerifyingEmailCode = false
+    @State private var isSigningInWithApple = false
+    @State private var isSigningInWithGoogle = false
+    @State private var appleSignInService = AppleSignInService()
 
-    enum AuthPhase { case options, phone, otp }
+    enum AuthPhase { case options, email, otp }
     enum DemoAccount: String {
         case pro, free
 
@@ -50,6 +55,10 @@ struct AuthView: View {
     }
 
     private var isSigningIn: Bool { signingInDemo != nil }
+    private var normalizedEmail: String { email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+    private var otpCode: String { code.joined() }
+    private var canSendEmailCode: Bool { normalizedEmail.contains("@") && normalizedEmail.contains(".") && !isSendingEmailCode }
+    private var canVerifyEmailCode: Bool { otpCode.count == 6 && !isVerifyingEmailCode }
 
     var body: some View {
         GeometryReader { geo in
@@ -94,7 +103,7 @@ struct AuthView: View {
                 VStack(spacing: 10) {
                     RDLogo(size: 38)
                     Text("Saha için yapay zekâ destekli iş güvenliği asistanı")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: 260)
@@ -126,7 +135,7 @@ struct AuthView: View {
     private var formHeight: CGFloat {
         switch phase {
         case .options: return 326
-        case .phone:   return 220
+        case .email:   return 220
         case .otp:     return 280
         }
     }
@@ -135,7 +144,7 @@ struct AuthView: View {
     private var form: some View {
         switch phase {
         case .options: optionsForm
-        case .phone:   phoneForm
+        case .email:   emailForm
         case .otp:     otpForm
         }
     }
@@ -144,20 +153,32 @@ struct AuthView: View {
 
     private var optionsForm: some View {
         VStack(spacing: 10) {
-            RDButton(title: "Apple ile devam et", style: .primary, icon: "applelogo") {
-                // TODO: ASAuthorizationAppleIDProvider
+            RDButton(
+                title: isSigningInWithApple ? "Apple ile bağlanıyor..." : "Apple ile devam et",
+                style: .primary,
+                icon: isSigningInWithApple ? "hourglass" : "applelogo"
+            ) {
+                runAppleSignIn()
             }
-            RDButton(title: "Google ile devam et", style: .secondary, icon: "g.circle.fill") {
-                // TODO: GoogleSignIn SDK
+            .disabled(isSigningInWithApple)
+            .opacity(isSigningInWithApple ? 0.75 : 1)
+            RDButton(
+                title: isSigningInWithGoogle ? "Google ile bağlanıyor..." : "Google ile devam et",
+                style: .secondary,
+                icon: isSigningInWithGoogle ? "hourglass" : "g.circle.fill"
+            ) {
+                runGoogleSignIn()
             }
+            .disabled(isSigningInWithGoogle)
+            .opacity(isSigningInWithGoogle ? 0.75 : 1)
             HStack(spacing: 12) {
                 Rectangle().fill(Color.rdLine).frame(height: 1)
-                Text("veya").font(.system(size: 12)).foregroundStyle(Color.rdSlate)
+                Text("veya").font(.system(size: 12, design: .rounded)).foregroundStyle(Color.rdSlate)
                 Rectangle().fill(Color.rdLine).frame(height: 1)
             }
             .padding(.vertical, 2)
-            RDButton(title: "Telefon numarası ile", style: .secondary, icon: "phone.fill") {
-                withAnimation(.easeInOut(duration: 0.22)) { phase = .phone }
+            RDButton(title: "E-posta kodu ile devam et", style: .secondary, icon: "envelope.fill") {
+                withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
 
             legalNotice
@@ -172,14 +193,14 @@ struct AuthView: View {
 
             if let err = authError {
                 Text(err)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
                     .padding(.top, 2)
             }
             if let svcErr = app.authError {
                 Text("⚠️ \(svcErr)")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
             }
@@ -189,7 +210,7 @@ struct AuthView: View {
     private var legalNotice: some View {
         VStack(spacing: 3) {
             Text("Üye olarak veya giriş yaparak RiskDetected kullanım koşullarını kabul etmiş sayılırsın.")
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 10, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
@@ -198,7 +219,7 @@ struct AuthView: View {
                 showLegalInfo = true
             } label: {
                 Text("KVKK · Kullanım koşulları · AI veri işleme")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .underline()
             }
@@ -208,38 +229,57 @@ struct AuthView: View {
         .padding(.vertical, 2)
     }
 
-    // MARK: - Phone
+    @ViewBuilder
+    private var authErrorText: some View {
+        if let err = authError {
+            Text(err)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.rdCritical)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+        }
+    }
 
-    private var phoneForm: some View {
+    // MARK: - Email
+
+    private var emailForm: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Telefon numarası")
-                .font(.system(size: 13, weight: .medium))
+            Text("E-posta adresi")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
             HStack(spacing: 8) {
-                Text("🇹🇷 +90")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 84, height: 52)
+                Image(systemName: "envelope.fill")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .frame(width: 54, height: 52)
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdLine, lineWidth: 1))
-                TextField("555 000 00 00", text: $phone)
-                    .keyboardType(.phonePad)
-                    .font(.system(size: 16))
+                TextField("mail@ornek.com", text: $email)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .font(.system(size: 16, design: .rounded))
                     .padding(.horizontal, 16)
                     .frame(height: 52)
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdLine, lineWidth: 1))
             }
-            RDButton(title: "Kod gönder", style: .primary, trailingIcon: "arrow.right") {
-                if phone.filter(\.isNumber).count >= 10 {
-                    withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
-                }
+            RDButton(
+                title: isSendingEmailCode ? "Kod gönderiliyor..." : "Kod gönder",
+                style: .primary,
+                trailingIcon: isSendingEmailCode ? "hourglass" : "arrow.right"
+            ) {
+                sendEmailCode()
             }
+            .opacity(canSendEmailCode ? 1 : 0.55)
+            .disabled(!canSendEmailCode)
+            authErrorText
             Button("← Diğer giriş yöntemleri") {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .options }
             }
-            .font(.system(size: 14))
+            .font(.system(size: 14, design: .rounded))
             .foregroundStyle(Color.rdSlate)
             .frame(maxWidth: .infinity)
             .padding(8)
@@ -252,14 +292,14 @@ struct AuthView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Doğrulama kodu")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
-                Text("+90 \(phone.isEmpty ? "555 000 00 00" : phone) numarasına gönderildi")
-                    .font(.system(size: 14))
+                Text("\(normalizedEmail.isEmpty ? "mail@ornek.com" : normalizedEmail) adresine gönderildi")
+                    .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(Color.rdInk)
             }
             HStack(spacing: 10) {
-                ForEach(0..<4, id: \.self) { i in
+                ForEach(0..<6, id: \.self) { i in
                     TextField("", text: Binding(
                         get: { code[i] },
                         set: { code[i] = String($0.filter(\.isNumber).prefix(1)) }
@@ -267,7 +307,7 @@ struct AuthView: View {
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.center)
                     .font(.system(size: 28, weight: .bold, design: .monospaced))
-                    .frame(width: 64, height: 64)
+                    .frame(width: 48, height: 58)
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(
@@ -278,17 +318,26 @@ struct AuthView: View {
             }
             .frame(maxWidth: .infinity)
 
-            Text("Kod gelmedi mi? **00:32** sonra tekrar gönder")
-                .font(.system(size: 13))
+            Text("Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin.")
+                .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .frame(maxWidth: .infinity)
 
-            RDButton(title: "Doğrula ve giriş yap", style: .detect) {}
-
-            Button("← Numarayı değiştir") {
-                withAnimation(.easeInOut(duration: 0.22)) { phase = .phone }
+            RDButton(
+                title: isVerifyingEmailCode ? "Doğrulanıyor..." : "Doğrula ve giriş yap",
+                style: .detect,
+                icon: isVerifyingEmailCode ? "hourglass" : nil
+            ) {
+                verifyEmailCode()
             }
-            .font(.system(size: 14))
+            .opacity(canVerifyEmailCode ? 1 : 0.55)
+            .disabled(!canVerifyEmailCode)
+            authErrorText
+
+            Button("← E-posta adresini değiştir") {
+                withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
+            }
+            .font(.system(size: 14, design: .rounded))
             .foregroundStyle(Color.rdSlate)
             .frame(maxWidth: .infinity)
             .padding(8)
@@ -303,9 +352,9 @@ struct AuthView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: signingInDemo == account ? "hourglass" : account.icon)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
                 Text(signingInDemo == account ? "Giriş..." : account.title)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
@@ -336,6 +385,66 @@ struct AuthView: View {
                 authError = AppErrorMessage.make(error, context: "Giriş yapılamadı", fallbackTitle: "Giriş yapılamadı").fullText
             }
             signingInDemo = nil
+        }
+    }
+
+    private func sendEmailCode() {
+        guard canSendEmailCode else { return }
+        isSendingEmailCode = true
+        authError = nil
+        Task {
+            do {
+                try await app.auth.sendEmailOTP(email: normalizedEmail)
+                code = Array(repeating: "", count: 6)
+                withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
+            } catch {
+                authError = AppErrorMessage.make(error, context: "Kod gönderilemedi", fallbackTitle: "Kod gönderilemedi").fullText
+            }
+            isSendingEmailCode = false
+        }
+    }
+
+    private func verifyEmailCode() {
+        guard canVerifyEmailCode else { return }
+        isVerifyingEmailCode = true
+        authError = nil
+        Task {
+            do {
+                try await app.auth.verifyEmailOTP(email: normalizedEmail, token: otpCode)
+            } catch {
+                authError = AppErrorMessage.make(error, context: "Kod doğrulanamadı", fallbackTitle: "Kod doğrulanamadı").fullText
+            }
+            isVerifyingEmailCode = false
+        }
+    }
+
+    private func runAppleSignIn() {
+        guard !isSigningInWithApple else { return }
+        isSigningInWithApple = true
+        authError = nil
+        Task {
+            do {
+                let result = try await appleSignInService.signIn()
+                try await app.auth.signInWithApple(idToken: result.idToken, nonce: result.nonce)
+                await app.auth.refreshProfile()
+            } catch {
+                authError = AppErrorMessage.make(error, context: "Apple ile giriş yapılamadı", fallbackTitle: "Apple ile giriş yapılamadı").fullText
+            }
+            isSigningInWithApple = false
+        }
+    }
+
+    private func runGoogleSignIn() {
+        guard !isSigningInWithGoogle else { return }
+        isSigningInWithGoogle = true
+        authError = nil
+        Task {
+            do {
+                try await app.auth.signInWithGoogleOAuth()
+            } catch {
+                authError = AppErrorMessage.make(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı").fullText
+            }
+            isSigningInWithGoogle = false
         }
     }
 }

@@ -36,7 +36,7 @@ struct AnnotateView: View {
         HStack {
             Button(action: onCancel) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
                     .background(Color.white.opacity(0.12))
@@ -46,13 +46,13 @@ struct AnnotateView: View {
 
             Spacer()
             Text("İşaretleme")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
             Spacer()
 
             Button(action: undoLast) {
                 Image(systemName: "arrow.uturn.backward")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
                     .background(Color.white.opacity(0.12))
@@ -130,9 +130,9 @@ struct AnnotateView: View {
                 } label: {
                     VStack(spacing: 2) {
                         Image(systemName: t.icon)
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
                         Text(t.label)
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.system(size: 9, weight: .semibold, design: .rounded))
                     }
                     .frame(width: 52, height: 44)
                     .foregroundStyle(active ? Color.white : Color.rdCharcoal)

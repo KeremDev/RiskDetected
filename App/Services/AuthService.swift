@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-/// Auth orkestrasyonu — Apple, Google, Phone OTP, sign-out.
+/// Auth orkestrasyonu — Apple, Google, Email OTP, sign-out.
 @MainActor
 final class AuthService: ObservableObject {
     @Published private(set) var session: Session?
@@ -39,35 +39,103 @@ final class AuthService: ObservableObject {
         await fetchProfile(userID: signedInSession.user.id)
     }
 
-    /// E-posta adresine sihirli link gönderir (passwordless).
-    func sendMagicLink(email: String) async throws {
-        try await supabase.auth.signInWithOTP(email: email,
-                                              redirectTo: deepLinkURL())
+    /// E-posta adresine tek kullanımlık doğrulama kodu gönderir.
+    func sendEmailOTP(email: String) async throws {
+        lastError = nil
+        try await supabase.auth.signInWithOTP(email: email, redirectTo: deepLinkURL())
+    }
+
+    /// E-posta doğrulama kodunu onaylar ve Supabase oturumu açar.
+    func verifyEmailOTP(email: String, token: String) async throws {
+        lastError = nil
+        let response = try await supabase.auth.verifyOTP(email: email, token: token, type: .email)
+        if let verifiedSession = response.session {
+            self.session = verifiedSession
+            await fetchProfile(userID: verifiedSession.user.id)
+        }
     }
 
     /// Telefon numarasına SMS OTP gönderir (E.164 formatında: +905...).
     func sendPhoneOTP(phone: String) async throws {
+        lastError = nil
         try await supabase.auth.signInWithOTP(phone: phone)
     }
 
     /// SMS OTP doğrulaması.
     func verifyPhoneOTP(phone: String, token: String) async throws {
-        try await supabase.auth.verifyOTP(phone: phone, token: token, type: .sms)
+        lastError = nil
+        let response = try await supabase.auth.verifyOTP(phone: phone, token: token, type: .sms)
+        if let verifiedSession = response.session {
+            self.session = verifiedSession
+            await fetchProfile(userID: verifiedSession.user.id)
+        }
+    }
+
+    /// Firebase Phone Auth doğrulaması tamamlandıktan sonra Firebase ID tokenını
+    /// backend bridge'e gönderir ve dönen Supabase bridge hesabıyla oturum açar.
+    func signInWithFirebasePhoneIDToken(_ idToken: String) async throws {
+        struct Body: Encodable {
+            let id_token: String
+        }
+
+        struct BridgeResponse: Decodable {
+            let email: String
+            let password: String
+            let userID: UUID
+            let phone: String
+
+            enum CodingKeys: String, CodingKey {
+                case email
+                case password
+                case userID = "user_id"
+                case phone
+            }
+        }
+
+        lastError = nil
+        let response: BridgeResponse = try await supabase.functions.invoke(
+            RDConfig.firebasePhoneBridgeFunctionName,
+            options: FunctionInvokeOptions(body: Body(id_token: idToken))
+        )
+
+        let signedInSession = try await supabase.auth.signIn(
+            email: response.email,
+            password: response.password
+        )
+        self.session = signedInSession
+        await fetchProfile(userID: response.userID)
     }
 
     /// Apple ID ile giriş — UI tarafında ASAuthorizationAppleIDCredential alındıktan sonra
     /// `idToken` ve nonce buraya iletilir.
     func signInWithApple(idToken: String, nonce: String) async throws {
-        try await supabase.auth.signInWithIdToken(
+        lastError = nil
+        let signedInSession = try await supabase.auth.signInWithIdToken(
             credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
         )
+        self.session = signedInSession
+        await fetchProfile(userID: signedInSession.user.id)
     }
 
     /// Google ile giriş — Google Sign-In SDK'sından alınan idToken ile.
     func signInWithGoogle(idToken: String, nonce: String? = nil) async throws {
-        try await supabase.auth.signInWithIdToken(
+        lastError = nil
+        let signedInSession = try await supabase.auth.signInWithIdToken(
             credentials: .init(provider: .google, idToken: idToken, nonce: nonce)
         )
+        self.session = signedInSession
+        await fetchProfile(userID: signedInSession.user.id)
+    }
+
+    /// Google OAuth web flow — GoogleSignIn SDK olmadan Supabase PKCE/OAuth akışını kullanır.
+    func signInWithGoogleOAuth() async throws {
+        lastError = nil
+        let signedInSession = try await supabase.auth.signInWithOAuth(
+            provider: .google,
+            redirectTo: deepLinkURL()
+        )
+        self.session = signedInSession
+        await fetchProfile(userID: signedInSession.user.id)
     }
 
     /// Çıkış yapar.

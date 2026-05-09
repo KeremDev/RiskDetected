@@ -6,9 +6,9 @@ struct RDProBadge: View {
     var body: some View {
         HStack(spacing: 3) {
             Image(systemName: "star.fill")
-                .font(.system(size: small ? 9 : 11, weight: .bold))
+                .font(.system(size: small ? 9 : 11, weight: .bold, design: .rounded))
             Text("PRO")
-                .font(.system(size: small ? 9 : 10, weight: .heavy))
+                .font(.system(size: small ? 9 : 10, weight: .heavy, design: .rounded))
                 .tracking(0.6)
         }
         .padding(.horizontal, small ? 6 : 8)
