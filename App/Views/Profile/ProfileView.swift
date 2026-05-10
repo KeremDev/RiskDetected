@@ -687,7 +687,7 @@ private struct ProfileEditSheet: View {
             .background(active ? Color.rdWhite : Color.rdFog)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(active ? Color.rdBlack : Color.rdLine, lineWidth: active ? 1.5 : 1)
+                    .stroke(active ? Color.rdSelected : Color.rdLine, lineWidth: active ? 1.5 : 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }

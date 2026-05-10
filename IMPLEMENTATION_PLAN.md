@@ -67,6 +67,8 @@
   - Header profile menu closes on outside tap or scroll/drag and no longer changes page layout.
   - Bottom tab inactive text/icons are black in light mode while active icon remains green.
   - Main CTA button style has a right-side action capsule; auth Apple button opts out of that action icon.
+  - Dark mode CTA contrast QA completed for Taramayi Baslat, Standart Rapor, Risk Analizi and PDF creation actions; dark-mode primary CTAs use green background with white text/icons.
+  - Standart Rapor action button is tuned to stay single-line and centered in light/dark mode.
   - Analysis thumbnails are clipped to a fixed box so images of any aspect ratio cannot overlap list/result text.
   - Text-only analyses now use a standard Metin Analizi artwork in recent/history/result/report surfaces instead of blank photo placeholders.
   - Free users see a compact daily trial quota hint under upload/text input, with dynamic `2/2`, `1/2`, `0/2` display.
@@ -297,8 +299,9 @@ These items exist in some form, but need revision before we treat them as produc
    - Started: persistent Karanlik mod toggle added under Profile > Ayarlar and header quick menu;
    - Started: theme applies globally through `preferredColorScheme`;
    - Started: core design tokens adapt to dark/light mode;
+   - Done: dark-mode CTA contrast QA for Home, Result and Report settings primary actions;
    - Follow-up: replace the single toggle with full System / Aydinlik / Karanlik choice under Profile > Tercihler;
-   - Follow-up: continue contrast QA across Result, Report, Paywall and all sheets.
+   - Follow-up: continue final contrast QA only after new Result, Reports, Paywall or sheet UI changes.
 2. Language preference:
    - add Turkish / English / System language selector;
    - introduce localized string structure before hardcoding grows further;

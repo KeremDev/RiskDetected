@@ -187,7 +187,7 @@ struct RiskDetailView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(active ? Color.rdBlack : Color.rdLine, lineWidth: active ? 1.5 : 1)
+                .stroke(active ? Color.rdSelected : Color.rdLine, lineWidth: active ? 1.5 : 1)
         )
     }
 

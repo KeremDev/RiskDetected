@@ -168,10 +168,10 @@ struct PaywallView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .stroke(active ? Color.rdBlack : Color.rdLine, lineWidth: 2)
+                        .stroke(active ? Color.rdSelected : Color.rdLine, lineWidth: 2)
                         .frame(width: 22, height: 22)
                     if active {
-                        Circle().fill(Color.rdBlack).frame(width: 10, height: 10)
+                        Circle().fill(Color.rdSelected).frame(width: 10, height: 10)
                     }
                 }
 
@@ -196,7 +196,7 @@ struct PaywallView: View {
                     .fill(Color.rdWhite)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(active ? Color.rdBlack : Color.rdLine,
+                            .stroke(active ? Color.rdSelected : Color.rdLine,
                                     lineWidth: active ? 2 : 1)
                     )
             )

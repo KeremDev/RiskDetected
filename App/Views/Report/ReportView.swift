@@ -567,7 +567,7 @@ private struct ReportPreview: View {
         .padding(.bottom, 12)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(Color.rdBlack)
+                .fill(Color.rdSelected)
                 .frame(height: 2)
         }
     }

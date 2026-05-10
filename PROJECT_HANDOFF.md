@@ -215,6 +215,8 @@ Completed in the latest UI polish pass:
   - closes on outside tap;
   - closes on scroll/drag.
 - Main CTA button style uses the right-side icon capsule, with fixed white text/icon where needed in dark mode.
+- Dark mode CTA contrast QA is complete for `Taramayi Baslat`, `Standart Rapor`, `Risk Analizi` and `Bu ayarlarla PDF olustur`; primary actions use green background with white text/icons in dark mode.
+- `Standart Rapor` is tuned to remain single-line and visually centered in both light and dark mode.
 - Free daily quota hint is shown under input for Free users and displays dynamic `2/2`, `1/2`, `0/2` state.
 - Analysis thumbnails are standardized with clipping so any image aspect ratio stays inside its box.
 - Text-only analyses use a standard Metin Analizi artwork instead of empty photo placeholders.
@@ -223,7 +225,7 @@ Completed in the latest UI polish pass:
 Remaining theme/design follow-up:
 
 - Replace single dark-mode toggle with full System / Aydinlik / Karanlik preference under Profile > Tercihler.
-- Continue dark-mode contrast QA across Result, Report, Paywall and sheets.
+- Continue final contrast QA when new Result, Report, Paywall or sheet UI changes are made.
 - Continue planned Reports page design refresh and Profile page tab/content work.
 
 ## Reports and PDF Status

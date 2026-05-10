@@ -74,9 +74,9 @@ struct HomeView: View {
                         title: "Taramayı Başlat",
                         style: .detect,
                         icon: "sparkles",
-                        backgroundOverride: .rdOnyx,
+                        backgroundOverride: .rdCTA,
                         foregroundOverride: .white,
-                        shadowOverride: Color.rdOnyx.opacity(0.14)
+                        shadowOverride: Color.rdGreen.opacity(0.18)
                     ) {
                         startAnalysisFlow()
                     }

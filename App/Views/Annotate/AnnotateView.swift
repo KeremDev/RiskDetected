@@ -136,7 +136,7 @@ struct AnnotateView: View {
                     }
                     .frame(width: 52, height: 44)
                     .foregroundStyle(active ? Color.white : Color.rdCharcoal)
-                    .background(active ? Color.rdBlack : Color.clear)
+                    .background(active ? Color.rdSelected : Color.clear)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
@@ -158,7 +158,7 @@ struct AnnotateView: View {
                             .frame(width: 22, height: 22)
                             .overlay(Circle().stroke(Color.white, lineWidth: 2))
                             .overlay(
-                                Circle().stroke(active ? Color.rdBlack : Color.clear, lineWidth: 2)
+                                Circle().stroke(active ? Color.rdSelected : Color.clear, lineWidth: 2)
                             )
                     }
                     .buttonStyle(.plain)

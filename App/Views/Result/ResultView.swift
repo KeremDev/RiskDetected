@@ -467,6 +467,12 @@ struct ResultView: View {
                 style: .primary,
                 icon: pdfGeneration.isActive ? "hourglass" : "arrow.down.to.line",
                 height: 56,
+                backgroundOverride: .rdCTA,
+                foregroundOverride: .white,
+                shadowOverride: Color.rdGreen.opacity(0.16),
+                reservesActionIconSpace: false,
+                titleFontSize: 16.8,
+                contentOffsetX: -10,
                 action: { generateAndSharePDF() }
             )
             .frame(maxWidth: .infinity)
@@ -500,10 +506,10 @@ struct ResultView: View {
                         .foregroundStyle(app.isPro ? Color.rdBlack : Color.rdHighText)
                 }
                 .frame(width: 86, height: 56)
-                .background(app.isPro ? Color.rdFog : Color.rdHighBg)
+                .background(app.isPro ? Color.rdCompactCTA : Color.rdHighBg)
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
-                        .stroke(app.isPro ? Color.rdLine : Color(hex: "#F6C343"), lineWidth: 1)
+                        .stroke(app.isPro ? Color.rdCompactCTA : Color(hex: "#F6C343"), lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
@@ -713,7 +719,9 @@ struct ReportSettingsSheet: View {
                              style: .detect,
                              icon: "doc.richtext.fill",
                              height: 54,
-                    backgroundOverride: .rdOnyx,
+                             backgroundOverride: .rdCTA,
+                             foregroundOverride: .white,
+                             shadowOverride: Color.rdGreen.opacity(0.16),
                              action: onGenerate)
                         .padding(.top, 4)
                 }
@@ -796,7 +804,7 @@ struct ReportSettingsSheet: View {
                         .background(active ? Color.rdWhite : Color.rdFog)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(active ? Color.rdBlack : Color.rdLine, lineWidth: active ? 1.5 : 1)
+                                .stroke(active ? Color.rdSelected : Color.rdLine, lineWidth: active ? 1.5 : 1)
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }

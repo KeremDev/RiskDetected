@@ -11,6 +11,9 @@ extension Color {
     static let rdGreenSoft = Color.dynamic(light: "#EAF8EE", dark: "#092F15")
     static let rdPaper = Color.dynamic(light: "#FAFBFA", dark: "#0B0D0E")
     static let rdWhite = Color.dynamic(light: "#FFFFFF", dark: "#151819")
+    static let rdSelected = Color.dynamic(light: "#0B0D0E", dark: "#00B82E")
+    static let rdCTA = Color.dynamic(light: "#0B0D0E", dark: "#00B82E")
+    static let rdCompactCTA = Color.dynamic(light: "#F1F4F2", dark: "#00B82E")
 
     // Secondary
     static let rdInk = Color.dynamic(light: "#202427", dark: "#F0F4F1")

@@ -197,7 +197,7 @@ private struct CanvasCard: View {
     // MARK: - Style helpers
 
     private var backgroundColor: Color {
-        isActive ? Color.rdBlack : Color.rdWhite
+        isActive ? Color.rdSelected : Color.rdWhite
     }
 
     private var textColor: Color {
@@ -209,7 +209,7 @@ private struct CanvasCard: View {
     }
 
     private var borderColor: Color {
-        if isActive { return Color.rdBlack }
+        if isActive { return Color.rdSelected }
         if canvas.isPro { return Color.rdGreen.opacity(0.55) }
         return Color.rdLine
     }

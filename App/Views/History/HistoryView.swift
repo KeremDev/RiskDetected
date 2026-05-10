@@ -58,7 +58,7 @@ struct HistoryView: View {
                                 .foregroundStyle(active ? .white : Color.rdCharcoal)
                                 .background(
                                     Capsule()
-                                        .fill(active ? Color.rdBlack : Color.rdWhite)
+                                        .fill(active ? Color.rdSelected : Color.rdWhite)
                                         .overlay(
                                             Capsule()
                                                 .stroke(active ? Color.clear : Color.rdLine,

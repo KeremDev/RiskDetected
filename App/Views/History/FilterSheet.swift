@@ -93,7 +93,7 @@ struct FilterSheet: View {
                         .frame(height: 34)
                         .foregroundStyle(active ? .white : Color.rdCharcoal)
                         .background(
-                            Capsule().fill(active ? Color.rdBlack : Color.rdFog)
+                            Capsule().fill(active ? Color.rdSelected : Color.rdFog)
                         )
                 }
                 .buttonStyle(.plain)
@@ -115,7 +115,7 @@ struct FilterSheet: View {
             .padding(.horizontal, 12)
             .frame(height: 34)
             .foregroundStyle(active ? .white : Color.rdCharcoal)
-            .background(Capsule().fill(active ? Color.rdBlack : Color.rdFog))
+            .background(Capsule().fill(active ? Color.rdSelected : Color.rdFog))
         }
         .buttonStyle(.plain)
     }

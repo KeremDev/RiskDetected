@@ -18,6 +18,9 @@ struct RDButton: View {
     var foregroundOverride: Color? = nil
     var shadowOverride: Color? = nil
     var showsActionIcon: Bool = true
+    var reservesActionIconSpace: Bool = true
+    var titleFontSize: CGFloat = 17
+    var contentOffsetX: CGFloat = 0
     let action: () -> Void
 
     var body: some View {
@@ -35,13 +38,16 @@ struct RDButton: View {
                         inlineIcon(icon)
                     }
                     Text(title)
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .font(.system(size: titleFontSize, weight: .semibold, design: .rounded))
                         .tracking(-0.2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
                     if inlineTrailingIconStyle, let trailingIcon {
                         inlineIcon(trailingIcon)
                     }
                 }
-                .padding(.horizontal, capsuleIconStyle ? max(56, height) : 0)
+                .padding(.horizontal, shouldReserveActionIconSpace ? max(56, height) : 0)
+                .offset(x: contentOffsetX)
             }
             .frame(maxWidth: .infinity)
             .frame(height: height)
@@ -114,6 +120,10 @@ struct RDButton: View {
         case .secondary, .ghost:
             return false
         }
+    }
+
+    private var shouldReserveActionIconSpace: Bool {
+        capsuleIconStyle && reservesActionIconSpace
     }
 
     private var inlineTrailingIconStyle: Bool {

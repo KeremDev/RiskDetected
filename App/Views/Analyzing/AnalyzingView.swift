@@ -159,7 +159,7 @@ struct AnalyzingView: View {
             Circle()
                 .fill(index < currentStep ? Color.rdGreen : Color.rdFog)
                 .overlay(
-                    Circle().stroke(index == currentStep ? Color.rdBlack : .clear, lineWidth: 2)
+                    Circle().stroke(index == currentStep ? Color.rdSelected : .clear, lineWidth: 2)
                 )
 
             if index < currentStep {
@@ -168,7 +168,7 @@ struct AnalyzingView: View {
                     .foregroundStyle(.white)
             } else if index == currentStep {
                 Circle()
-                    .fill(Color.rdBlack)
+                    .fill(Color.rdSelected)
                     .frame(width: 7, height: 7)
             }
         }
