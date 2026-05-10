@@ -135,7 +135,7 @@ struct AnnotateView: View {
                             .font(.system(size: 9, weight: .semibold, design: .rounded))
                     }
                     .frame(width: 52, height: 44)
-                    .foregroundStyle(active ? Color.white : Color.rdCharcoal)
+                    .foregroundStyle(active ? Color.white : Color.black)
                     .background(active ? Color.rdSelected : Color.clear)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }

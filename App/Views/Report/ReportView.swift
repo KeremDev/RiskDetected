@@ -20,6 +20,7 @@ struct ReportView: View {
     @State private var shareItem: ShareItem?
     @State private var showSourceReportSheet = false
     @State private var visibleReportCount = 5
+    @State private var excelGenerationID: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,6 +28,8 @@ struct ReportView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
+                    reportOverview
+                    reportValuePanel
                     if isLoading && storedReports.isEmpty && analyses.isEmpty {
                         loadingCard
                         storedReportsSection
@@ -65,7 +68,7 @@ struct ReportView: View {
             Text(errorMessage ?? "")
         }
         .sheet(item: $shareItem) { item in
-            ShareSheet(items: [item.url])
+            DocumentPreview(url: item.url)
         }
         .sheet(isPresented: $showSourceReportSheet) {
             if let selectedBundle {
@@ -73,14 +76,15 @@ struct ReportView: View {
                     bundle: selectedBundle,
                     profile: app.profile,
                     isPro: app.isPro,
+                    isExcelGenerating: excelGenerationID == selectedBundle.analysis.id,
                     pdfGeneration: pdfGeneration,
                     reportOptions: $reportOptions,
                     companyLogo: $reportCompanyLogo,
-                    onGenerateStandard: {
-                        generateSelectedReport()
-                    },
                     onGenerateCustom: { options, logo in
                         generateSelectedReport(options: options, companyLogo: logo)
+                    },
+                    onGenerateExcel: {
+                        generateExcelReport()
                     },
                     onPaywall: {
                         showSourceReportSheet = false
@@ -118,18 +122,25 @@ struct ReportView: View {
     }
 
     private var header: some View {
-        HStack {
-            Text("Raporlar")
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .tracking(-0.6)
-                .foregroundStyle(Color.rdBlack)
-            Spacer()
-            if isLoading {
-                ProgressView()
-                    .controlSize(.small)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                RDLogo(size: 18)
+                Spacer()
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                RDHeaderAccountCTA {
+                    showPaywall = true
+                }
             }
-            RDHeaderAccountCTA {
-                showPaywall = true
+
+            HStack {
+                Text("Raporlar")
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .tracking(-0.6)
+                    .foregroundStyle(Color.rdBlack)
+                Spacer()
             }
         }
         .padding(.horizontal, 20)
@@ -145,32 +156,160 @@ struct ReportView: View {
         }
     }
 
+    private var reportOverview: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(spacing: 7) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        Text("RAPOR MERKEZİ")
+                            .rdMono(size: 11, weight: .bold)
+                    }
+                    .foregroundStyle(Color.rdGreen)
+
+                    Text("Denetime hazır çıktılar")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .tracking(-0.3)
+                        .foregroundStyle(.white)
+
+                    Text("Tamamlanan analizleri PDF'e çevir, arşivden indir veya Pro risk tablosuyla ayrıntılandır.")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.72))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(spacing: 4) {
+                    Text("\(storedReports.count)")
+                        .rdMono(size: 25, weight: .bold)
+                        .foregroundStyle(.white)
+                    Text("PDF")
+                        .rdMono(size: 10, weight: .bold)
+                        .foregroundStyle(.white.opacity(0.58))
+                }
+                .frame(width: 66, height: 66)
+                .background(Color.white.opacity(0.10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+            }
+
+            HStack(spacing: 8) {
+                overviewMetric(icon: "chart.bar.doc.horizontal", title: "Kaynak", value: "\(analyses.count)")
+                overviewMetric(icon: "tablecells", title: "Risk", value: "\(riskReportCount)")
+                overviewMetric(icon: app.isPro ? "checkmark.seal.fill" : "star.fill", title: "Plan", value: app.isPro ? "Pro" : "Free")
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            ZStack(alignment: .topTrailing) {
+                Color.rdOnyx
+                Circle()
+                    .fill(Color.rdGreen.opacity(0.24))
+                    .frame(width: 170, height: 170)
+                    .offset(x: 58, y: -76)
+                Circle()
+                    .fill(Color.rdGreen.opacity(0.10))
+                    .frame(width: 96, height: 96)
+                    .offset(x: -210, y: 92)
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .shadow(color: Color.rdOnyx.opacity(0.14), radius: 18, x: 0, y: 10)
+    }
+
+    private func overviewMetric(icon: String, title: String, value: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreen)
+                .frame(width: 26, height: 26)
+                .background(Color.white.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .rdMono(size: 14, weight: .bold)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text(title)
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.58))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(9)
+        .frame(maxWidth: .infinity)
+        .background(Color.white.opacity(0.075))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var reportValuePanel: some View {
+        Button {
+            if !app.isPro { showPaywall = true }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: app.isPro ? "checkmark.seal.fill" : "star.fill")
+                    .font(.system(size: 17, weight: .heavy, design: .rounded))
+                    .foregroundStyle(app.isPro ? Color.rdGreen : Color.white)
+                    .frame(width: 42, height: 42)
+                    .background(app.isPro ? Color.rdGreenSoft : Color.rdGreen)
+                    .clipShape(RoundedRectangle(cornerRadius: 13))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(app.isPro ? "Pro rapor paketi aktif" : "Pro ile detaylı risk çıktısı")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text("Fine-Kinney ve 5×5 matris, logo, firma bilgisi ve özelleştirilmiş PDF ayarları.")
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .lineLimit(2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if app.isPro {
+                    Text("AKTİF")
+                        .rdMono(size: 10, weight: .bold)
+                        .foregroundStyle(Color.rdGreen)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(Color.rdGreenSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                }
+            }
+            .padding(14)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(app.isPro ? Color.rdGreen.opacity(0.26) : Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .disabled(app.isPro)
+    }
+
     private var storedReportsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Kayıtlı PDF Raporları", meta: "\(storedReports.count) dosya")
+            sectionTitle("Kayıtlı Rapor Dosyaları", meta: "\(storedReports.count) dosya", icon: "archivebox")
 
             if storedReports.isEmpty {
-                RDCard {
-                    HStack(spacing: 10) {
-                        Image(systemName: "tray")
-                            .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.rdSlate)
-                            .frame(width: 36, height: 36)
-                            .background(Color.rdFog)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Henüz kayıtlı PDF yok")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundStyle(Color.rdBlack)
-                            Text("PDF oluşturduğunda dosya Supabase rapor arşivine kaydedilecek.")
-                                .font(.system(size: 12, design: .rounded))
-                                .foregroundStyle(Color.rdSlate)
-                        }
-                        Spacer()
-                    }
-                }
+                ReportEmptyInlineCard(
+                    icon: "tray",
+                    title: "Henüz kayıtlı rapor yok",
+                    subtitle: "PDF veya Excel oluşturduğunda dosya rapor arşivine kaydedilecek."
+                )
             } else {
-                VStack(spacing: 8) {
+                VStack(spacing: 9) {
                     ForEach(Array(storedReports.prefix(visibleReportCount))) { report in
                         StoredReportRow(
                             report: report,
@@ -190,6 +329,8 @@ struct ReportView: View {
                             }
                         } label: {
                             HStack(spacing: 8) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
                                 Text("Daha fazla gör")
                                     .font(.system(size: 13, weight: .bold, design: .rounded))
                                 Text("\(min(5, storedReports.count - visibleReportCount)) rapor")
@@ -215,35 +356,59 @@ struct ReportView: View {
 
     private var analysisSelector: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Rapor Kaynağı", meta: "\(analyses.count) analiz")
+            sectionTitle("Rapora Dönüştür", meta: "\(analyses.count) analiz", icon: "wand.and.stars")
 
-            VStack(spacing: 8) {
-                ForEach(analyses) { row in
-                    ReportAnalysisRow(
-                        row: row,
-                        isSelected: row.id == selectedID,
-                        isLoading: row.id == loadingID
-                    ) {
-                        select(row)
+            if analyses.isEmpty {
+                ReportEmptyInlineCard(
+                    icon: "doc.text.magnifyingglass",
+                    title: "Rapor kaynağı bekleniyor",
+                    subtitle: "Analiz tamamlandığında burada Standart Rapor veya Pro Risk Analizi üretebilirsin."
+                )
+            } else {
+                VStack(spacing: 9) {
+                    ForEach(analyses) { row in
+                        ReportAnalysisRow(
+                            row: row,
+                            isSelected: row.id == selectedID,
+                            isLoading: row.id == loadingID
+                        ) {
+                            select(row)
+                        }
                     }
                 }
             }
         }
     }
 
-    private func sectionTitle(_ title: String, meta: String) -> some View {
-        VStack(spacing: 6) {
+    private func sectionTitle(_ title: String, meta: String, icon: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreen)
+                .frame(width: 30, height: 30)
+                .background(Color.rdGreenSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 9))
+
             Text(title)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
-                .multilineTextAlignment(.center)
+
+            Spacer()
+
             Text(meta)
                 .rdMono(size: 11, weight: .semibold)
                 .foregroundStyle(Color.rdSlate)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(Color.rdFog)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
         }
-        .frame(maxWidth: .infinity)
         .padding(.top, 4)
         .padding(.bottom, 2)
+    }
+
+    private var riskReportCount: Int {
+        storedReports.filter { $0.kind == PDFReportKind.riskAnalysis.rawValue }.count
     }
 
     private var loadingCard: some View {
@@ -403,6 +568,39 @@ struct ReportView: View {
                     fallbackTitle: "PDF oluşturulamadı"
                 ).fullText
             }
+        }
+    }
+
+    private func generateExcelReport() {
+        guard let selectedBundle else { return }
+        guard excelGenerationID == nil else { return }
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
+        excelGenerationID = selectedBundle.analysis.id
+
+        Task {
+            do {
+                let report = try await AnalysisService.shared.generateExcelReport(
+                    analysisID: selectedBundle.analysis.id,
+                    method: reportOptions.method,
+                    requestID: requestID,
+                    supportID: supportID
+                )
+                storedReports = (try? await AnalysisService.shared.listReports(limit: 100)) ?? storedReports
+                let url = try await AnalysisService.shared.reportFileURL(
+                    for: report,
+                    requestID: requestID,
+                    supportID: supportID
+                )
+                shareItem = ShareItem(url: url)
+            } catch {
+                errorMessage = AppErrorMessage.make(
+                    rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                    context: "Excel oluşturulamadı",
+                    fallbackTitle: "Excel oluşturulamadı"
+                ).fullText
+            }
+            excelGenerationID = nil
         }
     }
 
@@ -764,11 +962,12 @@ private struct ReportSourceSheet: View {
     let bundle: AnalysisResultBundle
     let profile: UserProfile?
     let isPro: Bool
+    let isExcelGenerating: Bool
     @ObservedObject var pdfGeneration: PDFGenerationProgressController
     @Binding var reportOptions: PDFReportOptions
     @Binding var companyLogo: UIImage?
-    let onGenerateStandard: () -> Void
     let onGenerateCustom: (PDFReportOptions, UIImage?) -> Void
+    let onGenerateExcel: () -> Void
     let onPaywall: () -> Void
     @State private var showSettings = false
 
@@ -788,9 +987,18 @@ private struct ReportSourceSheet: View {
                 options: $reportOptions,
                 companyLogo: $companyLogo,
                 profile: profile,
+                isPro: isPro,
                 onGenerate: {
                     showSettings = false
                     onGenerateCustom(reportOptions, companyLogo)
+                },
+                onGenerateExcel: {
+                    showSettings = false
+                    onGenerateExcel()
+                },
+                onPaywall: {
+                    showSettings = false
+                    onPaywall()
                 },
                 onClose: { showSettings = false }
             )
@@ -800,56 +1008,21 @@ private struct ReportSourceSheet: View {
     }
 
     private var reportActions: some View {
-        HStack(spacing: 8) {
-            RDButton(
-                title: pdfGeneration.isActive ? "PDF hazırlanıyor..." : "PDF oluştur",
-                style: .primary,
-                icon: pdfGeneration.isActive ? "hourglass" : "doc.richtext",
-                height: 52
-            ) {
-                onGenerateStandard()
-            }
-            .disabled(pdfGeneration.isActive)
-            .frame(maxWidth: .infinity)
-
-            Button {
-                if isPro {
-                    if reportOptions.kind == .standard {
-                        reportOptions = PDFReportOptions(
-                            kind: .riskAnalysis,
-                            method: .fineKinney,
-                            preparedBy: profile?.displayName ?? "",
-                            companyName: profile?.companyName ?? ""
-                        )
-                    }
-                    showSettings = true
-                } else {
-                    onPaywall()
-                }
-            } label: {
-                ZStack(alignment: .topTrailing) {
-                    VStack(spacing: 4) {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 19, weight: .bold, design: .rounded))
-                        Text("Ayarlar")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                    }
-                    .foregroundStyle(Color.rdBlack)
-                    .frame(width: 78, height: 52)
-                    .background(Color.rdWhite)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.rdLine, lineWidth: 1)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                    RDProBadge(small: true)
-                        .scaleEffect(0.72)
-                        .offset(x: 9, y: -9)
-                }
-            }
-            .buttonStyle(RDPressableButtonStyle())
+        RDButton(
+            title: isExcelGenerating ? "Excel hazırlanıyor..." : pdfGeneration.isActive ? "Rapor hazırlanıyor..." : "Rapor oluştur",
+            style: .primary,
+            icon: isExcelGenerating ? "hourglass" : "slider.horizontal.3",
+            height: 56
+        ) {
+            reportOptions = PDFReportOptions(
+                kind: .standard,
+                method: reportOptions.method,
+                preparedBy: profile?.displayName ?? "",
+                companyName: profile?.companyName ?? ""
+            )
+            showSettings = true
         }
+        .disabled(isExcelGenerating || pdfGeneration.isActive)
     }
 }
 
@@ -861,21 +1034,42 @@ private struct ReportAnalysisRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(row.title)
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                        .lineLimit(1)
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: row.kind == "text" ? "text.alignleft" : "camera.viewfinder")
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(level.textColor)
+                    .frame(width: 44, height: 44)
+                    .background(level.bgColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 13))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .top, spacing: 8) {
+                        Text(row.title)
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdBlack)
+                            .lineLimit(2)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Text(level.label)
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundStyle(level.textColor)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(level.bgColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+
                     HStack(spacing: 6) {
-                        Text(dateText)
+                        Label(dateText, systemImage: "calendar")
                         Text("·")
                         Text(canvasLabel)
                         Text("·")
                         Text("\(row.findingCount) bulgu")
+                            .rdMono(size: 12, weight: .semibold)
                     }
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
+                    .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -888,15 +1082,19 @@ private struct ReportAnalysisRow: View {
                         .foregroundStyle(isSelected ? Color.rdGreen : Color.rdSlate)
                 }
             }
-            .padding(12)
+            .padding(14)
             .background(isSelected ? Color.rdGreenSoft : Color.rdWhite)
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 18)
                     .stroke(isSelected ? Color.rdGreen.opacity(0.35) : Color.rdLine, lineWidth: 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .clipShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(RDPressableButtonStyle())
+    }
+
+    private var level: RiskLevel {
+        RiskLevel(rawValue: row.highestBandFK ?? row.highestBandM5 ?? "unknown") ?? .unknown
     }
 
     private var canvasLabel: String {
@@ -919,86 +1117,115 @@ private struct ReportAnalysisRow: View {
     }
 }
 
+private struct ReportEmptyInlineCard: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+                .frame(width: 42, height: 42)
+                .background(Color.rdFog)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text(subtitle)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(14)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+}
+
 private struct StoredReportRow: View {
     let report: ReportRow
     let isLoading: Bool
     let isDeleting: Bool
     let action: () -> Void
     let onDelete: () -> Void
-    @State private var dragOffset: CGFloat = 0
-
-    private let revealWidth: CGFloat = 74
 
     var body: some View {
-        ZStack(alignment: .trailing) {
-            Button(role: .destructive) {
-                onDelete()
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
-                    dragOffset = 0
+        rowContent
+            .contextMenu {
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Raporu sil", systemImage: "trash")
                 }
-            } label: {
-                VStack(spacing: 5) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    Text("Sil")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                }
-                .foregroundStyle(.white)
-                .frame(width: revealWidth, height: 68)
             }
-            .background(Color.rdCritical)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .opacity(dragOffset < -8 ? 1 : 0)
-
-            rowContent
-                .offset(x: dragOffset)
-                .gesture(
-                    DragGesture(minimumDistance: 12, coordinateSpace: .local)
-                        .onChanged { value in
-                            let horizontal = value.translation.width
-                            let vertical = abs(value.translation.height)
-                            guard abs(horizontal) > vertical else { return }
-                            dragOffset = min(0, max(-revealWidth, horizontal))
-                        }
-                        .onEnded { value in
-                            let shouldOpen = value.translation.width < -36
-                            withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
-                                dragOffset = shouldOpen ? -revealWidth : 0
-                            }
-                        }
-                )
-        }
+            .accessibilityAction(named: "Raporu sil") {
+                onDelete()
+            }
     }
 
     private var rowContent: some View {
-        HStack(spacing: 10) {
-            Image(systemName: iconName)
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.rdBlack)
-                .frame(width: 42, height: 42)
-                .background(Color.rdWhite)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.rdLine, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isRiskAnalysis ? Color.rdGreenSoft : Color.rdFog)
+                Image(systemName: iconName)
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(isRiskAnalysis ? Color.rdGreen : Color.rdCharcoal)
+            }
+            .frame(width: 46, height: 46)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(report.title)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
-                    .lineLimit(1)
-                HStack(spacing: 6) {
-                    Text(kindLabel)
-                    Text("·")
-                    Text(dateText)
-                    if let sizeText {
-                        Text("·")
-                        Text(sizeText)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(reportTitle)
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if let titleDateText {
+                        Text(titleDateText)
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color.rdSlate)
+                            .lineLimit(1)
+                            .layoutPriority(-1)
                     }
                 }
-                .font(.system(size: 12, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    LinearGradient(
+                        colors: [Color.rdFog, Color.rdWhite],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 11))
+
+                HStack(spacing: 7) {
+                    Text(kindLabel)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(kindStyle.text)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(kindStyle.background)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .fixedSize(horizontal: true, vertical: false)
+
+                    Text(dateText)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .lineLimit(1)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -1007,41 +1234,67 @@ private struct StoredReportRow: View {
                     .controlSize(.small)
             } else {
                 Image(systemName: "arrow.down.to.line")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .frame(width: 38, height: 38)
+                    .background(Color.rdFog)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
         .padding(12)
         .background(Color.rdWhite)
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.rdLine, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(isRiskAnalysis ? Color.rdGreen.opacity(0.24) : Color.rdLine, lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
         .contentShape(Rectangle())
         .onTapGesture {
-            if dragOffset < 0 {
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
-                    dragOffset = 0
-                }
-            } else {
-                action()
-            }
+            action()
         }
     }
 
     private var iconName: String {
-        report.kind == PDFReportKind.riskAnalysis.rawValue ? "tablecells" : "doc.richtext"
+        if isExcel { return "tablecells.fill" }
+        return report.kind == PDFReportKind.riskAnalysis.rawValue ? "tablecells" : "doc.richtext"
+    }
+
+    private var isExcel: Bool {
+        report.format == "xlsx" || report.mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }
+
+    private var isRiskAnalysis: Bool {
+        report.kind == PDFReportKind.riskAnalysis.rawValue
     }
 
     private var kindLabel: String {
-        report.kind == PDFReportKind.riskAnalysis.rawValue ? "Risk analizi" : "Standart PDF"
+        if isExcel { return "Excel tablo" }
+        return isRiskAnalysis ? "Risk analizi" : "Standart rapor"
     }
 
-    private var sizeText: String? {
-        guard let fileSize = report.fileSize else { return nil }
-        let kb = max(Int((Double(fileSize) / 1024.0).rounded()), 1)
-        return "\(kb) KB"
+    private var kindStyle: (text: Color, background: Color) {
+        if isExcel {
+            return (Color(hex: "#2563EB"), Color(hex: "#EAF1FF"))
+        }
+        if isRiskAnalysis {
+            return (Color.rdGreen, Color.rdGreenSoft)
+        }
+        return (Color(hex: "#6D5DF6"), Color(hex: "#EFEDFF"))
+    }
+
+    private var reportTitle: String {
+        guard let separatorRange = report.title.range(of: " · ", options: .backwards) else {
+            return report.title
+        }
+        return String(report.title[..<separatorRange.lowerBound])
+    }
+
+    private var titleDateText: String? {
+        guard let separatorRange = report.title.range(of: " · ", options: .backwards) else {
+            return nil
+        }
+        let suffix = String(report.title[separatorRange.upperBound...])
+        return suffix.isEmpty ? nil : suffix
     }
 
     private var dateText: String {

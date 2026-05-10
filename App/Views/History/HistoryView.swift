@@ -18,64 +18,30 @@ struct HistoryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Title
-            HStack {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    RDLogo(size: 18)
+                    Spacer()
+                    RDHeaderAccountCTA {
+                        showPaywall = true
+                    }
+                }
+
                 Text("Analizler")
                     .font(.system(size: 30, weight: .bold, design: .rounded))
                     .tracking(-0.6)
                     .foregroundStyle(Color.rdBlack)
-                Spacer()
-                RDHeaderAccountCTA {
-                    showPaywall = true
-                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
-            .padding(.bottom, 4)
+            .padding(.bottom, 8)
             .zIndex(100)
 
-            // Search row
-            HStack(spacing: 8) {
-                searchField
-                filterButton
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 12)
-
-            // Chip row
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(chips, id: \.self) { c in
-                        let active = c == activeChip
-                        Button {
-                            UISelectionFeedbackGenerator().selectionChanged()
-                            activeChip = c
-                        } label: {
-                            Text(c)
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                .padding(.horizontal, 12)
-                                .frame(height: 30)
-                                .foregroundStyle(active ? .white : Color.rdCharcoal)
-                                .background(
-                                    Capsule()
-                                        .fill(active ? Color.rdSelected : Color.rdWhite)
-                                        .overlay(
-                                            Capsule()
-                                                .stroke(active ? Color.clear : Color.rdLine,
-                                                        lineWidth: 1)
-                                        )
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 20)
-            }
-            .padding(.bottom, 8)
-
-            // List
             ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 10) {
+                LazyVStack(spacing: 12) {
+                    analysisOverview
+                    filterSurface
+
                     if filteredItems.isEmpty {
                         emptyState
                     } else {
@@ -93,6 +59,7 @@ struct HistoryView: View {
                     }
                 }
                 .padding(.horizontal, 20)
+                .padding(.top, 8)
                 .padding(.bottom, 110)
             }
         }
@@ -155,6 +122,149 @@ struct HistoryView: View {
         }
     }
 
+    private var analysisOverview: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(spacing: 7) {
+                        Image(systemName: "viewfinder")
+                            .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        Text("ANALİZ MERKEZİ")
+                            .rdMono(size: 11, weight: .bold)
+                    }
+                    .foregroundStyle(Color.rdGreen)
+
+                    Text("\(items.count) saha taraması")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .tracking(-0.3)
+                        .foregroundStyle(.white)
+
+                    Text("Riskleri, bulgu sayılarını ve durumları hızlıca tara; detay için karta dokun.")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.72))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(spacing: 4) {
+                    Text("\(criticalCount)")
+                        .rdMono(size: 25, weight: .bold)
+                        .foregroundStyle(.white)
+                    Text("KRT")
+                        .rdMono(size: 10, weight: .bold)
+                        .foregroundStyle(.white.opacity(0.58))
+                }
+                .frame(width: 66, height: 66)
+                .background(Color.white.opacity(0.10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+            }
+
+            HStack(spacing: 8) {
+                overviewMetric(icon: "calendar", title: "Bu hafta", value: "\(weekCount)")
+                overviewMetric(icon: "exclamationmark.triangle.fill", title: "Bulgu", value: "\(findingTotal)")
+                overviewMetric(icon: "checkmark.seal.fill", title: "İncelenen", value: "\(reviewedCount)")
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            ZStack(alignment: .topTrailing) {
+                Color.rdOnyx
+                Circle()
+                    .fill(Color.rdGreen.opacity(0.24))
+                    .frame(width: 170, height: 170)
+                    .offset(x: 58, y: -78)
+                Circle()
+                    .fill(Color.rdGreen.opacity(0.10))
+                    .frame(width: 94, height: 94)
+                    .offset(x: -210, y: 86)
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .shadow(color: Color.rdOnyx.opacity(0.14), radius: 18, x: 0, y: 10)
+    }
+
+    private func overviewMetric(icon: String, title: String, value: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreen)
+                .frame(width: 26, height: 26)
+                .background(Color.white.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .rdMono(size: 14, weight: .bold)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text(title)
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.58))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(9)
+        .frame(maxWidth: .infinity)
+        .background(Color.white.opacity(0.075))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var filterSurface: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                searchField
+                filterButton
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(chips, id: \.self) { c in
+                        filterChip(c)
+                    }
+                }
+                .padding(.vertical, 1)
+            }
+        }
+        .padding(12)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    private func filterChip(_ title: String) -> some View {
+        let active = title == activeChip
+        return Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            activeChip = title
+        } label: {
+            HStack(spacing: 6) {
+                if active {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                }
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 32)
+            .foregroundStyle(active ? .white : Color.rdCharcoal)
+            .background(
+                Capsule()
+                    .fill(active ? Color.rdSelected : Color.rdFog)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
@@ -166,7 +276,7 @@ struct HistoryView: View {
         }
         .padding(.horizontal, 12)
         .frame(height: 40)
-        .background(Color.rdFog)
+        .background(Color.rdCloud)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.rdLine, lineWidth: 1)
@@ -183,7 +293,7 @@ struct HistoryView: View {
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .frame(width: 40, height: 40)
                 .foregroundStyle(Color.rdBlack)
-                .background(Color.rdWhite)
+                .background(Color.rdCloud)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Color.rdLine, lineWidth: 1)
@@ -220,7 +330,13 @@ struct HistoryView: View {
 
     private var emptyState: some View {
         RDCard {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreen)
+                    .frame(width: 48, height: 48)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
                 Text("Analiz bulunamadı")
                     .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
@@ -230,6 +346,22 @@ struct HistoryView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private var criticalCount: Int {
+        items.filter { $0.level == .critical }.count
+    }
+
+    private var weekCount: Int {
+        items.filter { isThisWeek($0.createdAt) }.count
+    }
+
+    private var findingTotal: Int {
+        items.reduce(0) { $0 + $1.count }
+    }
+
+    private var reviewedCount: Int {
+        items.filter { $0.status == .reviewed }.count
     }
 
     private func loadItems() async {
@@ -294,7 +426,8 @@ struct HistoryView: View {
 
     private func isThisWeek(_ date: Date?) -> Bool {
         guard let date else { return false }
-        return Calendar.current.isDate(date, equalTo: Date(), toGranularity: .weekOfYear)
+        let recentWeekStart = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        return date >= recentWeekStart
     }
 }
 
@@ -306,109 +439,157 @@ private struct HistoryRow: View {
     var isDeleting: Bool = false
     let action: () -> Void
     let onDelete: () -> Void
-    @State private var dragOffset: CGFloat = 0
-
-    private let revealWidth: CGFloat = 74
 
     var body: some View {
-        ZStack(alignment: .trailing) {
-            Button(role: .destructive) {
-                onDelete()
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
-                    dragOffset = 0
+        rowContent
+            .contextMenu {
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Analizi sil", systemImage: "trash")
                 }
-            } label: {
-                VStack(spacing: 5) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    Text("Sil")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                }
-                .foregroundStyle(.white)
-                .frame(width: revealWidth, height: 84)
             }
-            .background(Color.rdCritical)
-            .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-            .opacity(dragOffset < -8 ? 1 : 0)
-
-            rowContent
-                .offset(x: dragOffset)
-                .gesture(
-                    DragGesture(minimumDistance: 12, coordinateSpace: .local)
-                        .onChanged { value in
-                            let horizontal = value.translation.width
-                            let vertical = abs(value.translation.height)
-                            guard abs(horizontal) > vertical else { return }
-                            dragOffset = min(0, max(-revealWidth, horizontal))
-                        }
-                        .onEnded { value in
-                            let shouldOpen = value.translation.width < -36
-                            withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
-                                dragOffset = shouldOpen ? -revealWidth : 0
-                            }
-                        }
-                )
-        }
+            .accessibilityAction(named: "Analizi sil") {
+                onDelete()
+            }
     }
 
     private var rowContent: some View {
-        HStack(alignment: .top, spacing: 12) {
-            AnalysisThumbnail(path: item.photoPath, isTextAnalysis: item.isTextAnalysis, cornerRadius: 10)
-                .frame(width: 56, height: 56)
+        HStack(spacing: 12) {
+            ZStack(alignment: .bottomTrailing) {
+                AnalysisThumbnail(path: item.photoPath, isTextAnalysis: item.isTextAnalysis, cornerRadius: 14)
+                    .frame(width: 68, height: 68)
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .top, spacing: 6) {
-                    Text(item.title)
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    RDChip(level: item.level)
+                Image(systemName: item.isTextAnalysis ? "text.alignleft" : "camera.fill")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreen)
+                    .frame(width: 22, height: 22)
+                    .background(Color.rdWhite)
+                    .clipShape(Circle())
+                    .shadow(color: Color.rdOnyx.opacity(0.12), radius: 6, x: 0, y: 3)
+                    .offset(x: 4, y: 4)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: 5) {
+                        Text(cleanTitle)
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdBlack)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text(item.level.label)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(item.level.textColor)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(item.level.bgColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .fixedSize(horizontal: true, vertical: false)
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    LinearGradient(
+                        colors: [Color.rdFog, Color.rdWhite],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 11))
 
-                HStack(spacing: 6) {
+                HStack(spacing: 7) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
                     Text(item.date)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .layoutPriority(2)
                     Text("·")
-                    Text(item.kind)
+                    Text(focusText)
+                        .lineLimit(1)
+                        .layoutPriority(1)
                     Text("·")
                     Text("\(item.count) bulgu")
-                        .rdMono(size: 12)
+                        .rdMono(size: 12, weight: .semibold)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
-                .font(.system(size: 12, design: .rounded))
+                .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
 
-                Text(item.status.rawValue)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .foregroundStyle(item.status.textColor)
-                    .background(item.status.bgColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(item.status.textColor)
+                        .frame(width: 6, height: 6)
+                    Text(item.status.rawValue)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(item.status.textColor)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(item.status.bgColor)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if isLoading || isDeleting {
                 ProgressView()
                     .controlSize(.small)
-                    .padding(.top, 2)
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
             }
         }
-        .padding(14)
+        .padding(12)
         .background(Color.rdWhite)
         .overlay(
-            RoundedRectangle(cornerRadius: RDRadius.lg)
-                .stroke(Color.rdLine, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(item.level == .critical ? Color.rdCritical.opacity(0.22) : Color.rdLine, lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: 20))
         .contentShape(Rectangle())
         .onTapGesture {
-            if dragOffset < 0 {
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
-                    dragOffset = 0
-                }
-            } else {
-                action()
-            }
+            action()
+        }
+    }
+
+    private var rawTitleText: String {
+        guard let separatorRange = item.title.range(of: " · ", options: .backwards) else {
+            return item.title
+        }
+        return String(item.title[..<separatorRange.lowerBound])
+    }
+
+    private var cleanTitle: String {
+        stripTrailingDate(from: rawTitleText)
+    }
+
+    private var focusText: String {
+        let title = cleanTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if title.contains(" + ") {
+            return title
+        }
+        return item.kind
+    }
+
+    private func stripTrailingDate(from title: String) -> String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let patterns = [
+            #"\s+\d{1,2}\s+[A-Za-zÇĞİÖŞÜçğıöşü]{3,}\s+\d{1,2}:\d{2}$"#,
+            #"\s+\d{1,2}\s+[A-Za-zÇĞİÖŞÜçğıöşü]{3,}$"#,
+            #"\s+Bugün\s+\d{1,2}:\d{2}$"#,
+            #"\s+Dün\s+\d{1,2}:\d{2}$"#
+        ]
+
+        return patterns.reduce(trimmed) { current, pattern in
+            current.replacingOccurrences(
+                of: pattern,
+                with: "",
+                options: [.regularExpression, .caseInsensitive]
+            )
         }
     }
 }

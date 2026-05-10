@@ -2,6 +2,78 @@ import Foundation
 import SwiftUI
 import Combine
 
+enum RDThemePreference: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: return "Sistem"
+        case .light: return "Aydınlık"
+        case .dark: return "Karanlık"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .system: return "Telefon ayarını takip eder."
+        case .light: return "Her zaman açık tema."
+        case .dark: return "Her zaman koyu tema."
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .system: return "iphone"
+        case .light: return "sun.max.fill"
+        case .dark: return "moon.fill"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
+}
+
+enum RDLanguagePreference: String, CaseIterable, Identifiable {
+    case system
+    case turkish
+    case english
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: return "Sistem"
+        case .turkish: return "Türkçe"
+        case .english: return "English"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .system: return "Telefon dilini takip eder."
+        case .turkish: return "Uygulama metinleri Türkçe kalır."
+        case .english: return "English interface preference."
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .system: return "globe"
+        case .turkish: return "textformat"
+        case .english: return "character.book.closed"
+        }
+    }
+}
+
 enum AppFlow: Equatable {
     case splash
     case onboarding
@@ -9,19 +81,40 @@ enum AppFlow: Equatable {
     case main
 }
 
+enum QuickScanSource {
+    case chooser
+    case camera
+    case gallery
+}
+
 @MainActor
 final class AppState: ObservableObject {
     private static let darkModeKey = "rd.theme.darkModeEnabled"
+    private static let themePreferenceKey = "rd.theme.preference"
+    private static let languagePreferenceKey = "rd.language.preference"
 
     @Published var flow: AppFlow = .splash
     @Published var isPro: Bool = false
     @Published var profile: UserProfile?
     @Published var activeTab: RDTab = .home
+    @Published var quickScanRequestID = UUID()
+    var quickScanSource: QuickScanSource = .chooser
     @Published var hasSeenOnboarding: Bool
     @Published var authError: String?
     @Published var isDarkModeEnabled: Bool {
         didSet {
             UserDefaults.standard.set(isDarkModeEnabled, forKey: Self.darkModeKey)
+        }
+    }
+    @Published var themePreference: RDThemePreference {
+        didSet {
+            UserDefaults.standard.set(themePreference.rawValue, forKey: Self.themePreferenceKey)
+            isDarkModeEnabled = themePreference == .dark
+        }
+    }
+    @Published var languagePreference: RDLanguagePreference {
+        didSet {
+            UserDefaults.standard.set(languagePreference.rawValue, forKey: Self.languagePreferenceKey)
         }
     }
 
@@ -33,7 +126,14 @@ final class AppState: ObservableObject {
         let resolved = auth ?? AuthService()
         self.auth = resolved
         self.hasSeenOnboarding = UserDefaults.standard.bool(forKey: "rd.onboarding.completed")
-        self.isDarkModeEnabled = UserDefaults.standard.bool(forKey: Self.darkModeKey)
+        let storedTheme = UserDefaults.standard.string(forKey: Self.themePreferenceKey)
+            .flatMap(RDThemePreference.init(rawValue:))
+        let resolvedTheme = storedTheme ?? (UserDefaults.standard.bool(forKey: Self.darkModeKey) ? .dark : .system)
+        self.themePreference = resolvedTheme
+        self.isDarkModeEnabled = resolvedTheme == .dark
+        let storedLanguage = UserDefaults.standard.string(forKey: Self.languagePreferenceKey)
+            .flatMap(RDLanguagePreference.init(rawValue:))
+        self.languagePreference = storedLanguage ?? .system
         self.profile = resolved.profile
         self.isPro = resolved.profile?.isPro ?? false
         self.authError = resolved.lastError
@@ -48,6 +148,7 @@ final class AppState: ObservableObject {
             // Profile observer'ı zaten bağladığımız için fetch otomatik tetiklenir,
             // yine de kesinlik için bir kez daha refresh edelim.
             await auth.refreshProfile()
+            activeTab = .home
             flow = .main
             return
         }
@@ -64,6 +165,7 @@ final class AppState: ObservableObject {
     /// Auth tarafı zaten signedIn yayınladığında otomatik geçilecek; manuel çağrıyı
     /// AuthView'in geçici "demo giriş" senaryosu için saklıyoruz.
     func signIn() {
+        activeTab = .home
         flow = .main
     }
 
@@ -74,7 +176,15 @@ final class AppState: ObservableObject {
     }
 
     func setDarkMode(_ enabled: Bool) {
-        isDarkModeEnabled = enabled
+        setThemePreference(enabled ? .dark : .light)
+    }
+
+    func setThemePreference(_ preference: RDThemePreference) {
+        themePreference = preference
+    }
+
+    func setLanguagePreference(_ preference: RDLanguagePreference) {
+        languagePreference = preference
     }
 
     // MARK: - Observation
@@ -105,6 +215,7 @@ final class AppState: ObservableObject {
                         await NotificationService.shared.refreshSettings()
                         NotificationService.shared.syncCurrentTokenIfPossible()
                     }
+                    self.activeTab = .home
                     if self.flow != .main {
                         self.flow = .main
                     }
@@ -121,5 +232,11 @@ final class AppState: ObservableObject {
                 self?.authError = err
             }
             .store(in: &cancellables)
+    }
+
+    func requestQuickScan(source: QuickScanSource = .chooser) {
+        quickScanSource = source
+        activeTab = .home
+        quickScanRequestID = UUID()
     }
 }

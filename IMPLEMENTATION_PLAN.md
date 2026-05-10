@@ -60,7 +60,7 @@
   - Supabase push token/preference/event tables with RLS;
   - `send-push-notification` Edge Function deployed for APNs delivery after APNs secrets are configured.
 - UI polish and theme foundation:
-  - App no longer forces light mode; Profile > Ayarlar has a persistent Karanlik mod toggle.
+  - App no longer forces light mode; Profile > Ayarlar > Tercihler has persistent System / Aydinlik / Karanlik theme choices.
   - Core color tokens now adapt to dark/light mode while fixed black CTA surfaces use `rdOnyx`.
   - Header profile avatar opens a compact overlay menu with Analizlerim, Raporlarim, Pro status/upgrade, sign-out and theme toggle actions.
   - Pro users see `Pro uyesiniz` in the header menu instead of a plan-upgrade link.
@@ -69,6 +69,8 @@
   - Main CTA button style has a right-side action capsule; auth Apple button opts out of that action icon.
   - Dark mode CTA contrast QA completed for Taramayi Baslat, Standart Rapor, Risk Analizi and PDF creation actions; dark-mode primary CTAs use green background with white text/icons.
   - Standart Rapor action button is tuned to stay single-line and centered in light/dark mode.
+  - Reports tab visual refresh completed with report center summary, Pro value panel, premium saved-report rows and clearer report-source selection.
+  - Analyses tab visual refresh completed with analysis center summary, modern search/filter surface, cleaner filter sheet and more scannable analysis cards.
   - Analysis thumbnails are clipped to a fixed box so images of any aspect ratio cannot overlap list/result text.
   - Text-only analyses now use a standard Metin Analizi artwork in recent/history/result/report surfaces instead of blank photo placeholders.
   - Free users see a compact daily trial quota hint under upload/text input, with dynamic `2/2`, `1/2`, `0/2` display.
@@ -142,6 +144,15 @@ These items exist in some form, but need revision before we treat them as produc
 
 ## Next Priority Backlog
 
+### P0.5 - First Launch Onboarding
+
+1. Add first-install onboarding before the Auth screen:
+   - show only for users who have not completed onboarding before;
+   - include app visuals/screenshots and short educational copy;
+   - explain what RiskDetected does, how photo/text analysis works, AI focus selection, reports and Pro value;
+   - use step-by-step `İlerle` flow and finish with the existing Apple/Google/e-mail login screen;
+   - persist completion locally so returning users go directly to Auth/Main as appropriate.
+
 ### P0 - Stabilize MVP and Plan Alignment
 
 1. Done: Change Free/Pro hazard limits to Free max 4 and Pro max 14.
@@ -169,8 +180,9 @@ These items exist in some form, but need revision before we treat them as produc
    - versioned `consents` table exists with RLS and minimum grants;
    - login/session creates a non-blocking background audit row with legal versions, timestamp, app version and device id when missing.
    - Done: consent audit failures are logged with retry backoff;
-   - Follow-up: replace summary copy with lawyer-reviewed final KVKK/terms text and add full document links.
-   - Follow-up: find a calmer in-app placement for KVKK/terms access, likely Profile > Güvenlik ve gizlilik or first-run/account settings instead of Home CTA area.
+   - Done: legal information link opens a full legal center with KVKK, Kullanım koşulları and AI veri işleme documents;
+   - Done: Profile > Güvenlik ve gizlilik opens the same legal center for in-app access;
+   - Follow-up: replace current editable scaffold copy with lawyer-reviewed final long-form KVKK/terms/AI processing text.
 2. Visual data policy:
    - Done: client-side EXIF cleanup by pixel-only re-render before AI analysis/upload;
    - Done: Edge Function strips common JPEG/PNG metadata before Gemini and Storage persistence;
@@ -296,14 +308,13 @@ These items exist in some form, but need revision before we treat them as produc
 ### P2.5 - App Preferences and Localization
 
 1. Theme preference:
-   - Started: persistent Karanlik mod toggle added under Profile > Ayarlar and header quick menu;
-   - Started: theme applies globally through `preferredColorScheme`;
-   - Started: core design tokens adapt to dark/light mode;
+   - Done: Profile > Tercihler includes System / Aydinlik / Karanlik theme selection;
+   - Done: theme applies globally through `preferredColorScheme`;
+   - Done: core design tokens adapt to dark/light mode;
    - Done: dark-mode CTA contrast QA for Home, Result and Report settings primary actions;
-   - Follow-up: replace the single toggle with full System / Aydinlik / Karanlik choice under Profile > Tercihler;
    - Follow-up: continue final contrast QA only after new Result, Reports, Paywall or sheet UI changes.
 2. Language preference:
-   - add Turkish / English / System language selector;
+   - Done: Profile > Tercihler includes System / Turkce / English selector and persists the preference locally;
    - introduce localized string structure before hardcoding grows further;
    - first target screens: Auth, Home, Analysis, Result, Reports, Profile;
    - later target: PDF/report output language selection.
@@ -325,14 +336,42 @@ These items exist in some form, but need revision before we treat them as produc
    - user will provide fixed prompts for these focus modes;
    - store prompts clearly so frontend labels and backend prompt routing stay aligned.
 3. Reports page design refresh:
-   - redesign Reports tab visual hierarchy;
-   - improve saved reports, report source selection and actions.
-4. Legal link destination refresh:
-   - update pages opened from KVKK, Kullanım şartları and AI veri işleme links;
-   - make the legal pages calmer, clearer and production-ready.
-5. Profile page tabs and content:
+   - Done: redesigned Reports tab visual hierarchy;
+   - Done: improved saved reports, report source selection and actions;
+   - Done: added calm Pro value presentation for detailed risk tables, company logo and PDF customization.
+4. Analyses page design refresh:
+   - Done: redesigned Analyses tab visual hierarchy;
+   - Done: retained quick filtering chips and improved the filter sheet presentation;
+   - Done: modernized analysis cards with thumbnail, risk label, metadata and status.
+5. Legal link destination refresh:
+   - Done: updated pages opened from KVKK, Kullanım şartları and AI veri işleme links;
+   - Done: legal center uses separate document selectors and long-content-ready section cards;
+   - Follow-up: user will paste final long legal contents into the document sections.
+6. Profile page tabs and content:
    - design and implement profile page sections/tabs;
    - fill missing content for account, preferences, reports, analyses, notifications and data/privacy areas.
+
+### P2.7 - Excel Risk Analysis Export
+
+1. Backend-generated XLSX export: ✅ Done
+   - create Supabase Edge Function `generate-excel-report`;
+   - function authenticates user JWT and reads only the requested user's analysis/finding/profile data;
+   - generate `.xlsx` with Summary, Risk Analysis Table, Action Plan and Report Info sheets.
+   - server-side Pro entitlement check is enforced before workbook generation.
+2. Storage and metadata: ✅ Done
+   - allow `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` in the private `reports` bucket;
+   - store generated Excel files under the existing `reports` bucket;
+   - save metadata in `public.reports` with `format = xlsx`, proper mime type, size and support/request ids.
+3. iOS integration: ✅ Done
+   - add client service method to invoke the Excel Edge Function;
+   - download/share generated XLSX from the existing report archive flow;
+   - show Excel as a Pro report action near detailed risk analysis/PDF settings.
+4. QA: ✅ Backend smoke test done / manual app Pro flow pending
+   - generate an Excel report from an existing completed analysis;
+   - verify it appears in Reports archive and opens via iOS share sheet;
+   - verify PDF generation remains unchanged.
+   - Done: Pro demo API smoke test generated `/tmp/riskdetected-test.xlsx`; workbook opened with sheets `Özet`, `Risk Analiz Tablosu`, `Aksiyon Planı`, `Rapor Bilgileri`.
+   - Pending: sign into Pro demo in simulator and run the full in-app tap/share flow.
 
 ### P3 - AI Reliability and Cost Control
 

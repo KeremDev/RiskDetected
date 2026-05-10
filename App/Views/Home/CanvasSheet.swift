@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// AI Odaklı Analiz canvas seçim sheet'i — 3×2 grid, PRO kartlar ayrıca vurgulu.
+/// AI Odaklı Analiz canvas seçim sheet'i — 2 satırlı yatay seçim rayı.
 struct CanvasSheet: View {
     @Binding var selected: Set<AnalysisCanvas>
     @Binding var userPrompt: String
@@ -10,52 +10,65 @@ struct CanvasSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     private let promptLimit = 100
+    private let maxSelectionCount = 2
 
-    private let columns: [GridItem] = Array(
-        repeating: GridItem(.flexible(), spacing: 8),
-        count: 3
+    private let rows: [GridItem] = Array(
+        repeating: GridItem(.fixed(82), spacing: 8),
+        count: 2
     )
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Başlık
-            VStack(alignment: .leading, spacing: 4) {
-                Text("AI Odaklı Analiz")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .tracking(-0.4)
-                    .foregroundStyle(Color.rdBlack)
-                    .padding(.top, 6)
-                Text("Analiz türünü seç. Her canvas, kendi alanı için özelleştirilmiş bir AI promptu kullanır.")
-                    .font(.system(size: 14, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
-                    .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("AI Odaklı Analiz")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .tracking(-0.4)
+                        .foregroundStyle(Color.rdBlack)
+                        .padding(.top, 6)
+                    Text("En fazla 2 analiz odağı seçebilirsin.")
+                        .font(.system(size: 14, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .frame(width: 38, height: 38)
+                        .background(Color.rdWhite)
+                        .clipShape(Circle())
+                        .shadow(color: Color.rdOnyx.opacity(0.10), radius: 8, x: 0, y: 4)
+                }
+                .buttonStyle(RDPressableButtonStyle())
+                .accessibilityLabel("Pencereyi kapat")
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 16)
 
-            // Grid
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(AnalysisCanvas.all) { canvas in
-                    CanvasCard(
-                        canvas: canvas,
-                        isActive: selected.contains(canvas)
-                    ) {
-                        if canvas.isPro && !isUserPro {
-                            onUpgradeRequested()
-                        } else {
-                            UISelectionFeedbackGenerator().selectionChanged()
-                            withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
-                                if selected.contains(canvas) {
-                                    if selected.count > 1 { selected.remove(canvas) }
-                                } else {
-                                    selected.insert(canvas)
-                                }
-                            }
+            // Yatay seçim rayı: ilk bakışta 6 kart görünür, sağda diğer seçeneklerden iz kalır.
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHGrid(rows: rows, spacing: 8) {
+                    ForEach(AnalysisCanvas.all) { canvas in
+                        CanvasCard(
+                            canvas: canvas,
+                            isActive: selected.contains(canvas),
+                            isLocked: canvas.isPro && !isUserPro,
+                            isUserPro: isUserPro
+                        ) {
+                            select(canvas)
                         }
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 1)
             }
-            .padding(.horizontal, 16)
             .padding(.bottom, 12)
 
             promptInput
@@ -71,6 +84,27 @@ struct CanvasSheet: View {
         }
         .padding(.top, 8)
         .background(Color.rdPaper)
+    }
+
+    private func select(_ canvas: AnalysisCanvas) {
+        if canvas.isPro && !isUserPro {
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            onUpgradeRequested()
+            return
+        }
+
+        UISelectionFeedbackGenerator().selectionChanged()
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+            if selected.contains(canvas) {
+                if selected.count > 1 {
+                    selected.remove(canvas)
+                }
+            } else if selected.count < maxSelectionCount {
+                selected.insert(canvas)
+            } else {
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            }
+        }
     }
 
     private var promptInput: some View {
@@ -128,30 +162,32 @@ struct CanvasSheet: View {
 private struct CanvasCard: View {
     let canvas: AnalysisCanvas
     let isActive: Bool
+    let isLocked: Bool
+    let isUserPro: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             ZStack(alignment: .topTrailing) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 7) {
                     iconBadge
                     Text(canvas.title)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                    Text(canvas.short)
-                        .font(.system(size: 10, design: .rounded))
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                        .foregroundStyle(secondaryTextColor)
                 }
-                .padding(10)
-                .frame(maxWidth: .infinity, minHeight: 108, alignment: .topLeading)
+                .padding(9)
+                .frame(width: 106, height: 82, alignment: .topLeading)
 
                 if canvas.isPro {
-                    proBadge
-                        .padding(.top, 8)
-                        .padding(.trailing, 8)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        proBadge
+                        if isLocked {
+                            lockedBadge
+                        }
+                    }
+                    .padding(.top, 6)
+                    .padding(.trailing, 6)
                 }
             }
             .foregroundStyle(textColor)
@@ -164,6 +200,7 @@ private struct CanvasCard: View {
                     )
             )
             .shadow(color: shadowColor, radius: 14, x: 0, y: 4)
+            .opacity(isLocked ? 0.86 : 1)
         }
         .buttonStyle(RDPressableButtonStyle())
     }
@@ -191,6 +228,21 @@ private struct CanvasCard: View {
         .frame(height: 16)
         .foregroundStyle(.white)
         .background(Color.rdGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+
+    private var lockedBadge: some View {
+        HStack(spacing: 2) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 6.5, design: .rounded))
+            Text("KİLİTLİ")
+                .font(.system(size: 6.8, weight: .heavy, design: .rounded))
+                .tracking(0.35)
+        }
+        .padding(.horizontal, 5)
+        .frame(height: 15)
+        .foregroundStyle(Color(hex: "#8A6500"))
+        .background(Color(hex: "#FFF1B8"))
         .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 

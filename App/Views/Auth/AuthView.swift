@@ -238,11 +238,13 @@ struct AuthView: View {
 
     private var legalNotice: some View {
         VStack(spacing: 3) {
-            Text("Üye olarak veya giriş yaparak RiskDetected kullanım koşullarını kabul etmiş sayılırsın.")
+            Text("Üye olarak veya giriş yaparak\nRiskDetected koşullarını kabul etmiş sayılırsın.")
                 .font(.system(size: 10, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
 
             Button {
                 showLegalInfo = true

@@ -219,6 +219,59 @@ final class AnalysisService {
         }
     }
 
+    @discardableResult
+    func generateExcelReport(
+        analysisID: UUID,
+        method: RiskMethod,
+        requestID: String,
+        supportID: String
+    ) async throws -> ReportRow {
+        struct Body: Encodable {
+            let analysis_id: String
+            let method: String
+            let report_kind: String
+            let request_id: String
+            let support_id: String
+        }
+
+        struct ExcelReportResponse: Decodable {
+            let report: ReportRow
+            let requestID: String?
+            let supportID: String?
+
+            enum CodingKeys: String, CodingKey {
+                case report
+                case requestID = "request_id"
+                case supportID = "support_id"
+            }
+        }
+
+        let body = Body(
+            analysis_id: analysisID.uuidString,
+            method: Self.databaseReportMethodValue(method),
+            report_kind: PDFReportKind.riskAnalysis.rawValue,
+            request_id: requestID,
+            support_id: supportID
+        )
+
+        do {
+            let response: ExcelReportResponse = try await supabase.functions.invoke(
+                RDConfig.generateExcelReportFunctionName,
+                options: FunctionInvokeOptions(body: body)
+            )
+            return response.report
+        } catch let FunctionsError.httpError(code, data) {
+            let payload = Self.functionErrorPayload(from: data)
+            let remoteSupportID = payload.supportID ?? supportID
+            let message = payload.message.isEmpty ? "Excel raporu oluşturulamadı." : payload.message
+            Self.logger.error("Excel report invoke failed support=\(remoteSupportID, privacy: .public) request=\(requestID, privacy: .public) http=\(code) message=\(message, privacy: .public)")
+            throw AnalysisError.storageFailed("\(message) Destek kodu: \(remoteSupportID)")
+        } catch {
+            Self.logger.error("Excel report invoke failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.storageFailed("Excel raporu oluşturulamadı. Destek kodu: \(supportID)")
+        }
+    }
+
     /// Oluşturulan PDF'i Storage'a yükler ve `reports` kaydını yazar.
     @discardableResult
     func storeReport(
@@ -641,8 +694,8 @@ final class AnalysisService {
 
     /// Profil ekranı için canlı sayaçlar.
     func profileStats() async throws -> ProfileStats {
-        let startOfWeek = Calendar.current.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
-        let weekStart = ISO8601DateFormatter().string(from: startOfWeek)
+        let recentWeekStart = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        let weekStart = ISO8601DateFormatter().string(from: recentWeekStart)
 
         async let totalAnalyses = countRows(
             table: "analyses",
@@ -1156,6 +1209,7 @@ struct ReportRow: Codable, Identifiable, Equatable {
     let id: UUID
     let userID: UUID
     let analysisID: UUID?
+    let format: String?
     let kind: String
     let method: String
     let title: String
@@ -1171,6 +1225,7 @@ struct ReportRow: Codable, Identifiable, Equatable {
         case id
         case userID = "user_id"
         case analysisID = "analysis_id"
+        case format
         case kind
         case method
         case title

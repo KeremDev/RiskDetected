@@ -25,6 +25,7 @@ struct AnalyzingView: View {
     @State private var workResult: AnalysisResultBundle? = nil
     @State private var animDone = false
     @State private var progressUpdate: AnalysisProgressUpdate?
+    @State private var signalPulse = false
 
     var body: some View {
         ZStack {
@@ -34,13 +35,20 @@ struct AnalyzingView: View {
                 Spacer(minLength: 0)
 
                 scanCard
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 22)
 
-                Text("Analiz devam ediyor")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .tracking(-0.4)
-                    .foregroundStyle(Color.rdBlack)
-                    .padding(.bottom, progressUpdate == nil ? 24 : 12)
+                VStack(spacing: 6) {
+                    Text("Analiz devam ediyor")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .tracking(-0.4)
+                        .foregroundStyle(Color.rdBlack)
+                    Text("AI, görüntüyü iş güvenliği odaklarıyla katman katman tarıyor.")
+                        .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                }
+                .padding(.bottom, progressUpdate == nil ? 18 : 12)
 
                 if let progressUpdate {
                     progressStatus(progressUpdate)
@@ -61,6 +69,9 @@ struct AnalyzingView: View {
             guard animTask == nil else { return }
             startAnimation()
             startWork()
+            withAnimation(.easeInOut(duration: 1.25).repeatForever(autoreverses: true)) {
+                signalPulse = true
+            }
         }
     }
 
@@ -68,60 +79,116 @@ struct AnalyzingView: View {
 
     private var scanCard: some View {
         ZStack {
-            if let previewImage {
-                Image(uiImage: previewImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 240, height: 240)
-                    .clipped()
-                    .overlay(Color.black.opacity(0.14))
-            } else {
-                RDPlaceholderPhoto(label: "Analiz ediliyor", cornerRadius: 22)
-            }
+            ZStack {
+                if let previewImage {
+                    Image(uiImage: previewImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 246, height: 246)
+                        .clipped()
+                        .overlay(Color.black.opacity(0.16))
+                } else {
+                    RDPlaceholderPhoto(label: "Analiz ediliyor", cornerRadius: 24)
+                }
 
-            // Scan beam
-            GeometryReader { geo in
-                let h = geo.size.height
-                LinearGradient(
-                    colors: [.clear, Color.rdGreen.opacity(0.55), .clear],
-                    startPoint: .top, endPoint: .bottom
-                )
-                .frame(height: 60)
-                .offset(y: scanY * h)
-                .onAppear {
-                    withAnimation(
-                        .linear(duration: 1.6).repeatForever(autoreverses: false)
-                    ) {
-                        scanY = 1
+                GeometryReader { geo in
+                    let h = geo.size.height
+                    LinearGradient(
+                        colors: [.clear, Color.rdGreen.opacity(0.62), Color.rdGreen.opacity(0.22), .clear],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                    .frame(height: 64)
+                    .offset(y: scanY * h)
+                    .onAppear {
+                        withAnimation(
+                            .linear(duration: 1.6).repeatForever(autoreverses: false)
+                        ) {
+                            scanY = 1
+                        }
                     }
                 }
-            }
 
-            RoundedRectangle(cornerRadius: 22)
-                .stroke(Color.rdGreen.opacity(0.7), lineWidth: 2)
-                .shadow(color: Color.rdGreen.opacity(0.3), radius: 12)
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.rdGreen.opacity(0.75), lineWidth: 2)
+                    .shadow(color: Color.rdGreen.opacity(0.32), radius: 14)
+            }
+            .frame(width: 246, height: 246)
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .shadow(color: .black.opacity(0.12), radius: 20, x: 0, y: 18)
+
+            aiSignal(icon: "shield.lefthalf.filled", label: "KKD", alignment: .topLeading)
+                .offset(x: -18, y: -12)
+            aiSignal(icon: "waveform.path.ecg", label: "Risk", alignment: .topTrailing)
+                .offset(x: 18, y: 26)
+            aiSignal(icon: "checklist.checked", label: "Kontrol", alignment: .bottomLeading)
+                .offset(x: -16, y: 16)
         }
-        .frame(width: 240, height: 240)
-        .clipShape(RoundedRectangle(cornerRadius: 22))
-        .shadow(color: .black.opacity(0.10), radius: 18, x: 0, y: 18)
+        .frame(width: 296, height: 286)
+    }
+
+    private func aiSignal(icon: String, label: String, alignment: Alignment) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+            Text(label)
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+        }
+        .foregroundStyle(Color.rdGreenDark)
+        .padding(.horizontal, 8)
+        .frame(height: 28)
+        .background(.ultraThinMaterial)
+        .overlay(
+            Capsule()
+                .stroke(Color.rdGreen.opacity(0.26), lineWidth: 1)
+        )
+        .clipShape(Capsule())
+        .shadow(color: Color.rdGreen.opacity(signalPulse ? 0.26 : 0.08), radius: signalPulse ? 14 : 6, x: 0, y: 5)
+        .scaleEffect(signalPulse ? 1.03 : 0.98)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
     }
 
     // MARK: - Steps
 
     private var stepsList: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 9) {
             ForEach(Array(steps.enumerated()), id: \.offset) { index, label in
                 HStack(spacing: 10) {
                     stepDot(index: index)
-                    Text(label)
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.rdInk)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(label)
+                            .font(.system(size: 13.5, weight: .semibold, design: .rounded))
+                            .foregroundStyle(Color.rdBlack)
+                        Text(stepSubtitle(index))
+                            .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color.rdSlate)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
                 }
-                .opacity(index <= currentStep ? 1.0 : 0.35)
-                .animation(.easeInOut(duration: 0.24), value: currentStep)
+                .padding(.horizontal, 12)
+                .frame(height: 54)
+                .background(index <= currentStep ? Color.rdWhite : Color.rdFog.opacity(0.62))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 15)
+                        .stroke(index == currentStep ? Color.rdGreen.opacity(0.42) : Color.rdLine.opacity(0.75), lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 15))
+                .shadow(color: index == currentStep ? Color.rdGreen.opacity(0.10) : Color.clear, radius: 12, x: 0, y: 7)
+                .opacity(index <= currentStep ? 1.0 : 0.52)
+                .scaleEffect(index == currentStep ? 1.015 : 1)
+                .animation(.spring(response: 0.34, dampingFraction: 0.84), value: currentStep)
             }
         }
         .frame(maxWidth: 320)
+    }
+
+    private func stepSubtitle(_ index: Int) -> String {
+        switch index {
+        case 0: return "Netlik ve görüntü okunabilirliği kontrol ediliyor"
+        case 1: return "Tehlike ipuçları ve uygunsuzluk alanları ayrıştırılıyor"
+        case 2: return "KKD, çevre ve saha düzeni birlikte değerlendiriliyor"
+        default: return "Bulgular, risk seviyesi ve aksiyonlar hazırlanıyor"
+        }
     }
 
     private func progressStatus(_ update: AnalysisProgressUpdate) -> some View {

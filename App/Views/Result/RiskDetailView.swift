@@ -3,32 +3,62 @@ import UIKit
 
 struct RiskDetailView: View {
     let finding: Finding
-    var method: RiskMethod = .fineKinney
     var photoPath: String? = nil
     var localPreviewImage: UIImage? = nil
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
+    @State private var method: RiskMethod
     @State private var showPaywall = false
 
+    init(
+        finding: Finding,
+        method: RiskMethod = .fineKinney,
+        photoPath: String? = nil,
+        localPreviewImage: UIImage? = nil
+    ) {
+        self.finding = finding
+        self.photoPath = photoPath
+        self.localPreviewImage = localPreviewImage
+        _method = State(initialValue: method)
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                header
+        ZStack(alignment: .topTrailing) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    header
 
-                photoScoreCard
-                comparisonCard
+                    photoScoreCard
+                    comparisonCard
 
-                section("Tehlike açıklaması", body: finding.description)
-                section("Önerilen önlem", body: finding.action,
-                        accent: Color.rdGreenSoft, accentText: Color.rdGreenDark,
-                        icon: "shield.lefthalf.filled")
-                referenceSection
+                    section("Tehlike açıklaması", body: finding.description)
+                    section("Önerilen önlem", body: finding.action,
+                            accent: Color.rdGreenSoft, accentText: Color.rdGreenDark,
+                            icon: "shield.lefthalf.filled")
+                    referenceSection
 
-                Color.clear.frame(height: 12)
+                    Color.clear.frame(height: 12)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .frame(width: 38, height: 38)
+                    .background(Color.rdWhite.opacity(0.96))
+                    .clipShape(Circle())
+                    .shadow(color: Color.rdOnyx.opacity(0.14), radius: 10, x: 0, y: 5)
+            }
+            .buttonStyle(RDPressableButtonStyle())
+            .padding(.top, 10)
+            .padding(.trailing, 18)
+            .accessibilityLabel("Pencereyi kapat")
         }
         .background(Color.rdPaper)
         .fullScreenCover(isPresented: $showPaywall) {
@@ -89,30 +119,42 @@ struct RiskDetailView: View {
         let band = finding.band(for: method)
         let score = finding.score(for: method)
 
-        return HStack(alignment: .center, spacing: 10) {
+        return HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .lastTextBaseline, spacing: 7) {
-                    Text("\(Int(score))")
-                        .font(.system(size: 28, weight: .heavy, design: .monospaced))
+                HStack(alignment: .lastTextBaseline, spacing: 8) {
+                    Text(scoreDisplay(score))
+                        .font(.system(size: 26, weight: .heavy, design: .monospaced))
                         .foregroundStyle(band.color)
                         .tracking(-0.6)
-                    Text("R = \(finding.formula(for: method))")
-                        .rdMono(size: 10.5, weight: .semibold)
-                        .foregroundStyle(Color.rdBlack.opacity(0.78))
                         .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
 
                 Text(band.action)
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(band.color)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             Spacer(minLength: 6)
-            Text(method.fullName.uppercased())
-                .font(.system(size: 9, weight: .bold, design: .rounded))
-                .tracking(0.6)
-                .foregroundStyle(Color.rdBlack.opacity(0.72))
-                .lineLimit(2)
-                .multilineTextAlignment(.trailing)
+
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(method.fullName.uppercased())
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .tracking(0.6)
+                    .foregroundStyle(Color.rdBlack.opacity(0.72))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.trailing)
+                Text("R = \(finding.formula(for: method))")
+                    .rdMono(size: 10.5, weight: .semibold)
+                    .foregroundStyle(Color.rdBlack.opacity(0.78))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.62)
+                    .allowsTightening(true)
+            }
+            .frame(maxWidth: 190, alignment: .trailing)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
@@ -134,6 +176,15 @@ struct RiskDetailView: View {
         .shadow(color: Color.black.opacity(0.16), radius: 14, x: 0, y: 8)
     }
 
+    private func scoreDisplay(_ score: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        formatter.groupingSeparator = "."
+        return formatter.string(from: NSNumber(value: Int(score))) ?? "\(Int(score))"
+    }
+
     private var comparisonCard: some View {
         RDCard {
             VStack(alignment: .leading, spacing: 10) {
@@ -148,47 +199,71 @@ struct RiskDetailView: View {
                         formula: "O × F × Ş",
                         score: Int(finding.fkScore),
                         band: finding.fkBand,
-                        active: method == .fineKinney
+                        active: method == .fineKinney,
+                        targetMethod: .fineKinney
                     )
                     methodBox(
                         title: "5×5 L-Tipi",
                         formula: "O × Ş",
                         score: finding.m5Score,
                         band: finding.m5Band,
-                        active: method == .matrix5x5
+                        active: method == .matrix5x5,
+                        targetMethod: .matrix5x5
                     )
                 }
             }
         }
     }
 
-    private func methodBox(title: String, formula: String, score: Int, band: RiskBand, active: Bool) -> some View {
-        VStack(spacing: 6) {
-            Text(title)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(active ? Color.rdBlack : Color.rdSlate)
-            Text("R = \(formula)")
-                .rdMono(size: 10)
-                .foregroundStyle(Color.rdSlate)
+    private func methodBox(title: String, formula: String, score: Int, band: RiskBand, active: Bool, targetMethod: RiskMethod) -> some View {
+        Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.86)) {
+                method = targetMethod
+            }
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                VStack(spacing: 6) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(active ? Color.rdBlack : Color.rdSlate)
+                    Text("R = \(formula)")
+                        .rdMono(size: 10)
+                        .foregroundStyle(Color.rdSlate)
 
-            Text("\(score)")
-                .font(.system(size: 24, weight: .heavy, design: .monospaced))
-                .foregroundStyle(.white)
+                    Text(scoreDisplay(Double(score)))
+                        .font(.system(size: 23, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(band.color)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                    Text(band.label)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(band.color)
+                }
+                .padding(10)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(band.color)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            Text(band.label)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                .foregroundStyle(band.color)
+                if active {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdGreen)
+                        .background(Circle().fill(Color.rdWhite))
+                        .offset(x: -8, y: 8)
+                }
+            }
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(active ? Color.rdSelected : Color.rdLine, lineWidth: active ? 1.5 : 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
-        .padding(10)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(active ? Color.rdSelected : Color.rdLine, lineWidth: active ? 1.5 : 1)
-        )
+        .buttonStyle(RDPressableButtonStyle())
     }
 
     // MARK: - Section
@@ -244,7 +319,7 @@ struct RiskDetailView: View {
                             .foregroundStyle(Color.rdBlack)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Standart referansları PRO'da açıktır")
+                            Text("Mevzuat-Standart Referansları Pro'da Açıktır")
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             Text("Mevzuat, standart ve kaynak bağlantılarını görmek için yükselt.")

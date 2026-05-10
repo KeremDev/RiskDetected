@@ -48,7 +48,8 @@ extension HistoryItem {
 extension HistoryItem {
     init(row: AnalysisRow, photoPath: String? = nil) {
         let level = RiskLevel(rawValue: row.highestBandFK ?? row.highestBandM5 ?? "unknown") ?? .unknown
-        let canvasTitle = AnalysisCanvas.all.first { $0.id == row.canvas }?.title ?? row.canvas
+        let canvasTitle = AnalysisCanvas.all.first { $0.id == row.canvas }?.title
+            ?? Self.legacyCanvasTitle(row.canvas)
         let status: HistoryStatus = row.status == "completed" ? .reviewed : .open
         let createdAt = Self.parseDate(row.createdAt)
 
@@ -88,5 +89,26 @@ extension HistoryItem {
             formatter.dateFormat = "d MMM · HH:mm"
         }
         return formatter.string(from: date)
+    }
+
+    private static func legacyCanvasTitle(_ id: String) -> String {
+        switch id {
+        case "mark":
+            return "İşaretleme"
+        case "procedure":
+            return "Prosedür"
+        case "urgent":
+            return "Acil Risk"
+        case "ppe":
+            return "KKD"
+        case "general":
+            return "Genel"
+        case "sector":
+            return "Sektör"
+        default:
+            return id
+                .replacingOccurrences(of: "_", with: " ")
+                .capitalized
+        }
     }
 }

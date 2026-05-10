@@ -40,9 +40,12 @@ struct HomeView: View {
     @State private var analysisError: String? = nil
     @State private var pendingJob: AnalysisJob? = nil
     @State private var recentItems: [RecentAnalysis] = []
+    @State private var recentReports: [ReportRow] = []
     @State private var openingRecentID: UUID? = nil
+    @State private var openingReportID: UUID? = nil
     @State private var quotaUsage: DailyQuotaUsage? = nil
     @State private var paywallPresentation: PaywallPresentation? = nil
+    @State private var reportPreviewItem: ShareItem?
 
     enum HomeMode: String, CaseIterable {
         case photo, text
@@ -85,6 +88,9 @@ struct HomeView: View {
 
                     recentSection
                         .padding(.top, 28)
+
+                    generatedReportsSection
+                        .padding(.top, 20)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
@@ -96,30 +102,47 @@ struct HomeView: View {
         .background(Color.rdWhite.ignoresSafeArea())
         .task {
             await loadRecentItems()
+            await loadRecentReports()
             await loadQuotaUsage()
+        }
+        .onAppear {
+            handlePendingQuickScanOnAppear()
         }
         .onChange(of: app.auth.session?.user.id) { _ in
             Task {
                 await loadRecentItems()
+                await loadRecentReports()
                 await loadQuotaUsage()
             }
         }
         .onChange(of: app.isPro) { _ in
             Task { await loadQuotaUsage() }
         }
-        .confirmationDialog("Saha fotoğrafı", isPresented: $showSourceDialog, titleVisibility: .visible) {
-            Button("Kamera ile çek") {
-                if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                    showCameraPicker = true
-                } else {
-                    // Simülatörde kamera yok — galeriye düş
-                    showGalleryPicker = true
-                }
-            }
-            Button("Galeriden seç") { showGalleryPicker = true }
-            Button("Vazgeç", role: .cancel) {}
-        } message: {
-            Text("Fotoğrafı nereden almak istersin?")
+        .onChange(of: app.quickScanRequestID) { _ in
+            handleQuickScanRequest()
+        }
+        .sheet(isPresented: $showSourceDialog) {
+            PhotoSourceSheet(
+                onCamera: {
+                    showSourceDialog = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                            showCameraPicker = true
+                        } else {
+                            showGalleryPicker = true
+                        }
+                    }
+                },
+                onGallery: {
+                    showSourceDialog = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                        showGalleryPicker = true
+                    }
+                },
+                onClose: { showSourceDialog = false }
+            )
+            .presentationDetents([.height(330)])
+            .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $showCanvasSheet) {
             CanvasSheet(
@@ -197,6 +220,9 @@ struct HomeView: View {
                 }
             )
         }
+        .sheet(item: $reportPreviewItem) { item in
+            DocumentPreview(url: item.url)
+        }
         .fullScreenCover(isPresented: $showResult) {
             ResultView(
                 bundle: analysisResult,
@@ -207,6 +233,7 @@ struct HomeView: View {
                     analysisResult = nil
                     Task {
                         await loadRecentItems()
+                        await loadRecentReports()
                         await loadQuotaUsage()
                     }
                 }
@@ -659,6 +686,63 @@ struct HomeView: View {
         .background(Color.rdWhite)
     }
 
+    private var generatedReportsSection: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Text("Oluşturulan Raporlar")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .tracking(0.4)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.rdSlate)
+                Spacer()
+                Button("Tümü") {
+                    app.activeTab = .reports
+                }
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+            }
+
+            if recentReports.isEmpty {
+                emptyReportsCard
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(recentReports.prefix(5)) { report in
+                        HomeReportRow(
+                            report: report,
+                            isLoading: openingReportID == report.id
+                        ) {
+                            openReport(report)
+                        }
+                    }
+                }
+            }
+        }
+        .background(Color.rdWhite)
+    }
+
+    private var emptyReportsCard: some View {
+        RDCard {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.text")
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .frame(width: 42, height: 42)
+                    .background(Color.rdFog)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Henüz rapor oluşturulmadı")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text("PDF veya Excel çıktıları burada görünecek.")
+                        .font(.system(size: 12, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
     private var emptyRecentCard: some View {
         RDCard {
             HStack(spacing: 12) {
@@ -708,6 +792,43 @@ struct HomeView: View {
             return
         }
         showCanvasSheet = true
+    }
+
+    private func handleQuickScanRequest() {
+        mode = .photo
+        if !app.isPro, quotaUsage?.isExhausted == true {
+            showQuotaPaywall()
+            app.quickScanSource = .chooser
+            return
+        }
+        let source = app.quickScanSource
+        app.quickScanSource = .chooser
+        switch source {
+        case .camera:
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                showCameraPicker = true
+            } else {
+                showGalleryPicker = true
+            }
+            return
+        case .gallery:
+            showGalleryPicker = true
+            return
+        case .chooser:
+            break
+        }
+        if selectedImage == nil {
+            showSourceDialog = true
+        } else {
+            showCanvasSheet = true
+        }
+    }
+
+    private func handlePendingQuickScanOnAppear() {
+        guard app.quickScanSource != .chooser else { return }
+        DispatchQueue.main.async {
+            handleQuickScanRequest()
+        }
     }
 
     /// AnnotateView'daki "İşaretli alanları analiz et" sonrası ana sayfada
@@ -805,6 +926,18 @@ struct HomeView: View {
         }
     }
 
+    private func loadRecentReports() async {
+        guard app.auth.session != nil else {
+            recentReports = []
+            return
+        }
+        do {
+            recentReports = try await AnalysisService.shared.listReports(limit: 5)
+        } catch {
+            recentReports = []
+        }
+    }
+
     private func loadQuotaUsage() async {
         guard app.auth.session != nil, !app.isPro else {
             quotaUsage = nil
@@ -831,6 +964,32 @@ struct HomeView: View {
                 analysisError = AppErrorMessage.make(error, context: "Analiz açılamadı", fallbackTitle: "Analiz açılamadı").fullText
             }
             openingRecentID = nil
+        }
+    }
+
+    private func openReport(_ report: ReportRow) {
+        guard openingReportID == nil else { return }
+        openingReportID = report.id
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
+
+        Task {
+            do {
+                let url = try await AnalysisService.shared.reportFileURL(
+                    for: report,
+                    requestID: requestID,
+                    supportID: supportID
+                )
+                reportPreviewItem = ShareItem(url: url)
+            } catch {
+                analysisError = AppErrorMessage.make(
+                    error,
+                    context: "Rapor açılamadı",
+                    fallbackTitle: "Rapor açılamadı"
+                ).fullText
+            }
+            openingReportID = nil
         }
     }
 }
@@ -945,6 +1104,221 @@ struct RecentAnalysisCard: View {
         .buttonStyle(RDPressableButtonStyle())
     }
 
+}
+
+// MARK: - HomeReportRow
+
+private struct HomeReportRow: View {
+    let report: ReportRow
+    let isLoading: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: iconName)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(kindStyle.text)
+                    .frame(width: 38, height: 38)
+                    .background(kindStyle.background)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(reportTitle)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .lineLimit(1)
+
+                    HStack(spacing: 6) {
+                        Text(kindLabel)
+                            .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                            .foregroundStyle(kindStyle.text)
+                            .padding(.horizontal, 8)
+                            .frame(height: 23)
+                            .background(kindStyle.background)
+                            .clipShape(RoundedRectangle(cornerRadius: 7))
+                        Text(dateText)
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color.rdSlate)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                }
+            }
+            .padding(12)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+    }
+
+    private var iconName: String {
+        if isExcel { return "tablecells.fill" }
+        return isRiskAnalysis ? "tablecells" : "doc.richtext"
+    }
+
+    private var isExcel: Bool {
+        report.format == "xlsx" || report.mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }
+
+    private var isRiskAnalysis: Bool {
+        report.kind == PDFReportKind.riskAnalysis.rawValue
+    }
+
+    private var kindLabel: String {
+        if isExcel { return "Excel tablo" }
+        return isRiskAnalysis ? "Risk analizi" : "Standart rapor"
+    }
+
+    private var kindStyle: (text: Color, background: Color) {
+        if isExcel {
+            return (Color(hex: "#2563EB"), Color(hex: "#EAF1FF"))
+        }
+        if isRiskAnalysis {
+            return (Color.rdGreen, Color.rdGreenSoft)
+        }
+        return (Color(hex: "#6D5DF6"), Color(hex: "#EFEDFF"))
+    }
+
+    private var reportTitle: String {
+        guard let separatorRange = report.title.range(of: " · ", options: .backwards) else {
+            return report.title
+        }
+        return String(report.title[..<separatorRange.lowerBound])
+    }
+
+    private var dateText: String {
+        guard let date = report.createdAt.flatMap(Self.parseDate) else { return "Tarih yok" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMM HH:mm"
+        return formatter.string(from: date)
+    }
+
+    private static func parseDate(_ raw: String) -> Date? {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: raw) { return date }
+        return ISO8601DateFormatter().date(from: raw)
+    }
+}
+
+struct PhotoSourceSheet: View {
+    let onCamera: () -> Void
+    let onGallery: () -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "camera.viewfinder")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreen)
+                    .frame(width: 48, height: 48)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Saha fotoğrafı")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text("Fotoğrafı nereden almak istiyorsun?")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                }
+
+                Spacer()
+
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .frame(width: 38, height: 38)
+                        .background(Color.rdCloud)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(RDPressableButtonStyle())
+            }
+
+            VStack(spacing: 10) {
+                sourceButton(
+                    title: "Kamera ile çek",
+                    subtitle: "Sahada anında fotoğraf al",
+                    icon: "camera.fill",
+                    action: onCamera
+                )
+                sourceButton(
+                    title: "Galeriden seç",
+                    subtitle: "Var olan saha görselini kullan",
+                    icon: "photo.on.rectangle.angled",
+                    action: onGallery
+                )
+            }
+
+            Text("Fotoğraf seçildikten sonra istersen riskli alanları işaretleyebilirsin.")
+                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 22)
+        .padding(.bottom, 18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color.rdPaper)
+    }
+
+    private func sourceButton(title: String, subtitle: String, icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .frame(width: 44, height: 44)
+                    .background(Color.rdWhite)
+                    .clipShape(RoundedRectangle(cornerRadius: 13))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 13)
+                            .stroke(Color.rdLine, lineWidth: 1)
+                    )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(subtitle)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+    }
 }
 
 // MARK: - FlowLayout

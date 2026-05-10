@@ -29,37 +29,85 @@ enum RDTab: String, CaseIterable, Identifiable {
 
 struct RDTabBar: View {
     @Binding var active: RDTab
+    var onQuickScan: () -> Void = {}
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(RDTab.allCases) { tab in
-                let isActive = active == tab
-                Button {
-                    withAnimation(.easeInOut(duration: 0.15)) { active = tab }
-                    UISelectionFeedbackGenerator().selectionChanged()
-                } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: tab.icon)
-                            .font(.system(size: 22, weight: isActive ? .bold : .regular, design: .rounded))
-                            .foregroundStyle(isActive ? Color.rdGreen : Color.rdBlack)
-                            .frame(width: 26, height: 26)
-                        Text(tab.label)
-                            .font(.system(size: 10, weight: .medium, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.plain)
-            }
+        HStack(alignment: .top, spacing: 0) {
+            tabButton(.home)
+            tabButton(.analyses)
+            quickScanButton
+            tabButton(.reports)
+            tabButton(.profile)
         }
         .padding(.horizontal, 12)
         .padding(.top, 8)
         .padding(.bottom, 24)
-        .frame(height: 84)
-        .background(.ultraThinMaterial)
-        .overlay(alignment: .top) {
-            Rectangle().fill(Color.rdLine).frame(height: 0.5)
+        .frame(height: 92)
+        .background(alignment: .top) {
+            ZStack(alignment: .top) {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                Circle()
+                    .fill(Color.rdPaper)
+                    .frame(width: 72, height: 72)
+                    .offset(y: -27)
+                    .shadow(color: Color.rdOnyx.opacity(0.06), radius: 12, x: 0, y: 2)
+            }
         }
+        .overlay(alignment: .top) {
+            HStack(spacing: 78) {
+                Rectangle().fill(Color.rdLine).frame(height: 0.5)
+                Rectangle().fill(Color.rdLine).frame(height: 0.5)
+            }
+        }
+    }
+
+    private func tabButton(_ tab: RDTab) -> some View {
+        let isActive = active == tab
+        return Button {
+            withAnimation(.easeInOut(duration: 0.15)) { active = tab }
+            UISelectionFeedbackGenerator().selectionChanged()
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: tab.icon)
+                    .font(.system(size: 22, weight: isActive ? .bold : .regular, design: .rounded))
+                    .foregroundStyle(isActive ? Color.rdGreen : Color.rdBlack)
+                    .frame(width: 26, height: 26)
+                Text(tab.label)
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var quickScanButton: some View {
+        Button(action: onQuickScan) {
+            VStack(spacing: 3) {
+                ZStack {
+                    Circle()
+                        .fill(Color.rdGreen)
+                        .frame(width: 58, height: 58)
+                        .shadow(color: Color.rdGreen.opacity(0.35), radius: 18, x: 0, y: 8)
+                    Circle()
+                        .stroke(Color.rdWhite.opacity(0.92), lineWidth: 4)
+                        .frame(width: 58, height: 58)
+                    Image(systemName: "viewfinder.circle.fill")
+                        .font(.system(size: 29, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdWhite)
+                }
+
+                Text("Tara")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreen)
+            }
+            .frame(maxWidth: .infinity)
+            .offset(y: -20)
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel("Hızlı tarama başlat")
     }
 }
 

@@ -201,10 +201,12 @@ Completed in the latest UI polish pass:
 
 - App-level dark mode foundation exists:
   - `AppState.isDarkModeEnabled` persists locally;
+  - `AppState.themePreference` supports `Sistem`, `Aydinlik`, `Karanlik`;
+  - `AppState.languagePreference` supports `Sistem`, `Turkce`, `English` and is stored locally for the future localization layer;
   - `RiskDetectedApp` applies `.preferredColorScheme`;
   - core color tokens in `RDColor` adapt to light/dark mode;
   - fixed black CTA surfaces use `rdOnyx` so they do not turn into dynamic text colors.
-- Profile > Ayarlar includes a Karanlik mod toggle.
+- Profile > Ayarlar > Tercihler opens a full preferences sheet with theme and language choices.
 - Top-right profile avatar opens a compact overlay menu:
   - `Analizlerim` navigates to the Analyses tab;
   - `Raporlarim` navigates to the Reports tab;
@@ -217,6 +219,8 @@ Completed in the latest UI polish pass:
 - Main CTA button style uses the right-side icon capsule, with fixed white text/icon where needed in dark mode.
 - Dark mode CTA contrast QA is complete for `Taramayi Baslat`, `Standart Rapor`, `Risk Analizi` and `Bu ayarlarla PDF olustur`; primary actions use green background with white text/icons in dark mode.
 - `Standart Rapor` is tuned to remain single-line and visually centered in both light and dark mode.
+- Reports tab has been redesigned with a report-center summary panel, Pro value panel, premium saved-report cards and clearer report-source rows.
+- Analyses tab has been redesigned with an analysis-center summary panel, modern search/filter surface, cleaner filter sheet and more scannable analysis cards.
 - Free daily quota hint is shown under input for Free users and displays dynamic `2/2`, `1/2`, `0/2` state.
 - Analysis thumbnails are standardized with clipping so any image aspect ratio stays inside its box.
 - Text-only analyses use a standard Metin Analizi artwork instead of empty photo placeholders.
@@ -224,9 +228,9 @@ Completed in the latest UI polish pass:
 
 Remaining theme/design follow-up:
 
-- Replace single dark-mode toggle with full System / Aydinlik / Karanlik preference under Profile > Tercihler.
+- Wire the stored language preference into a real localization/string system.
 - Continue final contrast QA when new Result, Report, Paywall or sheet UI changes are made.
-- Continue planned Reports page design refresh and Profile page tab/content work.
+- Continue planned Profile page tab/content work.
 
 ## Reports and PDF Status
 
@@ -291,6 +295,8 @@ Completed/started:
 - Login screen shows legal notice/link.
 - Home legal text was removed because it visually hurt the CTA area.
 - Session/login creates non-blocking consent audit row with legal versions, timestamp, app version and device id when missing.
+- Legal information now opens a full legal center with KVKK, Kullanım koşulları and AI veri işleme document selectors.
+- Profile > Güvenlik ve gizlilik opens the same legal center for in-app access.
 - Client photo preprocessing re-renders images before upload/analysis to strip EXIF/location/camera metadata.
 - Edge Function strips common JPEG/PNG metadata before Gemini and Storage persistence.
 - Client-side face blur is applied before upload/analysis.
@@ -315,8 +321,7 @@ Completed retention/delete work:
 Follow-up:
 
 - Implement privileged backend/admin completion flow for account deletion requests.
-- Add full lawyer-reviewed KVKK/terms links.
-- Add calmer legal access placement under Profile > Güvenlik ve gizlilik.
+- Replace editable legal-center scaffold copy with final lawyer-reviewed KVKK/terms/AI processing text.
 
 ## Error Handling and Supportability
 
@@ -385,9 +390,9 @@ Known image issue to keep checking:
 ### P2 - Product polish
 
 1. Profile preferences:
-   - Started: persistent Karanlik mod toggle and header quick toggle are implemented.
-   - Follow-up: System / Light / Dark theme.
-   - Turkish / English / System language.
+   - Done: persistent System / Aydinlik / Karanlik theme choices under Profile > Tercihler.
+   - Done: Turkish / English / System language preference is stored locally.
+   - Follow-up: wire stored language preference into localized strings.
 2. Persist Pro report defaults:
    - company logo;
    - company name;
@@ -411,8 +416,22 @@ Known image issue to keep checking:
    - user will provide fixed prompts for each focus;
    - keep frontend labels and backend prompt routing aligned.
 7. Reports page design refresh.
-8. Legal link destination refresh for KVKK, Kullanım şartları and AI veri işleme pages.
-9. Profile page tabs and missing content sections.
+   - Done: report-center summary panel, Pro value panel, saved-report card redesign and report-source selection redesign.
+8. Analyses page design refresh.
+   - Done: analysis-center summary panel, search/filter surface, filter sheet polish and analysis card redesign.
+9. Legal link destination refresh for KVKK, Kullanım şartları and AI veri işleme pages.
+   - Done: legal center with separate document selectors and long-content-ready section cards.
+10. Profile page tabs and missing content sections.
+11. Excel risk analysis export.
+   - Done: `generate-excel-report` Edge Function generates XLSX workbooks for Pro users only.
+   - Done: `reports` storage and metadata now support `xlsx` files.
+   - Done: iOS can invoke Excel generation from the report source sheet and shows Excel files in the report archive.
+   - Verified: Pro demo API smoke test generated a valid workbook with `Özet`, `Risk Analiz Tablosu`, `Aksiyon Planı`, `Rapor Bilgileri`.
+   - Pending: simulator should be signed into Pro demo to manually test the full tap-to-share flow in-app.
+12. First-install onboarding flow.
+   - Pending: before the Apple/Google/e-mail Auth screen, show introduction, usage and short training screens with app visuals and concise copy.
+   - Flow: user advances step by step with `İlerle`; after the last screen, continue to the existing login screen.
+   - Persistence: save onboarding completion locally so it appears only on first install / first launch.
 
 ### P3 - Later
 
@@ -423,7 +442,7 @@ Known image issue to keep checking:
    - multi-pass validation;
    - sector/procedure checklists;
    - low-confidence recheck.
-4. Excel export.
+4. Corporate/OSGB workflows only after individual MVP is stable.
 5. Corporate/OSGB workflows only after individual MVP is stable.
 
 ## Build and Simulator

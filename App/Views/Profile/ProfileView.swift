@@ -10,6 +10,8 @@ struct ProfileView: View {
     @State private var showProfileEditor = false
     @State private var showNotificationSettings = false
     @State private var showDataControls = false
+    @State private var showPreferences = false
+    @State private var showLegalInfo = false
     @State private var stats: ProfileStats? = nil
     @State private var dataActionInProgress: ProfileDataAction?
     @State private var pendingDataAction: ProfileDataAction?
@@ -94,6 +96,21 @@ struct ProfileView: View {
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showPreferences) {
+            ProfilePreferencesSheet(
+                themePreference: app.themePreference,
+                languagePreference: app.languagePreference,
+                onThemeChange: { app.setThemePreference($0) },
+                onLanguageChange: { app.setLanguagePreference($0) }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showLegalInfo) {
+            LegalInfoSheet(onClose: { showLegalInfo = false })
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
@@ -229,20 +246,40 @@ struct ProfileView: View {
         Button {
             showPaywall = true
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                RDProBadge()
-                Text("Pro'ya yükselt")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.top, 8)
-                Text("Sınırsız PDF rapor, gelişmiş AI canvasları ve risk matrisi.")
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.75))
+            ZStack(alignment: .topTrailing) {
+                Circle()
+                    .fill(Color.rdGreen.opacity(0.20))
+                    .frame(width: 132, height: 132)
+                    .offset(x: 48, y: -58)
+
+                VStack(alignment: .leading, spacing: 7) {
+                    RDProBadge()
+                    Text("Pro'ya yükselt")
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.top, 8)
+                    Text("Sınırsız Analiz, Gelişmiş Analiz, Gelişmiş Raporlamalar, Gelişmiş Canvas Kullanımı, Fine-Kinney ve 5*5 Matris Risk Analiz Methodları, Özelleştirilmiş PDF ve Excel Rapor Çıktıları ve daha fazlası...")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.78))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.rdOnyx)
+            .background(
+                LinearGradient(
+                    colors: [Color.rdOnyx, Color.rdOnyx.opacity(0.94), Color.rdGreen.opacity(0.16)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: RDRadius.lg)
+                    .stroke(Color.rdGreen.opacity(0.28), lineWidth: 1)
+            )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+            .shadow(color: Color.rdGreen.opacity(0.14), radius: 18, x: 0, y: 10)
         }
         .buttonStyle(RDPressableButtonStyle())
     }
@@ -256,18 +293,34 @@ struct ProfileView: View {
                 Button {
                     showProfileEditor = true
                 } label: {
-                    ProfileRow(icon: "person.text.rectangle", title: "Profil bilgileri", detail: "Doldur / güncelle")
+                    ProfileRow(icon: "person.text.rectangle", title: "Profil bilgileri")
                 }
                 .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
-                ProfileRow(icon: "doc.text", title: "Geçmiş analizler", detail: stats.map { "\($0.analysisCount)" } ?? "—")
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        app.activeTab = .analyses
+                    }
+                    UISelectionFeedbackGenerator().selectionChanged()
+                } label: {
+                    ProfileRow(icon: "doc.text", title: "Geçmiş analizler", detail: stats.map { "\($0.analysisCount)" } ?? "—")
+                }
+                .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
-                ProfileRow(icon: "arrow.down.to.line", title: "Raporlarım", detail: stats.map { "\($0.reportCount)" } ?? "—")
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        app.activeTab = .reports
+                    }
+                    UISelectionFeedbackGenerator().selectionChanged()
+                } label: {
+                    ProfileRow(icon: "arrow.down.to.line", title: "Raporlarım", detail: stats.map { "\($0.reportCount)" } ?? "—")
+                }
+                .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     showNotificationSettings = true
                 } label: {
-                    ProfileRow(icon: "bell", title: "Bildirimler", detail: notificationStatusText)
+                    ProfileRow(icon: "bell", title: "Bildirimler")
                 }
                 .buttonStyle(.plain)
             }
@@ -297,25 +350,29 @@ struct ProfileView: View {
         VStack(alignment: .leading, spacing: 6) {
             sectionHeader("Ayarlar")
             VStack(spacing: 0) {
-                ProfileRow(icon: "gearshape", title: "Tercihler")
-                Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
-                    app.setDarkMode(!app.isDarkModeEnabled)
                     UISelectionFeedbackGenerator().selectionChanged()
+                    showPreferences = true
                 } label: {
-                    ProfileThemeToggleRow(isOn: app.isDarkModeEnabled)
+                    ProfileRow(icon: "gearshape", title: "Tercihler")
                 }
                 .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     showDataControls = true
                 } label: {
-                    ProfileRow(icon: "externaldrive.badge.checkmark", title: "Verilerim", detail: "Dışa aktar / sil")
+                    ProfileRow(icon: "externaldrive.badge.checkmark", title: "Verilerim")
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
-                ProfileRow(icon: "lock", title: "Güvenlik ve gizlilik")
+                Button {
+                    showLegalInfo = true
+                    UISelectionFeedbackGenerator().selectionChanged()
+                } label: {
+                    ProfileRow(icon: "lock", title: "Güvenlik ve gizlilik")
+                }
+                .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 ProfileRow(icon: "headphones", title: "Destek")
             }
@@ -600,7 +657,8 @@ private struct ProfileEditSheet: View {
     }
 
     private var logoSection: some View {
-        RDCard {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionTitle("Logo", icon: "photo.badge.plus")
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
@@ -645,27 +703,50 @@ private struct ProfileEditSheet: View {
                 .accessibilityLabel(companyLogo == nil ? "Logo seç" : "Logoyu değiştir")
                 .disabled(isSaving)
             }
+            .padding(12)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18))
         }
     }
 
     private var identitySection: some View {
-        profileSection("KİMLİK VE FİRMA") {
-            VStack(spacing: 10) {
-                field("Ad soyad", text: $fullName, placeholder: "Ad Soyad")
-                field("Ünvan / belge sınıfı", text: $title, placeholder: "İSG Uzmanı · A Sınıfı")
-                field("Sertifika no", text: $certificateNumber, placeholder: "Sertifika numarası")
-                field("Firma adı", text: $companyName, placeholder: "Firma adı")
-                field("Telefon", text: $phone, placeholder: "+90 5xx xxx xx xx", keyboard: .phonePad)
+        VStack(alignment: .leading, spacing: 10) {
+            sectionTitle("Kimlik ve firma", icon: "building.2")
+            VStack(spacing: 9) {
+                profileField("Ad soyad", text: $fullName, placeholder: "Ad Soyad", icon: "person.fill")
+                profileField("Ünvan / belge sınıfı", text: $title, placeholder: "İSG Uzmanı · A Sınıfı", icon: "checkmark.seal.fill")
+                profileField("Sertifika no", text: $certificateNumber, placeholder: "Sertifika numarası", icon: "number")
+                profileField("Firma adı", text: $companyName, placeholder: "Firma adı", icon: "building.2.fill")
+                profileField("Telefon", text: $phone, placeholder: "+90 5xx xxx xx xx", icon: "phone.fill", keyboard: .phonePad)
             }
+            .padding(12)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18))
         }
     }
 
     private var methodSection: some View {
-        profileSection("VARSAYILAN RİSK METODU") {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionTitle("Varsayılan risk metodu", icon: "function")
             HStack(spacing: 8) {
                 methodButton(.fineKinney)
                 methodButton(.matrix5x5)
             }
+            .padding(12)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18))
         }
     }
 
@@ -694,42 +775,56 @@ private struct ProfileEditSheet: View {
         .buttonStyle(.plain)
     }
 
-    private func profileSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private func sectionTitle(_ title: String, icon: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreen)
+                .frame(width: 24, height: 24)
+                .background(Color.rdGreenSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 7))
             Text(title)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .tracking(0.6)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
-                .padding(.leading, 4)
-            content()
         }
+        .padding(.leading, 2)
     }
 
-    private func field(
+    private func profileField(
         _ title: String,
         text: Binding<String>,
         placeholder: String,
+        icon: String,
         keyboard: UIKeyboardType = .default
     ) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(title)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
-            TextField(placeholder, text: text)
-                .font(.system(size: 15, design: .rounded))
-                .foregroundStyle(Color.rdBlack)
-                .keyboardType(keyboard)
-                .textInputAutocapitalization(keyboard == .default ? .words : .never)
-                .autocorrectionDisabled(keyboard != .default)
-                .padding(.horizontal, 12)
-                .frame(height: 46)
-                .background(Color.rdWhite)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.rdLine, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+        HStack(spacing: 11) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdBlack.opacity(0.72))
+                .frame(width: 36, height: 36)
+                .background(Color.rdCloud)
+                .clipShape(RoundedRectangle(cornerRadius: 11))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                TextField(placeholder, text: text)
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .keyboardType(keyboard)
+                    .textInputAutocapitalization(keyboard == .default ? .words : .never)
+                    .autocorrectionDisabled(keyboard != .default)
+            }
         }
+        .padding(.horizontal, 12)
+        .frame(height: 58)
+        .background(Color.rdCloud.opacity(0.55))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     private func populate() {
@@ -1133,43 +1228,140 @@ struct ProfileRow: View {
     }
 }
 
-private struct ProfileThemeToggleRow: View {
-    let isOn: Bool
+private struct ProfilePreferencesSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let themePreference: RDThemePreference
+    let languagePreference: RDLanguagePreference
+    let onThemeChange: (RDThemePreference) -> Void
+    let onLanguageChange: (RDLanguagePreference) -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: isOn ? "moon.fill" : "sun.max.fill")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .frame(width: 32, height: 32)
-                .foregroundStyle(isOn ? Color.rdGreen : Color.rdCharcoal)
-                .background(isOn ? Color.rdGreenSoft : Color.rdFog)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    preferenceSection(
+                        title: "Tema",
+                        subtitle: "Uygulamanın görünümünü cihazına veya kendi seçimine göre ayarla."
+                    ) {
+                        VStack(spacing: 10) {
+                            ForEach(RDThemePreference.allCases) { preference in
+                                PreferenceOptionRow(
+                                    icon: preference.icon,
+                                    title: preference.title,
+                                    subtitle: preference.subtitle,
+                                    isSelected: themePreference == preference
+                                ) {
+                                    onThemeChange(preference)
+                                    UISelectionFeedbackGenerator().selectionChanged()
+                                }
+                            }
+                        }
+                    }
 
-            Text("Karanlık mod")
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundStyle(Color.rdBlack)
+                    preferenceSection(
+                        title: "Dil",
+                        subtitle: "Dil tercihini şimdiden kaydediyoruz; çoklu dil ekran metinleri eklendikçe bu seçim kullanılacak."
+                    ) {
+                        VStack(spacing: 10) {
+                            ForEach(RDLanguagePreference.allCases) { preference in
+                                PreferenceOptionRow(
+                                    icon: preference.icon,
+                                    title: preference.title,
+                                    subtitle: preference.subtitle,
+                                    isSelected: languagePreference == preference
+                                ) {
+                                    onLanguageChange(preference)
+                                    UISelectionFeedbackGenerator().selectionChanged()
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+                .padding(.bottom, 28)
+            }
+            .background(Color.rdPaper)
+            .navigationTitle("Tercihler")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Kapat") { dismiss() }
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                }
+            }
+        }
+        .preferredColorScheme(themePreference.colorScheme)
+    }
+
+    private func preferenceSection<Content: View>(
+        title: String,
+        subtitle: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title.uppercased())
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .tracking(0.6)
+                    .foregroundStyle(Color.rdSlate)
+                Text(subtitle)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 4)
+
+            content()
+        }
+    }
+}
+
+private struct PreferenceOptionRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .frame(width: 36, height: 36)
+                    .foregroundStyle(isSelected ? Color.white : Color.rdCharcoal)
+                    .background(isSelected ? Color.rdSelected : Color.rdFog)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(subtitle)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(isOn ? "Açık" : "Kapalı")
-                .rdMono(size: 13, weight: .medium)
-                .foregroundStyle(Color.rdSlate)
-
-            ZStack(alignment: isOn ? .trailing : .leading) {
-                Capsule()
-                    .fill(isOn ? Color.rdGreen : Color.rdLine)
-                Circle()
-                    .fill(Color.rdWhite)
-                    .frame(width: 24, height: 24)
-                    .shadow(color: Color.rdOnyx.opacity(0.12), radius: 4, x: 0, y: 2)
-                    .padding(3)
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundStyle(isSelected ? Color.rdGreen : Color.rdSlate.opacity(0.55))
             }
-            .frame(width: 54, height: 30)
+            .padding(14)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? Color.rdGreen.opacity(0.55) : Color.rdLine, lineWidth: isSelected ? 1.5 : 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .contentShape(Rectangle())
-        .accessibilityLabel("Karanlık mod")
-        .accessibilityValue(isOn ? "Açık" : "Kapalı")
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel(title)
+        .accessibilityValue(isSelected ? "Seçili" : "Seçili değil")
     }
 }
 

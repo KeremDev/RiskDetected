@@ -15,7 +15,7 @@
  * Schema notes (v4):
  *   - profiles.tier        enum: free | pro
  *   - analyses.status      enum: pending | analyzing | completed | failed
- *   - analyses.canvas      enum: general | ppe | mark | sector | urgent | procedure
+ *   - analyses.canvas      text canvas id; known ids are listed in CANVAS_FOCUS
  *   - findings.fk_score    GENERATED — DO NOT INSERT
  *   - findings.m5_score    GENERATED — DO NOT INSERT
  *   - findings.user_id     REQUIRED
@@ -42,12 +42,43 @@ const CANVAS_FOCUS: Record<string, string> = {
   general: "Tüm iş güvenliği uygunsuzluklarını geniş kapsamlı tara.",
   ppe:
     "Baret, gözlük, eldiven, emniyet kemeri ve yelek (KKD) kontrolüne odaklan.",
-  mark: "Yalnızca fotoğraf üzerinde işaretlenmiş alanları analiz et.",
+  machine:
+    "Makine koruyucuları, döner parçalar, sıkışma, ezilme ve bakım-kilit risklerine odaklan.",
+  warning_signs:
+    "Uyarı levhaları, yönlendirme, işaretleme, bariyerleme ve görünürlük eksiklerini analiz et.",
+  electrical:
+    "Elektrik panosu, kablo, kaçak akım, izolasyon, topraklama ve elektrik çarpması risklerine odaklan.",
   sector:
     "İnşaat, üretim, depo veya ofis bağlamına göre sektöre özgü risklere odaklan.",
-  urgent: "Yalnızca kritik ve yüksek seviye anlık riskleri öne çıkar.",
-  procedure: "Standart İSG prosedürlerine uyumsuzlukları tespit et.",
+  fire:
+    "Yanıcı maddeler, yangın söndürme ekipmanı, sıcak çalışma, tahliye ve acil durum risklerine odaklan.",
+  ergonomics:
+    "Duruş, kaldırma-taşıma, tekrar eden hareket, çalışma yüksekliği ve ergonomik zorlanma risklerini analiz et.",
+  environment_measurement:
+    "Gürültü, aydınlatma, toz, gaz, sıcaklık ve ortam ölçümü gerektiren maruziyet risklerini değerlendir.",
+  explosion:
+    "Patlayıcı atmosfer, basınçlı kaplar, gaz birikimi, kıvılcım kaynakları ve parlayıcı ortam risklerine odaklan.",
+  environment:
+    "Atık, sızıntı, dökülme, kimyasal yayılım, çevresel maruziyet ve saha düzeni etkilerini analiz et.",
+  legislation:
+    "İSG mevzuatı, yasal yükümlülük, kayıt, denetim ve uyum eksikleri açısından riskleri değerlendir.",
+  working_at_height:
+    "Düşme, korkuluk, iskele, merdiven, emniyet kemeri, yaşam hattı ve yüksekte çalışma risklerine odaklan.",
+  mobile_equipment:
+    "Forklift, transpalet, vinç, araç-yaya ayrımı, görüş alanı ve hareketli ekipman çarpışma risklerini analiz et.",
+  general_premium:
+    "Tüm görünür riskleri daha ayrıntılı, önceliklendirilmiş, denetim odaklı ve kontrol önerileriyle analiz et.",
+  construction_machinery:
+    "Ekskavatör, yükleyici, vinç, kazıcı-yükleyici ve saha iş makineleri kaynaklı risklere odaklan.",
 };
+
+const PRO_CANVASES = new Set([
+  "machine",
+  "sector",
+  "environment_measurement",
+  "legislation",
+  "general_premium",
+]);
 
 // DB constraint ile birebir uyumlu Fine-Kinney ölçekleri
 const FK_PROBABILITY_VALUES = [0.2, 0.5, 1, 3, 6, 10];
@@ -713,6 +744,28 @@ serve(async (req: Request) => {
 
   // Quota (free)
   if (!isPro) {
+    const requestedCanvases = Array.isArray(canvases) && canvases.length > 0
+      ? canvases
+      : [canvas];
+    if (requestedCanvases.some((id) => PRO_CANVASES.has(String(id)))) {
+      await supabase.from("analyses")
+        .update({
+          status: "failed",
+          status_message:
+            `Bu analiz odağı PRO üyelik gerektirir. Destek kodu: ${supportID}`,
+        })
+        .eq("id", analysis_id);
+      return errorResponse(
+        403,
+        "Bu analiz odağı PRO üyelik gerektirir.",
+        {
+          code: "pro_required",
+          requestID,
+          supportID,
+        },
+      );
+    }
+
     const today = new Date().toISOString().slice(0, 10);
     const { count } = await supabase
       .from("analyses")
@@ -746,11 +799,7 @@ serve(async (req: Request) => {
     .update({ status: "analyzing", started_at: new Date().toISOString() })
     .eq("id", analysis_id);
 
-  const model = isPro
-    ? MODEL_PRO
-    : (canvas === "urgent" || canvas === "procedure"
-      ? MODEL_FREE
-      : MODEL_FREE_LITE);
+  const model = isPro ? MODEL_PRO : MODEL_FREE_LITE;
 
   // Storage → base64
   const imageBase64Parts: { mimeType: string; data: string }[] = [];

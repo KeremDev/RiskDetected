@@ -14,9 +14,25 @@ struct FilterSheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Filtrele")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .padding(.top, 6)
+                HStack(spacing: 12) {
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdGreen)
+                        .frame(width: 42, height: 42)
+                        .background(Color.rdGreenSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 13))
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Analizleri filtrele")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdBlack)
+                        Text("Tarih, risk seviyesi ve odak alanına göre daralt.")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color.rdSlate)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.top, 6)
 
                 section("Tarih") {
                     chipRow(options: dateOptions, isSelected: { $0 == dateFilter }) {
@@ -40,19 +56,29 @@ struct FilterSheet: View {
                 }
 
                 HStack(spacing: 8) {
-                    RDButton(title: "Sıfırla", style: .secondary) {
+                    Button {
                         dateFilter = "Tümü"
                         selectedLevels = []
                         selectedKinds = []
+                    } label: {
+                        Text("Sıfırla")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdBlack)
+                            .frame(width: 92, height: 48)
+                            .background(Color.rdFog)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.rdLine, lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
-                    .frame(maxWidth: .infinity)
+                    .buttonStyle(RDPressableButtonStyle())
 
                     RDButton(title: "12 sonucu göster", style: .primary) {
                         onConfirm()
                         dismiss()
                     }
                     .frame(maxWidth: .infinity)
-                    .layoutPriority(2)
                 }
                 .padding(.top, 6)
 
@@ -93,7 +119,11 @@ struct FilterSheet: View {
                         .frame(height: 34)
                         .foregroundStyle(active ? .white : Color.rdCharcoal)
                         .background(
-                            Capsule().fill(active ? Color.rdSelected : Color.rdFog)
+                            Capsule()
+                                .fill(active ? Color.rdSelected : Color.rdWhite)
+                                .overlay(
+                                    Capsule().stroke(active ? Color.clear : Color.rdLine, lineWidth: 1)
+                                )
                         )
                 }
                 .buttonStyle(.plain)
@@ -115,7 +145,11 @@ struct FilterSheet: View {
             .padding(.horizontal, 12)
             .frame(height: 34)
             .foregroundStyle(active ? .white : Color.rdCharcoal)
-            .background(Capsule().fill(active ? Color.rdSelected : Color.rdFog))
+            .background(
+                Capsule()
+                    .fill(active ? Color.rdSelected : Color.rdWhite)
+                    .overlay(Capsule().stroke(active ? Color.clear : Color.rdLine, lineWidth: 1))
+            )
         }
         .buttonStyle(.plain)
     }
