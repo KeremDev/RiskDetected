@@ -1,20 +1,20 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @State private var active: RDTab = .home
+    @EnvironmentObject private var app: AppState
 
     var body: some View {
         ZStack(alignment: .bottom) {
             Color.rdPaper.ignoresSafeArea()
 
-            switch active {
+            switch app.activeTab {
             case .home:     HomeView()
             case .analyses: HistoryView()
             case .reports:  ReportView()
             case .profile:  ProfileView()
             }
 
-            RDTabBar(active: $active)
+            RDTabBar(active: $app.activeTab)
         }
         .ignoresSafeArea(edges: .bottom)
     }

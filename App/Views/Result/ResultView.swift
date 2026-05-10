@@ -166,28 +166,32 @@ struct ResultView: View {
 
     private var photoMetaCard: some View {
         RDCard {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: 16) {
                 ResultPhotoThumbnail(
                     image: localPreviewImage,
                     path: photoPath,
                     isTextAnalysis: bundle?.analysis.kind == "text",
                     cornerRadius: 12
                 )
-                    .frame(width: 92, height: 92)
+                    .frame(width: 58, height: 58)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(analysisTitle)
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text("\(formattedDate) · \(canvasLabel)")
                         .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
-                        .padding(.bottom, 6)
+                        .lineLimit(1)
+                        .padding(.bottom, 4)
 
                     HStack(spacing: 6) {
                         metaChip("\(findings.count) bulgu", bg: .rdFog, fg: .rdCharcoal)
                         confidenceChip
                     }
+                    .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -430,20 +434,25 @@ struct ResultView: View {
         } label: {
             VStack(alignment: .leading, spacing: 4) {
                 RDProBadge()
-                Text("Detaylı risk analizi tablosu")
+                Text("Detaylı Risk Analiz Tablosu")
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .padding(.top, 10)
-                Text("Olasılık × Etki matrisi, kalıcı kontrol önerileri ve denetim notları PRO ile açılır.")
+                Text("Kapsamlı Araştırma, Detaylı Risk Analiz Tablosu (Fine-Kinney ve 5x5 Matris) Rapor özelleştirme Pro ile açılır.")
                     .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(.white.opacity(0.7))
                     .padding(.top, 2)
-                RDButton(title: "PRO'yu keşfet", style: .detect) { showPaywall = true }
+                RDButton(
+                    title: "PRO'yu keşfet",
+                    style: .secondary,
+                    backgroundOverride: .rdGreen,
+                    foregroundOverride: .white
+                ) { showPaywall = true }
                     .padding(.top, 10)
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.rdBlack)
+            .background(Color.rdOnyx)
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         }
         .buttonStyle(RDPressableButtonStyle())
@@ -454,7 +463,7 @@ struct ResultView: View {
     private var actionButtons: some View {
         HStack(spacing: 8) {
             RDButton(
-                title: pdfGeneration.isActive ? "PDF hazırlanıyor..." : "Standart PDF",
+                title: pdfGeneration.isActive ? "PDF hazırlanıyor..." : "Standart Rapor",
                 style: .primary,
                 icon: pdfGeneration.isActive ? "hourglass" : "arrow.down.to.line",
                 height: 56,
@@ -704,6 +713,7 @@ struct ReportSettingsSheet: View {
                              style: .detect,
                              icon: "doc.richtext.fill",
                              height: 54,
+                    backgroundOverride: .rdOnyx,
                              action: onGenerate)
                         .padding(.top, 4)
                 }
@@ -1073,21 +1083,26 @@ private struct ResultPhotoThumbnail: View {
     @State private var loadedPath: String?
 
     var body: some View {
-        ZStack {
-            if let remoteImage {
-                Image(uiImage: remoteImage)
-                    .resizable()
-                    .scaledToFill()
-            } else if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                AnalysisThumbnail(path: nil, isTextAnalysis: isTextAnalysis, cornerRadius: cornerRadius)
+        GeometryReader { proxy in
+            ZStack {
+                if let remoteImage {
+                    Image(uiImage: remoteImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                } else if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                } else {
+                    AnalysisThumbnail(path: nil, isTextAnalysis: isTextAnalysis, cornerRadius: cornerRadius)
+                }
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         }
-        .clipped()
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .task(id: path) {
             await loadRemoteIfNeeded()
         }

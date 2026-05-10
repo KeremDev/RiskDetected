@@ -1,22 +1,24 @@
 import SwiftUI
+import UIKit
 
 extension Color {
     // Brand
-    static let rdBlack = Color(hex: "#0B0D0E")
-    static let rdGraphite = Color(hex: "#1A1D1F")
+    static let rdBlack = Color.dynamic(light: "#0B0D0E", dark: "#F4F7F5")
+    static let rdGraphite = Color.dynamic(light: "#1A1D1F", dark: "#E6ECE8")
+    static let rdOnyx = Color(hex: "#0B0D0E")
     static let rdGreen = Color(hex: "#00B82E")
     static let rdGreenDark = Color(hex: "#008F24")
-    static let rdGreenSoft = Color(hex: "#EAF8EE")
-    static let rdPaper = Color(hex: "#FAFBFA")
-    static let rdWhite = Color(hex: "#FFFFFF")
+    static let rdGreenSoft = Color.dynamic(light: "#EAF8EE", dark: "#092F15")
+    static let rdPaper = Color.dynamic(light: "#FAFBFA", dark: "#0B0D0E")
+    static let rdWhite = Color.dynamic(light: "#FFFFFF", dark: "#151819")
 
     // Secondary
-    static let rdInk = Color(hex: "#202427")
-    static let rdCharcoal = Color(hex: "#343A40")
-    static let rdSlate = Color(hex: "#6B7280")
-    static let rdLine = Color(hex: "#DDE3E0")
-    static let rdFog = Color(hex: "#F1F4F2")
-    static let rdCloud = Color(hex: "#F6F7F6")
+    static let rdInk = Color.dynamic(light: "#202427", dark: "#F0F4F1")
+    static let rdCharcoal = Color.dynamic(light: "#343A40", dark: "#CAD3CE")
+    static let rdSlate = Color.dynamic(light: "#6B7280", dark: "#9AA3AD")
+    static let rdLine = Color.dynamic(light: "#DDE3E0", dark: "#2B3032")
+    static let rdFog = Color.dynamic(light: "#F1F4F2", dark: "#202526")
+    static let rdCloud = Color.dynamic(light: "#F6F7F6", dark: "#111415")
 
     // Risk semantic
     static let rdCritical = Color(hex: "#B42318")
@@ -38,6 +40,43 @@ extension Color {
     static let rdHighText = Color(hex: "#A45A00")
     static let rdMediumText = Color(hex: "#854D0E")
     static let rdLowText = Color(hex: "#1F6B4A")
+}
+
+private extension Color {
+    static func dynamic(light: String, dark: String) -> Color {
+        Color(UIColor { trait in
+            UIColor(hex: trait.userInterfaceStyle == .dark ? dark : light)
+        })
+    }
+}
+
+private extension UIColor {
+    convenience init(hex: String) {
+        let cleaned = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "#", with: "")
+        var rgb: UInt64 = 0
+        Scanner(string: cleaned).scanHexInt64(&rgb)
+
+        let r, g, b, a: CGFloat
+        switch cleaned.count {
+        case 6:
+            r = CGFloat((rgb >> 16) & 0xFF) / 255.0
+            g = CGFloat((rgb >> 8) & 0xFF) / 255.0
+            b = CGFloat(rgb & 0xFF) / 255.0
+            a = 1.0
+        case 8:
+            r = CGFloat((rgb >> 24) & 0xFF) / 255.0
+            g = CGFloat((rgb >> 16) & 0xFF) / 255.0
+            b = CGFloat((rgb >> 8) & 0xFF) / 255.0
+            a = CGFloat(rgb & 0xFF) / 255.0
+        default:
+            r = 0
+            g = 0
+            b = 0
+            a = 1
+        }
+        self.init(red: r, green: g, blue: b, alpha: a)
+    }
 }
 
 enum RiskLevel: String, CaseIterable {

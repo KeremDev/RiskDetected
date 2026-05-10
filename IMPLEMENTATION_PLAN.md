@@ -54,11 +54,22 @@
     - Reports tab can delete stored PDF report files and metadata.
     - Analyses tab can delete an analysis, its findings, photos and related report records/files.
     - Profile > Verilerim provides export, bulk report delete, bulk analysis delete and account deletion request entry points.
-  - Push notification foundation added:
-    - iOS APNs permission/token registration service;
-    - Profile > Bildirimler settings sheet;
-    - Supabase push token/preference/event tables with RLS;
-    - `send-push-notification` Edge Function deployed for APNs delivery after APNs secrets are configured.
+- Push notification foundation added:
+  - iOS APNs permission/token registration service;
+  - Profile > Bildirimler settings sheet;
+  - Supabase push token/preference/event tables with RLS;
+  - `send-push-notification` Edge Function deployed for APNs delivery after APNs secrets are configured.
+- UI polish and theme foundation:
+  - App no longer forces light mode; Profile > Ayarlar has a persistent Karanlik mod toggle.
+  - Core color tokens now adapt to dark/light mode while fixed black CTA surfaces use `rdOnyx`.
+  - Header profile avatar opens a compact overlay menu with Analizlerim, Raporlarim, Pro status/upgrade, sign-out and theme toggle actions.
+  - Pro users see `Pro uyesiniz` in the header menu instead of a plan-upgrade link.
+  - Header profile menu closes on outside tap or scroll/drag and no longer changes page layout.
+  - Bottom tab inactive text/icons are black in light mode while active icon remains green.
+  - Main CTA button style has a right-side action capsule; auth Apple button opts out of that action icon.
+  - Analysis thumbnails are clipped to a fixed box so images of any aspect ratio cannot overlap list/result text.
+  - Text-only analyses now use a standard Metin Analizi artwork in recent/history/result/report surfaces instead of blank photo placeholders.
+  - Free users see a compact daily trial quota hint under upload/text input, with dynamic `2/2`, `1/2`, `0/2` display.
 
 ## Partially Done - Revision Queue
 
@@ -114,7 +125,7 @@ These items exist in some form, but need revision before we treat them as produc
    - Deferred phone auth: Firebase phone bridge code remains in the repo, but the UI is hidden until billing/Identity Platform and provider setup are production-ready.
 
 9. App preferences
-   - Current state: Profile/Settings screen exists, but theme and language preferences are not implemented.
+   - Current state: Profile/Settings screen has a persistent quick dark-mode toggle. Full preferences screen and language selection are still pending.
    - Target: add persistent user preferences under Profile > Tercihler.
    - Theme options:
      - System / Cihaz ayarını kullan;
@@ -283,10 +294,11 @@ These items exist in some form, but need revision before we treat them as produc
 ### P2.5 - App Preferences and Localization
 
 1. Theme preference:
-   - add Profile > Tercihler screen;
-   - support System / Aydınlık / Karanlık;
-   - persist selected theme locally;
-   - apply theme consistently across app surfaces, PDF preview screens and paywall.
+   - Started: persistent Karanlik mod toggle added under Profile > Ayarlar and header quick menu;
+   - Started: theme applies globally through `preferredColorScheme`;
+   - Started: core design tokens adapt to dark/light mode;
+   - Follow-up: replace the single toggle with full System / Aydinlik / Karanlik choice under Profile > Tercihler;
+   - Follow-up: continue contrast QA across Result, Report, Paywall and all sheets.
 2. Language preference:
    - add Turkish / English / System language selector;
    - introduce localized string structure before hardcoding grows further;
@@ -295,6 +307,29 @@ These items exist in some form, but need revision before we treat them as produc
 3. Preference sync:
    - keep MVP local-first;
    - later store preferred theme/language in `profiles` or a dedicated `user_preferences` table.
+
+### P2.6 - UI/UX Backlog From Product Notes
+
+1. Header profile quick menu:
+   - Done: tapping the top-right profile avatar opens a compact dropdown/popover;
+   - Done: includes `Analizlerim`, `Raporlarim`, plan upgrade for Free users and `Pro uyesiniz` for Pro users;
+   - Done: includes sign-out icon/action;
+   - Done: includes dark/light mode icon/action for quick theme switching;
+   - Done: menu closes on outside tap and scroll/drag;
+   - Done: menu is overlay-only and does not change page layout.
+2. AI analysis focus refresh:
+   - update the AI analysis focus/canvas options;
+   - user will provide fixed prompts for these focus modes;
+   - store prompts clearly so frontend labels and backend prompt routing stay aligned.
+3. Reports page design refresh:
+   - redesign Reports tab visual hierarchy;
+   - improve saved reports, report source selection and actions.
+4. Legal link destination refresh:
+   - update pages opened from KVKK, Kullanım şartları and AI veri işleme links;
+   - make the legal pages calmer, clearer and production-ready.
+5. Profile page tabs and content:
+   - design and implement profile page sections/tabs;
+   - fill missing content for account, preferences, reports, analyses, notifications and data/privacy areas.
 
 ### P3 - AI Reliability and Cost Control
 

@@ -154,7 +154,8 @@ struct AuthView: View {
             RDButton(
                 title: isSigningInWithApple ? "Apple ile bağlanıyor..." : "Apple ile devam et",
                 style: .primary,
-                icon: isSigningInWithApple ? "hourglass" : "applelogo"
+                icon: isSigningInWithApple ? "hourglass" : "applelogo",
+                showsActionIcon: false
             ) {
                 runAppleSignIn()
             }

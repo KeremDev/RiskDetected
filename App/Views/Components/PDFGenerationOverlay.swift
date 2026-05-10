@@ -97,7 +97,7 @@ struct PDFGenerationOverlay: View {
 
     var body: some View {
         ZStack {
-            Color.rdBlack.opacity(0.22)
+            Color.rdOnyx.opacity(0.22)
                 .ignoresSafeArea()
 
             VStack(spacing: 26) {
@@ -168,7 +168,7 @@ struct PDFGenerationOverlay: View {
                 RoundedRectangle(cornerRadius: 30, style: .continuous)
                     .stroke(Color.rdWhite.opacity(0.68), lineWidth: 1)
             )
-            .shadow(color: Color.rdBlack.opacity(0.16), radius: 34, x: 0, y: 18)
+            .shadow(color: Color.rdOnyx.opacity(0.16), radius: 34, x: 0, y: 18)
             .padding(.horizontal, 28)
         }
         .transition(.opacity.combined(with: .scale(scale: 0.96)))

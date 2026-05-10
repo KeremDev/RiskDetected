@@ -65,13 +65,18 @@ struct HomeView: View {
                         textInputArea
                     }
 
+                    if !app.isPro {
+                        freeQuotaHint
+                            .padding(.top, 10)
+                    }
+
                     RDButton(
                         title: "Taramayı Başlat",
                         style: .detect,
                         icon: "sparkles",
-                        backgroundOverride: .rdBlack,
-                        foregroundOverride: .rdGreen,
-                        shadowOverride: Color.rdBlack.opacity(0.14)
+                        backgroundOverride: .rdOnyx,
+                        foregroundOverride: .white,
+                        shadowOverride: Color.rdOnyx.opacity(0.14)
                     ) {
                         startAnalysisFlow()
                     }
@@ -506,6 +511,58 @@ struct HomeView: View {
         }
     }
 
+    private var freeQuotaHint: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            showPlainPaywall()
+        } label: {
+            HStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(isFreeQuotaExhausted ? Color.rdCritical : Color.rdOnyx)
+                    Text(freeQuotaCompactText)
+                        .rdMono(size: 11, weight: .bold)
+                        .foregroundStyle(Color.white)
+                }
+                .frame(width: 42, height: 38)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Günlük deneme hakkı")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text("Günde 2 analiz. Pro ile sınırsız hak ve daha detaylı bulgular.")
+                        .font(.system(size: 11, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 4)
+
+                Image(systemName: "star.fill")
+                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Color.rdGreen)
+                    .frame(width: 28, height: 28)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel("Free kullanım bilgisi. Günde 2 analiz. Pro ile sınırsız hak ve detaylı bulgular.")
+    }
+
+    private var freeQuotaCompactText: String {
+        guard let quotaUsage else { return "2/2" }
+        return "\(quotaUsage.remaining)/\(quotaUsage.limit)"
+    }
+
     private func lockedInputContent(title: String, subtitle: String, icon: String) -> some View {
         VStack(spacing: 10) {
             ZStack {
@@ -795,6 +852,7 @@ private struct HomeHeader: View {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
+        .zIndex(100)
         .fullScreenCover(isPresented: $showPaywall) {
             PaywallView(onClose: { showPaywall = false },
                         onSubscribe: {

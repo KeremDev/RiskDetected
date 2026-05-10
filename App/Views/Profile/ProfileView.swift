@@ -28,6 +28,7 @@ struct ProfileView: View {
             .padding(.horizontal, 20)
             .padding(.top, 8)
             .padding(.bottom, 4)
+            .zIndex(100)
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
@@ -219,7 +220,7 @@ struct ProfileView: View {
             .padding(16)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.rdBlack)
+        .background(Color.rdOnyx)
         .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         .allowsHitTesting(false)
     }
@@ -240,7 +241,7 @@ struct ProfileView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.rdBlack)
+            .background(Color.rdOnyx)
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         }
         .buttonStyle(RDPressableButtonStyle())
@@ -297,6 +298,14 @@ struct ProfileView: View {
             sectionHeader("Ayarlar")
             VStack(spacing: 0) {
                 ProfileRow(icon: "gearshape", title: "Tercihler")
+                Divider().background(Color.rdLine).padding(.leading, 60)
+                Button {
+                    app.setDarkMode(!app.isDarkModeEnabled)
+                    UISelectionFeedbackGenerator().selectionChanged()
+                } label: {
+                    ProfileThemeToggleRow(isOn: app.isDarkModeEnabled)
+                }
+                .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     showDataControls = true
@@ -1121,6 +1130,46 @@ struct ProfileRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .contentShape(Rectangle())
+    }
+}
+
+private struct ProfileThemeToggleRow: View {
+    let isOn: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: isOn ? "moon.fill" : "sun.max.fill")
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .frame(width: 32, height: 32)
+                .foregroundStyle(isOn ? Color.rdGreen : Color.rdCharcoal)
+                .background(isOn ? Color.rdGreenSoft : Color.rdFog)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            Text("Karanlık mod")
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(isOn ? "Açık" : "Kapalı")
+                .rdMono(size: 13, weight: .medium)
+                .foregroundStyle(Color.rdSlate)
+
+            ZStack(alignment: isOn ? .trailing : .leading) {
+                Capsule()
+                    .fill(isOn ? Color.rdGreen : Color.rdLine)
+                Circle()
+                    .fill(Color.rdWhite)
+                    .frame(width: 24, height: 24)
+                    .shadow(color: Color.rdOnyx.opacity(0.12), radius: 4, x: 0, y: 2)
+                    .padding(3)
+            }
+            .frame(width: 54, height: 30)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
+        .accessibilityLabel("Karanlık mod")
+        .accessibilityValue(isOn ? "Açık" : "Kapalı")
     }
 }
 

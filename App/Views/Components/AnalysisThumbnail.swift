@@ -12,21 +12,25 @@ struct AnalysisThumbnail: View {
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AnalysisThumbnail")
 
     var body: some View {
-        ZStack {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                if isTextAnalysis {
-                    RDTextAnalysisArtwork(cornerRadius: cornerRadius)
+        GeometryReader { proxy in
+            ZStack {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: proxy.size.width, height: proxy.size.height)
                 } else {
-                    RDPlaceholderPhoto(cornerRadius: cornerRadius)
+                    if isTextAnalysis {
+                        RDTextAnalysisArtwork(cornerRadius: cornerRadius)
+                    } else {
+                        RDPlaceholderPhoto(cornerRadius: cornerRadius)
+                    }
                 }
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         }
-        .clipped()
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .task(id: path) {
             await load()
         }

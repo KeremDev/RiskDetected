@@ -135,6 +135,7 @@ struct ReportView: View {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
+        .zIndex(100)
         .fullScreenCover(isPresented: $showPaywall) {
             PaywallView(onClose: { showPaywall = false },
                         onSubscribe: {

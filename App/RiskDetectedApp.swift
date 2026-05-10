@@ -14,7 +14,7 @@ struct RiskDetectedApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(appState)
-                .preferredColorScheme(.light)
+                .preferredColorScheme(appState.isDarkModeEnabled ? .dark : .light)
         }
     }
 }

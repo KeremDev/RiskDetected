@@ -11,11 +11,19 @@ enum AppFlow: Equatable {
 
 @MainActor
 final class AppState: ObservableObject {
+    private static let darkModeKey = "rd.theme.darkModeEnabled"
+
     @Published var flow: AppFlow = .splash
     @Published var isPro: Bool = false
     @Published var profile: UserProfile?
+    @Published var activeTab: RDTab = .home
     @Published var hasSeenOnboarding: Bool
     @Published var authError: String?
+    @Published var isDarkModeEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(isDarkModeEnabled, forKey: Self.darkModeKey)
+        }
+    }
 
     let auth: AuthService
 
@@ -25,6 +33,7 @@ final class AppState: ObservableObject {
         let resolved = auth ?? AuthService()
         self.auth = resolved
         self.hasSeenOnboarding = UserDefaults.standard.bool(forKey: "rd.onboarding.completed")
+        self.isDarkModeEnabled = UserDefaults.standard.bool(forKey: Self.darkModeKey)
         self.profile = resolved.profile
         self.isPro = resolved.profile?.isPro ?? false
         self.authError = resolved.lastError
@@ -62,6 +71,10 @@ final class AppState: ObservableObject {
         Task {
             try? await auth.signOut()
         }
+    }
+
+    func setDarkMode(_ enabled: Bool) {
+        isDarkModeEnabled = enabled
     }
 
     // MARK: - Observation

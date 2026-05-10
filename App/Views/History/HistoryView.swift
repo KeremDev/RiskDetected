@@ -32,6 +32,7 @@ struct HistoryView: View {
             .padding(.horizontal, 20)
             .padding(.top, 8)
             .padding(.bottom, 4)
+            .zIndex(100)
 
             // Search row
             HStack(spacing: 8) {

@@ -1,6 +1,6 @@
 # RiskDetected Project Handoff
 
-Last updated: 2026-05-09
+Last updated: 2026-05-10
 
 This file is the single-context handoff for continuing RiskDetected in a new Codex/Claude session.
 
@@ -190,9 +190,41 @@ Latest UI changes:
 - Logo and slogan in email entry screen are lifted upward.
 - Google button uses a lightweight colored Google wordmark style.
 - Email button label is `E-posta ile giriş yap`.
+- Apple button no longer shows the generic right-side paper-plane action icon.
 - Email placeholder is grey, not blue.
 - `Diğer giriş yöntemleri` link is slightly more prominent.
 - Email error cards use normalized red/pink message UI with support-friendly wording.
+
+## Latest UI and Theme Notes
+
+Completed in the latest UI polish pass:
+
+- App-level dark mode foundation exists:
+  - `AppState.isDarkModeEnabled` persists locally;
+  - `RiskDetectedApp` applies `.preferredColorScheme`;
+  - core color tokens in `RDColor` adapt to light/dark mode;
+  - fixed black CTA surfaces use `rdOnyx` so they do not turn into dynamic text colors.
+- Profile > Ayarlar includes a Karanlik mod toggle.
+- Top-right profile avatar opens a compact overlay menu:
+  - `Analizlerim` navigates to the Analyses tab;
+  - `Raporlarim` navigates to the Reports tab;
+  - Free users see `Plan Yukselt`; Pro users see passive `Pro uyesiniz`;
+  - bottom icon row includes sign-out and dark/light mode toggle.
+- Header profile menu:
+  - does not affect page layout;
+  - closes on outside tap;
+  - closes on scroll/drag.
+- Main CTA button style uses the right-side icon capsule, with fixed white text/icon where needed in dark mode.
+- Free daily quota hint is shown under input for Free users and displays dynamic `2/2`, `1/2`, `0/2` state.
+- Analysis thumbnails are standardized with clipping so any image aspect ratio stays inside its box.
+- Text-only analyses use a standard Metin Analizi artwork instead of empty photo placeholders.
+- Bottom tab inactive labels/icons are black in light mode; active icon remains green.
+
+Remaining theme/design follow-up:
+
+- Replace single dark-mode toggle with full System / Aydinlik / Karanlik preference under Profile > Tercihler.
+- Continue dark-mode contrast QA across Result, Report, Paywall and sheets.
+- Continue planned Reports page design refresh and Profile page tab/content work.
 
 ## Reports and PDF Status
 
@@ -351,7 +383,8 @@ Known image issue to keep checking:
 ### P2 - Product polish
 
 1. Profile preferences:
-   - System / Light / Dark theme.
+   - Started: persistent Karanlik mod toggle and header quick toggle are implemented.
+   - Follow-up: System / Light / Dark theme.
    - Turkish / English / System language.
 2. Persist Pro report defaults:
    - company logo;
@@ -367,6 +400,17 @@ Known image issue to keep checking:
    - quota exhausted;
    - Pro AI confidence/quality messaging;
    - premium report features.
+5. Header profile quick menu:
+   - Done: tap top-right avatar to open compact overlay menu.
+   - Done: include `Raporlarim`, `Analizlerim`, sign-out and night/light mode icon actions.
+   - Done: Free users see `Plan Yukselt`; Pro users see passive `Pro uyesiniz`.
+6. AI analysis focus refresh:
+   - update analysis focus/canvas options;
+   - user will provide fixed prompts for each focus;
+   - keep frontend labels and backend prompt routing aligned.
+7. Reports page design refresh.
+8. Legal link destination refresh for KVKK, Kullanım şartları and AI veri işleme pages.
+9. Profile page tabs and missing content sections.
 
 ### P3 - Later
 

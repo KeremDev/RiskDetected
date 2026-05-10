@@ -23,7 +23,7 @@ struct RDAvatar: View {
         .overlay(alignment: .bottomTrailing) {
             if pro {
                 Circle()
-                    .fill(Color.rdBlack)
+                    .fill(Color.rdOnyx)
                     .frame(width: size * 0.5, height: size * 0.5)
                     .overlay {
                         Image(systemName: "star.fill")
