@@ -13,6 +13,7 @@ struct AuthView: View {
     @State private var isSigningInWithApple = false
     @State private var isSigningInWithGoogle = false
     @State private var appleSignInService = AppleSignInService()
+    @FocusState private var focusedOTPIndex: Int?
 
     enum AuthPhase { case options, email, otp }
     enum DemoAccount: String {
@@ -126,6 +127,15 @@ struct AuthView: View {
             LegalInfoSheet(onClose: { showLegalInfo = false })
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        .onChange(of: phase) { newPhase in
+            if newPhase == .otp {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    focusedOTPIndex = firstEmptyOTPIndex ?? 0
+                }
+            } else {
+                focusedOTPIndex = nil
+            }
         }
     }
 
@@ -355,11 +365,9 @@ struct AuthView: View {
             }
             HStack(spacing: 10) {
                 ForEach(0..<6, id: \.self) { i in
-                    TextField("", text: Binding(
-                        get: { code[i] },
-                        set: { code[i] = String($0.filter(\.isNumber).prefix(1)) }
-                    ))
+                    TextField("", text: otpDigitBinding(for: i))
                     .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
                     .multilineTextAlignment(.center)
                     .font(.system(size: 28, weight: .bold, design: .monospaced))
                     .frame(width: 48, height: 58)
@@ -369,6 +377,7 @@ struct AuthView: View {
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(code[i].isEmpty ? Color.rdLine : Color.rdBlack, lineWidth: 1.5)
                     )
+                    .focused($focusedOTPIndex, equals: i)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -452,6 +461,9 @@ struct AuthView: View {
                 try await app.auth.sendEmailOTP(email: normalizedEmail)
                 code = Array(repeating: "", count: 6)
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+                    focusedOTPIndex = 0
+                }
             } catch {
                 setAuthError(error, context: "Kod gönderilemedi", fallbackTitle: "Kod gönderilemedi", operation: "send_email_otp", email: normalizedEmail)
             }
@@ -513,6 +525,46 @@ struct AuthView: View {
         let message = AppErrorMessage.make(error, context: context, fallbackTitle: fallbackTitle)
         AuthService.logAuthError(message, operation: operation, email: email)
         authError = message
+    }
+
+    private var firstEmptyOTPIndex: Int? {
+        code.firstIndex(where: { $0.isEmpty })
+    }
+
+    private func otpDigitBinding(for index: Int) -> Binding<String> {
+        Binding(
+            get: { code[index] },
+            set: { newValue in
+                updateOTPCode(at: index, with: newValue)
+            }
+        )
+    }
+
+    private func updateOTPCode(at index: Int, with newValue: String) {
+        let digits = newValue.filter(\.isNumber)
+
+        if digits.isEmpty {
+            if !code[index].isEmpty {
+                code[index] = ""
+                focusedOTPIndex = index
+            } else {
+                focusedOTPIndex = max(index - 1, 0)
+            }
+            return
+        }
+
+        if digits.count > 1 {
+            var writeIndex = index
+            for digit in digits.prefix(6 - index) {
+                code[writeIndex] = String(digit)
+                writeIndex += 1
+            }
+            focusedOTPIndex = firstEmptyOTPIndex
+            return
+        }
+
+        code[index] = String(digits.prefix(1))
+        focusedOTPIndex = index < code.count - 1 ? index + 1 : nil
     }
 }
 

@@ -104,12 +104,14 @@ struct AppErrorMessage: Equatable {
 
         if lower.contains("otp_expired") ||
             lower.contains("token expired") ||
+            lower.contains("token has expired") ||
+            lower.contains("expired or is invalid") ||
             lower.contains("expired") && lower.contains("otp")
         {
             return AppErrorMessage(
                 title: context ?? "Kodun süresi doldu",
-                message: "Girdiğin doğrulama kodunun süresi dolmuş görünüyor.",
-                action: "Yeni bir kod isteyip gelen son kodla tekrar dene.",
+                message: "Girdiğin doğrulama kodu artık geçerli değil.",
+                action: "Yeni bir kod isteyip e-postana gelen son kodla tekrar dene.",
                 category: .authRequired,
                 supportID: supportID
             )
