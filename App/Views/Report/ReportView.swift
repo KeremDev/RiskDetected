@@ -1,6 +1,9 @@
 import SwiftUI
+import OSLog
 
 struct ReportView: View {
+    private static let logger = Logger(subsystem: "com.riskdetected.app", category: "ReportView")
+
     @EnvironmentObject private var app: AppState
 
     @State private var analyses: [AnalysisRow] = []
@@ -550,13 +553,8 @@ struct ReportView: View {
                     storedReports = (try? await AnalysisService.shared.listReports(limit: 100)) ?? storedReports
                     pdfGeneration.advance(to: 0.94)
                 } catch {
-                    pdfGeneration.stop()
-                    errorMessage = AppErrorMessage.make(
-                        rawMessage: "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)\nDestek kodu: \(supportID)",
-                        context: "Rapor arşive kaydedilemedi",
-                        fallbackTitle: "Rapor arşive kaydedilemedi"
-                    ).fullText
-                    return
+                    Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                    pdfGeneration.advance(to: 0.94)
                 }
                 await pdfGeneration.complete()
                 shareItem = ShareItem(url: url)

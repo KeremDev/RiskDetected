@@ -171,12 +171,41 @@ Sonuç:
 
 - Geçti.
 
+### Result İndirme / Paylaşma İkonları
+
+Kontrol:
+
+- Analizler tabından tamamlanmış bir analiz Result ekranında açıldı.
+- Üstteki `Raporu indir` ikonu denendi.
+- İlk denemede PDF oluşturulduğu halde arşiv kaydı hatası preview akışını kesiyordu.
+- Result ve Reports PDF üretim akışında arşiv kaydı başarısız olsa bile üretilen dosyanın açılması/paylaşılması sağlandı.
+- Tekrar testte `Raporu indir` PDF preview açtı.
+- `Raporu paylaş` native paylaş panelini açtı.
+
+Sonuç:
+
+- Düzeltme sonrası geçti.
+
+### Reports PDF Preview / İndirme
+
+Kontrol:
+
+- Reports tabında kayıtlı standart PDF raporu açıldı.
+- `DocumentPreview` açıldı.
+- Preview içinde `Önizlemeyi kapat` ve `Dosyayı indir veya paylaş` aksiyonları göründü.
+- `Dosyayı indir veya paylaş` native paylaş/kaydet panelini açtı.
+
+Sonuç:
+
+- PDF için geçti.
+- Kayıtlı XLSX dosyası olmadığı için XLSX preview canlı tıklaması bu turda yapılamadı; Excel üretim QA'sından sonra tekrar kontrol edilecek.
+
 ## Tamamlanmayan QA
 
 Kullanıcı devamını sonraya bıraktığı için aşağıdaki QA maddeleri durdu:
 
 - Rapor oluştur sheet Excel seçimi.
-- Result ekranında indirme/paylaşma ikonları.
+- Reports XLSX preview ve indirme akışı.
 - Dark mode hızlı pass.
 - Profil düzenleme/logo kaydı.
 - Ana sayfa rapor preview X/indir.
@@ -184,7 +213,7 @@ Kullanıcı devamını sonraya bıraktığı için aşağıdaki QA maddeleri dur
 ## Yeni Sohbette QA'ya Nereden Devam Edilecek?
 
 1. Rapor oluştur sheet Excel seçimini test et.
-2. Result ekranında indirme/paylaşma ikonlarını test et.
-3. Reports PDF/XLSX preview ve indirme akışını test et.
+2. Excel dosyası oluşunca Reports XLSX preview ve indirme akışını test et.
+3. Ana sayfa rapor preview X/indir akışını tekrar kontrol et.
 4. Dark mode hızlı pass'i tamamla.
 5. Profil bilgi kaydetme, logo seçimi ve geçmiş analiz/rapor routing'i test et.

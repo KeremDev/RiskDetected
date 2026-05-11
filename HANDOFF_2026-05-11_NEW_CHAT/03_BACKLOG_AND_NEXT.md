@@ -3,7 +3,7 @@
 ## En Yakın İşler
 
 1. Manual simulator QA tamamlanmalı.
-2. Result/Reports indirme-paylaşma ve Excel preview akışları tamamlanmalı.
+2. Rapor oluştur sheet Excel seçimi ve ardından Reports XLSX preview akışı tamamlanmalı.
 3. Onboarding ekranları geliştirilmeli.
 4. AI canvas promptları kullanıcıdan alınmalı ve backend prompt routing'e net işlenmeli.
 5. KVKK / Kullanım koşulları / AI veri işleme uzun resmi metinleri eklenmeli.
@@ -36,9 +36,10 @@
   - Rapor Oluştur sheet açılıyor mu?
   - Free kullanıcı Risk Analizi Tablosu seçemiyor mu?
   - Pro kullanıcı PDF/Excel seçebiliyor mu?
-  - İndir/Paylaş ikonları doğru çalışıyor mu?
+  - İndir/Paylaş ikonları doğru çalışıyor mu? `Düzeltme sonrası geçti`
 - Reports:
-  - PDF/XLSX önizleme ve indirme.
+  - PDF önizleme ve indirme. `Geçti`
+  - XLSX önizleme ve indirme. `Excel üretim QA sonrası test edilecek`
   - Ana sayfa rapor kartından preview.
 - Dark mode:
   - Home

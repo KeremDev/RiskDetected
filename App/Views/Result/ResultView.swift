@@ -1,8 +1,11 @@
 import SwiftUI
 import UIKit
 import PhotosUI
+import OSLog
 
 struct ResultView: View {
+    private static let logger = Logger(subsystem: "com.riskdetected.app", category: "ResultView")
+
     @EnvironmentObject var app: AppState
     var bundle: AnalysisResultBundle? = nil
     var localPreviewImage: UIImage? = nil
@@ -718,13 +721,8 @@ struct ResultView: View {
                         )
                         pdfGeneration.advance(to: 0.92)
                     } catch {
-                        pdfGeneration.stop()
-                        pdfError = AppErrorMessage.make(
-                            rawMessage: "PDF oluşturuldu ancak rapor arşivine kaydedilemedi: \(error.localizedDescription)\nDestek kodu: \(supportID)",
-                            context: "Rapor arşive kaydedilemedi",
-                            fallbackTitle: "Rapor arşive kaydedilemedi"
-                        ).fullText
-                        return
+                        Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                        pdfGeneration.advance(to: 0.92)
                     }
                 }
                 await pdfGeneration.complete()
