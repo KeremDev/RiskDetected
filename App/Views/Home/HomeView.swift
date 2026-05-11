@@ -1250,6 +1250,7 @@ struct PhotoSourceSheet: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(RDPressableButtonStyle())
+                .accessibilityLabel("Kapat")
             }
 
             VStack(spacing: 10) {
@@ -1318,6 +1319,8 @@ struct PhotoSourceSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(RDPressableButtonStyle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
     }
 }
 

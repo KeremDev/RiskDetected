@@ -47,7 +47,7 @@ struct CanvasSheet: View {
                         .shadow(color: Color.rdOnyx.opacity(0.10), radius: 8, x: 0, y: 4)
                 }
                 .buttonStyle(RDPressableButtonStyle())
-                .accessibilityLabel("Pencereyi kapat")
+                .accessibilityLabel("Kapat")
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 16)
