@@ -342,8 +342,8 @@ struct AuthView: View {
                 TextField(
                     "",
                     text: $email,
-                    prompt: Text("mail@ornek.com")
-                        .foregroundColor(Color.rdSlate.opacity(0.55))
+                    prompt: Text("Mailinizi yazınız  mail@ornek.com")
+                        .foregroundColor(Color.rdSlate.opacity(0.48))
                 )
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
