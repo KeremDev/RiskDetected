@@ -300,16 +300,29 @@ final class AnalysisService {
             throw AnalysisError.storageFailed("PDF dosyası rapor arşivine yüklenemedi. Destek kodu: \(supportID). \(error.localizedDescription)")
         }
 
-        do {
-            _ = try await supabase.storage
-                .from(RDConfig.Bucket.reports)
-                .upload(
-                    storagePath,
-                    data: data,
-                    options: FileOptions(contentType: "application/pdf", upsert: true)
-                )
-        } catch {
-            Self.logger.error("Report upload failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) path=\(storagePath, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+        let maxUploadAttempts = 3
+        var lastUploadError: Error?
+        for attempt in 1...maxUploadAttempts {
+            do {
+                _ = try await supabase.storage
+                    .from(RDConfig.Bucket.reports)
+                    .upload(
+                        storagePath,
+                        data: data,
+                        options: FileOptions(contentType: "application/pdf", upsert: true)
+                    )
+                lastUploadError = nil
+                break
+            } catch {
+                lastUploadError = error
+                let canRetry = attempt < maxUploadAttempts && Self.isTransientReportUploadError(error)
+                Self.logger.error("Report upload failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) attempt=\(attempt) retry=\(canRetry, privacy: .public) path=\(storagePath, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+                guard canRetry else { break }
+                try? await Task.sleep(nanoseconds: UInt64(attempt) * 700_000_000)
+            }
+        }
+
+        if lastUploadError != nil {
             throw AnalysisError.storageFailed("PDF dosyası rapor arşivine yüklenemedi. Destek kodu: \(supportID)")
         }
 
@@ -369,6 +382,23 @@ final class AnalysisService {
             Self.logger.error("Report metadata save failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
             throw AnalysisError.databaseFailed("PDF oluşturuldu ancak rapor arşiv kaydı tamamlanamadı. Destek kodu: \(supportID)")
         }
+    }
+
+    private static func isTransientReportUploadError(_ error: Error) -> Bool {
+        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        return lower.contains("network connection was lost") ||
+            lower.contains("connection was lost") ||
+            lower.contains("network") ||
+            lower.contains("internet") ||
+            lower.contains("offline") ||
+            lower.contains("timed out") ||
+            lower.contains("timeout") ||
+            lower.contains("temporarily") ||
+            lower.contains("unavailable") ||
+            lower.contains("503") ||
+            lower.contains("500") ||
+            lower.contains("502") ||
+            lower.contains("504")
     }
 
     /// Storage'daki PDF raporu indirir ve geçici dosya URL'i döndürür.
