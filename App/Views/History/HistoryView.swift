@@ -455,22 +455,22 @@ private struct HistoryRow: View {
     }
 
     private var rowContent: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             ZStack(alignment: .bottomTrailing) {
                 AnalysisThumbnail(path: item.photoPath, isTextAnalysis: item.isTextAnalysis, cornerRadius: 14)
-                    .frame(width: 68, height: 68)
+                    .frame(width: 58, height: 58)
 
                 Image(systemName: item.isTextAnalysis ? "text.alignleft" : "camera.fill")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
-                    .frame(width: 22, height: 22)
+                    .frame(width: 20, height: 20)
                     .background(Color.rdWhite)
                     .clipShape(Circle())
                     .shadow(color: Color.rdOnyx.opacity(0.12), radius: 6, x: 0, y: 3)
                     .offset(x: 4, y: 4)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     HStack(alignment: .firstTextBaseline, spacing: 5) {
                         Text(cleanTitle)
@@ -489,8 +489,8 @@ private struct HistoryRow: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .fixedSize(horizontal: true, vertical: false)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 6)
                 .background(
                     LinearGradient(
                         colors: [Color.rdFog, Color.rdWhite],
@@ -505,16 +505,17 @@ private struct HistoryRow: View {
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                     Text(item.date)
                         .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
-                        .layoutPriority(2)
+                        .layoutPriority(3)
                     Text("·")
                     Text(focusText)
                         .lineLimit(1)
+                        .truncationMode(.tail)
                         .layoutPriority(1)
                     Text("·")
                     Text("\(item.count) bulgu")
                         .rdMono(size: 12, weight: .semibold)
                         .fixedSize(horizontal: true, vertical: false)
+                        .layoutPriority(2)
                 }
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
@@ -528,7 +529,7 @@ private struct HistoryRow: View {
                         .foregroundStyle(item.status.textColor)
                 }
                 .padding(.horizontal, 8)
-                .padding(.vertical, 5)
+                .padding(.vertical, 4)
                 .background(item.status.bgColor)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
@@ -543,7 +544,7 @@ private struct HistoryRow: View {
                     .foregroundStyle(Color.rdSlate)
             }
         }
-        .padding(12)
+        .padding(10)
         .background(Color.rdWhite)
         .overlay(
             RoundedRectangle(cornerRadius: 20)

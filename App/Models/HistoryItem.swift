@@ -82,9 +82,9 @@ extension HistoryItem {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "tr_TR")
         if Calendar.current.isDateInToday(date) {
-            formatter.dateFormat = "Bugün HH:mm"
+            formatter.dateFormat = "'Bugün' HH:mm"
         } else if Calendar.current.isDateInYesterday(date) {
-            formatter.dateFormat = "Dün HH:mm"
+            formatter.dateFormat = "'Dün' HH:mm"
         } else {
             formatter.dateFormat = "d MMM · HH:mm"
         }
