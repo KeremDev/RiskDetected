@@ -328,9 +328,9 @@ struct AuthView: View {
 
     private var emailForm: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("E-posta adresi")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
+            Text("E-posta Adresinizi Giriniz")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdInk)
             HStack(spacing: 8) {
                 Image(systemName: "envelope.fill")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
@@ -342,7 +342,7 @@ struct AuthView: View {
                 TextField(
                     "",
                     text: $email,
-                    prompt: Text("Mailinizi yazınız  mail@ornek.com")
+                    prompt: Text("Mailinizi yazınız...")
                         .foregroundColor(Color.rdSlate.opacity(0.48))
                 )
                     .keyboardType(.emailAddress)
