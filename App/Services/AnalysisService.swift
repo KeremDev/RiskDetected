@@ -64,7 +64,6 @@ final class AnalysisService {
         images: [UIImage],
         canvases: [AnalysisCanvas],
         title: String? = nil,
-        userPrompt: String = "",
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
     ) async throws -> AnalysisResultBundle {
         guard !canvases.isEmpty else {
@@ -95,7 +94,6 @@ final class AnalysisService {
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
             textInput: nil, photoPaths: [], photoBase64Parts: photoParts,
-            userPrompt: userPrompt,
             onProgress: onProgress
         )
 
@@ -108,7 +106,6 @@ final class AnalysisService {
         userID: UUID,
         text: String,
         canvases: [AnalysisCanvas],
-        userPrompt: String = "",
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
     ) async throws -> AnalysisResultBundle {
         guard !canvases.isEmpty else {
@@ -131,7 +128,6 @@ final class AnalysisService {
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
             textInput: trimmedText, photoPaths: [], photoBase64Parts: [],
-            userPrompt: userPrompt,
             onProgress: onProgress
         )
 
@@ -902,7 +898,6 @@ final class AnalysisService {
         textInput: String?,
         photoPaths: [String],
         photoBase64Parts: [InlinePhotoPart],
-        userPrompt: String,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)?
     ) async throws {
         struct Body: Encodable {
@@ -910,7 +905,6 @@ final class AnalysisService {
             let canvas: String
             let canvases: [String]
             let text_input: String?
-            let user_prompt: String?
             let request_id: String
             let support_id: String
             let photo_paths: [String]
@@ -919,7 +913,6 @@ final class AnalysisService {
         // `canvas` = primary sorted id (tek-canvas contract).
         // `canvases` = tüm seçimler — Edge Function çoklu desteğe geçince kullanılır.
         let sortedCanvasIDs = canvases.map(\.id).sorted()
-        let cleanPrompt = String(userPrompt.trimmingCharacters(in: .whitespacesAndNewlines).prefix(100))
         let requestID = UUID().uuidString
         let supportID = AppErrorMessage.newSupportID()
         let body = Body(
@@ -927,7 +920,6 @@ final class AnalysisService {
             canvas: sortedCanvasIDs.first ?? canvases[0].id,
             canvases: sortedCanvasIDs,
             text_input: textInput,
-            user_prompt: cleanPrompt.isEmpty ? nil : cleanPrompt,
             request_id: requestID,
             support_id: supportID,
             photo_paths: photoPaths,

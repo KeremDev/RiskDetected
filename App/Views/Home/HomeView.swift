@@ -24,7 +24,6 @@ struct HomeView: View {
     @State private var mode: HomeMode = .photo
     @State private var text: String = ""
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
-    @State private var analysisPrompt: String = ""
     @State private var showCanvasSheet = false
     @State private var showAnnotate = false
     @State private var showResult = false
@@ -147,7 +146,6 @@ struct HomeView: View {
         .sheet(isPresented: $showCanvasSheet) {
             CanvasSheet(
                 selected: $selectedCanvases,
-                userPrompt: $analysisPrompt,
                 isUserPro: app.isPro,
                 onConfirm: {
                     showCanvasSheet = false
@@ -858,7 +856,6 @@ struct HomeView: View {
         let canvases = Array(selectedCanvases)
         let capturedImage = selectedImage
         let capturedText = text
-        let capturedPrompt = analysisPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
 
         switch mode {
         case .photo:
@@ -871,7 +868,6 @@ struct HomeView: View {
                     userID: userID,
                     images: [img],
                     canvases: canvases,
-                    userPrompt: capturedPrompt,
                     onProgress: progress
                 )
             }
@@ -886,7 +882,6 @@ struct HomeView: View {
                     userID: userID,
                     text: trimmed,
                     canvases: canvases,
-                    userPrompt: capturedPrompt,
                     onProgress: progress
                 )
             }
