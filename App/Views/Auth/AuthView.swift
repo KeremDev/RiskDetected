@@ -14,6 +14,8 @@ struct AuthView: View {
     @State private var isSigningInWithApple = false
     @State private var isSigningInWithGoogle = false
     @State private var appleSignInService = AppleSignInService()
+    @State private var autoVerifiedCode: String?
+    @State private var caretPulse = false
     @FocusState private var isOTPInputFocused: Bool
 
     enum AuthPhase { case options, email, otp }
@@ -134,9 +136,14 @@ struct AuthView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                     isOTPInputFocused = true
                 }
+                caretPulse = true
             } else {
                 isOTPInputFocused = false
+                caretPulse = false
             }
+        }
+        .onChange(of: isOTPInputFocused) { isFocused in
+            caretPulse = isFocused
         }
     }
 
@@ -274,18 +281,36 @@ struct AuthView: View {
     @ViewBuilder
     private var authErrorText: some View {
         if let err = authError {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdCritical)
-                    .padding(.top, 1)
+            VStack(alignment: .leading, spacing: 9) {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.rdCritical)
+                        .padding(.top, 1)
 
-                Text(err.message)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.rdCritical)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(err.message)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdCritical)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if phase == .otp {
+                    Button {
+                        resendEmailCode()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: isSendingEmailCode ? "hourglass" : "arrow.clockwise")
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                            Text(isSendingEmailCode ? "Yeni kod gönderiliyor..." : "Yeni kod gönder")
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                        }
+                        .foregroundStyle(Color.rdCritical)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isSendingEmailCode)
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
@@ -381,17 +406,7 @@ struct AuthView: View {
 
                 HStack(spacing: 10) {
                     ForEach(0..<6, id: \.self) { i in
-                        Text(code[i])
-                            .multilineTextAlignment(.center)
-                            .font(.system(size: 28, weight: .bold, design: .monospaced))
-                            .foregroundStyle(Color.rdBlack)
-                            .frame(width: 48, height: 58)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(code[i].isEmpty ? Color.rdLine : Color.rdBlack, lineWidth: 1.5)
-                            )
+                        otpDigitBox(index: i)
                     }
                 }
             }
@@ -473,14 +488,26 @@ struct AuthView: View {
 
     private func sendEmailCode() {
         guard canSendEmailCode else { return }
+        requestEmailCode(transitionToOTP: true)
+    }
+
+    private func resendEmailCode() {
+        guard !isSendingEmailCode else { return }
+        requestEmailCode(transitionToOTP: false)
+    }
+
+    private func requestEmailCode(transitionToOTP: Bool) {
         isSendingEmailCode = true
         authError = nil
         Task {
             do {
                 try await app.auth.sendEmailOTP(email: normalizedEmail)
+                autoVerifiedCode = nil
                 otpInput = ""
                 code = Array(repeating: "", count: 6)
-                withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
+                if transitionToOTP {
+                    withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
+                }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
                     isOTPInputFocused = true
                 }
@@ -559,6 +586,46 @@ struct AuthView: View {
             nextCode[index] = String(digit)
         }
         code = nextCode
+        authError = nil
+
+        if sanitized.count < 6 {
+            autoVerifiedCode = nil
+        } else if sanitized.count == 6, autoVerifiedCode != sanitized, !isVerifyingEmailCode {
+            autoVerifiedCode = sanitized
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                verifyEmailCode()
+            }
+        }
+    }
+
+    private func otpDigitBox(index: Int) -> some View {
+        let activeIndex = min(otpInput.count, 5)
+        let isActive = isOTPInputFocused && otpInput.count < 6 && index == activeIndex
+        let hasValue = !code[index].isEmpty
+
+        return ZStack {
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(isActive ? Color.rdGreen : (hasValue ? Color.rdBlack : Color.rdLine), lineWidth: isActive ? 2 : 1.5)
+                )
+                .shadow(color: isActive ? Color.rdGreen.opacity(0.18) : .clear, radius: 12, x: 0, y: 4)
+
+            Text(code[index])
+                .multilineTextAlignment(.center)
+                .font(.system(size: 28, weight: .bold, design: .monospaced))
+                .foregroundStyle(Color.rdBlack)
+
+            if isActive && !hasValue {
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(Color.rdGreen)
+                    .frame(width: 2, height: 28)
+                    .opacity(caretPulse ? 1 : 0.22)
+                    .animation(.easeInOut(duration: 0.75).repeatForever(autoreverses: true), value: caretPulse)
+            }
+        }
+        .frame(width: 48, height: 58)
     }
 }
 
