@@ -38,38 +38,45 @@ const MODEL_FREE = "gemini-2.5-flash";
 const MODEL_PRO = "gemini-2.5-flash";
 const FREE_DAILY_LIMIT = 2;
 
+const COMMON_ANALYSIS_PROMPT =
+  `Fotoğrafı iş güvenliği uzmanı saha gözlemi gibi analiz et. Sadece görüntüde görülen bulgulara dayan. Görünmeyen veya emin olmadığın noktaları "kontrol edilmeli" diye belirt.`;
+
+const PRO_REFERENCES_PROMPT =
+  `Fotoğrafı Türkiye İSG mevzuatı perspektifiyle değerlendir. Her bulgu için Türkiye İSG mevzuatıyla ilişkili uygun kanun/yönetmelik başlığını references alanında kısa yaz. References alanı kısaltılmış kanun/yönetmelik adı ve biliyorsan kısa madde bilgisini içersin; emin değilsen madde uydurma, "mevzuat karşılığı kontrol edilmeli" yaz. Standart numarası, ölçüm değeri veya uzun açıklama uydurma.`;
+
 const CANVAS_FOCUS: Record<string, string> = {
-  general: "Tüm iş güvenliği uygunsuzluklarını geniş kapsamlı tara.",
+  general:
+    "Görüntüdeki tüm görünür İSG uygunsuzluklarını tara; düşme, çarpma, sıkışma, elektrik, yangın, kimyasal, düzen-temizlik, KKD, işaretleme, acil çıkış ve çalışma alanı risklerini önceliklendir.",
   ppe:
-    "Baret, gözlük, eldiven, emniyet kemeri ve yelek (KKD) kontrolüne odaklan.",
+    "Baret, gözlük/yüz koruma, eldiven, iş ayakkabısı, reflektif yelek, solunum koruması, kulak koruması, emniyet kemeri ve kullanım/uygunluk eksiklerini değerlendir.",
   machine:
-    "Makine koruyucuları, döner parçalar, sıkışma, ezilme ve bakım-kilit risklerine odaklan.",
+    "Koruyucular, döner/hareketli parçalar, sıkışma-ezilme-kesilme riskleri, acil durdurma, bakım-kilit/etiketleme, periyodik kontrol ve yetkisiz erişim uygunsuzluklarını analiz et.",
   warning_signs:
-    "Uyarı levhaları, yönlendirme, işaretleme, bariyerleme ve görünürlük eksiklerini analiz et.",
+    "Uyarı, yasak, zorunluluk, acil çıkış, yangın ekipmanı, yönlendirme, zemin/alan işaretlemesi, görünürlük, konum ve eksik işaret risklerini belirt.",
   electrical:
-    "Elektrik panosu, kablo, kaçak akım, izolasyon, topraklama ve elektrik çarpması risklerine odaklan.",
+    "Pano, kablo, priz, topraklama, kaçak akım, açık iletken, izolasyon, dağınık kablolama, nem/sıvı teması, yetkisiz erişim ve elektrik çarpması/yangın risklerini değerlendir.",
   sector:
-    "İnşaat, üretim, depo veya ofis bağlamına göre sektöre özgü risklere odaklan.",
+    "Sektör bağlamını tahmin et; inşaat, üretim, depo/lojistik, ofis veya saha çalışmasına özgü tipik İSG risklerini görünür bulgularla ilişkilendir. Tahmin belirsizse açıkça belirt.",
   fire:
-    "Yanıcı maddeler, yangın söndürme ekipmanı, sıcak çalışma, tahliye ve acil durum risklerine odaklan.",
+    "Yanıcı/parlayıcı malzeme, sıcak çalışma, elektrik kaynaklı yangın, söndürücü erişimi, yangın dolabı, acil çıkış, tahliye yolu, depolama düzeni ve yangın yükünü analiz et.",
   ergonomics:
-    "Duruş, kaldırma-taşıma, tekrar eden hareket, çalışma yüksekliği ve ergonomik zorlanma risklerini analiz et.",
+    "Uygunsuz duruş, elle kaldırma-taşıma, itme-çekme, tekrar eden hareket, uzun süreli statik çalışma, ekranlı çalışma, çalışma yüksekliği ve kas-iskelet zorlanmalarını belirt.",
   environment_measurement:
-    "Gürültü, aydınlatma, toz, gaz, sıcaklık ve ortam ölçümü gerektiren maruziyet risklerini değerlendir.",
+    "Gürültü, toz, gaz/buhar, aydınlatma, sıcaklık, havalandırma, titreşim ve kimyasal maruziyet gibi ölçüm gerektiren başlıkları \"ölçümle doğrulanmalı\" olarak yaz.",
   explosion:
-    "Patlayıcı atmosfer, basınçlı kaplar, gaz birikimi, kıvılcım kaynakları ve parlayıcı ortam risklerine odaklan.",
+    "Patlayıcı atmosfer, gaz/buhar/toz birikimi, yanıcı depolama, basınçlı kap, statik elektrik, kıvılcım/ateşleme kaynağı, havalandırma, Ex ekipman ve patlamadan korunma dokümanı ihtiyacını değerlendir.",
   environment:
-    "Atık, sızıntı, dökülme, kimyasal yayılım, çevresel maruziyet ve saha düzeni etkilerini analiz et.",
+    "Atık yönetimi, sızıntı/dökülme, kimyasal depolama, drenaj, toprak/su kirliliği, emisyon/toz yayılımı, saha düzeni ve çevresel acil durum risklerini analiz et.",
   legislation:
-    "İSG mevzuatı, yasal yükümlülük, kayıt, denetim ve uyum eksikleri açısından riskleri değerlendir.",
+    "Görüntüdeki bulguları Türkiye İSG mevzuatı açısından eşleştir. 6331, Risk Değerlendirmesi, KKD, İş Ekipmanları, Sağlık ve Güvenlik İşaretleri, Acil Durumlar, Yapı İşleri, İş Hijyeni, Patlayıcı Ortamlar vb. başlıklarla ilişkilendir. Emin olmadığın maddeyi uydurma.",
   working_at_height:
-    "Düşme, korkuluk, iskele, merdiven, emniyet kemeri, yaşam hattı ve yüksekte çalışma risklerine odaklan.",
+    "Düşme tehlikesi, korkuluk, iskele, merdiven, platform, yaşam hattı, ankraj, emniyet kemeri, boşluk/kenar koruması, düşen cisim ve erişim güvenliğini analiz et.",
   mobile_equipment:
-    "Forklift, transpalet, vinç, araç-yaya ayrımı, görüş alanı ve hareketli ekipman çarpışma risklerini analiz et.",
+    "Forklift, transpalet, vinç, kamyon, araç-yaya ayrımı, kör nokta, hız, manevra alanı, yük güvenliği, geri görüş, uyarı sistemi ve çarpma/ezilme risklerini belirt.",
   general_premium:
-    "Tüm görünür riskleri daha ayrıntılı, önceliklendirilmiş, denetim odaklı ve kontrol önerileriyle analiz et.",
+    "Tüm görünür İSG risklerini denetim odaklı ve ayrıntılı analiz et. Bulguları kritik seviyeden düşüğe sırala; her biri için kök neden, olası kaza senaryosu, acil aksiyon ve mevzuat karşılığını ver.",
   construction_machinery:
-    "Ekskavatör, yükleyici, vinç, kazıcı-yükleyici ve saha iş makineleri kaynaklı risklere odaklan.",
+    "Ekskavatör, yükleyici, vinç, kazıcı, kaldırıcı ve saha araçlarında devrilme, ezilme, kör nokta, operatör görüşü, yük kaldırma, zemin stabilitesi, bakım/periyodik kontrol ve yetkisiz yaklaşma risklerini analiz et.",
 };
 
 const PRO_CANVASES = new Set([
@@ -107,27 +114,32 @@ function m5Band(score: number): "low" | "medium" | "high" | "critical" {
   return "critical";
 }
 
-const RESPONSE_SCHEMA = {
+function responseSchema(isPro: boolean) {
+  const hazardProperties: Record<string, unknown> = {
+    title: { type: "STRING" },
+    category: { type: "STRING" },
+    observed_evidence: { type: "STRING" },
+    description: { type: "STRING" },
+    recommended_action: { type: "STRING" },
+    confidence: { type: "NUMBER" },
+    fk_probability: { type: "NUMBER" },
+    fk_frequency: { type: "NUMBER" },
+    fk_severity: { type: "NUMBER" },
+    m5_probability: { type: "NUMBER" },
+    m5_severity: { type: "NUMBER" },
+  };
+  if (isPro) {
+    hazardProperties.references = { type: "STRING" };
+  }
+
+  return {
   type: "OBJECT",
   properties: {
     hazards: {
       type: "ARRAY",
       items: {
         type: "OBJECT",
-        properties: {
-          title: { type: "STRING" },
-          category: { type: "STRING" },
-          observed_evidence: { type: "STRING" },
-          description: { type: "STRING" },
-          recommended_action: { type: "STRING" },
-          references: { type: "STRING" },
-          confidence: { type: "NUMBER" },
-          fk_probability: { type: "NUMBER" },
-          fk_frequency: { type: "NUMBER" },
-          fk_severity: { type: "NUMBER" },
-          m5_probability: { type: "NUMBER" },
-          m5_severity: { type: "NUMBER" },
-        },
+        properties: hazardProperties,
         required: [
           "title",
           "category",
@@ -147,7 +159,8 @@ const RESPONSE_SCHEMA = {
     limitations: { type: "STRING" },
   },
   required: ["hazards", "ai_summary"],
-};
+  };
+}
 
 class GeminiAPIError extends Error {
   status: number;
@@ -234,11 +247,15 @@ function maybeSimulateAIError(simulation?: AISimulationConfig) {
 }
 
 function buildSystemPrompt(canvases: string[], isPro: boolean): string {
-  const maxHazards = isPro ? 14 : 4;
+  const maxHazards = isPro ? 10 : 4;
   const focusLines =
     canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") ||
     CANVAS_FOCUS["general"];
   return `Sen deneyimli bir iş güvenliği (HSE/İSG) uzmanısın. Görevin: verilen görsel ve/veya metin girdisinden İSG tehlikelerini ve risklerini tespit etmek.
+
+ORTAK YAKLAŞIM:
+${COMMON_ANALYSIS_PROMPT}
+${isPro ? `\nPRO MEVZUAT REFERANSI:\n${PRO_REFERENCES_PROMPT}` : ""}
 
 ODAK: ${focusLines}
 
@@ -246,6 +263,9 @@ KURALLAR:
 - Yalnızca fotoğrafta/metinde GÖZLEMLENEN kanıtlara dayan. Tahmin etme.
 - Emin olmadığın noktalar için confidence değerini düşür (0.3–0.6).
 - En fazla ${maxHazards} tehlike döndür; önem sırasına göre sırala.
+- Her tehlike için description alanını kısa tut; yalnızca görünen kanıt ve riskin özünü 1-2 kısa cümleyle anlat.
+- Her tehlike için recommended_action alanını kısa, uygulanabilir ve en fazla 180 karakter olacak şekilde yaz.
+${isPro ? `- Her tehlike için references alanını kısa tut; kısaltılmış kanun/yönetmelik adı + varsa kısa madde bilgisini yaz veya "mevzuat karşılığı kontrol edilmeli" yaz.` : ""}
 - Her tehlike için Fine-Kinney girdilerini (fk_probability, fk_frequency, fk_severity) ve 5×5 girdilerini (m5_probability 1-5, m5_severity 1-5) öner.
 - Fine-Kinney ihtimal değerleri (sadece bunlar): 0.2 / 0.5 / 1 / 3 / 6 / 10
 - Fine-Kinney frekans değerleri (sadece bunlar): 0.5 / 1 / 2 / 3 / 6 / 10
@@ -262,6 +282,7 @@ async function callGemini(
   userText: string | null,
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
+  isPro: boolean,
   simulation?: AISimulationConfig,
 ) {
   maybeSimulateAIError(simulation);
@@ -287,9 +308,9 @@ async function callGemini(
     contents: [{ role: "user", parts }],
     generationConfig: {
       responseMimeType: "application/json",
-      responseSchema: RESPONSE_SCHEMA,
+      responseSchema: responseSchema(isPro),
       temperature: 0.2,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 12000,
     },
   };
 
@@ -395,6 +416,7 @@ async function callGeminiWithFallback(
   userText: string | null,
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
+  isPro: boolean,
   simulation?: AISimulationConfig,
 ) {
   const models = preferredModel === MODEL_FREE_LITE
@@ -414,6 +436,7 @@ async function callGeminiWithFallback(
           userText,
           userPrompt,
           imageBase64Parts,
+          isPro,
           simulation,
         );
         return {
@@ -424,8 +447,9 @@ async function callGeminiWithFallback(
         };
       } catch (err) {
         lastError = err;
-        const retryable = err instanceof GeminiAPIError &&
-          [429, 500, 502, 503, 504].includes(err.status);
+        const retryable = err instanceof SyntaxError ||
+          (err instanceof GeminiAPIError &&
+            [429, 500, 502, 503, 504].includes(err.status));
         console.error(
           "Gemini attempt failed",
           JSON.stringify({
@@ -895,7 +919,16 @@ serve(async (req: Request) => {
     imageBase64Parts.push({ mimeType, data: base64 });
   }
 
-  const systemPrompt = buildSystemPrompt(canvases ?? [canvas], isPro);
+  const requestedCanvases = Array.isArray(canvases) && canvases.length > 0
+    ? canvases.map((item) => String(item))
+    : [String(canvas)];
+  const firstValidCanvas = requestedCanvases.find((id) => Boolean(CANVAS_FOCUS[id])) ??
+    "general";
+  const resolvedCanvases = [firstValidCanvas];
+  const resolvedCanvasPrompts = resolvedCanvases
+    .map((id) => ({ id, prompt: CANVAS_FOCUS[id] }))
+    .filter((item) => Boolean(item.prompt));
+  const systemPrompt = buildSystemPrompt(resolvedCanvases, isPro);
   const aiSimulation = aiSimulationConfig();
   const inputAudit: Record<string, unknown> = {
     input_mode: imageBase64Parts.length > 0 ? "photo" : "text",
@@ -908,6 +941,13 @@ serve(async (req: Request) => {
     user_prompt: userPrompt,
     request_id: requestID,
     support_id: supportID,
+    selected_canvas_ids: resolvedCanvases,
+    resolved_canvas_prompts: resolvedCanvasPrompts,
+    common_analysis_prompt: COMMON_ANALYSIS_PROMPT,
+    pro_references_prompt: isPro ? PRO_REFERENCES_PROMPT : null,
+    references_requested: isPro,
+    response_schema_includes_references: isPro,
+    system_prompt_sent: systemPrompt,
     model,
     gemini_key_aliases_available: geminiKeys.map((item) => item.alias),
     test_simulation_enabled: aiSimulation.enabled,
@@ -930,6 +970,7 @@ serve(async (req: Request) => {
       text_input ?? null,
       userPrompt,
       imageBase64Parts,
+      isPro,
       aiSimulation,
     );
     geminiResult = out.result;
@@ -948,6 +989,15 @@ serve(async (req: Request) => {
       .update({
         status: "failed",
         status_message: `${cleanError.message} Destek kodu: ${supportID}`,
+        raw_ai_response: {
+          _input_audit: inputAudit,
+          _error: {
+            message: aiError,
+            code: cleanError.code,
+            support_id: supportID,
+            request_id: requestID,
+          },
+        },
       })
       .eq("id", analysis_id);
     await logUsage(supabase, {
@@ -1005,7 +1055,7 @@ serve(async (req: Request) => {
       category: h.category ?? "",
       description: `${h.observed_evidence}\n\n${h.description}`.trim(),
       recommended_action: h.recommended_action,
-      references_text: h.references ?? "",
+      references_text: isPro ? h.references ?? "" : "",
       confidence: Math.max(0, Math.min(1, h.confidence)),
       fk_probability: fkP,
       fk_frequency: fkF,

@@ -199,7 +199,7 @@ final class PDFReportService: @unchecked Sendable {
     }
 
     private func drawRiskAnalysisTablePages(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect) {
-        let rowsPerPage = input.options.method == .fineKinney ? 4 : 5
+        let rowsPerPage = input.options.method == .fineKinney ? 4 : 4
         let chunks = input.findings.chunked(into: rowsPerPage)
         guard !chunks.isEmpty else { return }
 
@@ -418,9 +418,9 @@ final class PDFReportService: @unchecked Sendable {
         let x: CGFloat = 32
         let y: CGFloat = 82
         let headerH: CGFloat = 44
-        let rowH: CGFloat = 102
-        let widths: [CGFloat] = [24, 66, 134, 82, 28, 28, 28, 40, 62, 186, 54, 46]
-        let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "F", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Sorumlu", "Termin"]
+        let rowH: CGFloat = 112
+        let widths: [CGFloat] = [22, 52, 124, 58, 22, 22, 22, 36, 54, 150, 130, 44, 42]
+        let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "F", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Mevzuat", "Sorumlu", "Termin"]
 
         drawGridHeader(x: x, y: y, widths: widths, height: headerH, headers: headers, fill: .rdPDFTableBlue)
 
@@ -439,6 +439,7 @@ final class PDFReportService: @unchecked Sendable {
                 scoreText(finding.fkScore),
                 band.label,
                 finding.action,
+                finding.references,
                 input.options.preparedBy.nonEmpty ?? "İşveren",
                 suggestedTerm(for: band.level),
             ]
@@ -450,9 +451,9 @@ final class PDFReportService: @unchecked Sendable {
         let x: CGFloat = 32
         let y: CGFloat = 82
         let headerH: CGFloat = 44
-        let rowH: CGFloat = 84
-        let widths: [CGFloat] = [24, 72, 150, 92, 30, 30, 42, 66, 220, 52]
-        let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Termin"]
+        let rowH: CGFloat = 100
+        let widths: [CGFloat] = [22, 58, 132, 66, 26, 26, 38, 56, 170, 130, 54]
+        let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Mevzuat", "Termin"]
 
         drawGridHeader(x: x, y: y, widths: widths, height: headerH, headers: headers, fill: .rdPDFTableBlue)
 
@@ -470,6 +471,7 @@ final class PDFReportService: @unchecked Sendable {
                 "\(finding.m5Score)",
                 band.label,
                 finding.action,
+                finding.references,
                 suggestedTerm(for: band.level),
             ]
             drawAssessmentRow(x: x, y: rowY, widths: widths, height: rowH, values: values, band: band.level, scoreColumn: 6, bandColumn: 7)
@@ -606,7 +608,7 @@ final class PDFReportService: @unchecked Sendable {
     private func drawText(_ text: String, in rect: CGRect, font: UIFont, color: UIColor, alignment: NSTextAlignment = .left) {
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = alignment
-        paragraph.lineBreakMode = .byTruncatingTail
+        paragraph.lineBreakMode = .byWordWrapping
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: color,

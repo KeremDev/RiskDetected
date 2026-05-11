@@ -853,7 +853,7 @@ struct HomeView: View {
             analysisError = AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated).fullText
             return
         }
-        let canvases = Array(selectedCanvases)
+        let canvases = [selectedCanvases.first ?? .general]
         let capturedImage = selectedImage
         let capturedText = text
 

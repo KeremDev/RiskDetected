@@ -502,7 +502,7 @@ struct ResultView: View {
                 .padding(.leading, 4)
 
             ForEach(Array(sortedFindings.enumerated()), id: \.element.id) { index, finding in
-                FindingCard(finding: finding, index: index + 1, method: method) {
+                FindingCard(finding: finding, index: index + 1, method: method, isPro: app.isPro) {
                     selectedFinding = finding
                 }
 
@@ -1444,6 +1444,7 @@ struct FindingCard: View {
     let finding: Finding
     let index: Int
     let method: RiskMethod
+    let isPro: Bool
     let action: () -> Void
 
     var body: some View {
@@ -1479,14 +1480,7 @@ struct FindingCard: View {
 
                     actionBlock
 
-                    HStack {
-                        Text(band.action)
-                            .rdMono(size: 11)
-                        Spacer()
-                        Text(finding.references)
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
-                    }
-                    .foregroundStyle(Color.rdSlate)
+                    findingMetaCards(band: band)
                 }
             }
             .padding(14)
@@ -1565,6 +1559,56 @@ struct FindingCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.rdGreenSoft)
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func findingMetaCards(band: RiskBand) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            infoCard(
+                icon: "checkmark.seal.fill",
+                title: "Plan",
+                value: band.action,
+                tint: band.color
+            )
+            infoCard(
+                icon: isPro ? "books.vertical.fill" : "lock.fill",
+                title: "Mevzuat",
+                value: isPro ? (finding.references.isEmpty ? "Kontrol edilmeli" : finding.references) : "Pro'da açık",
+                tint: isPro ? Color.rdGreenDark : Color.rdSlate
+            )
+        }
+    }
+
+    private func infoCard(icon: String, title: String, value: String, tint: Color) -> some View {
+        HStack(alignment: .top, spacing: 7) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(tint)
+                .frame(width: 18, height: 18)
+                .background(tint.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 5))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title.uppercased())
+                    .font(.system(size: 8, weight: .heavy, design: .rounded))
+                    .tracking(0.5)
+                    .foregroundStyle(Color.rdSlate)
+                Text(value)
+                    .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdGraphite)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(Color.rdFog.opacity(0.72))
+        .overlay(
+            RoundedRectangle(cornerRadius: 9)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 9))
     }
 }
 

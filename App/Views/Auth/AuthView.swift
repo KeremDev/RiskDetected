@@ -79,12 +79,12 @@ struct AuthView: View {
                 LinearGradient(
                     stops: [
                         .init(color: .clear,                           location: 0.0),
-                        .init(color: .clear,                           location: 0.18),
-                        .init(color: Color.rdPaper.opacity(0.14),      location: 0.30),
-                        .init(color: Color.rdPaper.opacity(0.42),      location: 0.43),
-                        .init(color: Color.rdPaper.opacity(0.72),      location: 0.56),
-                        .init(color: Color.rdPaper.opacity(0.94),      location: 0.70),
-                        .init(color: Color.rdPaper,                    location: 0.84),
+                        .init(color: .clear,                           location: 0.30),
+                        .init(color: Color.rdGreenSoft.opacity(0.16),  location: 0.45),
+                        .init(color: Color.rdPaper.opacity(0.28),      location: 0.58),
+                        .init(color: Color.rdPaper.opacity(0.68),      location: 0.72),
+                        .init(color: Color.rdPaper.opacity(0.94),      location: 0.86),
+                        .init(color: Color.rdPaper,                    location: 0.96),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -110,9 +110,25 @@ struct AuthView: View {
                         RDLogo(size: phase == .email ? 36 : 38)
                         Text("Saha için yapay zekâ destekli iş güvenliği asistanı")
                             .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundStyle(Color.rdSlate)
+                            .foregroundStyle(Color.rdGraphite)
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: 270)
+                    }
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0.0),
+                                .init(color: Color.white.opacity(0.52), location: 0.22),
+                                .init(color: Color.white.opacity(0.70), location: 0.50),
+                                .init(color: Color.white.opacity(0.52), location: 0.78),
+                                .init(color: .clear, location: 1.0),
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .blur(radius: 8)
                     }
 
                     form
@@ -169,6 +185,20 @@ struct AuthView: View {
 
     private var optionsForm: some View {
         VStack(spacing: 10) {
+            RDButton(title: "E-posta ile giriş yap", style: .secondary, icon: "envelope.fill") {
+                withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
+            }
+
+            HStack(spacing: 12) {
+                Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
+                Text("veya")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdGraphite.opacity(0.78))
+                    .padding(.horizontal, 4)
+                Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
+            }
+            .padding(.vertical, 2)
+
             RDButton(
                 title: isSigningInWithApple ? "Apple ile bağlanıyor..." : "Apple ile devam et",
                 style: .primary,
@@ -184,15 +214,6 @@ struct AuthView: View {
             }
             .disabled(isSigningInWithGoogle)
             .opacity(isSigningInWithGoogle ? 0.75 : 1)
-            HStack(spacing: 12) {
-                Rectangle().fill(Color.rdLine).frame(height: 1)
-                Text("veya").font(.system(size: 12, design: .rounded)).foregroundStyle(Color.rdSlate)
-                Rectangle().fill(Color.rdLine).frame(height: 1)
-            }
-            .padding(.vertical, 2)
-            RDButton(title: "E-posta ile giriş yap", style: .secondary, icon: "envelope.fill") {
-                withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
-            }
 
             legalNotice
 

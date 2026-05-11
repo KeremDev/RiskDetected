@@ -8,7 +8,6 @@ struct CanvasSheet: View {
     var onUpgradeRequested: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
-    private let maxSelectionCount = 2
 
     private let rows: [GridItem] = Array(
         repeating: GridItem(.fixed(82), spacing: 8),
@@ -25,7 +24,7 @@ struct CanvasSheet: View {
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
                         .padding(.top, 6)
-                    Text("En fazla 2 analiz odağı seçebilirsin.")
+                    Text("Bir analiz odağı seçebilirsin.")
                         .font(.system(size: 14, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
@@ -92,13 +91,9 @@ struct CanvasSheet: View {
         UISelectionFeedbackGenerator().selectionChanged()
         withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
             if selected.contains(canvas) {
-                if selected.count > 1 {
-                    selected.remove(canvas)
-                }
-            } else if selected.count < maxSelectionCount {
-                selected.insert(canvas)
+                selected = [canvas]
             } else {
-                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                selected = [canvas]
             }
         }
     }

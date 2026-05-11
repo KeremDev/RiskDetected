@@ -296,13 +296,13 @@ struct RiskDetailView: View {
     @ViewBuilder
     private var referenceSection: some View {
         if app.isPro {
-            section("Standart referansları", body: finding.references,
+            section("Mevzuat referansları", body: finding.references,
                     accent: Color.rdFog, accentText: Color.rdGraphite,
                     icon: "books.vertical")
         } else {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    Text("Standart referansları".uppercased())
+                    Text("Mevzuat referansları".uppercased())
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .tracking(0.6)
                         .foregroundStyle(Color.rdSlate)
@@ -319,10 +319,10 @@ struct RiskDetailView: View {
                             .foregroundStyle(Color.rdBlack)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Mevzuat-Standart Referansları Pro'da Açıktır")
+                            Text("Mevzuat Referansları Pro'da Açıktır")
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
-                            Text("Mevzuat, standart ve kaynak bağlantılarını görmek için yükselt.")
+                            Text("İlgili kanun, yönetmelik ve standart karşılıklarını görmek için Pro'ya geç.")
                                 .font(.system(size: 11, design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                                 .lineLimit(2)
