@@ -542,7 +542,9 @@ struct AuthView: View {
                 try await app.auth.signInWithApple(idToken: result.idToken, nonce: result.nonce)
                 await app.auth.refreshProfile()
             } catch {
-                setAuthError(error, context: "Apple ile giriş yapılamadı", fallbackTitle: "Apple ile giriş yapılamadı", operation: "apple_sign_in")
+                if !isUserCancelledAuth(error) {
+                    setAuthError(error, context: "Apple ile giriş yapılamadı", fallbackTitle: "Apple ile giriş yapılamadı", operation: "apple_sign_in")
+                }
             }
             isSigningInWithApple = false
         }
@@ -556,7 +558,9 @@ struct AuthView: View {
             do {
                 try await app.auth.signInWithGoogleOAuth()
             } catch {
-                setAuthError(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı", operation: "google_sign_in")
+                if !isUserCancelledAuth(error) {
+                    setAuthError(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı", operation: "google_sign_in")
+                }
             }
             isSigningInWithGoogle = false
         }
@@ -572,6 +576,18 @@ struct AuthView: View {
         let message = AppErrorMessage.make(error, context: context, fallbackTitle: fallbackTitle)
         AuthService.logAuthError(message, operation: operation, email: email)
         authError = message
+    }
+
+    private func isUserCancelledAuth(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        return nsError.code == 1 && nsError.domain.contains("WebAuthenticationSession") ||
+            lower.contains("cancel") ||
+            lower.contains("vazgeç") ||
+            lower.contains("canceled") ||
+            lower.contains("cancelled") ||
+            lower.contains("authentication session error 1") ||
+            lower.contains("webauthenticationsession")
     }
 
     private func syncOTPInput(_ newValue: String) {
