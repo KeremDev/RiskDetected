@@ -50,9 +50,9 @@
   - Analyses `Geçti`
   - Reports `Geçti`
 - Profil:
-  - Profil bilgileri kaydetme.
-  - Logo seçimi.
-  - Geçmiş analizler/Raporlarım routing.
+  - Profil bilgileri kaydetme. `Geçti`
+  - Logo seçimi. `Geçti`
+  - Geçmiş analizler/Raporlarım routing. `Geçti`
 
 ## Onboarding
 

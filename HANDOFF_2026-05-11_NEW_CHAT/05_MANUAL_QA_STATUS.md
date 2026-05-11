@@ -251,17 +251,37 @@ Sonuç:
 
 - Hızlı pass geçti.
 
+### Profil Bilgileri / Logo / Routing
+
+Kontrol:
+
+- Profile ekranında `Profil bilgileri` satırı açıldı.
+- `Profil Bilgileri` sheet'i açıldı.
+- Profil alanında küçük bir değişiklik yapılıp `Profili kaydet` ile kaydedildi.
+- Kaydetme sonrası hata göstermeden sheet kapandı ve Profile ekranına dönüldü.
+- Logo bölümünde mevcut profil logosu yüklendi.
+- `Logoyu değiştir` Photos picker'ı açtı.
+- Simülatör fotoğraflarından görsel seçildi.
+- Editörde logo önizlemesi seçilen görsele döndü.
+- Tekrar `Profili kaydet` sonrası sheet kapandı.
+- `Geçmiş analizler, 7` satırı Analizler tabına yönlendirdi.
+- `Raporlarım, 13` satırı Raporlar tabına yönlendirdi.
+
+Sonuç:
+
+- Profil bilgi kaydetme geçti.
+- Logo seçimi ve kaydetme geçti.
+- Geçmiş analiz / rapor routing geçti.
+
 ## Tamamlanmayan QA
 
 Kullanıcı devamını sonraya bıraktığı için aşağıdaki QA maddeleri durdu:
 
 - Reports XLSX preview ve indirme akışının canlı tıklama tekrarı.
-- Profil düzenleme/logo kaydı.
 - Ana sayfa rapor preview X/indir.
 
 ## Yeni Sohbette QA'ya Nereden Devam Edilecek?
 
 1. Reports XLSX preview ve indirme akışını canlı tıklamayla tekrar test et.
 2. Ana sayfa rapor preview X/indir akışını tekrar kontrol et.
-3. Profil bilgi kaydetme, logo seçimi ve geçmiş analiz/rapor routing'i test et.
-4. Pro kullanıcı Pro canvas seçebiliyor mu kontrol et.
+3. Pro kullanıcı Pro canvas seçebiliyor mu kontrol et.
