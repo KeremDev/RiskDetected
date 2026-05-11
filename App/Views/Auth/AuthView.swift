@@ -5,6 +5,7 @@ struct AuthView: View {
     @State private var phase: AuthPhase = .options
     @State private var email: String = ""
     @State private var code: [String] = Array(repeating: "", count: 6)
+    @State private var otpInput: String = ""
     @State private var signingInDemo: DemoAccount?
     @State private var authError: AppErrorMessage?
     @State private var showLegalInfo = false
@@ -13,7 +14,7 @@ struct AuthView: View {
     @State private var isSigningInWithApple = false
     @State private var isSigningInWithGoogle = false
     @State private var appleSignInService = AppleSignInService()
-    @FocusState private var focusedOTPIndex: Int?
+    @FocusState private var isOTPInputFocused: Bool
 
     enum AuthPhase { case options, email, otp }
     enum DemoAccount: String {
@@ -57,7 +58,7 @@ struct AuthView: View {
 
     private var isSigningIn: Bool { signingInDemo != nil }
     private var normalizedEmail: String { email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-    private var otpCode: String { code.joined() }
+    private var otpCode: String { otpInput }
     private var canSendEmailCode: Bool { normalizedEmail.contains("@") && normalizedEmail.contains(".") && !isSendingEmailCode }
     private var canVerifyEmailCode: Bool { otpCode.count == 6 && !isVerifyingEmailCode }
 
@@ -131,10 +132,10 @@ struct AuthView: View {
         .onChange(of: phase) { newPhase in
             if newPhase == .otp {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                    focusedOTPIndex = firstEmptyOTPIndex ?? 0
+                    isOTPInputFocused = true
                 }
             } else {
-                focusedOTPIndex = nil
+                isOTPInputFocused = false
             }
         }
     }
@@ -363,24 +364,42 @@ struct AuthView: View {
                     .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(Color.rdInk)
             }
-            HStack(spacing: 10) {
-                ForEach(0..<6, id: \.self) { i in
-                    TextField("", text: otpDigitBinding(for: i))
+            ZStack {
+                TextField("", text: $otpInput)
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
+                    .focused($isOTPInputFocused)
+                    .font(.system(size: 1))
+                    .foregroundStyle(Color.clear)
+                    .tint(Color.clear)
                     .multilineTextAlignment(.center)
-                    .font(.system(size: 28, weight: .bold, design: .monospaced))
-                    .frame(width: 48, height: 58)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(code[i].isEmpty ? Color.rdLine : Color.rdBlack, lineWidth: 1.5)
-                    )
-                    .focused($focusedOTPIndex, equals: i)
+                    .frame(maxWidth: .infinity, minHeight: 58)
+                    .opacity(0.01)
+                    .onChange(of: otpInput) { newValue in
+                        syncOTPInput(newValue)
+                    }
+
+                HStack(spacing: 10) {
+                    ForEach(0..<6, id: \.self) { i in
+                        Text(code[i])
+                            .multilineTextAlignment(.center)
+                            .font(.system(size: 28, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color.rdBlack)
+                            .frame(width: 48, height: 58)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(code[i].isEmpty ? Color.rdLine : Color.rdBlack, lineWidth: 1.5)
+                            )
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isOTPInputFocused = true
+            }
 
             Text("Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin.")
                 .font(.system(size: 13, design: .rounded))
@@ -459,10 +478,11 @@ struct AuthView: View {
         Task {
             do {
                 try await app.auth.sendEmailOTP(email: normalizedEmail)
+                otpInput = ""
                 code = Array(repeating: "", count: 6)
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
-                    focusedOTPIndex = 0
+                    isOTPInputFocused = true
                 }
             } catch {
                 setAuthError(error, context: "Kod gönderilemedi", fallbackTitle: "Kod gönderilemedi", operation: "send_email_otp", email: normalizedEmail)
@@ -527,44 +547,18 @@ struct AuthView: View {
         authError = message
     }
 
-    private var firstEmptyOTPIndex: Int? {
-        code.firstIndex(where: { $0.isEmpty })
-    }
-
-    private func otpDigitBinding(for index: Int) -> Binding<String> {
-        Binding(
-            get: { code[index] },
-            set: { newValue in
-                updateOTPCode(at: index, with: newValue)
-            }
-        )
-    }
-
-    private func updateOTPCode(at index: Int, with newValue: String) {
-        let digits = newValue.filter(\.isNumber)
-
-        if digits.isEmpty {
-            if !code[index].isEmpty {
-                code[index] = ""
-                focusedOTPIndex = index
-            } else {
-                focusedOTPIndex = max(index - 1, 0)
-            }
+    private func syncOTPInput(_ newValue: String) {
+        let sanitized = String(newValue.filter(\.isNumber).prefix(6))
+        if sanitized != otpInput {
+            otpInput = sanitized
             return
         }
 
-        if digits.count > 1 {
-            var writeIndex = index
-            for digit in digits.prefix(6 - index) {
-                code[writeIndex] = String(digit)
-                writeIndex += 1
-            }
-            focusedOTPIndex = firstEmptyOTPIndex
-            return
+        var nextCode = Array(repeating: "", count: 6)
+        for (index, digit) in sanitized.enumerated() where index < nextCode.count {
+            nextCode[index] = String(digit)
         }
-
-        code[index] = String(digits.prefix(1))
-        focusedOTPIndex = index < code.count - 1 ? index + 1 : nil
+        code = nextCode
     }
 }
 

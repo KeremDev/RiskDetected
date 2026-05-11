@@ -275,7 +275,7 @@ final class AuthService: ObservableObject {
     }
 
     private func verifyEmailOTPWithSupportedTypes(email: String, token: String) async throws -> AuthResponse {
-        let types: [EmailOTPType] = [.signup, .magiclink, .email]
+        let types: [EmailOTPType] = [.email, .magiclink, .signup]
         var lastError: Error?
 
         for (index, type) in types.enumerated() {
@@ -301,7 +301,6 @@ final class AuthService: ObservableObject {
         if lower.contains("rate") ||
             lower.contains("too many") ||
             lower.contains("429") ||
-            lower.contains("expired") ||
             lower.contains("over_email_send_rate_limit")
         {
             return false
