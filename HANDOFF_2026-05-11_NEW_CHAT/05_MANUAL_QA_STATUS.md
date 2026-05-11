@@ -198,22 +198,70 @@ Kontrol:
 Sonuç:
 
 - PDF için geçti.
-- Kayıtlı XLSX dosyası olmadığı için XLSX preview canlı tıklaması bu turda yapılamadı; Excel üretim QA'sından sonra tekrar kontrol edilecek.
+- Kayıtlı XLSX satırları Pro demo hesapta göründü (`Excel tablo`).
+
+### Rapor Oluştur Sheet / Excel / Free-Pro
+
+Kontrol:
+
+- Free demo kullanıcıyla Result ekranından `Rapor Oluştur` sheet'i açıldı.
+- `Standart Rapor` kartı açık kaldı.
+- `Risk Analizi Tablosu` kartı Free kullanıcıda `PRO` kilidiyle göründü.
+- Kilitli karta basınca Pro ekranı açıldı.
+- Pro demo kullanıcıya geçildi.
+- Reports içindeki `Rapora Dönüştür` listesinden analiz seçildi.
+- `Rapor Oluştur` sheet'inde `Risk Analizi Tablosu` Pro kullanıcıda kilitsiz açıldı.
+- `PDF rapor` ve `Excel tablo` dosya türleri görünür durumdaydı.
+- `Excel tablo` seçilince CTA `Excel risk tablosu oluştur` olarak değişti.
+
+Sonuç:
+
+- Free/Pro davranışı geçti.
+- Excel seçimi geçti.
+
+### Reports XLSX Satırları
+
+Kontrol:
+
+- Pro demo Reports ekranında kayıtlı `Excel tablo` rapor satırları göründü:
+  - `KKD + Genel · Excel tablo · 10 May 21:49`
+  - `Genel · Excel tablo · 10 May 21:26`
+
+Sonuç:
+
+- XLSX kayıtlarının Reports listesinde doğru ayrıştığı görüldü.
+- XLSX preview/indir butonuna canlı tıklama ayrı net pass olarak tekrar yapılabilir; bu tur Excel satırları ve oluşturma sheet seçimi doğrulandı.
+
+### Dark Mode Hızlı Pass
+
+Kontrol:
+
+- Pro demo hesapta üst profil menüsünden `Karanlık mod` açıldı.
+- Menü aksiyonu `Aydınlık mod` olarak değişti; dark mode aktifleşti.
+- Aşağıdaki ekranlar hızlı gezildi:
+  - Home: foto/metin geçişi, upload kartı, son uygunsuzluklar, oluşturulan raporlar.
+  - Analizler: başlık, arama, filtreler, analiz kartları.
+  - Result: `Analiz Sonucu`, risk metrikleri, bulgu kartları, indir/paylaş ikonları.
+  - Report settings: Pro modda risk analizi kartı, metod seçimi, PDF/Excel dosya türleri.
+  - Reports: kayıtlı PDF/XLSX satırları ve `Rapora Dönüştür` listesi.
+  - Profile: profil özeti, Pro plan kartı, hesap/ayarlar listesi.
+- Gezinme sonunda tema tekrar `Aydınlık mod`a alındı.
+
+Sonuç:
+
+- Hızlı pass geçti.
 
 ## Tamamlanmayan QA
 
 Kullanıcı devamını sonraya bıraktığı için aşağıdaki QA maddeleri durdu:
 
-- Rapor oluştur sheet Excel seçimi.
-- Reports XLSX preview ve indirme akışı.
-- Dark mode hızlı pass.
+- Reports XLSX preview ve indirme akışının canlı tıklama tekrarı.
 - Profil düzenleme/logo kaydı.
 - Ana sayfa rapor preview X/indir.
 
 ## Yeni Sohbette QA'ya Nereden Devam Edilecek?
 
-1. Rapor oluştur sheet Excel seçimini test et.
-2. Excel dosyası oluşunca Reports XLSX preview ve indirme akışını test et.
-3. Ana sayfa rapor preview X/indir akışını tekrar kontrol et.
-4. Dark mode hızlı pass'i tamamla.
-5. Profil bilgi kaydetme, logo seçimi ve geçmiş analiz/rapor routing'i test et.
+1. Reports XLSX preview ve indirme akışını canlı tıklamayla tekrar test et.
+2. Ana sayfa rapor preview X/indir akışını tekrar kontrol et.
+3. Profil bilgi kaydetme, logo seçimi ve geçmiş analiz/rapor routing'i test et.
+4. Pro kullanıcı Pro canvas seçebiliyor mu kontrol et.

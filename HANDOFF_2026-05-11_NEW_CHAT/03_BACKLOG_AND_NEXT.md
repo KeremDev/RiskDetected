@@ -3,7 +3,7 @@
 ## En Yakın İşler
 
 1. Manual simulator QA tamamlanmalı.
-2. Rapor oluştur sheet Excel seçimi ve ardından Reports XLSX preview akışı tamamlanmalı.
+2. Reports XLSX preview/indirme canlı tıklama tekrarı ve ana sayfa rapor preview akışı tamamlanmalı.
 3. Onboarding ekranları geliştirilmeli.
 4. AI canvas promptları kullanıcıdan alınmalı ve backend prompt routing'e net işlenmeli.
 5. KVKK / Kullanım koşulları / AI veri işleme uzun resmi metinleri eklenmeli.
@@ -35,19 +35,20 @@
 - Result ekranı:
   - Rapor Oluştur sheet açılıyor mu?
   - Free kullanıcı Risk Analizi Tablosu seçemiyor mu?
-  - Pro kullanıcı PDF/Excel seçebiliyor mu?
+  - Pro kullanıcı PDF/Excel seçebiliyor mu? `Geçti`
   - İndir/Paylaş ikonları doğru çalışıyor mu? `Düzeltme sonrası geçti`
 - Reports:
   - PDF önizleme ve indirme. `Geçti`
-  - XLSX önizleme ve indirme. `Excel üretim QA sonrası test edilecek`
+  - XLSX satırları listede doğru görünüyor. `Geçti`
+  - XLSX önizleme ve indirme. `Canlı tıklama tekrarı kaldı`
   - Ana sayfa rapor kartından preview.
 - Dark mode:
-  - Home
-  - Result
-  - Report settings
-  - Profile
-  - Analyses
-  - Reports
+  - Home `Geçti`
+  - Result `Geçti`
+  - Report settings `Geçti`
+  - Profile `Geçti`
+  - Analyses `Geçti`
+  - Reports `Geçti`
 - Profil:
   - Profil bilgileri kaydetme.
   - Logo seçimi.
