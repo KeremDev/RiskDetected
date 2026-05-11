@@ -144,12 +144,37 @@ Sonuç:
 
 - Geçti.
 
+### Free Kullanıcı Pro Canvas Kilidi
+
+Kontrol:
+
+- Quota simülasyonu kapalı Free demo kullanıcıyla galeri -> annotate -> Canvas sheet akışı çalıştırıldı.
+- Pro canvas kartlarında `PRO` ve `KİLİTLİ` badge'leri göründü.
+- `Makine, PRO, KİLİTLİ` kartına basınca ilk denemede Pro ekranı açılmadı.
+- Sebep: Canvas sheet açıkken aynı anda `fullScreenCover` tetikleniyordu.
+- `onUpgradeRequested` akışında önce Canvas sheet kapatılıp kısa gecikmeyle Pro ekranı açılacak şekilde düzeltildi.
+- Tekrar testte kilitli Pro canvas'a basınca Pro ekranı açıldı.
+
+Sonuç:
+
+- Düzeltme sonrası geçti.
+
+### Canvas Sheet Max 2 Seçim
+
+Kontrol:
+
+- Free kullanıcıyla Canvas sheet içinde `Genel` seçili durumdayken `Elektrik` seçildi.
+- Üçüncü Free kart olarak `Uyarı levhaları` seçilmeye çalışıldı.
+- Seçim sayısı 2'nin üzerine çıkmadı.
+
+Sonuç:
+
+- Geçti.
+
 ## Tamamlanmayan QA
 
 Kullanıcı devamını sonraya bıraktığı için aşağıdaki QA maddeleri durdu:
 
-- Free kullanıcı Pro canvas kilidi canlı simulator testi.
-- Canvas sheet max 2 seçim canlı simulator testi.
 - Rapor oluştur sheet Excel seçimi.
 - Result ekranında indirme/paylaşma ikonları.
 - Dark mode hızlı pass.
@@ -158,8 +183,8 @@ Kullanıcı devamını sonraya bıraktığı için aşağıdaki QA maddeleri dur
 
 ## Yeni Sohbette QA'ya Nereden Devam Edilecek?
 
-1. Simulator'u quota simülasyonu kapalı başlat.
-2. Free demo kullanıcıyla galeri/annotate akışından Canvas sheet'e gir.
-3. Pro canvas kartlarının kilitli göründüğünü ve tap sonrası Pro ekranı açtığını doğrula.
-4. Canvas sheet max 2 seçim davranışını tekrar doğrula.
-5. Manual QA listesindeki kalan başlıklara devam et.
+1. Rapor oluştur sheet Excel seçimini test et.
+2. Result ekranında indirme/paylaşma ikonlarını test et.
+3. Reports PDF/XLSX preview ve indirme akışını test et.
+4. Dark mode hızlı pass'i tamamla.
+5. Profil bilgi kaydetme, logo seçimi ve geçmiş analiz/rapor routing'i test et.

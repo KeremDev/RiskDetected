@@ -156,7 +156,10 @@ struct HomeView: View {
                     }
                 },
                 onUpgradeRequested: {
-                    showPlainPaywall()
+                    showCanvasSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        showPlainPaywall()
+                    }
                 }
             )
             .presentationDetents([.fraction(0.72), .large])

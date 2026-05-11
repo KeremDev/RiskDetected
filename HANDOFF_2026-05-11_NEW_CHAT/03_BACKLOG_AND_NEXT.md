@@ -3,7 +3,7 @@
 ## En Yakın İşler
 
 1. Manual simulator QA tamamlanmalı.
-2. Free kullanıcı Pro canvas kilidi canlı simulator ile doğrulanmalı.
+2. Result/Reports indirme-paylaşma ve Excel preview akışları tamamlanmalı.
 3. Onboarding ekranları geliştirilmeli.
 4. AI canvas promptları kullanıcıdan alınmalı ve backend prompt routing'e net işlenmeli.
 5. KVKK / Kullanım koşulları / AI veri işleme uzun resmi metinleri eklenmeli.
@@ -25,9 +25,9 @@
   - `Galeriden seç` label/accessibility ile çalışıyor mu?
   - X kapatma çalışıyor mu?
 - Canvas sheet:
-  - X kapatma çalışıyor mu?
-  - Max 2 seçim çalışıyor mu?
-  - Free kullanıcı Pro canvas seçemiyor mu? `Sıradaki iş`
+  - X kapatma çalışıyor mu? `Geçti`
+  - Max 2 seçim çalışıyor mu? `Geçti`
+  - Free kullanıcı Pro canvas seçemiyor mu? `Düzeltme sonrası geçti`
   - Pro kullanıcı Pro canvas seçebiliyor mu?
 - Analiz bekleme ekranı:
   - Animasyonlar taşmıyor mu?

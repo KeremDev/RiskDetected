@@ -752,6 +752,9 @@ final class AnalysisService {
                 limit: Self.freeDailyLimit
             )
         }
+        guard let userID = supabase.currentUserID else {
+            throw AnalysisError.notAuthenticated
+        }
 
         let utcDay = DateFormatter()
         utcDay.calendar = Calendar(identifier: .gregorian)
@@ -764,6 +767,7 @@ final class AnalysisService {
             table: "analyses",
             filters: {
                 $0.eq("status", value: "completed")
+                    .eq("user_id", value: userID.uuidString)
                     .gte("created_at", value: dayStart)
             }
         )
