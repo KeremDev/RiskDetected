@@ -78,7 +78,8 @@ struct CanvasSheet: View {
             .padding(.bottom, 16)
         }
         .padding(.top, 8)
-        .background(Color.rdPaper)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color.rdPaper.ignoresSafeArea())
     }
 
     private func select(_ canvas: AnalysisCanvas) {

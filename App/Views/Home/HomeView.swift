@@ -162,7 +162,7 @@ struct HomeView: View {
                     }
                 }
             )
-            .presentationDetents([.fraction(0.72), .large])
+            .presentationDetents([.height(430), .large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
