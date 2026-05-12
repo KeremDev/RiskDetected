@@ -255,7 +255,7 @@ struct ResultView: View {
                 Image(systemName: "star.fill")
                     .font(.system(size: 8.5, weight: .bold, design: .rounded))
                     .padding(.top, 2)
-                Text("Pro ile 10 bulguya kadar ve en az %90 AI güveni")
+                Text("Pro ile 10 Bulgu ve En az %90 Güven")
                     .font(.system(size: 10.5, weight: .semibold, design: .rounded))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -272,7 +272,7 @@ struct ResultView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .buttonStyle(.plain)
-        .accessibilityLabel("Pro ile 10 bulguya kadar ve en az yüzde 90 AI güveni")
+        .accessibilityLabel("Pro ile 10 bulgu ve en az yüzde 90 güven")
     }
 
     private var confidenceChip: some View {
