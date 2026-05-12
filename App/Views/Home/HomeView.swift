@@ -20,6 +20,7 @@ private let maxTextInputCharacters = AnalysisService.maxTextInputCharacters
 
 struct HomeView: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var mode: HomeMode = .photo
     @State private var text: String = ""
@@ -142,6 +143,7 @@ struct HomeView: View {
             )
             .presentationDetents([.height(330)])
             .presentationDragIndicator(.hidden)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showCanvasSheet) {
             CanvasSheet(
@@ -162,7 +164,7 @@ struct HomeView: View {
             )
             .presentationDetents([.fraction(0.72), .large])
             .presentationDragIndicator(.visible)
-            .preferredColorScheme(app.themePreference == .dark ? .dark : .light)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showCameraPicker) {
             CameraPicker { image in
@@ -175,6 +177,7 @@ struct HomeView: View {
                 }
             }
             .ignoresSafeArea()
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showGalleryPicker) {
             GalleryPicker { image in
@@ -187,6 +190,7 @@ struct HomeView: View {
                 }
             }
             .ignoresSafeArea()
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showAnnotate) {
             AnnotateView(
@@ -200,6 +204,7 @@ struct HomeView: View {
                     }
                 }
             )
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(item: $pendingJob) { job in
             AnalyzingView(
@@ -221,10 +226,11 @@ struct HomeView: View {
                     pendingJob = nil
                 }
             )
-            .preferredColorScheme(app.themePreference == .dark ? .dark : .light)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(item: $reportPreviewItem) { item in
             DocumentPreview(url: item.url)
+                .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showResult) {
             ResultView(
@@ -242,7 +248,7 @@ struct HomeView: View {
                 }
             )
             .environmentObject(app)
-            .preferredColorScheme(app.themePreference == .dark ? .dark : .light)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(item: $paywallPresentation) { presentation in
             PaywallView(
@@ -255,6 +261,7 @@ struct HomeView: View {
                 },
                 notice: presentation.notice
             )
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .alert("Analiz Hatası", isPresented: .init(
             get: { analysisError != nil },
@@ -267,6 +274,10 @@ struct HomeView: View {
     }
 
     // MARK: - Subviews
+
+    private var preferredModalColorScheme: ColorScheme {
+        app.themePreference.colorScheme ?? colorScheme
+    }
 
     private var modeSegment: some View {
         HStack(spacing: 0) {
@@ -999,7 +1010,12 @@ struct HomeView: View {
 
 private struct HomeHeader: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showPaywall = false
+
+    private var preferredModalColorScheme: ColorScheme {
+        app.themePreference.colorScheme ?? colorScheme
+    }
 
     var body: some View {
         HStack {
@@ -1019,6 +1035,7 @@ private struct HomeHeader: View {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }
                         })
+            .preferredColorScheme(preferredModalColorScheme)
         }
     }
 }

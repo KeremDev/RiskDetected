@@ -7,6 +7,7 @@ struct ResultView: View {
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "ResultView")
 
     @EnvironmentObject var app: AppState
+    @Environment(\.colorScheme) private var colorScheme
     var bundle: AnalysisResultBundle? = nil
     var localPreviewImage: UIImage? = nil
     var onClose: () -> Void = {}
@@ -52,6 +53,9 @@ struct ResultView: View {
     @State private var showReportSettings: Bool = false
     @State private var reportOptions = PDFReportOptions()
     @State private var reportCompanyLogo: UIImage?
+    private var preferredModalColorScheme: ColorScheme {
+        app.themePreference.colorScheme ?? colorScheme
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -92,12 +96,15 @@ struct ResultView: View {
             )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+                .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(item: $shareItem) { item in
             DocumentPreview(url: item.url)
+                .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(item: $activityShareItem) { item in
             ShareSheet(items: [item.url])
+                .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showReportSettings) {
             ReportSettingsSheet(
@@ -123,6 +130,7 @@ struct ResultView: View {
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .alert("Rapor Hatası", isPresented: Binding(
             get: { pdfError != nil },
@@ -138,6 +146,7 @@ struct ResultView: View {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }
                         })
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .onDisappear {
             pdfGeneration.cancel()

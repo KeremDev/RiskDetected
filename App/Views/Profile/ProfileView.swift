@@ -5,6 +5,7 @@ import UserNotifications
 
 struct ProfileView: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var notifications = NotificationService.shared
     @State private var showPaywall = false
     @State private var showProfileEditor = false
@@ -17,6 +18,9 @@ struct ProfileView: View {
     @State private var pendingDataAction: ProfileDataAction?
     @State private var dataMessage: String?
     @State private var shareItem: ShareItem?
+    private var preferredModalColorScheme: ColorScheme {
+        app.themePreference.colorScheme ?? colorScheme
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -63,6 +67,7 @@ struct ProfileView: View {
                                 await loadStats()
                             }
                         })
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showDataControls) {
             ProfileDataControlsSheet(
@@ -76,6 +81,7 @@ struct ProfileView: View {
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showProfileEditor) {
             ProfileEditSheet(
@@ -88,6 +94,7 @@ struct ProfileView: View {
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showNotificationSettings) {
             NotificationSettingsSheet(
@@ -96,6 +103,7 @@ struct ProfileView: View {
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showPreferences) {
             ProfilePreferencesSheet(
@@ -106,14 +114,17 @@ struct ProfileView: View {
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showLegalInfo) {
             LegalInfoSheet(onClose: { showLegalInfo = false })
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+                .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
+                .preferredColorScheme(preferredModalColorScheme)
         }
         .confirmationDialog(
             pendingDataAction?.confirmationTitle ?? "İşlem onayı",

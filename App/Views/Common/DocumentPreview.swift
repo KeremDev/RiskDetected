@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DocumentPreview: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var shareItem: ShareItem?
 
     let url: URL
@@ -48,6 +49,7 @@ struct DocumentPreview: View {
         }
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
+                .preferredColorScheme(colorScheme)
         }
     }
 }

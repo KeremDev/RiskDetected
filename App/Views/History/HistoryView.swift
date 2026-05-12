@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HistoryView: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.colorScheme) private var colorScheme
     @State private var search: String = ""
     @State private var activeChip: String = "Tümü"
     @State private var showFilter: Bool = false
@@ -15,6 +16,9 @@ struct HistoryView: View {
     @State private var showPaywall = false
 
     private let chips = ["Tümü", "Bu hafta", "Kritik", "KKD", "Genel"]
+    private var preferredModalColorScheme: ColorScheme {
+        app.themePreference.colorScheme ?? colorScheme
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -74,6 +78,7 @@ struct HistoryView: View {
             FilterSheet { showFilter = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+                .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showPaywall) {
             PaywallView(onClose: { showPaywall = false },
@@ -81,6 +86,7 @@ struct HistoryView: View {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }
                         })
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showResult) {
             ResultView(
@@ -92,6 +98,7 @@ struct HistoryView: View {
                 }
             )
             .environmentObject(app)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .confirmationDialog(
             "Analiz silinsin mi?",

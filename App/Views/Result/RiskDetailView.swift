@@ -7,8 +7,12 @@ struct RiskDetailView: View {
     var localPreviewImage: UIImage? = nil
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var method: RiskMethod
     @State private var showPaywall = false
+    private var preferredModalColorScheme: ColorScheme {
+        app.themePreference.colorScheme ?? colorScheme
+    }
 
     init(
         finding: Finding,
@@ -69,6 +73,7 @@ struct RiskDetailView: View {
                     Task { await app.auth.refreshProfile() }
                 }
             )
+            .preferredColorScheme(preferredModalColorScheme)
         }
     }
 

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AuthView: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.colorScheme) private var colorScheme
     @State private var phase: AuthPhase = .options
     @State private var email: String = ""
     @State private var code: [String] = Array(repeating: "", count: 6)
@@ -64,6 +65,9 @@ struct AuthView: View {
     private var otpCode: String { otpInput }
     private var canSendEmailCode: Bool { normalizedEmail.contains("@") && normalizedEmail.contains(".") && !isSendingEmailCode }
     private var canVerifyEmailCode: Bool { otpCode.count == 6 && !isVerifyingEmailCode }
+    private var preferredModalColorScheme: ColorScheme {
+        app.themePreference.colorScheme ?? colorScheme
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -147,6 +151,7 @@ struct AuthView: View {
             LegalInfoSheet(onClose: { showLegalInfo = false })
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+                .preferredColorScheme(preferredModalColorScheme)
         }
         .onChange(of: phase) { newPhase in
             if newPhase == .otp {

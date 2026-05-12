@@ -5,6 +5,7 @@ struct ReportView: View {
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "ReportView")
 
     @EnvironmentObject private var app: AppState
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var analyses: [AnalysisRow] = []
     @State private var storedReports: [ReportRow] = []
@@ -26,6 +27,9 @@ struct ReportView: View {
     @State private var excelGenerationID: UUID?
     @State private var isStoredReportsExpanded = false
     @State private var isAnalysisSelectorExpanded = false
+    private var preferredModalColorScheme: ColorScheme {
+        app.themePreference.colorScheme ?? colorScheme
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -74,6 +78,7 @@ struct ReportView: View {
         }
         .sheet(item: $shareItem) { item in
             DocumentPreview(url: item.url)
+                .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showSourceReportSheet) {
             if let selectedBundle {
@@ -100,6 +105,7 @@ struct ReportView: View {
                 )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+                .preferredColorScheme(preferredModalColorScheme)
             }
         }
         .confirmationDialog(
@@ -158,6 +164,7 @@ struct ReportView: View {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }
                         })
+            .preferredColorScheme(preferredModalColorScheme)
         }
     }
 
@@ -1014,6 +1021,7 @@ private struct ReportPreview: View {
 }
 
 private struct ReportSourceSheet: View {
+    @Environment(\.colorScheme) private var colorScheme
     let bundle: AnalysisResultBundle
     let profile: UserProfile?
     let isPro: Bool
@@ -1059,6 +1067,7 @@ private struct ReportSourceSheet: View {
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+            .preferredColorScheme(colorScheme)
         }
     }
 

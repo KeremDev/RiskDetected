@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject private var app: AppState
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showQuickSourceSheet = false
     @State private var showQuotaAlert = false
 
@@ -42,6 +43,7 @@ struct MainTabView: View {
             )
             .presentationDetents([.height(330)])
             .presentationDragIndicator(.hidden)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .alert("Günlük limit doldu", isPresented: $showQuotaAlert) {
             Button("Pro'ya geç") {
@@ -66,6 +68,10 @@ struct MainTabView: View {
             }
         }
         showQuickSourceSheet = true
+    }
+
+    private var preferredModalColorScheme: ColorScheme {
+        app.themePreference.colorScheme ?? colorScheme
     }
 }
 
