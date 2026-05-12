@@ -245,10 +245,10 @@ struct ResultView: View {
             HStack(spacing: 6) {
                 Image(systemName: "star.fill")
                     .font(.system(size: 8.5, weight: .bold, design: .rounded))
-                Text("Pro ile 10 bulguya kadar ve en az %90 AI güveni")
+                Text("Pro ile 10 bulguya kadar detaylı analiz")
                     .font(.system(size: 10.5, weight: .semibold, design: .rounded))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(Color.rdGreenDark)
             .padding(.horizontal, 8)
@@ -257,7 +257,7 @@ struct ResultView: View {
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Pro ile 10 bulguya kadar ve en az yüzde 90 AI güveni")
+        .accessibilityLabel("Pro ile 10 bulguya kadar detaylı analiz")
     }
 
     private var confidenceChip: some View {
