@@ -30,16 +30,6 @@
 				<string>io.supabase.riskdetected</string>
 			</array>
 		</dict>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLName</key>
-			<string>com.riskdetected.app.firebase</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>app-1-195728384880-ios-64819727b2f43607ab25b5</string>
-			</array>
-		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>

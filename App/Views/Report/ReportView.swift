@@ -24,6 +24,8 @@ struct ReportView: View {
     @State private var showSourceReportSheet = false
     @State private var visibleReportCount = 5
     @State private var excelGenerationID: UUID?
+    @State private var isStoredReportsExpanded = false
+    @State private var isAnalysisSelectorExpanded = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -303,111 +305,166 @@ struct ReportView: View {
 
     private var storedReportsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Kayıtlı Rapor Dosyaları", meta: "\(storedReports.count) dosya", icon: "archivebox")
+            collapsibleSectionTitle(
+                "Kayıtlı Rapor Dosyaları",
+                meta: "\(storedReports.count) dosya",
+                icon: "archivebox",
+                isExpanded: $isStoredReportsExpanded
+            )
 
-            if storedReports.isEmpty {
-                ReportEmptyInlineCard(
-                    icon: "tray",
-                    title: "Henüz kayıtlı rapor yok",
-                    subtitle: "PDF veya Excel oluşturduğunda dosya rapor arşivine kaydedilecek."
-                )
-            } else {
-                VStack(spacing: 9) {
-                    ForEach(Array(storedReports.prefix(visibleReportCount))) { report in
-                        StoredReportRow(
-                            report: report,
-                            isLoading: downloadingID == report.id,
-                            isDeleting: deletingReportID == report.id
-                        ) {
-                            download(report)
-                        } onDelete: {
-                            reportPendingDelete = report
+            if isStoredReportsExpanded {
+                if storedReports.isEmpty {
+                    ReportEmptyInlineCard(
+                        icon: "tray",
+                        title: "Henüz kayıtlı rapor yok",
+                        subtitle: "PDF veya Excel oluşturduğunda dosya rapor arşivine kaydedilecek."
+                    )
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                } else {
+                    VStack(spacing: 9) {
+                        ForEach(Array(storedReports.prefix(visibleReportCount))) { report in
+                            StoredReportRow(
+                                report: report,
+                                isLoading: downloadingID == report.id,
+                                isDeleting: deletingReportID == report.id
+                            ) {
+                                download(report)
+                            } onDelete: {
+                                reportPendingDelete = report
+                            }
+                        }
+
+                        if visibleReportCount < storedReports.count {
+                            Button {
+                                withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                                    visibleReportCount = min(visibleReportCount + 5, storedReports.count)
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    Text("Daha fazla gör")
+                                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                                    Text("\(min(5, storedReports.count - visibleReportCount)) rapor")
+                                        .rdMono(size: 11, weight: .semibold)
+                                        .foregroundStyle(Color.rdSlate)
+                                }
+                                .foregroundStyle(Color.rdBlack)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                                .background(Color.rdWhite)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(Color.rdLine, lineWidth: 1)
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                            }
+                            .buttonStyle(RDPressableButtonStyle())
                         }
                     }
-
-                    if visibleReportCount < storedReports.count {
-                        Button {
-                            withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
-                                visibleReportCount = min(visibleReportCount + 5, storedReports.count)
-                            }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                                Text("Daha fazla gör")
-                                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                                Text("\(min(5, storedReports.count - visibleReportCount)) rapor")
-                                    .rdMono(size: 11, weight: .semibold)
-                                    .foregroundStyle(Color.rdSlate)
-                            }
-                            .foregroundStyle(Color.rdBlack)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 44)
-                            .background(Color.rdWhite)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(Color.rdLine, lineWidth: 1)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                        }
-                        .buttonStyle(RDPressableButtonStyle())
-                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
+        .padding(12)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .animation(.spring(response: 0.32, dampingFraction: 0.88), value: isStoredReportsExpanded)
     }
 
     private var analysisSelector: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Rapora Dönüştür", meta: "\(analyses.count) analiz", icon: "wand.and.stars")
+            collapsibleSectionTitle(
+                "Rapora Dönüştür",
+                meta: "\(analyses.count) analiz",
+                icon: "wand.and.stars",
+                isExpanded: $isAnalysisSelectorExpanded
+            )
 
-            if analyses.isEmpty {
-                ReportEmptyInlineCard(
-                    icon: "doc.text.magnifyingglass",
-                    title: "Rapor kaynağı bekleniyor",
-                    subtitle: "Analiz tamamlandığında burada Standart Rapor veya Pro Risk Analizi üretebilirsin."
-                )
-            } else {
-                VStack(spacing: 9) {
-                    ForEach(analyses) { row in
-                        ReportAnalysisRow(
-                            row: row,
-                            isSelected: row.id == selectedID,
-                            isLoading: row.id == loadingID
-                        ) {
-                            select(row)
+            if isAnalysisSelectorExpanded {
+                if analyses.isEmpty {
+                    ReportEmptyInlineCard(
+                        icon: "doc.text.magnifyingglass",
+                        title: "Rapor kaynağı bekleniyor",
+                        subtitle: "Analiz tamamlandığında burada Standart Rapor veya Pro Risk Analizi üretebilirsin."
+                    )
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                } else {
+                    VStack(spacing: 9) {
+                        ForEach(analyses) { row in
+                            ReportAnalysisRow(
+                                row: row,
+                                isSelected: row.id == selectedID,
+                                isLoading: row.id == loadingID
+                            ) {
+                                select(row)
+                            }
                         }
                     }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
+        .padding(12)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .animation(.spring(response: 0.32, dampingFraction: 0.88), value: isAnalysisSelectorExpanded)
     }
 
-    private func sectionTitle(_ title: String, meta: String, icon: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdGreen)
-                .frame(width: 30, height: 30)
-                .background(Color.rdGreenSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 9))
+    private func collapsibleSectionTitle(
+        _ title: String,
+        meta: String,
+        icon: String,
+        isExpanded: Binding<Bool>
+    ) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
+                isExpanded.wrappedValue.toggle()
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreen)
+                    .frame(width: 30, height: 30)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
 
-            Text(title)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdBlack)
+                Text(title)
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
 
-            Spacer()
+                Text(meta)
+                    .rdMono(size: 11, weight: .semibold)
+                    .foregroundStyle(Color.rdSlate)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(Color.rdFog)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            Text(meta)
-                .rdMono(size: 11, weight: .semibold)
-                .foregroundStyle(Color.rdSlate)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(Color.rdFog)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .frame(width: 28, height: 28)
+                    .background(Color.rdWhite)
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
+                    .rotationEffect(.degrees(isExpanded.wrappedValue ? 0 : -90))
+            }
+            .padding(2)
         }
-        .padding(.top, 4)
-        .padding(.bottom, 2)
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel(title)
+        .accessibilityHint(isExpanded.wrappedValue ? "Bölümü kapatır" : "Bölümü açar")
     }
 
     private var riskReportCount: Int {

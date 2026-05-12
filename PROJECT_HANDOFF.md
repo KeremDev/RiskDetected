@@ -77,7 +77,6 @@ Core tables:
 - `reports`
 - `ai_usage_logs`
 - `consents`
-- `firebase_phone_auth_links` (deferred phone bridge)
 - `push_device_tokens`
 - `notification_preferences`
 - `notification_events`
@@ -92,7 +91,6 @@ Important functions:
 
 - `analyze`
 - `retention-cleanup`
-- `firebase-phone-bridge` (currently disabled/paused)
 - `send-push-notification`
 
 Important migrations:
@@ -152,7 +150,7 @@ Result findings should be sorted from highest risk to lowest risk.
 
 Current MVP auth decision:
 
-- Phone/Firebase login is temporarily canceled.
+- Phone/Firebase login has been removed from MVP scope.
 - User-facing passwordless login is Supabase Email OTP.
 - Demo Pro and Free login buttons remain available for testing.
 - Apple and Google buttons exist but provider dashboard setup still needs final production verification.
@@ -175,12 +173,11 @@ Required external auth work:
 - Verify Apple provider with real Apple account.
 - Verify Google OAuth redirect.
 
-Deferred phone/Firebase work:
+Phone/Firebase status:
 
-- Firebase iOS SDK is wired.
-- `GoogleService-Info.plist` real file is intentionally not committed.
-- `firebase-phone-bridge` exists but returns disabled/paused behavior.
-- Before reactivation, replace previous bridge idea with a short-lived secure exchange flow.
+- Firebase iOS SDK, `GoogleService-Info` files and Firebase URL scheme were removed from the app.
+- Live Supabase `firebase-phone-bridge` Edge Function was deleted.
+- If phone login returns later, design it as a fresh auth/security task.
 
 ## Latest Auth UI Notes
 

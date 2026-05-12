@@ -6,7 +6,6 @@ struct RiskDetectedApp: App {
     @StateObject private var appState = AppState()
 
     init() {
-        FirebaseBootstrap.configureIfAvailable()
         NotificationService.shared.configure()
     }
 
@@ -15,6 +14,9 @@ struct RiskDetectedApp: App {
             RootView()
                 .environmentObject(appState)
                 .preferredColorScheme(appState.themePreference.colorScheme)
+                .onOpenURL { url in
+                    SupabaseService.shared.handleAuthURL(url)
+                }
         }
     }
 }

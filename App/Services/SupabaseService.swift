@@ -10,7 +10,10 @@ final class SupabaseService {
     private init() {
         client = SupabaseClient(
             supabaseURL: RDConfig.supabaseURL,
-            supabaseKey: RDConfig.supabasePublishableKey
+            supabaseKey: RDConfig.supabasePublishableKey,
+            options: SupabaseClientOptions(
+                auth: .init(redirectToURL: RDConfig.Auth.redirectURL)
+            )
         )
     }
 
@@ -22,5 +25,9 @@ final class SupabaseService {
     /// Aktif kullanıcı id (yoksa nil).
     var currentUserID: UUID? {
         client.auth.currentUser?.id
+    }
+
+    func handleAuthURL(_ url: URL) {
+        client.auth.handle(url)
     }
 }

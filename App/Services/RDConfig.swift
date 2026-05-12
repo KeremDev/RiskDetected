@@ -16,7 +16,6 @@ enum RDConfig {
 
     /// Edge Function endpoint adı.
     static let analyzeFunctionName = "analyze"
-    static let firebasePhoneBridgeFunctionName = "firebase-phone-bridge"
     static let sendPushNotificationFunctionName = "send-push-notification"
     static let generateExcelReportFunctionName = "generate-excel-report"
 
@@ -28,7 +27,6 @@ enum RDConfig {
     }
 
     enum Auth {
-        /// Phone sign-in is currently hidden. Primary passwordless auth is email OTP.
-        static let useFirebasePhoneBridge = false
+        static let redirectURL = URL(string: "io.supabase.riskdetected://login-callback")!
     }
 }

@@ -8,7 +8,8 @@ Bu doküman iOS auth akışının üretime alınması için gereken ayarları tu
 - E-posta kod doğrulama: kullanıcıya açık ana şifresiz giriş akışı Supabase Email OTP üzerinden çalışır.
 - Apple Sign In: iOS `AuthenticationServices` ile gerçek Apple identity token alır ve Supabase `signInWithIdToken(provider: .apple)` akışına verir.
 - Google Sign In: Supabase OAuth/PKCE web akışına bağlandı.
-- Telefon/Firebase Auth: SDK ve bridge altyapısı hazır, ancak kullanıcıya açık akıştan geçici olarak kaldırıldı.
+- Apple/Google/e-posta başarılı oturum sonrası `profiles` satırı yoksa uygulama otomatik `free` profil oluşturur.
+- Telefon/Firebase Auth: MVP kapsamından çıkarıldı. iOS Firebase SDK, Firebase URL scheme ve `firebase-phone-bridge` Edge Function kaldırıldı.
 
 ## Supabase Dashboard Gerekenleri
 
@@ -28,18 +29,24 @@ Authentication > Providers:
   - Apple Services ID / Team ID / Key ID / private key Supabase tarafında tanımlanmalı.
 - Google provider aktif olmalı.
   - Google OAuth client id/secret Supabase tarafında tanımlanmalı.
+  - Google Cloud OAuth redirect URI:
+    - `https://ppcrzemgiztzcgddbins.supabase.co/auth/v1/callback`
 
 Authentication > URL Configuration:
 
 - Redirect URL olarak şunu ekle:
   - `io.supabase.riskdetected://login-callback`
 - iOS bundle Info.plist içinde `io.supabase.riskdetected` URL scheme kayıtlıdır (`Config/RiskDetectedInfo.plist`).
-- Firebase Phone Auth callback için `app-1-195728384880-ios-64819727b2f43607ab25b5` URL scheme kayıtlıdır.
 
 ## Apple Developer Gerekenleri
 
 - App Identifier: `com.riskdetected.app`
 - Sign in with Apple capability açık olmalı.
+- Supabase Apple provider için Apple Developer tarafında Services ID oluşturulmalı.
+- Services ID Return URL:
+  - `https://ppcrzemgiztzcgddbins.supabase.co/auth/v1/callback`
+- Services ID domain/subdomain:
+  - `ppcrzemgiztzcgddbins.supabase.co`
 - Xcode target entitlements:
   - `com.apple.developer.applesignin = Default`
 
@@ -47,51 +54,33 @@ Authentication > URL Configuration:
 
 Mevcut uygulama GoogleSignIn SDK yerine Supabase OAuth web flow kullanır. Bu, iOS tarafında ekstra Google SDK ve client plist gerektirmeden çalışır; ancak Supabase provider ve redirect URL doğru ayarlanmalıdır.
 
-## Firebase Phone Auth Kararı
+Google Cloud Console tarafında Web OAuth Client kullanılmalı:
 
-2026-05-09 kararı: telefon ile giriş/doğrulama MVP akışından geçici olarak çıkarıldı. Firebase billing/Identity Platform gereksinimi çözülene kadar kullanıcıya açık giriş akışı e-posta kod doğrulama üzerinden ilerleyecek.
+- Authorized redirect URI:
+  - `https://ppcrzemgiztzcgddbins.supabase.co/auth/v1/callback`
+- Supabase Authentication > Providers > Google alanına bu Web client'ın Client ID ve Client Secret değerleri girilmeli.
+- iOS uygulama dönüş URL'i Supabase URL Configuration içinde allow-list'te olmalı:
+  - `io.supabase.riskdetected://login-callback`
 
-Supabase'in Firebase Auth entegrasyonu Firebase JWT'yi doğrudan Supabase API çağrılarında kullanabilir. Bunun için Firebase tokenlarında `role: authenticated` custom claim gerekir.
+## Firebase / Telefon Auth Kararı
 
-RiskDetected'in mevcut veritabanı şeması `uuid` kullanıcı idleri ve `auth.uid()` tabanlı RLS üzerine kurulu. Firebase UID değerleri UUID olmadığı için Firebase JWT'yi doğrudan Supabase auth tokenı gibi kullanmak mevcut RLS yapısını kırar.
+2026-05-12 kararı: telefon doğrulama ve Firebase bağımlılıkları MVP kapsamından tamamen çıkarıldı.
 
-Bu nedenle güvenli üretim kararı:
-
-1. MVP için kullanıcıya açık şifresiz girişte Supabase Email OTP kullanılır.
-2. Firebase Phone Auth istenirse ayrı bir bridge tasarlanır:
-   - iOS Firebase Auth ile telefonu doğrular.
-   - Backend Firebase ID tokenı doğrular.
-   - Backend doğrulanmış telefon numarasını mevcut Supabase kullanıcı/profil modeliyle güvenli şekilde eşler.
-   - RLS ve kullanıcı id stratejisi değiştirilmeden Firebase UID doğrudan tablo sahibi yapılmaz.
-
-### Kod Durumu
-
-- Firebase iOS SDK paketleri projeye eklendi: `FirebaseCore`, `FirebaseAuth`.
-- App açılışında `FirebaseBootstrap.configureIfAvailable()` çalışır.
-- `GoogleService-Info.plist` bundle içinde yoksa Firebase sessizce devre dışı kalır; uygulama crash olmaz.
-- Güvenlik: gerçek `App/GoogleService-Info.plist` git dışında tutulur. Repo’da sadece `App/GoogleService-Info.plist.example` template’i bulunur.
-- `FirebasePhoneAuthService` SMS kod gönderme ve kod doğrulama/token alma işlemlerini hazırlar.
-- `RDConfig.Auth.useFirebasePhoneBridge = false`; kullanıcıya açık telefon girişi geçici olarak kapalıdır.
-- `firebase-phone-bridge` Edge Function deploy edildi ancak telefon auth kapalı olduğu için endpoint 410 dönecek şekilde devre dışı bırakıldı.
-- `firebase_phone_auth_links` tablosu remote Supabase veritabanına uygulandı.
-- `FIREBASE_PROJECT_ID=riskdetected` Supabase secret olarak eklendi.
-- Canlı endpoint sahte token için beklenen şekilde `invalid_token_format` döner; bu bridge'in config yüklü olduğunu gösterir.
-- Firebase Auth initialize denemesi `BILLING_NOT_ENABLED` döndü. Firebase Phone Auth aktif edilene kadar telefon UI'ı gösterilmeyecek.
-
-### Firebase'i Aktif Etmek İçin
-
-1. Firebase Console'da iOS app oluştur:
-   - Bundle ID: `com.riskdetected.app`
-2. `GoogleService-Info.plist` dosyasını indir.
-3. Dosyayı Xcode projesinde `App/GoogleService-Info.plist` konumuna ekle.
-4. Firebase Console > Authentication > Sign-in method:
-   - Phone provider aktif edilmeli.
-   - Test numaraları istenirse burada tanımlanmalı.
-5. Supabase secrets içinde `FIREBASE_PROJECT_ID=riskdetected` kayıtlı.
-6. `RDConfig.Auth.useFirebasePhoneBridge = true` tekrar aktif edilir ve UI yeniden açılır.
+- iOS Firebase SDK paketleri (`FirebaseCore`, `FirebaseAuth`) Xcode projesinden kaldırıldı.
+- `FirebaseBootstrap`, `FirebasePhoneAuthService` ve `GoogleService-Info` dosyaları kaldırıldı.
+- Firebase callback URL scheme Info.plist'ten kaldırıldı.
+- Canlı Supabase `firebase-phone-bridge` Edge Function silindi.
+- Kullanıcıya açık giriş akışları: Email OTP, Apple Sign In ve Google OAuth.
+- İleride telefon girişi yeniden istenirse yeni bir tasarım kararı ve ayrı güvenlik incelemesi gerekir.
 
 ## Sonraki Auth İşleri
 
+- Apple/Google provider aktivasyonu bekliyor:
+  - Canlı Supabase `/auth/v1/settings` kontrolünde `external.apple=false` ve `external.google=false` göründü.
+  - Canlı authorize endpoint testi Apple/Google için `Unsupported provider: provider is not enabled` döndü.
+  - Kullanıcı Apple Developer ve Google Cloud OAuth key/secret bilgilerini aldıktan sonra Supabase Dashboard > Authentication > Providers altında Apple ve Google aktif edilecek.
+  - Aktivasyon sonrası tekrar `/auth/v1/settings` kontrolü yapılacak; `apple=true` ve `google=true` görülmeli.
+  - Ardından gerçek Apple hesabı ve Google hesabı ile iOS giriş testi yapılacak.
 - Özel SMTP kurulumu:
   - Supabase Dashboard > Authentication > SMTP Settings altında SMTP sağlayıcısı bağlanacak.
   - Tercih edilen seçenek: Resend veya Postmark ile doğrulanmış domain üzerinden gönderim.
@@ -104,5 +93,4 @@ Bu nedenle güvenli üretim kararı:
   - Kalan manuel adım: Supabase Dashboard'da `Confirm signup` ve `Magic Link` şablonlarını repo'daki OTP şablonlarıyla değiştir; gerçek erişilebilir e-posta kutusunda 6 haneli kodun (`{{ .Token }}`) göründüğünü doğrula.
 - Gerçek Apple hesabıyla cihaz/simülatör doğrulaması yap.
 - Google OAuth redirect dönüşünü doğrula.
-- Telefon girişi tekrar açılacaksa Firebase Console'da billing/Identity Platform gereksinimi tamamlanmalı, Phone provider aktif edilmeli ve gerçek/test telefonla uçtan uca doğrulanmalı.
 - RevenueCat sonrası `profiles.tier` sadece doğrulanmış webhook/profil güncellemesiyle değişmeli.

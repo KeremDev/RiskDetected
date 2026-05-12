@@ -560,7 +560,12 @@ struct AuthView: View {
         Task {
             do {
                 let result = try await appleSignInService.signIn()
-                try await app.auth.signInWithApple(idToken: result.idToken, nonce: result.nonce)
+                try await app.auth.signInWithApple(
+                    idToken: result.idToken,
+                    nonce: result.nonce,
+                    email: result.email,
+                    fullName: result.fullName
+                )
                 await app.auth.refreshProfile()
             } catch {
                 if !isUserCancelledAuth(error) {

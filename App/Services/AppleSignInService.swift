@@ -8,6 +8,8 @@ final class AppleSignInService: NSObject {
     struct Result {
         let idToken: String
         let nonce: String
+        let email: String?
+        let fullName: String?
     }
 
     private var currentNonce: String?
@@ -97,11 +99,27 @@ extension AppleSignInService: ASAuthorizationControllerDelegate {
             return
         }
 
-        finish(.success(Result(idToken: idToken, nonce: nonce)))
+        let fullName = credential.fullName.map {
+            PersonNameComponentsFormatter.localizedString(from: $0, style: .medium)
+        }.flatMap(Self.nonBlank)
+
+        finish(.success(Result(
+            idToken: idToken,
+            nonce: nonce,
+            email: credential.email.flatMap(Self.nonBlank),
+            fullName: fullName
+        )))
     }
 
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         finish(.failure(error))
+    }
+}
+
+private extension AppleSignInService {
+    static func nonBlank(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 

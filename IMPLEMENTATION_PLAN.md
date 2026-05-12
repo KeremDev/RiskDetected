@@ -122,11 +122,11 @@ These items exist in some form, but need revision before we treat them as produc
    - Target additions: report archive filtering/search, report status labels and better empty/error states.
 
 8. Email OTP auth
-   - Current state: phone/Firebase auth is paused; the user-facing passwordless flow is Supabase Email OTP.
+   - Current state: phone/Firebase auth has been removed from the app; the user-facing passwordless flow is Supabase Email OTP.
    - Target: support registration and login with e-mail verification code, without forcing phone verification in MVP.
    - Supabase requirement: Email provider enabled and OTP template shows the 6-digit token.
    - Test requirement: verify send code -> enter code -> profile load -> main app flow with a real mailbox.
-   - Deferred phone auth: Firebase phone bridge code remains in the repo, but the UI is hidden until billing/Identity Platform and provider setup are production-ready.
+   - Removed phone auth: Firebase iOS SDK, Firebase URL scheme and `firebase-phone-bridge` are no longer part of the active app/backend surface.
 
 9. App preferences
    - Current state: Profile/Settings screen has a persistent quick dark-mode toggle. Full preferences screen and language selection are still pending.
@@ -247,7 +247,7 @@ These items exist in some form, but need revision before we treat them as produc
 
 ### P2 - Auth and Subscription
 
-1. Email OTP login + deferred Firebase phone bridge.
+1. Email OTP login.
    - Decision update 2026-05-09: phone login is temporarily canceled for MVP; user-facing passwordless auth is Supabase Email OTP.
    - Done: auth UI now shows "E-posta ile giriş yap" instead of phone number login.
    - Done: `AuthService.sendEmailOTP(email:)` and `verifyEmailOTP(email:token:)` are wired to Supabase Email OTP.
@@ -271,29 +271,13 @@ These items exist in some form, but need revision before we treat them as produc
    - Follow-up: configure Apple APNs Auth Key secrets in Supabase.
    - Follow-up: connect trusted backend events for analysis complete, report ready and account/security updates.
    - Follow-up: real-device/TestFlight delivery QA because APNs production delivery cannot be fully proven by simulator alone.
-   - Deferred: Firebase phone verification + Supabase bridge remains available in code for future reactivation.
-   - Added: Firebase iOS SDK packages (`FirebaseCore`, `FirebaseAuth`) are wired into the Xcode project.
-   - Added: `FirebaseBootstrap` configures Firebase only when `GoogleService-Info.plist` is present, so the app remains stable without Firebase config.
-   - Added: `FirebasePhoneAuthService` can send SMS verification and return a Firebase ID token after code verification.
-   - Added: `firebase-phone-bridge` Edge Function validates Firebase phone ID tokens, creates/links Supabase Auth users and returns bridge credentials for a normal Supabase session.
-   - Done: `firebase_phone_auth_links` table applied to remote Supabase database.
-   - Done: `firebase-phone-bridge` deployed with JWT verification disabled because callers do not have a Supabase session before login.
-   - Done: Firebase iOS app created in project `riskdetected` for bundle id `com.riskdetected.app`.
-   - Done: `App/GoogleService-Info.plist.example` template added; real Firebase plist is kept out of git.
-   - Done: `FIREBASE_PROJECT_ID=riskdetected` added to Supabase Edge Function secrets.
-   - Current production flag: `RDConfig.Auth.useFirebasePhoneBridge = false`; phone login is not exposed in UI.
-   - Safety update: `firebase-phone-bridge` now returns 410 while phone auth is paused. Before reactivation, replace the old reusable email/password bridge with a short-lived exchange flow.
-   - Previous fallback is no longer user-facing because the phone flow is paused.
-   - Blocked external config: Firebase Auth initialize returned `BILLING_NOT_ENABLED`; enable the required Firebase billing/Identity Platform setup and Phone provider before removing the fallback.
+   - Removed: Firebase phone verification and Supabase bridge are no longer part of the active app.
+   - Removed: Firebase iOS SDK packages (`FirebaseCore`, `FirebaseAuth`) from the Xcode project.
+   - Removed: `FirebaseBootstrap`, `FirebasePhoneAuthService`, Firebase URL scheme and `GoogleService-Info` template/local files.
+   - Removed: `firebase-phone-bridge` from the live Supabase Edge Function list.
+   - Removed: `firebase_phone_auth_links` table dropped from the remote Supabase database.
+   - Previous Firebase bridge and billing blockers are obsolete because phone auth was removed from MVP scope.
    - Added: auth setup notes captured in `AUTH_SETUP.md`.
-   - Firebase bridge target:
-     - add Firebase iOS config (`GoogleService-Info.plist`) and FirebaseAuth SDK;
-     - verify the phone number with Firebase Auth on-device;
-     - send the Firebase ID token to a backend verification endpoint;
-     - backend validates the Firebase token and creates/links the matching Supabase user/profile;
-     - never trust phone number/client claims without backend token verification.
-   - Constraint: direct Firebase JWT as Supabase auth is not compatible with the current UUID `auth.uid()` RLS model without a deliberate schema/RLS redesign.
-   - Decision checkpoint: after Firebase project config is available, choose either Firebase-backed phone bridge for production SMS reliability or keep Supabase native phone OTP if the bridge adds too much session complexity.
 2. Apple Sign In production hardening.
    - Started: iOS Apple Sign In service added with nonce hashing and Supabase `signInWithIdToken(provider: .apple)`.
    - Started: Sign in with Apple entitlement added to the target.
@@ -453,7 +437,7 @@ These items exist in some form, but need revision before we treat them as produc
 ## Known Decision Points
 
 1. Keep current synchronous `/analyze` flow or introduce async job processing?
-2. Use Firebase phone verification bridge or Supabase native phone OTP?
+2. If phone login returns later, should it be Supabase native phone OTP or a new audited backend-owned verification flow?
 3. Which paid Pro AI model/provider becomes the primary production route?
 4. How strict should image retention be for KVKK and user trust?
    - Current decision: Free analysis photos 30 days, Pro analysis photos 365 days, raw AI responses 30 days, reports until user deletion.

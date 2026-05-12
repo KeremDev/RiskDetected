@@ -60,21 +60,6 @@ struct AppErrorMessage: Equatable {
             )
         }
 
-        if lower.contains("firebase telefon") ||
-            lower.contains("firebase kodu") ||
-            lower.contains("firebase phone") ||
-            lower.contains("phone provider") ||
-            lower.contains("googleService-info".lowercased())
-        {
-            return AppErrorMessage(
-                title: context ?? "Telefon doğrulaması tamamlanamadı",
-                message: raw,
-                action: "Firebase Phone provider, test numarası ve iOS app ayarlarını kontrol edip tekrar dene.",
-                category: .validationFailed,
-                supportID: supportID
-            )
-        }
-
         if lower.contains("email_address_invalid") ||
             lower.contains("invalid email") ||
             lower.contains("email address") && lower.contains("invalid")

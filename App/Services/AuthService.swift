@@ -20,8 +20,8 @@ final class AuthService: ObservableObject {
         session = supabase.client.auth.currentSession
         startObservingAuthChanges()
         // Cache'den session geldiyse profili hemen tazele
-        if let cachedUserID = session?.user.id {
-            Task { await fetchProfile(userID: cachedUserID) }
+        if session?.user.id != nil {
+            Task { await ensureProfile(for: supabase.client.auth.currentSession?.user) }
         }
     }
 
@@ -36,10 +36,7 @@ final class AuthService: ObservableObject {
     func signInWithPassword(email: String, password: String) async throws {
         lastError = nil
         let signedInSession = try await supabase.auth.signIn(email: email, password: password)
-        self.session = signedInSession
-
-        // Profili response'taki user ID ile direkt fetch et
-        await fetchProfile(userID: signedInSession.user.id)
+        await finishSignIn(with: signedInSession)
     }
 
     /// E-posta adresine tek kullanımlık doğrulama kodu gönderir.
@@ -53,71 +50,18 @@ final class AuthService: ObservableObject {
         lastError = nil
         let response = try await verifyEmailOTPWithSupportedTypes(email: email, token: token)
         if let verifiedSession = response.session {
-            self.session = verifiedSession
-            await fetchProfile(userID: verifiedSession.user.id)
+            await finishSignIn(with: verifiedSession)
         }
-    }
-
-    /// Telefon numarasına SMS OTP gönderir (E.164 formatında: +905...).
-    func sendPhoneOTP(phone: String) async throws {
-        lastError = nil
-        try await supabase.auth.signInWithOTP(phone: phone)
-    }
-
-    /// SMS OTP doğrulaması.
-    func verifyPhoneOTP(phone: String, token: String) async throws {
-        lastError = nil
-        let response = try await supabase.auth.verifyOTP(phone: phone, token: token, type: .sms)
-        if let verifiedSession = response.session {
-            self.session = verifiedSession
-            await fetchProfile(userID: verifiedSession.user.id)
-        }
-    }
-
-    /// Firebase Phone Auth doğrulaması tamamlandıktan sonra Firebase ID tokenını
-    /// backend bridge'e gönderir ve dönen Supabase bridge hesabıyla oturum açar.
-    func signInWithFirebasePhoneIDToken(_ idToken: String) async throws {
-        struct Body: Encodable {
-            let id_token: String
-        }
-
-        struct BridgeResponse: Decodable {
-            let email: String
-            let password: String
-            let userID: UUID
-            let phone: String
-
-            enum CodingKeys: String, CodingKey {
-                case email
-                case password
-                case userID = "user_id"
-                case phone
-            }
-        }
-
-        lastError = nil
-        let response: BridgeResponse = try await supabase.functions.invoke(
-            RDConfig.firebasePhoneBridgeFunctionName,
-            options: FunctionInvokeOptions(body: Body(id_token: idToken))
-        )
-
-        let signedInSession = try await supabase.auth.signIn(
-            email: response.email,
-            password: response.password
-        )
-        self.session = signedInSession
-        await fetchProfile(userID: response.userID)
     }
 
     /// Apple ID ile giriş — UI tarafında ASAuthorizationAppleIDCredential alındıktan sonra
     /// `idToken` ve nonce buraya iletilir.
-    func signInWithApple(idToken: String, nonce: String) async throws {
+    func signInWithApple(idToken: String, nonce: String, email: String? = nil, fullName: String? = nil) async throws {
         lastError = nil
         let signedInSession = try await supabase.auth.signInWithIdToken(
             credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
         )
-        self.session = signedInSession
-        await fetchProfile(userID: signedInSession.user.id)
+        await finishSignIn(with: signedInSession, emailFallback: email, fullNameFallback: fullName)
     }
 
     /// Google ile giriş — Google Sign-In SDK'sından alınan idToken ile.
@@ -126,8 +70,7 @@ final class AuthService: ObservableObject {
         let signedInSession = try await supabase.auth.signInWithIdToken(
             credentials: .init(provider: .google, idToken: idToken, nonce: nonce)
         )
-        self.session = signedInSession
-        await fetchProfile(userID: signedInSession.user.id)
+        await finishSignIn(with: signedInSession)
     }
 
     /// Google OAuth web flow — GoogleSignIn SDK olmadan Supabase PKCE/OAuth akışını kullanır.
@@ -135,10 +78,9 @@ final class AuthService: ObservableObject {
         lastError = nil
         let signedInSession = try await supabase.auth.signInWithOAuth(
             provider: .google,
-            redirectTo: deepLinkURL()
+            redirectTo: RDConfig.Auth.redirectURL
         )
-        self.session = signedInSession
-        await fetchProfile(userID: signedInSession.user.id)
+        await finishSignIn(with: signedInSession)
     }
 
     /// Çıkış yapar.
@@ -152,7 +94,10 @@ final class AuthService: ObservableObject {
             self.profile = nil
             return
         }
-        await fetchProfile(userID: userID)
+        let result = await fetchProfile(userID: userID)
+        if case .missing = result {
+            await ensureProfile(for: supabase.client.auth.currentSession?.user)
+        }
     }
 
     func updateProfile(_ input: ProfileUpdateInput) async throws {
@@ -222,7 +167,32 @@ final class AuthService: ObservableObject {
     // MARK: - Private
 
     /// Profile fetch'in tek kaynağı. Hatayı `lastError`'a yazıyor ki UI gösterebilsin.
-    private func fetchProfile(userID: UUID) async {
+    private func finishSignIn(with signedInSession: Session, emailFallback: String? = nil, fullNameFallback: String? = nil) async {
+        self.session = signedInSession
+        await ensureProfile(
+            for: signedInSession.user,
+            emailFallback: emailFallback,
+            fullNameFallback: fullNameFallback
+        )
+    }
+
+    private func ensureProfile(for user: User?, emailFallback: String? = nil, fullNameFallback: String? = nil) async {
+        guard let user else { return }
+
+        switch await fetchProfile(userID: user.id) {
+        case .found, .failed:
+            return
+        case .missing:
+            await createDefaultProfile(
+                for: user,
+                emailFallback: emailFallback,
+                fullNameFallback: fullNameFallback
+            )
+        }
+    }
+
+    @discardableResult
+    private func fetchProfile(userID: UUID) async -> ProfileFetchResult {
         do {
             let row: UserProfile = try await supabase.client
                 .from("profiles")
@@ -234,6 +204,7 @@ final class AuthService: ObservableObject {
 
             self.profile = row
             self.lastError = nil
+            return .found
         } catch let DecodingError.keyNotFound(key, context) {
             let msg = "missing key '\(key.stringValue)' at \(context.codingPath.map(\.stringValue))"
             self.lastError = "Profile decode (key): \(msg)"
@@ -246,8 +217,37 @@ final class AuthService: ObservableObject {
         } catch let DecodingError.dataCorrupted(context) {
             let msg = "data corrupted at \(context.codingPath.map(\.stringValue)): \(context.debugDescription)"
             self.lastError = "Profile decode (corrupt): \(msg)"
+        } catch let error as PostgrestError where Self.isMissingProfileError(error) {
+            self.profile = nil
+            self.lastError = nil
+            return .missing
         } catch {
             self.lastError = "Profile fetch: \(error.localizedDescription)"
+        }
+        return .failed
+    }
+
+    private func createDefaultProfile(for user: User, emailFallback: String? = nil, fullNameFallback: String? = nil) async {
+        let payload = ProfileBootstrapPayload(
+            id: user.id.uuidString,
+            email: user.email ?? emailFallback,
+            fullName: fullNameFallback,
+            initials: fullNameFallback.flatMap(Self.initials(for:)),
+            tier: SubscriptionTier.free.rawValue
+        )
+
+        do {
+            try await supabase.client
+                .from("profiles")
+                .insert(payload)
+                .execute()
+            await fetchProfile(userID: user.id)
+        } catch {
+            // If a profile appeared between fetch and insert, read it again instead of surfacing a false failure.
+            if case .found = await fetchProfile(userID: user.id) {
+                return
+            }
+            self.lastError = "Profile bootstrap: \(error.localizedDescription)"
         }
     }
 
@@ -261,8 +261,8 @@ final class AuthService: ObservableObject {
                     self.session = newSession
                 }
 
-                if let userID = newSession?.user.id {
-                    await self.fetchProfile(userID: userID)
+                if newSession?.user.id != nil {
+                    await self.ensureProfile(for: newSession?.user)
                 } else {
                     await MainActor.run { self.profile = nil }
                 }
@@ -271,7 +271,7 @@ final class AuthService: ObservableObject {
     }
 
     private func deepLinkURL() -> URL {
-        URL(string: "io.supabase.riskdetected://login-callback")!
+        RDConfig.Auth.redirectURL
     }
 
     private func verifyEmailOTPWithSupportedTypes(email: String, token: String) async throws -> AuthResponse {
@@ -308,6 +308,12 @@ final class AuthService: ObservableObject {
         return true
     }
 
+    private static func isMissingProfileError(_ error: PostgrestError) -> Bool {
+        if error.code == "PGRST116" { return true }
+        let lower = error.message.lowercased(with: Locale(identifier: "en_US_POSIX"))
+        return lower.contains("0 rows") || lower.contains("no rows")
+    }
+
     static func logAuthError(_ message: AppErrorMessage, operation: String, email: String? = nil) {
         logger.error("Auth error support=\(message.supportID, privacy: .public) operation=\(operation, privacy: .public) category=\(message.category.rawValue, privacy: .public) email=\(email ?? "-", privacy: .private(mask: .hash)) message=\(message.message, privacy: .public)")
     }
@@ -330,6 +336,12 @@ struct ProfileUpdateInput {
     var phone: String
     var preferredMethod: RiskMethodWire?
     var companyLogoPath: String?
+}
+
+private enum ProfileFetchResult {
+    case found
+    case missing
+    case failed
 }
 
 private struct ProfileUpdatePayload: Encodable {
@@ -355,6 +367,22 @@ private struct ProfileUpdatePayload: Encodable {
         case companyLogoURL = "company_logo_url"
         case phone
         case preferredMethod = "preferred_method"
+    }
+}
+
+private struct ProfileBootstrapPayload: Encodable {
+    let id: String
+    let email: String?
+    let fullName: String?
+    let initials: String?
+    let tier: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case email
+        case fullName = "full_name"
+        case initials
+        case tier
     }
 }
 

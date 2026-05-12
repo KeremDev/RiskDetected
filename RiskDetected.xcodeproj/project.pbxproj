@@ -6,23 +6,21 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A1000001000000000000B001 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B101 /* Supabase */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A1000001000000000000A200 /* RiskDetected.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RiskDetected.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A1000001000000000000A001 /* RiskDetected */ = {
+		A1000001000000000000A001 /* App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
 			path = App;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
-
-/* Begin PBXBuildFile section */
-		A1000001000000000000B001 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B101 /* Supabase */; };
-		A1000001000000000000B002 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B102 /* FirebaseAuth */; };
-		A1000001000000000000B003 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B103 /* FirebaseCore */; };
-/* End PBXBuildFile section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A1000001000000000000A100 /* Frameworks */ = {
@@ -30,8 +28,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000001000000000000B001 /* Supabase in Frameworks */,
-				A1000001000000000000B002 /* FirebaseAuth in Frameworks */,
-				A1000001000000000000B003 /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -41,7 +37,7 @@
 		A1000001000000000000A000 = {
 			isa = PBXGroup;
 			children = (
-				A1000001000000000000A001 /* RiskDetected */,
+				A1000001000000000000A001 /* App */,
 				A1000001000000000000A002 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -71,13 +67,11 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A1000001000000000000A001 /* RiskDetected */,
+				A1000001000000000000A001 /* App */,
 			);
 			name = RiskDetected;
 			packageProductDependencies = (
 				A1000001000000000000B101 /* Supabase */,
-				A1000001000000000000B102 /* FirebaseAuth */,
-				A1000001000000000000B103 /* FirebaseCore */,
 			);
 			productName = RiskDetected;
 			productReference = A1000001000000000000A200 /* RiskDetected.app */;
@@ -110,7 +104,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */,
-				A1000001000000000000B202 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A1000001000000000000A002 /* Products */;
@@ -122,43 +115,6 @@
 		};
 /* End PBXProject section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/supabase/supabase-swift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.24.0;
-			};
-		};
-		A1000001000000000000B202 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 12.0.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		A1000001000000000000B101 /* Supabase */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Supabase;
-		};
-		A1000001000000000000B102 /* FirebaseAuth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1000001000000000000B202 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAuth;
-		};
-		A1000001000000000000B103 /* FirebaseCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1000001000000000000B202 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCore;
-		};
-/* End XCSwiftPackageProductDependency section */
-
 /* Begin PBXResourcesBuildPhase section */
 		A1000001000000000000A102 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
@@ -168,16 +124,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXSourcesBuildPhase section */
-		A1000001000000000000A101 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXSourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		A1000001000000000000A103 /* Strip xattrs */ = {
@@ -200,6 +146,16 @@
 			shellScript = "if [ -d \"$BUILT_PRODUCTS_DIR/$WRAPPER_NAME\" ]; then\n  find \"$BUILT_PRODUCTS_DIR/$WRAPPER_NAME\" -exec xattr -c {} \\; 2>/dev/null || true\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1000001000000000000A101 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		A1000001000000000000A400 /* Debug */ = {
@@ -410,9 +366,24 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin PBXFileReference section */
-		A1000001000000000000A200 /* RiskDetected.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RiskDetected.app; sourceTree = BUILT_PRODUCTS_DIR; };
-/* End PBXFileReference section */
+/* Begin XCRemoteSwiftPackageReference section */
+		A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.24.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A1000001000000000000B101 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A1000001000000000000A300 /* Project object */;
 }
