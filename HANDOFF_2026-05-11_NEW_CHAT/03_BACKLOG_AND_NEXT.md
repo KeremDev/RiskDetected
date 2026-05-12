@@ -1,5 +1,8 @@
 # 03 - Yapılacaklar ve Sonraki İşler
 
+> Güncel tek yapılacaklar özeti için bkz. `../PROJECT_STATUS_AND_NEXT_2026-05-12.md`.
+> Bu dosya 2026-05-11 handoff anındaki durumu gösterir; bazı maddeler artık tamamlandı.
+
 ## En Yakın İşler
 
 1. Manual simulator QA tamamlanmalı.

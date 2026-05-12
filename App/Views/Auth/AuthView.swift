@@ -14,6 +14,7 @@ struct AuthView: View {
     @State private var isSigningInWithApple = false
     @State private var isSigningInWithGoogle = false
     @State private var appleSignInService = AppleSignInService()
+    private let googleSignInService = GoogleSignInService()
     @State private var autoVerifiedCode: String?
     @State private var caretPulse = false
     @FocusState private var isOTPInputFocused: Bool
@@ -582,7 +583,15 @@ struct AuthView: View {
         authError = nil
         Task {
             do {
-                try await app.auth.signInWithGoogleOAuth()
+                let result = try await googleSignInService.signIn()
+                try await app.auth.signInWithGoogle(
+                    idToken: result.idToken,
+                    accessToken: result.accessToken,
+                    nonce: result.nonce,
+                    emailFallback: result.email,
+                    fullNameFallback: result.fullName
+                )
+                await app.auth.refreshProfile()
             } catch {
                 if !isUserCancelledAuth(error) {
                     setAuthError(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı", operation: "google_sign_in")

@@ -7,7 +7,7 @@ Bu doküman iOS auth akışının üretime alınması için gereken ayarları tu
 - E-posta/şifre: demo hesaplar için aktif.
 - E-posta kod doğrulama: kullanıcıya açık ana şifresiz giriş akışı Supabase Email OTP üzerinden çalışır.
 - Apple Sign In: iOS `AuthenticationServices` ile gerçek Apple identity token alır ve Supabase `signInWithIdToken(provider: .apple)` akışına verir.
-- Google Sign In: Supabase OAuth/PKCE web akışına bağlandı.
+- Google Sign In: Native Google Sign-In SDK ile çalışır; Google `idToken` Supabase `signInWithIdToken(provider: .google)` akışına verilir.
 - Apple/Google/e-posta başarılı oturum sonrası `profiles` satırı yoksa uygulama otomatik `free` profil oluşturur.
 - Telefon/Firebase Auth: MVP kapsamından çıkarıldı. iOS Firebase SDK, Firebase URL scheme ve `firebase-phone-bridge` Edge Function kaldırıldı.
 
@@ -52,10 +52,17 @@ Authentication > URL Configuration:
 
 ## Google OAuth Notu
 
-Mevcut uygulama GoogleSignIn SDK yerine Supabase OAuth web flow kullanır. Bu, iOS tarafında ekstra Google SDK ve client plist gerektirmeden çalışır; ancak Supabase provider ve redirect URL doğru ayarlanmalıdır.
+Mevcut uygulama native Google Sign-In SDK kullanır. Supabase web OAuth akışı ana Google giriş yolu değildir.
 
-Google Cloud Console tarafında Web OAuth Client kullanılmalı:
+Google Cloud Console tarafında iki client kullanılır:
 
+- iOS OAuth Client:
+  - Bundle ID: `com.riskdetected.app`
+  - `Config/RiskDetectedInfo.plist` içindeki `GIDClientID`
+  - Reversed client ID URL scheme olarak aynı plist içinde kayıtlı.
+- Web OAuth Client:
+  - Supabase provider ayarında Client ID/Secret olarak kullanılır.
+  - Google SDK tarafında `GIDServerClientID` olarak kullanılır.
 - Authorized redirect URI:
   - `https://ppcrzemgiztzcgddbins.supabase.co/auth/v1/callback`
 - Supabase Authentication > Providers > Google alanına bu Web client'ın Client ID ve Client Secret değerleri girilmeli.
@@ -70,17 +77,17 @@ Google Cloud Console tarafında Web OAuth Client kullanılmalı:
 - `FirebaseBootstrap`, `FirebasePhoneAuthService` ve `GoogleService-Info` dosyaları kaldırıldı.
 - Firebase callback URL scheme Info.plist'ten kaldırıldı.
 - Canlı Supabase `firebase-phone-bridge` Edge Function silindi.
-- Kullanıcıya açık giriş akışları: Email OTP, Apple Sign In ve Google OAuth.
+- Kullanıcıya açık giriş akışları: Email OTP, Apple Sign In ve native Google Sign-In.
 - İleride telefon girişi yeniden istenirse yeni bir tasarım kararı ve ayrı güvenlik incelemesi gerekir.
 
 ## Sonraki Auth İşleri
 
-- Apple/Google provider aktivasyonu bekliyor:
-  - Canlı Supabase `/auth/v1/settings` kontrolünde `external.apple=false` ve `external.google=false` göründü.
-  - Canlı authorize endpoint testi Apple/Google için `Unsupported provider: provider is not enabled` döndü.
-  - Kullanıcı Apple Developer ve Google Cloud OAuth key/secret bilgilerini aldıktan sonra Supabase Dashboard > Authentication > Providers altında Apple ve Google aktif edilecek.
-  - Aktivasyon sonrası tekrar `/auth/v1/settings` kontrolü yapılacak; `apple=true` ve `google=true` görülmeli.
-  - Ardından gerçek Apple hesabı ve Google hesabı ile iOS giriş testi yapılacak.
+- Apple/Google provider durumu:
+  - 2026-05-12 canlı Supabase `/auth/v1/settings` kontrolünde `external.apple=true` ve `external.google=true` göründü.
+  - Google native SDK ile mevcut kullanıcı girişi ve yeni kullanıcı kaydı geçti.
+  - Google Cloud OAuth consent screen hâlâ test modunda; release öncesi production/publish adımı yapılacak.
+  - Apple kodlandı ve Apple/Supabase ayarları yapıldı; gerçek Apple hesabıyla canlı test sonraya bırakıldı.
+  - Detaylı canlı kontrol notu: `AUTH_LIVE_VERIFICATION_2026-05-12.md`.
 - Özel SMTP kurulumu:
   - Supabase Dashboard > Authentication > SMTP Settings altında SMTP sağlayıcısı bağlanacak.
   - Tercih edilen seçenek: Resend veya Postmark ile doğrulanmış domain üzerinden gönderim.
@@ -90,7 +97,7 @@ Google Cloud Console tarafında Web OAuth Client kullanılmalı:
   - `POST /auth/v1/otp` geçerli Gmail formatlı test adresiyle `200` döndü; Email provider aktif.
   - Admin `generate_link` + `/auth/v1/verify` token hash testi access token döndürdü; Supabase session üretimi çalışıyor.
   - Çok sık test isteği sonrası Supabase `over_email_send_rate_limit` döndürdü; uygulama bunu kullanıcıya "Kod gönderme sınırı" olarak gösterecek şekilde normalize ediyor.
-  - Kalan manuel adım: Supabase Dashboard'da `Confirm signup` ve `Magic Link` şablonlarını repo'daki OTP şablonlarıyla değiştir; gerçek erişilebilir e-posta kutusunda 6 haneli kodun (`{{ .Token }}`) göründüğünü doğrula.
+  - Resend/Supabase SMTP ile Email OTP giriş ve kayıt canlı test edildi; geçti.
 - Gerçek Apple hesabıyla cihaz/simülatör doğrulaması yap.
-- Google OAuth redirect dönüşünü doğrula.
+- Google Cloud OAuth consent screen production/publish durumunu release öncesi tamamla.
 - RevenueCat sonrası `profiles.tier` sadece doğrulanmış webhook/profil güncellemesiyle değişmeli.

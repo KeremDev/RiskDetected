@@ -1,5 +1,8 @@
 # 05 - Manual Simulator QA Durumu
 
+> Güncel tek yapılacaklar özeti için bkz. `../PROJECT_STATUS_AND_NEXT_2026-05-12.md`.
+> Bu dosya 2026-05-11 manuel QA notlarını korur; yeni pass/fail özeti status dosyasındadır.
+
 Manual QA başlatıldı. 2026-05-11 devam oturumunda Auth, Email OTP, rapor upload retry ve Free limit dolu senaryosu test edildi.
 
 ## QA Sırasında Yapılanlar
@@ -99,10 +102,16 @@ Kontrol:
 - 6 hane tamamlanınca otomatik doğrulama çalışıyor.
 - Hata durumunda tekrar kod gönderme linki gösteriliyor.
 - Google OAuth `Vazgeç` sonrası teknik `WebAuthenticationSession` hatası kullanıcıya gösterilmiyor.
+- Email OTP ile giriş ve kayıt canlı test edildi; geçti.
+- Google Sign-In native SDK'ya taşındı.
+- Google mevcut kullanıcı girişi canlı test edildi; geçti.
+- Google yeni kullanıcı kaydı fiziksel cihazda canlı test edildi; geçti.
+- Google Cloud OAuth consent screen şu an test modunda; release öncesi production/publish adımı yapılacak.
+- Apple Sign In kodlandı ve gerekli Apple/Supabase ayarları yapıldı; canlı Apple hesabı testi sonraya bırakıldı.
 
 Sonuç:
 
-- Geçti.
+- Email OTP ve Google geçti. Apple canlı test bekliyor.
 
 Commitler:
 

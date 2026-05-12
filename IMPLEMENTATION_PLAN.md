@@ -1,5 +1,8 @@
 # RiskDetected Implementation Plan
 
+> Güncel tek yapılacaklar özeti için bkz. `PROJECT_STATUS_AND_NEXT_2026-05-12.md`.
+> Bu dosya tarihsel plan detaylarını korur; bazı maddeler son commitlerle tamamlanmış veya değişmiştir.
+
 ## Current Phase
 
 - FAZ 1: iOS app MVP + Supabase/Gemini analysis flow.

@@ -1,5 +1,8 @@
 # Prompt Sistemi Yenileme Planı
 
+> Güncel tek yapılacaklar özeti için bkz. `PROJECT_STATUS_AND_NEXT_2026-05-12.md`.
+> Bu dosya prompt revamp planının tarihsel ayrıntılarını korur; prompt sisteminin uygulanan/kalan durumu status dosyasında özetlenmiştir.
+
 Kaynak dosya: `/Users/keremkayalar/Downloads/isg_ai_odakli_analiz_prompt_seti.docx`
 
 Tarih: 2026-05-11

@@ -65,12 +65,22 @@ final class AuthService: ObservableObject {
     }
 
     /// Google ile giriş — Google Sign-In SDK'sından alınan idToken ile.
-    func signInWithGoogle(idToken: String, nonce: String? = nil) async throws {
+    func signInWithGoogle(
+        idToken: String,
+        accessToken: String? = nil,
+        nonce: String? = nil,
+        emailFallback: String? = nil,
+        fullNameFallback: String? = nil
+    ) async throws {
         lastError = nil
         let signedInSession = try await supabase.auth.signInWithIdToken(
-            credentials: .init(provider: .google, idToken: idToken, nonce: nonce)
+            credentials: .init(provider: .google, idToken: idToken, accessToken: accessToken, nonce: nonce)
         )
-        await finishSignIn(with: signedInSession)
+        await finishSignIn(
+            with: signedInSession,
+            emailFallback: emailFallback,
+            fullNameFallback: fullNameFallback
+        )
     }
 
     /// Google OAuth web flow — GoogleSignIn SDK olmadan Supabase PKCE/OAuth akışını kullanır.
@@ -180,7 +190,14 @@ final class AuthService: ObservableObject {
         guard let user else { return }
 
         switch await fetchProfile(userID: user.id) {
-        case .found, .failed:
+        case .found(let profile):
+            await backfillProviderIdentityIfNeeded(
+                for: user,
+                profile: profile,
+                emailFallback: emailFallback,
+                fullNameFallback: fullNameFallback
+            )
+        case .failed:
             return
         case .missing:
             await createDefaultProfile(
@@ -204,7 +221,7 @@ final class AuthService: ObservableObject {
 
             self.profile = row
             self.lastError = nil
-            return .found
+            return .found(row)
         } catch let DecodingError.keyNotFound(key, context) {
             let msg = "missing key '\(key.stringValue)' at \(context.codingPath.map(\.stringValue))"
             self.lastError = "Profile decode (key): \(msg)"
@@ -228,11 +245,12 @@ final class AuthService: ObservableObject {
     }
 
     private func createDefaultProfile(for user: User, emailFallback: String? = nil, fullNameFallback: String? = nil) async {
+        let resolvedFullName = Self.providerFullName(for: user, fallback: fullNameFallback)
         let payload = ProfileBootstrapPayload(
             id: user.id.uuidString,
-            email: user.email ?? emailFallback,
-            fullName: fullNameFallback,
-            initials: fullNameFallback.flatMap(Self.initials(for:)),
+            email: Self.providerEmail(for: user, fallback: emailFallback),
+            fullName: resolvedFullName,
+            initials: resolvedFullName.flatMap(Self.initials(for:)),
             tier: SubscriptionTier.free.rawValue
         )
 
@@ -244,10 +262,50 @@ final class AuthService: ObservableObject {
             await fetchProfile(userID: user.id)
         } catch {
             // If a profile appeared between fetch and insert, read it again instead of surfacing a false failure.
-            if case .found = await fetchProfile(userID: user.id) {
+            if case .found(let profile) = await fetchProfile(userID: user.id) {
+                await backfillProviderIdentityIfNeeded(
+                    for: user,
+                    profile: profile,
+                    emailFallback: emailFallback,
+                    fullNameFallback: fullNameFallback
+                )
                 return
             }
             self.lastError = "Profile bootstrap: \(error.localizedDescription)"
+        }
+    }
+
+    private func backfillProviderIdentityIfNeeded(
+        for user: User,
+        profile: UserProfile,
+        emailFallback: String? = nil,
+        fullNameFallback: String? = nil
+    ) async {
+        let resolvedEmail = Self.providerEmail(for: user, fallback: emailFallback)
+        let resolvedFullName = Self.providerFullName(for: user, fallback: fullNameFallback)
+
+        let shouldUpdateEmail = profile.email?.nilIfBlank == nil && resolvedEmail != nil
+        let shouldUpdateName = resolvedFullName.map {
+            Self.shouldBackfillFullName(profile.fullName, email: resolvedEmail, providerFullName: $0)
+        } ?? false
+
+        guard shouldUpdateEmail || shouldUpdateName else { return }
+
+        let payload = ProfileIdentityPatchPayload(
+            email: shouldUpdateEmail ? resolvedEmail : profile.email,
+            fullName: shouldUpdateName ? resolvedFullName : profile.fullName,
+            initials: shouldUpdateName ? resolvedFullName.flatMap(Self.initials(for:)) : profile.initials
+        )
+
+        do {
+            try await supabase.client
+                .from("profiles")
+                .update(payload)
+                .eq("id", value: user.id.uuidString)
+                .execute()
+            await fetchProfile(userID: user.id)
+        } catch {
+            Self.logger.warning("Profile provider identity backfill failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -314,6 +372,49 @@ final class AuthService: ObservableObject {
         return lower.contains("0 rows") || lower.contains("no rows")
     }
 
+    private static func providerEmail(for user: User, fallback: String?) -> String? {
+        user.email?.nilIfBlank ?? fallback?.nilIfBlank ?? metadataString("email", in: user.userMetadata)
+    }
+
+    private static func providerFullName(for user: User, fallback: String?) -> String? {
+        if let fallback = fallback?.nilIfBlank { return fallback }
+
+        let metadata = user.userMetadata
+        if let fullName = metadataString("full_name", in: metadata) { return fullName }
+        if let name = metadataString("name", in: metadata) { return name }
+        if let displayName = metadataString("display_name", in: metadata) { return displayName }
+
+        let givenName = metadataString("given_name", in: metadata)
+        let familyName = metadataString("family_name", in: metadata)
+        let combined = [givenName, familyName]
+            .compactMap { $0?.nilIfBlank }
+            .joined(separator: " ")
+            .nilIfBlank
+        return combined
+    }
+
+    private static func metadataString(_ key: String, in metadata: [String: AnyJSON]) -> String? {
+        metadata[key]?.stringValue?.nilIfBlank
+    }
+
+    private static func shouldBackfillFullName(
+        _ currentFullName: String?,
+        email: String?,
+        providerFullName: String
+    ) -> Bool {
+        guard providerFullName.nilIfBlank != nil else { return false }
+        guard let current = currentFullName?.nilIfBlank else { return true }
+
+        let currentNormalized = current.lowercased(with: Locale(identifier: "en_US_POSIX"))
+        let emailLocalPart = email?
+            .split(separator: "@", maxSplits: 1)
+            .first
+            .map(String.init)?
+            .lowercased(with: Locale(identifier: "en_US_POSIX"))
+
+        return emailLocalPart == currentNormalized
+    }
+
     static func logAuthError(_ message: AppErrorMessage, operation: String, email: String? = nil) {
         logger.error("Auth error support=\(message.supportID, privacy: .public) operation=\(operation, privacy: .public) category=\(message.category.rawValue, privacy: .public) email=\(email ?? "-", privacy: .private(mask: .hash)) message=\(message.message, privacy: .public)")
     }
@@ -339,7 +440,7 @@ struct ProfileUpdateInput {
 }
 
 private enum ProfileFetchResult {
-    case found
+    case found(UserProfile)
     case missing
     case failed
 }
@@ -383,6 +484,18 @@ private struct ProfileBootstrapPayload: Encodable {
         case fullName = "full_name"
         case initials
         case tier
+    }
+}
+
+private struct ProfileIdentityPatchPayload: Encodable {
+    let email: String?
+    let fullName: String?
+    let initials: String?
+
+    enum CodingKeys: String, CodingKey {
+        case email
+        case fullName = "full_name"
+        case initials
     }
 }
 

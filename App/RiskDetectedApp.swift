@@ -15,7 +15,9 @@ struct RiskDetectedApp: App {
                 .environmentObject(appState)
                 .preferredColorScheme(appState.themePreference.colorScheme)
                 .onOpenURL { url in
-                    SupabaseService.shared.handleAuthURL(url)
+                    if !GoogleSignInService.handle(url) {
+                        SupabaseService.shared.handleAuthURL(url)
+                    }
                 }
         }
     }

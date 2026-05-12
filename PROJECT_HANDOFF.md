@@ -1,5 +1,8 @@
 # RiskDetected Project Handoff
 
+> Güncel tek yapılacaklar özeti için bkz. `PROJECT_STATUS_AND_NEXT_2026-05-12.md`.
+> Bu handoff dosyası mimari ve tarihsel bağlamı korur; en güncel yapılacak sırası yeni status dosyasındadır.
+
 Last updated: 2026-05-10
 
 This file is the single-context handoff for continuing RiskDetected in a new Codex/Claude session.
