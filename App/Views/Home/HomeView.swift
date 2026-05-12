@@ -242,6 +242,7 @@ struct HomeView: View {
                 }
             )
             .environmentObject(app)
+            .preferredColorScheme(app.themePreference == .dark ? .dark : .light)
         }
         .fullScreenCover(item: $paywallPresentation) { presentation in
             PaywallView(
