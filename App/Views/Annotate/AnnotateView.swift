@@ -27,7 +27,6 @@ struct AnnotateView: View {
                 bottomCTA
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Top Bar

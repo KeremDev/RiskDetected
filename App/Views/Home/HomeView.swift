@@ -162,6 +162,7 @@ struct HomeView: View {
             )
             .presentationDetents([.fraction(0.72), .large])
             .presentationDragIndicator(.visible)
+            .preferredColorScheme(app.themePreference == .dark ? .dark : .light)
         }
         .fullScreenCover(isPresented: $showCameraPicker) {
             CameraPicker { image in
