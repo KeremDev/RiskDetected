@@ -251,20 +251,26 @@ struct ResultView: View {
         Button {
             showPaywall = true
         } label: {
-            HStack(spacing: 6) {
+            HStack(alignment: .top, spacing: 6) {
                 Image(systemName: "star.fill")
                     .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                    .padding(.top, 2)
                 Text("Pro ile 10 bulguya kadar ve en az %90 AI güveni")
                     .font(.system(size: 10.5, weight: .semibold, design: .rounded))
                     .lineLimit(2)
+                    .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .layoutPriority(1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .foregroundStyle(Color.rdGreenDark)
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
             .background(Color.rdGreenSoft.opacity(0.78))
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .buttonStyle(.plain)
         .accessibilityLabel("Pro ile 10 bulguya kadar ve en az yüzde 90 AI güveni")
     }
