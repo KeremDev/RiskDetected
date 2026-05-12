@@ -428,9 +428,10 @@ final class PDFReportService: @unchecked Sendable {
             let ordinal = pageIndex * rowsPerPage + idx + 1
             let rowY = y + headerH + CGFloat(idx) * rowH
             let band = finding.fkBand
+            let activityArea = canvasLabel(input.bundle.analysis.canvas)
             let values = [
                 "\(ordinal)",
-                input.bundle.analysis.canvas.capitalized,
+                activityArea,
                 finding.title + "\n" + finding.description,
                 finding.category,
                 scoreText(finding.fk.probability),
@@ -461,9 +462,10 @@ final class PDFReportService: @unchecked Sendable {
             let ordinal = pageIndex * rowsPerPage + idx + 1
             let rowY = y + headerH + CGFloat(idx) * rowH
             let band = finding.m5Band
+            let activityArea = canvasLabel(input.bundle.analysis.canvas)
             let values = [
                 "\(ordinal)",
-                input.bundle.analysis.canvas.capitalized,
+                activityArea,
                 finding.title + "\n" + finding.description,
                 finding.category,
                 "\(finding.m5.probability)",
