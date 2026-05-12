@@ -221,6 +221,7 @@ struct HomeView: View {
                     pendingJob = nil
                 }
             )
+            .preferredColorScheme(app.themePreference == .dark ? .dark : .light)
         }
         .sheet(item: $reportPreviewItem) { item in
             DocumentPreview(url: item.url)
