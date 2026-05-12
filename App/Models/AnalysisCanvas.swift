@@ -32,9 +32,9 @@ extension AnalysisCanvas {
     static let fire = AnalysisCanvas(id: "fire", title: "Yangın", short: "",
                                      body: "Yanıcı maddeler, yangın söndürme erişimi, sıcak çalışma ve tahliye risklerine odaklan.",
                                      icon: "flame.fill", isPro: false)
-    static let ergonomics = AnalysisCanvas(id: "ergonomics", title: "Ergonomi", short: "",
-                                           body: "Duruş, kaldırma-taşıma, tekrar eden hareket ve ergonomik zorlanma risklerini analiz et.",
-                                           icon: "figure.strengthtraining.traditional", isPro: false)
+    static let ergonomics = AnalysisCanvas(id: "ergonomics", title: "Özel Ekipman", short: "",
+                                           body: "Fotoğraftaki ekipmanı tanımla ve İSG açısından değerlendir. Emin değilsen olasılıkları belirt, varsayım yapma. Kısa başlıklarla şunları ver: ekipman adı, tehlikeler, riskler, önlemler, gerekli KKD, kullanım öncesi kontroller ve durdurma kriterleri. Kritik risk varsa en başta uyar. Eksik bilgi varsa ek fotoğraf veya marka/model iste.",
+                                           icon: "wrench.and.screwdriver.fill", isPro: true)
     static let environmentMeasurement = AnalysisCanvas(id: "environment_measurement", title: "Ortam Ölçümü", short: "",
                                                        body: "Gürültü, aydınlatma, toz, gaz, sıcaklık ve ortam ölçümü gerektiren riskleri değerlendir.",
                                                        icon: "gauge.with.dots.needle.67percent", isPro: true)
@@ -62,10 +62,10 @@ extension AnalysisCanvas {
 
     static let all: [AnalysisCanvas] = [
         .general, .ppe, .machine,
-        .warningSigns, .electrical, .sector,
+        .warningSigns, .generalPremium, .sector,
         .fire, .ergonomics, .environmentMeasurement,
         .explosion, .environment, .legislation,
-        .workingAtHeight, .mobileEquipment, .generalPremium,
+        .workingAtHeight, .mobileEquipment, .electrical,
         .constructionMachinery
     ]
 }

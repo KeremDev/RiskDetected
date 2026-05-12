@@ -60,7 +60,7 @@ const CANVAS_FOCUS: Record<string, string> = {
   fire:
     "Yanıcı/parlayıcı malzeme, sıcak çalışma, elektrik kaynaklı yangın, söndürücü erişimi, yangın dolabı, acil çıkış, tahliye yolu, depolama düzeni ve yangın yükünü analiz et.",
   ergonomics:
-    "Uygunsuz duruş, elle kaldırma-taşıma, itme-çekme, tekrar eden hareket, uzun süreli statik çalışma, ekranlı çalışma, çalışma yüksekliği ve kas-iskelet zorlanmalarını belirt.",
+    "Fotoğraftaki ekipmanı tanımla ve İSG açısından değerlendir. Emin değilsen olasılıkları belirt, varsayım yapma. Kısa başlıklarla şunları ver: ekipman adı, tehlikeler, riskler, önlemler, gerekli KKD, kullanım öncesi kontroller ve durdurma kriterleri. Kritik risk varsa en başta uyar. Eksik bilgi varsa ek fotoğraf veya marka/model iste.",
   environment_measurement:
     "Gürültü, toz, gaz/buhar, aydınlatma, sıcaklık, havalandırma, titreşim ve kimyasal maruziyet gibi ölçüm gerektiren başlıkları \"ölçümle doğrulanmalı\" olarak yaz.",
   explosion:
@@ -85,6 +85,7 @@ const PRO_CANVASES = new Set([
   "environment_measurement",
   "legislation",
   "general_premium",
+  "ergonomics",
 ]);
 
 // DB constraint ile birebir uyumlu Fine-Kinney ölçekleri

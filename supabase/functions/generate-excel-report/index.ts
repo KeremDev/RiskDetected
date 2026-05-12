@@ -143,6 +143,8 @@ function canvasLabel(value: unknown): string {
       return "İşaretleme";
     case "sector":
       return "Sektör";
+    case "ergonomics":
+      return "Özel Ekipman";
     case "urgent":
       return "Acil";
     case "procedure":
