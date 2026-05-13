@@ -1,63 +1,40 @@
 import SwiftUI
 
 struct PaywallView: View {
+    @EnvironmentObject private var app: AppState
+
     var onClose: () -> Void
     var onSubscribe: () -> Void
     var notice: String? = nil
 
-    enum Plan: String, CaseIterable, Identifiable {
-        case yearly, monthly
-        var id: String { rawValue }
+    @State private var selectedTier: SubscriptionTier = .plus
+    @State private var isWorking = false
+    @State private var errorMessage: String?
 
-        var label: String {
-            switch self {
-            case .yearly:  return "Yıllık"
-            case .monthly: return "Aylık"
-            }
-        }
-
-        var price: String {
-            switch self {
-            case .yearly:  return "₺149,99"
-            case .monthly: return "₺249,99"
-            }
-        }
-
-        var sub: String {
-            switch self {
-            case .yearly:  return "ay başına · ₺1.799,99 yıllık"
-            case .monthly: return "ay başına · istediğin zaman iptal"
-            }
-        }
-
-        var badge: String? {
-            self == .yearly ? "2 ay hediye" : nil
-        }
-    }
-
-    @State private var selected: Plan = .yearly
+    private let paidTiers: [SubscriptionTier] = [.plus, .pro]
+    private let allTiers: [SubscriptionTier] = [.free, .plus, .pro]
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Color.rdWhite.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 18) {
-                        hero
-                        if let notice {
-                            noticeCard(notice)
-                        }
-                        features
-                        plansSection
-                        footnote
-                        ctaButton
-                        legalRow
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    hero
+                    if let notice {
+                        noticeCard(notice)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 56) // close button area
-                    .padding(.bottom, 24)
+                    planComparison
+                    packageSelector
+                    if let errorMessage {
+                        noticeCard(errorMessage)
+                    }
+                    ctaButton
+                    legalRow
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 56)
+                .padding(.bottom, 24)
             }
 
             Button(action: onClose) {
@@ -71,22 +48,170 @@ struct PaywallView: View {
             .padding(.top, 8)
             .padding(.trailing, 16)
         }
+        .task {
+            await app.refreshSubscriptionOfferings()
+        }
     }
-
-    // MARK: - Sections
 
     private var hero: some View {
         VStack(alignment: .leading, spacing: 12) {
-            RDProBadge()
-            Text("Sahanın profesyonel risk asistanı.")
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .tracking(-0.6)
+            HStack(spacing: 6) {
+                RDTierBadge(tier: .plus)
+                RDTierBadge(tier: .pro)
+            }
+            Text("Saha risk analizini planına göre büyüt.")
+                .font(.system(size: 29, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("PRO ile detaylı risk tabloları, sınırsız PDF rapor ve gelişmiş AI canvasları açılır.")
+            Text("Free haklarını gör, Plus veya Pro ile detaylı analiz, rapor ve gelişmiş canvasları aç.")
                 .font(.system(size: 15, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var planComparison: some View {
+        VStack(spacing: 10) {
+            ForEach(allTiers, id: \.self) { tier in
+                planCard(tier)
+            }
+        }
+    }
+
+    private func planCard(_ tier: SubscriptionTier) -> some View {
+        let capabilities = PlanCapabilities.forTier(tier)
+        let current = app.currentTier == tier
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 7) {
+                        Text(tier.title)
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdBlack)
+                        if tier.isPaid {
+                            RDTierBadge(tier: tier, small: true)
+                        }
+                    }
+                    Text(priceText(for: tier))
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                }
+                Spacer()
+                if current {
+                    Text("Mevcut plan")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(tier.accentTextColor)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(tier.accentSoftColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else if tier.isPaid {
+                    Image(systemName: selectedTier == tier ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundStyle(selectedTier == tier ? tier.accentColor : Color.rdSlate.opacity(0.35))
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 7) {
+                featureRow("Analiz", capabilities.standardAnalysisLabel)
+                featureRow("Detaylı analiz", capabilities.detailedAnalysisLabel)
+                featureRow("Rapor", capabilities.reportLabel)
+                featureRow("Hızlandırılmış", capabilities.acceleratedReportLabel)
+                featureRow("Arşiv", capabilities.archiveLabel)
+                featureRow("Risk tablosu", capabilities.canUseDetailedRiskTable ? "Açık" : "Kapalı")
+                featureRow("AI canvas", capabilities.advancedCanvasLabel)
+                featureRow("Otomatik gönderim", capabilities.canUseAutomaticDelivery ? "Açık" : "Kapalı")
+                featureRow("Destek", capabilities.supportLabel)
+            }
+        }
+        .padding(16)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(borderColor(for: tier, current: current), lineWidth: selectedTier == tier ? 2 : 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .contentShape(RoundedRectangle(cornerRadius: 16))
+        .onTapGesture {
+            guard tier.isPaid else { return }
+            selectedTier = tier
+            UISelectionFeedbackGenerator().selectionChanged()
+        }
+    }
+
+    private var packageSelector: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("ABONELİK")
+                .rdMono(size: 11, weight: .bold)
+                .foregroundStyle(Color.rdSlate)
+            ForEach(packages(for: selectedTier)) { package in
+                Button {
+                    selectedTier = package.tier
+                    UISelectionFeedbackGenerator().selectionChanged()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: package.tier.badgeIcon)
+                            .foregroundStyle(package.tier.accentColor)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(package.title)
+                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.rdBlack)
+                            Text(package.subtitle)
+                                .font(.system(size: 12, design: .rounded))
+                                .foregroundStyle(Color.rdSlate)
+                        }
+                        Spacer()
+                        Text(package.price)
+                            .rdMono(size: 16, weight: .bold)
+                            .foregroundStyle(Color.rdBlack)
+                    }
+                    .padding(14)
+                    .background(Color.rdFog)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var ctaButton: some View {
+        RDButton(
+            title: isWorking ? "İşleniyor..." : "\(selectedTier.title)'a Geç",
+            style: .detect,
+            trailingIcon: "arrow.right",
+            height: 56
+        ) {
+            purchaseSelectedPlan()
+        }
+        .disabled(isWorking || selectedPackage == nil)
+        .opacity(selectedPackage == nil ? 0.62 : 1)
+    }
+
+    private var legalRow: some View {
+        HStack(spacing: 14) {
+            Spacer()
+            Button("Geri Yükle") { restore() }
+                .buttonStyle(.plain)
+            separator
+            Text("Şartlar")
+            separator
+            Text("Gizlilik")
+            Spacer()
+        }
+        .font(.system(size: 12, design: .rounded))
+        .foregroundStyle(Color.rdSlate)
+    }
+
+    private func featureRow(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+                .frame(width: 112, alignment: .leading)
+            Text(value)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -104,148 +229,67 @@ struct PaywallView: View {
         .padding(12)
         .background(Color.rdCritical.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.rdCritical.opacity(0.18), lineWidth: 1)
-        )
-    }
-
-    private struct Feature {
-        let icon: String
-        let title: String
-        let detail: String
-    }
-
-    private let featureList: [Feature] = [
-        .init(icon: "rectangle.3.group", title: "Detaylı risk analizi tablosu",
-              detail: "Olasılık × etki matrisi ve kontrol önerileri"),
-        .init(icon: "arrow.down.to.line", title: "Sınırsız PDF rapor",
-              detail: "Logolu, denetim hazır, paylaşılabilir"),
-        .init(icon: "doc.text", title: "Geçmiş analizlere tam erişim",
-              detail: "90 günden uzun sınırsız arşiv"),
-        .init(icon: "sparkles", title: "Gelişmiş AI canvasları",
-              detail: "Acil risk + prosedür uygunluk modülleri"),
-    ]
-
-    private var features: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(Array(featureList.enumerated()), id: \.offset) { _, f in
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: f.icon)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .frame(width: 36, height: 36)
-                        .foregroundStyle(Color.rdGreenDark)
-                        .background(Color.rdGreenSoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(f.title)
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                        Text(f.detail)
-                            .font(.system(size: 13, design: .rounded))
-                            .foregroundStyle(Color.rdSlate)
-                    }
-                    Spacer()
-                }
-            }
-        }
-    }
-
-    private var plansSection: some View {
-        VStack(spacing: 10) {
-            ForEach(Plan.allCases) { plan in
-                planRow(plan)
-            }
-        }
-    }
-
-    private func planRow(_ plan: Plan) -> some View {
-        let active = selected == plan
-        return Button {
-            UISelectionFeedbackGenerator().selectionChanged()
-            withAnimation(.easeInOut(duration: 0.15)) { selected = plan }
-        } label: {
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .stroke(active ? Color.rdSelected : Color.rdLine, lineWidth: 2)
-                        .frame(width: 22, height: 22)
-                    if active {
-                        Circle().fill(Color.rdSelected).frame(width: 10, height: 10)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(plan.label)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                    Text(plan.sub)
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                }
-
-                Spacer()
-                Text(plan.price)
-                    .rdMono(size: 18, weight: .bold)
-                    .foregroundStyle(Color.rdBlack)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.rdWhite)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(active ? Color.rdSelected : Color.rdLine,
-                                    lineWidth: active ? 2 : 1)
-                    )
-            )
-            .overlay(alignment: .topTrailing) {
-                if let badge = plan.badge {
-                    Text(badge)
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .tracking(0.4)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color.rdGreen)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .padding(.top, -10)
-                        .padding(.trailing, 14)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var footnote: some View {
-        Text("7 gün ücretsiz dene · İlk ödeme öncesi hatırlatma")
-            .font(.system(size: 12, design: .rounded))
-            .foregroundStyle(Color.rdSlate)
-            .frame(maxWidth: .infinity)
-    }
-
-    private var ctaButton: some View {
-        RDButton(title: "PRO'yu Etkinleştir", style: .detect, trailingIcon: "arrow.right", height: 56) {
-            onSubscribe()
-        }
-    }
-
-    private var legalRow: some View {
-        HStack(spacing: 14) {
-            Spacer()
-            Text("Geri Yükle"); separator; Text("Şartlar"); separator; Text("Gizlilik")
-            Spacer()
-        }
-        .font(.system(size: 12, design: .rounded))
-        .foregroundStyle(Color.rdSlate)
     }
 
     private var separator: some View {
         Text("·").foregroundStyle(Color.rdSlate.opacity(0.6))
     }
+
+    private var selectedPackage: SubscriptionPlanPackage? {
+        packages(for: selectedTier).first
+    }
+
+    private func packages(for tier: SubscriptionTier) -> [SubscriptionPlanPackage] {
+        app.subscriptionPackages.filter { $0.tier == tier }
+    }
+
+    private func priceText(for tier: SubscriptionTier) -> String {
+        guard tier.isPaid else { return "Ücretsiz" }
+        return packages(for: tier).first?.price ?? "RevenueCat'te yapılandırılıyor"
+    }
+
+    private func borderColor(for tier: SubscriptionTier, current: Bool) -> Color {
+        if current { return tier.accentColor }
+        if selectedTier == tier { return tier.accentColor }
+        return Color.rdLine
+    }
+
+    private func purchaseSelectedPlan() {
+        guard let selectedPackage else {
+            errorMessage = "Bu plan için RevenueCat paketi bulunamadı."
+            return
+        }
+        isWorking = true
+        errorMessage = nil
+        Task {
+            do {
+                try await app.purchaseSubscription(packageID: selectedPackage.id)
+                isWorking = false
+                onSubscribe()
+            } catch {
+                isWorking = false
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func restore() {
+        isWorking = true
+        errorMessage = nil
+        Task {
+            do {
+                try await app.restoreSubscriptions()
+                isWorking = false
+                onSubscribe()
+            } catch {
+                isWorking = false
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
 }
 
 #Preview {
     PaywallView(onClose: {}, onSubscribe: {})
+        .environmentObject(AppState())
 }

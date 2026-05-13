@@ -40,7 +40,7 @@ struct ProfileView: View {
                 VStack(spacing: 14) {
                     profileHeader
                     statsRow
-                    if app.isPro { proCard } else { upsellCard }
+                    if app.currentTier.isPaid { proCard } else { upsellCard }
                     accountList
                     settingsList
                     signOutCard
@@ -162,7 +162,7 @@ struct ProfileView: View {
             RDAvatar(
                 initials: app.profile?.displayInitials ?? "—",
                 size: 64,
-                pro: app.isPro
+                tier: app.currentTier
             )
             VStack(alignment: .leading, spacing: 2) {
                 Text(app.profile?.displayName ?? "Kullanıcı")
@@ -224,19 +224,19 @@ struct ProfileView: View {
     private var proCard: some View {
         ZStack(alignment: .topLeading) {
             Circle()
-                .fill(Color.rdGreen.opacity(0.18))
+                .fill(app.currentTier.accentColor.opacity(0.18))
                 .frame(width: 120, height: 120)
                 .offset(x: 230, y: -45)
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
-                    RDProBadge(small: true)
+                    RDTierBadge(tier: app.currentTier, small: true)
                     Text("Aktif · \(subscriptionPeriodLabel)")
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white.opacity(0.7))
                 }
 
-                Text("Bir sonraki ödeme")
+                Text(subscriptionPaymentTitle)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .padding(.top, 4)
@@ -259,13 +259,16 @@ struct ProfileView: View {
         } label: {
             ZStack(alignment: .topTrailing) {
                 Circle()
-                    .fill(Color.rdGreen.opacity(0.20))
+                    .fill(Color.rdPlanPlus.opacity(0.18))
                     .frame(width: 132, height: 132)
                     .offset(x: 48, y: -58)
 
                 VStack(alignment: .leading, spacing: 7) {
-                    RDProBadge()
-                    Text("Pro'ya yükselt")
+                    HStack(spacing: 6) {
+                        RDTierBadge(tier: .plus)
+                        RDTierBadge(tier: .pro)
+                    }
+                    Text("Plus veya Pro'ya yükselt")
                         .font(.system(size: 17, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                         .padding(.top, 8)
@@ -280,17 +283,17 @@ struct ProfileView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 LinearGradient(
-                    colors: [Color.rdOnyx, Color.rdOnyx.opacity(0.94), Color.rdGreen.opacity(0.16)],
+                    colors: [Color.rdOnyx, Color.rdOnyx.opacity(0.94), Color.rdPlanPlus.opacity(0.14), Color.rdGreen.opacity(0.12)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .stroke(Color.rdGreen.opacity(0.28), lineWidth: 1)
+                    .stroke(Color.rdPlanPlus.opacity(0.28), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-            .shadow(color: Color.rdGreen.opacity(0.14), radius: 18, x: 0, y: 10)
+            .shadow(color: Color.rdPlanPlus.opacity(0.14), radius: 18, x: 0, y: 10)
         }
         .buttonStyle(RDPressableButtonStyle())
     }
@@ -433,8 +436,12 @@ struct ProfileView: View {
         case "monthly": return "Aylık plan"
         case "yearly": return "Yıllık plan"
         case .some(let value): return value.capitalized
-        case .none: return "Pro plan"
+        case .none: return "\(app.currentTier.title) plan"
         }
+    }
+
+    private var subscriptionPaymentTitle: String {
+        "\(app.currentTier.title) plan"
     }
 
     private var subscriptionRenewalLabel: String {
@@ -1103,7 +1110,7 @@ private struct ProfileDataControlsSheet: View {
                         onTap: onRequestAccountDeletion
                     )
 
-                    Text("Not: Otomatik saklama politikası ayrıca çalışır. Free fotoğraflar 30 gün, Pro fotoğraflar 1 yıl saklanır; raporlar kullanıcı silene kadar kalır.")
+                    Text("Not: Otomatik saklama politikası ayrıca çalışır. Free fotoğraflar 7 gün, Plus fotoğraflar 30 gün, Pro fotoğraflar sınırsız saklanır; raporlar kullanıcı silene kadar kalır.")
                         .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)

@@ -46,15 +46,29 @@ struct AppErrorMessage: Equatable {
         let lower = raw.lowercased(with: Locale(identifier: "tr_TR"))
         let supportID = Self.existingSupportID(in: raw) ?? Self.newSupportID()
 
+        if isReportQuotaExceeded(rawMessage) {
+            return AppErrorMessage(
+                title: "Rapor limiti doldu",
+                message: "Bu plan için aylık rapor oluşturma limitin dolmuş görünüyor.",
+                action: "Bir üst plana yükselt veya yeni kota dönemini bekle.",
+                category: .quotaExceeded,
+                supportID: supportID
+            )
+        }
+
         let isDailyQuota = lower.contains("günlük kota") ||
+            lower.contains("günlük analiz kot") ||
+            lower.contains("günlük detaylı analiz kot") ||
+            lower.contains("analiz kotan doldu") ||
             lower.contains("analiz/gün") ||
             lower.contains("quota_exceeded") ||
             lower.contains("ücretsiz analiz hakk")
         if isDailyQuota {
+            let isFreeQuota = lower.contains("ücretsiz")
             return AppErrorMessage(
-                title: "Günlük limit doldu",
-                message: "Bugünkü ücretsiz analiz hakkın dolmuş görünüyor.",
-                action: "Yarın tekrar deneyebilir veya Pro ile sınırsız analiz akışına geçebilirsin.",
+                title: "Analiz hakkı doldu",
+                message: raw.components(separatedBy: "\n").first ?? "Analiz kotan dolmuş görünüyor.",
+                action: isFreeQuota ? "Plus veya Pro ile devam edebilirsin." : "Plan kotan yenilenene kadar bekle veya daha üst plana geç.",
                 category: .quotaExceeded,
                 supportID: supportID
             )
@@ -284,6 +298,13 @@ struct AppErrorMessage: Equatable {
         )
     }
 
+    static func isReportQuotaExceeded(_ rawMessage: String) -> Bool {
+        let lower = rawMessage.lowercased(with: Locale(identifier: "tr_TR"))
+        return lower.contains("report_quota_exceeded") ||
+            lower.contains("aylık rapor kot") ||
+            lower.contains("rapor") && lower.contains("limit") && lower.contains("dol")
+    }
+
     private static func make(
         _ error: AnalysisService.AnalysisError,
         context: String?,
@@ -299,11 +320,12 @@ struct AppErrorMessage: Equatable {
                 category: .authRequired,
                 supportID: supportID
             )
-        case .quotaExceeded:
+        case .quotaExceeded(let message, let tier):
+            let isFree = tier == "free" || message.localizedCaseInsensitiveContains("ücretsiz")
             return AppErrorMessage(
-                title: "Günlük limit doldu",
-                message: "Bugünkü ücretsiz analiz hakkın dolmuş görünüyor.",
-                action: "Yarın tekrar deneyebilir veya Pro ile devam edebilirsin.",
+                title: "Analiz hakkı doldu",
+                message: message,
+                action: isFree ? "Plus veya Pro ile devam edebilirsin." : "Plan kotan yenilenene kadar bekle veya daha üst plana geç.",
                 category: .quotaExceeded,
                 supportID: supportID
             )

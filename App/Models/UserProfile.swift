@@ -42,6 +42,7 @@ struct UserProfile: Codable, Identifiable, Equatable {
     }
 
     var isPro: Bool { tier == .pro }
+    var isPaid: Bool { tier.isPaid }
 
     /// İsim baş harflerini fallback'lerle hesaplar.
     var displayInitials: String {
@@ -60,7 +61,102 @@ struct UserProfile: Codable, Identifiable, Equatable {
 
 enum SubscriptionTier: String, Codable, Equatable {
     case free
+    case plus
     case pro
+
+    var rank: Int {
+        switch self {
+        case .free: return 0
+        case .plus: return 1
+        case .pro: return 2
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .free: return "Free"
+        case .plus: return "Plus"
+        case .pro: return "Pro"
+        }
+    }
+
+    var isPaid: Bool { self != .free }
+
+    func includes(_ required: SubscriptionTier) -> Bool {
+        rank >= required.rank
+    }
+}
+
+struct PlanCapabilities: Equatable {
+    let tier: SubscriptionTier
+    let standardAnalysisLabel: String
+    let detailedAnalysisLabel: String
+    let reportLabel: String
+    let acceleratedReportLabel: String
+    let archiveLabel: String
+    let canUseDetailedRiskTable: Bool
+    let canUseEmergencyRisk: Bool
+    let canUseProcedureCheck: Bool
+    let advancedCanvasLabel: String
+    let canUseAutomaticDelivery: Bool
+    let canUseTrainedAI: Bool
+    let supportLabel: String
+
+    var isPaid: Bool { tier.isPaid }
+    var isPro: Bool { tier == .pro }
+
+    static func forTier(_ tier: SubscriptionTier) -> PlanCapabilities {
+        switch tier {
+        case .free:
+            return PlanCapabilities(
+                tier: tier,
+                standardAnalysisLabel: "Günde 1 analiz",
+                detailedAnalysisLabel: "Yok",
+                reportLabel: "3/ay, özelleştirilemez",
+                acceleratedReportLabel: "Yok",
+                archiveLabel: "7 gün",
+                canUseDetailedRiskTable: false,
+                canUseEmergencyRisk: false,
+                canUseProcedureCheck: false,
+                advancedCanvasLabel: "Yok",
+                canUseAutomaticDelivery: false,
+                canUseTrainedAI: false,
+                supportLabel: "Yok"
+            )
+        case .plus:
+            return PlanCapabilities(
+                tier: tier,
+                standardAnalysisLabel: "15/gün",
+                detailedAnalysisLabel: "2/gün",
+                reportLabel: "150/ay, logolu",
+                acceleratedReportLabel: "50/ay",
+                archiveLabel: "30 gün",
+                canUseDetailedRiskTable: true,
+                canUseEmergencyRisk: true,
+                canUseProcedureCheck: false,
+                advancedCanvasLabel: "Sınırlı",
+                canUseAutomaticDelivery: true,
+                canUseTrainedAI: false,
+                supportLabel: "E-posta"
+            )
+        case .pro:
+            return PlanCapabilities(
+                tier: tier,
+                standardAnalysisLabel: "60/gün",
+                detailedAnalysisLabel: "10/gün",
+                reportLabel: "Sınırsız, logolu",
+                acceleratedReportLabel: "250/ay",
+                archiveLabel: "Sınırsız",
+                canUseDetailedRiskTable: true,
+                canUseEmergencyRisk: true,
+                canUseProcedureCheck: true,
+                advancedCanvasLabel: "Tam",
+                canUseAutomaticDelivery: true,
+                canUseTrainedAI: true,
+                supportLabel: "E-posta + WhatsApp"
+            )
+        }
+    }
 }
 
 enum RiskMethodWire: String, Codable, Equatable {

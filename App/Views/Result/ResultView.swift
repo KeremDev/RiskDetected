@@ -53,6 +53,8 @@ struct ResultView: View {
     @State private var showReportSettings: Bool = false
     @State private var reportOptions = PDFReportOptions()
     @State private var reportCompanyLogo: UIImage?
+    @State private var reportQuotaExhausted: Bool = false
+    @State private var reportSettingsDetent: PresentationDetent = .height(440)
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
     }
@@ -70,16 +72,20 @@ struct ResultView: View {
                         emptyFindingsCard
                     } else {
                         findingsSection
-                        if !app.isPro { proUpsellCard }
-                        actionButtons
+                        if !app.planCapabilities.canUseDetailedRiskTable { proUpsellCard }
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
-                .padding(.bottom, 110)
+                .padding(.bottom, findings.isEmpty ? 110 : 132)
             }
         }
         .background(Color.rdPaper)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !findings.isEmpty {
+                stickyReportCTA
+            }
+        }
         .overlay {
             if pdfGeneration.isActive {
                 PDFGenerationOverlay(progress: pdfGeneration.progress)
@@ -110,8 +116,11 @@ struct ResultView: View {
             ReportSettingsSheet(
                 options: $reportOptions,
                 companyLogo: $reportCompanyLogo,
+                presentationDetent: $reportSettingsDetent,
                 profile: app.profile,
-                isPro: app.isPro,
+                accessTier: app.currentTier,
+                canUseRiskAnalysis: app.planCapabilities.canUseDetailedRiskTable,
+                reportQuotaExhausted: reportQuotaExhausted,
                 onGenerate: {
                     showReportSettings = false
                     generateAndSharePDF(options: reportOptions)
@@ -128,7 +137,7 @@ struct ResultView: View {
                 },
                 onClose: { showReportSettings = false }
             )
-            .presentationDetents([.large])
+            .presentationDetents([.height(440), .large], selection: $reportSettingsDetent)
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -517,7 +526,7 @@ struct ResultView: View {
                 .padding(.leading, 4)
 
             ForEach(Array(sortedFindings.enumerated()), id: \.element.id) { index, finding in
-                FindingCard(finding: finding, index: index + 1, method: method, isPro: app.isPro) {
+                FindingCard(finding: finding, index: index + 1, method: method, currentTier: app.currentTier) {
                     selectedFinding = finding
                 }
 
@@ -543,7 +552,7 @@ struct ResultView: View {
     }
 
     private func lockedFindingPreview(afterVisibleIndex index: Int) -> LockedFindingPreview? {
-        guard !app.isPro else { return nil }
+        guard app.currentTier == .free else { return nil }
         let insertionIndexes = lockedPreviewInsertionIndexes
         guard let previewIndex = insertionIndexes.firstIndex(of: index),
               lockedFindingPreviews.indices.contains(previewIndex)
@@ -566,7 +575,7 @@ struct ResultView: View {
     }
 
     private var bottomLockedFindingPreviews: [LockedFindingPreview] {
-        guard !app.isPro else { return [] }
+        guard app.currentTier == .free else { return [] }
         return Array(lockedFindingPreviews.dropFirst(inlineLockedPreviewCount))
     }
 
@@ -577,13 +586,13 @@ struct ResultView: View {
             ("Ek kritik bulgu", .critical, "Detaylı açıklama Pro ile açılır."),
             ("Tolerans dışı durum", .high, "Fine-Kinney ve 5×5 hesabı kilitli."),
             ("Önemli risk alanı", .high, "Kanıt ve aksiyon planı Pro'da görünür."),
-            ("Gizli uygunsuzluk", .medium, "Önerilen önlem Pro raporunda açılır."),
-            ("Olası risk", .low, "Ek bulgu detayları Pro ile görünür."),
+            ("Gizli uygunsuzluk", .medium, "Önerilen önlem Plus ile görünür."),
+            ("Olası risk", .low, "Ek bulgu detayları Plus ile görünür."),
             ("Önemli risk", .high, "PDF/Excel risk tablosuna eklenir."),
-            ("Ek saha riski", .medium, "Standart referansları Pro'da açılır."),
+            ("Ek saha riski", .medium, "Standart referansları Plus'ta açılır."),
             ("Kritik kontrol noktası", .critical, "Detaylı risk hesabı Pro ile açılır."),
-            ("Düzeltici aksiyon", .medium, "Aksiyon takibi Pro raporunda görünür."),
-            ("Mevzuat referansı", .low, "Kaynak ve standart bilgisi Pro'da açılır.")
+            ("Düzeltici aksiyon", .medium, "Aksiyon takibi Plus raporunda görünür."),
+            ("Mevzuat referansı", .low, "Kaynak ve standart bilgisi Plus'ta açılır.")
         ]
         return (0..<total).map { offset in
             let template = templates[offset % templates.count]
@@ -642,9 +651,27 @@ struct ResultView: View {
         .buttonStyle(RDPressableButtonStyle())
     }
 
-    // MARK: - Action buttons
+    // MARK: - Report CTA
 
-    private var actionButtons: some View {
+    private var stickyReportCTA: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [Color.rdPaper.opacity(0), Color.rdPaper.opacity(0.96)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 18)
+            .allowsHitTesting(false)
+
+            reportCTAButton
+                .padding(.horizontal, 20)
+                .padding(.bottom, 10)
+                .padding(.top, 2)
+                .background(Color.rdPaper.opacity(0.96))
+        }
+    }
+
+    private var reportCTAButton: some View {
         RDButton(
             title: pdfGeneration.isActive ? "Rapor hazırlanıyor..." : isExcelGenerating ? "Excel hazırlanıyor..." : "Rapor Oluştur",
             style: .primary,
@@ -656,8 +683,15 @@ struct ResultView: View {
             action: {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 reportOptions = defaultReportOptions(kind: .standard)
-                Task { _ = try? await loadProfileLogoIfNeeded() }
-                showReportSettings = true
+                Task {
+                    await app.refreshPlanState()
+                    if app.currentTier == .pro {
+                        reportQuotaExhausted = false
+                    }
+                    _ = try? await loadProfileLogoIfNeeded()
+                    reportSettingsDetent = .height(440)
+                    showReportSettings = true
+                }
             }
         )
         .disabled(pdfGeneration.isActive || isExcelGenerating)
@@ -737,6 +771,9 @@ struct ResultView: View {
                         pdfGeneration.advance(to: 0.92)
                     } catch {
                         Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                        if AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) {
+                            throw error
+                        }
                         pdfGeneration.advance(to: 0.92)
                     }
                 }
@@ -748,6 +785,7 @@ struct ResultView: View {
                 }
             } catch {
                 pdfGeneration.stop()
+                handleReportQuotaIfNeeded(error)
                 pdfError = AppErrorMessage.make(
                     rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
                     context: "PDF oluşturulamadı",
@@ -786,6 +824,7 @@ struct ResultView: View {
                 )
                 shareItem = ShareItem(url: url)
             } catch {
+                handleReportQuotaIfNeeded(error)
                 pdfError = AppErrorMessage.make(
                     error,
                     context: "Excel oluşturulamadı",
@@ -793,6 +832,15 @@ struct ResultView: View {
                 ).fullText
             }
             isExcelGenerating = false
+        }
+    }
+
+    private func handleReportQuotaIfNeeded(_ error: Error) {
+        guard AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) else { return }
+        reportQuotaExhausted = true
+        reportOptions.kind = .standard
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            showPaywall = true
         }
     }
 
@@ -889,8 +937,11 @@ struct ReportSettingsSheet: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var options: PDFReportOptions
     @Binding var companyLogo: UIImage?
+    @Binding var presentationDetent: PresentationDetent
     let profile: UserProfile?
-    let isPro: Bool
+    let accessTier: SubscriptionTier
+    let canUseRiskAnalysis: Bool
+    let reportQuotaExhausted: Bool
     let onGenerate: () -> Void
     let onGenerateExcel: (() -> Void)?
     let onPaywall: () -> Void
@@ -900,16 +951,20 @@ struct ReportSettingsSheet: View {
 
     private var isDarkMode: Bool { colorScheme == .dark }
     private var lockedCardBackground: Color {
-        isDarkMode ? Color.rdWhite.opacity(0.08) : Color(hex: "#FFFCF2")
+        if reportQuotaExhausted { return Color.rdCriticalBg.opacity(isDarkMode ? 0.14 : 0.34) }
+        return isDarkMode ? Color.rdWhite.opacity(0.08) : Color(hex: "#FFFCF2")
     }
     private var lockedCardStroke: Color {
-        isDarkMode ? Color.rdGreen.opacity(0.26) : Color(hex: "#F6C343").opacity(0.5)
+        if reportQuotaExhausted { return Color.rdCritical.opacity(isDarkMode ? 0.34 : 0.42) }
+        return isDarkMode ? SubscriptionTier.plus.accentColor.opacity(0.30) : SubscriptionTier.plus.accentColor.opacity(0.46)
     }
     private var lockedIconBackground: Color {
-        isDarkMode ? Color.rdGreenSoft.opacity(0.20) : Color(hex: "#FFF2BD")
+        if reportQuotaExhausted { return Color.rdCriticalBg.opacity(isDarkMode ? 0.24 : 1) }
+        return SubscriptionTier.plus.accentSoftColor
     }
     private var lockedIconForeground: Color {
-        isDarkMode ? Color.rdGreen : Color(hex: "#9A6B00")
+        if reportQuotaExhausted { return Color.rdCriticalText }
+        return SubscriptionTier.plus.accentTextColor
     }
     private var lockedPreviewBackground: Color {
         isDarkMode ? Color.rdWhite.opacity(0.07) : Color.rdWhite.opacity(0.58)
@@ -919,6 +974,9 @@ struct ReportSettingsSheet: View {
     }
     private var lockedPreviewFieldBackground: Color {
         isDarkMode ? Color.rdWhite.opacity(0.08) : Color.rdWhite.opacity(0.76)
+    }
+    private var riskAnalysisLocked: Bool {
+        !canUseRiskAnalysis || reportQuotaExhausted
     }
 
     var body: some View {
@@ -939,28 +997,15 @@ struct ReportSettingsSheet: View {
                             removal: .opacity.combined(with: .scale(scale: 0.98, anchor: .top))
                         ))
                     }
-
-                    RDButton(title: primaryButtonTitle,
-                             style: .detect,
-                             icon: primaryButtonIcon,
-                             height: 54,
-                             backgroundOverride: .rdCTA,
-                             foregroundOverride: .white,
-                             shadowOverride: Color.rdGreen.opacity(0.16),
-                             action: {
-                                 if options.kind == .riskAnalysis, outputFormat == .excel, let onGenerateExcel {
-                                     onGenerateExcel()
-                                 } else {
-                                     onGenerate()
-                                 }
-                             })
-                        .padding(.top, 4)
                 }
                 .padding(.horizontal, 14)
-                .padding(.top, 18)
-                .padding(.bottom, 24)
+                .padding(.top, 12)
+                .padding(.bottom, 96)
             }
             .background(Color.rdPaper)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                reportSettingsStickyCTA
+            }
             .navigationTitle("Rapor Oluştur")
             .navigationBarTitleDisplayMode(.inline)
             .animation(.spring(response: 0.34, dampingFraction: 0.86), value: options.kind)
@@ -976,16 +1021,53 @@ struct ReportSettingsSheet: View {
 
     private var primaryButtonTitle: String {
         if options.kind == .standard { return "Rapor oluştur" }
+        if reportQuotaExhausted { return "Limit doldu" }
         return outputFormat == .excel ? "Excel risk tablosu oluştur" : "Risk analizi PDF oluştur"
     }
 
     private var primaryButtonIcon: String {
         if options.kind == .standard { return "doc.richtext.fill" }
+        if reportQuotaExhausted { return "exclamationmark.triangle.fill" }
         return outputFormat == .excel ? "tablecells" : "doc.text.magnifyingglass"
     }
 
+    private var reportSettingsStickyCTA: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [Color.rdPaper.opacity(0), Color.rdPaper.opacity(0.98)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 14)
+            .allowsHitTesting(false)
+
+            RDButton(title: primaryButtonTitle,
+                     style: .detect,
+                     icon: primaryButtonIcon,
+                     height: 54,
+                     backgroundOverride: .rdCTA,
+                     foregroundOverride: .white,
+                     shadowOverride: Color.rdGreen.opacity(0.16),
+                     action: {
+                         if options.kind == .riskAnalysis, riskAnalysisLocked {
+                             onPaywall()
+                             return
+                         }
+                         if options.kind == .riskAnalysis, outputFormat == .excel, let onGenerateExcel {
+                             onGenerateExcel()
+                         } else {
+                             onGenerate()
+                         }
+                     })
+                .padding(.horizontal, 14)
+                .padding(.top, 2)
+                .padding(.bottom, 10)
+                .background(Color.rdPaper.opacity(0.98))
+        }
+    }
+
     private var reportTypeSection: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 10) {
             reportKindRow(
                 kind: .standard,
                 title: "Standart Rapor",
@@ -997,7 +1079,7 @@ struct ReportSettingsSheet: View {
                 title: "Risk Analizi Tablosu",
                 subtitle: "Fine-Kinney veya 5×5 Matris Metodu PDF ve Excel çıktısı, ayrıca özelleştirilebilir alanlar.",
                 icon: "tablecells",
-                locked: !isPro
+                locked: riskAnalysisLocked
             )
         }
     }
@@ -1019,13 +1101,16 @@ struct ReportSettingsSheet: View {
                     options.kind = kind
                     if kind == .standard {
                         outputFormat = .pdf
+                        presentationDetent = .height(440)
+                    } else {
+                        presentationDetent = .large
                     }
                 }
             }
         } label: {
             VStack(alignment: .leading, spacing: locked ? 10 : 0) {
                 HStack(spacing: 14) {
-                    Image(systemName: locked ? "lock.fill" : icon)
+                    Image(systemName: locked ? (reportQuotaExhausted ? "exclamationmark.triangle.fill" : "lock.fill") : icon)
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundStyle(active ? Color.white : locked ? lockedIconForeground : Color.rdGreenDark)
                         .frame(width: 58, height: 58)
@@ -1038,8 +1123,7 @@ struct ReportSettingsSheet: View {
                                 .font(.system(size: 17, weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             if locked {
-                                RDProBadge(small: true)
-                                    .scaleEffect(0.82)
+                                riskAnalysisStatusBadge
                             }
                         }
                         Text(subtitle)
@@ -1053,11 +1137,13 @@ struct ReportSettingsSheet: View {
                         .foregroundStyle(active ? Color.rdGreen : Color.rdSlate.opacity(0.32))
                 }
 
-                if locked {
-                    proLockedPreview
+                if locked && active {
+                    riskAnalysisPreview
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
-            .padding(18)
+            .padding(.horizontal, 18)
+            .padding(.vertical, active ? 18 : 16)
             .background(active ? Color.rdGreenSoft.opacity(0.65) : locked ? lockedCardBackground : Color.rdWhite)
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
@@ -1066,11 +1152,32 @@ struct ReportSettingsSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .shadow(color: active ? Color.rdGreen.opacity(0.12) : Color.clear, radius: 14, x: 0, y: 8)
         }
-        .frame(minHeight: locked ? 286 : 136)
+        .frame(minHeight: active && locked ? 286 : 118)
         .buttonStyle(RDPressableButtonStyle())
     }
 
-    private var proLockedPreview: some View {
+    @ViewBuilder
+    private var riskAnalysisStatusBadge: some View {
+        if reportQuotaExhausted {
+            HStack(spacing: 3) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 8, weight: .bold, design: .rounded))
+                Text("LİMİT DOLDU")
+                    .font(.system(size: 8, weight: .heavy, design: .rounded))
+                    .tracking(0.3)
+            }
+            .padding(.horizontal, 6)
+            .frame(height: 18)
+            .foregroundStyle(Color.rdCriticalText)
+            .background(Color.rdCriticalBg)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        } else {
+            RDTierBadge(tier: .plus, small: true)
+                .scaleEffect(0.82)
+        }
+    }
+
+    private var riskAnalysisPreview: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 lockedPreviewPill("Fine-Kinney", detail: "R = O × F × Ş", icon: "function")
@@ -1103,9 +1210,9 @@ struct ReportSettingsSheet: View {
                 .frame(width: 17, height: 17)
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdGreen)
+                .foregroundStyle(reportQuotaExhausted ? Color.rdCriticalText : SubscriptionTier.plus.accentTextColor)
                 .frame(width: 26, height: 26)
-                .background(Color.rdGreenSoft)
+                .background(reportQuotaExhausted ? Color.rdCriticalBg : SubscriptionTier.plus.accentSoftColor)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
@@ -1390,6 +1497,23 @@ private struct LockedFindingPreviewCard: View {
     var compact: Bool = false
     let action: () -> Void
 
+    private var requiredTier: SubscriptionTier {
+        switch preview.level {
+        case .critical, .high:
+            return .pro
+        case .medium, .low, .unknown:
+            return .plus
+        }
+    }
+
+    private var cardTint: Color {
+        requiredTier.accentColor
+    }
+
+    private var cardTintSoft: Color {
+        requiredTier.accentSoftColor
+    }
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
@@ -1425,17 +1549,17 @@ private struct LockedFindingPreviewCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                RDProBadge(small: true)
+                RDTierBadge(tier: requiredTier, small: true)
                     .scaleEffect(0.78)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, compact ? 9 : 11)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.rdGreenSoft.opacity(compact ? 0.28 : 0.34))
+                    .fill(cardTintSoft.opacity(compact ? 0.28 : 0.34))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.rdGreen.opacity(compact ? 0.22 : 0.32), lineWidth: 1)
+                            .stroke(cardTint.opacity(compact ? 0.22 : 0.32), lineWidth: 1)
                     )
             )
             .overlay {
@@ -1459,7 +1583,7 @@ struct FindingCard: View {
     let finding: Finding
     let index: Int
     let method: RiskMethod
-    let isPro: Bool
+    let currentTier: SubscriptionTier
     let action: () -> Void
 
     var body: some View {
@@ -1577,7 +1701,9 @@ struct FindingCard: View {
     }
 
     private func findingMetaCards(band: RiskBand) -> some View {
-        HStack(alignment: .top, spacing: 8) {
+        let referencesTier = requiredTier(for: band.level)
+        let referencesUnlocked = currentTier.includes(referencesTier)
+        return HStack(alignment: .top, spacing: 8) {
             infoCard(
                 icon: "checkmark.seal.fill",
                 title: "Plan",
@@ -1585,11 +1711,20 @@ struct FindingCard: View {
                 tint: band.color
             )
             infoCard(
-                icon: isPro ? "books.vertical.fill" : "lock.fill",
+                icon: referencesUnlocked ? "books.vertical.fill" : "lock.fill",
                 title: "Mevzuat",
-                value: isPro ? (finding.references.isEmpty ? "Kontrol edilmeli" : finding.references) : "Pro'da açık",
-                tint: isPro ? Color.rdGreenDark : Color.rdSlate
+                value: referencesUnlocked ? (finding.references.isEmpty ? "Kontrol edilmeli" : finding.references) : "\(referencesTier.title)'ta açık",
+                tint: referencesUnlocked ? Color.rdGreenDark : referencesTier.accentTextColor
             )
+        }
+    }
+
+    private func requiredTier(for level: RiskLevel) -> SubscriptionTier {
+        switch level {
+        case .critical, .high:
+            return .pro
+        case .medium, .low, .unknown:
+            return .plus
         }
     }
 

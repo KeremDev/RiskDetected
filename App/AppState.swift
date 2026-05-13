@@ -95,12 +95,16 @@ final class AppState: ObservableObject {
 
     @Published var flow: AppFlow = .splash
     @Published var isPro: Bool = false
+    @Published var currentTier: SubscriptionTier = .free
+    @Published var planCapabilities: PlanCapabilities = .forTier(.free)
     @Published var profile: UserProfile?
     @Published var activeTab: RDTab = .home
     @Published var quickScanRequestID = UUID()
     var quickScanSource: QuickScanSource = .chooser
     @Published var hasSeenOnboarding: Bool
     @Published var authError: String?
+    @Published private(set) var subscriptionState: SubscriptionState = .free
+    @Published private(set) var subscriptionPackages: [SubscriptionPlanPackage] = []
     @Published var isDarkModeEnabled: Bool {
         didSet {
             UserDefaults.standard.set(isDarkModeEnabled, forKey: Self.darkModeKey)
@@ -119,12 +123,18 @@ final class AppState: ObservableObject {
     }
 
     let auth: AuthService
+    let subscriptions: any SubscriptionManaging
 
     private var cancellables = Set<AnyCancellable>()
 
-    init(auth: AuthService? = nil) {
+    init(
+        auth: AuthService? = nil,
+        subscriptions: (any SubscriptionManaging)? = nil
+    ) {
         let resolved = auth ?? AuthService()
+        let resolvedSubscriptions = subscriptions ?? RevenueCatSubscriptionManager.shared
         self.auth = resolved
+        self.subscriptions = resolvedSubscriptions
         self.hasSeenOnboarding = UserDefaults.standard.bool(forKey: "rd.onboarding.completed")
         let storedTheme = UserDefaults.standard.string(forKey: Self.themePreferenceKey)
             .flatMap(RDThemePreference.init(rawValue:))
@@ -135,9 +145,11 @@ final class AppState: ObservableObject {
             .flatMap(RDLanguagePreference.init(rawValue:))
         self.languagePreference = storedLanguage ?? .system
         self.profile = resolved.profile
-        self.isPro = resolved.profile?.isPro ?? false
+        applyTier(resolved.profile?.tier ?? .free)
         self.authError = resolved.lastError
+        resolvedSubscriptions.configure()
         observeAuth()
+        observeSubscriptions()
         Task { await bootstrap() }
     }
 
@@ -148,6 +160,8 @@ final class AppState: ObservableObject {
             // Profile observer'ı zaten bağladığımız için fetch otomatik tetiklenir,
             // yine de kesinlik için bir kez daha refresh edelim.
             await auth.refreshProfile()
+            await subscriptions.identify(userID: auth.session?.user.id)
+            await subscriptions.loadOfferings()
             activeTab = .home
             flow = .main
             return
@@ -175,6 +189,26 @@ final class AppState: ObservableObject {
         }
     }
 
+    func refreshSubscriptionOfferings() async {
+        await subscriptions.loadOfferings()
+    }
+
+    func refreshPlanState() async {
+        await subscriptions.refreshCustomerInfo()
+        await auth.refreshProfile()
+        applyTier(highestTier(auth.profile?.tier ?? .free, subscriptions.state.tier))
+    }
+
+    func purchaseSubscription(packageID: String) async throws {
+        try await subscriptions.purchase(packageID: packageID)
+        await auth.refreshProfile()
+    }
+
+    func restoreSubscriptions() async throws {
+        try await subscriptions.restorePurchases()
+        await auth.refreshProfile()
+    }
+
     func setDarkMode(_ enabled: Bool) {
         setThemePreference(enabled ? .dark : .light)
     }
@@ -199,7 +233,7 @@ final class AppState: ObservableObject {
             .sink { [weak self] newProfile in
                 guard let self else { return }
                 self.profile = newProfile
-                self.isPro = newProfile?.isPro ?? false
+                self.applyTier(self.highestTier(newProfile?.tier ?? .free, self.subscriptionState.tier))
             }
             .store(in: &cancellables)
 
@@ -214,12 +248,14 @@ final class AppState: ObservableObject {
                             .recordLoginNoticeAcceptanceIfNeeded(userID: session.user.id)
                         await NotificationService.shared.refreshSettings()
                         NotificationService.shared.syncCurrentTokenIfPossible()
+                        await self.subscriptions.identify(userID: session.user.id)
                     }
                     self.activeTab = .home
                     if self.flow != .main {
                         self.flow = .main
                     }
                 } else if self.flow == .main {
+                    Task { await self.subscriptions.identify(userID: nil) }
                     self.flow = .auth
                 }
             }
@@ -232,6 +268,34 @@ final class AppState: ObservableObject {
                 self?.authError = err
             }
             .store(in: &cancellables)
+    }
+
+    private func observeSubscriptions() {
+        subscriptions.statePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                guard let self else { return }
+                self.subscriptionState = state
+                self.applyTier(self.highestTier(self.profile?.tier ?? .free, state.tier))
+            }
+            .store(in: &cancellables)
+
+        subscriptions.packagesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] packages in
+                self?.subscriptionPackages = packages
+            }
+            .store(in: &cancellables)
+    }
+
+    private func highestTier(_ first: SubscriptionTier, _ second: SubscriptionTier) -> SubscriptionTier {
+        first.rank >= second.rank ? first : second
+    }
+
+    private func applyTier(_ tier: SubscriptionTier) {
+        currentTier = tier
+        planCapabilities = PlanCapabilities.forTier(tier)
+        isPro = tier == .pro
     }
 
     func requestQuickScan(source: QuickScanSource = .chooser) {

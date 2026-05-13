@@ -28,14 +28,10 @@ struct RootView: View {
 
 struct SplashView: View {
     var body: some View {
-        VStack(spacing: 12) {
-            Spacer()
+        ZStack {
             RDLogo(size: 28)
-            Text("Detect risk before it grows.")
-                .rdFont(.subheadline)
-                .foregroundStyle(Color.rdSlate)
-            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

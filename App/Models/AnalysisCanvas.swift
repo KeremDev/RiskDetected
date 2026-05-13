@@ -7,7 +7,44 @@ struct AnalysisCanvas: Identifiable, Equatable, Hashable {
     let short: String
     let body: String
     let icon: String        // SF Symbol adı
-    let isPro: Bool
+    let minTier: SubscriptionTier
+
+    var isPro: Bool { minTier == .pro }
+    var isPaid: Bool { minTier != .free }
+
+    init(
+        id: String,
+        title: String,
+        short: String,
+        body: String,
+        icon: String,
+        isPro: Bool
+    ) {
+        self.init(
+            id: id,
+            title: title,
+            short: short,
+            body: body,
+            icon: icon,
+            minTier: isPro ? .pro : .free
+        )
+    }
+
+    init(
+        id: String,
+        title: String,
+        short: String,
+        body: String,
+        icon: String,
+        minTier: SubscriptionTier
+    ) {
+        self.id = id
+        self.title = title
+        self.short = short
+        self.body = body
+        self.icon = icon
+        self.minTier = minTier
+    }
 }
 
 extension AnalysisCanvas {
@@ -19,7 +56,7 @@ extension AnalysisCanvas {
                                     icon: "shield.lefthalf.filled", isPro: false)
     static let machine = AnalysisCanvas(id: "machine", title: "Makine", short: "",
                                         body: "Makine koruyucuları, döner parçalar, sıkışma ve bakım-kilit risklerine odaklan.",
-                                        icon: "gearshape.2.fill", isPro: true)
+                                        icon: "gearshape.2.fill", minTier: .plus)
     static let warningSigns = AnalysisCanvas(id: "warning_signs", title: "Uyarı levhaları", short: "",
                                              body: "Uyarı levhaları, yönlendirme, işaretleme ve görünürlük eksiklerini analiz et.",
                                              icon: "exclamationmark.triangle.fill", isPro: false)
@@ -28,7 +65,7 @@ extension AnalysisCanvas {
                                            icon: "bolt.fill", isPro: false)
     static let sector = AnalysisCanvas(id: "sector", title: "Sektör", short: "",
                                        body: "İnşaat, üretim, depo veya ofis bağlamına göre sektöre özgü risklere odaklan.",
-                                       icon: "building.2.fill", isPro: true)
+                                       icon: "building.2.fill", minTier: .plus)
     static let fire = AnalysisCanvas(id: "fire", title: "Yangın", short: "",
                                      body: "Yanıcı maddeler, yangın söndürme erişimi, sıcak çalışma ve tahliye risklerine odaklan.",
                                      icon: "flame.fill", isPro: false)
@@ -37,7 +74,7 @@ extension AnalysisCanvas {
                                            icon: "wrench.and.screwdriver.fill", isPro: true)
     static let environmentMeasurement = AnalysisCanvas(id: "environment_measurement", title: "Ortam Ölçümü", short: "",
                                                        body: "Gürültü, aydınlatma, toz, gaz, sıcaklık ve ortam ölçümü gerektiren riskleri değerlendir.",
-                                                       icon: "gauge.with.dots.needle.67percent", isPro: true)
+                                                       icon: "gauge.with.dots.needle.67percent", minTier: .plus)
     static let explosion = AnalysisCanvas(id: "explosion", title: "Patlama", short: "",
                                           body: "Patlayıcı atmosfer, basınçlı kaplar, gaz birikimi ve kıvılcım kaynaklarına odaklan.",
                                           icon: "burst.fill", isPro: false)

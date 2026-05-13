@@ -3,7 +3,12 @@ import SwiftUI
 struct RDAvatar: View {
     var initials: String = "EY"
     var size: CGFloat = 36
+    var tier: SubscriptionTier = .free
     var pro: Bool = false
+
+    private var effectiveTier: SubscriptionTier {
+        pro ? .pro : tier
+    }
 
     var body: some View {
         ZStack {
@@ -21,14 +26,14 @@ struct RDAvatar: View {
         }
         .frame(width: size, height: size)
         .overlay(alignment: .bottomTrailing) {
-            if pro {
+            if effectiveTier.isPaid {
                 Circle()
-                    .fill(Color.rdOnyx)
+                    .fill(effectiveTier.accentColor)
                     .frame(width: size * 0.5, height: size * 0.5)
                     .overlay {
-                        Image(systemName: "star.fill")
+                        Image(systemName: effectiveTier.badgeIcon)
                             .font(.system(size: size * 0.22, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color(hex: "#FFD75A"))
+                            .foregroundStyle(.white)
                     }
                     .overlay(
                         Circle().stroke(.white, lineWidth: 2)
@@ -42,7 +47,7 @@ struct RDAvatar: View {
 #Preview {
     HStack(spacing: 16) {
         RDAvatar(initials: "EY", size: 36)
-        RDAvatar(initials: "EY", size: 48, pro: true)
+        RDAvatar(initials: "EY", size: 48, tier: .plus)
         RDAvatar(initials: "KK", size: 64, pro: true)
     }
     .padding()

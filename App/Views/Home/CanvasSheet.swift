@@ -3,7 +3,7 @@ import SwiftUI
 /// AI Odaklı Analiz canvas seçim sheet'i — 2 satırlı yatay seçim rayı.
 struct CanvasSheet: View {
     @Binding var selected: Set<AnalysisCanvas>
-    var isUserPro: Bool = false
+    var userTier: SubscriptionTier = .free
     var onConfirm: () -> Void
     var onUpgradeRequested: () -> Void = {}
 
@@ -24,7 +24,7 @@ struct CanvasSheet: View {
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
                         .padding(.top, 6)
-                    Text("Bir analiz odağı seçebilirsin.")
+                    Text(userTier.isPaid ? "Bir veya birden fazla analiz odağı seçebilirsin." : "Bir analiz odağı seçebilirsin.")
                         .font(.system(size: 14, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
@@ -56,8 +56,8 @@ struct CanvasSheet: View {
                         CanvasCard(
                             canvas: canvas,
                             isActive: selected.contains(canvas),
-                            isLocked: canvas.isPro && !isUserPro,
-                            isUserPro: isUserPro
+                            isLocked: canvas.isPaid && !userTier.includes(canvas.minTier),
+                            userTier: userTier
                         ) {
                             select(canvas)
                         }
@@ -83,7 +83,7 @@ struct CanvasSheet: View {
     }
 
     private func select(_ canvas: AnalysisCanvas) {
-        if canvas.isPro && !isUserPro {
+        if canvas.isPaid && !userTier.includes(canvas.minTier) {
             UINotificationFeedbackGenerator().notificationOccurred(.warning)
             onUpgradeRequested()
             return
@@ -91,10 +91,14 @@ struct CanvasSheet: View {
 
         UISelectionFeedbackGenerator().selectionChanged()
         withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
-            if selected.contains(canvas) {
+            if !userTier.isPaid {
                 selected = [canvas]
+            } else if selected.contains(canvas) {
+                if selected.count > 1 {
+                    selected.remove(canvas)
+                }
             } else {
-                selected = [canvas]
+                selected.insert(canvas)
             }
         }
     }
@@ -106,7 +110,7 @@ private struct CanvasCard: View {
     let canvas: AnalysisCanvas
     let isActive: Bool
     let isLocked: Bool
-    let isUserPro: Bool
+    let userTier: SubscriptionTier
     let action: () -> Void
 
     var body: some View {
@@ -122,9 +126,9 @@ private struct CanvasCard: View {
                 .padding(9)
                 .frame(width: 106, height: 82, alignment: .topLeading)
 
-                if canvas.isPro {
+                if canvas.isPaid {
                     VStack(alignment: .trailing, spacing: 4) {
-                        proBadge
+                        tierBadge
                         if isLocked {
                             lockedBadge
                         }
@@ -159,18 +163,18 @@ private struct CanvasCard: View {
         .frame(width: 28, height: 28)
     }
 
-    private var proBadge: some View {
+    private var tierBadge: some View {
         HStack(spacing: 2) {
-            Image(systemName: "star.fill")
+            Image(systemName: canvas.minTier.badgeIcon)
                 .font(.system(size: 7, design: .rounded))
-            Text("PRO")
+            Text(canvas.minTier.badgeLabel)
                 .font(.system(size: 8, weight: .heavy, design: .rounded))
                 .tracking(0.6)
         }
         .padding(.horizontal, 5)
         .frame(height: 16)
         .foregroundStyle(.white)
-        .background(Color.rdGreen)
+        .background(canvas.minTier.accentColor)
         .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
@@ -205,29 +209,29 @@ private struct CanvasCard: View {
 
     private var borderColor: Color {
         if isActive { return Color.rdSelected }
-        if canvas.isPro { return Color.rdGreen.opacity(0.55) }
+        if canvas.isPaid { return canvas.minTier.accentColor.opacity(0.55) }
         return Color.rdLine
     }
 
     private var borderWidth: CGFloat {
-        canvas.isPro && !isActive ? 1.5 : 1
+        canvas.isPaid && !isActive ? 1.5 : 1
     }
 
     private var iconBg: Color {
         if isActive { return Color.rdGreen }
-        if canvas.isPro { return Color.rdGreenSoft }
+        if canvas.isPaid { return canvas.minTier.accentSoftColor }
         return Color.rdFog
     }
 
     private var iconColor: Color {
         if isActive { return .white }
-        if canvas.isPro { return Color.rdGreenDark }
+        if canvas.isPaid { return canvas.minTier.accentTextColor }
         return Color.rdBlack
     }
 
     private var shadowColor: Color {
         if isActive { return Color.black.opacity(0.12) }
-        if canvas.isPro { return Color.rdGreen.opacity(0.14) }
+        if canvas.isPaid { return canvas.minTier.accentColor.opacity(0.14) }
         return .clear
     }
 }
@@ -236,7 +240,7 @@ private struct CanvasCard: View {
     StatefulPreviewWrapper(Set([AnalysisCanvas.general])) { binding in
         CanvasSheet(
             selected: binding,
-            isUserPro: false,
+            userTier: .free,
             onConfirm: {}
         )
         .presentationDetents([.medium, .large])

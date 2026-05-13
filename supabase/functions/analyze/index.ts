@@ -4,7 +4,7 @@
  * POST body:
  *   analysis_id  : string (UUID)
  *   canvas       : string (primary canvas id, single-value enum)
- *   canvases     : string[] (all selected — for future multi-canvas backend)
+ *   canvases     : string[] (all selected; Free supports one, paid plans support multiple)
  *   text_input   : string | null
  *   user_prompt  : string | null (optional, max 100 chars; user focus note)
  *   request_id   : string | null (client trace id)
@@ -13,7 +13,8 @@
  *   photo_base64_parts: { mime_type: string; data: string; width?: number; height?: number }[] (inline photos)
  *
  * Schema notes (v4):
- *   - profiles.tier        enum: free | pro
+ *   - profiles.tier        enum/text: free | plus | pro
+ *   - analyses.analysis_mode enum/text: standard | detailed | emergency | procedure
  *   - analyses.status      enum: pending | analyzing | completed | failed
  *   - analyses.canvas      text canvas id; known ids are listed in CANVAS_FOCUS
  *   - findings.fk_score    GENERATED — DO NOT INSERT
@@ -36,7 +37,19 @@ const MODEL_FREE = "gemini-2.5-flash";
 // Gemini Pro model free quota bu API key'de 0 dönebiliyor.
 // Ücretli Google AI planı açılana kadar PRO kullanıcıyı da Flash üzerinde çalıştırıyoruz.
 const MODEL_PRO = "gemini-2.5-flash";
-const FREE_DAILY_LIMIT = 2;
+
+type PlanTier = "free" | "plus" | "pro";
+type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
+
+const PLAN_LIMITS: Record<PlanTier, {
+  dailyStandardLimit?: number;
+  dailyDetailedLimit?: number;
+  maxHazards: number;
+}> = {
+  free: { dailyStandardLimit: 1, maxHazards: 4 },
+  plus: { dailyStandardLimit: 15, dailyDetailedLimit: 2, maxHazards: 8 },
+  pro: { dailyStandardLimit: 60, dailyDetailedLimit: 10, maxHazards: 10 },
+};
 
 const COMMON_ANALYSIS_PROMPT =
   `Fotoğrafı iş güvenliği uzmanı saha gözlemi gibi analiz et. Sadece görüntüde görülen bulgulara dayan. Görünmeyen veya emin olmadığın noktaları "kontrol edilmeli" diye belirt.`;
@@ -80,12 +93,20 @@ const CANVAS_FOCUS: Record<string, string> = {
 };
 
 const PRO_CANVASES = new Set([
-  "machine",
-  "sector",
-  "environment_measurement",
   "legislation",
   "general_premium",
   "ergonomics",
+]);
+const PLUS_CANVASES = new Set([
+  "machine",
+  "sector",
+  "environment_measurement",
+]);
+const PAID_CANVASES = new Set([...PLUS_CANVASES, ...PRO_CANVASES]);
+const DETAILED_CANVASES = new Set([
+  ...PLUS_CANVASES,
+  ...PRO_CANVASES,
+  "general_premium",
 ]);
 
 // DB constraint ile birebir uyumlu Fine-Kinney ölçekleri
@@ -247,8 +268,65 @@ function maybeSimulateAIError(simulation?: AISimulationConfig) {
   );
 }
 
-function buildSystemPrompt(canvases: string[], isPro: boolean): string {
-  const maxHazards = isPro ? 10 : 4;
+function tierRank(tier: PlanTier): number {
+  switch (tier) {
+    case "pro":
+      return 2;
+    case "plus":
+      return 1;
+    case "free":
+    default:
+      return 0;
+  }
+}
+
+function normalizeTier(raw: unknown): PlanTier {
+  return raw === "pro" || raw === "plus" ? raw : "free";
+}
+
+function hasActiveSubscription(row: { status?: string | null; current_period_ends_at?: string | null } | null): boolean {
+  if (!row) return false;
+  if (!["active", "trialing", "grace_period"].includes(String(row.status ?? ""))) return false;
+  if (!row.current_period_ends_at) return true;
+  const expiresAt = Date.parse(row.current_period_ends_at);
+  return Number.isFinite(expiresAt) && expiresAt > Date.now();
+}
+
+function resolvePlanTier(
+  profileTier: unknown,
+  subscription: { tier?: string | null; status?: string | null; current_period_ends_at?: string | null } | null,
+): PlanTier {
+  void profileTier;
+  return hasActiveSubscription(subscription) ? normalizeTier(subscription?.tier) : "free";
+}
+
+function canUseCanvas(tier: PlanTier, canvasID: string): boolean {
+  if (PRO_CANVASES.has(canvasID)) return tier === "pro";
+  if (PLUS_CANVASES.has(canvasID)) return tier === "plus" || tier === "pro";
+  return !PAID_CANVASES.has(canvasID);
+}
+
+function normalizeAnalysisMode(rawMode: unknown, canvasIDs: string[]): AnalysisMode {
+  if (rawMode === "detailed" || rawMode === "emergency" || rawMode === "procedure") {
+    return rawMode;
+  }
+  if (canvasIDs.some((id) => DETAILED_CANVASES.has(id))) return "detailed";
+  return "standard";
+}
+
+function istanbulDayStartISO(): string {
+  const day = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Istanbul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  return `${day}T00:00:00+03:00`;
+}
+
+function buildSystemPrompt(canvases: string[], tier: PlanTier): string {
+  const isPro = tier === "pro";
+  const maxHazards = PLAN_LIMITS[tier].maxHazards;
   const focusLines =
     canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") ||
     CANVAS_FOCUS["general"];
@@ -484,6 +562,10 @@ function errorResponse(status: number, message: string, meta?: {
   code?: string;
   requestID?: string;
   supportID?: string;
+  tier?: string;
+  limit?: number;
+  used?: number;
+  feature?: string;
 }): Response {
   const supportID = meta?.supportID ?? newSupportID();
   return new Response(
@@ -493,6 +575,10 @@ function errorResponse(status: number, message: string, meta?: {
       code: meta?.code ?? "unknown",
       request_id: meta?.requestID ?? null,
       support_id: supportID,
+      tier: meta?.tier ?? null,
+      limit: meta?.limit ?? null,
+      used: meta?.used ?? null,
+      feature: meta?.feature ?? null,
     }),
     {
       status,
@@ -654,6 +740,38 @@ async function logUsage(supabase: any, data: any) {
   }
 }
 
+// deno-lint-ignore no-explicit-any
+async function releaseAnalysisQuota(supabase: any, analysisID: string, userID: string) {
+  try {
+    await supabase
+      .from("usage_events")
+      .delete()
+      .eq("user_id", userID)
+      .eq("source_id", analysisID)
+      .in("feature", ["analysis_standard", "analysis_detailed"])
+      .eq("event_type", "reserved");
+  } catch (e) {
+    console.error("Quota reservation release failed:", e);
+  }
+}
+
+// deno-lint-ignore no-explicit-any
+async function completeAnalysisQuota(supabase: any, analysisID: string, userID: string) {
+  try {
+    await supabase
+      .from("usage_events")
+      .update({
+        event_type: "completed",
+      })
+      .eq("user_id", userID)
+      .eq("source_id", analysisID)
+      .in("feature", ["analysis_standard", "analysis_detailed"])
+      .eq("event_type", "reserved");
+  } catch (e) {
+    console.error("Quota reservation completion failed:", e);
+  }
+}
+
 const BAND_RANK: Record<string, number> = {
   low: 0,
   medium: 1,
@@ -734,6 +852,7 @@ serve(async (req: Request) => {
     analysis_id,
     canvas,
     canvases,
+    analysis_mode,
     text_input,
     photo_paths = [],
     photo_base64_parts = [],
@@ -748,86 +867,206 @@ serve(async (req: Request) => {
       supportID,
     });
   }
+  const analysisID = String(analysis_id);
+  const requestedPhotoPaths = Array.isArray(photo_paths)
+    ? photo_paths
+      .map((path) => typeof path === "string" ? path.trim() : "")
+      .filter((path) => path.length > 0)
+    : [];
 
   console.log(
     "Analyze request started",
     JSON.stringify({
       request_id: requestID,
       support_id: supportID,
-      analysis_id,
+      analysis_id: analysisID,
       user_id: user.id,
     }),
   );
 
-  // Profil + tier
+  const { data: ownedAnalysis, error: analysisOwnerErr } = await supabase
+    .from("analyses")
+    .select("id,user_id")
+    .eq("id", analysisID)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (analysisOwnerErr || !ownedAnalysis) {
+    console.warn(
+      "Analyze ownership denied",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        analysis_id: analysisID,
+        user_id: user.id,
+        error: analysisOwnerErr?.message ?? null,
+      }),
+    );
+    return errorResponse(404, "Analiz bulunamadı veya bu işlem için yetki yok.", {
+      code: "analysis_not_found",
+      requestID,
+      supportID,
+    });
+  }
+
+  // deno-lint-ignore no-explicit-any
+  const updateOwnedAnalysis = (patch: Record<string, any>) =>
+    supabase.from("analyses")
+      .update(patch)
+      .eq("id", analysisID)
+      .eq("user_id", user.id);
+
+  const requestedCanvases = [...new Set(
+    (Array.isArray(canvases) && canvases.length > 0 ? canvases : [canvas])
+      .map((item) => String(item ?? "").trim())
+      .filter((item) => item.length > 0),
+  )];
+  const analysisMode = normalizeAnalysisMode(analysis_mode, requestedCanvases);
+
+  // Profil + backend-synced subscription tier
   const { data: profile } = await supabase
     .from("profiles")
     .select("tier")
     .eq("id", user.id)
     .single();
-  const isPro = profile?.tier === "pro";
+  const { data: subscription } = await supabase
+    .from("user_subscriptions")
+    .select("tier,status,current_period_ends_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const planTier = resolvePlanTier(profile?.tier, subscription);
+  const isPro = planTier === "pro";
 
-  // Quota (free)
-  if (!isPro) {
-    const requestedCanvases = Array.isArray(canvases) && canvases.length > 0
-      ? canvases
-      : [canvas];
-    if (requestedCanvases.some((id) => PRO_CANVASES.has(String(id)))) {
-      await supabase.from("analyses")
-        .update({
-          status: "failed",
-          status_message:
-            `Bu analiz odağı PRO üyelik gerektirir. Destek kodu: ${supportID}`,
-        })
-        .eq("id", analysis_id);
-      return errorResponse(
-        403,
-        "Bu analiz odağı PRO üyelik gerektirir.",
-        {
-          code: "pro_required",
-          requestID,
-          supportID,
-        },
-      );
-    }
+  if (planTier === "free" && requestedCanvases.length > 1) {
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `Free planda tek analiz odağı seçebilirsin. Destek kodu: ${supportID}`,
+    });
+    return errorResponse(
+      403,
+      "Free planda tek analiz odağı seçebilirsin.",
+      {
+        code: "single_canvas_required",
+        requestID,
+        supportID,
+        tier: planTier,
+      },
+    );
+  }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const { count } = await supabase
-      .from("analyses")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("status", "completed")
-      .gte("created_at", `${today}T00:00:00Z`);
+  if (requestedCanvases.some((id) => !canUseCanvas(planTier, String(id)))) {
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `Bu analiz odağı daha yüksek üyelik gerektirir. Destek kodu: ${supportID}`,
+    });
+    return errorResponse(
+      403,
+      "Bu analiz odağı daha yüksek üyelik gerektirir.",
+      {
+        code: "plan_required",
+        requestID,
+        supportID,
+      },
+    );
+  }
 
-    if ((count ?? 0) >= FREE_DAILY_LIMIT) {
-      await supabase.from("analyses")
-        .update({
-          status: "failed",
-          status_message:
-            `Günlük kota doldu (${FREE_DAILY_LIMIT}/gün). Destek kodu: ${supportID}`,
-        })
-        .eq("id", analysis_id);
-      return errorResponse(
-        429,
-        `Günlük kota doldu (${FREE_DAILY_LIMIT} analiz/gün).`,
-        {
-          code: "quota_exceeded",
-          requestID,
-          supportID,
-        },
-      );
-    }
+  if (analysisMode === "detailed" && planTier === "free") {
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `Detaylı analiz Plus veya Pro üyelik gerektirir. Destek kodu: ${supportID}`,
+    });
+    return errorResponse(403, "Detaylı analiz Plus veya Pro üyelik gerektirir.", {
+      code: "plan_required",
+      requestID,
+      supportID,
+    });
+  }
+
+  if (analysisMode === "emergency" && planTier === "free") {
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `Acil risk modülü Plus veya Pro üyelik gerektirir. Destek kodu: ${supportID}`,
+    });
+    return errorResponse(403, "Acil risk modülü Plus veya Pro üyelik gerektirir.", {
+      code: "plan_required",
+      requestID,
+      supportID,
+    });
+  }
+
+  if (analysisMode === "procedure" && planTier !== "pro") {
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `Prosedür uygunluk kontrolü Pro üyelik gerektirir. Destek kodu: ${supportID}`,
+    });
+    return errorResponse(403, "Prosedür uygunluk kontrolü Pro üyelik gerektirir.", {
+      code: "plan_required",
+      requestID,
+      supportID,
+    });
+  }
+
+  const { data: quotaReservation, error: quotaReservationErr } = await supabase
+    .rpc("reserve_analysis_quota", {
+      p_user_id: user.id,
+      p_analysis_id: analysisID,
+      p_analysis_mode: analysisMode,
+    });
+
+  if (quotaReservationErr) {
+    console.error("Quota reservation failed", quotaReservationErr);
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `Analiz kotası kontrol edilemedi. Destek kodu: ${supportID}`,
+    });
+    return errorResponse(500, "Analiz kotası kontrol edilemedi.", {
+      code: "quota_check_failed",
+      requestID,
+      supportID,
+    });
+  }
+
+  if (quotaReservation?.ok !== true) {
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `${quotaReservation?.message ?? "Analiz kotası doldu."} Destek kodu: ${supportID}`,
+    });
+    return errorResponse(
+      quotaReservation?.code === "plan_required" ? 403 : 429,
+      quotaReservation?.message ?? "Analiz kotası doldu.",
+      {
+        code: quotaReservation?.code ?? "quota_exceeded",
+        requestID,
+        supportID,
+        tier: quotaReservation?.tier,
+        limit: quotaReservation?.limit,
+        used: quotaReservation?.used,
+        feature: quotaReservation?.feature,
+      },
+    );
   }
 
   // Status → analyzing
-  await supabase.from("analyses")
-    .update({ status: "analyzing", started_at: new Date().toISOString() })
-    .eq("id", analysis_id);
+  await updateOwnedAnalysis({
+    status: "analyzing",
+    analysis_mode: analysisMode,
+    started_at: new Date().toISOString(),
+  });
 
-  const model = isPro ? MODEL_PRO : MODEL_FREE_LITE;
+  const model = planTier === "free" ? MODEL_FREE_LITE : MODEL_PRO;
 
   // Storage → base64
   const imageBase64Parts: { mimeType: string; data: string }[] = [];
+  const inlinePhotoParts = Array.isArray(photo_base64_parts)
+    ? photo_base64_parts
+    : [];
   const sanitizedInlinePhotos: {
     mimeType: "image/jpeg" | "image/png";
     bytes: Uint8Array;
@@ -835,12 +1074,10 @@ serve(async (req: Request) => {
     width: number;
     height: number;
   }[] = [];
-  const inlinePhotoCount = Array.isArray(photo_base64_parts)
-    ? photo_base64_parts.length
-    : 0;
-  const storagePhotoCount = Array.isArray(photo_paths) ? photo_paths.length : 0;
+  const inlinePhotoCount = inlinePhotoParts.length;
+  const storagePhotoCount = requestedPhotoPaths.length;
 
-  for (const part of photo_base64_parts) {
+  for (const part of inlinePhotoParts) {
     if (!part?.data) continue;
     const mimeType = normalizedImageMimeType(part.mime_type ?? part.mimeType);
     const rawBytes = base64ToBytes(part.data);
@@ -863,17 +1100,22 @@ serve(async (req: Request) => {
   // Client tarafında Storage RLS'e takılmamak için bu işi service role ile Edge Function yapıyor.
   const persistedPhotoPaths: string[] = [];
   if (sanitizedInlinePhotos.length > 0) {
-    await supabase.from("photos").delete().eq("analysis_id", analysis_id);
+    await supabase.from("photos")
+      .delete()
+      .eq("analysis_id", analysisID)
+      .eq("user_id", user.id);
 
     for (let i = 0; i < sanitizedInlinePhotos.length; i++) {
       const part = sanitizedInlinePhotos[i];
       const mimeType = part.mimeType;
       const ext = mimeType.includes("png") ? "png" : "jpg";
-      const storagePath = `${user.id}/${analysis_id}/p${i + 1}.${ext}`;
+      const storagePath = `${user.id}/${analysisID}/p${i + 1}.${ext}`;
+      const uploadBuffer = new ArrayBuffer(part.bytes.byteLength);
+      new Uint8Array(uploadBuffer).set(part.bytes);
 
       const { error: uploadErr } = await supabase.storage
         .from("photos")
-        .upload(storagePath, new Blob([part.bytes], { type: mimeType }), {
+        .upload(storagePath, new Blob([uploadBuffer], { type: mimeType }), {
           contentType: mimeType,
           upsert: true,
         });
@@ -884,7 +1126,7 @@ serve(async (req: Request) => {
       }
 
       const { error: photoErr } = await supabase.from("photos").insert({
-        analysis_id,
+        analysis_id: analysisID,
         user_id: user.id,
         storage_path: storagePath,
         width: part.width,
@@ -901,7 +1143,49 @@ serve(async (req: Request) => {
     }
   }
 
-  for (const path of photo_paths) {
+  const uniqueRequestedPhotoPaths = [...new Set(requestedPhotoPaths)];
+  if (uniqueRequestedPhotoPaths.length > 0) {
+    const expectedPrefix = `${user.id}/${analysisID}/`;
+    const { data: ownedPhotoRows, error: ownedPhotoErr } = await supabase
+      .from("photos")
+      .select("storage_path")
+      .eq("analysis_id", analysisID)
+      .eq("user_id", user.id)
+      .in("storage_path", uniqueRequestedPhotoPaths);
+
+    const ownedPaths = new Set(
+      (ownedPhotoRows ?? []).map((row) => String(row.storage_path)),
+    );
+    const invalidPaths = uniqueRequestedPhotoPaths.filter((path) =>
+      !path.startsWith(expectedPrefix) || !ownedPaths.has(path)
+    );
+
+    if (ownedPhotoErr || invalidPaths.length > 0) {
+      console.warn(
+        "Analyze photo ownership denied",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          user_id: user.id,
+          invalid_path_count: invalidPaths.length,
+          error: ownedPhotoErr?.message ?? null,
+        }),
+      );
+      await updateOwnedAnalysis({
+        status: "failed",
+        status_message:
+          `Fotoğraf bu analiz için doğrulanamadı. Destek kodu: ${supportID}`,
+      });
+      return errorResponse(403, "Fotoğraf bu analiz için doğrulanamadı.", {
+        code: "photo_not_authorized",
+        requestID,
+        supportID,
+      });
+    }
+  }
+
+  for (const path of uniqueRequestedPhotoPaths) {
     const { data: fileData, error: storageErr } = await supabase.storage.from(
       "photos",
     ).download(path);
@@ -920,16 +1204,12 @@ serve(async (req: Request) => {
     imageBase64Parts.push({ mimeType, data: base64 });
   }
 
-  const requestedCanvases = Array.isArray(canvases) && canvases.length > 0
-    ? canvases.map((item) => String(item))
-    : [String(canvas)];
-  const firstValidCanvas = requestedCanvases.find((id) => Boolean(CANVAS_FOCUS[id])) ??
-    "general";
-  const resolvedCanvases = [firstValidCanvas];
+  const validRequestedCanvases = requestedCanvases.filter((id) => Boolean(CANVAS_FOCUS[id]));
+  const resolvedCanvases = validRequestedCanvases.length > 0 ? validRequestedCanvases : ["general"];
   const resolvedCanvasPrompts = resolvedCanvases
     .map((id) => ({ id, prompt: CANVAS_FOCUS[id] }))
     .filter((item) => Boolean(item.prompt));
-  const systemPrompt = buildSystemPrompt(resolvedCanvases, isPro);
+  const systemPrompt = buildSystemPrompt(resolvedCanvases, planTier);
   const aiSimulation = aiSimulationConfig();
   const inputAudit: Record<string, unknown> = {
     input_mode: imageBase64Parts.length > 0 ? "photo" : "text",
@@ -940,6 +1220,8 @@ serve(async (req: Request) => {
     text_input_present: Boolean(text_input),
     user_prompt_present: Boolean(userPrompt),
     user_prompt: userPrompt,
+    analysis_mode: analysisMode,
+    user_plan: planTier,
     request_id: requestID,
     support_id: supportID,
     selected_canvas_ids: resolvedCanvases,
@@ -986,23 +1268,22 @@ serve(async (req: Request) => {
   } catch (err) {
     aiError = String(err);
     const cleanError = userFacingAIError(err);
-    await supabase.from("analyses")
-      .update({
-        status: "failed",
-        status_message: `${cleanError.message} Destek kodu: ${supportID}`,
-        raw_ai_response: {
-          _input_audit: inputAudit,
-          _error: {
-            message: aiError,
-            code: cleanError.code,
-            support_id: supportID,
-            request_id: requestID,
-          },
+    await releaseAnalysisQuota(supabase, analysisID, user.id);
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message: `${cleanError.message} Destek kodu: ${supportID}`,
+      raw_ai_response: {
+        _input_audit: inputAudit,
+        _error: {
+          message: aiError,
+          code: cleanError.code,
+          support_id: supportID,
+          request_id: requestID,
         },
-      })
-      .eq("id", analysis_id);
+      },
+    });
     await logUsage(supabase, {
-      analysis_id,
+      analysis_id: analysisID,
       user_id: user.id,
       provider: "gemini",
       model,
@@ -1010,7 +1291,7 @@ serve(async (req: Request) => {
       tokens_out: 0,
       duration_ms: Date.now() - startMs,
       error: aiError,
-      user_plan: isPro ? "pro" : "free",
+      user_plan: planTier,
       request_id: requestID,
       support_id: supportID,
       error_code: cleanError.code,
@@ -1049,7 +1330,7 @@ serve(async (req: Request) => {
     if (BAND_RANK[fkB] > BAND_RANK[highestBandFK]) highestBandFK = fkB;
     if (BAND_RANK[m5B] > BAND_RANK[highestBandM5]) highestBandM5 = m5B;
     return {
-      analysis_id,
+      analysis_id: analysisID,
       user_id: user.id,
       ordinal: i + 1,
       title: h.title,
@@ -1074,12 +1355,11 @@ serve(async (req: Request) => {
     );
     if (findingsErr) {
       console.error("Findings insert error:", findingsErr);
-      await supabase.from("analyses")
-        .update({
-          status: "failed",
-          status_message: `Findings DB hatası. Destek kodu: ${supportID}`,
-        })
-        .eq("id", analysis_id);
+      await releaseAnalysisQuota(supabase, analysisID, user.id);
+      await updateOwnedAnalysis({
+        status: "failed",
+        status_message: `Findings DB hatası. Destek kodu: ${supportID}`,
+      });
       return errorResponse(500, "Bulgular kaydedilemedi.", {
         code: "findings_insert_failed",
         requestID,
@@ -1088,7 +1368,7 @@ serve(async (req: Request) => {
     }
   }
 
-  await supabase.from("analyses").update({
+  await updateOwnedAnalysis({
     status: "completed",
     status_message: `Gemini ${modelUsed} · ${imageBase64Parts.length} foto · ${
       text_input ? "metin var" : "metin yok"
@@ -1102,10 +1382,12 @@ serve(async (req: Request) => {
     finding_count: findingRows.length,
     raw_ai_response: { ...geminiResult, _input_audit: inputAudit },
     ai_models_used: [modelUsed],
-  }).eq("id", analysis_id);
+  });
+
+  await completeAnalysisQuota(supabase, analysisID, user.id);
 
   await logUsage(supabase, {
-    analysis_id,
+    analysis_id: analysisID,
     user_id: user.id,
     provider: "gemini",
     model: modelUsed,
@@ -1113,7 +1395,7 @@ serve(async (req: Request) => {
     tokens_out: outputTokens,
     duration_ms: Date.now() - startMs,
     error: null,
-    user_plan: isPro ? "pro" : "free",
+    user_plan: planTier,
     request_id: requestID,
     support_id: supportID,
     error_code: null,

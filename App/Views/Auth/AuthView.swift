@@ -22,11 +22,12 @@ struct AuthView: View {
 
     enum AuthPhase { case options, email, otp }
     enum DemoAccount: String {
-        case pro, free
+        case pro, plus, free
 
         var title: String {
             switch self {
             case .pro: return "Pro demo"
+            case .plus: return "Plus demo"
             case .free: return "Free demo"
             }
         }
@@ -34,6 +35,7 @@ struct AuthView: View {
         var email: String {
             switch self {
             case .pro: return "demo@riskdetected.app"
+            case .plus: return "plus@riskdetected.app"
             case .free: return "free@riskdetected.app"
             }
         }
@@ -41,6 +43,7 @@ struct AuthView: View {
         var password: String {
             switch self {
             case .pro: return "demo123456"
+            case .plus: return "plus123456"
             case .free: return "free123456"
             }
         }
@@ -48,6 +51,7 @@ struct AuthView: View {
         var icon: String {
             switch self {
             case .pro: return "star.fill"
+            case .plus: return "crown.fill"
             case .free: return "person.crop.circle"
             }
         }
@@ -55,6 +59,7 @@ struct AuthView: View {
         var tint: Color {
             switch self {
             case .pro: return Color.rdGreen
+            case .plus: return Color.rdPlanPlus
             case .free: return Color.rdBlack
             }
         }
@@ -226,6 +231,7 @@ struct AuthView: View {
             #if DEBUG
             HStack(spacing: 8) {
                 demoButton(.pro)
+                demoButton(.plus)
                 demoButton(.free)
             }
             .opacity(isSigningIn ? 0.6 : 1)
@@ -488,7 +494,7 @@ struct AuthView: View {
             .background(Color.rdWhite)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(account.tint.opacity(account == .pro ? 0.45 : 0.18), lineWidth: 1)
+                    .stroke(account.tint.opacity(account == .free ? 0.18 : 0.45), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }

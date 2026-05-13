@@ -18,6 +18,15 @@ enum RDConfig {
     static let analyzeFunctionName = "analyze"
     static let sendPushNotificationFunctionName = "send-push-notification"
     static let generateExcelReportFunctionName = "generate-excel-report"
+    static let revenueCatWebhookFunctionName = "revenuecat-webhook"
+
+    /// RevenueCat client-side public SDK config. This key is intentionally public;
+    /// subscription truth for backend limits must still be synced server-side.
+    enum Subscription {
+        static let revenueCatAPIKey = "test_uVmDjwjIdGBHDajqdDduMVDYYMb"
+        static let plusEntitlementID = "plus"
+        static let proEntitlementID = "pro"
+    }
 
     /// Storage bucket adları.
     enum Bucket {

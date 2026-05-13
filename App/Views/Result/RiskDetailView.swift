@@ -335,17 +335,7 @@ struct RiskDetailView: View {
 
                         Spacer(minLength: 8)
 
-                        HStack(spacing: 4) {
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 10, weight: .heavy, design: .rounded))
-                            Text("PRO")
-                                .font(.system(size: 11, weight: .heavy, design: .rounded))
-                        }
-                        .foregroundStyle(Color(hex: "#8A5A00"))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
-                        .background(Color(hex: "#FFF3C4"))
-                        .clipShape(Capsule())
+                        RDProBadge(small: true)
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)

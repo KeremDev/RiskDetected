@@ -27,6 +27,7 @@ struct ReportView: View {
     @State private var excelGenerationID: UUID?
     @State private var isStoredReportsExpanded = false
     @State private var isAnalysisSelectorExpanded = false
+    @State private var reportQuotaExhausted = false
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
     }
@@ -85,7 +86,9 @@ struct ReportView: View {
                 ReportSourceSheet(
                     bundle: selectedBundle,
                     profile: app.profile,
-                    isPro: app.isPro,
+                    accessTier: app.currentTier,
+                    canUseRiskAnalysis: app.planCapabilities.canUseDetailedRiskTable,
+                    reportQuotaExhausted: reportQuotaExhausted,
                     isExcelGenerating: excelGenerationID == selectedBundle.analysis.id,
                     pdfGeneration: pdfGeneration,
                     reportOptions: $reportOptions,
@@ -212,7 +215,7 @@ struct ReportView: View {
             HStack(spacing: 8) {
                 overviewMetric(icon: "chart.bar.doc.horizontal", title: "Kaynak", value: "\(analyses.count)")
                 overviewMetric(icon: "tablecells", title: "Risk", value: "\(riskReportCount)")
-                overviewMetric(icon: app.isPro ? "checkmark.seal.fill" : "star.fill", title: "Plan", value: app.isPro ? "Pro" : "Free")
+                overviewMetric(icon: app.currentTier.badgeIcon, title: "Plan", value: app.currentTier.title)
             }
         }
         .padding(18)
@@ -263,18 +266,18 @@ struct ReportView: View {
 
     private var reportValuePanel: some View {
         Button {
-            if !app.isPro { showPaywall = true }
+            if !app.planCapabilities.canUseDetailedRiskTable { showPaywall = true }
         } label: {
             HStack(spacing: 12) {
-                Image(systemName: app.isPro ? "checkmark.seal.fill" : "star.fill")
+                Image(systemName: app.planCapabilities.canUseDetailedRiskTable ? app.currentTier.badgeIcon : SubscriptionTier.plus.badgeIcon)
                     .font(.system(size: 17, weight: .heavy, design: .rounded))
-                    .foregroundStyle(app.isPro ? Color.rdGreen : Color.white)
+                    .foregroundStyle(app.planCapabilities.canUseDetailedRiskTable ? app.currentTier.accentTextColor : Color.white)
                     .frame(width: 42, height: 42)
-                    .background(app.isPro ? Color.rdGreenSoft : Color.rdGreen)
+                    .background(app.planCapabilities.canUseDetailedRiskTable ? app.currentTier.accentSoftColor : SubscriptionTier.plus.accentColor)
                     .clipShape(RoundedRectangle(cornerRadius: 13))
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(app.isPro ? "Pro rapor paketi aktif" : "Pro ile detaylı risk çıktısı")
+                    Text(app.planCapabilities.canUseDetailedRiskTable ? "\(app.currentTier.title) rapor paketi aktif" : "Plus ile detaylı risk çıktısı")
                         .font(.system(size: 15, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("Fine-Kinney ve 5×5 matris, logo, firma bilgisi ve özelleştirilmiş PDF ayarları.")
@@ -284,7 +287,7 @@ struct ReportView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                if app.isPro {
+                if app.planCapabilities.canUseDetailedRiskTable {
                     Text("AKTİF")
                         .rdMono(size: 10, weight: .bold)
                         .foregroundStyle(Color.rdGreen)
@@ -302,12 +305,12 @@ struct ReportView: View {
             .background(Color.rdWhite)
             .overlay(
                 RoundedRectangle(cornerRadius: 18)
-                    .stroke(app.isPro ? Color.rdGreen.opacity(0.26) : Color.rdLine, lineWidth: 1)
+                    .stroke(app.planCapabilities.canUseDetailedRiskTable ? Color.rdGreen.opacity(0.26) : Color.rdLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(RDPressableButtonStyle())
-        .disabled(app.isPro)
+        .disabled(app.planCapabilities.canUseDetailedRiskTable)
     }
 
     private var storedReportsSection: some View {
@@ -560,6 +563,10 @@ struct ReportView: View {
             do {
                 selectedBundle = try await AnalysisService.shared.result(analysisID: row.id)
                 reportOptions = defaultReportOptions(kind: reportOptions.kind == .standard ? .riskAnalysis : reportOptions.kind)
+                await app.refreshPlanState()
+                if app.currentTier == .pro {
+                    reportQuotaExhausted = false
+                }
                 _ = try? await loadProfileLogoIfNeeded()
                 showSourceReportSheet = true
             } catch {
@@ -618,12 +625,16 @@ struct ReportView: View {
                     pdfGeneration.advance(to: 0.94)
                 } catch {
                     Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                    if AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) {
+                        throw error
+                    }
                     pdfGeneration.advance(to: 0.94)
                 }
                 await pdfGeneration.complete()
                 shareItem = ShareItem(url: url)
             } catch {
                 pdfGeneration.stop()
+                handleReportQuotaIfNeeded(error)
                 errorMessage = AppErrorMessage.make(
                     rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
                     context: "PDF oluşturulamadı",
@@ -656,6 +667,7 @@ struct ReportView: View {
                 )
                 shareItem = ShareItem(url: url)
             } catch {
+                handleReportQuotaIfNeeded(error)
                 errorMessage = AppErrorMessage.make(
                     rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
                     context: "Excel oluşturulamadı",
@@ -663,6 +675,15 @@ struct ReportView: View {
                 ).fullText
             }
             excelGenerationID = nil
+        }
+    }
+
+    private func handleReportQuotaIfNeeded(_ error: Error) {
+        guard AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) else { return }
+        reportQuotaExhausted = true
+        reportOptions.kind = .standard
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            showPaywall = true
         }
     }
 
@@ -1024,7 +1045,9 @@ private struct ReportSourceSheet: View {
     @Environment(\.colorScheme) private var colorScheme
     let bundle: AnalysisResultBundle
     let profile: UserProfile?
-    let isPro: Bool
+    let accessTier: SubscriptionTier
+    let canUseRiskAnalysis: Bool
+    let reportQuotaExhausted: Bool
     let isExcelGenerating: Bool
     @ObservedObject var pdfGeneration: PDFGenerationProgressController
     @Binding var reportOptions: PDFReportOptions
@@ -1033,6 +1056,7 @@ private struct ReportSourceSheet: View {
     let onGenerateExcel: () -> Void
     let onPaywall: () -> Void
     @State private var showSettings = false
+    @State private var reportSettingsDetent: PresentationDetent = .height(440)
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -1049,8 +1073,11 @@ private struct ReportSourceSheet: View {
             ReportSettingsSheet(
                 options: $reportOptions,
                 companyLogo: $companyLogo,
+                presentationDetent: $reportSettingsDetent,
                 profile: profile,
-                isPro: isPro,
+                accessTier: accessTier,
+                canUseRiskAnalysis: canUseRiskAnalysis,
+                reportQuotaExhausted: reportQuotaExhausted,
                 onGenerate: {
                     showSettings = false
                     onGenerateCustom(reportOptions, companyLogo)
@@ -1065,7 +1092,7 @@ private struct ReportSourceSheet: View {
                 },
                 onClose: { showSettings = false }
             )
-            .presentationDetents([.large])
+            .presentationDetents([.height(440), .large], selection: $reportSettingsDetent)
             .presentationDragIndicator(.visible)
             .preferredColorScheme(colorScheme)
         }
@@ -1084,6 +1111,7 @@ private struct ReportSourceSheet: View {
                 preparedBy: profile?.displayName ?? "",
                 companyName: profile?.companyName ?? ""
             )
+            reportSettingsDetent = .height(440)
             showSettings = true
         }
         .disabled(isExcelGenerating || pdfGeneration.isActive)

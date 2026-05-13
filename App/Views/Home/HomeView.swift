@@ -27,6 +27,7 @@ struct HomeView: View {
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
     @State private var showCanvasSheet = false
     @State private var showAnnotate = false
+    @State private var pendingAnnotateRequestID: UUID?
     @State private var showResult = false
 
     // Foto akışı state
@@ -45,6 +46,7 @@ struct HomeView: View {
     @State private var openingReportID: UUID? = nil
     @State private var quotaUsage: DailyQuotaUsage? = nil
     @State private var paywallPresentation: PaywallPresentation? = nil
+    @State private var restoreCanvasSheetAfterPaywall = false
     @State private var reportPreviewItem: ShareItem?
 
     enum HomeMode: String, CaseIterable {
@@ -68,7 +70,7 @@ struct HomeView: View {
                         textInputArea
                     }
 
-                    if !app.isPro {
+                    if !app.currentTier.isPaid {
                         freeQuotaHint
                             .padding(.top, 10)
                     }
@@ -115,7 +117,8 @@ struct HomeView: View {
                 await loadQuotaUsage()
             }
         }
-        .onChange(of: app.isPro) { _ in
+        .onChange(of: app.currentTier) { _ in
+            normalizeSelectedCanvasesForTier()
             Task { await loadQuotaUsage() }
         }
         .onChange(of: app.quickScanRequestID) { _ in
@@ -141,14 +144,14 @@ struct HomeView: View {
                 },
                 onClose: { showSourceDialog = false }
             )
-            .presentationDetents([.height(330)])
+            .presentationDetents([.height(285)])
             .presentationDragIndicator(.hidden)
             .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showCanvasSheet) {
             CanvasSheet(
                 selected: $selectedCanvases,
-                isUserPro: app.isPro,
+                userTier: app.currentTier,
                 onConfirm: {
                     showCanvasSheet = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -158,7 +161,7 @@ struct HomeView: View {
                 onUpgradeRequested: {
                     showCanvasSheet = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        showPlainPaywall()
+                        showPlainPaywall(restoreCanvasAfterDismiss: true)
                     }
                 }
             )
@@ -171,9 +174,7 @@ struct HomeView: View {
                 showCameraPicker = false
                 if let image {
                     selectedImage = image
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        showAnnotate = true
-                    }
+                    scheduleAnnotatePresentation()
                 }
             }
             .ignoresSafeArea()
@@ -184,20 +185,22 @@ struct HomeView: View {
                 showGalleryPicker = false
                 if let image {
                     selectedImage = image
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        showAnnotate = true
-                    }
+                    scheduleAnnotatePresentation()
                 }
             }
             .ignoresSafeArea()
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .fullScreenCover(isPresented: $showAnnotate) {
+        .fullScreenCover(isPresented: annotatePresentationBinding) {
             AnnotateView(
                 initialImage: selectedImage,
-                onCancel: { showAnnotate = false },
+                onCancel: {
+                    pendingAnnotateRequestID = nil
+                    showAnnotate = false
+                },
                 onAnalyze: { annotated in
                     selectedImage = annotated
+                    pendingAnnotateRequestID = nil
                     showAnnotate = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                         continueFromAnnotatedPhoto()
@@ -222,8 +225,10 @@ struct HomeView: View {
                     }
                 },
                 onError: { msg in
-                    handleAnalysisError(msg)
                     pendingJob = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        handleAnalysisError(msg)
+                    }
                 }
             )
             .preferredColorScheme(preferredModalColorScheme)
@@ -250,14 +255,15 @@ struct HomeView: View {
             .environmentObject(app)
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .fullScreenCover(item: $paywallPresentation) { presentation in
+        .fullScreenCover(item: $paywallPresentation, onDismiss: {
+            restoreCanvasSheetAfterPaywallIfNeeded()
+        }) { presentation in
             PaywallView(
                 onClose: {
                     paywallPresentation = nil
                 },
                 onSubscribe: {
-                    paywallPresentation = nil
-                    Task { await app.auth.refreshProfile() }
+                    handlePaywallSubscription()
                 },
                 notice: presentation.notice
             )
@@ -279,11 +285,29 @@ struct HomeView: View {
         app.themePreference.colorScheme ?? colorScheme
     }
 
+    private var annotatePresentationBinding: Binding<Bool> {
+        Binding(
+            get: {
+                showAnnotate && mode == .photo && selectedImage != nil
+            },
+            set: { newValue in
+                if !newValue {
+                    pendingAnnotateRequestID = nil
+                    showAnnotate = false
+                }
+            }
+        )
+    }
+
     private var modeSegment: some View {
         HStack(spacing: 0) {
             ForEach(HomeMode.allCases, id: \.self) { m in
                 let active = mode == m
                 Button {
+                    if m == .text {
+                        pendingAnnotateRequestID = nil
+                        showAnnotate = false
+                    }
                     withAnimation(.easeInOut(duration: 0.16)) { mode = m }
                     UISelectionFeedbackGenerator().selectionChanged()
                 } label: {
@@ -326,7 +350,10 @@ struct HomeView: View {
             }
             if selectedImage != nil {
                 // Mevcut foto varsa direkt çizim ekranına dön
-                showAnnotate = true
+                if mode == .photo {
+                    pendingAnnotateRequestID = nil
+                    showAnnotate = true
+                }
             } else {
                 showSourceDialog = true
             }
@@ -446,17 +473,17 @@ struct HomeView: View {
                 }
                 .frame(width: 82, height: 82)
 
-                Text("Günlük free limit doldu")
+                Text("Ücretsiz hak doldu")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
-                Text("Yeni fotoğraf analizi için yarın tekrar dene veya PRO ile sınırsız taramaya geç.")
+                Text("Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et.")
                     .font(.system(size: 13, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Color.rdSlate)
                     .frame(maxWidth: 280)
 
                 HStack(spacing: 5) {
-                    Text("PRO'ya geç")
+                    Text("Plus'a geç")
                         .font(.system(size: 12, weight: .heavy, design: .rounded))
                     Image(systemName: "chevron.right")
                         .font(.system(size: 10, weight: .bold, design: .rounded))
@@ -496,8 +523,8 @@ struct HomeView: View {
                     showQuotaPaywall()
                 } label: {
                     lockedInputContent(
-                        title: "Günlük free limit doldu",
-                        subtitle: "Yeni metin analizi için yarın tekrar dene veya PRO ile sınırsız taramaya geç.",
+                        title: "Ücretsiz hak doldu",
+                        subtitle: "Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et.",
                         icon: "text.badge.xmark"
                     )
                 }
@@ -569,10 +596,10 @@ struct HomeView: View {
                 .frame(width: 42, height: 38)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Günlük deneme hakkı")
+                    Text("Ücretsiz Analiz Hakkı")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("Günde 2 analiz. Pro ile sınırsız hak ve daha detaylı bulgular.")
+                    Text("Günde 1 ücretsiz analiz, daha fazlası için hesabını yükselt !")
                         .font(.system(size: 11, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
@@ -580,11 +607,11 @@ struct HomeView: View {
 
                 Spacer(minLength: 4)
 
-                Image(systemName: "star.fill")
+                Image(systemName: SubscriptionTier.plus.badgeIcon)
                     .font(.system(size: 12, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Color.rdGreen)
+                    .foregroundStyle(SubscriptionTier.plus.accentTextColor)
                     .frame(width: 28, height: 28)
-                    .background(Color.rdGreenSoft)
+                    .background(SubscriptionTier.plus.accentSoftColor)
                     .clipShape(RoundedRectangle(cornerRadius: 9))
             }
             .padding(.horizontal, 12)
@@ -597,11 +624,11 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(RDPressableButtonStyle())
-        .accessibilityLabel("Free kullanım bilgisi. Günde 2 analiz. Pro ile sınırsız hak ve detaylı bulgular.")
+        .accessibilityLabel("Free kullanım bilgisi. Günde 1 ücretsiz analiz, daha fazlası için hesabını yükselt.")
     }
 
     private var freeQuotaCompactText: String {
-        guard let quotaUsage else { return "2/2" }
+        guard let quotaUsage else { return "1/1" }
         return "\(quotaUsage.remaining)/\(quotaUsage.limit)"
     }
 
@@ -784,13 +811,13 @@ struct HomeView: View {
     // MARK: - Helpers
 
     private var isFreeQuotaExhausted: Bool {
-        !app.isPro && quotaUsage?.isExhausted == true
+        !app.currentTier.isPaid && quotaUsage?.isExhausted == true
     }
 
     /// "Taramayı Başlat" → foto yoksa picker; varsa canvas sheet.
     private func startAnalysisFlow() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        if !app.isPro, quotaUsage?.isExhausted == true {
+        if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             return
         }
@@ -811,7 +838,7 @@ struct HomeView: View {
 
     private func handleQuickScanRequest() {
         mode = .photo
-        if !app.isPro, quotaUsage?.isExhausted == true {
+        if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             app.quickScanSource = .chooser
             return
@@ -850,7 +877,7 @@ struct HomeView: View {
     /// bekletmeden doğrudan analiz odağı seçimine geçer.
     private func continueFromAnnotatedPhoto() {
         guard mode == .photo, selectedImage != nil else { return }
-        if !app.isPro, quotaUsage?.isExhausted == true {
+        if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             return
         }
@@ -867,7 +894,7 @@ struct HomeView: View {
             analysisError = AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated).fullText
             return
         }
-        let canvases = [selectedCanvases.first ?? .general]
+        let canvases = selectedCanvasesForCurrentTier()
         let capturedImage = selectedImage
         let capturedText = text
 
@@ -906,23 +933,79 @@ struct HomeView: View {
         let normalized = AppErrorMessage.make(rawMessage: msg, context: "Analiz tamamlanamadı", fallbackTitle: "Analiz tamamlanamadı")
         if normalized.category == .quotaExceeded {
             analysisError = nil
-            showQuotaPaywall(supportID: normalized.supportID)
+            showQuotaPaywall(notice: "\(normalized.message) \(normalized.action) Destek kodu: \(normalized.supportID)")
             Task { await loadQuotaUsage() }
         } else {
             analysisError = normalized.fullText
         }
     }
 
+    private func selectedCanvasesForCurrentTier() -> [AnalysisCanvas] {
+        let ordered = AnalysisCanvas.all.filter { selectedCanvases.contains($0) }
+        let nonEmpty = ordered.isEmpty ? [.general] : ordered
+        if app.currentTier.isPaid {
+            return nonEmpty
+        }
+        return [nonEmpty.first ?? .general]
+    }
+
+    private func normalizeSelectedCanvasesForTier() {
+        guard !app.currentTier.isPaid, selectedCanvases.count > 1 else { return }
+        selectedCanvases = [selectedCanvasesForCurrentTier().first ?? .general]
+    }
+
     private func quotaPaywallNotice(supportID: String = AppErrorMessage.newSupportID()) -> String {
-        "Bugünkü ücretsiz analiz hakkın doldu. Yarın tekrar deneyebilir veya Pro ile devam edebilirsin. Destek kodu: \(supportID)"
+        "Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam edebilirsin. Destek kodu: \(supportID)"
     }
 
     private func showQuotaPaywall(supportID: String = AppErrorMessage.newSupportID()) {
+        restoreCanvasSheetAfterPaywall = false
         paywallPresentation = PaywallPresentation(notice: quotaPaywallNotice(supportID: supportID))
     }
 
-    private func showPlainPaywall() {
+    private func showQuotaPaywall(notice: String) {
+        restoreCanvasSheetAfterPaywall = false
+        paywallPresentation = PaywallPresentation(notice: notice)
+    }
+
+    private func showPlainPaywall(restoreCanvasAfterDismiss: Bool = false) {
+        restoreCanvasSheetAfterPaywall = restoreCanvasAfterDismiss
         paywallPresentation = PaywallPresentation(notice: nil)
+    }
+
+    private func restoreCanvasSheetAfterPaywallIfNeeded() {
+        guard restoreCanvasSheetAfterPaywall else { return }
+        restoreCanvasSheetAfterPaywall = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            guard paywallPresentation == nil, !showCanvasSheet else { return }
+            showCanvasSheet = true
+        }
+    }
+
+    private func handlePaywallSubscription() {
+        let shouldRestoreCanvas = restoreCanvasSheetAfterPaywall
+        restoreCanvasSheetAfterPaywall = false
+        paywallPresentation = nil
+        Task {
+            await app.auth.refreshProfile()
+            guard shouldRestoreCanvas else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                guard paywallPresentation == nil, !showCanvasSheet else { return }
+                showCanvasSheet = true
+            }
+        }
+    }
+
+    private func scheduleAnnotatePresentation() {
+        let requestID = UUID()
+        pendingAnnotateRequestID = requestID
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            guard pendingAnnotateRequestID == requestID,
+                  mode == .photo,
+                  selectedImage != nil
+            else { return }
+            showAnnotate = true
+        }
     }
 
     private func loadRecentItems() async {
@@ -951,7 +1034,7 @@ struct HomeView: View {
     }
 
     private func loadQuotaUsage() async {
-        guard app.auth.session != nil, !app.isPro else {
+        guard app.auth.session != nil, !app.currentTier.isPaid else {
             quotaUsage = nil
             return
         }
@@ -1249,7 +1332,7 @@ struct PhotoSourceSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Saha fotoğrafı")
+                    Text("Fotoğraf Yükle")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("Fotoğrafı nereden almak istiyorsun?")
@@ -1286,14 +1369,10 @@ struct PhotoSourceSheet: View {
                 )
             }
 
-            Text("Fotoğraf seçildikten sonra istersen riskli alanları işaretleyebilirsin.")
-                .font(.system(size: 11.5, weight: .medium, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 20)
         .padding(.top, 22)
-        .padding(.bottom, 18)
+        .padding(.bottom, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color.rdPaper)
     }

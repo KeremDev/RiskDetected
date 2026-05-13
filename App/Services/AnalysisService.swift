@@ -29,14 +29,14 @@ struct AnalysisProgressUpdate: Equatable {
 @MainActor
 final class AnalysisService {
     static let shared = AnalysisService()
-    static let freeDailyLimit = 2
+    static let freeDailyLimit = 1
     nonisolated static let maxTextInputCharacters = 100
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AnalysisService")
     private let supabase = SupabaseService.shared
 
     enum AnalysisError: LocalizedError {
         case notAuthenticated
-        case quotaExceeded(remaining: Int, tier: String)
+        case quotaExceeded(message: String, tier: String)
         case alreadyCompleted
         case aiFailed(String)
         case storageFailed(String)
@@ -46,7 +46,7 @@ final class AnalysisService {
         var errorDescription: String? {
             switch self {
             case .notAuthenticated:               return "Önce giriş yapmalısın."
-            case .quotaExceeded(let r, _):        return "Günlük kotan doldu (kalan: \(r))."
+            case .quotaExceeded(let message, _): return message
             case .alreadyCompleted:               return "Bu analiz zaten tamamlanmış."
             case .aiFailed(let msg):              return "AI hatası: \(msg)"
             case .storageFailed(let msg):         return "Yükleme hatası: \(msg)"
@@ -740,7 +740,7 @@ final class AnalysisService {
         )
     }
 
-    /// Free kullanıcı için günlük analiz kullanımını verir.
+    /// Free kullanıcı için bugünkü ücretsiz standart analiz kullanımını verir.
     func dailyQuotaUsage() async throws -> DailyQuotaUsage {
         if DataActionFailureSimulation.isEnabled(.quotaExceeded) {
             return DailyQuotaUsage(
@@ -751,19 +751,14 @@ final class AnalysisService {
         guard let userID = supabase.currentUserID else {
             throw AnalysisError.notAuthenticated
         }
-
-        let utcDay = DateFormatter()
-        utcDay.calendar = Calendar(identifier: .gregorian)
-        utcDay.locale = Locale(identifier: "en_US_POSIX")
-        utcDay.timeZone = TimeZone(secondsFromGMT: 0)
-        utcDay.dateFormat = "yyyy-MM-dd"
-        let dayStart = "\(utcDay.string(from: Date()))T00:00:00Z"
+        let dayStart = Self.istanbulStartOfTodayISO()
 
         let used = try await countRows(
             table: "analyses",
             filters: {
                 $0.eq("status", value: "completed")
                     .eq("user_id", value: userID.uuidString)
+                    .eq("analysis_mode", value: "standard")
                     .gte("created_at", value: dayStart)
             }
         )
@@ -778,6 +773,16 @@ final class AnalysisService {
 
     nonisolated private static let maxInlinePhotoBytes = 1_500_000
     nonisolated private static let maxInlinePhotoPayloadBytes = 4_500_000
+
+    private static func istanbulStartOfTodayISO() -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        let startOfDay = calendar.startOfDay(for: Date())
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.string(from: startOfDay)
+    }
 
     private func countRows(
         table: String,
@@ -904,6 +909,7 @@ final class AnalysisService {
             let analysis_id: String
             let canvas: String
             let canvases: [String]
+            let analysis_mode: String
             let text_input: String?
             let request_id: String
             let support_id: String
@@ -913,12 +919,14 @@ final class AnalysisService {
         // `canvas` = primary sorted id (tek-canvas contract).
         // `canvases` = tüm seçimler — Edge Function çoklu desteğe geçince kullanılır.
         let sortedCanvasIDs = canvases.map(\.id).sorted()
+        let analysisMode = Self.analysisMode(for: canvases)
         let requestID = UUID().uuidString
         let supportID = AppErrorMessage.newSupportID()
         let body = Body(
             analysis_id: analysisID.uuidString,
             canvas: sortedCanvasIDs.first ?? canvases[0].id,
             canvases: sortedCanvasIDs,
+            analysis_mode: analysisMode,
             text_input: textInput,
             request_id: requestID,
             support_id: supportID,
@@ -941,7 +949,8 @@ final class AnalysisService {
 
                 if code == 429,
                    msg.localizedCaseInsensitiveContains("günlük kota") || msg.localizedCaseInsensitiveContains("analiz/gün") || errorCode == "quota_exceeded" {
-                    throw AnalysisError.quotaExceeded(remaining: 0, tier: "free")
+                    let fallbackMessage = msg.isEmpty ? "Analiz kotan doldu." : msg
+                    throw AnalysisError.quotaExceeded(message: Self.appendSupportID(remoteSupportID, to: fallbackMessage), tier: payload.tier ?? "free")
                 }
                 if code == 409 {
                     throw AnalysisError.alreadyCompleted
@@ -974,6 +983,10 @@ final class AnalysisService {
                 throw AnalysisError.aiFailed(error.localizedDescription)
             }
         }
+    }
+
+    private static func analysisMode(for canvases: [AnalysisCanvas]) -> String {
+        canvases.contains { $0.isPaid } ? "detailed" : "standard"
     }
 
     private func fetchResult(analysisID: UUID) async throws -> AnalysisResultBundle {
@@ -1018,22 +1031,23 @@ final class AnalysisService {
         return "\(label) · \(formatter.string(from: Date()))"
     }
 
-    private static func functionErrorPayload(from data: Data) -> (message: String, supportID: String?, code: String?) {
+    private static func functionErrorPayload(from data: Data) -> (message: String, supportID: String?, code: String?, tier: String?) {
         struct FunctionErrorBody: Decodable {
             let error: String?
             let message: String?
             let support_id: String?
             let code: String?
+            let tier: String?
         }
 
         if let body = try? JSONDecoder().decode(FunctionErrorBody.self, from: data) {
             let message = (body.error ?? body.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             if !message.isEmpty {
-                return (message, body.support_id, body.code)
+                return (message, body.support_id, body.code, body.tier)
             }
         }
 
-        return (String(data: data, encoding: .utf8) ?? "", nil, nil)
+        return (String(data: data, encoding: .utf8) ?? "", nil, nil, nil)
     }
 
     private static func appendSupportID(_ supportID: String, to message: String) -> String {

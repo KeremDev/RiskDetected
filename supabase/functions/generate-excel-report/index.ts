@@ -74,6 +74,61 @@ type ProfileRow = Record<string, unknown> & {
   phone?: string | null;
 };
 
+type PlanTier = "free" | "plus" | "pro";
+
+function tierRank(tier: PlanTier): number {
+  switch (tier) {
+    case "pro":
+      return 2;
+    case "plus":
+      return 1;
+    case "free":
+    default:
+      return 0;
+  }
+}
+
+function normalizeTier(raw: unknown): PlanTier {
+  return raw === "pro" || raw === "plus" ? raw : "free";
+}
+
+function hasActiveSubscription(row: { status?: string | null; current_period_ends_at?: string | null } | null): boolean {
+  if (!row) return false;
+  if (!["active", "trialing", "grace_period"].includes(String(row.status ?? ""))) return false;
+  if (!row.current_period_ends_at) return true;
+  const expiresAt = Date.parse(row.current_period_ends_at);
+  return Number.isFinite(expiresAt) && expiresAt > Date.now();
+}
+
+function resolvePlanTier(
+  profileTier: unknown,
+  subscription: { tier?: string | null; status?: string | null; current_period_ends_at?: string | null } | null,
+): PlanTier {
+  void profileTier;
+  return hasActiveSubscription(subscription) ? normalizeTier(subscription?.tier) : "free";
+}
+
+function monthlyReportLimit(tier: PlanTier): number | null {
+  switch (tier) {
+    case "pro":
+      return null;
+    case "plus":
+      return 150;
+    case "free":
+    default:
+      return 3;
+  }
+}
+
+function istanbulMonthStartISO(): string {
+  const day = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Istanbul",
+    year: "numeric",
+    month: "2-digit",
+  }).format(new Date());
+  return `${day}-01T00:00:00+03:00`;
+}
+
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -397,13 +452,47 @@ serve(async (req: Request) => {
     .eq("id", user.id)
     .maybeSingle();
 
-  if ((profile as ProfileRow | null)?.tier !== "pro") {
+  const { data: subscription } = await supabase
+    .from("user_subscriptions")
+    .select("tier,status,current_period_ends_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const planTier = resolvePlanTier((profile as ProfileRow | null)?.tier, subscription);
+  if (planTier === "free") {
     return json(402, {
-      error: "pro_required",
-      message: "Excel risk analizi Pro üyelik ile kullanılabilir.",
+      error: "plan_required",
+      message: "Excel risk tablosu Plus veya Pro üyelik ile kullanılabilir.",
       request_id: requestID,
       support_id: supportID,
     });
+  }
+
+  const reportLimit = monthlyReportLimit(planTier);
+  if (reportLimit !== null) {
+    const { count: reportCount, error: reportCountError } = await supabase
+      .from("reports")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", istanbulMonthStartISO());
+
+    if (reportCountError) {
+      return json(500, {
+        error: "report_quota_check_failed",
+        message: "Rapor kotası kontrol edilemedi.",
+        request_id: requestID,
+        support_id: supportID,
+      });
+    }
+
+    if ((reportCount ?? 0) >= reportLimit) {
+      return json(429, {
+        error: "report_quota_exceeded",
+        message: `Aylık rapor kotan doldu (${reportLimit}/ay).`,
+        request_id: requestID,
+        support_id: supportID,
+      });
+    }
   }
 
   const workbook = makeWorkbook(

@@ -41,22 +41,22 @@ struct MainTabView: View {
                 },
                 onClose: { showQuickSourceSheet = false }
             )
-            .presentationDetents([.height(330)])
+            .presentationDetents([.height(285)])
             .presentationDragIndicator(.hidden)
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .alert("Günlük limit doldu", isPresented: $showQuotaAlert) {
-            Button("Pro'ya geç") {
+        .alert("Ücretsiz hak doldu", isPresented: $showQuotaAlert) {
+            Button("Plus'a geç") {
                 app.activeTab = .profile
             }
             Button("Tamam", role: .cancel) {}
         } message: {
-            Text("Günlük analiz limitinizi doldurdunuz. Pro'ya geçerek sınırsız analiz ve premium özelliklerin keyfini çıkarabilirsiniz.")
+            Text("Günde 1 ücretsiz analiz hakkınızı kullandınız. Plus veya Pro ile devam edebilirsiniz.")
         }
     }
 
     private func handleQuickScanTap() async {
-        if !app.isPro {
+        if !app.currentTier.isPaid {
             do {
                 let usage = try await AnalysisService.shared.dailyQuotaUsage()
                 if usage.isExhausted {

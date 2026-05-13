@@ -9,6 +9,12 @@ extension Color {
     static let rdGreen = Color(hex: "#00B82E")
     static let rdGreenDark = Color(hex: "#008F24")
     static let rdGreenSoft = Color.dynamic(light: "#EAF8EE", dark: "#092F15")
+    static let rdPlanPro = Color.rdGreen
+    static let rdPlanProDark = Color.rdGreenDark
+    static let rdPlanProSoft = Color.rdGreenSoft
+    static let rdPlanPlus = Color(hex: "#F0A400")
+    static let rdPlanPlusDark = Color(hex: "#9A5B00")
+    static let rdPlanPlusSoft = Color.dynamic(light: "#FFF3D0", dark: "#3A2605")
     static let rdPaper = Color.dynamic(light: "#FAFBFA", dark: "#0B0D0E")
     static let rdWhite = Color.dynamic(light: "#FFFFFF", dark: "#151819")
     static let rdSelected = Color.dynamic(light: "#0B0D0E", dark: "#00B82E")
@@ -43,6 +49,48 @@ extension Color {
     static let rdHighText = Color(hex: "#A45A00")
     static let rdMediumText = Color(hex: "#854D0E")
     static let rdLowText = Color(hex: "#1F6B4A")
+}
+
+extension SubscriptionTier {
+    var badgeLabel: String {
+        switch self {
+        case .free: return "FREE"
+        case .plus: return "PLUS"
+        case .pro: return "PRO"
+        }
+    }
+
+    var badgeIcon: String {
+        switch self {
+        case .free: return "checkmark.circle.fill"
+        case .plus: return "crown.fill"
+        case .pro: return "star.fill"
+        }
+    }
+
+    var accentColor: Color {
+        switch self {
+        case .free: return .rdSlate
+        case .plus: return .rdPlanPlus
+        case .pro: return .rdPlanPro
+        }
+    }
+
+    var accentTextColor: Color {
+        switch self {
+        case .free: return .rdSlate
+        case .plus: return .rdPlanPlusDark
+        case .pro: return .rdPlanProDark
+        }
+    }
+
+    var accentSoftColor: Color {
+        switch self {
+        case .free: return .rdFog
+        case .plus: return .rdPlanPlusSoft
+        case .pro: return .rdPlanProSoft
+        }
+    }
 }
 
 private extension Color {

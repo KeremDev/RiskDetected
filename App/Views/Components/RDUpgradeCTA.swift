@@ -1,44 +1,69 @@
 import SwiftUI
 
 struct RDUpgradeCTA: View {
-    var isPro: Bool
+    var tier: SubscriptionTier
+    var isActive: Bool
+    var title: String?
+    var icon: String?
     var action: () -> Void
+
+    init(isPro: Bool, action: @escaping () -> Void) {
+        self.tier = .pro
+        self.isActive = isPro
+        self.title = nil
+        self.icon = nil
+        self.action = action
+    }
+
+    init(
+        tier: SubscriptionTier,
+        isActive: Bool = false,
+        title: String? = nil,
+        icon: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.tier = tier
+        self.isActive = isActive
+        self.title = title
+        self.icon = icon
+        self.action = action
+    }
 
     var body: some View {
         Button {
-            if !isPro {
+            if !isActive {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 action()
             }
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: "star.fill")
+                Image(systemName: icon ?? tier.badgeIcon)
                     .font(.system(size: 10, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
-                Text(isPro ? "PRO" : "PRO")
+                Text(title ?? tier.badgeLabel)
                     .font(.system(size: 10, weight: .heavy, design: .rounded))
-                    .tracking(0.7)
+                    .tracking(title == nil ? 0.7 : 0.1)
                     .foregroundStyle(.white)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, title == nil ? 8 : 10)
             .frame(height: 24)
             .background(
                 RoundedRectangle(cornerRadius: 7)
                     .fill(
-                        LinearGradient(colors: [Color.rdGreen, Color.rdGreenDark],
+                        LinearGradient(colors: [tier.accentColor, tier.accentTextColor],
                                        startPoint: .topLeading,
                                        endPoint: .bottomTrailing)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 7)
-                            .stroke(Color.rdGreen.opacity(0.18), lineWidth: 1)
+                            .stroke(tier.accentColor.opacity(0.18), lineWidth: 1)
                     )
             )
             .clipShape(RoundedRectangle(cornerRadius: 7))
-            .shadow(color: Color.rdGreen.opacity(0.24), radius: 8, x: 0, y: 3)
+            .shadow(color: tier.accentColor.opacity(0.24), radius: 8, x: 0, y: 3)
         }
         .buttonStyle(RDPressableButtonStyle())
-        .accessibilityLabel(isPro ? "Pro aktif" : "Pro'ya geç")
+        .accessibilityLabel(isActive ? "\(tier.title) aktif" : (title ?? "\(tier.title)'a geç"))
     }
 }
 
@@ -50,7 +75,12 @@ struct RDHeaderAccountCTA: View {
     var body: some View {
         HStack(spacing: 8) {
             if !app.isPro {
-                RDUpgradeCTA(isPro: false, action: onUpgrade)
+                RDUpgradeCTA(
+                    tier: app.currentTier == .plus ? .pro : .plus,
+                    title: "Yükselt",
+                    icon: "arrow.up.circle.fill",
+                    action: onUpgrade
+                )
             }
             Button {
                 withAnimation(.spring(response: 0.24, dampingFraction: 0.88)) {
@@ -61,7 +91,7 @@ struct RDHeaderAccountCTA: View {
                 RDAvatar(
                     initials: app.profile?.displayInitials ?? "—",
                     size: 36,
-                    pro: app.isPro
+                    tier: app.currentTier
                 )
             }
             .buttonStyle(RDPressableButtonStyle())
@@ -82,7 +112,7 @@ struct RDHeaderAccountCTA: View {
                         .accessibilityHidden(true)
 
                     RDHeaderProfileMenu(
-                        isPro: app.isPro,
+                        currentTier: app.currentTier,
                         isDarkMode: app.isDarkModeEnabled,
                         onAnalyses: { select(.analyses) },
                         onReports: { select(.reports) },
@@ -120,7 +150,7 @@ struct RDHeaderAccountCTA: View {
 }
 
 private struct RDHeaderProfileMenu: View {
-    let isPro: Bool
+    let currentTier: SubscriptionTier
     let isDarkMode: Bool
     let onAnalyses: () -> Void
     let onReports: () -> Void
@@ -135,10 +165,14 @@ private struct RDHeaderProfileMenu: View {
                 Divider().background(Color.rdLine).padding(.leading, 40)
                 menuButton(icon: "doc.text", title: "Raporlarım", action: onReports)
                 Divider().background(Color.rdLine).padding(.leading, 40)
-                if isPro {
-                    menuInfo(icon: "star.fill", title: "Pro üyesiniz", tint: .rdGreen)
+                if currentTier.isPaid {
+                    menuInfo(
+                        icon: currentTier.badgeIcon,
+                        title: "\(currentTier.title) üyesiniz",
+                        tint: currentTier.accentColor
+                    )
                 } else {
-                    menuButton(icon: "star.fill", title: "Plan Yükselt", tint: .rdGreen, action: onUpgrade)
+                    menuButton(icon: SubscriptionTier.plus.badgeIcon, title: "Plan Yükselt", tint: .rdPlanPlus, action: onUpgrade)
                 }
             }
 
@@ -238,6 +272,7 @@ private struct RDHeaderProfileMenu: View {
 #Preview {
     HStack(spacing: 16) {
         RDUpgradeCTA(isPro: false) {}
+        RDUpgradeCTA(tier: .plus) {}
         RDUpgradeCTA(isPro: true) {}
     }
     .padding()
