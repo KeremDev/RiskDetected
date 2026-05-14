@@ -23,7 +23,11 @@ enum RDConfig {
     /// RevenueCat client-side public SDK config. This key is intentionally public;
     /// subscription truth for backend limits must still be synced server-side.
     enum Subscription {
+        #if DEBUG
         static let revenueCatAPIKey = "test_uVmDjwjIdGBHDajqdDduMVDYYMb"
+        #else
+        static let revenueCatAPIKey = "appl_mckFFxUrvtNqzjShezjMIrFmItA"
+        #endif
         static let plusEntitlementID = "plus"
         static let proEntitlementID = "pro"
     }

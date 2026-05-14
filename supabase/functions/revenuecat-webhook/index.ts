@@ -122,6 +122,16 @@ serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  let eventUserID = userID;
+  if (eventUserID) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", eventUserID)
+      .maybeSingle();
+    if (!profile) eventUserID = null;
+  }
+
   const { data: existing } = await supabase
     .from("subscription_events")
     .select("event_id")
@@ -132,9 +142,9 @@ serve(async (req) => {
     return json(200, { ok: true, duplicate: true });
   }
 
-  await supabase.from("subscription_events").insert({
+  const { error: insertError } = await supabase.from("subscription_events").insert({
     event_id: eventID,
-    user_id: userID,
+    user_id: eventUserID,
     app_user_id: appUserID,
     event_type: eventType,
     product_id: productID,
@@ -142,8 +152,16 @@ serve(async (req) => {
     environment,
     raw_event: event,
   });
+  if (insertError) {
+    return json(500, { error: "Failed to record subscription event" });
+  }
 
-  if (!userID || eventType === "TEST") {
+  if (!eventUserID || eventType === "TEST") {
+    await supabase
+      .from("subscription_events")
+      .update({ processed_at: new Date().toISOString() })
+      .eq("event_id", eventID);
+
     return json(200, { ok: true, ignored: true });
   }
 
@@ -170,7 +188,7 @@ serve(async (req) => {
 
   if (nextTier) {
     await supabase.from("user_subscriptions").upsert({
-      user_id: userID,
+      user_id: eventUserID,
       tier: nextTier,
       source: "revenuecat",
       status: nextStatus,
@@ -187,7 +205,7 @@ serve(async (req) => {
     await supabase
       .from("profiles")
       .update({ tier: nextTier })
-      .eq("id", userID);
+      .eq("id", eventUserID);
   } else {
     await supabase
       .from("user_subscriptions")
@@ -197,13 +215,13 @@ serve(async (req) => {
         last_event_id: eventID,
         updated_at: new Date().toISOString(),
       })
-      .eq("user_id", userID);
+      .eq("user_id", eventUserID);
 
     if (eventType === "BILLING_ISSUE" || eventType === "SUBSCRIPTION_PAUSED") {
       await supabase
         .from("profiles")
         .update({ tier: "free" })
-        .eq("id", userID);
+        .eq("id", eventUserID);
     }
   }
 
