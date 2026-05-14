@@ -8,7 +8,8 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import * as XLSX from "npm:xlsx@0.18.5";
+import JSZip from "npm:jszip@3.10.1";
+import XLSX from "npm:xlsx-js-style@1.2.0";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -71,10 +72,36 @@ type ProfileRow = Record<string, unknown> & {
   title?: string | null;
   certificate_number?: string | null;
   company_name?: string | null;
+  company_logo_url?: string | null;
   phone?: string | null;
 };
 
 type PlanTier = "free" | "plus" | "pro";
+type RiskBand = "critical" | "high" | "medium" | "low" | "unknown";
+
+const palette = {
+  ink: "0B0F0E",
+  charcoal: "1F2933",
+  slate: "667085",
+  line: "D9E1E2",
+  tableBlue: "DDF3FB",
+  tableLine: "6EAFC6",
+  fog: "F4F7F6",
+  white: "FFFFFF",
+  green: "00B83E",
+  greenDark: "087A2D",
+  greenSoft: "E8F8EE",
+  critical: "C62828",
+  criticalSoft: "FDECEC",
+  high: "D99000",
+  highSoft: "FFF3CC",
+  medium: "C4A000",
+  mediumSoft: "FFF8D9",
+  low: "1F8E46",
+  lowSoft: "E9F7EF",
+  unknown: "6B7280",
+  unknownSoft: "F2F4F7",
+};
 
 function tierRank(tier: PlanTier): number {
   switch (tier) {
@@ -188,22 +215,65 @@ function bandLabel(value: unknown): string {
   }
 }
 
+function normalizeBand(value: unknown): RiskBand {
+  const raw = safeText(value).toLowerCase();
+  if (raw === "critical" || raw === "high" || raw === "medium" || raw === "low") {
+    return raw;
+  }
+  return "unknown";
+}
+
+function bandStyle(value: unknown) {
+  const band = normalizeBand(value);
+  switch (band) {
+    case "critical":
+      return { fg: palette.critical, bg: palette.criticalSoft };
+    case "high":
+      return { fg: palette.high, bg: palette.highSoft };
+    case "medium":
+      return { fg: palette.medium, bg: palette.mediumSoft };
+    case "low":
+      return { fg: palette.low, bg: palette.lowSoft };
+    case "unknown":
+    default:
+      return { fg: palette.unknown, bg: palette.unknownSoft };
+  }
+}
+
 function canvasLabel(value: unknown): string {
   switch (safeText(value)) {
     case "general":
       return "Genel";
     case "ppe":
       return "KKD";
-    case "mark":
-      return "İşaretleme";
+    case "machine":
+      return "Makine";
+    case "warning_signs":
+      return "Uyarı Levhaları";
+    case "electrical":
+      return "Elektrik";
     case "sector":
       return "Sektör";
+    case "fire":
+      return "Yangın";
     case "ergonomics":
       return "Özel Ekipman";
-    case "urgent":
-      return "Acil";
-    case "procedure":
-      return "Prosedür";
+    case "environment_measurement":
+      return "Ortam Ölçümü";
+    case "explosion":
+      return "Patlama";
+    case "environment":
+      return "Çevre";
+    case "legislation":
+      return "Mevzuat";
+    case "working_at_height":
+      return "Yüksekte Çalışma";
+    case "mobile_equipment":
+      return "Hareketli Ekipman";
+    case "general_premium":
+      return "Genel Premium";
+    case "construction_machinery":
+      return "İş Makineleri";
     default:
       return safeText(value, "Genel");
   }
@@ -232,10 +302,641 @@ function workbookBuffer(workbook: XLSX.WorkBook): Uint8Array {
   }) as Uint8Array;
 }
 
-function appendSheet(workbook: XLSX.WorkBook, name: string, rows: unknown[][]) {
+function xmlEscape(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}
+
+function logoPathFromProfile(value: unknown): string {
+  const raw = safeText(value).trim();
+  if (!raw) return "";
+  if (!raw.startsWith("http")) return raw.replace(/^\/+/, "");
+  try {
+    const url = new URL(raw);
+    const marker = "/storage/v1/object/";
+    const markerIndex = url.pathname.indexOf(marker);
+    if (markerIndex === -1) return "";
+    const objectPath = decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
+    return objectPath.replace(/^public\/logos\//, "").replace(/^sign\/logos\//, "").replace(/^logos\//, "");
+  } catch {
+    return "";
+  }
+}
+
+async function loadCompanyLogo(
+  supabase: any,
+  profile: ProfileRow | null,
+): Promise<{ bytes: Uint8Array; extension: "jpg" | "png" } | null> {
+  const path = logoPathFromProfile(profile?.company_logo_url);
+  if (!path) return null;
+
+  const { data, error } = await supabase.storage.from("logos").download(path);
+  if (error || !data) {
+    console.warn("Company logo could not be downloaded for Excel", error);
+    return null;
+  }
+
+  const mime = safeText(data.type).toLowerCase();
+  const extension: "jpg" | "png" = mime.includes("png") || path.toLowerCase().endsWith(".png")
+    ? "png"
+    : "jpg";
+  return {
+    bytes: new Uint8Array(await data.arrayBuffer()),
+    extension,
+  };
+}
+
+function appendXmlRelationship(xml: string, id: string, type: string, target: string): string {
+  const relationship =
+    `<Relationship Id="${xmlEscape(id)}" Type="${xmlEscape(type)}" Target="${xmlEscape(target)}"/>`;
+  if (xml.includes(`Id="${id}"`)) return xml;
+  return xml.replace("</Relationships>", `${relationship}</Relationships>`);
+}
+
+function appendContentTypeDefault(xml: string, extension: string, contentType: string): string {
+  if (xml.includes(`Extension="${extension}"`)) return xml;
+  return xml.replace(
+    "</Types>",
+    `<Default Extension="${xmlEscape(extension)}" ContentType="${xmlEscape(contentType)}"/></Types>`,
+  );
+}
+
+function appendContentTypeOverride(xml: string, partName: string, contentType: string): string {
+  if (xml.includes(`PartName="${partName}"`)) return xml;
+  return xml.replace(
+    "</Types>",
+    `<Override PartName="${xmlEscape(partName)}" ContentType="${xmlEscape(contentType)}"/></Types>`,
+  );
+}
+
+function readUint32BE(bytes: Uint8Array, offset: number): number {
+  return (
+    (bytes[offset] << 24) |
+    (bytes[offset + 1] << 16) |
+    (bytes[offset + 2] << 8) |
+    bytes[offset + 3]
+  ) >>> 0;
+}
+
+function logoDimensions(bytes: Uint8Array, extension: "jpg" | "png"): { width: number; height: number } | null {
+  if (extension === "png" && bytes.length > 24) {
+    return {
+      width: readUint32BE(bytes, 16),
+      height: readUint32BE(bytes, 20),
+    };
+  }
+
+  if (extension === "jpg" && bytes.length > 4) {
+    let offset = 2;
+    while (offset + 9 < bytes.length) {
+      if (bytes[offset] !== 0xff) break;
+      const marker = bytes[offset + 1];
+      const length = (bytes[offset + 2] << 8) + bytes[offset + 3];
+      if (length < 2) break;
+      if ((marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7)) {
+        return {
+          height: (bytes[offset + 5] << 8) + bytes[offset + 6],
+          width: (bytes[offset + 7] << 8) + bytes[offset + 8],
+        };
+      }
+      offset += 2 + length;
+    }
+  }
+
+  return null;
+}
+
+function logoExtents(bytes: Uint8Array, extension: "jpg" | "png"): { cx: number; cy: number } {
+  const maxCx = 1450000;
+  const maxCy = 420000;
+  const dimensions = logoDimensions(bytes, extension);
+  if (!dimensions || dimensions.width <= 0 || dimensions.height <= 0) {
+    return { cx: maxCx, cy: maxCy };
+  }
+
+  const ratio = dimensions.width / dimensions.height;
+  const maxRatio = maxCx / maxCy;
+  if (ratio >= maxRatio) {
+    return { cx: maxCx, cy: Math.round(maxCx / ratio) };
+  }
+  return { cx: Math.round(maxCy * ratio), cy: maxCy };
+}
+
+async function embedCompanyLogo(bytes: Uint8Array, logo: { bytes: Uint8Array; extension: "jpg" | "png" }): Promise<Uint8Array> {
+  const zip = await JSZip.loadAsync(bytes);
+  const imageName = `company-logo.${logo.extension}`;
+  const imageContentType = logo.extension === "png" ? "image/png" : "image/jpeg";
+  const extents = logoExtents(logo.bytes, logo.extension);
+  const drawingPath = "xl/drawings/drawing1.xml";
+  const drawingRelsPath = "xl/drawings/_rels/drawing1.xml.rels";
+  const sheetPath = "xl/worksheets/sheet1.xml";
+  const sheetRelsPath = "xl/worksheets/_rels/sheet1.xml.rels";
+  const contentTypesPath = "[Content_Types].xml";
+
+  zip.file(`xl/media/${imageName}`, logo.bytes);
+  zip.file(
+    drawingPath,
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+  <xdr:oneCellAnchor>
+    <xdr:from><xdr:col>6</xdr:col><xdr:colOff>180000</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>130000</xdr:rowOff></xdr:from>
+    <xdr:ext cx="${extents.cx}" cy="${extents.cy}"/>
+    <xdr:pic>
+      <xdr:nvPicPr>
+        <xdr:cNvPr id="1" name="Firma Logosu"/>
+        <xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr>
+      </xdr:nvPicPr>
+      <xdr:blipFill>
+        <a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId1"/>
+        <a:stretch><a:fillRect/></a:stretch>
+      </xdr:blipFill>
+      <xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>
+    </xdr:pic>
+    <xdr:clientData/>
+  </xdr:oneCellAnchor>
+</xdr:wsDr>`,
+  );
+  zip.file(
+    drawingRelsPath,
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${xmlEscape(imageName)}"/>
+</Relationships>`,
+  );
+
+  const sheetXmlFile = zip.file(sheetPath);
+  if (!sheetXmlFile) return bytes;
+  let sheetXml = await sheetXmlFile.async("string");
+  if (!sheetXml.includes("xmlns:r=")) {
+    sheetXml = sheetXml.replace(
+      "<worksheet ",
+      '<worksheet xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ',
+    );
+  }
+  if (!sheetXml.includes("<drawing ")) {
+    sheetXml = sheetXml.replace("</worksheet>", '<drawing r:id="rIdLogo"/></worksheet>');
+  }
+  zip.file(sheetPath, sheetXml);
+
+  const sheetRels = zip.file(sheetRelsPath)
+    ? await zip.file(sheetRelsPath)!.async("string")
+    : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+  zip.file(
+    sheetRelsPath,
+    appendXmlRelationship(
+      sheetRels,
+      "rIdLogo",
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
+      "../drawings/drawing1.xml",
+    ),
+  );
+
+  const contentTypesFile = zip.file(contentTypesPath);
+  if (contentTypesFile) {
+    let contentTypes = await contentTypesFile.async("string");
+    contentTypes = appendContentTypeDefault(contentTypes, logo.extension, imageContentType);
+    contentTypes = appendContentTypeOverride(
+      contentTypes,
+      "/xl/drawings/drawing1.xml",
+      "application/vnd.openxmlformats-officedocument.drawing+xml",
+    );
+    zip.file(contentTypesPath, contentTypes);
+  }
+
+  return await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+}
+
+const borderThin = {
+  top: { style: "thin", color: { rgb: palette.line } },
+  bottom: { style: "thin", color: { rgb: palette.line } },
+  left: { style: "thin", color: { rgb: palette.line } },
+  right: { style: "thin", color: { rgb: palette.line } },
+};
+
+const styles = {
+  title: {
+    font: { name: "Aptos Display", sz: 24, bold: true, color: { rgb: palette.white } },
+    fill: { fgColor: { rgb: palette.ink } },
+    alignment: { horizontal: "left", vertical: "center" },
+  },
+  subtitle: {
+    font: { name: "Aptos", sz: 12, color: { rgb: palette.slate } },
+    fill: { fgColor: { rgb: palette.ink } },
+    alignment: { horizontal: "left", vertical: "center" },
+  },
+  label: {
+    font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.slate } },
+    alignment: { horizontal: "left", vertical: "top", wrapText: true },
+  },
+  value: {
+    font: { name: "Aptos", sz: 11, color: { rgb: palette.charcoal } },
+    alignment: { horizontal: "left", vertical: "top", wrapText: true },
+  },
+  kpiLabel: {
+    font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.slate } },
+    fill: { fgColor: { rgb: palette.fog } },
+    alignment: { horizontal: "center", vertical: "center", wrapText: true },
+    border: borderThin,
+  },
+  kpiValue: {
+    font: { name: "Aptos Display", sz: 20, bold: true, color: { rgb: palette.ink } },
+    fill: { fgColor: { rgb: palette.white } },
+    alignment: { horizontal: "center", vertical: "center", wrapText: true },
+    border: borderThin,
+  },
+  tableHeader: {
+    font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.white } },
+    fill: { fgColor: { rgb: palette.ink } },
+    alignment: { horizontal: "center", vertical: "center", wrapText: true },
+    border: borderThin,
+  },
+  tableCell: {
+    font: { name: "Aptos", sz: 10, color: { rgb: palette.charcoal } },
+    alignment: { horizontal: "left", vertical: "top", wrapText: true },
+    border: borderThin,
+  },
+  tableNumber: {
+    font: { name: "Aptos", sz: 10, color: { rgb: palette.charcoal } },
+    alignment: { horizontal: "center", vertical: "top", wrapText: true },
+    border: borderThin,
+  },
+  referenceTitle: {
+    font: { name: "Aptos", sz: 13, bold: true, color: { rgb: palette.ink } },
+    alignment: { horizontal: "center", vertical: "center", wrapText: true },
+  },
+  referenceHeader: {
+    font: { name: "Aptos", sz: 9, bold: true, color: { rgb: palette.ink } },
+    fill: { fgColor: { rgb: palette.tableBlue } },
+    alignment: { horizontal: "center", vertical: "center", wrapText: true },
+    border: borderThin,
+  },
+};
+
+function appendSheet(workbook: XLSX.WorkBook, name: string, rows: unknown[][]): XLSX.WorkSheet {
   const sheet = XLSX.utils.aoa_to_sheet(rows);
-  sheet["!cols"] = rows[0]?.map((_, index) => ({ wch: index === 0 ? 24 : 34 })) ?? [];
   XLSX.utils.book_append_sheet(workbook, sheet, name);
+  return sheet;
+}
+
+function setCols(sheet: XLSX.WorkSheet, widths: number[]) {
+  sheet["!cols"] = widths.map((wch) => ({ wch }));
+}
+
+function setRows(sheet: XLSX.WorkSheet, heights: number[]) {
+  sheet["!rows"] = heights.map((hpt) => ({ hpt }));
+}
+
+function addMerges(sheet: XLSX.WorkSheet, ranges: string[]) {
+  sheet["!merges"] = ranges.map((range) => XLSX.utils.decode_range(range));
+}
+
+function ensureCell(sheet: XLSX.WorkSheet, address: string) {
+  if (!sheet[address]) sheet[address] = { t: "s", v: "" };
+  return sheet[address] as XLSX.CellObject;
+}
+
+function setStyle(sheet: XLSX.WorkSheet, range: string, style: Record<string, unknown>) {
+  const decoded = XLSX.utils.decode_range(range);
+  for (let row = decoded.s.r; row <= decoded.e.r; row++) {
+    for (let col = decoded.s.c; col <= decoded.e.c; col++) {
+      const address = XLSX.utils.encode_cell({ r: row, c: col });
+      ensureCell(sheet, address).s = style;
+    }
+  }
+}
+
+function methodBand(finding: FindingRow, method: string): RiskBand {
+  return normalizeBand(method === "matrix_5x5" ? finding.m5_band : finding.fk_band);
+}
+
+function methodScore(finding: FindingRow, method: string): number {
+  return safeNumber(method === "matrix_5x5" ? finding.m5_score : finding.fk_score);
+}
+
+function methodTotalScore(analysis: AnalysisRow, method: string): number {
+  return safeNumber(method === "matrix_5x5" ? analysis.total_score_m5 : analysis.total_score_fk);
+}
+
+function riskCounts(findings: FindingRow[], method: string): Record<RiskBand, number> {
+  const counts: Record<RiskBand, number> = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+    unknown: 0,
+  };
+  for (const finding of findings) {
+    counts[methodBand(finding, method)] += 1;
+  }
+  return counts;
+}
+
+function averageConfidence(findings: FindingRow[]): number {
+  if (findings.length === 0) return 0;
+  return Math.round(
+    findings.reduce((sum, finding) => sum + safeNumber(finding.confidence), 0) /
+      findings.length * 100,
+  );
+}
+
+function riskBar(count: number, total: number): string {
+  if (total <= 0 || count <= 0) return "";
+  const units = Math.max(1, Math.round((count / total) * 18));
+  return "█".repeat(units);
+}
+
+function applyWorkbookDefaults(workbook: XLSX.WorkBook) {
+  workbook.Props = {
+    ...(workbook.Props ?? {}),
+    Title: "RiskDetected Risk Analizi",
+    Subject: "İSG risk analizi Excel raporu",
+    Author: "RiskDetected",
+    Company: "RiskDetected",
+  };
+}
+
+function matrixBand(score: number): RiskBand {
+  if (score >= 20) return "critical";
+  if (score >= 10) return "high";
+  if (score >= 5) return "medium";
+  return "low";
+}
+
+function applyReferenceTableStyle(
+  sheet: XLSX.WorkSheet,
+  titleRange: string,
+  headerRange: string,
+  bodyRange: string,
+) {
+  setStyle(sheet, titleRange, styles.referenceHeader);
+  setStyle(sheet, headerRange, {
+    ...styles.tableHeader,
+    font: { name: "Aptos", sz: 8, bold: true, color: { rgb: palette.ink } },
+    fill: { fgColor: { rgb: palette.fog } },
+  });
+  setStyle(sheet, bodyRange, {
+    ...styles.tableCell,
+    font: { name: "Aptos", sz: 8, color: { rgb: palette.charcoal } },
+    alignment: { horizontal: "center", vertical: "center", wrapText: true },
+  });
+}
+
+function appendMethodReferenceSheet(
+  workbook: XLSX.WorkBook,
+  analysis: AnalysisRow,
+  profile: ProfileRow | null,
+  method: string,
+  supportID: string,
+) {
+  if (method === "matrix_5x5") {
+    appendMatrixReferenceSheet(workbook, analysis, profile, supportID);
+  } else {
+    appendFineKinneyReferenceSheet(workbook, analysis, profile, supportID);
+  }
+}
+
+function appendFineKinneyReferenceSheet(
+  workbook: XLSX.WorkBook,
+  analysis: AnalysisRow,
+  profile: ProfileRow | null,
+  supportID: string,
+) {
+  const preparedBy = profile?.display_name ?? profile?.full_name ?? "Kullanıcı";
+  const companyName = profile?.company_name ?? "Firma belirtilmedi";
+  const sheet = appendSheet(workbook, "Metot Referansı", [
+    ["FINE-KINNEY METODU REFERANS TABLOSU", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+    [],
+    ["OLASILIK (O)", "", "", "", "", "FREKANS (F)", "", "", "", "", "ŞİDDET (Ş)", "", "", ""],
+    ["Değer", "Zararın gerçekleşme olasılığı", "", "", "", "Değer", "Tehlikeye maruz kalma tekrarı", "", "", "", "Değer", "İnsan/çevre üzerinde tahmini zarar", "", ""],
+    ["10", "Beklenir, kesin", "", "", "", "10", "Hemen hemen sürekli / saatte birkaç defa", "", "", "", "100", "Birden fazla ölümlü kaza / çevresel felaket", "", ""],
+    ["6", "Yüksek, oldukça mümkün", "", "", "", "6", "Sık / günde bir veya birkaç defa", "", "", "", "40", "Ölümlü kaza / ciddi çevresel zarar", "", ""],
+    ["3", "Olası", "", "", "", "3", "Ara sıra / haftada birkaç defa", "", "", "", "15", "Kalıcı hasar veya iş kaybı", "", ""],
+    ["1", "Mümkün fakat düşük", "", "", "", "2", "Sık değil / ayda birkaç defa", "", "", "", "7", "Önemli yaralanma / dış ilk yardım", "", ""],
+    ["0.5", "Beklenmez fakat mümkün", "", "", "", "1", "Seyrek / yılda birkaç defa", "", "", "", "3", "Küçük yaralanma / iç ilk yardım", "", ""],
+    ["0.2", "Beklenmez", "", "", "", "0.5", "Çok seyrek / yılda bir veya daha az", "", "", "", "1", "Ucuz atlatma / çevresel zarar yok", "", ""],
+    [],
+    ["RİSK DEĞERİ (R = O x F x Ş)", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+    ["Risk değeri", "Risk adı", "", "Eylem", "", "", "", "", "", "", "", "Termin", "", ""],
+    ["1801 ≤ R", "Tolerans gösterilemez", "", "İş derhal durdurulur; tesis/çevre kapatılması düşünülebilir.", "", "", "", "", "", "", "", "Hemen / 1 hafta", "", ""],
+    ["401 ≤ R < 1801", "En kısa sürede giderilecek", "", "Risk kabul edilebilir seviyeye düşene kadar faaliyet kısıtlanır.", "", "", "", "", "", "", "", "1 aydan kısa", "", ""],
+    ["201 ≤ R < 401", "Esaslı risk", "", "Acil önlem alınır ve faaliyet izlenir.", "", "", "", "", "", "", "", "1-3 ay", "", ""],
+    ["71 ≤ R < 201", "Önemli risk", "", "Düzeltici faaliyet planı başlatılır.", "", "", "", "", "", "", "", "6 ay", "", ""],
+    ["21 ≤ R < 71", "Olası risk", "", "Kontroller sürdürülür ve izlenir.", "", "", "", "", "", "", "", "1 yıl", "", ""],
+    ["R < 21", "Önemsiz risk", "", "İlave kontrole gerek olmayabilir.", "", "", "", "", "", "", "", "Kontrol", "", ""],
+    [],
+    [`Analiz: ${safeText(analysis.title)}`, "", "", "", "", `Hazırlayan: ${preparedBy}`, "", "", "", "", `Doküman No: ${supportID}`, "", "", ""],
+    [`Firma: ${companyName}`, "", "", "", "", `Tarih: ${formatDate(analysis.created_at)}`, "", "", "", "", "", "", "", ""],
+  ]);
+  setCols(sheet, [12, 18, 18, 18, 4, 12, 18, 18, 18, 4, 12, 18, 18, 18]);
+  setRows(sheet, [28, 8, 24, 28, 26, 26, 26, 26, 26, 26, 10, 26, 28, 26, 26, 26, 26, 26, 26, 10, 26, 26]);
+  addMerges(sheet, [
+    "A1:N1",
+    "A3:D3",
+    "F3:I3",
+    "K3:N3",
+    "B4:D4",
+    "G4:I4",
+    "L4:N4",
+    "B5:D5",
+    "G5:I5",
+    "L5:N5",
+    "B6:D6",
+    "G6:I6",
+    "L6:N6",
+    "B7:D7",
+    "G7:I7",
+    "L7:N7",
+    "B8:D8",
+    "G8:I8",
+    "L8:N8",
+    "B9:D9",
+    "G9:I9",
+    "L9:N9",
+    "B10:D10",
+    "G10:I10",
+    "L10:N10",
+    "A12:N12",
+    "B13:C13",
+    "D13:K13",
+    "L13:N13",
+    "B14:C14",
+    "D14:K14",
+    "L14:N14",
+    "B15:C15",
+    "D15:K15",
+    "L15:N15",
+    "B16:C16",
+    "D16:K16",
+    "L16:N16",
+    "B17:C17",
+    "D17:K17",
+    "L17:N17",
+    "B18:C18",
+    "D18:K18",
+    "L18:N18",
+    "B19:C19",
+    "D19:K19",
+    "L19:N19",
+    "A21:E21",
+    "F21:J21",
+    "K21:N21",
+    "A22:E22",
+    "F22:J22",
+    "K22:N22",
+  ]);
+  setStyle(sheet, "A1:N1", styles.referenceTitle);
+  applyReferenceTableStyle(sheet, "A3:D3", "A4:D4", "A5:D10");
+  applyReferenceTableStyle(sheet, "F3:I3", "F4:I4", "F5:I10");
+  applyReferenceTableStyle(sheet, "K3:N3", "K4:N4", "K5:N10");
+  applyReferenceTableStyle(sheet, "A12:N12", "A13:N13", "A14:N19");
+  setStyle(sheet, "A21:N22", {
+    ...styles.tableCell,
+    fill: { fgColor: { rgb: palette.fog } },
+    font: { name: "Aptos", sz: 9, color: { rgb: palette.charcoal } },
+  });
+  const riskColors = [palette.critical, palette.critical, palette.high, palette.medium, palette.low, palette.green];
+  for (let index = 0; index < riskColors.length; index++) {
+    const row = 14 + index;
+    setStyle(sheet, `A${row}:A${row}`, {
+      ...styles.tableNumber,
+      fill: { fgColor: { rgb: riskColors[index] } },
+      font: { name: "Aptos", sz: 8, bold: true, color: { rgb: palette.white } },
+    });
+  }
+}
+
+function appendMatrixReferenceSheet(
+  workbook: XLSX.WorkBook,
+  analysis: AnalysisRow,
+  profile: ProfileRow | null,
+  supportID: string,
+) {
+  const preparedBy = profile?.display_name ?? profile?.full_name ?? "Kullanıcı";
+  const companyName = profile?.company_name ?? "Firma belirtilmedi";
+  const matrixRows: unknown[][] = [];
+  for (let probability = 0; probability <= 5; probability++) {
+    const row: unknown[] = [];
+    for (let severity = 0; severity <= 5; severity++) {
+      if (probability === 0 && severity === 0) row.push("O / Ş");
+      else if (probability === 0) row.push(severity);
+      else if (severity === 0) row.push(probability);
+      else row.push(probability * severity);
+    }
+    matrixRows.push(row);
+  }
+
+  const sheet = appendSheet(workbook, "Metot Referansı", [
+    ["5x5 L-TİPİ RİSK MATRİSİ REFERANS TABLOSU", "", "", "", "", "", "", "", "", "", "", "", ""],
+    [],
+    ["OLASILIK (O)", "", "", "", "", "", "", "ŞİDDET (Ş)", "", "", "", "", ""],
+    ["Derece", "Tanım", "", "", "", "", "", "Derece", "Tanım", "", "", "", ""],
+    ["1", "Gerçekleşme ihtimali çok az", "", "", "", "", "", "1", "Hafif yaralanmalar / iş günü kaybı yok", "", "", "", ""],
+    ["2", "Gerçekleşme ihtimali az", "", "", "", "", "", "2", "İlk yardım gerektiren küçük yaralanma", "", "", "", ""],
+    ["3", "Gerçekleşme ihtimali var", "", "", "", "", "", "3", "İş günü kaybı veya tedavi gerektiren yaralanma", "", "", "", ""],
+    ["4", "Gerçekleşme ihtimali yüksek", "", "", "", "", "", "4", "Uzun süreli kayıp / ağır yaralanma", "", "", "", ""],
+    ["5", "Gerçekleşme ihtimali çok yüksek", "", "", "", "", "", "5", "Kalıcı iş göremezlik veya ölüm", "", "", "", ""],
+    [],
+    ["5x5 Risk Matrisi - R = O x Ş", "", "", "", "", "", "", "", "", "", "", "", ""],
+    ...matrixRows.map((row) => ["", "", ...row, "", "", "", "", ""]),
+    [],
+    ["Risk aralığı", "Risk adı", "", "Eylem", "", "", "", "Termin", "", "", "", "", ""],
+    ["20 ≤ R", "Tolerans dışı", "", "Çalışma derhal durdurulmalı.", "", "", "", "Hemen", "", "", "", "", ""],
+    ["10 ≤ R < 20", "Yüksek risk", "", "En kısa sürede önlem alınmalı.", "", "", "", "30 gün", "", "", "", "", ""],
+    ["5 ≤ R < 10", "Orta risk", "", "Plan dahilinde önlem alınmalı.", "", "", "", "90 gün", "", "", "", "", ""],
+    ["3 ≤ R < 5", "Düşük risk", "", "Gözetim altında izlenmeli.", "", "", "", "Kontrol", "", "", "", "", ""],
+    ["R < 3", "Önemsiz", "", "İzleme yeterli olabilir.", "", "", "", "Kontrol", "", "", "", "", ""],
+    [],
+    [`Analiz: ${safeText(analysis.title)}`, "", "", "", "", `Hazırlayan: ${preparedBy}`, "", "", "", `Doküman No: ${supportID}`, "", "", ""],
+    [`Firma: ${companyName}`, "", "", "", "", `Tarih: ${formatDate(analysis.created_at)}`, "", "", "", "", "", "", ""],
+  ]);
+  setCols(sheet, [12, 18, 12, 12, 12, 12, 12, 12, 18, 18, 18, 18, 18]);
+  setRows(sheet, [28, 8, 24, 28, 26, 26, 26, 26, 26, 10, 26, 26, 26, 26, 26, 26, 26, 10, 28, 26, 26, 26, 26, 26, 10, 26, 26]);
+  addMerges(sheet, [
+    "A1:M1",
+    "A3:F3",
+    "H3:M3",
+    "B4:F4",
+    "I4:M4",
+    "B5:F5",
+    "I5:M5",
+    "B6:F6",
+    "I6:M6",
+    "B7:F7",
+    "I7:M7",
+    "B8:F8",
+    "I8:M8",
+    "B9:F9",
+    "I9:M9",
+    "A11:M11",
+    "B19:C19",
+    "D19:G19",
+    "H19:M19",
+    "B20:C20",
+    "D20:G20",
+    "H20:M20",
+    "B21:C21",
+    "D21:G21",
+    "H21:M21",
+    "B22:C22",
+    "D22:G22",
+    "H22:M22",
+    "B23:C23",
+    "D23:G23",
+    "H23:M23",
+    "A26:E26",
+    "F26:I26",
+    "J26:M26",
+    "A27:E27",
+    "F27:I27",
+    "J27:M27",
+  ]);
+  setStyle(sheet, "A1:M1", styles.referenceTitle);
+  applyReferenceTableStyle(sheet, "A3:F3", "A4:F4", "A5:F9");
+  applyReferenceTableStyle(sheet, "H3:M3", "H4:M4", "H5:M9");
+  setStyle(sheet, "A11:M11", styles.referenceHeader);
+  setStyle(sheet, "C12:H17", {
+    ...styles.tableNumber,
+    font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.ink } },
+  });
+  for (let row = 12; row <= 17; row++) {
+    for (let col = 2; col <= 7; col++) {
+      const address = XLSX.utils.encode_cell({ r: row - 1, c: col });
+      const value = Number(sheet[address]?.v ?? 0);
+      if (row === 12 || col === 2) {
+        setStyle(sheet, `${address}:${address}`, {
+          ...styles.tableNumber,
+          fill: { fgColor: { rgb: palette.fog } },
+          font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.ink } },
+        });
+      } else {
+        const color = bandStyle(matrixBand(value));
+        setStyle(sheet, `${address}:${address}`, {
+          ...styles.tableNumber,
+          fill: { fgColor: { rgb: color.fg } },
+          font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.white } },
+        });
+      }
+    }
+  }
+  applyReferenceTableStyle(sheet, "A19:M19", "A19:M19", "A20:M24");
+  setStyle(sheet, "A26:M27", {
+    ...styles.tableCell,
+    fill: { fgColor: { rgb: palette.fog } },
+    font: { name: "Aptos", sz: 9, color: { rgb: palette.charcoal } },
+  });
+  const riskColors = [palette.critical, palette.high, palette.medium, palette.low, palette.green];
+  for (let index = 0; index < riskColors.length; index++) {
+    const row = 20 + index;
+    setStyle(sheet, `A${row}:A${row}`, {
+      ...styles.tableNumber,
+      fill: { fgColor: { rgb: riskColors[index] } },
+      font: { name: "Aptos", sz: 8, bold: true, color: { rgb: palette.white } },
+    });
+  }
 }
 
 function makeWorkbook(
@@ -247,82 +948,208 @@ function makeWorkbook(
   supportID: string,
 ): XLSX.WorkBook {
   const workbook = XLSX.utils.book_new();
+  applyWorkbookDefaults(workbook);
   const preparedBy = profile?.display_name ?? profile?.full_name ?? "";
   const companyName = profile?.company_name ?? "";
   const highestBand = method === "matrix_5x5"
     ? analysis.highest_band_m5
     : analysis.highest_band_fk;
+  const counts = riskCounts(findings, method);
+  const totalFindings = findings.length;
+  const avgConfidence = averageConfidence(findings);
+  const createdDate = formatDate(analysis.created_at);
+  const completedDate = formatDate(analysis.completed_at);
+  const generatedDate = formatDate(new Date().toISOString());
+  const riskOrder: RiskBand[] = ["critical", "high", "medium", "low", "unknown"];
 
-  appendSheet(workbook, "Özet", [
-    ["Alan", "Değer"],
-    ["Analiz başlığı", safeText(analysis.title)],
-    ["Analiz tarihi", formatDate(analysis.created_at)],
-    ["Tamamlanma tarihi", formatDate(analysis.completed_at)],
-    ["Analiz odağı", canvasLabel(analysis.canvas)],
-    ["Analiz tipi", safeText(analysis.kind)],
-    ["Hazırlayan", preparedBy],
-    ["Firma", companyName],
-    ["Risk metodu", methodLabel(method)],
-    ["Toplam bulgu", findings.length],
-    ["En yüksek risk", bandLabel(highestBand)],
-    ["Fine-Kinney toplam", safeNumber(analysis.total_score_fk)],
-    ["5x5 toplam", safeNumber(analysis.total_score_m5)],
-    ["AI özeti", safeText(analysis.ai_summary)],
-  ]);
-
-  appendSheet(workbook, "Risk Analiz Tablosu", [
+  const summary = appendSheet(workbook, "Kapak ve Özet", [
+    ["RiskDetected", "", "", "", "", "", "", ""],
+    ["İSG Risk Analizi Excel Raporu", "", "", "", "", "", "", ""],
+    [],
+    ["Firma", companyName || "Belirtilmedi", "", "Hazırlayan", preparedBy || "Belirtilmedi", "", "Oluşturma", generatedDate],
+    ["Analiz", safeText(analysis.title), "", "Odak", canvasLabel(analysis.canvas), "", "Metot", methodLabel(method)],
+    ["Başlangıç", createdDate, "", "Tamamlanma", completedDate, "", "Destek Kodu", supportID],
+    [],
+    ["TOPLAM BULGU", "EN YÜKSEK RİSK", "AI GÜVENİ", "METOT", "TOPLAM SKOR", "KRİTİK", "YÜKSEK", "ORTA/DÜŞÜK"],
     [
-      "No",
-      "Tehlike",
-      "Kategori",
-      "Açıklama",
-      "Fine-Kinney O",
-      "Fine-Kinney F",
-      "Fine-Kinney Ş",
-      "Fine-Kinney Skor",
-      "Fine-Kinney Seviye",
-      "5x5 Olasılık",
-      "5x5 Şiddet",
-      "5x5 Skor",
-      "5x5 Seviye",
-      "Önerilen Önlem",
-      "Referans / İzleme",
-      "AI Güveni",
+      totalFindings,
+      bandLabel(highestBand),
+      `%${avgConfidence}`,
+      methodLabel(method),
+      methodTotalScore(analysis, method),
+      counts.critical,
+      counts.high,
+      `${counts.medium}/${counts.low}`,
     ],
-    ...findings.map((finding, index) => [
-      finding.ordinal ?? index + 1,
-      safeText(finding.title),
-      safeText(finding.category),
-      safeText(finding.description),
+    [],
+    ["Risk Dağılımı", "Adet", "Oran", "Görsel", "", "", "", ""],
+    ...riskOrder.map((band) => {
+      const count = counts[band];
+      const ratio = totalFindings > 0 ? `${Math.round((count / totalFindings) * 100)}%` : "0%";
+      return [bandLabel(band), count, ratio, riskBar(count, totalFindings), "", "", "", ""];
+    }),
+    [],
+    ["AI Özeti", "", "", "", "", "", "", ""],
+    [safeText(analysis.ai_summary, "Özet bulunamadı."), "", "", "", "", "", "", ""],
+  ]);
+  setCols(summary, [18, 28, 4, 18, 24, 4, 16, 24]);
+  setRows(summary, [32, 24, 8, 24, 24, 24, 8, 28, 42, 8, 24, 24, 24, 24, 24, 24, 8, 70]);
+  addMerges(summary, ["A1:H1", "A2:H2", "D11:H11", "A17:H17", "A18:H18"]);
+  setStyle(summary, "A1:H1", styles.title);
+  setStyle(summary, "A2:H2", styles.subtitle);
+  setStyle(summary, "A4:H6", styles.tableCell);
+  setStyle(summary, "A8:H8", styles.kpiLabel);
+  setStyle(summary, "A9:H9", styles.kpiValue);
+  setStyle(summary, "A11:H11", styles.tableHeader);
+  setStyle(summary, "A12:H16", styles.tableCell);
+  setStyle(summary, "A17:H17", styles.tableHeader);
+  setStyle(summary, "A18:H18", { ...styles.value, alignment: { horizontal: "left", vertical: "top", wrapText: true } });
+  for (let i = 0; i < riskOrder.length; i++) {
+    const row = 12 + i;
+    const color = bandStyle(riskOrder[i]);
+    setStyle(summary, `A${row}:A${row}`, {
+      ...styles.tableCell,
+      font: { name: "Aptos", sz: 10, bold: true, color: { rgb: color.fg } },
+      fill: { fgColor: { rgb: color.bg } },
+    });
+    setStyle(summary, `D${row}:H${row}`, {
+      ...styles.tableCell,
+      font: { name: "Aptos", sz: 10, bold: true, color: { rgb: color.fg } },
+    });
+  }
+
+  const metricHeaders = method === "matrix_5x5"
+    ? ["Olasılık", "Şiddet", "Skor", "Risk Seviyesi"]
+    : ["Olasılık (O)", "Frekans (F)", "Şiddet (Ş)", "Skor", "Risk Seviyesi"];
+  const metricValues = (finding: FindingRow) => method === "matrix_5x5"
+    ? [
+      safeNumber(finding.m5_probability),
+      safeNumber(finding.m5_severity),
+      safeNumber(finding.m5_score),
+      bandLabel(finding.m5_band),
+    ]
+    : [
       safeNumber(finding.fk_probability),
       safeNumber(finding.fk_frequency),
       safeNumber(finding.fk_severity),
       safeNumber(finding.fk_score),
       bandLabel(finding.fk_band),
-      safeNumber(finding.m5_probability),
-      safeNumber(finding.m5_severity),
-      safeNumber(finding.m5_score),
-      bandLabel(finding.m5_band),
-      safeText(finding.recommended_action),
-      safeText(finding.references_text),
-      `${Math.round(safeNumber(finding.confidence) * 100)}%`,
-    ]),
-  ]);
-
-  appendSheet(workbook, "Aksiyon Planı", [
-    ["No", "Tehlike", "Önerilen Önlem", "Sorumlu", "Termin", "Durum", "Not"],
+    ];
+  const riskHeaders = [
+    "No",
+    "Tehlike",
+    "Kategori",
+    "Açıklama",
+    ...metricHeaders,
+    "Önerilen Önlem",
+    "Referans / İzleme",
+    "AI Güveni",
+    "Sorumlu",
+    "Termin",
+    "Durum",
+    "Not",
+  ];
+  const riskRows = [
+    riskHeaders,
     ...findings.map((finding, index) => [
       finding.ordinal ?? index + 1,
       safeText(finding.title),
+      safeText(finding.category),
+      safeText(finding.description),
+      ...metricValues(finding),
       safeText(finding.recommended_action),
+      safeText(finding.references_text),
+      `${Math.round(safeNumber(finding.confidence) * 100)}%`,
       "",
       "",
       "Açık",
       "",
     ]),
-  ]);
+  ];
+  const riskSheet = appendSheet(workbook, "Risk Analiz Tablosu", riskRows);
+  const riskColumnWidths = method === "matrix_5x5"
+    ? [6, 26, 18, 56, 11, 11, 12, 16, 56, 36, 10, 18, 16, 14, 32]
+    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 56, 36, 10, 18, 16, 14, 32];
+  const riskLastCol = XLSX.utils.encode_col(riskHeaders.length - 1);
+  const riskLevelCol = XLSX.utils.encode_col(4 + metricHeaders.length - 1);
+  const metricFirstCol = "E";
+  const metricLastCol = XLSX.utils.encode_col(4 + metricHeaders.length - 2);
+  const statusCol = XLSX.utils.encode_col(riskHeaders.length - 2);
+  setCols(riskSheet, riskColumnWidths);
+  setRows(riskSheet, [34, ...findings.map(() => 92)]);
+  riskSheet["!autofilter"] = { ref: `A1:${riskLastCol}${Math.max(1, riskRows.length)}` };
+  riskSheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+  setStyle(riskSheet, `A1:${riskLastCol}1`, styles.tableHeader);
+  for (let i = 0; i < findings.length; i++) {
+    const row = i + 2;
+    const color = bandStyle(methodBand(findings[i], method));
+    const rowFill = i % 2 === 0 ? palette.white : palette.fog;
+    setStyle(riskSheet, `A${row}:${riskLastCol}${row}`, {
+      ...styles.tableCell,
+      fill: { fgColor: { rgb: rowFill } },
+    });
+    setStyle(riskSheet, `A${row}:A${row}`, styles.tableNumber);
+    setStyle(riskSheet, `${metricFirstCol}${row}:${metricLastCol}${row}`, styles.tableNumber);
+    setStyle(riskSheet, `${riskLevelCol}${row}:${riskLevelCol}${row}`, {
+      ...styles.tableNumber,
+      font: { name: "Aptos", sz: 10, bold: true, color: { rgb: color.fg } },
+      fill: { fgColor: { rgb: color.bg } },
+    });
+    setStyle(riskSheet, `${statusCol}${row}:${statusCol}${row}`, {
+      ...styles.tableNumber,
+      font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.high } },
+      fill: { fgColor: { rgb: palette.highSoft } },
+    });
+  }
 
-  appendSheet(workbook, "Rapor Bilgileri", [
+  const distribution = appendSheet(workbook, "Risk Dağılımı", [
+    ["Risk Dağılımı", "", "", "", "", ""],
+    ["Seviye", "Adet", "Oran", "Bar", "Metot", "Not"],
+    ...riskOrder.map((band) => {
+      const count = counts[band];
+      return [
+        bandLabel(band),
+        count,
+        totalFindings > 0 ? `${Math.round((count / totalFindings) * 100)}%` : "0%",
+        riskBar(count, totalFindings),
+        methodLabel(method),
+        "Seçilen metoda göre hesaplandı",
+      ];
+    }),
+    [],
+    ["Kritik/Yüksek Bulgular", "", "", "", "", ""],
+    ...findings
+      .filter((finding) => ["critical", "high"].includes(methodBand(finding, method)))
+      .map((finding) => [
+        finding.ordinal ?? "",
+        safeText(finding.title),
+        bandLabel(methodBand(finding, method)),
+        methodScore(finding, method),
+        safeText(finding.recommended_action),
+        "",
+      ]),
+  ]);
+  setCols(distribution, [20, 10, 10, 34, 18, 18]);
+  setRows(distribution, [32, 28, 24, 24, 24, 24, 24, 8, 28, ...findings.map(() => 48)]);
+  addMerges(distribution, ["A1:F1", "A8:F8"]);
+  setStyle(distribution, "A1:F1", styles.title);
+  setStyle(distribution, "A2:F2", styles.tableHeader);
+  setStyle(distribution, "A3:F7", styles.tableCell);
+  setStyle(distribution, "A8:F8", styles.tableHeader);
+  setStyle(distribution, `A9:F${Math.max(9, findings.length + 8)}`, styles.tableCell);
+  for (let i = 0; i < riskOrder.length; i++) {
+    const row = i + 3;
+    const color = bandStyle(riskOrder[i]);
+    setStyle(distribution, `A${row}:D${row}`, {
+      ...styles.tableCell,
+      font: { name: "Aptos", sz: 10, bold: true, color: { rgb: color.fg } },
+      fill: { fgColor: { rgb: color.bg } },
+    });
+  }
+
+  appendMethodReferenceSheet(workbook, analysis, profile, method, supportID);
+
+  const info = appendSheet(workbook, "Rapor Bilgileri", [
     ["Alan", "Değer"],
     ["Analiz ID", analysis.id],
     ["Kullanıcı ID", analysis.user_id],
@@ -335,6 +1162,11 @@ function makeWorkbook(
     ["Request ID", requestID],
     ["Destek kodu", supportID],
   ]);
+  setCols(info, [24, 72]);
+  setRows(info, Array(12).fill(24));
+  setStyle(info, "A1:B1", styles.tableHeader);
+  setStyle(info, "A2:B11", styles.tableCell);
+  setStyle(info, "A2:A11", styles.label);
 
   return workbook;
 }
@@ -503,7 +1335,9 @@ serve(async (req: Request) => {
     requestID,
     supportID,
   );
-  const bytes = workbookBuffer(workbook);
+  const logo = await loadCompanyLogo(supabase, profile as ProfileRow | null);
+  const rawBytes = workbookBuffer(workbook);
+  const bytes = logo ? await embedCompanyLogo(rawBytes, logo) : rawBytes;
   const fileName = `${safeFilePart(safeText((analysis as AnalysisRow).title, "risk-analizi"))}-${method}-risk-analizi.xlsx`;
   const storagePath = `${user.id.toLowerCase()}/${analysisID.toLowerCase()}/${fileName}`;
 
@@ -524,7 +1358,8 @@ serve(async (req: Request) => {
     });
   }
 
-  const documentNo = `XLSX-${analysisID.slice(0, 8).toUpperCase()}`;
+  const methodCode = method === "matrix_5x5" ? "5X5" : "FK";
+  const documentNo = `XLSX-${methodCode}-${analysisID.slice(0, 8).toUpperCase()}`;
   const { data: report, error: reportError } = await supabase
     .from("reports")
     .upsert({
@@ -549,6 +1384,16 @@ serve(async (req: Request) => {
 
   if (reportError) {
     console.error("Excel report metadata failed", reportError);
+    await supabase.storage.from("reports").remove([storagePath]);
+    const message = String(reportError.message ?? "");
+    if (message.includes("report_quota_exceeded")) {
+      return json(429, {
+        error: "report_quota_exceeded",
+        message: "Aylık rapor kotan doldu.",
+        request_id: requestID,
+        support_id: supportID,
+      });
+    }
     return json(500, {
       error: "excel_metadata_failed",
       message: "Excel oluşturuldu ancak rapor arşiv kaydı tamamlanamadı.",

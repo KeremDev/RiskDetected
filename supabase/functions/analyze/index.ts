@@ -1177,6 +1177,7 @@ serve(async (req: Request) => {
         status_message:
           `Fotoğraf bu analiz için doğrulanamadı. Destek kodu: ${supportID}`,
       });
+      await releaseAnalysisQuota(supabase, analysisID, user.id);
       return errorResponse(403, "Fotoğraf bu analiz için doğrulanamadı.", {
         code: "photo_not_authorized",
         requestID,

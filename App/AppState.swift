@@ -145,7 +145,7 @@ final class AppState: ObservableObject {
             .flatMap(RDLanguagePreference.init(rawValue:))
         self.languagePreference = storedLanguage ?? .system
         self.profile = resolved.profile
-        applyTier(resolved.profile?.tier ?? .free)
+        applyTier(displayTier(profileTier: resolved.profile?.tier ?? .free, subscriptionTier: resolvedSubscriptions.state.tier))
         self.authError = resolved.lastError
         resolvedSubscriptions.configure()
         observeAuth()
@@ -196,7 +196,7 @@ final class AppState: ObservableObject {
     func refreshPlanState() async {
         await subscriptions.refreshCustomerInfo()
         await auth.refreshProfile()
-        applyTier(highestTier(auth.profile?.tier ?? .free, subscriptions.state.tier))
+        applyTier(displayTier(profileTier: auth.profile?.tier ?? .free, subscriptionTier: subscriptions.state.tier))
     }
 
     func purchaseSubscription(packageID: String) async throws {
@@ -233,7 +233,7 @@ final class AppState: ObservableObject {
             .sink { [weak self] newProfile in
                 guard let self else { return }
                 self.profile = newProfile
-                self.applyTier(self.highestTier(newProfile?.tier ?? .free, self.subscriptionState.tier))
+                self.applyTier(self.displayTier(profileTier: newProfile?.tier ?? .free, subscriptionTier: self.subscriptionState.tier))
             }
             .store(in: &cancellables)
 
@@ -276,7 +276,7 @@ final class AppState: ObservableObject {
             .sink { [weak self] state in
                 guard let self else { return }
                 self.subscriptionState = state
-                self.applyTier(self.highestTier(self.profile?.tier ?? .free, state.tier))
+                self.applyTier(self.displayTier(profileTier: self.profile?.tier ?? .free, subscriptionTier: state.tier))
             }
             .store(in: &cancellables)
 
@@ -288,8 +288,15 @@ final class AppState: ObservableObject {
             .store(in: &cancellables)
     }
 
-    private func highestTier(_ first: SubscriptionTier, _ second: SubscriptionTier) -> SubscriptionTier {
-        first.rank >= second.rank ? first : second
+    private func displayTier(profileTier: SubscriptionTier, subscriptionTier: SubscriptionTier) -> SubscriptionTier {
+        if subscriptionTier.isPaid {
+            return subscriptionTier
+        }
+        #if DEBUG
+        return profileTier
+        #else
+        return .free
+        #endif
     }
 
     private func applyTier(_ tier: SubscriptionTier) {

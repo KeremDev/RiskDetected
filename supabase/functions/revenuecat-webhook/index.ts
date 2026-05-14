@@ -22,7 +22,6 @@ const ACTIVE_STATUSES = new Set([
 ]);
 
 const PASSIVE_STATUSES = new Set([
-  "CANCELLATION",
   "BILLING_ISSUE",
   "SUBSCRIPTION_PAUSED",
 ]);
@@ -80,6 +79,12 @@ function parseExpiration(value: unknown): string | null {
     if (Number.isFinite(parsed)) return new Date(parsed).toISOString();
   }
   return null;
+}
+
+function isFutureExpiration(value: string | null): boolean {
+  if (!value) return false;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) && parsed > Date.now();
 }
 
 serve(async (req) => {
@@ -143,12 +148,18 @@ serve(async (req) => {
   }
 
   const entitlementTier = tierFrom(entitlementIDs, productID);
+  const expiration = parseExpiration(event.expiration_at_ms ?? event.expiration_at);
   let nextTier: PlanTier | null = null;
   let nextStatus = "inactive";
 
   if (eventType === "EXPIRATION") {
     nextTier = "free";
     nextStatus = "expired";
+  } else if (eventType === "CANCELLATION") {
+    nextTier = entitlementTier !== "free" && isFutureExpiration(expiration)
+      ? entitlementTier
+      : null;
+    nextStatus = nextTier ? "active" : "cancellation";
   } else if (ACTIVE_STATUSES.has(eventType)) {
     nextTier = entitlementTier;
     nextStatus = entitlementTier === "free" ? "inactive" : "active";
@@ -168,7 +179,7 @@ serve(async (req) => {
       entitlement_id: entitlementTier === "free" ? null : entitlementTier,
       entitlement_ids: entitlementIDs,
       environment,
-      current_period_ends_at: parseExpiration(event.expiration_at_ms ?? event.expiration_at),
+      current_period_ends_at: expiration,
       last_event_id: eventID,
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
@@ -182,6 +193,7 @@ serve(async (req) => {
       .from("user_subscriptions")
       .update({
         status: nextStatus,
+        current_period_ends_at: expiration,
         last_event_id: eventID,
         updated_at: new Date().toISOString(),
       })
