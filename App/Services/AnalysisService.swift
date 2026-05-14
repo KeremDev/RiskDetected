@@ -1279,6 +1279,16 @@ struct ReportRow: Codable, Identifiable, Equatable {
     }
 }
 
+extension ReportRow {
+    var isExcelReport: Bool {
+        format == "xlsx" || mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }
+
+    var isRiskAnalysisReport: Bool {
+        kind == PDFReportKind.riskAnalysis.rawValue || kind == "risk_analysis"
+    }
+}
+
 struct AnalysisRow: Codable, Identifiable, Equatable {
     let id: UUID
     let userID: UUID

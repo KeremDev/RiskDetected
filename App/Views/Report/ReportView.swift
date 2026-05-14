@@ -188,7 +188,7 @@ struct ReportView: View {
                         .tracking(-0.3)
                         .foregroundStyle(.white)
 
-                    Text("Tamamlanan analizleri PDF'e çevir, arşivden indir veya Pro risk tablosuyla ayrıntılandır.")
+                    Text("Tamamlanan analizleri PDF/Excel çıktıya çevir, arşivden indir veya risk tablosuyla ayrıntılandır.")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(.white.opacity(0.72))
                         .fixedSize(horizontal: false, vertical: true)
@@ -199,7 +199,7 @@ struct ReportView: View {
                     Text("\(storedReports.count)")
                         .rdMono(size: 25, weight: .bold)
                         .foregroundStyle(.white)
-                    Text("PDF")
+                    Text("dosya")
                         .rdMono(size: 10, weight: .bold)
                         .foregroundStyle(.white.opacity(0.58))
                 }
@@ -280,7 +280,7 @@ struct ReportView: View {
                     Text(app.planCapabilities.canUseDetailedRiskTable ? "\(app.currentTier.title) rapor paketi aktif" : "Plus ile detaylı risk çıktısı")
                         .font(.system(size: 15, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("Fine-Kinney ve 5×5 matris, logo, firma bilgisi ve özelleştirilmiş PDF ayarları.")
+                    Text("Fine-Kinney ve 5×5 matris, logo, firma bilgisi ve özelleştirilmiş PDF/Excel ayarları.")
                         .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
@@ -478,7 +478,7 @@ struct ReportView: View {
     }
 
     private var riskReportCount: Int {
-        storedReports.filter { $0.kind == PDFReportKind.riskAnalysis.rawValue }.count
+        storedReports.filter(\.isRiskAnalysisReport).count
     }
 
     private var loadingCard: some View {
@@ -1348,15 +1348,15 @@ private struct StoredReportRow: View {
 
     private var iconName: String {
         if isExcel { return "tablecells.fill" }
-        return report.kind == PDFReportKind.riskAnalysis.rawValue ? "tablecells" : "doc.richtext"
+        return isRiskAnalysis ? "tablecells" : "doc.richtext"
     }
 
     private var isExcel: Bool {
-        report.format == "xlsx" || report.mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        report.isExcelReport
     }
 
     private var isRiskAnalysis: Bool {
-        report.kind == PDFReportKind.riskAnalysis.rawValue
+        report.isRiskAnalysisReport
     }
 
     private var kindLabel: String {

@@ -1271,11 +1271,11 @@ private struct HomeReportRow: View {
     }
 
     private var isExcel: Bool {
-        report.format == "xlsx" || report.mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        report.isExcelReport
     }
 
     private var isRiskAnalysis: Bool {
-        report.kind == PDFReportKind.riskAnalysis.rawValue
+        report.isRiskAnalysisReport
     }
 
     private var kindLabel: String {
