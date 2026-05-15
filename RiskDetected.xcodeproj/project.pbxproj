@@ -313,6 +313,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Config/RiskDetectedInfo.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RiskDetected;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCameraUsageDescription = "RiskDetected, saha fotoğrafları çekerek iş güvenliği analizi yapabilmek için kamerana ihtiyaç duyar.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Saha fotoğraflarını analiz edebilmek için galerine erişim izni gerekiyor.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -347,6 +349,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Config/RiskDetectedInfo.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RiskDetected;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCameraUsageDescription = "RiskDetected, saha fotoğrafları çekerek iş güvenliği analizi yapabilmek için kamerana ihtiyaç duyar.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Saha fotoğraflarını analiz edebilmek için galerine erişim izni gerekiyor.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
