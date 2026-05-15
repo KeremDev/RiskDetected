@@ -958,7 +958,6 @@ private struct ReportPreview: View {
             Text("RİSK").frame(maxWidth: .infinity, alignment: .leading)
             Text("FK").frame(width: 48, alignment: .leading)
             Text("5×5").frame(width: 44, alignment: .leading)
-            Text("GÜVEN").frame(width: 46, alignment: .leading)
         }
         .font(.system(size: 9, weight: .bold, design: .rounded))
         .tracking(0.7)
@@ -993,10 +992,6 @@ private struct ReportPreview: View {
                 .rdMono(size: 10, weight: .semibold)
                 .foregroundStyle(finding.m5Band.level.textColor)
                 .frame(width: 44, alignment: .leading)
-            Text("\(Int(finding.confidence * 100))%")
-                .rdMono(size: 10)
-                .foregroundStyle(Color.rdSlate)
-                .frame(width: 46, alignment: .leading)
         }
         .padding(.vertical, 8)
     }

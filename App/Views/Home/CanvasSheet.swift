@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// AI Odaklı Analiz canvas seçim sheet'i — 2 satırlı yatay seçim rayı.
+/// Odaklı Analiz canvas seçim sheet'i — 2 satırlı yatay seçim rayı.
 struct CanvasSheet: View {
     @Binding var selected: Set<AnalysisCanvas>
     var userTier: SubscriptionTier = .free
@@ -19,7 +19,7 @@ struct CanvasSheet: View {
             // Başlık
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("AI Odaklı Analiz")
+                    Text("Odaklı Analiz")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
@@ -69,7 +69,7 @@ struct CanvasSheet: View {
             .padding(.bottom, 12)
 
             // Onay butonu
-            RDButton(title: "Onayla ve devam et", style: .primary) {
+            RDButton(title: "Onayla ve devam et", style: .detect) {
                 onConfirm()
                 dismiss()
             }

@@ -7,6 +7,15 @@ import Foundation
 /// repo'da bulunması güvenlik açığı oluşturmaz (RLS tüm istekleri kullanıcı bazlı
 /// kısıtlar). Service-role key burada YER ALMAZ — sadece Edge Function üzerinde.
 enum RDConfig {
+    /// Public web presence and legal page URLs.
+    enum Web {
+        static let websiteURL = URL(string: "https://riskdetected.com")!
+        static let supportURL = URL(string: "https://riskdetected.com")!
+        static let privacyPolicyURL = URL(string: "https://riskdetected.com/gizlilik-politikasi")!
+        static let termsURL = URL(string: "https://riskdetected.com/kullanim-kosullari")!
+        static let kvkkURL = URL(string: "https://riskdetected.com/kvkk-aydinlatma-ve-acik-riza-metni")!
+    }
+
     /// Supabase proje URL'i.
     static let supabaseURL = URL(string: "https://ppcrzemgiztzcgddbins.supabase.co")!
 

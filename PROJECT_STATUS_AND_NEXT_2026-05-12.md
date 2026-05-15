@@ -121,7 +121,9 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Legal center eklendi:
   - KVKK,
   - Kullanım koşulları,
-  - AI veri işleme.
+  - Gizlilik Politikası.
+- Legal metinler `Riskdetected`, `info@riskdetected.com`, Eskişehir ve `https://riskdetected.com` bilgileriyle güncellendi.
+- App içi yasal ekran artık madde kartları yerine doğrudan uzun metin dokümanını scroll edilen pencere içinde gösteriyor.
 - `consents` tablosu ve RLS var.
 - Login/session arka planda consent audit row oluşturuyor.
 - Client fotoğraf preprocessing EXIF/location/camera metadata'yı temizliyor.
@@ -189,7 +191,11 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - PDF, Pro PDF ve XLSX yeni bir analizden baştan sona üretilmeli.
 
 5. Legal metin finali
-   - KVKK, Kullanım koşulları ve AI veri işleme metinleri lawyer-reviewed final içerikle değiştirilmeli.
+   - KVKK, Kullanım koşulları ve Gizlilik Politikası metinleri uygulama içine markdown belge olarak eklendi.
+   - Website yayını için hedef URL'ler:
+     - `https://riskdetected.com/kvkk-aydinlatma-ve-acik-riza-metni`
+     - `https://riskdetected.com/kullanim-kosullari`
+     - `https://riskdetected.com/gizlilik-politikasi`
    - App Store privacy nutrition / veri kullanımı beyanları bu metinlerle tutarlı hale getirilmeli.
 
 6. Supabase migration geçmişi
@@ -286,7 +292,9 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 2. App Store metadata
    - App adı, açıklama, keyword, kategori.
    - Screenshot/video seti.
-   - Support URL, Privacy Policy URL, Terms URL.
+   - Support URL: `https://riskdetected.com`
+   - Privacy Policy URL: `https://riskdetected.com/gizlilik-politikasi`
+   - Terms URL: `https://riskdetected.com/kullanim-kosullari`
    - Privacy nutrition form.
    - Age rating.
 

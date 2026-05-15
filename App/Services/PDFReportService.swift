@@ -580,8 +580,7 @@ final class PDFReportService: @unchecked Sendable {
         drawText(scoreText(finding.score(for: method)), in: CGRect(x: x + 370, y: y + 19, width: 70, height: 20), font: .monospacedSystemFont(ofSize: 16, weight: .bold), color: .white, alignment: .center)
         drawText(band.label, in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
 
-        drawText(finding.action, in: CGRect(x: x + 462, y: y + 12, width: 286, height: 38), font: .systemFont(ofSize: 10), color: .rdPDFBlack)
-        drawText("Güven: %\(Int(finding.confidence * 100)) · \(finding.references)", in: CGRect(x: x + 462, y: y + 54, width: 286, height: 12), font: .systemFont(ofSize: 8), color: .rdPDFSlate)
+        drawText(finding.action, in: CGRect(x: x + 462, y: y + 12, width: 286, height: 52), font: .systemFont(ofSize: 10), color: .rdPDFBlack)
     }
 
     private func drawImage(_ image: UIImage, in rect: CGRect, cornerRadius: CGFloat, mode: UIView.ContentMode = .scaleAspectFill) {

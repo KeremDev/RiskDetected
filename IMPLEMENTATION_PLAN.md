@@ -185,9 +185,11 @@ These items exist in some form, but need revision before we treat them as produc
    - versioned `consents` table exists with RLS and minimum grants;
    - login/session creates a non-blocking background audit row with legal versions, timestamp, app version and device id when missing.
    - Done: consent audit failures are logged with retry backoff;
-   - Done: legal information link opens a full legal center with KVKK, Kullanım koşulları and AI veri işleme documents;
+   - Done: legal information link opens a full legal center with KVKK, Kullanım koşulları and Gizlilik Politikası documents;
    - Done: Profile > Güvenlik ve gizlilik opens the same legal center for in-app access;
-   - Follow-up: replace current editable scaffold copy with lawyer-reviewed final long-form KVKK/terms/AI processing text.
+   - Done: legal center now renders the long-form markdown documents directly in a scrollable document window;
+   - Done: legal documents use Riskdetected, `info@riskdetected.com`, Eskişehir and `https://riskdetected.com` as the public contact/site details.
+   - Follow-up: publish these same documents on the website under `https://riskdetected.com/kvkk-aydinlatma-ve-acik-riza-metni`, `https://riskdetected.com/kullanim-kosullari` and `https://riskdetected.com/gizlilik-politikasi`.
 2. Visual data policy:
    - Done: client-side EXIF cleanup by pixel-only re-render before AI analysis/upload;
    - Done: Edge Function strips common JPEG/PNG metadata before Gemini and Storage persistence;
@@ -303,7 +305,8 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: dark-mode CTA contrast QA for Home, Result and Report settings primary actions;
    - Follow-up: continue final contrast QA only after new Result, Reports, Paywall or sheet UI changes.
 2. Language preference:
-   - Done: Profile > Tercihler includes System / Turkce / English selector and persists the preference locally;
+   - Done: Profile > Tercihler currently exposes only Turkce because English localization is not shipped yet;
+   - Done: stored System / English preferences are normalized back to Turkce until multi-language UI is implemented;
    - introduce localized string structure before hardcoding grows further;
    - first target screens: Auth, Home, Analysis, Result, Reports, Profile;
    - later target: PDF/report output language selection.
@@ -321,21 +324,25 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: menu closes on outside tap and scroll/drag;
    - Done: menu is overlay-only and does not change page layout.
 2. AI analysis focus refresh:
-   - update the AI analysis focus/canvas options;
+   - Done: focus sheet title now reads `Odaklı Analiz`;
+   - Done: focus confirmation CTA uses the green detect style so it remains readable in dark mode;
    - user will provide fixed prompts for these focus modes;
    - store prompts clearly so frontend labels and backend prompt routing stay aligned.
 3. Reports page design refresh:
    - Done: redesigned Reports tab visual hierarchy;
    - Done: improved saved reports, report source selection and actions;
-   - Done: added calm Pro value presentation for detailed risk tables, company logo and PDF customization.
+   - Done: added calm Pro value presentation for detailed risk tables, company logo and PDF customization;
+   - Done: standard report output no longer shows AI confidence percentages in the app preview, PDF or Excel.
 4. Analyses page design refresh:
    - Done: redesigned Analyses tab visual hierarchy;
    - Done: retained quick filtering chips and improved the filter sheet presentation;
    - Done: modernized analysis cards with thumbnail, risk label, metadata and status.
+   - Done: quota-exhausted photo upload card has dark-mode-specific colors and copy uses `Yükselt`.
 5. Legal link destination refresh:
-   - Done: updated pages opened from KVKK, Kullanım şartları and AI veri işleme links;
-   - Done: legal center uses separate document selectors and long-content-ready section cards;
-   - Follow-up: user will paste final long legal contents into the document sections.
+   - Done: updated pages opened from KVKK, Kullanım şartları and Gizlilik Politikası links;
+   - Done: legal center uses separate document selectors and a scrollable plain-document reader;
+   - Done: final markdown legal contents are bundled in-app from `App/LegalDocuments`;
+   - Follow-up: mirror the bundled legal documents to the public website legal URLs.
 6. Profile page tabs and content:
    - design and implement profile page sections/tabs;
    - fill missing content for account, preferences, reports, analyses, notifications and data/privacy areas.

@@ -46,7 +46,7 @@ struct MainTabView: View {
             .preferredColorScheme(preferredModalColorScheme)
         }
         .alert("Ücretsiz hak doldu", isPresented: $showQuotaAlert) {
-            Button("Plus'a geç") {
+            Button("Yükselt") {
                 app.activeTab = .profile
             }
             Button("Tamam", role: .cancel) {}

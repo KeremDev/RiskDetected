@@ -1297,10 +1297,10 @@ private struct ProfilePreferencesSheet: View {
 
                     preferenceSection(
                         title: "Dil",
-                        subtitle: "Dil tercihini şimdiden kaydediyoruz; çoklu dil ekran metinleri eklendikçe bu seçim kullanılacak."
+                        subtitle: "Uygulama metinleri şimdilik Türkçe kalır."
                     ) {
                         VStack(spacing: 10) {
-                            ForEach(RDLanguagePreference.allCases) { preference in
+                            ForEach(RDLanguagePreference.supportedCases) { preference in
                                 PreferenceOptionRow(
                                     icon: preference.icon,
                                     title: preference.title,
@@ -1330,6 +1330,11 @@ private struct ProfilePreferencesSheet: View {
             }
         }
         .preferredColorScheme(themePreference.colorScheme)
+        .onAppear {
+            if !RDLanguagePreference.supportedCases.contains(languagePreference) {
+                onLanguageChange(.turkish)
+            }
+        }
     }
 
     private func preferenceSection<Content: View>(

@@ -309,7 +309,7 @@ struct AuthView: View {
             Button {
                 showLegalInfo = true
             } label: {
-                Text("KVKK · Kullanım koşulları · AI veri işleme")
+                Text("KVKK · Kullanım koşulları · Gizlilik politikası")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .underline()

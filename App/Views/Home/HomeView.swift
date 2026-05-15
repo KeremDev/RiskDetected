@@ -461,36 +461,36 @@ struct HomeView: View {
             VStack(spacing: 10) {
                 ZStack {
                     Circle()
-                        .fill(Color.rdCritical.opacity(0.10))
+                        .fill(lockedPhotoIconBackground)
                         .frame(width: 74, height: 74)
-                        .shadow(color: Color.rdCritical.opacity(0.18), radius: 16, x: 0, y: 8)
+                        .shadow(color: lockedPhotoIconShadow, radius: 16, x: 0, y: 8)
 
                     Circle()
-                        .stroke(Color.rdCritical, lineWidth: 6)
+                        .stroke(lockedPhotoCriticalColor, lineWidth: 6)
                         .frame(width: 56, height: 56)
 
                     Image(systemName: "lock.fill")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdCritical)
+                        .foregroundStyle(lockedPhotoCriticalColor)
                 }
                 .frame(width: 82, height: 82)
 
                 Text("Ücretsiz hak doldu")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
+                    .foregroundStyle(lockedPhotoTitleColor)
                 Text("Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et.")
                     .font(.system(size: 13, design: .rounded))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.rdSlate)
+                    .foregroundStyle(lockedPhotoSubtitleColor)
                     .frame(maxWidth: 280)
 
                 HStack(spacing: 5) {
-                    Text("Plus'a geç")
+                    Text("Yükselt")
                         .font(.system(size: 12, weight: .heavy, design: .rounded))
                     Image(systemName: "chevron.right")
                         .font(.system(size: 10, weight: .bold, design: .rounded))
                 }
-                .foregroundStyle(Color.rdCritical)
+                .foregroundStyle(lockedPhotoActionColor)
                 .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -501,7 +501,7 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: 20)
                 .fill(
                     LinearGradient(
-                        colors: [Color.rdWhite, Color.rdCriticalBg.opacity(0.68)],
+                        colors: lockedPhotoBackgroundColors,
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -511,10 +511,57 @@ struct HomeView: View {
                         .strokeBorder(
                             style: StrokeStyle(lineWidth: 1.7, dash: [6, 4])
                         )
-                        .foregroundStyle(Color.rdCritical.opacity(0.38))
+                        .foregroundStyle(lockedPhotoBorderColor)
                 )
         )
-        .shadow(color: Color.rdCritical.opacity(0.10), radius: 16, x: 0, y: 8)
+        .shadow(color: lockedPhotoCardShadow, radius: 16, x: 0, y: 8)
+    }
+
+    private var isDarkMode: Bool {
+        colorScheme == .dark
+    }
+
+    private var lockedPhotoBackgroundColors: [Color] {
+        if isDarkMode {
+            return [
+                Color(hex: "#171B1C"),
+                Color(hex: "#141718"),
+                Color(hex: "#1B1112")
+            ]
+        }
+        return [Color.rdWhite, Color.rdCriticalBg.opacity(0.68)]
+    }
+
+    private var lockedPhotoCriticalColor: Color {
+        isDarkMode ? Color(hex: "#F05A4F") : Color.rdCritical
+    }
+
+    private var lockedPhotoIconBackground: Color {
+        isDarkMode ? Color.rdCritical.opacity(0.16) : Color.rdCritical.opacity(0.10)
+    }
+
+    private var lockedPhotoIconShadow: Color {
+        isDarkMode ? Color.rdCritical.opacity(0.24) : Color.rdCritical.opacity(0.18)
+    }
+
+    private var lockedPhotoTitleColor: Color {
+        isDarkMode ? Color.white : Color.rdBlack
+    }
+
+    private var lockedPhotoSubtitleColor: Color {
+        isDarkMode ? Color.rdCharcoal.opacity(0.92) : Color.rdSlate
+    }
+
+    private var lockedPhotoActionColor: Color {
+        isDarkMode ? Color.rdPlanPlus : Color.rdCritical
+    }
+
+    private var lockedPhotoBorderColor: Color {
+        isDarkMode ? Color.rdCritical.opacity(0.44) : Color.rdCritical.opacity(0.38)
+    }
+
+    private var lockedPhotoCardShadow: Color {
+        isDarkMode ? Color.black.opacity(0.28) : Color.rdCritical.opacity(0.10)
     }
 
     private var textInputArea: some View {

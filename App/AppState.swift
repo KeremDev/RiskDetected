@@ -47,6 +47,8 @@ enum RDLanguagePreference: String, CaseIterable, Identifiable {
     case turkish
     case english
 
+    static let supportedCases: [RDLanguagePreference] = [.turkish]
+
     var id: String { rawValue }
 
     var title: String {
@@ -143,7 +145,7 @@ final class AppState: ObservableObject {
         self.isDarkModeEnabled = resolvedTheme == .dark
         let storedLanguage = UserDefaults.standard.string(forKey: Self.languagePreferenceKey)
             .flatMap(RDLanguagePreference.init(rawValue:))
-        self.languagePreference = storedLanguage ?? .system
+        self.languagePreference = Self.normalizedLanguagePreference(storedLanguage)
         self.profile = resolved.profile
         applyTier(displayTier(profileTier: resolved.profile?.tier ?? .free, subscriptionTier: resolvedSubscriptions.state.tier))
         self.authError = resolved.lastError
@@ -218,7 +220,14 @@ final class AppState: ObservableObject {
     }
 
     func setLanguagePreference(_ preference: RDLanguagePreference) {
-        languagePreference = preference
+        languagePreference = Self.normalizedLanguagePreference(preference)
+    }
+
+    private static func normalizedLanguagePreference(_ preference: RDLanguagePreference?) -> RDLanguagePreference {
+        guard let preference, RDLanguagePreference.supportedCases.contains(preference) else {
+            return .turkish
+        }
+        return preference
     }
 
     // MARK: - Observation

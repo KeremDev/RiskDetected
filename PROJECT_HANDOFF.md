@@ -295,8 +295,14 @@ Completed/started:
 - Login screen shows legal notice/link.
 - Home legal text was removed because it visually hurt the CTA area.
 - Session/login creates non-blocking consent audit row with legal versions, timestamp, app version and device id when missing.
-- Legal information now opens a full legal center with KVKK, Kullanım koşulları and AI veri işleme document selectors.
+- Legal information now opens a full legal center with KVKK, Kullanım koşulları and Gizlilik Politikası document selectors.
 - Profile > Güvenlik ve gizlilik opens the same legal center for in-app access.
+- Legal documents are long-form markdown files rendered directly in a scrollable document reader.
+- Public website/domain: `https://riskdetected.com`.
+- Intended public legal URLs:
+  - `https://riskdetected.com/kvkk-aydinlatma-ve-acik-riza-metni`
+  - `https://riskdetected.com/kullanim-kosullari`
+  - `https://riskdetected.com/gizlilik-politikasi`
 - Client photo preprocessing re-renders images before upload/analysis to strip EXIF/location/camera metadata.
 - Edge Function strips common JPEG/PNG metadata before Gemini and Storage persistence.
 - Client-side face blur is applied before upload/analysis.
@@ -321,7 +327,7 @@ Completed retention/delete work:
 Follow-up:
 
 - Implement privileged backend/admin completion flow for account deletion requests.
-- Replace editable legal-center scaffold copy with final lawyer-reviewed KVKK/terms/AI processing text.
+- Publish bundled legal markdown contents to the public website legal URLs once the website source/deploy project is available.
 
 ## Error Handling and Supportability
 
@@ -419,7 +425,7 @@ Known image issue to keep checking:
    - Done: report-center summary panel, Pro value panel, saved-report card redesign and report-source selection redesign.
 8. Analyses page design refresh.
    - Done: analysis-center summary panel, search/filter surface, filter sheet polish and analysis card redesign.
-9. Legal link destination refresh for KVKK, Kullanım şartları and AI veri işleme pages.
+9. Legal link destination refresh for KVKK, Kullanım şartları and Gizlilik Politikası pages.
    - Done: legal center with separate document selectors and long-content-ready section cards.
 10. Profile page tabs and missing content sections.
 11. Excel risk analysis export.

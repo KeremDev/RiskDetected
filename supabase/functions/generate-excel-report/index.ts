@@ -635,14 +635,6 @@ function riskCounts(findings: FindingRow[], method: string): Record<RiskBand, nu
   return counts;
 }
 
-function averageConfidence(findings: FindingRow[]): number {
-  if (findings.length === 0) return 0;
-  return Math.round(
-    findings.reduce((sum, finding) => sum + safeNumber(finding.confidence), 0) /
-      findings.length * 100,
-  );
-}
-
 function riskBar(count: number, total: number): string {
   if (total <= 0 || count <= 0) return "";
   const units = Math.max(1, Math.round((count / total) * 18));
@@ -956,7 +948,6 @@ function makeWorkbook(
     : analysis.highest_band_fk;
   const counts = riskCounts(findings, method);
   const totalFindings = findings.length;
-  const avgConfidence = averageConfidence(findings);
   const createdDate = formatDate(analysis.created_at);
   const completedDate = formatDate(analysis.completed_at);
   const generatedDate = formatDate(new Date().toISOString());
@@ -970,16 +961,16 @@ function makeWorkbook(
     ["Analiz", safeText(analysis.title), "", "Odak", canvasLabel(analysis.canvas), "", "Metot", methodLabel(method)],
     ["Başlangıç", createdDate, "", "Tamamlanma", completedDate, "", "Destek Kodu", supportID],
     [],
-    ["TOPLAM BULGU", "EN YÜKSEK RİSK", "AI GÜVENİ", "METOT", "TOPLAM SKOR", "KRİTİK", "YÜKSEK", "ORTA/DÜŞÜK"],
+    ["TOPLAM BULGU", "EN YÜKSEK RİSK", "METOT", "TOPLAM SKOR", "KRİTİK", "YÜKSEK", "ORTA/DÜŞÜK", ""],
     [
       totalFindings,
       bandLabel(highestBand),
-      `%${avgConfidence}`,
       methodLabel(method),
       methodTotalScore(analysis, method),
       counts.critical,
       counts.high,
       `${counts.medium}/${counts.low}`,
+      "",
     ],
     [],
     ["Risk Dağılımı", "Adet", "Oran", "Görsel", "", "", "", ""],
@@ -1043,7 +1034,6 @@ function makeWorkbook(
     ...metricHeaders,
     "Önerilen Önlem",
     "Referans / İzleme",
-    "AI Güveni",
     "Sorumlu",
     "Termin",
     "Durum",
@@ -1059,7 +1049,6 @@ function makeWorkbook(
       ...metricValues(finding),
       safeText(finding.recommended_action),
       safeText(finding.references_text),
-      `${Math.round(safeNumber(finding.confidence) * 100)}%`,
       "",
       "",
       "Açık",
@@ -1068,8 +1057,8 @@ function makeWorkbook(
   ];
   const riskSheet = appendSheet(workbook, "Risk Analiz Tablosu", riskRows);
   const riskColumnWidths = method === "matrix_5x5"
-    ? [6, 26, 18, 56, 11, 11, 12, 16, 56, 36, 10, 18, 16, 14, 32]
-    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 56, 36, 10, 18, 16, 14, 32];
+    ? [6, 26, 18, 56, 11, 11, 12, 16, 56, 36, 18, 16, 14, 32]
+    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 56, 36, 18, 16, 14, 32];
   const riskLastCol = XLSX.utils.encode_col(riskHeaders.length - 1);
   const riskLevelCol = XLSX.utils.encode_col(4 + metricHeaders.length - 1);
   const metricFirstCol = "E";
