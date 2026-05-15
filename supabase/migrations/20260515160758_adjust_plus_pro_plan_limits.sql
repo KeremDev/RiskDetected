@@ -137,10 +137,8 @@ begin
   );
 end;
 $$;
-
 revoke all on function public.reserve_analysis_quota(uuid, uuid, text) from public, anon, authenticated;
 grant execute on function public.reserve_analysis_quota(uuid, uuid, text) to service_role;
-
 create or replace function private.report_monthly_limit(p_tier text)
 returns integer
 language sql
@@ -154,7 +152,5 @@ as $$
     else 3
   end;
 $$;
-
 revoke all on function private.report_monthly_limit(text) from public, anon, authenticated;
-
 select pg_notify('pgrst', 'reload schema');

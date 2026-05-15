@@ -27,11 +27,14 @@ struct ReportView: View {
     @State private var reportSearch = ""
     @State private var reportFilter: ReportArchiveFilter = .all
     @State private var reportsLoadError: String?
+    @State private var canLoadMoreStoredReports = false
+    @State private var isLoadingMoreStoredReports = false
     @State private var excelGenerationID: UUID?
     @State private var isStoredReportsExpanded = false
     @State private var isAnalysisSelectorExpanded = false
     @State private var reportQuotaExhausted = false
     private let reportArchivePageSize = 5
+    private let reportArchiveFetchPageSize = 100
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
     }
@@ -380,14 +383,17 @@ struct ReportView: View {
                             }
                         }
 
-                        if visibleReportCount < filteredStoredReports.count {
+                        if visibleReportCount < filteredStoredReports.count || canLoadMoreStoredReports {
                             ReportArchiveLoadMoreButton(
                                 visibleCount: min(visibleReportCount, filteredStoredReports.count),
                                 totalCount: filteredStoredReports.count,
-                                nextCount: min(reportArchivePageSize, filteredStoredReports.count - visibleReportCount)
+                                nextCount: nextVisibleReportCount,
+                                isLoading: isLoadingMoreStoredReports,
+                                hasRemoteMore: canLoadMoreStoredReports && visibleReportCount >= filteredStoredReports.count
                             ) {
                                 loadMoreReports()
                             }
+                            .disabled(isLoadingMoreStoredReports)
                         }
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -601,6 +607,13 @@ struct ReportView: View {
         !reportSearch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || reportFilter != .all
     }
 
+    private var nextVisibleReportCount: Int {
+        if visibleReportCount < filteredStoredReports.count {
+            return min(reportArchivePageSize, filteredStoredReports.count - visibleReportCount)
+        }
+        return reportArchivePageSize
+    }
+
     private var loadingCard: some View {
         RDCard {
             HStack(spacing: 12) {
@@ -695,8 +708,8 @@ struct ReportView: View {
 
     private func normalizedReportSearch(_ value: String) -> String {
         value
-            .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: Locale(identifier: "tr_TR"))
             .lowercased(with: Locale(identifier: "tr_TR"))
+            .folding(options: [.diacriticInsensitive, .widthInsensitive], locale: Locale(identifier: "tr_TR"))
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -705,8 +718,41 @@ struct ReportView: View {
     }
 
     private func loadMoreReports() {
-        withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
-            visibleReportCount = min(visibleReportCount + reportArchivePageSize, filteredStoredReports.count)
+        if visibleReportCount < filteredStoredReports.count {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                visibleReportCount = min(visibleReportCount + reportArchivePageSize, filteredStoredReports.count)
+            }
+            return
+        }
+
+        guard canLoadMoreStoredReports, !isLoadingMoreStoredReports else { return }
+        isLoadingMoreStoredReports = true
+        Task {
+            do {
+                let moreReports = try await AnalysisService.shared.listReports(
+                    limit: reportArchiveFetchPageSize,
+                    offset: storedReports.count
+                )
+                await MainActor.run {
+                    appendStoredReports(moreReports)
+                    canLoadMoreStoredReports = moreReports.count == reportArchiveFetchPageSize
+                    reportsLoadError = nil
+                    visibleReportCount = min(
+                        visibleReportCount + reportArchivePageSize,
+                        max(filteredStoredReports.count, visibleReportCount)
+                    )
+                    isLoadingMoreStoredReports = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = AppErrorMessage.make(
+                        error,
+                        context: "Rapor arşivi yüklenemedi",
+                        fallbackTitle: "Rapor arşivi yüklenemedi"
+                    ).fullText
+                    isLoadingMoreStoredReports = false
+                }
+            }
         }
     }
 
@@ -732,6 +778,8 @@ struct ReportView: View {
             selectedBundle = nil
             selectedID = nil
             reportsLoadError = nil
+            canLoadMoreStoredReports = false
+            isLoadingMoreStoredReports = false
             return
         }
 
@@ -740,10 +788,12 @@ struct ReportView: View {
 
         do {
             async let analysisRows = AnalysisService.shared.listRecent(limit: 12)
-            async let reportRows = AnalysisService.shared.listReports(limit: 100)
+            async let reportRows = AnalysisService.shared.listReports(limit: reportArchiveFetchPageSize)
             let rows = try await analysisRows
             do {
-                storedReports = try await reportRows
+                let reports = try await reportRows
+                storedReports = reports
+                canLoadMoreStoredReports = reports.count == reportArchiveFetchPageSize
                 reportsLoadError = nil
             } catch {
                 reportsLoadError = AppErrorMessage.make(
@@ -752,6 +802,7 @@ struct ReportView: View {
                     fallbackTitle: "Rapor arşivi yüklenemedi"
                 ).fullText
                 storedReports = []
+                canLoadMoreStoredReports = false
             }
             visibleReportCount = min(visibleReportCount, max(filteredStoredReports.count, reportArchivePageSize))
             analyses = rows
@@ -764,6 +815,8 @@ struct ReportView: View {
             selectedBundle = nil
             selectedID = nil
             reportsLoadError = nil
+            canLoadMoreStoredReports = false
+            isLoadingMoreStoredReports = false
         }
     }
 
@@ -824,20 +877,35 @@ struct ReportView: View {
                 )
                 let url = try await PDFReportService.shared.generateAsync(input: input)
                 pdfGeneration.advance(to: 0.71)
-                let report = try await AnalysisService.shared.storeReport(
-                    userID: userID,
-                    bundle: selectedBundle,
-                    fileURL: url,
-                    kind: resolvedOptions.kind,
-                    method: resolvedOptions.method,
-                    requestID: requestID,
-                    supportID: supportID
-                )
-                mergeStoredReport(report)
+                var archiveWarning: String?
+                do {
+                    let report = try await AnalysisService.shared.storeReport(
+                        userID: userID,
+                        bundle: selectedBundle,
+                        fileURL: url,
+                        kind: resolvedOptions.kind,
+                        method: resolvedOptions.method,
+                        requestID: requestID,
+                        supportID: supportID
+                    )
+                    mergeStoredReport(report)
+                } catch {
+                    Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                    if AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) {
+                        throw error
+                    }
+                    archiveWarning = AppErrorMessage.make(
+                        rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                        context: "Rapor arşive kaydedilemedi",
+                        fallbackTitle: "Rapor arşive kaydedilemedi"
+                    ).fullText
+                }
                 pdfGeneration.advance(to: 0.88)
-                storedReports = (try? await AnalysisService.shared.listReports(limit: 100)) ?? storedReports
                 pdfGeneration.advance(to: 0.94)
                 await pdfGeneration.complete()
+                if let archiveWarning {
+                    errorMessage = archiveWarning
+                }
                 shareItem = ShareItem(url: url)
             } catch {
                 pdfGeneration.stop()
@@ -867,7 +935,6 @@ struct ReportView: View {
                     supportID: supportID
                 )
                 mergeStoredReport(report)
-                storedReports = (try? await AnalysisService.shared.listReports(limit: 100)) ?? storedReports
                 let url = try await AnalysisService.shared.reportFileURL(
                     for: report,
                     requestID: requestID,
@@ -891,6 +958,14 @@ struct ReportView: View {
         storedReports.removeAll { $0.id == report.id || $0.storagePath == report.storagePath }
         storedReports.insert(report, at: 0)
         visibleReportCount = max(visibleReportCount, min(filteredStoredReports.count, reportArchivePageSize))
+    }
+
+    private func appendStoredReports(_ reports: [ReportRow]) {
+        guard !reports.isEmpty else { return }
+        let existingIDs = Set(storedReports.map(\.id))
+        let existingPaths = Set(storedReports.map(\.storagePath))
+        let uniqueReports = reports.filter { !existingIDs.contains($0.id) && !existingPaths.contains($0.storagePath) }
+        storedReports.append(contentsOf: uniqueReports)
     }
 
     private func handleReportQuotaIfNeeded(_ error: Error) {
@@ -1584,35 +1659,45 @@ private struct ReportArchiveLoadMoreButton: View {
     let visibleCount: Int
     let totalCount: Int
     let nextCount: Int
+    let isLoading: Bool
+    let hasRemoteMore: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .frame(width: 28, height: 28)
-                    .foregroundStyle(Color.rdGreen)
-                    .background(Color.rdGreenSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 9))
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .frame(width: 28, height: 28)
+                } else {
+                    Image(systemName: hasRemoteMore ? "arrow.down.circle.fill" : "plus")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .frame(width: 28, height: 28)
+                        .foregroundStyle(Color.rdGreen)
+                        .background(Color.rdGreenSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 9))
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Daha fazla yükle")
+                    Text(isLoading ? "Yükleniyor" : hasRemoteMore ? "Arşivden devamını yükle" : "Daha fazla yükle")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("\(visibleCount)/\(totalCount) gösteriliyor")
+                    Text(hasRemoteMore ? "\(visibleCount) eşleşen rapor gösteriliyor" : "\(visibleCount)/\(totalCount) gösteriliyor")
                         .rdMono(size: 10, weight: .semibold)
                         .foregroundStyle(Color.rdSlate)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text("+\(nextCount)")
-                    .rdMono(size: 11, weight: .bold)
-                    .foregroundStyle(Color.rdSlate)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(Color.rdFog)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                if !isLoading {
+                    Text("+\(nextCount)")
+                        .rdMono(size: 11, weight: .bold)
+                        .foregroundStyle(Color.rdSlate)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(Color.rdFog)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
             }
             .padding(10)
             .background(Color.rdWhite)

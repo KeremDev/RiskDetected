@@ -136,8 +136,6 @@ begin
   );
 end;
 $$;
-
 revoke all on function public.reserve_analysis_quota(uuid, uuid, text) from public, anon, authenticated;
 grant execute on function public.reserve_analysis_quota(uuid, uuid, text) to service_role;
-
 select pg_notify('pgrst', 'reload schema');

@@ -467,9 +467,10 @@ These items exist in some form, but need revision before we treat them as produc
 ## Deployment Notes
 
 - Supabase CLI is available through `npx supabase`.
-- Remote migration history contains older timestamped migrations from the previous setup that are not fully mirrored locally, so `supabase db push` reports a history mismatch.
+- Supabase migration history was repaired on 2026-05-15. Remote base migrations are now mirrored locally and `supabase migration list` is clean.
+- Repair details live in `QA/Supabase_Migration_History_Repair_2026-05-15.md`.
 - For the P0 reports migration, SQL was applied with:
-  - `npx supabase db query --linked -f supabase/migrations/20260506_reports_storage.sql`
+  - `npx supabase db query --linked -f supabase/migrations/20260506193000_reports_storage.sql`
 - For the P1 retention migration, SQL was applied with:
   - `supabase db query --linked -f supabase/migrations/20260507221522_retention_policy.sql`
 - P1 retention Edge Function deploy:

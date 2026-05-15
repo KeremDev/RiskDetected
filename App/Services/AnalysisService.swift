@@ -200,13 +200,15 @@ final class AnalysisService {
     }
 
     /// Kullanıcının kayıtlı PDF raporlarını listeler.
-    func listReports(limit: Int = 20) async throws -> [ReportRow] {
+    func listReports(limit: Int = 20, offset: Int = 0) async throws -> [ReportRow] {
         do {
+            let start = max(offset, 0)
+            let end = start + max(limit, 1) - 1
             let rows: [ReportRow] = try await supabase.client
                 .from("reports")
                 .select()
                 .order("created_at", ascending: false)
-                .limit(limit)
+                .range(from: start, to: end)
                 .execute()
                 .value
             return rows

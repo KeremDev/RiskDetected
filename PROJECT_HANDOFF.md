@@ -98,7 +98,7 @@ Important functions:
 
 Important migrations:
 
-- `supabase/migrations/20260506_reports_storage.sql`
+- `supabase/migrations/20260506193000_reports_storage.sql`
 - `supabase/migrations/20260508192153_add_report_request_support_ids.sql`
 - `supabase/migrations/20260509001429_firebase_phone_auth_bridge.sql`
 

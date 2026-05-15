@@ -1,12 +1,20 @@
--- Keep demo accounts aligned with backend quota checks.
+-- Keep demo accounts aligned with backend quota checks when explicitly enabled.
 --
 -- The app can show demo tiers from cached profile/subscription state, but
 -- database-side quota enforcement intentionally trusts `user_subscriptions`
 -- instead of `profiles.tier`. These rows make the known demo accounts behave
 -- like real paid users in report/archive flows without relaxing production RLS
 -- or using editable profile data for authorization.
+--
+-- Safety: this seed is disabled by default so production migrations do not
+-- silently grant paid entitlements to demo accounts. To run it in a controlled
+-- demo/staging session, set:
+--   set app.riskdetected_seed_demo_subscriptions = 'on';
 
-with demo_accounts as (
+with demo_seed_enabled as (
+  select lower(coalesce(current_setting('app.riskdetected_seed_demo_subscriptions', true), '')) in ('1', 'true', 'on', 'yes') as enabled
+),
+demo_accounts as (
   select
     u.id as user_id,
     lower(u.email) as email,
@@ -21,6 +29,7 @@ with demo_accounts as (
     'plus@riskdetected.app',
     'free@riskdetected.app'
   )
+  and (select enabled from demo_seed_enabled)
 ),
 paid_demo_accounts as (
   select *
@@ -71,6 +80,9 @@ set tier = excluded.tier,
 update public.profiles p
 set tier = d.tier::public.subscription_tier
 from (
+  with demo_seed_enabled as (
+    select lower(coalesce(current_setting('app.riskdetected_seed_demo_subscriptions', true), '')) in ('1', 'true', 'on', 'yes') as enabled
+  )
   select
     u.id as user_id,
     case lower(u.email)
@@ -84,6 +96,7 @@ from (
     'plus@riskdetected.app',
     'free@riskdetected.app'
   )
+  and (select enabled from demo_seed_enabled)
 ) d
 where p.id = d.user_id
   and p.tier::text is distinct from d.tier;

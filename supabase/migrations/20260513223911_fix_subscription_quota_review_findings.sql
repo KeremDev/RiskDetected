@@ -20,9 +20,7 @@ as $$
     limit 1
   ), 'free');
 $$;
-
 revoke all on function private.user_plan_tier(uuid) from public, anon, authenticated;
-
 create or replace function public.enforce_report_plan_limits()
 returns trigger
 language plpgsql
@@ -64,11 +62,9 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists reports_enforce_plan_limits on public.reports;
 create trigger reports_enforce_plan_limits
   before insert on public.reports
   for each row
   execute function public.enforce_report_plan_limits();
-
 select pg_notify('pgrst', 'reload schema');

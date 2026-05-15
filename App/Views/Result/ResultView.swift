@@ -762,6 +762,7 @@ struct ResultView: View {
                 )
                 let url = try await PDFReportService.shared.generateAsync(input: input)
                 pdfGeneration.advance(to: 0.71)
+                var archiveWarning: String?
                 if let userID = app.auth.session?.user.id {
                     do {
                         _ = try await AnalysisService.shared.storeReport(
@@ -776,10 +777,21 @@ struct ResultView: View {
                         pdfGeneration.advance(to: 0.92)
                     } catch {
                         Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                        throw error
+                        if AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) {
+                            throw error
+                        }
+                        archiveWarning = AppErrorMessage.make(
+                            rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                            context: "Rapor arşive kaydedilemedi",
+                            fallbackTitle: "Rapor arşive kaydedilemedi"
+                        ).fullText
+                        pdfGeneration.advance(to: 0.92)
                     }
                 }
                 await pdfGeneration.complete()
+                if let archiveWarning {
+                    pdfError = archiveWarning
+                }
                 if presentShareSheet {
                     activityShareItem = ShareItem(url: url)
                 } else {

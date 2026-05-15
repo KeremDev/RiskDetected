@@ -8,7 +8,6 @@ create unique index if not exists usage_events_analysis_feature_unique
   on public.usage_events (user_id, feature, source_id)
   where source_id is not null
     and feature in ('analysis_standard', 'analysis_detailed');
-
 create or replace function private.user_plan_tier(p_user_id uuid)
 returns text
 language sql
@@ -28,9 +27,7 @@ as $$
     limit 1
   ), 'free');
 $$;
-
 revoke all on function private.user_plan_tier(uuid) from public, anon, authenticated;
-
 create or replace function public.reserve_analysis_quota(
   p_user_id uuid,
   p_analysis_id uuid,
@@ -166,8 +163,6 @@ begin
   );
 end;
 $$;
-
 revoke all on function public.reserve_analysis_quota(uuid, uuid, text) from public, anon, authenticated;
 grant execute on function public.reserve_analysis_quota(uuid, uuid, text) to service_role;
-
 select pg_notify('pgrst', 'reload schema');

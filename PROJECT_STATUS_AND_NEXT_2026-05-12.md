@@ -89,6 +89,10 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Pro XLSX export Edge Function eklendi ve backend smoke test geçti.
 - Reports sayfasında `Kayıtlı Rapor Dosyaları` ve `Rapora Dönüştür` bölümleri açılır/kapanır kart yapısına taşındı.
 - Reports arşivine arama/filtre, PDF/XLSX/metot/durum label'ları, boş/error state ve filtreli load-more davranışı eklendi.
+- Reports archive yoğun veri QA eklendi:
+  - simülatörde 21 kayıtlı raporla smoke test alındı;
+  - 247 sentetik kayıtla ilk 100 kayıt fetch, +5 local load-more, remote continuation, filtre/search ve duplicate merge doğrulandı;
+  - Türkçe diacritic-insensitive arama için `İş Güvenliği` -> `is guvenligi` normalizasyonu düzeltildi.
 - Pro/Plus rapor varsayılanları profilden geliyor:
   - profil logosu rapor logosu olarak otomatik yükleniyor;
   - hazırlayan adı, unvan, belge no, firma adı/bilgisi ve varsayılan metod PDF ayarlarına otomatik doluyor;
@@ -189,7 +193,8 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Kalan: Pro satın alma, restore purchase, iptal/expiration/downgrade eventleri test edilmeli.
 
 4. Son manuel QA
-   - Reports XLSX preview ve indirme akışı canlı tıklamayla tekrar test edilmeli.
+   - Reports archive 21 kayıt simülatör smoke + 247 sentetik yoğun veri QA geçti.
+   - Reports XLSX backend check geçti; TestFlight/gerçek cihaz share sheet final spot-check kalır.
    - Ana sayfa rapor kartından preview, X kapatma ve indir/paylaş test edilmeli.
    - Pro kullanıcı Pro canvas seçimi bir kez daha net pass alınmalı.
    - Yeni prompt sistemiyle Free ve Pro canlı analiz kıyas testi yapılmalı.
@@ -204,9 +209,12 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - App Store privacy nutrition / veri kullanımı beyanları bu metinlerle tutarlı hale getirilmeli.
 
 6. Supabase migration geçmişi
-   - Yeni Firebase kaldırma migration'ı remote history ile eşleşiyor.
-   - Ancak eski remote migration geçmişinde lokalde olmayan timestamp'ler var.
-   - Release/deploy öncesi migration history için bilinçli bir repair/fetch stratejisi belirlenmeli.
+   - Done: remote base migration history repoya fetch edildi.
+   - Done: kısa/bozuk timestamp'li lokal migration'lar temizlendi:
+     - `20260504_ai_usage_logs.sql` duplicate olduğu için kaldırıldı.
+     - `20260506_reports_storage.sql`, `20260506193000_reports_storage.sql` olarak geçerli timestamp'e taşındı.
+   - Done: remote migration history schema değiştirmeden `repair` ile hizalandı; `supabase migration list` temiz.
+   - Detay: `QA/Supabase_Migration_History_Repair_2026-05-15.md`.
 
 ### P1 - Güvenilirlik ve Operasyon
 
@@ -252,11 +260,13 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 
 2. Pro report defaults
    - Done: profil logosu, şirket, uzman adı, unvan, belge no, firma bilgisi ve varsayılan metod otomatik rapor varsayılanı olarak kullanılıyor.
-   - Follow-up: gerçek müşteri verisiyle PDF/XLSX görsel QA ve uzun firma/unvan metni taşma kontrolü yapılmalı.
+   - Done: PDF/XLSX default akışı kod QA + simülatör smoke ile doğrulandı; detaylar `QA/Reports_Defaults_Archive_QA_2026-05-15.md`.
+   - Follow-up: TestFlight/gerçek cihazda uzun firma/unvan metniyle final görsel spot-check yapılmalı.
 
 3. Reports archive gelişimi
    - Done: açılır kart yapısı, arama/filtre, durum label'ları, boş/error state ve load-more davranışı yapıldı.
-   - Follow-up: gerçek yoğun arşiv datasıyla performans ve UX QA alınmalı.
+   - Done: 247 kayıt sentetik yoğun veri QA ile pagination, filtre, arama ve duplicate merge doğrulandı; detaylar `QA/Reports_Defaults_Archive_QA_2026-05-15.md`.
+   - Follow-up: Production verisi oluştukça telemetry/performance spot-check alınmalı.
 
 4. Profile ekranı içerik/tabs
    - Mevcut profil, tercihler, bildirimler, verilerim akışları var.
@@ -322,13 +332,12 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - "Reports sayfası tasarım refresh yapılacak" eski durumdu; açılır kartlı yeni yapı eklendi.
 - "Reports archive arama/filtre/status/empty/load-more yapılacak" eski durumdu; uygulandı.
 - "Pro report defaults profilden otomatik gelsin" eski durumdu; PDF/XLSX akışlarına bağlandı.
+- "Supabase migration history temizlik kararı" eski durumdu; remote/local history eşitlendi.
 
 ## Önerilen Sıradaki Uygulama Sırası
 
 1. Paywall sayfası yenileme ve Plus/Pro plan limit metinlerini UI'da netleştirme.
-2. PDF/XLSX rapor varsayılanları ve Reports archive yoğun veri QA.
-3. RevenueCat Pro satın alma + restore purchase + expiration/downgrade testi.
-4. Legal final metinler ve App Store privacy hazırlığı.
-5. APNs real-device/TestFlight push testi.
-6. Supabase migration history temizlik kararı.
-7. TestFlight tam uçtan uca release pass.
+2. RevenueCat Pro satın alma + restore purchase + expiration/downgrade testi.
+3. Legal final metinler ve App Store privacy hazırlığı.
+4. APNs real-device/TestFlight push testi.
+5. TestFlight tam uçtan uca release pass.
