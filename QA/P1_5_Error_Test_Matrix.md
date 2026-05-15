@@ -30,7 +30,7 @@ Destek kodu: RD-1A2B3C4D
 
 | Kategori | Kaynak | Retry | Kullanıcı aksiyonu | Not |
 | --- | --- | --- | --- | --- |
-| `quotaExceeded` | Edge Function / plan limiti | Hayır | Pro sayfasına yönlendir | Free toplam günlük limit: 2 |
+| `quotaExceeded` | Edge Function / plan limiti | Hayır | Yükseltme/paywall sayfasına yönlendir | Free standart analiz limiti: günde 1 |
 | `authRequired` | Supabase Auth/session | Hayır | Tekrar giriş yap | Expired token ve nil session kapsanmalı |
 | `networkUnavailable` | iOS / Supabase / Storage | Evet | Bağlantıyı kontrol et, tekrar dene | Offline sim testiyle doğrula |
 | `storageDenied` | Storage RLS / bucket policy | Hayır | Destek koduyla bildir | Raw RLS metni gösterilmemeli |
@@ -46,7 +46,7 @@ Destek kodu: RD-1A2B3C4D
 
 | ID | Senaryo | Nasıl Tetiklenir | Beklenen UI | Beklenen İz | Durum |
 | --- | --- | --- | --- | --- | --- |
-| E01 | Free günlük limit dolu | Free demo ile aynı gün 3. analizi başlat | Foto/metin girişi ve başlatma akışı Pro yönlendirmesi verir; teknik hata göstermez | Paywall quota notunda support id görünür; Edge 429 varsa aynı `quotaExceeded` support id taşınır | Geçti · 2026-05-09 · `RD-8478660C` |
+| E01 | Free günlük limit dolu | Free demo ile aynı gün 2. standart analizi başlat | Foto/metin girişi ve başlatma akışı yükseltme yönlendirmesi verir; teknik hata göstermez | Paywall quota notunda support id görünür; Edge 429 varsa aynı `quotaExceeded` support id taşınır | Güncellendi · Free günde 1 standart analiz kuralına göre tekrar smoke önerilir |
 | E02 | Foto seçmeden analiz | Foto modunda foto yokken `Taramayı Başlat` | Galeri/kamera seçim akışı açılır veya limit doluysa upload alanı bloklanır | Lokal validation, backend çağrısı yok | Geçti · 2026-05-09 · kaynak dialog açıldı |
 | E03 | Metin çok kısa/boş | Metin modunda boş/kısa metinle başlat | “Eksik bilgi” mesajı gösterilir, ham hata yok | Backend çağrısı yok | Geçti · 2026-05-09 · `RD-73459579` |
 | E04 | Oturum yok/expired | App session temizlenmişken analiz başlat | “Tekrar giriş yap” tipi mesaj | Supabase auth error normalize edilir | Mevcut kod desteği hazır · manuel doğrulama bekliyor |

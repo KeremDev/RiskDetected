@@ -1,6 +1,6 @@
 # RiskDetected - Güncel Durum ve Kalan İşler
 
-Tarih: 2026-05-12
+Tarih: 2026-05-15
 
 Bu dosya `IMPLEMENTATION_PLAN.md`, `PROJECT_HANDOFF.md`, `HANDOFF_2026-05-11_NEW_CHAT/*`,
 `AUTH_SETUP.md`, `PROMPT_SYSTEM_REVAMP_PLAN_2026-05-11.md` ve `QA/P1_5_Error_Test_Matrix.md`
@@ -16,9 +16,10 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Fotoğraf ve metin analizi canlı veriyle çalışıyor.
 - Analizler `analyses`, `findings`, `photos`, `ai_usage_logs` tablolarına yazılıyor.
 - Fine-Kinney ve 5x5 ham girdileri AI'dan alınıyor; skorlar DB/sistem tarafında hesaplanıyor.
-- Free günlük analiz limiti 2 olarak uygulanıyor.
-- Free bulgu limiti 4, Pro bulgu limiti 10 olarak güncellendi.
-- Free limit dolu senaryosunda Home ve orta Tara butonu Pro uyarısına yönlendiriyor.
+- Free standart analiz limiti günde 1 olarak uygulanıyor.
+- Free kullanıcı yalnızca 1 canvas seçebiliyor; Plus sınırlı gelişmiş canvas, Pro tam gelişmiş canvas erişimine sahip.
+- Pro bulgu limiti 10 olarak güncellendi.
+- Free limit dolu senaryosunda Home ve orta Tara butonu yükseltme uyarısına yönlendiriyor.
 
 ### Auth
 
@@ -161,14 +162,17 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Resend/Supabase SMTP ayarları canlıda doğrulandı.
    - Email OTP ile kayıt geçti.
    - Email OTP ile giriş geçti.
+   - TestFlight gerçek cihazda mail ve kod alanlarının klavye üstünde görünür kaldığı doğrulandı.
    - Release öncesi son smoke test olarak yeni kullanıcı + mevcut kullanıcı tekrar denenebilir.
 
-3. RevenueCat / gerçek Pro entitlement
-   - RevenueCat SDK ve ürünleri entegre edilmeli.
-   - Satın alma/restore akışı yapılmalı.
-   - Webhook ile Supabase `profiles.tier` güvenli şekilde güncellenmeli.
-   - Demo/local Pro davranışı production entitlement yerine geçmemeli.
-   - App Store sandbox satın alma testi yapılmalı.
+3. RevenueCat / gerçek entitlement
+   - RevenueCat SDK, Plus/Pro ürünleri ve webhook entegrasyonu tamamlandı.
+   - TestFlight sandbox Plus satın alma testi geçti:
+     - `riskdetected_plus_monthly`
+     - `entitlement_ids = [plus]`
+     - Supabase `user_subscriptions.tier = plus`
+     - Supabase `profiles.tier = plus`
+   - Kalan: Pro satın alma, restore purchase, iptal/expiration/downgrade eventleri test edilmeli.
 
 4. Son manuel QA
    - Reports XLSX preview ve indirme akışı canlı tıklamayla tekrar test edilmeli.
@@ -275,8 +279,8 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Clean install onboarding.
    - Email OTP.
    - Apple/Google login.
-   - Free limit.
-   - Pro purchase/restore.
+   - Free günde 1 analiz limiti.
+   - Plus/Pro purchase/restore.
    - Photo permission / gallery / camera.
    - Analysis -> Result -> PDF/XLSX -> share.
    - Dark mode.
@@ -287,6 +291,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - "Onboarding yapılacak" maddesi artık yapıldı; sadece final görsel/metin polish kalabilir.
 - "AI canvas promptları kullanıcıdan alınacak" maddesi büyük ölçüde yapıldı; promptlar backend'e işlendi.
 - "Max 2 canvas" eski davranıştı; yeni karar tek canvas ve uygulandı.
+- "Free günlük analiz limiti 2" eski kuraldı; yeni kural Free günde 1 standart analiz.
 - "Pro max 14" eski kuraldı; yeni kural Pro max 10.
 - "Firebase phone bridge paused/deferred" eski durumdu; artık tamamen kaldırıldı.
 - "P1.5 QA kalan satırlar" eski durumdu; matris E01-E18 geçti.
@@ -296,7 +301,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 
 1. Auth provider canlı doğrulama: Apple + Google + Email OTP final dokümantasyon.
 2. Reports XLSX/Home preview/Pro canvas kısa manuel QA.
-3. RevenueCat entegrasyonu ve gerçek Pro entitlement.
+3. RevenueCat Pro satın alma + restore purchase + expiration/downgrade testi.
 4. Legal final metinler ve App Store privacy hazırlığı.
 5. APNs real-device/TestFlight push testi.
 6. Supabase migration history temizlik kararı.

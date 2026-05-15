@@ -109,8 +109,8 @@ Important migrations:
 Current intended routing:
 
 - Free users: lower-cost Gemini model path and smaller hazard budget.
-- Pro users: stronger Gemini model path and larger hazard budget.
-- Current product target: Free max 4 findings, Pro max 14 findings.
+- Plus/Pro users: paid-plan model path and larger quota/capability budget.
+- Current product target: Free günde 1 standart analiz ve tek canvas, Plus sınırlı gelişmiş erişim, Pro 10 bulguya kadar detaylı analiz.
 
 Known product note:
 

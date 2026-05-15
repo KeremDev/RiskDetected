@@ -14,7 +14,7 @@
 - SwiftUI app shell, onboarding, auth and main tab flow.
 - Supabase Auth, profiles, analyses, findings, photos and AI usage wiring.
 - Gemini Edge Function for photo/text risk analysis.
-- Free daily analysis limit set to 2.
+- Free standard analysis limit is now 1 per day.
 - Demo Pro and Free users added to login screen.
 - Home, History, Result and Report screens now use live analysis data instead of mock-heavy data.
 - Inline photo analysis persists analyzed images into Supabase Storage and `photos`.
@@ -30,7 +30,9 @@
   - Header Pro CTA is visible as a lightweight conversion entry point.
 - PDF/plan comparison completed against `RiskDetected Is Plani.pdf`.
 - P0 plan alignment completed for the current MVP scope:
-  - Edge Function hazard budget aligned to Free max 4 and Pro max 14.
+  - Edge Function plan limits now follow Free / Plus / Pro subscription tiers.
+  - Current Free rule: 1 standard analysis per day and 1 canvas.
+  - Current Pro rule: up to 10 detailed findings.
   - `reports` table + private `reports` Storage bucket migration added and applied to the linked Supabase project.
   - Generated PDFs are uploaded to Storage and written to `reports` metadata when possible.
   - Reports tab can regenerate a standard PDF for the selected analysis and download/share stored PDF reports.
@@ -158,7 +160,7 @@ These items exist in some form, but need revision before we treat them as produc
 
 ### P0 - Stabilize MVP and Plan Alignment
 
-1. Done: Change Free/Pro hazard limits to Free max 4 and Pro max 14.
+1. Done: Replace old Free/Pro-only limits with Free / Plus / Pro plan rules.
 2. Done: Persist report metadata/files:
    - create/verify `reports` table fields;
    - upload generated PDF to Storage;
@@ -444,7 +446,7 @@ These items exist in some form, but need revision before we treat them as produc
 3. Which paid Pro AI model/provider becomes the primary production route?
 4. How strict should image retention be for KVKK and user trust?
    - Current decision: Free analysis photos 30 days, Pro analysis photos 365 days, raw AI responses 30 days, reports until user deletion.
-5. Is Free max 4 / Pro max 14 the final business rule, or should we A/B test it later?
+5. Free max 4 / Pro max 14 is no longer the active business rule; current rule is Free 1 standard analysis/day and Pro up to 10 detailed findings.
 
 ## Deployment Notes
 
