@@ -18,9 +18,11 @@ struct AuthView: View {
     private let googleSignInService = GoogleSignInService()
     @State private var autoVerifiedCode: String?
     @State private var caretPulse = false
-    @FocusState private var isOTPInputFocused: Bool
+    @StateObject private var keyboard = KeyboardObserver()
+    @FocusState private var focusedField: AuthInputField?
 
     enum AuthPhase { case options, email, otp }
+    enum AuthInputField { case email, otp }
     enum DemoAccount: String {
         case pro, plus, free
 
@@ -115,6 +117,8 @@ struct AuthView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
                 // MARK: Identity + form — daha yukarıda dengeli blok
+                let keyboardLift = max(0, keyboard.height - geo.safeAreaInsets.bottom)
+
                 VStack(spacing: phase == .email ? 18 : 20) {
                     VStack(spacing: 10) {
                         RDLogo(size: phase == .email ? 36 : 38)
@@ -143,11 +147,12 @@ struct AuthView: View {
 
                     form
                         .padding(.horizontal, 20)
-                        .padding(.bottom, max(18, geo.safeAreaInsets.bottom))
+                        .padding(.bottom, keyboardLift > 0 ? 0 : max(18, geo.safeAreaInsets.bottom))
                 }
-                .padding(.bottom, max(22, geo.safeAreaInsets.bottom + 8))
-                .offset(y: phase == .email ? -24 : 0)
+                .padding(.bottom, keyboardLift > 0 ? keyboardLift + 14 : max(22, geo.safeAreaInsets.bottom + 8))
+                .offset(y: keyboardLift > 0 ? -8 : (phase == .email ? -24 : 0))
                 .frame(maxWidth: .infinity)
+                .animation(.easeOut(duration: 0.22), value: keyboard.height)
             }
         }
         .ignoresSafeArea()
@@ -159,18 +164,22 @@ struct AuthView: View {
                 .preferredColorScheme(preferredModalColorScheme)
         }
         .onChange(of: phase) { newPhase in
-            if newPhase == .otp {
+            if newPhase == .email {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                    isOTPInputFocused = true
+                    focusedField = .email
+                }
+            } else if newPhase == .otp {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    focusedField = .otp
                 }
                 caretPulse = true
             } else {
-                isOTPInputFocused = false
+                focusedField = nil
                 caretPulse = false
             }
         }
-        .onChange(of: isOTPInputFocused) { isFocused in
-            caretPulse = isFocused
+        .onChange(of: focusedField) { field in
+            caretPulse = field == .otp
         }
     }
 
@@ -381,6 +390,7 @@ struct AuthView: View {
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .focused($focusedField, equals: .email)
                     .font(.system(size: 16, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .tint(Color.rdGreen)
@@ -426,7 +436,7 @@ struct AuthView: View {
                 TextField("", text: $otpInput)
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
-                    .focused($isOTPInputFocused)
+                    .focused($focusedField, equals: .otp)
                     .font(.system(size: 1))
                     .foregroundStyle(Color.clear)
                     .tint(Color.clear)
@@ -446,7 +456,7 @@ struct AuthView: View {
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
             .onTapGesture {
-                isOTPInputFocused = true
+                focusedField = .otp
             }
 
             Text("Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin.")
@@ -542,7 +552,7 @@ struct AuthView: View {
                     withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
-                    isOTPInputFocused = true
+                    focusedField = .otp
                 }
             } catch {
                 setAuthError(error, context: "Kod gönderilemedi", fallbackTitle: "Kod gönderilemedi", operation: "send_email_otp", email: normalizedEmail)
@@ -662,7 +672,7 @@ struct AuthView: View {
 
     private func otpDigitBox(index: Int) -> some View {
         let activeIndex = min(otpInput.count, 5)
-        let isActive = isOTPInputFocused && otpInput.count < 6 && index == activeIndex
+        let isActive = focusedField == .otp && otpInput.count < 6 && index == activeIndex
         let hasValue = !code[index].isEmpty
 
         return ZStack {

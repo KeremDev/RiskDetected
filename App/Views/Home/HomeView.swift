@@ -97,8 +97,10 @@ struct HomeView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
                 .padding(.bottom, 110) // tab bar clearance
+                .keyboardAdaptivePadding(extra: 16)
                 .background(Color.rdWhite)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Color.rdWhite)
         }
         .background(Color.rdWhite.ignoresSafeArea())

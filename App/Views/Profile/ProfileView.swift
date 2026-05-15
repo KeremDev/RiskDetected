@@ -643,7 +643,9 @@ private struct ProfileEditSheet: View {
                 }
                 .padding(20)
                 .padding(.bottom, 24)
+                .keyboardAdaptivePadding(extra: 16)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Color.rdPaper)
             .navigationTitle("Profil Bilgileri")
             .navigationBarTitleDisplayMode(.inline)

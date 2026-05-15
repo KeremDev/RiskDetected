@@ -1001,7 +1001,9 @@ struct ReportSettingsSheet: View {
                 .padding(.horizontal, 14)
                 .padding(.top, 12)
                 .padding(.bottom, 96)
+                .keyboardAdaptivePadding(extra: 16)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Color.rdPaper)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 reportSettingsStickyCTA
