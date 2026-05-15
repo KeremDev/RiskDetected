@@ -340,6 +340,13 @@ These items exist in some form, but need revision before we treat them as produc
    - design and implement profile page sections/tabs;
    - fill missing content for account, preferences, reports, analyses, notifications and data/privacy areas.
 
+7. Paywall page redesign:
+   - redesign the Plus/Pro upgrade screen with the latest commercial limits;
+   - show Plus as 10 standard analyses/day, 2 detailed analyses/day and 150 reports/month;
+   - show Pro as 40 standard analyses/day, 10 detailed analyses/day and 750 reports/month;
+   - make RevenueCat package loading, current-plan state, purchase, restore and error states clearer;
+   - verify the refreshed paywall on TestFlight with real-device purchase/restore QA.
+
 ### P2.7 - Excel Risk Analysis Export
 
 1. Backend-generated XLSX export: ✅ Done

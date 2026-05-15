@@ -126,7 +126,7 @@ struct PlanCapabilities: Equatable {
         case .plus:
             return PlanCapabilities(
                 tier: tier,
-                standardAnalysisLabel: "15/gün",
+                standardAnalysisLabel: "10/gün",
                 detailedAnalysisLabel: "2/gün",
                 reportLabel: "150/ay, logolu",
                 acceleratedReportLabel: "50/ay",
@@ -142,9 +142,9 @@ struct PlanCapabilities: Equatable {
         case .pro:
             return PlanCapabilities(
                 tier: tier,
-                standardAnalysisLabel: "60/gün",
+                standardAnalysisLabel: "40/gün",
                 detailedAnalysisLabel: "10/gün",
-                reportLabel: "Sınırsız, logolu",
+                reportLabel: "750/ay, logolu",
                 acceleratedReportLabel: "250/ay",
                 archiveLabel: "Sınırsız",
                 canUseDetailedRiskTable: true,

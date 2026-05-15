@@ -17,6 +17,8 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Analizler `analyses`, `findings`, `photos`, `ai_usage_logs` tablolarına yazılıyor.
 - Fine-Kinney ve 5x5 ham girdileri AI'dan alınıyor; skorlar DB/sistem tarafında hesaplanıyor.
 - Free standart analiz limiti günde 1 olarak uygulanıyor.
+- Plus standart analiz limiti günde 10, Pro standart analiz limiti günde 40 olarak uygulanıyor.
+- Rapor kotası Free 3/ay, Plus 150/ay, Pro 750/ay olarak uygulanıyor.
 - Free kullanıcı yalnızca 1 canvas seçebiliyor; Plus sınırlı gelişmiş canvas, Pro tam gelişmiş canvas erişimine sahip.
 - Pro bulgu limiti 10 olarak güncellendi.
 - Free limit dolu senaryosunda Home ve orta Tara butonu yükseltme uyarısına yönlendiriyor.
@@ -31,6 +33,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - OTP hata mesajları Türkçe ve kullanıcı dostu hale getirildi.
 - Google OAuth "Vazgeç" durumunda teknik WebAuthenticationSession hatası kullanıcıya gösterilmiyor.
 - Apple Sign In iOS tarafında gerçek Apple identity token + nonce ile Supabase akışına bağlı.
+- Apple Sign In gerçek Apple hesabıyla TestFlight cihazda doğrulandı; Supabase `apple` identity ve otomatik `profiles` satırı oluştu.
 - Google Sign In native Google SDK ile bağlı; Supabase'e Google `idToken` ile oturum açılıyor.
 - Sosyal/e-posta giriş sonrası profil yoksa güvenli şekilde default `free` profil oluşturuluyor.
 - Profil bootstrap artık "profil yok" ile "profil okunamadı" hatasını ayırıyor.
@@ -91,6 +94,8 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Profil bilgisi kaydetme çalışıyor.
 - Profil logosu seçme/kaydetme çalışıyor.
 - Profilde geçmiş analizler ve raporlar routing'i çalışıyor.
+- Profil > Destek formu eklendi; konu, mesaj ve isteğe bağlı fotoğraf/dosya ekiyle `info@riskdetected.com` adresine mail gönderir.
+  - Canlı mail gönderimi için Supabase Edge Function secret'ına `RESEND_API_KEY` eklenmeli.
 - Dark mode foundation tamamlandı:
   - Sistem / Aydınlık / Karanlık seçenekleri.
   - Core renk tokenları dark/light uyumlu.
@@ -151,7 +156,9 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Detay: `AUTH_LIVE_VERIFICATION_2026-05-12.md`.
    - Supabase Apple provider credentials girildi.
    - Apple kodlandı ve gerekli Apple/Supabase ayarları yapıldı.
-   - Gerçek Apple hesabıyla giriş testi sonraya bırakıldı.
+   - 2026-05-15 TestFlight gerçek cihazda Apple Sign In geçti.
+   - Apple provider `Client IDs` alanında native iOS bundle id `com.riskdetected.app` ve Services ID birlikte tanımlandı.
+   - Canlı DB'de `auth.identities.provider = apple`, auth user ve `profiles` satırı doğrulandı.
    - Supabase Google provider credentials girildi.
    - Google native SDK ile mevcut kullanıcı girişi geçti.
    - Google native SDK ile yeni kullanıcı kaydı geçti.
@@ -248,11 +255,19 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Mevcut profil, tercihler, bildirimler, verilerim akışları var.
    - Daha net tab/section yapısı ve eksik içerik düzeni tasarlanabilir.
 
-5. Image privacy ileri adımlar
+5. Paywall sayfası yenileme
+   - Plus ve Pro plan kartları yeni limitlerle uyumlu olacak:
+     - Plus: 10 standart analiz/gün, 2 detaylı analiz/gün, 150 rapor/ay.
+     - Pro: 40 standart analiz/gün, 10 detaylı analiz/gün, 750 rapor/ay.
+   - RevenueCat paketleri, restore purchase ve mevcut plan durumları daha net gösterilecek.
+   - Limit dolu/free upgrade girişleriyle aynı görsel dilde, daha modern ve güven veren bir tasarım yapılacak.
+   - TestFlight gerçek cihazda satın alma, restore ve plan geçiş görünümüyle QA alınacak.
+
+6. Image privacy ileri adımlar
    - Yüz blur var.
    - Company logo blur ve cleaned-image-only storage policy daha sıkı hale getirilebilir.
 
-6. Pro analiz kalitesi
+7. Pro analiz kalitesi
    - Pro max 10 ve references var.
    - Daha sonra:
      - stronger model,
@@ -299,7 +314,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 
 ## Önerilen Sıradaki Uygulama Sırası
 
-1. Auth provider canlı doğrulama: Apple + Google + Email OTP final dokümantasyon.
+1. Paywall sayfası yenileme ve Plus/Pro plan limit metinlerini UI'da netleştirme.
 2. Reports XLSX/Home preview/Pro canvas kısa manuel QA.
 3. RevenueCat Pro satın alma + restore purchase + expiration/downgrade testi.
 4. Legal final metinler ve App Store privacy hazırlığı.

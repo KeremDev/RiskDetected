@@ -138,7 +138,7 @@ function resolvePlanTier(
 function monthlyReportLimit(tier: PlanTier): number | null {
   switch (tier) {
     case "pro":
-      return null;
+      return 750;
     case "plus":
       return 150;
     case "free":

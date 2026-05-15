@@ -86,7 +86,9 @@ Google Cloud Console tarafında iki client kullanılır:
   - 2026-05-12 canlı Supabase `/auth/v1/settings` kontrolünde `external.apple=true` ve `external.google=true` göründü.
   - Google native SDK ile mevcut kullanıcı girişi ve yeni kullanıcı kaydı geçti.
   - Google Cloud OAuth consent screen hâlâ test modunda; release öncesi production/publish adımı yapılacak.
-  - Apple kodlandı ve Apple/Supabase ayarları yapıldı; gerçek Apple hesabıyla canlı test sonraya bırakıldı.
+  - Apple kodlandı ve Apple/Supabase ayarları yapıldı.
+  - 2026-05-15 TestFlight gerçek cihazda Apple Sign In canlı testi geçti.
+  - Apple provider `Client IDs` alanında Services ID yanında native iOS bundle id `com.riskdetected.app` da tanımlı olmalı; aksi durumda Supabase `Unacceptable audience in id_token` hatası verir.
   - Detaylı canlı kontrol notu: `AUTH_LIVE_VERIFICATION_2026-05-12.md`.
 - Özel SMTP kurulumu:
   - Supabase Dashboard > Authentication > SMTP Settings altında SMTP sağlayıcısı bağlanacak.
@@ -98,6 +100,6 @@ Google Cloud Console tarafında iki client kullanılır:
   - Admin `generate_link` + `/auth/v1/verify` token hash testi access token döndürdü; Supabase session üretimi çalışıyor.
   - Çok sık test isteği sonrası Supabase `over_email_send_rate_limit` döndürdü; uygulama bunu kullanıcıya "Kod gönderme sınırı" olarak gösterecek şekilde normalize ediyor.
   - Resend/Supabase SMTP ile Email OTP giriş ve kayıt canlı test edildi; geçti.
-- Gerçek Apple hesabıyla cihaz/simülatör doğrulaması yap.
+- Release öncesi Apple/Google/Email OTP için kısa final smoke test yapılabilir.
 - Google Cloud OAuth consent screen production/publish durumunu release öncesi tamamla.
 - RevenueCat sonrası `profiles.tier` sadece doğrulanmış webhook/profil güncellemesiyle değişmeli.

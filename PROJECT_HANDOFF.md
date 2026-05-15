@@ -156,7 +156,7 @@ Current MVP auth decision:
 - Phone/Firebase login has been removed from MVP scope.
 - User-facing passwordless login is Supabase Email OTP.
 - Demo Pro and Free login buttons remain available for testing.
-- Apple and Google buttons exist but provider dashboard setup still needs final production verification.
+- Apple, Google and Email OTP auth flows are implemented; Email OTP, Google native sign-in and Apple native sign-in have passed live/TestFlight verification.
 
 Current auth implementation:
 
@@ -173,7 +173,7 @@ Required external auth work:
   - Preferred: Resend or Postmark with verified domain.
   - Alternatives: SendGrid, Mailgun.
 - Replace Supabase `Confirm signup` and `Magic Link` email templates with the repo templates under `supabase/templates/`, so real mailboxes receive a 6-digit OTP using `{{ .Token }}` instead of a confirmation link.
-- Verify Apple provider with real Apple account.
+- Apple provider was verified with a real Apple account on TestFlight. Supabase Apple provider must keep both the Services ID and native iOS bundle id `com.riskdetected.app` in `Client IDs`.
 - Verify Google OAuth redirect.
 
 Phone/Firebase status:

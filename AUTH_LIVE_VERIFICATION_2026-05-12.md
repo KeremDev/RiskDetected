@@ -23,7 +23,7 @@ Canlı `/auth/v1/settings` sonucu:
 
 Authorize endpoint smoke test:
 
-- Apple: provider enabled, OAuth/native token akışı canlı test bekliyor.
+- Apple: provider enabled, TestFlight gerçek cihazda native Apple Sign In geçti.
 - Google: provider enabled, native Google Sign-In SDK ile mevcut kullanıcı girişi ve yeni kullanıcı kaydı canlı geçti.
 
 iOS app prerequisites:
@@ -37,7 +37,7 @@ iOS app prerequisites:
 
 Apple ve Google provider'ları canlı Supabase tarafında açık.
 Google native SDK akışı gerçek hesapla başarıyla denendi. Mevcut kullanıcı girişi ve yeni kullanıcı kaydı geçti.
-Apple kodu ve provider ayarları hazır; gerçek Apple hesabı testi sonraya bırakıldı.
+Apple native akışı gerçek Apple hesabıyla TestFlight cihazda başarıyla denendi. Canlı DB'de `auth.identities.provider = apple`, auth user ve otomatik `profiles` satırı doğrulandı.
 
 ## Apple Provider İçin Gerekenler
 
@@ -64,7 +64,9 @@ Aktivasyon sonrası beklenen kontrol:
 
 - `/auth/v1/settings` içinde `external.apple=true` görüldü.
 - Apple authorize endpoint artık `Unsupported provider` dönmemeli.
-- iOS simulator/cihazda gerçek Apple hesabıyla giriş denenmeli.
+- 2026-05-15 TestFlight gerçek cihazda Apple Sign In geçti.
+- Supabase Apple provider `Client IDs` alanında Services ID yanında native iOS bundle id `com.riskdetected.app` da tanımlı olmalı.
+- Sadece Services ID tanımlı kalırsa native iOS token'ında `aud = com.riskdetected.app` geldiği için Supabase `Unacceptable audience in id_token` hatası verir.
 
 Apple `Secret Key (for OAuth)` alanı tek değer istiyorsa:
 
@@ -147,4 +149,5 @@ Doğrulananlar:
 
 Kalan:
 
-1. Release öncesi bir kez daha yeni kullanıcı + mevcut kullanıcı smoke test yapılabilir.
+1. Release öncesi Email OTP, Google ve Apple için kısa final smoke test yapılabilir.
+2. Google Cloud OAuth consent screen production/publish adımı release öncesi tamamlanmalı.

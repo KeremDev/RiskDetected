@@ -13,6 +13,7 @@ struct ProfileView: View {
     @State private var showDataControls = false
     @State private var showPreferences = false
     @State private var showLegalInfo = false
+    @State private var showSupport = false
     @State private var stats: ProfileStats? = nil
     @State private var dataActionInProgress: ProfileDataAction?
     @State private var pendingDataAction: ProfileDataAction?
@@ -121,6 +122,16 @@ struct ProfileView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
                 .preferredColorScheme(preferredModalColorScheme)
+        }
+        .sheet(isPresented: $showSupport) {
+            SupportContactSheet(
+                profile: app.profile,
+                tier: app.currentTier,
+                onClose: { showSupport = false }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
@@ -272,7 +283,7 @@ struct ProfileView: View {
                         .font(.system(size: 17, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                         .padding(.top, 8)
-                    Text("Sınırsız Analiz, Gelişmiş Analiz, Gelişmiş Raporlamalar, Gelişmiş Canvas Kullanımı, Fine-Kinney ve 5*5 Matris Risk Analiz Methodları, Özelleştirilmiş PDF ve Excel Rapor Çıktıları ve daha fazlası...")
+                    Text("Günlük daha yüksek analiz hakkı, detaylı analiz, gelişmiş raporlama, gelişmiş canvas kullanımı, Fine-Kinney ve 5*5 Matris risk analiz methodları, özelleştirilmiş PDF ve Excel rapor çıktıları ve daha fazlası...")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(.white.opacity(0.78))
                         .fixedSize(horizontal: false, vertical: true)
@@ -388,7 +399,13 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
-                ProfileRow(icon: "headphones", title: "Destek")
+                Button {
+                    showSupport = true
+                    UISelectionFeedbackGenerator().selectionChanged()
+                } label: {
+                    ProfileRow(icon: "headphones", title: "Destek")
+                }
+                .buttonStyle(.plain)
             }
             .background(Color.rdWhite)
             .overlay(

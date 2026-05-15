@@ -47,8 +47,8 @@ const PLAN_LIMITS: Record<PlanTier, {
   maxHazards: number;
 }> = {
   free: { dailyStandardLimit: 1, maxHazards: 4 },
-  plus: { dailyStandardLimit: 15, dailyDetailedLimit: 2, maxHazards: 8 },
-  pro: { dailyStandardLimit: 60, dailyDetailedLimit: 10, maxHazards: 10 },
+  plus: { dailyStandardLimit: 10, dailyDetailedLimit: 2, maxHazards: 8 },
+  pro: { dailyStandardLimit: 40, dailyDetailedLimit: 10, maxHazards: 10 },
 };
 
 const COMMON_ANALYSIS_PROMPT =
