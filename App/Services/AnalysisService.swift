@@ -287,7 +287,12 @@ final class AnalysisService {
             throw AnalysisError.storageFailed("PDF dosyası okunamadı. Destek kodu: \(supportID)")
         }
 
-        let fileName = Self.safeReportFileName(for: bundle.analysis, kind: kind, method: method)
+        let fileName = Self.safeReportFileName(
+            for: bundle.analysis,
+            kind: kind,
+            method: method,
+            requestID: requestID
+        )
         let storagePath = "\(userID.uuidString.lowercased())/\(bundle.analysis.id.uuidString.lowercased())/\(fileName)"
 
         if ReportFailureSimulation.isEnabled(.storageUpload) {
@@ -368,7 +373,7 @@ final class AnalysisService {
         do {
             let row: ReportRow = try await supabase.client
                 .from("reports")
-                .upsert(payload, onConflict: "user_id,storage_path")
+                .insert(payload)
                 .select()
                 .single()
                 .execute()
@@ -376,6 +381,13 @@ final class AnalysisService {
             return row
         } catch {
             Self.logger.error("Report metadata save failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            do {
+                _ = try await supabase.storage
+                    .from(RDConfig.Bucket.reports)
+                    .remove(paths: [storagePath])
+            } catch {
+                Self.logger.error("Report orphan cleanup failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) path=\(storagePath, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+            }
             throw AnalysisError.databaseFailed("PDF oluşturuldu ancak rapor arşiv kaydı tamamlanamadı. Destek kodu: \(supportID)")
         }
     }
@@ -1056,7 +1068,12 @@ final class AnalysisService {
         return "\(clean)\nDestek kodu: \(supportID)"
     }
 
-    private static func safeReportFileName(for analysis: AnalysisRow, kind: PDFReportKind, method: RiskMethod) -> String {
+    private static func safeReportFileName(
+        for analysis: AnalysisRow,
+        kind: PDFReportKind,
+        method: RiskMethod,
+        requestID: String
+    ) -> String {
         let normalizedTitle = analysis.title
             .folding(options: [.diacriticInsensitive, .widthInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
             .lowercased()
@@ -1073,7 +1090,21 @@ final class AnalysisService {
             .trimmingCharacters(in: CharacterSet(charactersIn: "_-"))
         let titlePart = safeTitle.isEmpty ? "analysis" : String(safeTitle.prefix(48))
         let shortID = String(analysis.id.uuidString.prefix(8)).lowercased()
-        return "riskdetected_\(titlePart)_\(kind.rawValue)_\(databaseReportMethodValue(method))_\(shortID).pdf"
+        let archiveID = archiveFileSuffix(requestID: requestID)
+        return "riskdetected_\(titlePart)_\(kind.rawValue)_\(databaseReportMethodValue(method))_\(shortID)_\(archiveID).pdf"
+    }
+
+    private static func archiveFileSuffix(requestID: String) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyyMMdd'T'HHmmss'Z'"
+        let timestamp = formatter.string(from: Date())
+        let requestPart = requestID
+            .lowercased()
+            .filter { $0.isLetter || $0.isNumber }
+            .prefix(8)
+        return "\(timestamp)_\(requestPart.isEmpty ? "request" : String(requestPart))"
     }
 
     private static func databaseReportMethodValue(_ method: RiskMethod) -> String {

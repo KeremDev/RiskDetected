@@ -42,7 +42,10 @@ struct PDFReportOptions: Equatable {
     var kind: PDFReportKind = .standard
     var method: RiskMethod = .fineKinney
     var preparedBy: String = ""
+    var preparedTitle: String = ""
+    var certificateNumber: String = ""
     var companyName: String = ""
+    var companyInfo: String = ""
 
     static func standard(method: RiskMethod) -> PDFReportOptions {
         PDFReportOptions(kind: .standard, method: method)
@@ -152,9 +155,29 @@ final class PDFReportService: @unchecked Sendable {
         )
 
         let expert = input.options.preparedBy.nonEmpty ?? profile?.displayName ?? "Kullanıcı"
-        let credential = profile?.certificateNumber ?? profile?.title ?? "İSG Uzmanı"
-        let company = input.options.companyName.nonEmpty.map { " · Firma: \($0)" } ?? ""
-        let footer = "Hazırlayan: \(expert) · \(credential)\(company) · Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())"
+        let title = input.options.preparedTitle.nonEmpty ?? profile?.title
+        let certificate = input.options.certificateNumber.nonEmpty ?? profile?.certificateNumber
+        let companyName = input.options.companyName.nonEmpty ?? profile?.companyName
+        let companyInfo = input.options.companyInfo.nonEmpty ?? profile?.phone
+        let credential = [
+            title,
+            certificate.map { "Belge no: \($0)" }
+        ]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty }
+            .joined(separator: " · ")
+        let companyParts = [
+            companyName.map { "Firma: \($0)" },
+            companyInfo
+        ]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty }
+            .joined(separator: " · ")
+        let footerParts = [
+            "Hazırlayan: \(expert)",
+            credential.nonEmpty ?? "İSG Uzmanı",
+            companyParts.nonEmpty,
+            "Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())"
+        ].compactMap { $0 }
+        let footer = footerParts.joined(separator: " · ")
         drawText(
             footer,
             in: CGRect(x: margin, y: 448, width: 758, height: 22),
@@ -407,11 +430,17 @@ final class PDFReportService: @unchecked Sendable {
         let analysis = input.bundle.analysis
         let prepared = input.options.preparedBy.nonEmpty ?? input.profile?.displayName ?? "Kullanıcı"
         let company = input.options.companyName.nonEmpty ?? input.profile?.companyName ?? "Firma belirtilmedi"
-        drawText("Analiz: \(analysis.title)", in: CGRect(x: rect.minX + 10, y: rect.minY + 8, width: 260, height: 12), font: .systemFont(ofSize: 8, weight: .bold), color: .rdPDFBlack)
-        drawText("Firma: \(company)", in: CGRect(x: rect.minX + 10, y: rect.minY + 23, width: 260, height: 12), font: .systemFont(ofSize: 8), color: .rdPDFSlate)
-        drawText("Hazırlayan: \(prepared)", in: CGRect(x: rect.minX + 294, y: rect.minY + 8, width: 220, height: 12), font: .systemFont(ofSize: 8), color: .rdPDFSlate)
-        drawText("Tarih: \(formattedDate(analysis.createdAt))", in: CGRect(x: rect.minX + 294, y: rect.minY + 23, width: 220, height: 12), font: .systemFont(ofSize: 8), color: .rdPDFSlate)
-        drawText("Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())", in: CGRect(x: rect.minX + 548, y: rect.minY + 15, width: 200, height: 12), font: .monospacedSystemFont(ofSize: 8, weight: .semibold), color: .rdPDFBlack, alignment: .right)
+        let title = input.options.preparedTitle.nonEmpty ?? input.profile?.title ?? "Belirtilmedi"
+        let certificate = input.options.certificateNumber.nonEmpty ?? input.profile?.certificateNumber ?? "Belirtilmedi"
+        let companyInfo = input.options.companyInfo.nonEmpty ?? input.profile?.phone
+        drawText("Analiz: \(analysis.title)", in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 260, height: 10), font: .systemFont(ofSize: 7.5, weight: .bold), color: .rdPDFBlack)
+        drawText("Firma: \(company)", in: CGRect(x: rect.minX + 10, y: rect.minY + 18, width: 260, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
+        drawText("Firma bilgisi: \(companyInfo ?? "Belirtilmedi")", in: CGRect(x: rect.minX + 10, y: rect.minY + 31, width: 260, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
+        drawText("Hazırlayan: \(prepared)", in: CGRect(x: rect.minX + 294, y: rect.minY + 5, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
+        drawText("Ünvan: \(title)", in: CGRect(x: rect.minX + 294, y: rect.minY + 18, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
+        drawText("Belge No: \(certificate)", in: CGRect(x: rect.minX + 294, y: rect.minY + 31, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
+        drawText("Tarih: \(formattedDate(analysis.createdAt))", in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate, alignment: .right)
+        drawText("Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())", in: CGRect(x: rect.minX + 548, y: rect.minY + 23, width: 200, height: 10), font: .monospacedSystemFont(ofSize: 7.5, weight: .semibold), color: .rdPDFBlack, alignment: .right)
     }
 
     private func drawFineKinneyAssessmentTable(input: ReportInput, findings: [Finding], pageIndex: Int, rowsPerPage: Int) {

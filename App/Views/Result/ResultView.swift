@@ -157,6 +157,11 @@ struct ResultView: View {
                         })
             .preferredColorScheme(preferredModalColorScheme)
         }
+        .task(id: app.profile?.preferredMethod?.rawValue) {
+            if let preferredMethod = app.profile?.preferredMethod?.domain {
+                method = preferredMethod
+            }
+        }
         .onDisappear {
             pdfGeneration.cancel()
         }
@@ -771,10 +776,7 @@ struct ResultView: View {
                         pdfGeneration.advance(to: 0.92)
                     } catch {
                         Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                        if AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) {
-                            throw error
-                        }
-                        pdfGeneration.advance(to: 0.92)
+                        throw error
                     }
                 }
                 await pdfGeneration.complete()
@@ -887,7 +889,10 @@ struct ResultView: View {
             kind: kind,
             method: method,
             preparedBy: app.profile?.displayName ?? "",
-            companyName: app.profile?.companyName ?? ""
+            preparedTitle: app.profile?.title ?? "",
+            certificateNumber: app.profile?.certificateNumber ?? "",
+            companyName: app.profile?.companyName ?? "",
+            companyInfo: app.profile?.phone ?? ""
         )
     }
 
@@ -1350,7 +1355,10 @@ struct ReportSettingsSheet: View {
         settingsSection(title: "OPSİYONEL BİLGİLER") {
             VStack(spacing: 10) {
                 labeledField("Hazırlayan", text: $options.preparedBy, placeholder: profile?.displayName ?? "Ad Soyad")
+                labeledField("Unvan", text: $options.preparedTitle, placeholder: profile?.title ?? "İSG Uzmanı")
+                labeledField("Belge no", text: $options.certificateNumber, placeholder: profile?.certificateNumber ?? "Sertifika / belge no")
                 labeledField("Firma", text: $options.companyName, placeholder: profile?.companyName ?? "Firma adı")
+                labeledField("Firma bilgisi", text: $options.companyInfo, placeholder: profile?.phone ?? "Telefon veya kısa bilgi")
             }
         }
     }

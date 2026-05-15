@@ -24,10 +24,14 @@ struct ReportView: View {
     @State private var shareItem: ShareItem?
     @State private var showSourceReportSheet = false
     @State private var visibleReportCount = 5
+    @State private var reportSearch = ""
+    @State private var reportFilter: ReportArchiveFilter = .all
+    @State private var reportsLoadError: String?
     @State private var excelGenerationID: UUID?
     @State private var isStoredReportsExpanded = false
     @State private var isAnalysisSelectorExpanded = false
     @State private var reportQuotaExhausted = false
+    private let reportArchivePageSize = 5
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
     }
@@ -68,6 +72,12 @@ struct ReportView: View {
         }
         .onChange(of: app.auth.session?.user.id) { _ in
             Task { await loadReports() }
+        }
+        .onChange(of: reportSearch) { _ in
+            resetReportArchivePagination()
+        }
+        .onChange(of: reportFilter) { _ in
+            resetReportArchivePagination()
         }
         .alert("Rapor Hatası", isPresented: .init(
             get: { errorMessage != nil },
@@ -317,22 +327,48 @@ struct ReportView: View {
         VStack(alignment: .leading, spacing: 10) {
             collapsibleSectionTitle(
                 "Kayıtlı Rapor Dosyaları",
-                meta: "\(storedReports.count) dosya",
+                meta: reportArchiveMeta,
                 icon: "archivebox",
                 isExpanded: $isStoredReportsExpanded
             )
 
             if isStoredReportsExpanded {
-                if storedReports.isEmpty {
-                    ReportEmptyInlineCard(
+                if let reportsLoadError {
+                    ReportArchiveStateCard(
+                        icon: "exclamationmark.triangle.fill",
+                        title: "Arşiv yüklenemedi",
+                        subtitle: reportsLoadError,
+                        tint: Color.rdCriticalText,
+                        actionTitle: "Tekrar dene"
+                    ) {
+                        Task { await loadReports() }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                } else if storedReports.isEmpty {
+                    ReportArchiveStateCard(
                         icon: "tray",
                         title: "Henüz kayıtlı rapor yok",
-                        subtitle: "PDF veya Excel oluşturduğunda dosya rapor arşivine kaydedilecek."
+                        subtitle: "PDF veya Excel oluşturduğunda dosya rapor arşivine kaydedilecek.",
+                        tint: Color.rdSlate
                     )
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 } else {
                     VStack(spacing: 9) {
-                        ForEach(Array(storedReports.prefix(visibleReportCount))) { report in
+                        reportArchiveControls
+
+                        if filteredStoredReports.isEmpty {
+                            ReportArchiveStateCard(
+                                icon: "magnifyingglass",
+                                title: "Eşleşen rapor yok",
+                                subtitle: "Arama veya filtreyi değiştirerek arşivdeki diğer dosyaları görebilirsin.",
+                                tint: Color.rdSlate,
+                                actionTitle: "Filtreleri temizle"
+                            ) {
+                                clearReportArchiveFilters()
+                            }
+                        }
+
+                        ForEach(visibleStoredReports) { report in
                             StoredReportRow(
                                 report: report,
                                 isLoading: downloadingID == report.id,
@@ -344,32 +380,14 @@ struct ReportView: View {
                             }
                         }
 
-                        if visibleReportCount < storedReports.count {
-                            Button {
-                                withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
-                                    visibleReportCount = min(visibleReportCount + 5, storedReports.count)
-                                }
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "plus")
-                                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                                    Text("Daha fazla gör")
-                                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                                    Text("\(min(5, storedReports.count - visibleReportCount)) rapor")
-                                        .rdMono(size: 11, weight: .semibold)
-                                        .foregroundStyle(Color.rdSlate)
-                                }
-                                .foregroundStyle(Color.rdBlack)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 44)
-                                .background(Color.rdWhite)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .stroke(Color.rdLine, lineWidth: 1)
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                        if visibleReportCount < filteredStoredReports.count {
+                            ReportArchiveLoadMoreButton(
+                                visibleCount: min(visibleReportCount, filteredStoredReports.count),
+                                totalCount: filteredStoredReports.count,
+                                nextCount: min(reportArchivePageSize, filteredStoredReports.count - visibleReportCount)
+                            ) {
+                                loadMoreReports()
                             }
-                            .buttonStyle(RDPressableButtonStyle())
                         }
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -384,6 +402,82 @@ struct ReportView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .animation(.spring(response: 0.32, dampingFraction: 0.88), value: isStoredReportsExpanded)
+    }
+
+    private var reportArchiveControls: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+
+                    TextField("Rapor ara", text: $reportSearch)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+
+                    if !reportSearch.isEmpty {
+                        Button {
+                            reportSearch = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.rdSlate.opacity(0.72))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Aramayı temizle")
+                    }
+                }
+                .padding(.horizontal, 12)
+                .frame(height: 40)
+                .background(Color.rdCloud)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                if hasActiveReportArchiveFilters {
+                    Button {
+                        clearReportArchiveFilters()
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdGreen)
+                            .frame(width: 40, height: 40)
+                            .background(Color.rdGreenSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(RDPressableButtonStyle())
+                    .accessibilityLabel("Rapor filtrelerini temizle")
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(ReportArchiveFilter.allCases) { filter in
+                        ReportArchiveFilterChip(
+                            title: filter.title,
+                            count: count(for: filter),
+                            isSelected: reportFilter == filter
+                        ) {
+                            UISelectionFeedbackGenerator().selectionChanged()
+                            reportFilter = filter
+                        }
+                    }
+                }
+                .padding(.vertical, 1)
+            }
+        }
+        .padding(12)
+        .background(Color.rdFog.opacity(0.72))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private var analysisSelector: some View {
@@ -481,6 +575,32 @@ struct ReportView: View {
         storedReports.filter(\.isRiskAnalysisReport).count
     }
 
+    private var reportArchiveMeta: String {
+        if reportsLoadError != nil, storedReports.isEmpty {
+            return "hata"
+        }
+        if storedReports.isEmpty || filteredStoredReports.count == storedReports.count {
+            return "\(storedReports.count) dosya"
+        }
+        return "\(filteredStoredReports.count)/\(storedReports.count)"
+    }
+
+    private var filteredStoredReports: [ReportRow] {
+        let needle = normalizedReportSearch(reportSearch)
+        return storedReports.filter { report in
+            let matchesSearch = needle.isEmpty || normalizedReportSearch(reportSearchText(for: report)).contains(needle)
+            return matchesSearch && matchesReportFilter(report)
+        }
+    }
+
+    private var visibleStoredReports: [ReportRow] {
+        Array(filteredStoredReports.prefix(visibleReportCount))
+    }
+
+    private var hasActiveReportArchiveFilters: Bool {
+        !reportSearch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || reportFilter != .all
+    }
+
     private var loadingCard: some View {
         RDCard {
             HStack(spacing: 12) {
@@ -523,12 +643,95 @@ struct ReportView: View {
         }
     }
 
+    private func matchesReportFilter(_ report: ReportRow) -> Bool {
+        switch reportFilter {
+        case .all:
+            return true
+        case .pdf:
+            return !report.isExcelReport
+        case .excel:
+            return report.isExcelReport
+        case .standard:
+            return !report.isExcelReport && !report.isRiskAnalysisReport
+        case .riskAnalysis:
+            return report.isRiskAnalysisReport || report.isExcelReport
+        case .thisWeek:
+            guard let date = report.createdAt.flatMap(Self.parseReportDate) else { return false }
+            return Calendar.current.isDate(date, equalTo: Date(), toGranularity: .weekOfYear)
+        }
+    }
+
+    private func count(for filter: ReportArchiveFilter) -> Int {
+        storedReports.filter { report in
+            switch filter {
+            case .all:
+                return true
+            case .pdf:
+                return !report.isExcelReport
+            case .excel:
+                return report.isExcelReport
+            case .standard:
+                return !report.isExcelReport && !report.isRiskAnalysisReport
+            case .riskAnalysis:
+                return report.isRiskAnalysisReport || report.isExcelReport
+            case .thisWeek:
+                guard let date = report.createdAt.flatMap(Self.parseReportDate) else { return false }
+                return Calendar.current.isDate(date, equalTo: Date(), toGranularity: .weekOfYear)
+            }
+        }.count
+    }
+
+    private func reportSearchText(for report: ReportRow) -> String {
+        [
+            report.title,
+            report.fileName,
+            report.kind,
+            report.method,
+            report.format ?? "",
+            report.mimeType,
+            report.createdAt ?? ""
+        ].joined(separator: " ")
+    }
+
+    private func normalizedReportSearch(_ value: String) -> String {
+        value
+            .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: Locale(identifier: "tr_TR"))
+            .lowercased(with: Locale(identifier: "tr_TR"))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func resetReportArchivePagination() {
+        visibleReportCount = reportArchivePageSize
+    }
+
+    private func loadMoreReports() {
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+            visibleReportCount = min(visibleReportCount + reportArchivePageSize, filteredStoredReports.count)
+        }
+    }
+
+    private func clearReportArchiveFilters() {
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+            reportSearch = ""
+            reportFilter = .all
+            resetReportArchivePagination()
+        }
+    }
+
+    private static func parseReportDate(_ raw: String) -> Date? {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: raw) { return date }
+        return ISO8601DateFormatter().date(from: raw)
+    }
+
     private func loadReports() async {
         guard app.auth.session != nil else {
             analyses = []
             storedReports = []
             selectedBundle = nil
             selectedID = nil
+            reportsLoadError = nil
             return
         }
 
@@ -539,8 +742,18 @@ struct ReportView: View {
             async let analysisRows = AnalysisService.shared.listRecent(limit: 12)
             async let reportRows = AnalysisService.shared.listReports(limit: 100)
             let rows = try await analysisRows
-            storedReports = (try? await reportRows) ?? []
-            visibleReportCount = min(visibleReportCount, max(storedReports.count, 5))
+            do {
+                storedReports = try await reportRows
+                reportsLoadError = nil
+            } catch {
+                reportsLoadError = AppErrorMessage.make(
+                    error,
+                    context: "Rapor arşivi yüklenemedi",
+                    fallbackTitle: "Rapor arşivi yüklenemedi"
+                ).fullText
+                storedReports = []
+            }
+            visibleReportCount = min(visibleReportCount, max(filteredStoredReports.count, reportArchivePageSize))
             analyses = rows
             selectedBundle = nil
             selectedID = nil
@@ -550,6 +763,7 @@ struct ReportView: View {
             storedReports = []
             selectedBundle = nil
             selectedID = nil
+            reportsLoadError = nil
         }
     }
 
@@ -610,26 +824,19 @@ struct ReportView: View {
                 )
                 let url = try await PDFReportService.shared.generateAsync(input: input)
                 pdfGeneration.advance(to: 0.71)
-                do {
-                    _ = try await AnalysisService.shared.storeReport(
-                        userID: userID,
-                        bundle: selectedBundle,
-                        fileURL: url,
-                        kind: resolvedOptions.kind,
-                        method: resolvedOptions.method,
-                        requestID: requestID,
-                        supportID: supportID
-                    )
-                    pdfGeneration.advance(to: 0.88)
-                    storedReports = (try? await AnalysisService.shared.listReports(limit: 100)) ?? storedReports
-                    pdfGeneration.advance(to: 0.94)
-                } catch {
-                    Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                    if AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) {
-                        throw error
-                    }
-                    pdfGeneration.advance(to: 0.94)
-                }
+                let report = try await AnalysisService.shared.storeReport(
+                    userID: userID,
+                    bundle: selectedBundle,
+                    fileURL: url,
+                    kind: resolvedOptions.kind,
+                    method: resolvedOptions.method,
+                    requestID: requestID,
+                    supportID: supportID
+                )
+                mergeStoredReport(report)
+                pdfGeneration.advance(to: 0.88)
+                storedReports = (try? await AnalysisService.shared.listReports(limit: 100)) ?? storedReports
+                pdfGeneration.advance(to: 0.94)
                 await pdfGeneration.complete()
                 shareItem = ShareItem(url: url)
             } catch {
@@ -659,6 +866,7 @@ struct ReportView: View {
                     requestID: requestID,
                     supportID: supportID
                 )
+                mergeStoredReport(report)
                 storedReports = (try? await AnalysisService.shared.listReports(limit: 100)) ?? storedReports
                 let url = try await AnalysisService.shared.reportFileURL(
                     for: report,
@@ -676,6 +884,13 @@ struct ReportView: View {
             }
             excelGenerationID = nil
         }
+    }
+
+    private func mergeStoredReport(_ report: ReportRow) {
+        reportsLoadError = nil
+        storedReports.removeAll { $0.id == report.id || $0.storagePath == report.storagePath }
+        storedReports.insert(report, at: 0)
+        visibleReportCount = max(visibleReportCount, min(filteredStoredReports.count, reportArchivePageSize))
     }
 
     private func handleReportQuotaIfNeeded(_ error: Error) {
@@ -727,6 +942,7 @@ struct ReportView: View {
                     supportID: supportID
                 )
                 storedReports.removeAll { $0.id == report.id }
+                visibleReportCount = min(visibleReportCount, max(filteredStoredReports.count, reportArchivePageSize))
             } catch {
                 errorMessage = AppErrorMessage.make(
                     rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
@@ -750,9 +966,12 @@ struct ReportView: View {
     private func defaultReportOptions(kind: PDFReportKind = .standard) -> PDFReportOptions {
         PDFReportOptions(
             kind: kind,
-            method: .fineKinney,
+            method: app.profile?.preferredMethod?.domain ?? .fineKinney,
             preparedBy: app.profile?.displayName ?? "",
-            companyName: app.profile?.companyName ?? ""
+            preparedTitle: app.profile?.title ?? "",
+            certificateNumber: app.profile?.certificateNumber ?? "",
+            companyName: app.profile?.companyName ?? "",
+            companyInfo: app.profile?.phone ?? ""
         )
     }
 
@@ -1102,9 +1321,12 @@ private struct ReportSourceSheet: View {
         ) {
             reportOptions = PDFReportOptions(
                 kind: .standard,
-                method: reportOptions.method,
+                method: profile?.preferredMethod?.domain ?? reportOptions.method,
                 preparedBy: profile?.displayName ?? "",
-                companyName: profile?.companyName ?? ""
+                preparedTitle: profile?.title ?? "",
+                certificateNumber: profile?.certificateNumber ?? "",
+                companyName: profile?.companyName ?? "",
+                companyInfo: profile?.phone ?? ""
             )
             reportSettingsDetent = .height(440)
             showSettings = true
@@ -1239,6 +1461,171 @@ private struct ReportEmptyInlineCard: View {
     }
 }
 
+private enum ReportArchiveFilter: String, CaseIterable, Identifiable {
+    case all
+    case pdf
+    case excel
+    case standard
+    case riskAnalysis
+    case thisWeek
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: return "Tümü"
+        case .pdf: return "PDF"
+        case .excel: return "Excel"
+        case .standard: return "Standart"
+        case .riskAnalysis: return "Risk analizi"
+        case .thisWeek: return "Bu hafta"
+        }
+    }
+}
+
+private struct ReportArchiveFilterChip: View {
+    let title: String
+    let count: Int
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                }
+
+                Text(title)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+
+                Text("\(count)")
+                    .rdMono(size: 10, weight: .bold)
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.74) : Color.rdSlate)
+            }
+            .padding(.horizontal, 11)
+            .frame(height: 32)
+            .foregroundStyle(isSelected ? Color.white : Color.rdCharcoal)
+            .background(isSelected ? Color.rdSelected : Color.rdWhite)
+            .overlay(
+                Capsule()
+                    .stroke(isSelected ? Color.rdSelected : Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title), \(count) rapor")
+    }
+}
+
+private struct ReportArchiveStateCard: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let tint: Color
+    var actionTitle: String?
+    var action: (() -> Void)?
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundStyle(tint)
+                .frame(width: 42, height: 42)
+                .background(tint.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(subtitle)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if let actionTitle, let action {
+                    Button(action: action) {
+                        HStack(spacing: 6) {
+                            Image(systemName: actionTitle.localizedCaseInsensitiveContains("tekrar") ? "arrow.clockwise" : "xmark.circle")
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                            Text(actionTitle)
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                        }
+                        .foregroundStyle(Color.rdBlack)
+                        .padding(.horizontal, 10)
+                        .frame(height: 30)
+                        .background(Color.rdFog)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 9)
+                                .stroke(Color.rdLine, lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 9))
+                    }
+                    .buttonStyle(RDPressableButtonStyle())
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(14)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+}
+
+private struct ReportArchiveLoadMoreButton: View {
+    let visibleCount: Int
+    let totalCount: Int
+    let nextCount: Int
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .frame(width: 28, height: 28)
+                    .foregroundStyle(Color.rdGreen)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Daha fazla yükle")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text("\(visibleCount)/\(totalCount) gösteriliyor")
+                        .rdMono(size: 10, weight: .semibold)
+                        .foregroundStyle(Color.rdSlate)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text("+\(nextCount)")
+                    .rdMono(size: 11, weight: .bold)
+                    .foregroundStyle(Color.rdSlate)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(Color.rdFog)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .padding(10)
+            .background(Color.rdWhite)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+    }
+}
+
 private struct StoredReportRow: View {
     let report: ReportRow
     let isLoading: Bool
@@ -1308,11 +1695,29 @@ private struct StoredReportRow: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .fixedSize(horizontal: true, vertical: false)
 
-                    Text(dateText)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                        .lineLimit(1)
+                    Text(methodLabel)
+                        .rdMono(size: 10, weight: .bold)
+                        .foregroundStyle(Color.rdCharcoal)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(Color.rdFog)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .fixedSize(horizontal: true, vertical: false)
+
+                    Text(statusLabel)
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(statusStyle.text)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(statusStyle.background)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .fixedSize(horizontal: true, vertical: false)
                 }
+
+                Text(dateText)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -1367,6 +1772,29 @@ private struct StoredReportRow: View {
             return (Color.rdGreen, Color.rdGreenSoft)
         }
         return (Color(hex: "#6D5DF6"), Color(hex: "#EFEDFF"))
+    }
+
+    private var methodLabel: String {
+        if report.method == RiskMethod.matrix5x5.rawValue || report.method == "matrix_5x5" {
+            return "5x5"
+        }
+        return "FK"
+    }
+
+    private var statusLabel: String {
+        if isDeleting { return "Siliniyor" }
+        if isLoading { return "Açılıyor" }
+        return "Hazır"
+    }
+
+    private var statusStyle: (text: Color, background: Color) {
+        if isDeleting {
+            return (Color.rdCriticalText, Color.rdCriticalBg.opacity(0.75))
+        }
+        if isLoading {
+            return (Color.rdHighText, Color.rdHighBg.opacity(0.75))
+        }
+        return (Color.rdLowText, Color.rdLowBg.opacity(0.8))
     }
 
     private var reportTitle: String {

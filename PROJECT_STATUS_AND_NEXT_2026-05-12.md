@@ -88,6 +88,11 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Arşiv kaydı başarısız olsa bile oluşturulan PDF preview/paylaşım akışı kesilmiyor.
 - Pro XLSX export Edge Function eklendi ve backend smoke test geçti.
 - Reports sayfasında `Kayıtlı Rapor Dosyaları` ve `Rapora Dönüştür` bölümleri açılır/kapanır kart yapısına taşındı.
+- Reports arşivine arama/filtre, PDF/XLSX/metot/durum label'ları, boş/error state ve filtreli load-more davranışı eklendi.
+- Pro/Plus rapor varsayılanları profilden geliyor:
+  - profil logosu rapor logosu olarak otomatik yükleniyor;
+  - hazırlayan adı, unvan, belge no, firma adı/bilgisi ve varsayılan metod PDF ayarlarına otomatik doluyor;
+  - standart PDF, detaylı PDF ve XLSX metadata alanları aynı profil varsayılanlarını kullanıyor.
 
 ### Profil, Tema ve UI
 
@@ -246,16 +251,12 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - PDF/report output language ayrıca değerlendirilmeli.
 
 2. Pro report defaults
-   - Profil bilgisi ve logo kaydı çalışıyor.
-   - Rapor oluştururken default company logo, şirket, uzman adı, belge no ve varsayılan metod otomatik kullanılacak şekilde netleştirilmeli.
+   - Done: profil logosu, şirket, uzman adı, unvan, belge no, firma bilgisi ve varsayılan metod otomatik rapor varsayılanı olarak kullanılıyor.
+   - Follow-up: gerçek müşteri verisiyle PDF/XLSX görsel QA ve uzun firma/unvan metni taşma kontrolü yapılmalı.
 
 3. Reports archive gelişimi
-   - Açılır kart yapısı yapıldı.
-   - Kalanlar:
-     - arama/filtre,
-     - rapor durum label'ları,
-     - daha iyi boş/error state,
-     - load-more davranışının ürün kararı.
+   - Done: açılır kart yapısı, arama/filtre, durum label'ları, boş/error state ve load-more davranışı yapıldı.
+   - Follow-up: gerçek yoğun arşiv datasıyla performans ve UX QA alınmalı.
 
 4. Profile ekranı içerik/tabs
    - Mevcut profil, tercihler, bildirimler, verilerim akışları var.
@@ -319,11 +320,13 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - "Firebase phone bridge paused/deferred" eski durumdu; artık tamamen kaldırıldı.
 - "P1.5 QA kalan satırlar" eski durumdu; matris E01-E18 geçti.
 - "Reports sayfası tasarım refresh yapılacak" eski durumdu; açılır kartlı yeni yapı eklendi.
+- "Reports archive arama/filtre/status/empty/load-more yapılacak" eski durumdu; uygulandı.
+- "Pro report defaults profilden otomatik gelsin" eski durumdu; PDF/XLSX akışlarına bağlandı.
 
 ## Önerilen Sıradaki Uygulama Sırası
 
 1. Paywall sayfası yenileme ve Plus/Pro plan limit metinlerini UI'da netleştirme.
-2. Reports XLSX/Home preview/Pro canvas kısa manuel QA.
+2. PDF/XLSX rapor varsayılanları ve Reports archive yoğun veri QA.
 3. RevenueCat Pro satın alma + restore purchase + expiration/downgrade testi.
 4. Legal final metinler ve App Store privacy hazırlığı.
 5. APNs real-device/TestFlight push testi.

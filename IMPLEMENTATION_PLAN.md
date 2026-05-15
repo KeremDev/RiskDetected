@@ -59,6 +59,15 @@
     - Reports tab can delete stored PDF report files and metadata.
     - Analyses tab can delete an analysis, its findings, photos and related report records/files.
     - Profile > Verilerim provides export, bulk report delete, bulk analysis delete and account deletion request entry points.
+- Reports archive development:
+  - Search and format/type filters added for stored reports.
+  - PDF/XLSX, method and ready/loading/deleting status labels added to report rows.
+  - Better empty, filtered-empty and error states added.
+  - Load-more behavior now pages through filtered results instead of dumping the whole archive.
+- Pro/Plus report defaults now come from Profile:
+  - company logo is loaded from the saved profile logo;
+  - preparer name, title, certificate/belge no, company name/info and default risk method prefill PDF settings;
+  - standard PDF, detailed PDF and XLSX output metadata use the same profile defaults.
 - Push notification foundation added:
   - iOS APNs permission/token registration service;
   - Profile > Bildirimler settings sheet;
@@ -118,22 +127,14 @@ These items exist in some form, but need revision before we treat them as produc
    - Target: actually improve Pro analysis quality using stronger models, higher image budget, multi-pass validation, sector/procedure checklists and low-confidence re-checking.
    - Copy rule: do not promise a fixed score. Preferred wording: "Pro analizlerde daha kapsamli model ve dogrulama katmani ile daha yuksek guven hedeflenir."
 
-6. Pro report identity/logo
-   - Current state: per-report company logo and identity fields can be selected in the PDF settings flow.
-   - Target: persist company logo and default report identity under Profile so the user does not reselect them each time.
-
-7. Reports tab and report storage
-   - Current state: generated PDFs are uploaded to Supabase Storage, metadata is written to `reports`, and the Reports tab can download/regenerate reports.
-   - Target additions: report archive filtering/search, report status labels and better empty/error states.
-
-8. Email OTP auth
+6. Email OTP auth
    - Current state: phone/Firebase auth has been removed from the app; the user-facing passwordless flow is Supabase Email OTP.
    - Target: support registration and login with e-mail verification code, without forcing phone verification in MVP.
    - Supabase requirement: Email provider enabled and OTP template shows the 6-digit token.
    - Test requirement: verify send code -> enter code -> profile load -> main app flow with a real mailbox.
    - Removed phone auth: Firebase iOS SDK, Firebase URL scheme and `firebase-phone-bridge` are no longer part of the active app/backend surface.
 
-9. App preferences
+7. App preferences
    - Current state: Profile/Settings screen has a persistent quick dark-mode toggle. Full preferences screen and language selection are still pending.
    - Target: add persistent user preferences under Profile > Tercihler.
    - Theme options:
@@ -333,6 +334,7 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: improved saved reports, report source selection and actions;
    - Done: added calm Pro value presentation for detailed risk tables, company logo and PDF customization;
    - Done: standard report output no longer shows AI confidence percentages in the app preview, PDF or Excel.
+   - Done: report archive now has search/filter controls, status labels, stronger empty/error states and filtered load-more behavior.
 4. Analyses page design refresh:
    - Done: redesigned Analyses tab visual hierarchy;
    - Done: retained quick filtering chips and improved the filter sheet presentation;
@@ -369,12 +371,12 @@ These items exist in some form, but need revision before we treat them as produc
    - add client service method to invoke the Excel Edge Function;
    - download/share generated XLSX from the existing report archive flow;
    - show Excel as a Pro report action near detailed risk analysis/PDF settings.
-4. QA: ✅ Backend smoke test done / manual app Pro flow pending
+4. QA: ✅ Done
    - generate an Excel report from an existing completed analysis;
    - verify it appears in Reports archive and opens via iOS share sheet;
    - verify PDF generation remains unchanged.
    - Done: Pro demo API smoke test generated `/tmp/riskdetected-test.xlsx`; workbook opened with sheets `Özet`, `Risk Analiz Tablosu`, `Aksiyon Planı`, `Rapor Bilgileri`.
-   - Pending: sign into Pro demo in simulator and run the full in-app tap/share flow.
+   - Done: simulator Pro demo flow generated a standard PDF, archived it, opened its share sheet, then generated an Excel risk table, archived it and opened the iOS share sheet as an Office spreadsheet.
 
 ### P3 - AI Reliability and Cost Control
 
@@ -435,15 +437,15 @@ These items exist in some form, but need revision before we treat them as produc
 ### P5 - Reporting and Exports
 
 1. Pro report defaults:
-   - persist company logo;
-   - persist preparer name/title/certificate/company fields.
+   - Done: profile company logo is used automatically as the report logo default;
+   - Done: preparer name, title, certificate/belge no, company name/info and preferred method are pulled from Profile into report defaults;
+   - Done: PDF standard footer, detailed PDF info strip and XLSX metadata sheets use these defaults.
 2. Detailed risk analysis outputs:
    - keep Fine-Kinney and 5x5 PDF formats;
-   - later evaluate DOCX/XLSX only after PDF flow is stable.
+   - XLSX export is now implemented for Pro detailed risk analysis.
 3. Export backlog:
-   - Excel export is optional;
    - Word export is optional;
-   - both are lower priority than stored PDFs and report regeneration.
+   - Word remains lower priority than stored PDFs, XLSX and report regeneration.
 
 ## Out of Scope for Now
 

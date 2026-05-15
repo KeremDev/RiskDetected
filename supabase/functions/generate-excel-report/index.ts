@@ -294,6 +294,16 @@ function safeFilePart(value: string): string {
     .toLowerCase() || "riskdetected";
 }
 
+function archiveFileSuffix(requestID: string): string {
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/\.\d{3}Z$/, "Z")
+    .replace(/[-:]/g, "")
+    .toLowerCase();
+  const requestPart = requestID.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8).toLowerCase();
+  return `${timestamp}-${requestPart || "request"}`;
+}
+
 function workbookBuffer(workbook: XLSX.WorkBook): Uint8Array {
   return XLSX.write(workbook, {
     bookType: "xlsx",
@@ -682,12 +692,12 @@ function appendMethodReferenceSheet(
   analysis: AnalysisRow,
   profile: ProfileRow | null,
   method: string,
-  supportID: string,
+  documentNo: string,
 ) {
   if (method === "matrix_5x5") {
-    appendMatrixReferenceSheet(workbook, analysis, profile, supportID);
+    appendMatrixReferenceSheet(workbook, analysis, profile, documentNo);
   } else {
-    appendFineKinneyReferenceSheet(workbook, analysis, profile, supportID);
+    appendFineKinneyReferenceSheet(workbook, analysis, profile, documentNo);
   }
 }
 
@@ -695,10 +705,14 @@ function appendFineKinneyReferenceSheet(
   workbook: XLSX.WorkBook,
   analysis: AnalysisRow,
   profile: ProfileRow | null,
-  supportID: string,
+  documentNo: string,
 ) {
   const preparedBy = profile?.display_name ?? profile?.full_name ?? "Kullanıcı";
   const companyName = profile?.company_name ?? "Firma belirtilmedi";
+  const companyInfo = safeText(profile?.phone);
+  const preparedTitle = safeText(profile?.title, "Belirtilmedi");
+  const certificateNumber = safeText(profile?.certificate_number, "Belirtilmedi");
+  const companyLine = companyInfo.length > 0 ? `${companyName} · ${companyInfo}` : companyName;
   const sheet = appendSheet(workbook, "Metot Referansı", [
     ["FINE-KINNEY METODU REFERANS TABLOSU", "", "", "", "", "", "", "", "", "", "", "", "", ""],
     [],
@@ -720,8 +734,8 @@ function appendFineKinneyReferenceSheet(
     ["21 ≤ R < 71", "Olası risk", "", "Kontroller sürdürülür ve izlenir.", "", "", "", "", "", "", "", "1 yıl", "", ""],
     ["R < 21", "Önemsiz risk", "", "İlave kontrole gerek olmayabilir.", "", "", "", "", "", "", "", "Kontrol", "", ""],
     [],
-    [`Analiz: ${safeText(analysis.title)}`, "", "", "", "", `Hazırlayan: ${preparedBy}`, "", "", "", "", `Doküman No: ${supportID}`, "", "", ""],
-    [`Firma: ${companyName}`, "", "", "", "", `Tarih: ${formatDate(analysis.created_at)}`, "", "", "", "", "", "", "", ""],
+    [`Analiz: ${safeText(analysis.title)}`, "", "", "", "", `Hazırlayan: ${preparedBy}`, "", "", "", "", `Doküman No: ${documentNo}`, "", "", ""],
+    [`Firma: ${companyLine}`, "", "", "", "", `Ünvan / Belge: ${preparedTitle} / ${certificateNumber}`, "", "", "", "", `Tarih: ${formatDate(analysis.created_at)}`, "", "", ""],
   ]);
   setCols(sheet, [12, 18, 18, 18, 4, 12, 18, 18, 18, 4, 12, 18, 18, 18]);
   setRows(sheet, [28, 8, 24, 28, 26, 26, 26, 26, 26, 26, 10, 26, 28, 26, 26, 26, 26, 26, 26, 10, 26, 26]);
@@ -805,10 +819,14 @@ function appendMatrixReferenceSheet(
   workbook: XLSX.WorkBook,
   analysis: AnalysisRow,
   profile: ProfileRow | null,
-  supportID: string,
+  documentNo: string,
 ) {
   const preparedBy = profile?.display_name ?? profile?.full_name ?? "Kullanıcı";
   const companyName = profile?.company_name ?? "Firma belirtilmedi";
+  const companyInfo = safeText(profile?.phone);
+  const preparedTitle = safeText(profile?.title, "Belirtilmedi");
+  const certificateNumber = safeText(profile?.certificate_number, "Belirtilmedi");
+  const companyLine = companyInfo.length > 0 ? `${companyName} · ${companyInfo}` : companyName;
   const matrixRows: unknown[][] = [];
   for (let probability = 0; probability <= 5; probability++) {
     const row: unknown[] = [];
@@ -842,8 +860,8 @@ function appendMatrixReferenceSheet(
     ["3 ≤ R < 5", "Düşük risk", "", "Gözetim altında izlenmeli.", "", "", "", "Kontrol", "", "", "", "", ""],
     ["R < 3", "Önemsiz", "", "İzleme yeterli olabilir.", "", "", "", "Kontrol", "", "", "", "", ""],
     [],
-    [`Analiz: ${safeText(analysis.title)}`, "", "", "", "", `Hazırlayan: ${preparedBy}`, "", "", "", `Doküman No: ${supportID}`, "", "", ""],
-    [`Firma: ${companyName}`, "", "", "", "", `Tarih: ${formatDate(analysis.created_at)}`, "", "", "", "", "", "", ""],
+    [`Analiz: ${safeText(analysis.title)}`, "", "", "", "", `Hazırlayan: ${preparedBy}`, "", "", "", `Doküman No: ${documentNo}`, "", "", ""],
+    [`Firma: ${companyLine}`, "", "", "", "", `Ünvan / Belge: ${preparedTitle} / ${certificateNumber}`, "", "", "", `Tarih: ${formatDate(analysis.created_at)}`, "", "", ""],
   ]);
   setCols(sheet, [12, 18, 12, 12, 12, 12, 12, 12, 18, 18, 18, 18, 18]);
   setRows(sheet, [28, 8, 24, 28, 26, 26, 26, 26, 26, 10, 26, 26, 26, 26, 26, 26, 26, 10, 28, 26, 26, 26, 26, 26, 10, 26, 26]);
@@ -938,11 +956,15 @@ function makeWorkbook(
   method: string,
   requestID: string,
   supportID: string,
+  documentNo: string,
 ): XLSX.WorkBook {
   const workbook = XLSX.utils.book_new();
   applyWorkbookDefaults(workbook);
   const preparedBy = profile?.display_name ?? profile?.full_name ?? "";
   const companyName = profile?.company_name ?? "";
+  const preparedTitle = safeText(profile?.title);
+  const certificateNumber = safeText(profile?.certificate_number);
+  const companyInfo = safeText(profile?.phone);
   const highestBand = method === "matrix_5x5"
     ? analysis.highest_band_m5
     : analysis.highest_band_fk;
@@ -958,7 +980,8 @@ function makeWorkbook(
     ["İSG Risk Analizi Excel Raporu", "", "", "", "", "", "", ""],
     [],
     ["Firma", companyName || "Belirtilmedi", "", "Hazırlayan", preparedBy || "Belirtilmedi", "", "Oluşturma", generatedDate],
-    ["Analiz", safeText(analysis.title), "", "Odak", canvasLabel(analysis.canvas), "", "Metot", methodLabel(method)],
+    ["Firma bilgisi", companyInfo || "Belirtilmedi", "", "Ünvan", preparedTitle || "Belirtilmedi", "", "Doküman No", documentNo],
+    ["Analiz", safeText(analysis.title), "", "Belge No", certificateNumber || "Belirtilmedi", "", "Metot", methodLabel(method)],
     ["Başlangıç", createdDate, "", "Tamamlanma", completedDate, "", "Destek Kodu", supportID],
     [],
     ["TOPLAM BULGU", "EN YÜKSEK RİSK", "METOT", "TOPLAM SKOR", "KRİTİK", "YÜKSEK", "ORTA/DÜŞÜK", ""],
@@ -984,19 +1007,19 @@ function makeWorkbook(
     [safeText(analysis.ai_summary, "Özet bulunamadı."), "", "", "", "", "", "", ""],
   ]);
   setCols(summary, [18, 28, 4, 18, 24, 4, 16, 24]);
-  setRows(summary, [32, 24, 8, 24, 24, 24, 8, 28, 42, 8, 24, 24, 24, 24, 24, 24, 8, 70]);
-  addMerges(summary, ["A1:H1", "A2:H2", "D11:H11", "A17:H17", "A18:H18"]);
+  setRows(summary, [32, 24, 8, 24, 24, 24, 24, 8, 28, 42, 8, 24, 24, 24, 24, 24, 24, 8, 70, 70]);
+  addMerges(summary, ["A1:H1", "A2:H2", "D12:H12", "A19:H19", "A20:H20"]);
   setStyle(summary, "A1:H1", styles.title);
   setStyle(summary, "A2:H2", styles.subtitle);
-  setStyle(summary, "A4:H6", styles.tableCell);
-  setStyle(summary, "A8:H8", styles.kpiLabel);
-  setStyle(summary, "A9:H9", styles.kpiValue);
-  setStyle(summary, "A11:H11", styles.tableHeader);
-  setStyle(summary, "A12:H16", styles.tableCell);
-  setStyle(summary, "A17:H17", styles.tableHeader);
-  setStyle(summary, "A18:H18", { ...styles.value, alignment: { horizontal: "left", vertical: "top", wrapText: true } });
+  setStyle(summary, "A4:H7", styles.tableCell);
+  setStyle(summary, "A9:H9", styles.kpiLabel);
+  setStyle(summary, "A10:H10", styles.kpiValue);
+  setStyle(summary, "A12:H12", styles.tableHeader);
+  setStyle(summary, "A13:H17", styles.tableCell);
+  setStyle(summary, "A19:H19", styles.tableHeader);
+  setStyle(summary, "A20:H20", { ...styles.value, alignment: { horizontal: "left", vertical: "top", wrapText: true } });
   for (let i = 0; i < riskOrder.length; i++) {
-    const row = 12 + i;
+    const row = 13 + i;
     const color = bandStyle(riskOrder[i]);
     setStyle(summary, `A${row}:A${row}`, {
       ...styles.tableCell,
@@ -1136,16 +1159,17 @@ function makeWorkbook(
     });
   }
 
-  appendMethodReferenceSheet(workbook, analysis, profile, method, supportID);
+  appendMethodReferenceSheet(workbook, analysis, profile, method, documentNo);
 
   const info = appendSheet(workbook, "Rapor Bilgileri", [
     ["Alan", "Değer"],
     ["Analiz ID", analysis.id],
     ["Kullanıcı ID", analysis.user_id],
+    ["Doküman No", documentNo],
     ["Firma", companyName],
     ["Hazırlayan", preparedBy],
     ["Ünvan", safeText(profile?.title)],
-    ["Sertifika", safeText(profile?.certificate_number)],
+    ["Belge No", safeText(profile?.certificate_number)],
     ["Telefon", safeText(profile?.phone)],
     ["Oluşturma tarihi", formatDate(new Date().toISOString())],
     ["Request ID", requestID],
@@ -1154,8 +1178,8 @@ function makeWorkbook(
   setCols(info, [24, 72]);
   setRows(info, Array(12).fill(24));
   setStyle(info, "A1:B1", styles.tableHeader);
-  setStyle(info, "A2:B11", styles.tableCell);
-  setStyle(info, "A2:A11", styles.label);
+  setStyle(info, "A2:B12", styles.tableCell);
+  setStyle(info, "A2:A12", styles.label);
 
   return workbook;
 }
@@ -1316,6 +1340,9 @@ serve(async (req: Request) => {
     }
   }
 
+  const archiveSuffix = archiveFileSuffix(requestID);
+  const methodCode = method === "matrix_5x5" ? "5X5" : "FK";
+  const documentNo = `XLSX-${methodCode}-${analysisID.slice(0, 8).toUpperCase()}-${archiveSuffix.slice(-8).toUpperCase()}`;
   const workbook = makeWorkbook(
     analysis as AnalysisRow,
     (findings ?? []) as FindingRow[],
@@ -1323,11 +1350,12 @@ serve(async (req: Request) => {
     method,
     requestID,
     supportID,
+    documentNo,
   );
   const logo = await loadCompanyLogo(supabase, profile as ProfileRow | null);
   const rawBytes = workbookBuffer(workbook);
   const bytes = logo ? await embedCompanyLogo(rawBytes, logo) : rawBytes;
-  const fileName = `${safeFilePart(safeText((analysis as AnalysisRow).title, "risk-analizi"))}-${method}-risk-analizi.xlsx`;
+  const fileName = `${safeFilePart(safeText((analysis as AnalysisRow).title, "risk-analizi"))}-${method}-risk-analizi-${archiveSuffix}.xlsx`;
   const storagePath = `${user.id.toLowerCase()}/${analysisID.toLowerCase()}/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
@@ -1347,11 +1375,9 @@ serve(async (req: Request) => {
     });
   }
 
-  const methodCode = method === "matrix_5x5" ? "5X5" : "FK";
-  const documentNo = `XLSX-${methodCode}-${analysisID.slice(0, 8).toUpperCase()}`;
   const { data: report, error: reportError } = await supabase
     .from("reports")
-    .upsert({
+    .insert({
       user_id: user.id,
       analysis_id: analysisID,
       document_no: documentNo,
@@ -1367,7 +1393,7 @@ serve(async (req: Request) => {
       page_count: 1,
       request_id: requestID,
       support_id: supportID,
-    }, { onConflict: "user_id,storage_path" })
+    })
     .select()
     .single();
 
