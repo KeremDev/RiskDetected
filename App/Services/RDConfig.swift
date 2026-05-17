@@ -33,11 +33,10 @@ enum RDConfig {
     /// RevenueCat client-side public SDK config. This key is intentionally public;
     /// subscription truth for backend limits must still be synced server-side.
     enum Subscription {
-        #if DEBUG
-        static let revenueCatAPIKey = "test_uVmDjwjIdGBHDajqdDduMVDYYMb"
-        #else
+        // Debug builds use the same App Store RevenueCat project as TestFlight.
+        // The previous Test Store key had no products in its offering, which left
+        // the paywall waiting forever for packages in simulator/debug builds.
         static let revenueCatAPIKey = "appl_mckFFxUrvtNqzjShezjMIrFmItA"
-        #endif
         static let plusEntitlementID = "plus"
         static let proEntitlementID = "pro"
     }

@@ -45,14 +45,19 @@ serve(async (req) => {
   const cleanupSecret = Deno.env.get("RETENTION_CLEANUP_SECRET");
   const providedSecret = req.headers.get("x-retention-cleanup-secret");
 
-  if (authHeader !== expectedHeader && (!cleanupSecret || providedSecret !== cleanupSecret)) {
+  if (
+    authHeader !== expectedHeader &&
+    (!cleanupSecret || providedSecret !== cleanupSecret)
+  ) {
     return json(401, { error: "Unauthorized" });
   }
 
   let batchSize = 500;
   try {
     const body = await req.json().catch(() => ({}));
-    if (typeof body.batch_size === "number" && Number.isFinite(body.batch_size)) {
+    if (
+      typeof body.batch_size === "number" && Number.isFinite(body.batch_size)
+    ) {
       batchSize = Math.max(1, Math.min(1000, Math.floor(body.batch_size)));
     }
   } catch {
@@ -74,7 +79,7 @@ serve(async (req) => {
     .limit(batchSize);
 
   if (rawSelectError) {
-    return json(500, { error: "Failed to select expired raw AI responses", details: rawSelectError.message });
+    return json(500, { error: "Failed to select expired raw AI responses" });
   }
 
   const rawIds = (rawRows ?? []).map((row) => row.id as string);
@@ -87,7 +92,7 @@ serve(async (req) => {
       .in("id", rawIds);
 
     if (rawUpdateError) {
-      return json(500, { error: "Failed to clear expired raw AI responses", details: rawUpdateError.message });
+      return json(500, { error: "Failed to clear expired raw AI responses" });
     }
 
     expiredRawAI = rawIds.length;
@@ -101,12 +106,14 @@ serve(async (req) => {
     .limit(batchSize);
 
   if (photoSelectError) {
-    return json(500, { error: "Failed to select expired photos", details: photoSelectError.message });
+    return json(500, { error: "Failed to select expired photos" });
   }
 
   const photos = (expiredPhotos ?? []) as ExpiredPhoto[];
   const photoIds = photos.map((photo) => photo.id);
-  const storagePaths = photos.map((photo) => photo.storage_path).filter(Boolean);
+  const storagePaths = photos.map((photo) => photo.storage_path).filter(
+    Boolean,
+  );
 
   let removedStorageObjects = 0;
   let removedPhotoRows = 0;
@@ -117,7 +124,7 @@ serve(async (req) => {
       .remove(storagePaths);
 
     if (storageRemoveError) {
-      return json(500, { error: "Failed to remove expired photo objects", details: storageRemoveError.message });
+      return json(500, { error: "Failed to remove expired photo objects" });
     }
 
     removedStorageObjects = removed?.length ?? storagePaths.length;
@@ -135,7 +142,7 @@ serve(async (req) => {
       .in("id", photoIds);
 
     if (photoDeleteError) {
-      return json(500, { error: "Failed to delete expired photo rows", details: photoDeleteError.message });
+      return json(500, { error: "Failed to delete expired photo rows" });
     }
 
     removedPhotoRows = photoIds.length;

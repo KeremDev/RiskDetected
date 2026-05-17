@@ -190,7 +190,8 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: Profile > Güvenlik ve gizlilik opens the same legal center for in-app access;
    - Done: legal center now renders the long-form markdown documents directly in a scrollable document window;
    - Done: legal documents use Riskdetected, `info@riskdetected.com`, Eskişehir and `https://riskdetected.com` as the public contact/site details.
-   - Follow-up: publish these same documents on the website under `https://riskdetected.com/kvkk-aydinlatma-ve-acik-riza-metni`, `https://riskdetected.com/kullanim-kosullari` and `https://riskdetected.com/gizlilik-politikasi`.
+   - Done: App Store privacy nutrition disclosure draft prepared at `QA/App_Store_Privacy_Nutrition_2026-05-16.md`.
+   - Removed from active backlog: public website legal publication will be handled outside this implementation list.
 2. Visual data policy:
    - Done: client-side EXIF cleanup by pixel-only re-render before AI analysis/upload;
    - Done: Edge Function strips common JPEG/PNG metadata before Gemini and Storage persistence;
@@ -208,7 +209,9 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: Analyses tab exposes per-analysis delete action;
    - Done: scheduled daily execution through Supabase Cron (`riskdetected-retention-cleanup-daily`, `15 2 * * *`);
    - Done: Profile > Verilerim section added for JSON export, bulk report delete, bulk analysis delete and account deletion request capture;
-   - Follow-up: implement privileged backend/admin completion flow for account deletion requests.
+   - Done: privileged `account-deletion-complete` Edge Function and migration added for account deletion request completion;
+   - Done: completion flow removes user Storage prefixes, deletes the Supabase Auth user with admin privileges and preserves the request row as completed audit evidence;
+   - Follow-up: deploy the function, set `ACCOUNT_DELETION_ADMIN_SECRET` if needed and run one disposable-account production spot-check.
 
 ### P1.5 - Error Handling, Messages and Supportability
 
@@ -232,6 +235,10 @@ These items exist in some form, but need revision before we treat them as produc
    - generate a client-side request/support id for analysis and PDF flows;
    - pass request id to Edge Function and log it in `ai_usage_logs` / report metadata where relevant;
    - log normalized error code, provider/model, status code, latency and retry/fallback outcome.
+   - Done: production log privacy pass completed on 2026-05-16; Edge Function logs now avoid raw user ids, Storage paths, provider details and token-like values where practical.
+   - Done: support id lookup runbook added at `QA/Production_Log_Privacy_Support_Runbook_2026-05-16.md`.
+   - Done: production Supabase secrets scan found no active simulation flag names.
+   - Done: updated Edge Functions deployed: `analyze`, `generate-excel-report`, `support-contact`, `send-push-notification`, `retention-cleanup`, `account-deletion-complete`.
 4. Retry and fallback UX:
    - Started: iOS analysis flow retries transient Edge Function / Gemini failures once for the same analysis record instead of creating duplicate analyses;
    - Started: Analyzing screen can show a compact "AI servisi yoğun, tekrar deneniyor" status card while retrying;
@@ -308,9 +315,11 @@ These items exist in some form, but need revision before we treat them as produc
 2. Language preference:
    - Done: Profile > Tercihler currently exposes only Turkce because English localization is not shipped yet;
    - Done: stored System / English preferences are normalized back to Turkce until multi-language UI is implemented;
-   - introduce localized string structure before hardcoding grows further;
-   - first target screens: Auth, Home, Analysis, Result, Reports, Profile;
-   - later target: PDF/report output language selection.
+   - Done: `RDLanguage`, `RDLocalization` and `RDReportLocalization` added as the real string localization layer;
+   - Done: PDF report options now carry a `language` value and report settings show the current Turkce report language;
+   - Done: PDF report titles/date locale are routed through the report language layer.
+   - Follow-up: when another language ships, localize Auth, Home, Analysis, Result, Reports and Profile strings through the same key layer;
+   - Follow-up: extend PDF/XLSX table labels and legal/report boilerplate to the new report language.
 3. Preference sync:
    - keep MVP local-first;
    - later store preferred theme/language in `profiles` or a dedicated `user_preferences` table.
@@ -335,6 +344,7 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: added calm Pro value presentation for detailed risk tables, company logo and PDF customization;
    - Done: standard report output no longer shows AI confidence percentages in the app preview, PDF or Excel.
    - Done: report archive now has search/filter controls, status labels, stronger empty/error states and filtered load-more behavior.
+   - Done: production telemetry/performance spot-check completed; duplicate report archive index removed and PII-free archive load/load-more telemetry added. Details: `QA/Reports_Archive_Production_Spot_Check_2026-05-16.md`.
 4. Analyses page design refresh:
    - Done: redesigned Analyses tab visual hierarchy;
    - Done: retained quick filtering chips and improved the filter sheet presentation;
@@ -344,7 +354,7 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: updated pages opened from KVKK, Kullanım şartları and Gizlilik Politikası links;
    - Done: legal center uses separate document selectors and a scrollable plain-document reader;
    - Done: final markdown legal contents are bundled in-app from `App/LegalDocuments`;
-   - Follow-up: mirror the bundled legal documents to the public website legal URLs.
+   - Done: App Store privacy nutrition disclosure draft prepared at `QA/App_Store_Privacy_Nutrition_2026-05-16.md`.
 6. Profile page tabs and content:
    - design and implement profile page sections/tabs;
    - fill missing content for account, preferences, reports, analyses, notifications and data/privacy areas.
@@ -377,6 +387,8 @@ These items exist in some form, but need revision before we treat them as produc
    - verify PDF generation remains unchanged.
    - Done: Pro demo API smoke test generated `/tmp/riskdetected-test.xlsx`; workbook opened with sheets `Özet`, `Risk Analiz Tablosu`, `Aksiyon Planı`, `Rapor Bilgileri`.
    - Done: simulator Pro demo flow generated a standard PDF, archived it, opened its share sheet, then generated an Excel risk table, archived it and opened the iOS share sheet as an Office spreadsheet.
+   - Done: 2026-05-16 final simulator QA covered home report preview/close/share, Pro canvas selection, Free quota-dolu report gating, Pro live analysis, standard PDF, Pro PDF and XLSX preview/share flows.
+   - Done: report quota gating now prevents generation when exhausted and routes to `Yükselt`; generated PDF Storage paths are ASCII-safe; repeated PDF generation uses unique document numbers for archive metadata.
 
 ### P3 - AI Reliability and Cost Control
 

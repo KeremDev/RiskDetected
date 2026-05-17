@@ -8,32 +8,54 @@ enum PDFReportKind: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     var title: String {
+        localizedTitle()
+    }
+
+    func localizedTitle(language: RDLanguage = .turkish) -> String {
         switch self {
-        case .standard: return "Standart PDF"
-        case .riskAnalysis: return "Detaylı risk analizi"
+        case .standard:
+            return RDLocalization.shared.text(.standardPDFTitle, language: language)
+        case .riskAnalysis:
+            return RDLocalization.shared.text(.riskAnalysisPDFTitle, language: language)
         }
     }
 
     var subtitle: String {
+        localizedSubtitle()
+    }
+
+    func localizedSubtitle(language: RDLanguage = .turkish) -> String {
         switch self {
         case .standard:
-            return "RiskDetected şablonu ile hızlı saha raporu."
+            return RDLocalization.shared.text(.standardPDFSubtitle, language: language)
         case .riskAnalysis:
-            return "Fine-Kinney veya 5×5 metoduna göre denetim çıktısı."
+            return RDLocalization.shared.text(.riskAnalysisPDFSubtitle, language: language)
         }
     }
 
     var headerTitle: String {
+        localizedHeaderTitle()
+    }
+
+    func localizedHeaderTitle(language: RDLanguage = .turkish) -> String {
         switch self {
-        case .standard: return "SAHA TARAMA RAPORU"
-        case .riskAnalysis: return "İŞ GÜVENLİĞİ RİSK ANALİZİ"
+        case .standard:
+            return RDLocalization.shared.text(.standardReportHeader, language: language)
+        case .riskAnalysis:
+            return RDLocalization.shared.text(.riskAnalysisReportHeader, language: language)
         }
     }
 
     var detailTitle: String {
+        localizedDetailTitle()
+    }
+
+    func localizedDetailTitle(language: RDLanguage = .turkish) -> String {
         switch self {
-        case .standard: return "BULGU DETAYLARI"
-        case .riskAnalysis: return "RİSK ANALİZİ TABLOSU"
+        case .standard:
+            return RDLocalization.shared.text(.findingDetailsHeader, language: language)
+        case .riskAnalysis:
+            return RDLocalization.shared.text(.riskAnalysisTableHeader, language: language)
         }
     }
 }
@@ -46,6 +68,7 @@ struct PDFReportOptions: Equatable {
     var certificateNumber: String = ""
     var companyName: String = ""
     var companyInfo: String = ""
+    var language: RDLanguage = .turkish
 
     static func standard(method: RiskMethod) -> PDFReportOptions {
         PDFReportOptions(kind: .standard, method: method)
@@ -116,7 +139,7 @@ final class PDFReportService: @unchecked Sendable {
 
     private func drawCoverPage(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect) {
         context.beginPage()
-        drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.headerTitle, page: 1)
+        drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.localizedHeaderTitle(language: input.options.language), page: 1)
 
         let margin: CGFloat = 42
         let contentTop: CGFloat = 92
@@ -131,7 +154,7 @@ final class PDFReportService: @unchecked Sendable {
         )
 
         drawText(
-            "\(formattedDate(analysis.createdAt)) · \(canvasLabel(analysis.canvas)) · \(input.findings.count) bulgu",
+            "\(formattedDate(analysis.createdAt, language: input.options.language)) · \(canvasLabel(analysis.canvas)) · \(input.findings.count) bulgu",
             in: CGRect(x: margin, y: contentTop + 38, width: 480, height: 22),
             font: .systemFont(ofSize: 12, weight: .medium),
             color: .rdPDFSlate
@@ -195,7 +218,7 @@ final class PDFReportService: @unchecked Sendable {
 
         for (pageIndex, findings) in chunks.enumerated() {
             context.beginPage()
-            drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.detailTitle, page: pageIndex + 2)
+            drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.localizedDetailTitle(language: input.options.language), page: pageIndex + 2)
             drawTableHeader(y: 92)
 
             var y: CGFloat = 122
@@ -439,7 +462,7 @@ final class PDFReportService: @unchecked Sendable {
         drawText("Hazırlayan: \(prepared)", in: CGRect(x: rect.minX + 294, y: rect.minY + 5, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
         drawText("Ünvan: \(title)", in: CGRect(x: rect.minX + 294, y: rect.minY + 18, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
         drawText("Belge No: \(certificate)", in: CGRect(x: rect.minX + 294, y: rect.minY + 31, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Tarih: \(formattedDate(analysis.createdAt))", in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate, alignment: .right)
+        drawText("Tarih: \(formattedDate(analysis.createdAt, language: input.options.language))", in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate, alignment: .right)
         drawText("Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())", in: CGRect(x: rect.minX + 548, y: rect.minY + 23, width: 200, height: 10), font: .monospacedSystemFont(ofSize: 7.5, weight: .semibold), color: .rdPDFBlack, alignment: .right)
     }
 
@@ -661,13 +684,13 @@ final class PDFReportService: @unchecked Sendable {
         path.stroke()
     }
 
-    private func formattedDate(_ raw: String?) -> String {
+    private func formattedDate(_ raw: String?, language: RDLanguage = .turkish) -> String {
         guard let raw else { return "Tarih yok" }
         let fractional = ISO8601DateFormatter()
         fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let date = fractional.date(from: raw) ?? ISO8601DateFormatter().date(from: raw) ?? Date()
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.locale = language.locale
         formatter.dateFormat = "d MMMM yyyy · HH:mm"
         return formatter.string(from: date)
     }

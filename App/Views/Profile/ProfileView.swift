@@ -536,7 +536,7 @@ struct ProfileView: View {
                         requestID: requestID,
                         supportID: supportID
                     )
-                    dataMessage = "Hesap silme talebin kaydedildi. Bu işlem yetkili backend/admin süreciyle tamamlanacak."
+                    dataMessage = "Hesap silme talebin kaydedildi. İşlem güvenli silme kuyruğunda tamamlanacak."
                 }
             } catch {
                 dataMessage = AppErrorMessage.make(
@@ -589,7 +589,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .deleteAnalyses:
             return "Tüm analizler, bulgular, fotoğraf kayıtları ve bu analizlere bağlı raporlar silinir. Bu işlem geri alınamaz."
         case .requestAccountDeletion:
-            return "Talep kaydedilir. Hesap silme işlemi güvenli backend/admin süreciyle tamamlanmalıdır."
+            return "Talep kaydedilir. Hesap silme işlemi yetkili sunucu akışıyla tamamlanır."
         }
     }
 
@@ -1123,7 +1123,7 @@ private struct ProfileDataControlsSheet: View {
                     dataActionButton(
                         icon: "person.crop.circle.badge.xmark",
                         title: "Hesabımı silme talebi",
-                        subtitle: "Talep kaydı oluşturulur; hesap silme backend/admin sürecinde tamamlanır.",
+                        subtitle: "Talep kaydı oluşturulur; hesap silme güvenli sunucu sürecinde tamamlanır.",
                         action: .requestAccountDeletion,
                         danger: true,
                         onTap: onRequestAccountDeletion

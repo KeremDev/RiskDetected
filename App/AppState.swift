@@ -42,40 +42,6 @@ enum RDThemePreference: String, CaseIterable, Identifiable {
     }
 }
 
-enum RDLanguagePreference: String, CaseIterable, Identifiable {
-    case system
-    case turkish
-    case english
-
-    static let supportedCases: [RDLanguagePreference] = [.turkish]
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .system: return "Sistem"
-        case .turkish: return "Türkçe"
-        case .english: return "English"
-        }
-    }
-
-    var subtitle: String {
-        switch self {
-        case .system: return "Telefon dilini takip eder."
-        case .turkish: return "Uygulama metinleri Türkçe kalır."
-        case .english: return "English interface preference."
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .system: return "globe"
-        case .turkish: return "textformat"
-        case .english: return "character.book.closed"
-        }
-    }
-}
-
 enum AppFlow: Equatable {
     case splash
     case onboarding

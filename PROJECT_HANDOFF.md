@@ -202,7 +202,9 @@ Completed in the latest UI polish pass:
 - App-level dark mode foundation exists:
   - `AppState.isDarkModeEnabled` persists locally;
   - `AppState.themePreference` supports `Sistem`, `Aydinlik`, `Karanlik`;
-  - `AppState.languagePreference` supports `Sistem`, `Turkce`, `English` and is stored locally for the future localization layer;
+  - `AppState.languagePreference` is backed by `RDLanguage`, currently exposes only `Turkce`, and normalizes older `Sistem` / `English` stored values back to `Turkce`;
+  - `RDLocalization` / `RDReportLocalization` provide the real localization lookup layer for app/report strings;
+  - `PDFReportOptions.language` carries the current report output language for future PDF/XLSX language selection;
   - `RiskDetectedApp` applies `.preferredColorScheme`;
   - core color tokens in `RDColor` adapt to light/dark mode;
   - fixed black CTA surfaces use `rdOnyx` so they do not turn into dynamic text colors.
@@ -228,7 +230,7 @@ Completed in the latest UI polish pass:
 
 Remaining theme/design follow-up:
 
-- Wire the stored language preference into a real localization/string system.
+- Expand the localization key coverage when a second app/report language is ready to ship.
 - Continue final contrast QA when new Result, Report, Paywall or sheet UI changes are made.
 - Continue planned Profile page tab/content work.
 
@@ -326,7 +328,7 @@ Completed retention/delete work:
 
 Follow-up:
 
-- Implement privileged backend/admin completion flow for account deletion requests.
+- Account deletion completion flow is implemented and deployed as `account-deletion-complete`; run one disposable-account production spot-check before release.
 - Publish bundled legal markdown contents to the public website legal URLs once the website source/deploy project is available.
 
 ## Error Handling and Supportability
@@ -423,6 +425,7 @@ Known image issue to keep checking:
    - keep frontend labels and backend prompt routing aligned.
 7. Reports page design refresh.
    - Done: report-center summary panel, Pro value panel, saved-report card redesign and report-source selection redesign.
+   - Done: production archive performance spot-check completed; duplicate `reports_user_id_idx` removed and Reports archive now logs PII-free initial/load-more timing telemetry.
 8. Analyses page design refresh.
    - Done: analysis-center summary panel, search/filter surface, filter sheet polish and analysis card redesign.
 9. Legal link destination refresh for KVKK, Kullanım şartları and Gizlilik Politikası pages.

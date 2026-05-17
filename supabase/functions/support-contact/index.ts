@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -48,6 +49,13 @@ function newSupportID(): string {
   return `RD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
+function safeLogText(value: string, maxLength = 180): string {
+  return value
+    .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email]")
+    .slice(0, maxLength);
+}
+
 function normalizeAttachments(value: unknown): SupportAttachment[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -56,12 +64,15 @@ function normalizeAttachments(value: unknown): SupportAttachment[] {
       const source = item as SupportAttachment;
       return {
         filename: cleanText(source.filename, 120) || "ek-dosya",
-        mime_type: cleanText(source.mime_type, 80) || "application/octet-stream",
+        mime_type: cleanText(source.mime_type, 80) ||
+          "application/octet-stream",
         data: cleanText(source.data, 8_000_000),
         size_bytes: Number(source.size_bytes ?? 0),
       };
     })
-    .filter((item) => item.data && item.size_bytes >= 0 && item.size_bytes <= 5_000_000);
+    .filter((item) =>
+      item.data && item.size_bytes >= 0 && item.size_bytes <= 5_000_000
+    );
 }
 
 serve(async (req) => {
@@ -78,7 +89,8 @@ serve(async (req) => {
   const supabaseURL = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const toEmail = Deno.env.get("SUPPORT_TO_EMAIL") ?? "info@riskdetected.com";
-  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") ?? "RiskDetected Destek <info@riskdetected.com>";
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") ??
+    "RiskDetected Destek <info@riskdetected.com>";
 
   if (!supabaseURL || !serviceRoleKey) {
     return json(500, {
@@ -125,7 +137,9 @@ serve(async (req) => {
     auth: { persistSession: false },
   });
 
-  const { data: userResult, error: userError } = await supabase.auth.getUser(jwt);
+  const { data: userResult, error: userError } = await supabase.auth.getUser(
+    jwt,
+  );
   const user = userResult?.user;
   if (userError || !user) {
     return json(401, {
@@ -150,7 +164,8 @@ serve(async (req) => {
     .maybeSingle();
 
   const senderName = cleanText(profile?.full_name, 160) || "Kayıtlı değil";
-  const senderEmail = cleanText(profile?.email, 240) || user.email || "Kayıtlı değil";
+  const senderEmail = cleanText(profile?.email, 240) || user.email ||
+    "Kayıtlı değil";
   const senderPhone = cleanText(profile?.phone, 80) || "Kayıtlı değil";
   const senderTier = cleanText(profile?.tier, 40) || "free";
   const companyName = cleanText(profile?.company_name, 160) || "Kayıtlı değil";
@@ -162,12 +177,24 @@ serve(async (req) => {
       <h2 style="margin:0 0 12px">RiskDetected destek talebi</h2>
       <p style="margin:0 0 16px;color:#667085">Destek kodu: <strong>${supportID}</strong></p>
       <table style="border-collapse:collapse;margin-bottom:18px">
-        <tr><td style="padding:6px 12px 6px 0;color:#667085">Ad soyad</td><td style="padding:6px 0"><strong>${escapeHTML(senderName)}</strong></td></tr>
-        <tr><td style="padding:6px 12px 6px 0;color:#667085">E-posta</td><td style="padding:6px 0">${escapeHTML(senderEmail)}</td></tr>
-        <tr><td style="padding:6px 12px 6px 0;color:#667085">Telefon</td><td style="padding:6px 0">${escapeHTML(senderPhone)}</td></tr>
-        <tr><td style="padding:6px 12px 6px 0;color:#667085">Plan</td><td style="padding:6px 0">${escapeHTML(senderTier)}</td></tr>
-        <tr><td style="padding:6px 12px 6px 0;color:#667085">Firma</td><td style="padding:6px 0">${escapeHTML(companyName)}</td></tr>
-        <tr><td style="padding:6px 12px 6px 0;color:#667085">Ünvan</td><td style="padding:6px 0">${escapeHTML(senderTitle)}</td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#667085">Ad soyad</td><td style="padding:6px 0"><strong>${
+    escapeHTML(senderName)
+  }</strong></td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#667085">E-posta</td><td style="padding:6px 0">${
+    escapeHTML(senderEmail)
+  }</td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#667085">Telefon</td><td style="padding:6px 0">${
+    escapeHTML(senderPhone)
+  }</td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#667085">Plan</td><td style="padding:6px 0">${
+    escapeHTML(senderTier)
+  }</td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#667085">Firma</td><td style="padding:6px 0">${
+    escapeHTML(companyName)
+  }</td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#667085">Ünvan</td><td style="padding:6px 0">${
+    escapeHTML(senderTitle)
+  }</td></tr>
       </table>
       <h3 style="margin:0 0 8px">${escapeHTML(subject)}</h3>
       <div style="padding:14px;border:1px solid #E3E7E3;border-radius:12px;background:#F6F7F6">${escapedMessage}</div>
@@ -212,7 +239,14 @@ serve(async (req) => {
 
   if (!response.ok) {
     const detail = await response.text();
-    console.error("support email failed", supportID, response.status, detail);
+    console.error(
+      "support email failed",
+      JSON.stringify({
+        support_id: supportID,
+        http_status: response.status,
+        detail: safeLogText(detail),
+      }),
+    );
     return json(502, {
       error: "email_failed",
       message: "Destek talebi mail olarak gönderilemedi.",

@@ -75,7 +75,7 @@ const CANVAS_FOCUS: Record<string, string> = {
   ergonomics:
     "Fotoğraftaki ekipmanı tanımla ve İSG açısından değerlendir. Emin değilsen olasılıkları belirt, varsayım yapma. Kısa başlıklarla şunları ver: ekipman adı, tehlikeler, riskler, önlemler, gerekli KKD, kullanım öncesi kontroller ve durdurma kriterleri. Kritik risk varsa en başta uyar. Eksik bilgi varsa ek fotoğraf veya marka/model iste.",
   environment_measurement:
-    "Gürültü, toz, gaz/buhar, aydınlatma, sıcaklık, havalandırma, titreşim ve kimyasal maruziyet gibi ölçüm gerektiren başlıkları \"ölçümle doğrulanmalı\" olarak yaz.",
+    'Gürültü, toz, gaz/buhar, aydınlatma, sıcaklık, havalandırma, titreşim ve kimyasal maruziyet gibi ölçüm gerektiren başlıkları "ölçümle doğrulanmalı" olarak yaz.',
   explosion:
     "Patlayıcı atmosfer, gaz/buhar/toz birikimi, yanıcı depolama, basınçlı kap, statik elektrik, kıvılcım/ateşleme kaynağı, havalandırma, Ex ekipman ve patlamadan korunma dokümanı ihtiyacını değerlendir.",
   environment:
@@ -155,32 +155,32 @@ function responseSchema(isPro: boolean) {
   }
 
   return {
-  type: "OBJECT",
-  properties: {
-    hazards: {
-      type: "ARRAY",
-      items: {
-        type: "OBJECT",
-        properties: hazardProperties,
-        required: [
-          "title",
-          "category",
-          "observed_evidence",
-          "description",
-          "recommended_action",
-          "confidence",
-          "fk_probability",
-          "fk_frequency",
-          "fk_severity",
-          "m5_probability",
-          "m5_severity",
-        ],
+    type: "OBJECT",
+    properties: {
+      hazards: {
+        type: "ARRAY",
+        items: {
+          type: "OBJECT",
+          properties: hazardProperties,
+          required: [
+            "title",
+            "category",
+            "observed_evidence",
+            "description",
+            "recommended_action",
+            "confidence",
+            "fk_probability",
+            "fk_frequency",
+            "fk_severity",
+            "m5_probability",
+            "m5_severity",
+          ],
+        },
       },
+      ai_summary: { type: "STRING" },
+      limitations: { type: "STRING" },
     },
-    ai_summary: { type: "STRING" },
-    limitations: { type: "STRING" },
-  },
-  required: ["hazards", "ai_summary"],
+    required: ["hazards", "ai_summary"],
   };
 }
 
@@ -284,9 +284,15 @@ function normalizeTier(raw: unknown): PlanTier {
   return raw === "pro" || raw === "plus" ? raw : "free";
 }
 
-function hasActiveSubscription(row: { status?: string | null; current_period_ends_at?: string | null } | null): boolean {
+function hasActiveSubscription(
+  row:
+    | { status?: string | null; current_period_ends_at?: string | null }
+    | null,
+): boolean {
   if (!row) return false;
-  if (!["active", "trialing", "grace_period"].includes(String(row.status ?? ""))) return false;
+  if (
+    !["active", "trialing", "grace_period"].includes(String(row.status ?? ""))
+  ) return false;
   if (!row.current_period_ends_at) return true;
   const expiresAt = Date.parse(row.current_period_ends_at);
   return Number.isFinite(expiresAt) && expiresAt > Date.now();
@@ -294,10 +300,16 @@ function hasActiveSubscription(row: { status?: string | null; current_period_end
 
 function resolvePlanTier(
   profileTier: unknown,
-  subscription: { tier?: string | null; status?: string | null; current_period_ends_at?: string | null } | null,
+  subscription: {
+    tier?: string | null;
+    status?: string | null;
+    current_period_ends_at?: string | null;
+  } | null,
 ): PlanTier {
   void profileTier;
-  return hasActiveSubscription(subscription) ? normalizeTier(subscription?.tier) : "free";
+  return hasActiveSubscription(subscription)
+    ? normalizeTier(subscription?.tier)
+    : "free";
 }
 
 function canUseCanvas(tier: PlanTier, canvasID: string): boolean {
@@ -306,8 +318,13 @@ function canUseCanvas(tier: PlanTier, canvasID: string): boolean {
   return !PAID_CANVASES.has(canvasID);
 }
 
-function normalizeAnalysisMode(rawMode: unknown, canvasIDs: string[]): AnalysisMode {
-  if (rawMode === "detailed" || rawMode === "emergency" || rawMode === "procedure") {
+function normalizeAnalysisMode(
+  rawMode: unknown,
+  canvasIDs: string[],
+): AnalysisMode {
+  if (
+    rawMode === "detailed" || rawMode === "emergency" || rawMode === "procedure"
+  ) {
     return rawMode;
   }
   if (canvasIDs.some((id) => DETAILED_CANVASES.has(id))) return "detailed";
@@ -344,7 +361,11 @@ KURALLAR:
 - En fazla ${maxHazards} tehlike döndür; önem sırasına göre sırala.
 - Her tehlike için description alanını kısa tut; yalnızca görünen kanıt ve riskin özünü 1-2 kısa cümleyle anlat.
 - Her tehlike için recommended_action alanını kısa, uygulanabilir ve en fazla 180 karakter olacak şekilde yaz.
-${isPro ? `- Her tehlike için references alanını kısa tut; kısaltılmış kanun/yönetmelik adı + varsa kısa madde bilgisini yaz veya "mevzuat karşılığı kontrol edilmeli" yaz.` : ""}
+${
+    isPro
+      ? `- Her tehlike için references alanını kısa tut; kısaltılmış kanun/yönetmelik adı + varsa kısa madde bilgisini yaz veya "mevzuat karşılığı kontrol edilmeli" yaz.`
+      : ""
+  }
 - Her tehlike için Fine-Kinney girdilerini (fk_probability, fk_frequency, fk_severity) ve 5×5 girdilerini (m5_probability 1-5, m5_severity 1-5) öner.
 - Fine-Kinney ihtimal değerleri (sadece bunlar): 0.2 / 0.5 / 1 / 3 / 6 / 10
 - Fine-Kinney frekans değerleri (sadece bunlar): 0.5 / 1 / 2 / 3 / 6 / 10
@@ -437,7 +458,9 @@ function geminiKeyPool(): GeminiKeyConfig[] {
   const preferredAlias = Deno.env.get("GEMINI_PREFERRED_KEY_ALIAS")?.trim();
   if (!preferredAlias) return keys;
 
-  const preferredIndex = keys.findIndex((item) => item.alias === preferredAlias);
+  const preferredIndex = keys.findIndex((item) =>
+    item.alias === preferredAlias
+  );
   if (preferredIndex < 0) return keys;
 
   const preferred = keys[preferredIndex];
@@ -536,7 +559,7 @@ async function callGeminiWithFallback(
             model,
             attempt,
             retryable,
-            error: String(err),
+            error: safeLogError(err),
           }),
         );
         if (!retryable) throw err;
@@ -550,6 +573,31 @@ async function callGeminiWithFallback(
 
 function newSupportID(): string {
   return `RD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+function safeLogError(error: unknown): Record<string, unknown> {
+  if (error instanceof GeminiAPIError) {
+    return { name: "GeminiAPIError", status: error.status };
+  }
+  if (error instanceof SyntaxError) {
+    return { name: "SyntaxError" };
+  }
+  if (error instanceof Error) {
+    return {
+      name: error.name || "Error",
+      message: error.message.replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+        .slice(0, 160),
+    };
+  }
+  return { name: typeof error };
+}
+
+async function hashedID(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest.slice(0, 6)))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function normalizedTraceValue(value: unknown, fallback: string): string {
@@ -736,12 +784,16 @@ async function logUsage(supabase: any, data: any) {
   try {
     await supabase.from("ai_usage_logs").insert(data);
   } catch (e) {
-    console.error("Usage log insert failed:", e);
+    console.error("Usage log insert failed", JSON.stringify(safeLogError(e)));
   }
 }
 
 // deno-lint-ignore no-explicit-any
-async function releaseAnalysisQuota(supabase: any, analysisID: string, userID: string) {
+async function releaseAnalysisQuota(
+  supabase: any,
+  analysisID: string,
+  userID: string,
+) {
   try {
     await supabase
       .from("usage_events")
@@ -751,12 +803,19 @@ async function releaseAnalysisQuota(supabase: any, analysisID: string, userID: s
       .in("feature", ["analysis_standard", "analysis_detailed"])
       .eq("event_type", "reserved");
   } catch (e) {
-    console.error("Quota reservation release failed:", e);
+    console.error(
+      "Quota reservation release failed",
+      JSON.stringify(safeLogError(e)),
+    );
   }
 }
 
 // deno-lint-ignore no-explicit-any
-async function completeAnalysisQuota(supabase: any, analysisID: string, userID: string) {
+async function completeAnalysisQuota(
+  supabase: any,
+  analysisID: string,
+  userID: string,
+) {
   try {
     await supabase
       .from("usage_events")
@@ -768,7 +827,10 @@ async function completeAnalysisQuota(supabase: any, analysisID: string, userID: 
       .in("feature", ["analysis_standard", "analysis_detailed"])
       .eq("event_type", "reserved");
   } catch (e) {
-    console.error("Quota reservation completion failed:", e);
+    console.error(
+      "Quota reservation completion failed",
+      JSON.stringify(safeLogError(e)),
+    );
   }
 }
 
@@ -880,7 +942,7 @@ serve(async (req: Request) => {
       request_id: requestID,
       support_id: supportID,
       analysis_id: analysisID,
-      user_id: user.id,
+      user_hash: await hashedID(user.id),
     }),
   );
 
@@ -898,15 +960,19 @@ serve(async (req: Request) => {
         request_id: requestID,
         support_id: supportID,
         analysis_id: analysisID,
-        user_id: user.id,
-        error: analysisOwnerErr?.message ?? null,
+        user_hash: await hashedID(user.id),
+        error: analysisOwnerErr ? safeLogError(analysisOwnerErr) : null,
       }),
     );
-    return errorResponse(404, "Analiz bulunamadı veya bu işlem için yetki yok.", {
-      code: "analysis_not_found",
-      requestID,
-      supportID,
-    });
+    return errorResponse(
+      404,
+      "Analiz bulunamadı veya bu işlem için yetki yok.",
+      {
+        code: "analysis_not_found",
+        requestID,
+        supportID,
+      },
+    );
   }
 
   // deno-lint-ignore no-explicit-any
@@ -916,11 +982,13 @@ serve(async (req: Request) => {
       .eq("id", analysisID)
       .eq("user_id", user.id);
 
-  const requestedCanvases = [...new Set(
-    (Array.isArray(canvases) && canvases.length > 0 ? canvases : [canvas])
-      .map((item) => String(item ?? "").trim())
-      .filter((item) => item.length > 0),
-  )];
+  const requestedCanvases = [
+    ...new Set(
+      (Array.isArray(canvases) && canvases.length > 0 ? canvases : [canvas])
+        .map((item) => String(item ?? "").trim())
+        .filter((item) => item.length > 0),
+    ),
+  ];
   const analysisMode = normalizeAnalysisMode(analysis_mode, requestedCanvases);
 
   // Profil + backend-synced subscription tier
@@ -978,11 +1046,15 @@ serve(async (req: Request) => {
       status_message:
         `Detaylı analiz Plus veya Pro üyelik gerektirir. Destek kodu: ${supportID}`,
     });
-    return errorResponse(403, "Detaylı analiz Plus veya Pro üyelik gerektirir.", {
-      code: "plan_required",
-      requestID,
-      supportID,
-    });
+    return errorResponse(
+      403,
+      "Detaylı analiz Plus veya Pro üyelik gerektirir.",
+      {
+        code: "plan_required",
+        requestID,
+        supportID,
+      },
+    );
   }
 
   if (analysisMode === "emergency" && planTier === "free") {
@@ -991,11 +1063,15 @@ serve(async (req: Request) => {
       status_message:
         `Acil risk modülü Plus veya Pro üyelik gerektirir. Destek kodu: ${supportID}`,
     });
-    return errorResponse(403, "Acil risk modülü Plus veya Pro üyelik gerektirir.", {
-      code: "plan_required",
-      requestID,
-      supportID,
-    });
+    return errorResponse(
+      403,
+      "Acil risk modülü Plus veya Pro üyelik gerektirir.",
+      {
+        code: "plan_required",
+        requestID,
+        supportID,
+      },
+    );
   }
 
   if (analysisMode === "procedure" && planTier !== "pro") {
@@ -1004,11 +1080,15 @@ serve(async (req: Request) => {
       status_message:
         `Prosedür uygunluk kontrolü Pro üyelik gerektirir. Destek kodu: ${supportID}`,
     });
-    return errorResponse(403, "Prosedür uygunluk kontrolü Pro üyelik gerektirir.", {
-      code: "plan_required",
-      requestID,
-      supportID,
-    });
+    return errorResponse(
+      403,
+      "Prosedür uygunluk kontrolü Pro üyelik gerektirir.",
+      {
+        code: "plan_required",
+        requestID,
+        supportID,
+      },
+    );
   }
 
   const { data: quotaReservation, error: quotaReservationErr } = await supabase
@@ -1019,7 +1099,15 @@ serve(async (req: Request) => {
     });
 
   if (quotaReservationErr) {
-    console.error("Quota reservation failed", quotaReservationErr);
+    console.error(
+      "Quota reservation failed",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        analysis_id: analysisID,
+        error: safeLogError(quotaReservationErr),
+      }),
+    );
     await updateOwnedAnalysis({
       status: "failed",
       status_message:
@@ -1035,8 +1123,9 @@ serve(async (req: Request) => {
   if (quotaReservation?.ok !== true) {
     await updateOwnedAnalysis({
       status: "failed",
-      status_message:
-        `${quotaReservation?.message ?? "Analiz kotası doldu."} Destek kodu: ${supportID}`,
+      status_message: `${
+        quotaReservation?.message ?? "Analiz kotası doldu."
+      } Destek kodu: ${supportID}`,
     });
     return errorResponse(
       quotaReservation?.code === "plan_required" ? 403 : 429,
@@ -1121,7 +1210,16 @@ serve(async (req: Request) => {
         });
 
       if (uploadErr) {
-        console.error("Persist inline photo upload error:", uploadErr);
+        console.error(
+          "Persist inline photo upload error",
+          JSON.stringify({
+            request_id: requestID,
+            support_id: supportID,
+            analysis_id: analysisID,
+            photo_index: i + 1,
+            error: safeLogError(uploadErr),
+          }),
+        );
         continue;
       }
 
@@ -1135,7 +1233,16 @@ serve(async (req: Request) => {
       });
 
       if (photoErr) {
-        console.error("Persist inline photo metadata error:", photoErr);
+        console.error(
+          "Persist inline photo metadata error",
+          JSON.stringify({
+            request_id: requestID,
+            support_id: supportID,
+            analysis_id: analysisID,
+            photo_index: i + 1,
+            error: safeLogError(photoErr),
+          }),
+        );
         continue;
       }
 
@@ -1167,9 +1274,9 @@ serve(async (req: Request) => {
           request_id: requestID,
           support_id: supportID,
           analysis_id: analysisID,
-          user_id: user.id,
+          user_hash: await hashedID(user.id),
           invalid_path_count: invalidPaths.length,
-          error: ownedPhotoErr?.message ?? null,
+          error: ownedPhotoErr ? safeLogError(ownedPhotoErr) : null,
         }),
       );
       await updateOwnedAnalysis({
@@ -1191,7 +1298,17 @@ serve(async (req: Request) => {
       "photos",
     ).download(path);
     if (storageErr || !fileData) {
-      console.error("Storage download error:", storageErr);
+      console.error(
+        "Storage download error",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: storageErr
+            ? safeLogError(storageErr)
+            : { name: "empty_file_data" },
+        }),
+      );
       continue;
     }
     const buffer = await fileData.arrayBuffer();
@@ -1205,8 +1322,12 @@ serve(async (req: Request) => {
     imageBase64Parts.push({ mimeType, data: base64 });
   }
 
-  const validRequestedCanvases = requestedCanvases.filter((id) => Boolean(CANVAS_FOCUS[id]));
-  const resolvedCanvases = validRequestedCanvases.length > 0 ? validRequestedCanvases : ["general"];
+  const validRequestedCanvases = requestedCanvases.filter((id) =>
+    Boolean(CANVAS_FOCUS[id])
+  );
+  const resolvedCanvases = validRequestedCanvases.length > 0
+    ? validRequestedCanvases
+    : ["general"];
   const resolvedCanvasPrompts = resolvedCanvases
     .map((id) => ({ id, prompt: CANVAS_FOCUS[id] }))
     .filter((item) => Boolean(item.prompt));
@@ -1355,7 +1476,15 @@ serve(async (req: Request) => {
       findingRows,
     );
     if (findingsErr) {
-      console.error("Findings insert error:", findingsErr);
+      console.error(
+        "Findings insert error",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogError(findingsErr),
+        }),
+      );
       await releaseAnalysisQuota(supabase, analysisID, user.id);
       await updateOwnedAnalysis({
         status: "failed",

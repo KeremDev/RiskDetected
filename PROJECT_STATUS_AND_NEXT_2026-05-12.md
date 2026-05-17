@@ -109,7 +109,13 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
   - Sistem / Aydınlık / Karanlık seçenekleri.
   - Core renk tokenları dark/light uyumlu.
   - Home, Result, Report settings, Profile, Analyses, Reports hızlı dark pass geçti.
-- Dil tercihi lokal olarak saklanıyor: Sistem / Türkçe / English.
+- Dil tercihi lokal olarak saklanıyor ve şimdilik yalnızca Türkçe seçenek gösteriliyor.
+- Gerçek lokalizasyon altyapısı eklendi:
+  - `RDLanguage` tek dil kaynağı olarak kullanılıyor;
+  - eski Sistem/English tercihleri otomatik Türkçe'ye normalize ediliyor;
+  - rapor seçenekleri `language` alanı taşıyor;
+  - PDF tarih/başlık metinleri seçili rapor dili üzerinden hazırlanıyor;
+  - Rapor Oluştur sheet'inde şimdilik yalnızca Türkçe rapor dili gösteriliyor.
 - Header profil menüsü var:
   - Analizlerim,
   - Raporlarım,
@@ -193,20 +199,18 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Kalan: Pro satın alma, restore purchase, iptal/expiration/downgrade eventleri test edilmeli.
 
 4. Son manuel QA
-   - Reports archive 21 kayıt simülatör smoke + 247 sentetik yoğun veri QA geçti.
-   - Reports XLSX backend check geçti; TestFlight/gerçek cihaz share sheet final spot-check kalır.
-   - Ana sayfa rapor kartından preview, X kapatma ve indir/paylaş test edilmeli.
-   - Pro kullanıcı Pro canvas seçimi bir kez daha net pass alınmalı.
-   - Yeni prompt sistemiyle Free ve Pro canlı analiz kıyas testi yapılmalı.
-   - PDF, Pro PDF ve XLSX yeni bir analizden baştan sona üretilmeli.
+   - Done: 2026-05-16 simülatörde final manuel QA kapatıldı.
+   - Ana sayfa rapor kartından preview, X kapatma ve indir/paylaş geçti.
+   - Pro kullanıcı Pro canvas seçimi geçti.
+   - Yeni prompt sistemiyle Free kota-dolu akış ve Pro canlı analiz kıyası geçti.
+   - Yeni analizden standart PDF, Reports içinden Pro PDF ve XLSX üretimi, preview ve iOS share sheet geçti.
+   - QA sırasında bulunan rapor oluşturma sorunları düzeltildi: kota dolu durumda transient hata yerine Yükselt yönlendirmesi, Storage için ASCII-safe dosya adı ve tekrar üretilen PDF'lerde benzersiz belge numarası.
 
 5. Legal metin finali
-   - KVKK, Kullanım koşulları ve Gizlilik Politikası metinleri uygulama içine markdown belge olarak eklendi.
-   - Website yayını için hedef URL'ler:
-     - `https://riskdetected.com/kvkk-aydinlatma-ve-acik-riza-metni`
-     - `https://riskdetected.com/kullanim-kosullari`
-     - `https://riskdetected.com/gizlilik-politikasi`
-   - App Store privacy nutrition / veri kullanımı beyanları bu metinlerle tutarlı hale getirilmeli.
+   - Done: KVKK, Kullanım koşulları ve Gizlilik Politikası metinleri uygulama içine markdown belge olarak eklendi.
+   - Done: Legal metinler Riskdetected, `info@riskdetected.com`, Eskişehir ve `https://riskdetected.com` bilgileriyle güncellendi.
+   - Done: App Store privacy nutrition / veri kullanımı beyan taslağı `QA/App_Store_Privacy_Nutrition_2026-05-16.md` altında hazırlandı.
+   - Not in active backlog: website yayını kullanıcı tarafından yapılacak.
 
 6. Supabase migration geçmişi
    - Done: remote base migration history repoya fetch edildi.
@@ -237,26 +241,32 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 
 3. Account deletion admin completion
    - Kullanıcının hesap silme talebi alınabiliyor.
-   - Talebi gerçekten tamamlayacak privileged backend/admin akışı henüz yapılmalı.
-   - Silme sonrası Storage, Auth user, analiz/rapor/veri ilişkileri uçtan uca doğrulanmalı.
+   - Done: `account-deletion-complete` privileged Edge Function eklendi.
+   - Done: request kaydı Auth user silindikten sonra audit için korunacak şekilde migration eklendi.
+   - Done: function Storage `photos`/`reports`/`logos` prefix temizliği, Supabase Auth admin delete ve request completion kaydı yapıyor.
+   - Follow-up: disposable TestFlight hesabıyla production spot-check yapılmalı; detaylar `QA/Account_Deletion_Completion_2026-05-16.md`.
 
 4. Production hata ve log kontrolü
-   - Test simulation env flag'leri production'da kapalı olmalı.
-   - Edge Function loglarında kişisel veri/raw key sızıntısı olmadığı doğrulanmalı.
-   - Support id ile DB/log lookup akışı dokümante edilmeli.
+   - Done: iOS simulation flag'leri `#if DEBUG` ile release build'de kapalı.
+   - Done: production Supabase secrets listesinde test simulation flag adı bulunmadı.
+   - Done: Edge Function logları ham user id/path/provider detail yerine support/request id, hash ve bounded error summary kullanacak şekilde sıkılaştırıldı.
+   - Done: support id ile DB/log lookup runbook'u `QA/Production_Log_Privacy_Support_Runbook_2026-05-16.md` altında hazırlandı.
+   - Done: değişen Edge Function'lar deploy edildi: `analyze` v45, `generate-excel-report` v17, `support-contact` v4, `send-push-notification` v7, `retention-cleanup` v14, `account-deletion-complete` v3.
 
 ### P2 - Ürün Polish
 
 1. Lokalizasyon
-   - Dil tercihi saklanıyor ama gerçek string localization sistemi henüz bağlı değil.
-   - İlk hedef ekranlar:
+   - Done: gerçek dil modeli ve string lookup altyapısı eklendi.
+   - Done: Profile > Tercihler yalnızca Türkçe seçenek gösteriyor; eski Sistem/English kayıtları Türkçe'ye normalize ediliyor.
+   - Done: PDF/report options artık `language` taşıyor; Rapor Oluştur ekranında rapor dili alanı Türkçe olarak bağlı.
+   - Follow-up: ikinci dil eklendiğinde ilk çeviri hedef ekranları:
      - Auth,
      - Home,
      - Analysis/Canvas,
      - Result,
      - Reports,
      - Profile.
-   - PDF/report output language ayrıca değerlendirilmeli.
+   - Follow-up: PDF/XLSX tüm statik tablo etiketleri için ikinci dil çevirileri eklenecek.
 
 2. Pro report defaults
    - Done: profil logosu, şirket, uzman adı, unvan, belge no, firma bilgisi ve varsayılan metod otomatik rapor varsayılanı olarak kullanılıyor.
@@ -266,7 +276,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 3. Reports archive gelişimi
    - Done: açılır kart yapısı, arama/filtre, durum label'ları, boş/error state ve load-more davranışı yapıldı.
    - Done: 247 kayıt sentetik yoğun veri QA ile pagination, filtre, arama ve duplicate merge doğrulandı; detaylar `QA/Reports_Defaults_Archive_QA_2026-05-15.md`.
-   - Follow-up: Production verisi oluştukça telemetry/performance spot-check alınmalı.
+   - Done: production telemetry/performance spot-check alındı; canlı `reports` indeksleri ve satır dağılımı kontrol edildi, duplicate `reports_user_id_idx` migration ile kaldırıldı, app tarafında PII'siz initial/load-more telemetry eklendi. Detay: `QA/Reports_Archive_Production_Spot_Check_2026-05-16.md`.
 
 4. Profile ekranı içerik/tabs
    - Mevcut profil, tercihler, bildirimler, verilerim akışları var.
@@ -295,19 +305,15 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 ### P3 - App Store / Yayın Hazırlığı
 
 1. Apple Developer capability kontrolü
-   - Sign in with Apple entitlement.
-   - Push notification entitlement.
-   - Bundle id ve URL scheme.
-   - Release signing/provisioning.
+   - Done: Sign in with Apple, Push Notifications/APNs, In-App Purchase, camera/photo izinleri, URL scheme ve privacy manifest kontrol edildi.
+   - Done: İlk release için hedef cihaz ailesi iPhone-only yapıldı; iPad screenshot/UI QA yükü sonraki faza bırakıldı.
+   - Follow-up: Archive sonrası embedded entitlements içinde APNs production, distribution signing ve privacy report Xcode Organizer'da kontrol edilmeli.
 
 2. App Store metadata
-   - App adı, açıklama, keyword, kategori.
-   - Screenshot/video seti.
-   - Support URL: `https://riskdetected.com`
-   - Privacy Policy URL: `https://riskdetected.com/gizlilik-politikasi`
-   - Terms URL: `https://riskdetected.com/kullanim-kosullari`
-   - Privacy nutrition form.
-   - Age rating.
+   - Done: App adı, subtitle, açıklama, keyword, kategori, review notes, support/legal URL, screenshot/video çekim planı, privacy nutrition özet formu ve age rating cevapları hazırlandı.
+   - Done: Detay doküman: `QA/App_Store_Submission_Preparation_2026-05-16.md`.
+   - Follow-up: public legal URL'ler canlı olunca App Store Connect alanlarına girilmeli.
+   - Follow-up: clean demo data ile final iPhone screenshot seti üretilmeli.
 
 3. TestFlight release checklist
    - Clean install onboarding.
@@ -338,6 +344,6 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 
 1. Paywall sayfası yenileme ve Plus/Pro plan limit metinlerini UI'da netleştirme.
 2. RevenueCat Pro satın alma + restore purchase + expiration/downgrade testi.
-3. Legal final metinler ve App Store privacy hazırlığı.
+3. App Store privacy nutrition taslağını App Store Connect ekranında final soru setiyle bire bir kontrol edip girme.
 4. APNs real-device/TestFlight push testi.
 5. TestFlight tam uçtan uca release pass.

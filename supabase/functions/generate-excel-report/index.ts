@@ -119,9 +119,15 @@ function normalizeTier(raw: unknown): PlanTier {
   return raw === "pro" || raw === "plus" ? raw : "free";
 }
 
-function hasActiveSubscription(row: { status?: string | null; current_period_ends_at?: string | null } | null): boolean {
+function hasActiveSubscription(
+  row:
+    | { status?: string | null; current_period_ends_at?: string | null }
+    | null,
+): boolean {
   if (!row) return false;
-  if (!["active", "trialing", "grace_period"].includes(String(row.status ?? ""))) return false;
+  if (
+    !["active", "trialing", "grace_period"].includes(String(row.status ?? ""))
+  ) return false;
   if (!row.current_period_ends_at) return true;
   const expiresAt = Date.parse(row.current_period_ends_at);
   return Number.isFinite(expiresAt) && expiresAt > Date.now();
@@ -129,10 +135,16 @@ function hasActiveSubscription(row: { status?: string | null; current_period_end
 
 function resolvePlanTier(
   profileTier: unknown,
-  subscription: { tier?: string | null; status?: string | null; current_period_ends_at?: string | null } | null,
+  subscription: {
+    tier?: string | null;
+    status?: string | null;
+    current_period_ends_at?: string | null;
+  } | null,
 ): PlanTier {
   void profileTier;
-  return hasActiveSubscription(subscription) ? normalizeTier(subscription?.tier) : "free";
+  return hasActiveSubscription(subscription)
+    ? normalizeTier(subscription?.tier)
+    : "free";
 }
 
 function monthlyReportLimit(tier: PlanTier): number | null {
@@ -165,6 +177,23 @@ function json(status: number, body: Record<string, unknown>) {
 
 function newSupportID(): string {
   return `RD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+function safeLogError(error: unknown): Record<string, unknown> {
+  if (error instanceof Error) {
+    return {
+      name: error.name || "Error",
+      message: error.message.replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+        .slice(0, 160),
+    };
+  }
+  if (typeof error === "object" && error !== null && "message" in error) {
+    return {
+      name: "ObjectError",
+      message: String((error as { message?: unknown }).message).slice(0, 160),
+    };
+  }
+  return { name: typeof error };
 }
 
 function cleanTrace(value: unknown, fallback: string): string {
@@ -217,7 +246,9 @@ function bandLabel(value: unknown): string {
 
 function normalizeBand(value: unknown): RiskBand {
   const raw = safeText(value).toLowerCase();
-  if (raw === "critical" || raw === "high" || raw === "medium" || raw === "low") {
+  if (
+    raw === "critical" || raw === "high" || raw === "medium" || raw === "low"
+  ) {
     return raw;
   }
   return "unknown";
@@ -300,7 +331,8 @@ function archiveFileSuffix(requestID: string): string {
     .replace(/\.\d{3}Z$/, "Z")
     .replace(/[-:]/g, "")
     .toLowerCase();
-  const requestPart = requestID.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8).toLowerCase();
+  const requestPart = requestID.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8)
+    .toLowerCase();
   return `${timestamp}-${requestPart || "request"}`;
 }
 
@@ -330,8 +362,13 @@ function logoPathFromProfile(value: unknown): string {
     const marker = "/storage/v1/object/";
     const markerIndex = url.pathname.indexOf(marker);
     if (markerIndex === -1) return "";
-    const objectPath = decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
-    return objectPath.replace(/^public\/logos\//, "").replace(/^sign\/logos\//, "").replace(/^logos\//, "");
+    const objectPath = decodeURIComponent(
+      url.pathname.slice(markerIndex + marker.length),
+    );
+    return objectPath.replace(/^public\/logos\//, "").replace(
+      /^sign\/logos\//,
+      "",
+    ).replace(/^logos\//, "");
   } catch {
     return "";
   }
@@ -346,40 +383,62 @@ async function loadCompanyLogo(
 
   const { data, error } = await supabase.storage.from("logos").download(path);
   if (error || !data) {
-    console.warn("Company logo could not be downloaded for Excel", error);
+    console.warn(
+      "Company logo could not be downloaded for Excel",
+      JSON.stringify({
+        error: error ? safeLogError(error) : { name: "empty_logo_data" },
+      }),
+    );
     return null;
   }
 
   const mime = safeText(data.type).toLowerCase();
-  const extension: "jpg" | "png" = mime.includes("png") || path.toLowerCase().endsWith(".png")
-    ? "png"
-    : "jpg";
+  const extension: "jpg" | "png" =
+    mime.includes("png") || path.toLowerCase().endsWith(".png") ? "png" : "jpg";
   return {
     bytes: new Uint8Array(await data.arrayBuffer()),
     extension,
   };
 }
 
-function appendXmlRelationship(xml: string, id: string, type: string, target: string): string {
-  const relationship =
-    `<Relationship Id="${xmlEscape(id)}" Type="${xmlEscape(type)}" Target="${xmlEscape(target)}"/>`;
+function appendXmlRelationship(
+  xml: string,
+  id: string,
+  type: string,
+  target: string,
+): string {
+  const relationship = `<Relationship Id="${xmlEscape(id)}" Type="${
+    xmlEscape(type)
+  }" Target="${xmlEscape(target)}"/>`;
   if (xml.includes(`Id="${id}"`)) return xml;
   return xml.replace("</Relationships>", `${relationship}</Relationships>`);
 }
 
-function appendContentTypeDefault(xml: string, extension: string, contentType: string): string {
+function appendContentTypeDefault(
+  xml: string,
+  extension: string,
+  contentType: string,
+): string {
   if (xml.includes(`Extension="${extension}"`)) return xml;
   return xml.replace(
     "</Types>",
-    `<Default Extension="${xmlEscape(extension)}" ContentType="${xmlEscape(contentType)}"/></Types>`,
+    `<Default Extension="${xmlEscape(extension)}" ContentType="${
+      xmlEscape(contentType)
+    }"/></Types>`,
   );
 }
 
-function appendContentTypeOverride(xml: string, partName: string, contentType: string): string {
+function appendContentTypeOverride(
+  xml: string,
+  partName: string,
+  contentType: string,
+): string {
   if (xml.includes(`PartName="${partName}"`)) return xml;
   return xml.replace(
     "</Types>",
-    `<Override PartName="${xmlEscape(partName)}" ContentType="${xmlEscape(contentType)}"/></Types>`,
+    `<Override PartName="${xmlEscape(partName)}" ContentType="${
+      xmlEscape(contentType)
+    }"/></Types>`,
   );
 }
 
@@ -392,7 +451,10 @@ function readUint32BE(bytes: Uint8Array, offset: number): number {
   ) >>> 0;
 }
 
-function logoDimensions(bytes: Uint8Array, extension: "jpg" | "png"): { width: number; height: number } | null {
+function logoDimensions(
+  bytes: Uint8Array,
+  extension: "jpg" | "png",
+): { width: number; height: number } | null {
   if (extension === "png" && bytes.length > 24) {
     return {
       width: readUint32BE(bytes, 16),
@@ -407,7 +469,9 @@ function logoDimensions(bytes: Uint8Array, extension: "jpg" | "png"): { width: n
       const marker = bytes[offset + 1];
       const length = (bytes[offset + 2] << 8) + bytes[offset + 3];
       if (length < 2) break;
-      if ((marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7)) {
+      if (
+        (marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7)
+      ) {
         return {
           height: (bytes[offset + 5] << 8) + bytes[offset + 6],
           width: (bytes[offset + 7] << 8) + bytes[offset + 8],
@@ -420,7 +484,10 @@ function logoDimensions(bytes: Uint8Array, extension: "jpg" | "png"): { width: n
   return null;
 }
 
-function logoExtents(bytes: Uint8Array, extension: "jpg" | "png"): { cx: number; cy: number } {
+function logoExtents(
+  bytes: Uint8Array,
+  extension: "jpg" | "png",
+): { cx: number; cy: number } {
   const maxCx = 1450000;
   const maxCy = 420000;
   const dimensions = logoDimensions(bytes, extension);
@@ -436,10 +503,15 @@ function logoExtents(bytes: Uint8Array, extension: "jpg" | "png"): { cx: number;
   return { cx: Math.round(maxCy * ratio), cy: maxCy };
 }
 
-async function embedCompanyLogo(bytes: Uint8Array, logo: { bytes: Uint8Array; extension: "jpg" | "png" }): Promise<Uint8Array> {
+async function embedCompanyLogo(
+  bytes: Uint8Array,
+  logo: { bytes: Uint8Array; extension: "jpg" | "png" },
+): Promise<Uint8Array> {
   const zip = await JSZip.loadAsync(bytes);
   const imageName = `company-logo.${logo.extension}`;
-  const imageContentType = logo.extension === "png" ? "image/png" : "image/jpeg";
+  const imageContentType = logo.extension === "png"
+    ? "image/png"
+    : "image/jpeg";
   const extents = logoExtents(logo.bytes, logo.extension);
   const drawingPath = "xl/drawings/drawing1.xml";
   const drawingRelsPath = "xl/drawings/_rels/drawing1.xml.rels";
@@ -474,7 +546,9 @@ async function embedCompanyLogo(bytes: Uint8Array, logo: { bytes: Uint8Array; ex
     drawingRelsPath,
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${xmlEscape(imageName)}"/>
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${
+      xmlEscape(imageName)
+    }"/>
 </Relationships>`,
   );
 
@@ -488,7 +562,10 @@ async function embedCompanyLogo(bytes: Uint8Array, logo: { bytes: Uint8Array; ex
     );
   }
   if (!sheetXml.includes("<drawing ")) {
-    sheetXml = sheetXml.replace("</worksheet>", '<drawing r:id="rIdLogo"/></worksheet>');
+    sheetXml = sheetXml.replace(
+      "</worksheet>",
+      '<drawing r:id="rIdLogo"/></worksheet>',
+    );
   }
   zip.file(sheetPath, sheetXml);
 
@@ -508,7 +585,11 @@ async function embedCompanyLogo(bytes: Uint8Array, logo: { bytes: Uint8Array; ex
   const contentTypesFile = zip.file(contentTypesPath);
   if (contentTypesFile) {
     let contentTypes = await contentTypesFile.async("string");
-    contentTypes = appendContentTypeDefault(contentTypes, logo.extension, imageContentType);
+    contentTypes = appendContentTypeDefault(
+      contentTypes,
+      logo.extension,
+      imageContentType,
+    );
     contentTypes = appendContentTypeOverride(
       contentTypes,
       "/xl/drawings/drawing1.xml",
@@ -517,7 +598,10 @@ async function embedCompanyLogo(bytes: Uint8Array, logo: { bytes: Uint8Array; ex
     zip.file(contentTypesPath, contentTypes);
   }
 
-  return await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+  return await zip.generateAsync({
+    type: "uint8array",
+    compression: "DEFLATE",
+  });
 }
 
 const borderThin = {
@@ -529,7 +613,12 @@ const borderThin = {
 
 const styles = {
   title: {
-    font: { name: "Aptos Display", sz: 24, bold: true, color: { rgb: palette.white } },
+    font: {
+      name: "Aptos Display",
+      sz: 24,
+      bold: true,
+      color: { rgb: palette.white },
+    },
     fill: { fgColor: { rgb: palette.ink } },
     alignment: { horizontal: "left", vertical: "center" },
   },
@@ -553,7 +642,12 @@ const styles = {
     border: borderThin,
   },
   kpiValue: {
-    font: { name: "Aptos Display", sz: 20, bold: true, color: { rgb: palette.ink } },
+    font: {
+      name: "Aptos Display",
+      sz: 20,
+      bold: true,
+      color: { rgb: palette.ink },
+    },
     fill: { fgColor: { rgb: palette.white } },
     alignment: { horizontal: "center", vertical: "center", wrapText: true },
     border: borderThin,
@@ -586,7 +680,11 @@ const styles = {
   },
 };
 
-function appendSheet(workbook: XLSX.WorkBook, name: string, rows: unknown[][]): XLSX.WorkSheet {
+function appendSheet(
+  workbook: XLSX.WorkBook,
+  name: string,
+  rows: unknown[][],
+): XLSX.WorkSheet {
   const sheet = XLSX.utils.aoa_to_sheet(rows);
   XLSX.utils.book_append_sheet(workbook, sheet, name);
   return sheet;
@@ -609,7 +707,11 @@ function ensureCell(sheet: XLSX.WorkSheet, address: string) {
   return sheet[address] as XLSX.CellObject;
 }
 
-function setStyle(sheet: XLSX.WorkSheet, range: string, style: Record<string, unknown>) {
+function setStyle(
+  sheet: XLSX.WorkSheet,
+  range: string,
+  style: Record<string, unknown>,
+) {
   const decoded = XLSX.utils.decode_range(range);
   for (let row = decoded.s.r; row <= decoded.e.r; row++) {
     for (let col = decoded.s.c; col <= decoded.e.c; col++) {
@@ -620,18 +722,27 @@ function setStyle(sheet: XLSX.WorkSheet, range: string, style: Record<string, un
 }
 
 function methodBand(finding: FindingRow, method: string): RiskBand {
-  return normalizeBand(method === "matrix_5x5" ? finding.m5_band : finding.fk_band);
+  return normalizeBand(
+    method === "matrix_5x5" ? finding.m5_band : finding.fk_band,
+  );
 }
 
 function methodScore(finding: FindingRow, method: string): number {
-  return safeNumber(method === "matrix_5x5" ? finding.m5_score : finding.fk_score);
+  return safeNumber(
+    method === "matrix_5x5" ? finding.m5_score : finding.fk_score,
+  );
 }
 
 function methodTotalScore(analysis: AnalysisRow, method: string): number {
-  return safeNumber(method === "matrix_5x5" ? analysis.total_score_m5 : analysis.total_score_fk);
+  return safeNumber(
+    method === "matrix_5x5" ? analysis.total_score_m5 : analysis.total_score_fk,
+  );
 }
 
-function riskCounts(findings: FindingRow[], method: string): Record<RiskBand, number> {
+function riskCounts(
+  findings: FindingRow[],
+  method: string,
+): Record<RiskBand, number> {
   const counts: Record<RiskBand, number> = {
     critical: 0,
     high: 0,
@@ -711,34 +822,347 @@ function appendFineKinneyReferenceSheet(
   const companyName = profile?.company_name ?? "Firma belirtilmedi";
   const companyInfo = safeText(profile?.phone);
   const preparedTitle = safeText(profile?.title, "Belirtilmedi");
-  const certificateNumber = safeText(profile?.certificate_number, "Belirtilmedi");
-  const companyLine = companyInfo.length > 0 ? `${companyName} · ${companyInfo}` : companyName;
+  const certificateNumber = safeText(
+    profile?.certificate_number,
+    "Belirtilmedi",
+  );
+  const companyLine = companyInfo.length > 0
+    ? `${companyName} · ${companyInfo}`
+    : companyName;
   const sheet = appendSheet(workbook, "Metot Referansı", [
-    ["FINE-KINNEY METODU REFERANS TABLOSU", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+    [
+      "FINE-KINNEY METODU REFERANS TABLOSU",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
     [],
-    ["OLASILIK (O)", "", "", "", "", "FREKANS (F)", "", "", "", "", "ŞİDDET (Ş)", "", "", ""],
-    ["Değer", "Zararın gerçekleşme olasılığı", "", "", "", "Değer", "Tehlikeye maruz kalma tekrarı", "", "", "", "Değer", "İnsan/çevre üzerinde tahmini zarar", "", ""],
-    ["10", "Beklenir, kesin", "", "", "", "10", "Hemen hemen sürekli / saatte birkaç defa", "", "", "", "100", "Birden fazla ölümlü kaza / çevresel felaket", "", ""],
-    ["6", "Yüksek, oldukça mümkün", "", "", "", "6", "Sık / günde bir veya birkaç defa", "", "", "", "40", "Ölümlü kaza / ciddi çevresel zarar", "", ""],
-    ["3", "Olası", "", "", "", "3", "Ara sıra / haftada birkaç defa", "", "", "", "15", "Kalıcı hasar veya iş kaybı", "", ""],
-    ["1", "Mümkün fakat düşük", "", "", "", "2", "Sık değil / ayda birkaç defa", "", "", "", "7", "Önemli yaralanma / dış ilk yardım", "", ""],
-    ["0.5", "Beklenmez fakat mümkün", "", "", "", "1", "Seyrek / yılda birkaç defa", "", "", "", "3", "Küçük yaralanma / iç ilk yardım", "", ""],
-    ["0.2", "Beklenmez", "", "", "", "0.5", "Çok seyrek / yılda bir veya daha az", "", "", "", "1", "Ucuz atlatma / çevresel zarar yok", "", ""],
+    [
+      "OLASILIK (O)",
+      "",
+      "",
+      "",
+      "",
+      "FREKANS (F)",
+      "",
+      "",
+      "",
+      "",
+      "ŞİDDET (Ş)",
+      "",
+      "",
+      "",
+    ],
+    [
+      "Değer",
+      "Zararın gerçekleşme olasılığı",
+      "",
+      "",
+      "",
+      "Değer",
+      "Tehlikeye maruz kalma tekrarı",
+      "",
+      "",
+      "",
+      "Değer",
+      "İnsan/çevre üzerinde tahmini zarar",
+      "",
+      "",
+    ],
+    [
+      "10",
+      "Beklenir, kesin",
+      "",
+      "",
+      "",
+      "10",
+      "Hemen hemen sürekli / saatte birkaç defa",
+      "",
+      "",
+      "",
+      "100",
+      "Birden fazla ölümlü kaza / çevresel felaket",
+      "",
+      "",
+    ],
+    [
+      "6",
+      "Yüksek, oldukça mümkün",
+      "",
+      "",
+      "",
+      "6",
+      "Sık / günde bir veya birkaç defa",
+      "",
+      "",
+      "",
+      "40",
+      "Ölümlü kaza / ciddi çevresel zarar",
+      "",
+      "",
+    ],
+    [
+      "3",
+      "Olası",
+      "",
+      "",
+      "",
+      "3",
+      "Ara sıra / haftada birkaç defa",
+      "",
+      "",
+      "",
+      "15",
+      "Kalıcı hasar veya iş kaybı",
+      "",
+      "",
+    ],
+    [
+      "1",
+      "Mümkün fakat düşük",
+      "",
+      "",
+      "",
+      "2",
+      "Sık değil / ayda birkaç defa",
+      "",
+      "",
+      "",
+      "7",
+      "Önemli yaralanma / dış ilk yardım",
+      "",
+      "",
+    ],
+    [
+      "0.5",
+      "Beklenmez fakat mümkün",
+      "",
+      "",
+      "",
+      "1",
+      "Seyrek / yılda birkaç defa",
+      "",
+      "",
+      "",
+      "3",
+      "Küçük yaralanma / iç ilk yardım",
+      "",
+      "",
+    ],
+    [
+      "0.2",
+      "Beklenmez",
+      "",
+      "",
+      "",
+      "0.5",
+      "Çok seyrek / yılda bir veya daha az",
+      "",
+      "",
+      "",
+      "1",
+      "Ucuz atlatma / çevresel zarar yok",
+      "",
+      "",
+    ],
     [],
-    ["RİSK DEĞERİ (R = O x F x Ş)", "", "", "", "", "", "", "", "", "", "", "", "", ""],
-    ["Risk değeri", "Risk adı", "", "Eylem", "", "", "", "", "", "", "", "Termin", "", ""],
-    ["1801 ≤ R", "Tolerans gösterilemez", "", "İş derhal durdurulur; tesis/çevre kapatılması düşünülebilir.", "", "", "", "", "", "", "", "Hemen / 1 hafta", "", ""],
-    ["401 ≤ R < 1801", "En kısa sürede giderilecek", "", "Risk kabul edilebilir seviyeye düşene kadar faaliyet kısıtlanır.", "", "", "", "", "", "", "", "1 aydan kısa", "", ""],
-    ["201 ≤ R < 401", "Esaslı risk", "", "Acil önlem alınır ve faaliyet izlenir.", "", "", "", "", "", "", "", "1-3 ay", "", ""],
-    ["71 ≤ R < 201", "Önemli risk", "", "Düzeltici faaliyet planı başlatılır.", "", "", "", "", "", "", "", "6 ay", "", ""],
-    ["21 ≤ R < 71", "Olası risk", "", "Kontroller sürdürülür ve izlenir.", "", "", "", "", "", "", "", "1 yıl", "", ""],
-    ["R < 21", "Önemsiz risk", "", "İlave kontrole gerek olmayabilir.", "", "", "", "", "", "", "", "Kontrol", "", ""],
+    [
+      "RİSK DEĞERİ (R = O x F x Ş)",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "Risk değeri",
+      "Risk adı",
+      "",
+      "Eylem",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Termin",
+      "",
+      "",
+    ],
+    [
+      "1801 ≤ R",
+      "Tolerans gösterilemez",
+      "",
+      "İş derhal durdurulur; tesis/çevre kapatılması düşünülebilir.",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Hemen / 1 hafta",
+      "",
+      "",
+    ],
+    [
+      "401 ≤ R < 1801",
+      "En kısa sürede giderilecek",
+      "",
+      "Risk kabul edilebilir seviyeye düşene kadar faaliyet kısıtlanır.",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "1 aydan kısa",
+      "",
+      "",
+    ],
+    [
+      "201 ≤ R < 401",
+      "Esaslı risk",
+      "",
+      "Acil önlem alınır ve faaliyet izlenir.",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "1-3 ay",
+      "",
+      "",
+    ],
+    [
+      "71 ≤ R < 201",
+      "Önemli risk",
+      "",
+      "Düzeltici faaliyet planı başlatılır.",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "6 ay",
+      "",
+      "",
+    ],
+    [
+      "21 ≤ R < 71",
+      "Olası risk",
+      "",
+      "Kontroller sürdürülür ve izlenir.",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "1 yıl",
+      "",
+      "",
+    ],
+    [
+      "R < 21",
+      "Önemsiz risk",
+      "",
+      "İlave kontrole gerek olmayabilir.",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Kontrol",
+      "",
+      "",
+    ],
     [],
-    [`Analiz: ${safeText(analysis.title)}`, "", "", "", "", `Hazırlayan: ${preparedBy}`, "", "", "", "", `Doküman No: ${documentNo}`, "", "", ""],
-    [`Firma: ${companyLine}`, "", "", "", "", `Ünvan / Belge: ${preparedTitle} / ${certificateNumber}`, "", "", "", "", `Tarih: ${formatDate(analysis.created_at)}`, "", "", ""],
+    [
+      `Analiz: ${safeText(analysis.title)}`,
+      "",
+      "",
+      "",
+      "",
+      `Hazırlayan: ${preparedBy}`,
+      "",
+      "",
+      "",
+      "",
+      `Doküman No: ${documentNo}`,
+      "",
+      "",
+      "",
+    ],
+    [
+      `Firma: ${companyLine}`,
+      "",
+      "",
+      "",
+      "",
+      `Ünvan / Belge: ${preparedTitle} / ${certificateNumber}`,
+      "",
+      "",
+      "",
+      "",
+      `Tarih: ${formatDate(analysis.created_at)}`,
+      "",
+      "",
+      "",
+    ],
   ]);
   setCols(sheet, [12, 18, 18, 18, 4, 12, 18, 18, 18, 4, 12, 18, 18, 18]);
-  setRows(sheet, [28, 8, 24, 28, 26, 26, 26, 26, 26, 26, 10, 26, 28, 26, 26, 26, 26, 26, 26, 10, 26, 26]);
+  setRows(sheet, [
+    28,
+    8,
+    24,
+    28,
+    26,
+    26,
+    26,
+    26,
+    26,
+    26,
+    10,
+    26,
+    28,
+    26,
+    26,
+    26,
+    26,
+    26,
+    26,
+    10,
+    26,
+    26,
+  ]);
   addMerges(sheet, [
     "A1:N1",
     "A3:D3",
@@ -804,7 +1228,14 @@ function appendFineKinneyReferenceSheet(
     fill: { fgColor: { rgb: palette.fog } },
     font: { name: "Aptos", sz: 9, color: { rgb: palette.charcoal } },
   });
-  const riskColors = [palette.critical, palette.critical, palette.high, palette.medium, palette.low, palette.green];
+  const riskColors = [
+    palette.critical,
+    palette.critical,
+    palette.high,
+    palette.medium,
+    palette.low,
+    palette.green,
+  ];
   for (let index = 0; index < riskColors.length; index++) {
     const row = 14 + index;
     setStyle(sheet, `A${row}:A${row}`, {
@@ -825,8 +1256,13 @@ function appendMatrixReferenceSheet(
   const companyName = profile?.company_name ?? "Firma belirtilmedi";
   const companyInfo = safeText(profile?.phone);
   const preparedTitle = safeText(profile?.title, "Belirtilmedi");
-  const certificateNumber = safeText(profile?.certificate_number, "Belirtilmedi");
-  const companyLine = companyInfo.length > 0 ? `${companyName} · ${companyInfo}` : companyName;
+  const certificateNumber = safeText(
+    profile?.certificate_number,
+    "Belirtilmedi",
+  );
+  const companyLine = companyInfo.length > 0
+    ? `${companyName} · ${companyInfo}`
+    : companyName;
   const matrixRows: unknown[][] = [];
   for (let probability = 0; probability <= 5; probability++) {
     const row: unknown[] = [];
@@ -840,31 +1276,269 @@ function appendMatrixReferenceSheet(
   }
 
   const sheet = appendSheet(workbook, "Metot Referansı", [
-    ["5x5 L-TİPİ RİSK MATRİSİ REFERANS TABLOSU", "", "", "", "", "", "", "", "", "", "", "", ""],
+    [
+      "5x5 L-TİPİ RİSK MATRİSİ REFERANS TABLOSU",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
     [],
     ["OLASILIK (O)", "", "", "", "", "", "", "ŞİDDET (Ş)", "", "", "", "", ""],
     ["Derece", "Tanım", "", "", "", "", "", "Derece", "Tanım", "", "", "", ""],
-    ["1", "Gerçekleşme ihtimali çok az", "", "", "", "", "", "1", "Hafif yaralanmalar / iş günü kaybı yok", "", "", "", ""],
-    ["2", "Gerçekleşme ihtimali az", "", "", "", "", "", "2", "İlk yardım gerektiren küçük yaralanma", "", "", "", ""],
-    ["3", "Gerçekleşme ihtimali var", "", "", "", "", "", "3", "İş günü kaybı veya tedavi gerektiren yaralanma", "", "", "", ""],
-    ["4", "Gerçekleşme ihtimali yüksek", "", "", "", "", "", "4", "Uzun süreli kayıp / ağır yaralanma", "", "", "", ""],
-    ["5", "Gerçekleşme ihtimali çok yüksek", "", "", "", "", "", "5", "Kalıcı iş göremezlik veya ölüm", "", "", "", ""],
+    [
+      "1",
+      "Gerçekleşme ihtimali çok az",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "1",
+      "Hafif yaralanmalar / iş günü kaybı yok",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "2",
+      "Gerçekleşme ihtimali az",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "2",
+      "İlk yardım gerektiren küçük yaralanma",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "3",
+      "Gerçekleşme ihtimali var",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "3",
+      "İş günü kaybı veya tedavi gerektiren yaralanma",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "4",
+      "Gerçekleşme ihtimali yüksek",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "4",
+      "Uzun süreli kayıp / ağır yaralanma",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "5",
+      "Gerçekleşme ihtimali çok yüksek",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "5",
+      "Kalıcı iş göremezlik veya ölüm",
+      "",
+      "",
+      "",
+      "",
+    ],
     [],
-    ["5x5 Risk Matrisi - R = O x Ş", "", "", "", "", "", "", "", "", "", "", "", ""],
+    [
+      "5x5 Risk Matrisi - R = O x Ş",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
     ...matrixRows.map((row) => ["", "", ...row, "", "", "", "", ""]),
     [],
-    ["Risk aralığı", "Risk adı", "", "Eylem", "", "", "", "Termin", "", "", "", "", ""],
-    ["20 ≤ R", "Tolerans dışı", "", "Çalışma derhal durdurulmalı.", "", "", "", "Hemen", "", "", "", "", ""],
-    ["10 ≤ R < 20", "Yüksek risk", "", "En kısa sürede önlem alınmalı.", "", "", "", "30 gün", "", "", "", "", ""],
-    ["5 ≤ R < 10", "Orta risk", "", "Plan dahilinde önlem alınmalı.", "", "", "", "90 gün", "", "", "", "", ""],
-    ["3 ≤ R < 5", "Düşük risk", "", "Gözetim altında izlenmeli.", "", "", "", "Kontrol", "", "", "", "", ""],
-    ["R < 3", "Önemsiz", "", "İzleme yeterli olabilir.", "", "", "", "Kontrol", "", "", "", "", ""],
+    [
+      "Risk aralığı",
+      "Risk adı",
+      "",
+      "Eylem",
+      "",
+      "",
+      "",
+      "Termin",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "20 ≤ R",
+      "Tolerans dışı",
+      "",
+      "Çalışma derhal durdurulmalı.",
+      "",
+      "",
+      "",
+      "Hemen",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "10 ≤ R < 20",
+      "Yüksek risk",
+      "",
+      "En kısa sürede önlem alınmalı.",
+      "",
+      "",
+      "",
+      "30 gün",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "5 ≤ R < 10",
+      "Orta risk",
+      "",
+      "Plan dahilinde önlem alınmalı.",
+      "",
+      "",
+      "",
+      "90 gün",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "3 ≤ R < 5",
+      "Düşük risk",
+      "",
+      "Gözetim altında izlenmeli.",
+      "",
+      "",
+      "",
+      "Kontrol",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "R < 3",
+      "Önemsiz",
+      "",
+      "İzleme yeterli olabilir.",
+      "",
+      "",
+      "",
+      "Kontrol",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
     [],
-    [`Analiz: ${safeText(analysis.title)}`, "", "", "", "", `Hazırlayan: ${preparedBy}`, "", "", "", `Doküman No: ${documentNo}`, "", "", ""],
-    [`Firma: ${companyLine}`, "", "", "", "", `Ünvan / Belge: ${preparedTitle} / ${certificateNumber}`, "", "", "", `Tarih: ${formatDate(analysis.created_at)}`, "", "", ""],
+    [
+      `Analiz: ${safeText(analysis.title)}`,
+      "",
+      "",
+      "",
+      "",
+      `Hazırlayan: ${preparedBy}`,
+      "",
+      "",
+      "",
+      `Doküman No: ${documentNo}`,
+      "",
+      "",
+      "",
+    ],
+    [
+      `Firma: ${companyLine}`,
+      "",
+      "",
+      "",
+      "",
+      `Ünvan / Belge: ${preparedTitle} / ${certificateNumber}`,
+      "",
+      "",
+      "",
+      `Tarih: ${formatDate(analysis.created_at)}`,
+      "",
+      "",
+      "",
+    ],
   ]);
   setCols(sheet, [12, 18, 12, 12, 12, 12, 12, 12, 18, 18, 18, 18, 18]);
-  setRows(sheet, [28, 8, 24, 28, 26, 26, 26, 26, 26, 10, 26, 26, 26, 26, 26, 26, 26, 10, 28, 26, 26, 26, 26, 26, 10, 26, 26]);
+  setRows(sheet, [
+    28,
+    8,
+    24,
+    28,
+    26,
+    26,
+    26,
+    26,
+    26,
+    10,
+    26,
+    26,
+    26,
+    26,
+    26,
+    26,
+    26,
+    10,
+    28,
+    26,
+    26,
+    26,
+    26,
+    26,
+    10,
+    26,
+    26,
+  ]);
   addMerges(sheet, [
     "A1:M1",
     "A3:F3",
@@ -920,14 +1594,24 @@ function appendMatrixReferenceSheet(
         setStyle(sheet, `${address}:${address}`, {
           ...styles.tableNumber,
           fill: { fgColor: { rgb: palette.fog } },
-          font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.ink } },
+          font: {
+            name: "Aptos",
+            sz: 10,
+            bold: true,
+            color: { rgb: palette.ink },
+          },
         });
       } else {
         const color = bandStyle(matrixBand(value));
         setStyle(sheet, `${address}:${address}`, {
           ...styles.tableNumber,
           fill: { fgColor: { rgb: color.fg } },
-          font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.white } },
+          font: {
+            name: "Aptos",
+            sz: 10,
+            bold: true,
+            color: { rgb: palette.white },
+          },
         });
       }
     }
@@ -938,7 +1622,13 @@ function appendMatrixReferenceSheet(
     fill: { fgColor: { rgb: palette.fog } },
     font: { name: "Aptos", sz: 9, color: { rgb: palette.charcoal } },
   });
-  const riskColors = [palette.critical, palette.high, palette.medium, palette.low, palette.green];
+  const riskColors = [
+    palette.critical,
+    palette.high,
+    palette.medium,
+    palette.low,
+    palette.green,
+  ];
   for (let index = 0; index < riskColors.length; index++) {
     const row = 20 + index;
     setStyle(sheet, `A${row}:A${row}`, {
@@ -973,18 +1663,69 @@ function makeWorkbook(
   const createdDate = formatDate(analysis.created_at);
   const completedDate = formatDate(analysis.completed_at);
   const generatedDate = formatDate(new Date().toISOString());
-  const riskOrder: RiskBand[] = ["critical", "high", "medium", "low", "unknown"];
+  const riskOrder: RiskBand[] = [
+    "critical",
+    "high",
+    "medium",
+    "low",
+    "unknown",
+  ];
 
   const summary = appendSheet(workbook, "Kapak ve Özet", [
     ["RiskDetected", "", "", "", "", "", "", ""],
     ["İSG Risk Analizi Excel Raporu", "", "", "", "", "", "", ""],
     [],
-    ["Firma", companyName || "Belirtilmedi", "", "Hazırlayan", preparedBy || "Belirtilmedi", "", "Oluşturma", generatedDate],
-    ["Firma bilgisi", companyInfo || "Belirtilmedi", "", "Ünvan", preparedTitle || "Belirtilmedi", "", "Doküman No", documentNo],
-    ["Analiz", safeText(analysis.title), "", "Belge No", certificateNumber || "Belirtilmedi", "", "Metot", methodLabel(method)],
-    ["Başlangıç", createdDate, "", "Tamamlanma", completedDate, "", "Destek Kodu", supportID],
+    [
+      "Firma",
+      companyName || "Belirtilmedi",
+      "",
+      "Hazırlayan",
+      preparedBy || "Belirtilmedi",
+      "",
+      "Oluşturma",
+      generatedDate,
+    ],
+    [
+      "Firma bilgisi",
+      companyInfo || "Belirtilmedi",
+      "",
+      "Ünvan",
+      preparedTitle || "Belirtilmedi",
+      "",
+      "Doküman No",
+      documentNo,
+    ],
+    [
+      "Analiz",
+      safeText(analysis.title),
+      "",
+      "Belge No",
+      certificateNumber || "Belirtilmedi",
+      "",
+      "Metot",
+      methodLabel(method),
+    ],
+    [
+      "Başlangıç",
+      createdDate,
+      "",
+      "Tamamlanma",
+      completedDate,
+      "",
+      "Destek Kodu",
+      supportID,
+    ],
     [],
-    ["TOPLAM BULGU", "EN YÜKSEK RİSK", "METOT", "TOPLAM SKOR", "KRİTİK", "YÜKSEK", "ORTA/DÜŞÜK", ""],
+    [
+      "TOPLAM BULGU",
+      "EN YÜKSEK RİSK",
+      "METOT",
+      "TOPLAM SKOR",
+      "KRİTİK",
+      "YÜKSEK",
+      "ORTA/DÜŞÜK",
+      "",
+    ],
     [
       totalFindings,
       bandLabel(highestBand),
@@ -999,15 +1740,56 @@ function makeWorkbook(
     ["Risk Dağılımı", "Adet", "Oran", "Görsel", "", "", "", ""],
     ...riskOrder.map((band) => {
       const count = counts[band];
-      const ratio = totalFindings > 0 ? `${Math.round((count / totalFindings) * 100)}%` : "0%";
-      return [bandLabel(band), count, ratio, riskBar(count, totalFindings), "", "", "", ""];
+      const ratio = totalFindings > 0
+        ? `${Math.round((count / totalFindings) * 100)}%`
+        : "0%";
+      return [
+        bandLabel(band),
+        count,
+        ratio,
+        riskBar(count, totalFindings),
+        "",
+        "",
+        "",
+        "",
+      ];
     }),
     [],
     ["AI Özeti", "", "", "", "", "", "", ""],
-    [safeText(analysis.ai_summary, "Özet bulunamadı."), "", "", "", "", "", "", ""],
+    [
+      safeText(analysis.ai_summary, "Özet bulunamadı."),
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
   ]);
   setCols(summary, [18, 28, 4, 18, 24, 4, 16, 24]);
-  setRows(summary, [32, 24, 8, 24, 24, 24, 24, 8, 28, 42, 8, 24, 24, 24, 24, 24, 24, 8, 70, 70]);
+  setRows(summary, [
+    32,
+    24,
+    8,
+    24,
+    24,
+    24,
+    24,
+    8,
+    28,
+    42,
+    8,
+    24,
+    24,
+    24,
+    24,
+    24,
+    24,
+    8,
+    70,
+    70,
+  ]);
   addMerges(summary, ["A1:H1", "A2:H2", "D12:H12", "A19:H19", "A20:H20"]);
   setStyle(summary, "A1:H1", styles.title);
   setStyle(summary, "A2:H2", styles.subtitle);
@@ -1017,7 +1799,10 @@ function makeWorkbook(
   setStyle(summary, "A12:H12", styles.tableHeader);
   setStyle(summary, "A13:H17", styles.tableCell);
   setStyle(summary, "A19:H19", styles.tableHeader);
-  setStyle(summary, "A20:H20", { ...styles.value, alignment: { horizontal: "left", vertical: "top", wrapText: true } });
+  setStyle(summary, "A20:H20", {
+    ...styles.value,
+    alignment: { horizontal: "left", vertical: "top", wrapText: true },
+  });
   for (let i = 0; i < riskOrder.length; i++) {
     const row = 13 + i;
     const color = bandStyle(riskOrder[i]);
@@ -1035,20 +1820,21 @@ function makeWorkbook(
   const metricHeaders = method === "matrix_5x5"
     ? ["Olasılık", "Şiddet", "Skor", "Risk Seviyesi"]
     : ["Olasılık (O)", "Frekans (F)", "Şiddet (Ş)", "Skor", "Risk Seviyesi"];
-  const metricValues = (finding: FindingRow) => method === "matrix_5x5"
-    ? [
-      safeNumber(finding.m5_probability),
-      safeNumber(finding.m5_severity),
-      safeNumber(finding.m5_score),
-      bandLabel(finding.m5_band),
-    ]
-    : [
-      safeNumber(finding.fk_probability),
-      safeNumber(finding.fk_frequency),
-      safeNumber(finding.fk_severity),
-      safeNumber(finding.fk_score),
-      bandLabel(finding.fk_band),
-    ];
+  const metricValues = (finding: FindingRow) =>
+    method === "matrix_5x5"
+      ? [
+        safeNumber(finding.m5_probability),
+        safeNumber(finding.m5_severity),
+        safeNumber(finding.m5_score),
+        bandLabel(finding.m5_band),
+      ]
+      : [
+        safeNumber(finding.fk_probability),
+        safeNumber(finding.fk_frequency),
+        safeNumber(finding.fk_severity),
+        safeNumber(finding.fk_score),
+        bandLabel(finding.fk_band),
+      ];
   const riskHeaders = [
     "No",
     "Tehlike",
@@ -1089,7 +1875,9 @@ function makeWorkbook(
   const statusCol = XLSX.utils.encode_col(riskHeaders.length - 2);
   setCols(riskSheet, riskColumnWidths);
   setRows(riskSheet, [34, ...findings.map(() => 92)]);
-  riskSheet["!autofilter"] = { ref: `A1:${riskLastCol}${Math.max(1, riskRows.length)}` };
+  riskSheet["!autofilter"] = {
+    ref: `A1:${riskLastCol}${Math.max(1, riskRows.length)}`,
+  };
   riskSheet["!freeze"] = { xSplit: 0, ySplit: 1 };
   setStyle(riskSheet, `A1:${riskLastCol}1`, styles.tableHeader);
   for (let i = 0; i < findings.length; i++) {
@@ -1101,7 +1889,11 @@ function makeWorkbook(
       fill: { fgColor: { rgb: rowFill } },
     });
     setStyle(riskSheet, `A${row}:A${row}`, styles.tableNumber);
-    setStyle(riskSheet, `${metricFirstCol}${row}:${metricLastCol}${row}`, styles.tableNumber);
+    setStyle(
+      riskSheet,
+      `${metricFirstCol}${row}:${metricLastCol}${row}`,
+      styles.tableNumber,
+    );
     setStyle(riskSheet, `${riskLevelCol}${row}:${riskLevelCol}${row}`, {
       ...styles.tableNumber,
       font: { name: "Aptos", sz: 10, bold: true, color: { rgb: color.fg } },
@@ -1122,7 +1914,9 @@ function makeWorkbook(
       return [
         bandLabel(band),
         count,
-        totalFindings > 0 ? `${Math.round((count / totalFindings) * 100)}%` : "0%",
+        totalFindings > 0
+          ? `${Math.round((count / totalFindings) * 100)}%`
+          : "0%",
         riskBar(count, totalFindings),
         methodLabel(method),
         "Seçilen metoda göre hesaplandı",
@@ -1131,7 +1925,9 @@ function makeWorkbook(
     [],
     ["Kritik/Yüksek Bulgular", "", "", "", "", ""],
     ...findings
-      .filter((finding) => ["critical", "high"].includes(methodBand(finding, method)))
+      .filter((finding) =>
+        ["critical", "high"].includes(methodBand(finding, method))
+      )
       .map((finding) => [
         finding.ordinal ?? "",
         safeText(finding.title),
@@ -1142,13 +1938,28 @@ function makeWorkbook(
       ]),
   ]);
   setCols(distribution, [20, 10, 10, 34, 18, 18]);
-  setRows(distribution, [32, 28, 24, 24, 24, 24, 24, 8, 28, ...findings.map(() => 48)]);
+  setRows(distribution, [
+    32,
+    28,
+    24,
+    24,
+    24,
+    24,
+    24,
+    8,
+    28,
+    ...findings.map(() => 48),
+  ]);
   addMerges(distribution, ["A1:F1", "A8:F8"]);
   setStyle(distribution, "A1:F1", styles.title);
   setStyle(distribution, "A2:F2", styles.tableHeader);
   setStyle(distribution, "A3:F7", styles.tableCell);
   setStyle(distribution, "A8:F8", styles.tableHeader);
-  setStyle(distribution, `A9:F${Math.max(9, findings.length + 8)}`, styles.tableCell);
+  setStyle(
+    distribution,
+    `A9:F${Math.max(9, findings.length + 8)}`,
+    styles.tableCell,
+  );
   for (let i = 0; i < riskOrder.length; i++) {
     const row = i + 3;
     const color = bandStyle(riskOrder[i]);
@@ -1190,7 +2001,10 @@ serve(async (req: Request) => {
   }
 
   if (req.method !== "POST") {
-    return json(405, { error: "method_not_allowed", message: "Yalnızca POST desteklenir." });
+    return json(405, {
+      error: "method_not_allowed",
+      message: "Yalnızca POST desteklenir.",
+    });
   }
 
   const supabase = createClient(
@@ -1198,7 +2012,10 @@ serve(async (req: Request) => {
     requiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
   );
 
-  let requestID = cleanTrace(req.headers.get("x-request-id"), crypto.randomUUID());
+  let requestID = cleanTrace(
+    req.headers.get("x-request-id"),
+    crypto.randomUUID(),
+  );
   let supportID = cleanTrace(req.headers.get("x-support-id"), newSupportID());
 
   const authHeader = req.headers.get("Authorization");
@@ -1303,7 +2120,10 @@ serve(async (req: Request) => {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const planTier = resolvePlanTier((profile as ProfileRow | null)?.tier, subscription);
+  const planTier = resolvePlanTier(
+    (profile as ProfileRow | null)?.tier,
+    subscription,
+  );
   if (planTier === "free") {
     return json(402, {
       error: "plan_required",
@@ -1342,7 +2162,9 @@ serve(async (req: Request) => {
 
   const archiveSuffix = archiveFileSuffix(requestID);
   const methodCode = method === "matrix_5x5" ? "5X5" : "FK";
-  const documentNo = `XLSX-${methodCode}-${analysisID.slice(0, 8).toUpperCase()}-${archiveSuffix.slice(-8).toUpperCase()}`;
+  const documentNo = `XLSX-${methodCode}-${
+    analysisID.slice(0, 8).toUpperCase()
+  }-${archiveSuffix.slice(-8).toUpperCase()}`;
   const workbook = makeWorkbook(
     analysis as AnalysisRow,
     (findings ?? []) as FindingRow[],
@@ -1355,8 +2177,11 @@ serve(async (req: Request) => {
   const logo = await loadCompanyLogo(supabase, profile as ProfileRow | null);
   const rawBytes = workbookBuffer(workbook);
   const bytes = logo ? await embedCompanyLogo(rawBytes, logo) : rawBytes;
-  const fileName = `${safeFilePart(safeText((analysis as AnalysisRow).title, "risk-analizi"))}-${method}-risk-analizi-${archiveSuffix}.xlsx`;
-  const storagePath = `${user.id.toLowerCase()}/${analysisID.toLowerCase()}/${fileName}`;
+  const fileName = `${
+    safeFilePart(safeText((analysis as AnalysisRow).title, "risk-analizi"))
+  }-${method}-risk-analizi-${archiveSuffix}.xlsx`;
+  const storagePath =
+    `${user.id.toLowerCase()}/${analysisID.toLowerCase()}/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from("reports")
@@ -1366,7 +2191,15 @@ serve(async (req: Request) => {
     });
 
   if (uploadError) {
-    console.error("Excel upload failed", uploadError);
+    console.error(
+      "Excel upload failed",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        analysis_id: analysisID,
+        error: safeLogError(uploadError),
+      }),
+    );
     return json(500, {
       error: "excel_upload_failed",
       message: "Excel dosyası rapor arşivine kaydedilemedi.",
@@ -1398,7 +2231,15 @@ serve(async (req: Request) => {
     .single();
 
   if (reportError) {
-    console.error("Excel report metadata failed", reportError);
+    console.error(
+      "Excel report metadata failed",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        analysis_id: analysisID,
+        error: safeLogError(reportError),
+      }),
+    );
     await supabase.storage.from("reports").remove([storagePath]);
     const message = String(reportError.message ?? "");
     if (message.includes("report_quota_exceeded")) {

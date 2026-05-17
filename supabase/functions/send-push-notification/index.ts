@@ -40,11 +40,21 @@ function requiredEnv(name: string): string {
   return value;
 }
 
+function safeErrorText(value: unknown, maxLength = 180): string {
+  return String(value)
+    .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+    .replace(/[A-Fa-f0-9]{64,}/g, "[hex]")
+    .slice(0, maxLength);
+}
+
 function base64URL(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll(
+    "=",
+    "",
+  );
 }
 
 function base64URLText(value: string): string {
@@ -72,7 +82,9 @@ async function makeProviderToken(): Promise<string> {
 
   const header = { alg: "ES256", kid: keyID };
   const claims = { iss: teamID, iat: Math.floor(Date.now() / 1000) };
-  const signingInput = `${base64URLText(JSON.stringify(header))}.${base64URLText(JSON.stringify(claims))}`;
+  const signingInput = `${base64URLText(JSON.stringify(header))}.${
+    base64URLText(JSON.stringify(claims))
+  }`;
 
   const key = await crypto.subtle.importKey(
     "pkcs8",
@@ -104,7 +116,9 @@ serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) {
-    return json(500, { error: "Supabase service credentials are not configured" });
+    return json(500, {
+      error: "Supabase service credentials are not configured",
+    });
   }
 
   const authHeader = req.headers.get("Authorization") ?? "";
@@ -132,12 +146,16 @@ serve(async (req) => {
 
   const { data: preference } = await supabase
     .from("notification_preferences")
-    .select("enabled, analysis_complete, report_ready, account_updates, marketing")
+    .select(
+      "enabled, analysis_complete, report_ready, account_updates, marketing",
+    )
     .eq("user_id", body.user_id)
     .maybeSingle();
 
   const preferenceKey = kind.replaceAll("-", "_");
-  const allowedByKind = preference ? preference[preferenceKey as keyof typeof preference] !== false : true;
+  const allowedByKind = preference
+    ? preference[preferenceKey as keyof typeof preference] !== false
+    : true;
   if (preference?.enabled === false || !allowedByKind) {
     const { data: event } = await supabase
       .from("notification_events")
@@ -155,7 +173,9 @@ serve(async (req) => {
     return json(200, { status: "skipped", event_id: event?.id ?? null });
   }
 
-  const environment = Deno.env.get("APNS_ENV") === "production" ? "production" : "sandbox";
+  const environment = Deno.env.get("APNS_ENV") === "production"
+    ? "production"
+    : "sandbox";
   const { data: tokens, error: tokenError } = await supabase
     .from("push_device_tokens")
     .select("id, token")
@@ -164,7 +184,7 @@ serve(async (req) => {
     .eq("notifications_enabled", true);
 
   if (tokenError) {
-    return json(500, { error: "Failed to load device tokens", details: tokenError.message });
+    return json(500, { error: "Failed to load device tokens" });
   }
 
   const deviceTokens = (tokens ?? []) as PushToken[];
@@ -183,11 +203,15 @@ serve(async (req) => {
     .single();
 
   if (eventError) {
-    return json(500, { error: "Failed to create notification event", details: eventError.message });
+    return json(500, { error: "Failed to create notification event" });
   }
 
   if (deviceTokens.length === 0) {
-    return json(200, { status: "skipped", reason: "no_active_device_tokens", event_id: event.id });
+    return json(200, {
+      status: "skipped",
+      reason: "no_active_device_tokens",
+      event_id: event.id,
+    });
   }
 
   let providerToken: string;
@@ -196,9 +220,16 @@ serve(async (req) => {
   } catch (error) {
     await supabase
       .from("notification_events")
-      .update({ status: "failed", failure_count: deviceTokens.length, last_error: String(error) })
+      .update({
+        status: "failed",
+        failure_count: deviceTokens.length,
+        last_error: safeErrorText(error),
+      })
       .eq("id", event.id);
-    return json(500, { error: "APNs credentials are not configured", details: String(error), event_id: event.id });
+    return json(500, {
+      error: "APNs credentials are not configured",
+      event_id: event.id,
+    });
   }
 
   const topic = Deno.env.get("APNS_BUNDLE_ID") ?? "com.riskdetected.app";
@@ -240,7 +271,7 @@ serve(async (req) => {
     } else {
       failed += 1;
       const errorText = await response.text();
-      lastError = `${response.status}: ${errorText}`;
+      lastError = `${response.status}: ${safeErrorText(errorText)}`;
       await supabase
         .from("push_device_tokens")
         .update({ last_failure_at: now, last_failure_reason: lastError })
@@ -259,5 +290,10 @@ serve(async (req) => {
     })
     .eq("id", event.id);
 
-  return json(200, { status: sent > 0 ? "sent" : "failed", event_id: event.id, sent, failed });
+  return json(200, {
+    status: sent > 0 ? "sent" : "failed",
+    event_id: event.id,
+    sent,
+    failed,
+  });
 });

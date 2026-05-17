@@ -77,15 +77,17 @@ struct ResultView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
-                .padding(.bottom, findings.isEmpty ? 110 : 132)
+                .padding(.bottom, findings.isEmpty ? 110 : 16)
+            }
+            .clipped()
+            .zIndex(0)
+
+            if !findings.isEmpty {
+                stickyReportCTA
+                    .zIndex(1)
             }
         }
         .background(Color.rdPaper)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if !findings.isEmpty {
-                stickyReportCTA
-            }
-        }
         .overlay {
             if pdfGeneration.isActive {
                 PDFGenerationOverlay(progress: pdfGeneration.progress)
@@ -677,29 +679,54 @@ struct ResultView: View {
     }
 
     private var reportCTAButton: some View {
-        RDButton(
-            title: pdfGeneration.isActive ? "Rapor hazırlanıyor..." : isExcelGenerating ? "Excel hazırlanıyor..." : "Rapor Oluştur",
-            style: .primary,
-            icon: pdfGeneration.isActive || isExcelGenerating ? "hourglass" : "slider.horizontal.3",
-            height: 56,
-            backgroundOverride: .rdCTA,
-            foregroundOverride: .white,
-            shadowOverride: Color.rdGreen.opacity(0.16),
-            action: {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                reportOptions = defaultReportOptions(kind: .standard)
-                Task {
-                    await app.refreshPlanState()
-                    if app.currentTier == .pro {
-                        reportQuotaExhausted = false
-                    }
-                    _ = try? await loadProfileLogoIfNeeded()
-                    reportSettingsDetent = .height(440)
-                    showReportSettings = true
+        Button(action: openReportSettings) {
+            ZStack {
+                HStack {
+                    Spacer()
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 18, weight: .heavy, design: .rounded))
+                        .symbolRenderingMode(.monochrome)
+                        .foregroundStyle(Color.rdOnyx)
+                        .frame(width: 42, height: 42)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+
+                HStack(spacing: 8) {
+                    Image(systemName: pdfGeneration.isActive || isExcelGenerating ? "hourglass" : "slider.horizontal.3")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    Text(pdfGeneration.isActive ? "Rapor hazırlanıyor..." : isExcelGenerating ? "Excel hazırlanıyor..." : "Rapor Oluştur")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                }
+                .padding(.horizontal, 56)
             }
-        )
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .padding(.horizontal, 10)
+            .background(Color.rdCTA)
+            .foregroundStyle(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .shadow(color: Color.rdGreen.opacity(0.16), radius: 18, x: 0, y: 6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(RDPressableButtonStyle())
         .disabled(pdfGeneration.isActive || isExcelGenerating)
+    }
+
+    private func openReportSettings() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Task {
+            await app.refreshPlanState()
+            _ = await refreshReportQuotaState()
+            reportOptions = defaultReportOptions(kind: .standard)
+            reportSettingsDetent = .height(440)
+            showReportSettings = true
+            if !reportQuotaExhausted {
+                _ = try? await loadProfileLogoIfNeeded()
+            }
+        }
     }
 
     // MARK: - Helpers
@@ -748,6 +775,13 @@ struct ResultView: View {
         pdfGeneration.start()
         Task {
             do {
+                if await refreshReportQuotaState() {
+                    pdfGeneration.stop()
+                    reportOptions = defaultReportOptions(kind: .standard)
+                    reportSettingsDetent = .height(440)
+                    showReportSettings = true
+                    return
+                }
                 let reportImage = try await loadReportImage()
                 pdfGeneration.advance(to: 0.23)
                 let resolvedOptions = options ?? defaultReportOptions(kind: .standard)
@@ -779,12 +813,13 @@ struct ResultView: View {
                         Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
                         if AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) {
                             throw error
+                        } else {
+                            archiveWarning = AppErrorMessage.make(
+                                rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                                context: "Rapor arşive kaydedilemedi",
+                                fallbackTitle: "Rapor arşive kaydedilemedi"
+                            ).fullText
                         }
-                        archiveWarning = AppErrorMessage.make(
-                            rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
-                            context: "Rapor arşive kaydedilemedi",
-                            fallbackTitle: "Rapor arşive kaydedilemedi"
-                        ).fullText
                         pdfGeneration.advance(to: 0.92)
                     }
                 }
@@ -799,7 +834,9 @@ struct ResultView: View {
                 }
             } catch {
                 pdfGeneration.stop()
-                handleReportQuotaIfNeeded(error)
+                if handleReportQuotaIfNeeded(error) {
+                    return
+                }
                 pdfError = AppErrorMessage.make(
                     rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
                     context: "PDF oluşturulamadı",
@@ -825,9 +862,17 @@ struct ResultView: View {
         isExcelGenerating = true
         Task {
             do {
+                if await refreshReportQuotaState() {
+                    reportOptions.kind = .standard
+                    reportSettingsDetent = .height(440)
+                    showReportSettings = true
+                    isExcelGenerating = false
+                    return
+                }
                 let report = try await AnalysisService.shared.generateExcelReport(
                     analysisID: bundle.analysis.id,
                     method: method,
+                    language: reportOptions.language,
                     requestID: requestID,
                     supportID: supportID
                 )
@@ -838,7 +883,10 @@ struct ResultView: View {
                 )
                 shareItem = ShareItem(url: url)
             } catch {
-                handleReportQuotaIfNeeded(error)
+                if handleReportQuotaIfNeeded(error) {
+                    isExcelGenerating = false
+                    return
+                }
                 pdfError = AppErrorMessage.make(
                     error,
                     context: "Excel oluşturulamadı",
@@ -849,13 +897,24 @@ struct ResultView: View {
         }
     }
 
-    private func handleReportQuotaIfNeeded(_ error: Error) {
-        guard AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) else { return }
+    @discardableResult
+    private func handleReportQuotaIfNeeded(_ error: Error) -> Bool {
+        guard AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) else { return false }
         reportQuotaExhausted = true
         reportOptions.kind = .standard
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            showPaywall = true
+        reportSettingsDetent = .height(440)
+        showReportSettings = true
+        return true
+    }
+
+    private func refreshReportQuotaState() async -> Bool {
+        do {
+            let usage = try await AnalysisService.shared.monthlyReportQuotaUsage(tier: app.profile?.tier ?? app.currentTier)
+            reportQuotaExhausted = usage.isExhausted
+        } catch {
+            reportQuotaExhausted = false
         }
+        return reportQuotaExhausted
     }
 
     private func loadReportImage() async throws -> UIImage? {
@@ -904,7 +963,8 @@ struct ResultView: View {
             preparedTitle: app.profile?.title ?? "",
             certificateNumber: app.profile?.certificateNumber ?? "",
             companyName: app.profile?.companyName ?? "",
-            companyInfo: app.profile?.phone ?? ""
+            companyInfo: app.profile?.phone ?? "",
+            language: app.languagePreference
         )
     }
 
@@ -995,12 +1055,16 @@ struct ReportSettingsSheet: View {
     private var riskAnalysisLocked: Bool {
         !canUseRiskAnalysis || reportQuotaExhausted
     }
+    private var standardReportLocked: Bool {
+        reportQuotaExhausted
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
                     reportTypeSection
+                    languageSection
 
                     if options.kind == .riskAnalysis {
                         VStack(alignment: .leading, spacing: 18) {
@@ -1025,7 +1089,7 @@ struct ReportSettingsSheet: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 reportSettingsStickyCTA
             }
-            .navigationTitle("Rapor Oluştur")
+            .navigationTitle(RDLocalization.shared.text(.reportCreateTitle, language: options.language))
             .navigationBarTitleDisplayMode(.inline)
             .animation(.spring(response: 0.34, dampingFraction: 0.86), value: options.kind)
             .animation(.spring(response: 0.28, dampingFraction: 0.9), value: outputFormat)
@@ -1039,14 +1103,14 @@ struct ReportSettingsSheet: View {
     }
 
     private var primaryButtonTitle: String {
+        if reportQuotaExhausted { return "Yükselt" }
         if options.kind == .standard { return "Rapor oluştur" }
-        if reportQuotaExhausted { return "Limit doldu" }
         return outputFormat == .excel ? "Excel risk tablosu oluştur" : "Risk analizi PDF oluştur"
     }
 
     private var primaryButtonIcon: String {
+        if reportQuotaExhausted { return "arrow.up.circle.fill" }
         if options.kind == .standard { return "doc.richtext.fill" }
-        if reportQuotaExhausted { return "exclamationmark.triangle.fill" }
         return outputFormat == .excel ? "tablecells" : "doc.text.magnifyingglass"
     }
 
@@ -1068,6 +1132,10 @@ struct ReportSettingsSheet: View {
                      foregroundOverride: .white,
                      shadowOverride: Color.rdGreen.opacity(0.16),
                      action: {
+                         if reportQuotaExhausted {
+                             onPaywall()
+                             return
+                         }
                          if options.kind == .riskAnalysis, riskAnalysisLocked {
                              onPaywall()
                              return
@@ -1090,8 +1158,9 @@ struct ReportSettingsSheet: View {
             reportKindRow(
                 kind: .standard,
                 title: "Standart Rapor",
-                subtitle: "Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur.",
-                icon: "doc.richtext"
+                subtitle: reportQuotaExhausted ? "Aylık rapor kotan doldu. Devam etmek için Plus'a yükselt." : "Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur.",
+                icon: "doc.richtext",
+                locked: standardReportLocked
             )
             reportKindRow(
                 kind: .riskAnalysis,
@@ -1156,7 +1225,7 @@ struct ReportSettingsSheet: View {
                         .foregroundStyle(active ? Color.rdGreen : Color.rdSlate.opacity(0.32))
                 }
 
-                if locked && active {
+                if locked && active && kind == .riskAnalysis {
                     riskAnalysisPreview
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
@@ -1171,7 +1240,7 @@ struct ReportSettingsSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .shadow(color: active ? Color.rdGreen.opacity(0.12) : Color.clear, radius: 14, x: 0, y: 8)
         }
-        .frame(minHeight: active && locked ? 286 : 118)
+        .frame(minHeight: active && locked && kind == .riskAnalysis ? 286 : 118)
         .buttonStyle(RDPressableButtonStyle())
     }
 
@@ -1352,6 +1421,29 @@ struct ReportSettingsSheet: View {
                     }
                     .buttonStyle(.plain)
                 }
+            }
+        }
+    }
+
+    private var languageSection: some View {
+        settingsSection(title: RDLocalization.shared.text(.reportLanguageSection, language: options.language)) {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(RDLanguage.supportedCases) { language in
+                    optionRow(
+                        title: language.title,
+                        subtitle: RDLocalization.shared.text(.reportLanguageTurkishSubtitle, language: language),
+                        icon: language.icon,
+                        active: options.language == language
+                    ) {
+                        options.language = language
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    }
+                }
+
+                Text(RDLocalization.shared.text(.reportLanguageFutureNote, language: options.language))
+                    .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .padding(.horizontal, 4)
             }
         }
     }

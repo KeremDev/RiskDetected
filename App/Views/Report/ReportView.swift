@@ -728,10 +728,12 @@ struct ReportView: View {
         guard canLoadMoreStoredReports, !isLoadingMoreStoredReports else { return }
         isLoadingMoreStoredReports = true
         Task {
+            let startedAt = Date()
+            let offset = storedReports.count
             do {
                 let moreReports = try await AnalysisService.shared.listReports(
                     limit: reportArchiveFetchPageSize,
-                    offset: storedReports.count
+                    offset: offset
                 )
                 await MainActor.run {
                     appendStoredReports(moreReports)
@@ -742,9 +744,18 @@ struct ReportView: View {
                         max(filteredStoredReports.count, visibleReportCount)
                     )
                     isLoadingMoreStoredReports = false
+                    logReportArchiveTelemetry(
+                        event: "load_more",
+                        duration: Date().timeIntervalSince(startedAt),
+                        fetchedCount: moreReports.count,
+                        cachedCount: storedReports.count,
+                        offset: offset,
+                        hasRemoteMore: canLoadMoreStoredReports
+                    )
                 }
             } catch {
                 await MainActor.run {
+                    Self.logger.error("Report archive load_more failed offset=\(offset, privacy: .public) duration_ms=\(Int(Date().timeIntervalSince(startedAt) * 1000), privacy: .public) error=\(error.localizedDescription, privacy: .public)")
                     errorMessage = AppErrorMessage.make(
                         error,
                         context: "Rapor arşivi yüklenemedi",
@@ -787,6 +798,7 @@ struct ReportView: View {
         defer { isLoading = false }
 
         do {
+            let archiveStartedAt = Date()
             async let analysisRows = AnalysisService.shared.listRecent(limit: 12)
             async let reportRows = AnalysisService.shared.listReports(limit: reportArchiveFetchPageSize)
             let rows = try await analysisRows
@@ -795,7 +807,16 @@ struct ReportView: View {
                 storedReports = reports
                 canLoadMoreStoredReports = reports.count == reportArchiveFetchPageSize
                 reportsLoadError = nil
+                logReportArchiveTelemetry(
+                    event: "initial_load",
+                    duration: Date().timeIntervalSince(archiveStartedAt),
+                    fetchedCount: reports.count,
+                    cachedCount: storedReports.count,
+                    offset: 0,
+                    hasRemoteMore: canLoadMoreStoredReports
+                )
             } catch {
+                Self.logger.error("Report archive initial_load failed duration_ms=\(Int(Date().timeIntervalSince(archiveStartedAt) * 1000), privacy: .public) error=\(error.localizedDescription, privacy: .public)")
                 reportsLoadError = AppErrorMessage.make(
                     error,
                     context: "Rapor arşivi yüklenemedi",
@@ -820,6 +841,17 @@ struct ReportView: View {
         }
     }
 
+    private func logReportArchiveTelemetry(
+        event: String,
+        duration: TimeInterval,
+        fetchedCount: Int,
+        cachedCount: Int,
+        offset: Int,
+        hasRemoteMore: Bool
+    ) {
+        Self.logger.info("Report archive \(event, privacy: .public) duration_ms=\(Int(duration * 1000), privacy: .public) fetched=\(fetchedCount, privacy: .public) cached=\(cachedCount, privacy: .public) offset=\(offset, privacy: .public) remote_more=\(hasRemoteMore, privacy: .public) filter=\(reportFilter.rawValue, privacy: .public) filters_active=\(hasActiveReportArchiveFilters, privacy: .public)")
+    }
+
     private func select(_ row: AnalysisRow) {
         guard loadingID == nil else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -831,9 +863,7 @@ struct ReportView: View {
                 selectedBundle = try await AnalysisService.shared.result(analysisID: row.id)
                 reportOptions = defaultReportOptions(kind: reportOptions.kind == .standard ? .riskAnalysis : reportOptions.kind)
                 await app.refreshPlanState()
-                if app.currentTier == .pro {
-                    reportQuotaExhausted = false
-                }
+                _ = await refreshReportQuotaState()
                 _ = try? await loadProfileLogoIfNeeded()
                 showSourceReportSheet = true
             } catch {
@@ -863,6 +893,12 @@ struct ReportView: View {
         pdfGeneration.start()
         Task {
             do {
+                if await refreshReportQuotaState() {
+                    pdfGeneration.stop()
+                    reportOptions.kind = .standard
+                    showSourceReportSheet = true
+                    return
+                }
                 let reportImage = try await loadReportImage(for: selectedBundle)
                 pdfGeneration.advance(to: 0.23)
                 let resolvedOptions = options ?? defaultReportOptions(kind: .standard)
@@ -893,12 +929,13 @@ struct ReportView: View {
                     Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
                     if AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) {
                         throw error
+                    } else {
+                        archiveWarning = AppErrorMessage.make(
+                            rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
+                            context: "Rapor arşive kaydedilemedi",
+                            fallbackTitle: "Rapor arşive kaydedilemedi"
+                        ).fullText
                     }
-                    archiveWarning = AppErrorMessage.make(
-                        rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
-                        context: "Rapor arşive kaydedilemedi",
-                        fallbackTitle: "Rapor arşive kaydedilemedi"
-                    ).fullText
                 }
                 pdfGeneration.advance(to: 0.88)
                 pdfGeneration.advance(to: 0.94)
@@ -909,7 +946,9 @@ struct ReportView: View {
                 shareItem = ShareItem(url: url)
             } catch {
                 pdfGeneration.stop()
-                handleReportQuotaIfNeeded(error)
+                if handleReportQuotaIfNeeded(error) {
+                    return
+                }
                 errorMessage = AppErrorMessage.make(
                     rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
                     context: "PDF oluşturulamadı",
@@ -928,9 +967,16 @@ struct ReportView: View {
 
         Task {
             do {
+                if await refreshReportQuotaState() {
+                    reportOptions.kind = .standard
+                    showSourceReportSheet = true
+                    excelGenerationID = nil
+                    return
+                }
                 let report = try await AnalysisService.shared.generateExcelReport(
                     analysisID: selectedBundle.analysis.id,
                     method: reportOptions.method,
+                    language: reportOptions.language,
                     requestID: requestID,
                     supportID: supportID
                 )
@@ -942,7 +988,10 @@ struct ReportView: View {
                 )
                 shareItem = ShareItem(url: url)
             } catch {
-                handleReportQuotaIfNeeded(error)
+                if handleReportQuotaIfNeeded(error) {
+                    excelGenerationID = nil
+                    return
+                }
                 errorMessage = AppErrorMessage.make(
                     rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
                     context: "Excel oluşturulamadı",
@@ -968,13 +1017,23 @@ struct ReportView: View {
         storedReports.append(contentsOf: uniqueReports)
     }
 
-    private func handleReportQuotaIfNeeded(_ error: Error) {
-        guard AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) else { return }
+    @discardableResult
+    private func handleReportQuotaIfNeeded(_ error: Error) -> Bool {
+        guard AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) else { return false }
         reportQuotaExhausted = true
         reportOptions.kind = .standard
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            showPaywall = true
+        showSourceReportSheet = true
+        return true
+    }
+
+    private func refreshReportQuotaState() async -> Bool {
+        do {
+            let usage = try await AnalysisService.shared.monthlyReportQuotaUsage(tier: app.profile?.tier ?? app.currentTier)
+            reportQuotaExhausted = usage.isExhausted
+        } catch {
+            reportQuotaExhausted = false
         }
+        return reportQuotaExhausted
     }
 
     private func download(_ report: ReportRow) {
@@ -1046,7 +1105,8 @@ struct ReportView: View {
             preparedTitle: app.profile?.title ?? "",
             certificateNumber: app.profile?.certificateNumber ?? "",
             companyName: app.profile?.companyName ?? "",
-            companyInfo: app.profile?.phone ?? ""
+            companyInfo: app.profile?.phone ?? "",
+            language: app.languagePreference
         )
     }
 
@@ -1401,7 +1461,8 @@ private struct ReportSourceSheet: View {
                 preparedTitle: profile?.title ?? "",
                 certificateNumber: profile?.certificateNumber ?? "",
                 companyName: profile?.companyName ?? "",
-                companyInfo: profile?.phone ?? ""
+                companyInfo: profile?.phone ?? "",
+                language: reportOptions.language
             )
             reportSettingsDetent = .height(440)
             showSettings = true

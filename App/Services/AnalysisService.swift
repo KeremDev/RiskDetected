@@ -206,7 +206,7 @@ final class AnalysisService {
             let end = start + max(limit, 1) - 1
             let rows: [ReportRow] = try await supabase.client
                 .from("reports")
-                .select()
+                .select("id,user_id,analysis_id,format,kind,method,title,storage_path,file_name,mime_type,file_size,request_id,support_id,created_at")
                 .order("created_at", ascending: false)
                 .range(from: start, to: end)
                 .execute()
@@ -221,6 +221,7 @@ final class AnalysisService {
     func generateExcelReport(
         analysisID: UUID,
         method: RiskMethod,
+        language: RDLanguage = .turkish,
         requestID: String,
         supportID: String
     ) async throws -> ReportRow {
@@ -228,6 +229,7 @@ final class AnalysisService {
             let analysis_id: String
             let method: String
             let report_kind: String
+            let report_language: String
             let request_id: String
             let support_id: String
         }
@@ -248,6 +250,7 @@ final class AnalysisService {
             analysis_id: analysisID.uuidString,
             method: Self.databaseReportMethodValue(method),
             report_kind: PDFReportKind.riskAnalysis.rawValue,
+            report_language: language.rawValue,
             request_id: requestID,
             support_id: supportID
         )
@@ -351,7 +354,12 @@ final class AnalysisService {
         let payload = UpsertPayload(
             user_id: userID.uuidString,
             analysis_id: bundle.analysis.id.uuidString,
-            document_no: Self.reportDocumentNo(for: bundle.analysis, kind: kind, method: method),
+            document_no: Self.reportDocumentNo(
+                for: bundle.analysis,
+                kind: kind,
+                method: method,
+                requestID: requestID
+            ),
             format: "pdf",
             kind: kind.rawValue,
             method: Self.databaseReportMethodValue(method),
@@ -783,6 +791,26 @@ final class AnalysisService {
         )
     }
 
+    /// Kullanıcının içinde bulunduğu takvim ayındaki rapor kullanımını verir.
+    func monthlyReportQuotaUsage(tier: SubscriptionTier) async throws -> DailyQuotaUsage {
+        guard let userID = supabase.currentUserID else {
+            throw AnalysisError.notAuthenticated
+        }
+        let monthStart = Self.istanbulStartOfCurrentMonthISO()
+        let rows: [ReportRow] = try await supabase.client
+            .from("reports")
+            .select()
+            .eq("user_id", value: userID.uuidString)
+            .gte("created_at", value: monthStart)
+            .execute()
+            .value
+
+        return DailyQuotaUsage(
+            used: rows.count,
+            limit: Self.monthlyReportLimit(for: tier)
+        )
+    }
+
     // MARK: - Private steps
 
     nonisolated private static let maxInlinePhotoBytes = 1_500_000
@@ -793,9 +821,29 @@ final class AnalysisService {
         calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
         let startOfDay = calendar.startOfDay(for: Date())
 
+        return isoString(from: startOfDay)
+    }
+
+    private static func istanbulStartOfCurrentMonthISO() -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        let components = calendar.dateComponents([.year, .month], from: Date())
+        let startOfMonth = calendar.date(from: components) ?? calendar.startOfDay(for: Date())
+        return isoString(from: startOfMonth)
+    }
+
+    private static func isoString(from date: Date) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter.string(from: startOfDay)
+        return formatter.string(from: date)
+    }
+
+    private static func monthlyReportLimit(for tier: SubscriptionTier) -> Int {
+        switch tier {
+        case .free: return 3
+        case .plus: return 150
+        case .pro: return 750
+        }
     }
 
     private func countRows(
@@ -1077,12 +1125,31 @@ final class AnalysisService {
         requestID: String
     ) -> String {
         let normalizedTitle = analysis.title
+            .replacingOccurrences(of: "ı", with: "i")
+            .replacingOccurrences(of: "İ", with: "I")
+            .replacingOccurrences(of: "ğ", with: "g")
+            .replacingOccurrences(of: "Ğ", with: "G")
+            .replacingOccurrences(of: "ü", with: "u")
+            .replacingOccurrences(of: "Ü", with: "U")
+            .replacingOccurrences(of: "ş", with: "s")
+            .replacingOccurrences(of: "Ş", with: "S")
+            .replacingOccurrences(of: "ö", with: "o")
+            .replacingOccurrences(of: "Ö", with: "O")
+            .replacingOccurrences(of: "ç", with: "c")
+            .replacingOccurrences(of: "Ç", with: "C")
             .folding(options: [.diacriticInsensitive, .widthInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
             .lowercased()
         let safeTitle = normalizedTitle
             .map { character -> Character in
-                if character.isLetter || character.isNumber { return character }
-                if character == "-" || character == "_" { return character }
+                guard let scalar = character.unicodeScalars.first, character.unicodeScalars.count == 1 else {
+                    return "_"
+                }
+                if (48...57).contains(Int(scalar.value)) || (97...122).contains(Int(scalar.value)) {
+                    return character
+                }
+                if character == "-" || character == "_" {
+                    return character
+                }
                 return "_"
             }
             .reduce(into: "") { partial, character in
@@ -1118,19 +1185,31 @@ final class AnalysisService {
         }
     }
 
-    private static func reportDocumentNo(for analysis: AnalysisRow, kind: PDFReportKind, method: RiskMethod) -> String {
+    private static func reportDocumentNo(
+        for analysis: AnalysisRow,
+        kind: PDFReportKind,
+        method: RiskMethod,
+        requestID: String
+    ) -> String {
         let shortID = String(analysis.id.uuidString.prefix(8)).uppercased()
+        let requestPart = requestID
+            .uppercased()
+            .filter { $0.isLetter || $0.isNumber }
+            .prefix(4)
+        let uniquePart = requestPart.isEmpty ? "RPT" : String(requestPart)
+        let base: String
         switch kind {
         case .standard:
-            return "\(shortID)-STD"
+            base = "\(shortID)-STD"
         case .riskAnalysis:
             switch method {
             case .fineKinney:
-                return "\(shortID)-FK"
+                base = "\(shortID)-FK"
             case .matrix5x5:
-                return "\(shortID)-M5"
+                base = "\(shortID)-M5"
             }
         }
+        return "\(base)-\(uniquePart)"
     }
 
     private static func estimatedPageCount(for kind: PDFReportKind, findingCount: Int) -> Int {

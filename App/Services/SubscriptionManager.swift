@@ -25,8 +25,20 @@ struct SubscriptionPlanPackage: Identifiable, Equatable {
     let tier: SubscriptionTier
     let title: String
     let price: String
+    let monthlyEquivalentPrice: String?
     let subtitle: String
     let productIdentifier: String
+}
+
+private enum SubscriptionManagerError: LocalizedError {
+    case noPackagesConfigured
+
+    var errorDescription: String? {
+        switch self {
+        case .noPackagesConfigured:
+            return "Abonelik paketleri RevenueCat tarafında bulunamadı."
+        }
+    }
 }
 
 @MainActor
@@ -113,6 +125,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                         tier: tier,
                         title: tier.title,
                         price: package.localizedPriceString,
+                        monthlyEquivalentPrice: package.storeProduct.localizedPricePerMonth,
                         subtitle: Self.subtitle(for: package),
                         productIdentifier: package.storeProduct.productIdentifier
                     )
@@ -123,6 +136,18 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             packages = mappedPackages.sorted {
                 if $0.tier.rank == $1.tier.rank { return $0.price < $1.price }
                 return $0.tier.rank < $1.tier.rank
+            }
+
+            if packages.isEmpty {
+                apply(error: SubscriptionManagerError.noPackagesConfigured)
+            } else {
+                state = SubscriptionState(
+                    tier: state.tier,
+                    entitlementID: state.entitlementID,
+                    source: state.source,
+                    updatedAt: state.updatedAt,
+                    errorMessage: nil
+                )
             }
         } catch {
             apply(error: error)
