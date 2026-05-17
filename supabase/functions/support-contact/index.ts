@@ -75,6 +75,63 @@ function normalizeAttachments(value: unknown): SupportAttachment[] {
     );
 }
 
+function attachmentMetadata(attachments: SupportAttachment[]) {
+  return attachments.map((attachment) => ({
+    filename: attachment.filename,
+    mime_type: attachment.mime_type,
+    size_bytes: attachment.size_bytes ?? 0,
+  }));
+}
+
+async function saveSupportRequest(
+  supabase: { from: (table: string) => any },
+  values: {
+    userID: string;
+    supportID: string;
+    subject: string;
+    message: string;
+    senderName: string;
+    senderEmail: string;
+    senderPhone: string;
+    senderTier: string;
+    companyName: string;
+    senderTitle: string;
+    attachments: SupportAttachment[];
+    deliveryStatus: "sent" | "stored" | "email_failed";
+    deliveryError?: string;
+  },
+): Promise<boolean> {
+  const { error } = await supabase.from("support_requests").insert({
+    user_id: values.userID,
+    support_id: values.supportID,
+    subject: values.subject,
+    message: values.message,
+    sender_name: values.senderName,
+    sender_email: values.senderEmail,
+    sender_phone: values.senderPhone,
+    tier: values.senderTier,
+    company_name: values.companyName,
+    title: values.senderTitle,
+    attachment_count: values.attachments.length,
+    attachments: attachmentMetadata(values.attachments),
+    delivery_status: values.deliveryStatus,
+    delivery_error: values.deliveryError,
+  });
+
+  if (error) {
+    console.error(
+      "support request save failed",
+      JSON.stringify({
+        support_id: values.supportID,
+        error: safeLogText(error.message),
+      }),
+    );
+    return false;
+  }
+
+  return true;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
@@ -149,14 +206,6 @@ serve(async (req) => {
     });
   }
 
-  if (!resendAPIKey) {
-    return json(500, {
-      error: "support_mail_not_configured",
-      message: "Destek mail servisi yapılandırılmamış.",
-      support_id: supportID,
-    });
-  }
-
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name,email,phone,tier,company_name,title")
@@ -216,6 +265,38 @@ serve(async (req) => {
     message,
   ].join("\n");
 
+  if (!resendAPIKey) {
+    const saved = await saveSupportRequest(supabase, {
+      userID: user.id,
+      supportID,
+      subject,
+      message,
+      senderName,
+      senderEmail,
+      senderPhone,
+      senderTier,
+      companyName,
+      senderTitle,
+      attachments,
+      deliveryStatus: "stored",
+      deliveryError: "RESEND_API_KEY missing",
+    });
+
+    if (!saved) {
+      return json(500, {
+        error: "support_request_save_failed",
+        message: "Destek talebi kaydedilemedi.",
+        support_id: supportID,
+      });
+    }
+
+    return json(200, {
+      ok: true,
+      support_id: supportID,
+      delivery_status: "stored",
+    });
+  }
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -239,14 +320,40 @@ serve(async (req) => {
 
   if (!response.ok) {
     const detail = await response.text();
+    const saved = await saveSupportRequest(supabase, {
+      userID: user.id,
+      supportID,
+      subject,
+      message,
+      senderName,
+      senderEmail,
+      senderPhone,
+      senderTier,
+      companyName,
+      senderTitle,
+      attachments,
+      deliveryStatus: "email_failed",
+      deliveryError: safeLogText(detail),
+    });
+
     console.error(
       "support email failed",
       JSON.stringify({
         support_id: supportID,
         http_status: response.status,
         detail: safeLogText(detail),
+        saved,
       }),
     );
+
+    if (saved) {
+      return json(200, {
+        ok: true,
+        support_id: supportID,
+        delivery_status: "email_failed",
+      });
+    }
+
     return json(502, {
       error: "email_failed",
       message: "Destek talebi mail olarak gönderilemedi.",
@@ -254,8 +361,24 @@ serve(async (req) => {
     });
   }
 
+  await saveSupportRequest(supabase, {
+    userID: user.id,
+    supportID,
+    subject,
+    message,
+    senderName,
+    senderEmail,
+    senderPhone,
+    senderTier,
+    companyName,
+    senderTitle,
+    attachments,
+    deliveryStatus: "sent",
+  });
+
   return json(200, {
     ok: true,
     support_id: supportID,
+    delivery_status: "sent",
   });
 });

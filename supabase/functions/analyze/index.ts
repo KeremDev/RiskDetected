@@ -1199,12 +1199,14 @@ serve(async (req: Request) => {
       const mimeType = part.mimeType;
       const ext = mimeType.includes("png") ? "png" : "jpg";
       const storagePath = `${user.id}/${analysisID}/p${i + 1}.${ext}`;
-      const uploadBuffer = new ArrayBuffer(part.bytes.byteLength);
-      new Uint8Array(uploadBuffer).set(part.bytes);
+      const uploadBody = part.bytes.byteOffset === 0 &&
+          part.bytes.byteLength === part.bytes.buffer.byteLength
+        ? part.bytes
+        : part.bytes.slice();
 
       const { error: uploadErr } = await supabase.storage
         .from("photos")
-        .upload(storagePath, new Blob([uploadBuffer], { type: mimeType }), {
+        .upload(storagePath, uploadBody, {
           contentType: mimeType,
           upsert: true,
         });
@@ -1229,6 +1231,7 @@ serve(async (req: Request) => {
         storage_path: storagePath,
         width: part.width,
         height: part.height,
+        size_bytes: part.bytes.byteLength,
         mime_type: mimeType,
       });
 

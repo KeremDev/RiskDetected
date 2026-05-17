@@ -338,7 +338,11 @@ struct SupportContactSheet: View {
                 )
             )
             let supportID = result.supportID ?? "oluşturuldu"
-            successMessage = "Talebin gönderildi. Destek kodu: \(supportID)"
+            if result.deliveryStatus == "sent" {
+                successMessage = "Talebin gönderildi. Destek kodu: \(supportID)"
+            } else {
+                successMessage = "Talebin kaydedildi. Destek kodu: \(supportID)"
+            }
             subject = ""
             message = ""
             attachment = nil

@@ -465,7 +465,7 @@ struct ProfileView: View {
         guard let raw = app.profile?.subscriptionRenewalAt,
               let date = parseISODate(raw)
         else {
-            return "Yenileme bilgisi bekleniyor"
+            return "App Store aboneliği aktif"
         }
 
         let formatter = DateFormatter()

@@ -1391,6 +1391,7 @@ private struct ReportPreview: View {
 }
 
 private struct ReportSourceSheet: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     let bundle: AnalysisResultBundle
     let profile: UserProfile?
@@ -1410,14 +1411,17 @@ private struct ReportSourceSheet: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
+                sheetHeader
                 ReportPreview(bundle: bundle, profile: profile)
-                reportActions
             }
             .padding(.horizontal, 20)
-            .padding(.top, 18)
-            .padding(.bottom, 28)
+            .padding(.top, 12)
+            .padding(.bottom, 110)
         }
         .background(Color.rdCloud)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            reportActionsBar
+        }
         .sheet(isPresented: $showSettings) {
             ReportSettingsSheet(
                 options: $reportOptions,
@@ -1444,6 +1448,45 @@ private struct ReportSourceSheet: View {
             .presentationDetents([.height(440), .large], selection: $reportSettingsDetent)
             .presentationDragIndicator(.visible)
             .preferredColorScheme(colorScheme)
+        }
+    }
+
+    private var reportActionsBar: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.rdCloud.opacity(0), Color.rdCloud],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: 14)
+
+            reportActions
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 14)
+                .background(Color.rdCloud)
+        }
+    }
+
+    private var sheetHeader: some View {
+        HStack {
+            Spacer()
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .frame(width: 40, height: 40)
+                    .background(Color.rdWhite.opacity(0.96))
+                    .clipShape(Circle())
+                    .shadow(color: Color.rdOnyx.opacity(0.14), radius: 10, x: 0, y: 5)
+            }
+            .buttonStyle(RDPressableButtonStyle())
+            .accessibilityLabel("Pencereyi kapat")
         }
     }
 

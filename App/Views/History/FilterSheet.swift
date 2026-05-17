@@ -31,6 +31,20 @@ struct FilterSheet: View {
                             .foregroundStyle(Color.rdSlate)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdBlack)
+                            .frame(width: 38, height: 38)
+                            .background(Color.rdWhite)
+                            .clipShape(Circle())
+                            .shadow(color: Color.rdOnyx.opacity(0.10), radius: 8, x: 0, y: 4)
+                    }
+                    .buttonStyle(RDPressableButtonStyle())
+                    .accessibilityLabel("Filtre penceresini kapat")
                 }
                 .padding(.top, 6)
 

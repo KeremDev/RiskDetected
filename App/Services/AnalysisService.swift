@@ -162,7 +162,7 @@ final class AnalysisService {
         do {
             let rows: [AnalysisPhotoRow] = try await supabase.client
                 .from("photos")
-                .select("analysis_id,storage_path")
+                .select("analysis_id,storage_path,width,height,mime_type")
                 .in("analysis_id", values: analysisIDs.map { $0.uuidString })
                 .order("storage_path", ascending: true)
                 .execute()

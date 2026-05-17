@@ -954,7 +954,10 @@ struct HomeView: View {
             }
             pendingJob = AnalysisJob(previewImage: img) {
                 progress in
-                try await AnalysisService.shared.runPhotoAnalysis(
+                if app.currentTier.isPaid {
+                    await app.refreshPlanState()
+                }
+                return try await AnalysisService.shared.runPhotoAnalysis(
                     userID: userID,
                     images: [img],
                     canvases: canvases,
@@ -968,7 +971,10 @@ struct HomeView: View {
             }
             pendingJob = AnalysisJob(previewImage: nil) {
                 progress in
-                try await AnalysisService.shared.runTextAnalysis(
+                if app.currentTier.isPaid {
+                    await app.refreshPlanState()
+                }
+                return try await AnalysisService.shared.runTextAnalysis(
                     userID: userID,
                     text: trimmed,
                     canvases: canvases,
@@ -991,7 +997,8 @@ struct HomeView: View {
 
     private func selectedCanvasesForCurrentTier() -> [AnalysisCanvas] {
         let ordered = AnalysisCanvas.all.filter { selectedCanvases.contains($0) }
-        let nonEmpty = ordered.isEmpty ? [.general] : ordered
+        let allowed = ordered.filter { app.currentTier.includes($0.minTier) }
+        let nonEmpty = allowed.isEmpty ? [.general] : allowed
         if app.currentTier.isPaid {
             return nonEmpty
         }
@@ -999,8 +1006,9 @@ struct HomeView: View {
     }
 
     private func normalizeSelectedCanvasesForTier() {
-        guard !app.currentTier.isPaid, selectedCanvases.count > 1 else { return }
-        selectedCanvases = [selectedCanvasesForCurrentTier().first ?? .general]
+        let allowed = Set(selectedCanvasesForCurrentTier())
+        guard selectedCanvases != allowed else { return }
+        selectedCanvases = allowed
     }
 
     private func quotaPaywallNotice(supportID: String = AppErrorMessage.newSupportID()) -> String {

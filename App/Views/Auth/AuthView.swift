@@ -376,7 +376,7 @@ struct AuthView: View {
             HStack(spacing: 8) {
                 Image(systemName: "envelope.fill")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
+                    .foregroundStyle(Color.rdOnyx.opacity(0.82))
                     .frame(width: 54, height: 52)
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -385,14 +385,14 @@ struct AuthView: View {
                     "",
                     text: $email,
                     prompt: Text("Mailinizi yazınız...")
-                        .foregroundColor(Color.rdSlate.opacity(0.48))
+                        .foregroundColor(Color.rdOnyx.opacity(0.34))
                 )
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .focused($focusedField, equals: .email)
                     .font(.system(size: 16, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
+                    .foregroundColor(Color.rdOnyx)
                     .tint(Color.rdGreen)
                     .padding(.horizontal, 16)
                     .frame(height: 52)

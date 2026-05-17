@@ -46,10 +46,12 @@ struct SupportRequestInput {
 struct SupportRequestResult: Decodable {
     let ok: Bool?
     let supportID: String?
+    let deliveryStatus: String?
 
     enum CodingKeys: String, CodingKey {
         case ok
         case supportID = "support_id"
+        case deliveryStatus = "delivery_status"
     }
 }
 

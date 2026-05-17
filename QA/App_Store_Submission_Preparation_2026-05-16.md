@@ -62,8 +62,8 @@ Final archive check: in Xcode Organizer, inspect Privacy Report and embedded ent
 
 | Field | Entry |
 | --- | --- |
-| Name | `RiskDetected` |
-| Subtitle | `Yapay zeka destekli İSG asistanı` |
+| Name | `RiskDetected İSG Analizi` |
+| Subtitle | `Fotoğrafla Risk Tespiti` |
 | Category | Productivity |
 | Secondary category | Business |
 | Content rights | No third-party copyrighted content unless screenshots include user-provided/demo images. |

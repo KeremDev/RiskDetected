@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import Supabase
 
 enum RDThemePreference: String, CaseIterable, Identifiable {
     case system
@@ -129,6 +130,8 @@ final class AppState: ObservableObject {
             // yine de kesinlik için bir kez daha refresh edelim.
             await auth.refreshProfile()
             await subscriptions.identify(userID: auth.session?.user.id)
+            await syncBackendSubscription()
+            await auth.refreshProfile()
             await subscriptions.loadOfferings()
             activeTab = .home
             flow = .main
@@ -163,17 +166,20 @@ final class AppState: ObservableObject {
 
     func refreshPlanState() async {
         await subscriptions.refreshCustomerInfo()
+        await syncBackendSubscription()
         await auth.refreshProfile()
         applyTier(displayTier(profileTier: auth.profile?.tier ?? .free, subscriptionTier: subscriptions.state.tier))
     }
 
     func purchaseSubscription(packageID: String) async throws {
         try await subscriptions.purchase(packageID: packageID)
+        await syncBackendSubscription()
         await auth.refreshProfile()
     }
 
     func restoreSubscriptions() async throws {
         try await subscriptions.restorePurchases()
+        await syncBackendSubscription()
         await auth.refreshProfile()
     }
 
@@ -278,6 +284,27 @@ final class AppState: ObservableObject {
         currentTier = tier
         planCapabilities = PlanCapabilities.forTier(tier)
         isPro = tier == .pro
+    }
+
+    private func syncBackendSubscription() async {
+        guard auth.session != nil else { return }
+        struct EmptyBody: Encodable {}
+        struct SyncResponse: Decodable {
+            let tier: String?
+        }
+
+        do {
+            let response: SyncResponse = try await SupabaseService.shared.functions.invoke(
+                RDConfig.syncRevenueCatSubscriptionFunctionName,
+                options: FunctionInvokeOptions(body: EmptyBody())
+            )
+            if let tier = response.tier.flatMap(SubscriptionTier.init(rawValue:)) {
+                applyTier(displayTier(profileTier: tier, subscriptionTier: subscriptions.state.tier))
+            }
+        } catch {
+            // RevenueCat SDK state remains the user-facing source; backend sync retry
+            // happens on the next refresh/purchase/restore/bootstrap.
+        }
     }
 
     func requestQuickScan(source: QuickScanSource = .chooser) {

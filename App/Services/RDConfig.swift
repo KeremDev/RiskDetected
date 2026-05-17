@@ -28,6 +28,7 @@ enum RDConfig {
     static let sendPushNotificationFunctionName = "send-push-notification"
     static let generateExcelReportFunctionName = "generate-excel-report"
     static let revenueCatWebhookFunctionName = "revenuecat-webhook"
+    static let syncRevenueCatSubscriptionFunctionName = "sync-revenuecat-subscription"
     static let supportContactFunctionName = "support-contact"
 
     /// RevenueCat client-side public SDK config. This key is intentionally public;
