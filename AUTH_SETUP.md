@@ -87,7 +87,7 @@ Google Cloud Console tarafında iki client kullanılır:
   - Google native SDK ile mevcut kullanıcı girişi ve yeni kullanıcı kaydı geçti.
   - 2026-05-17 Google Auth Platform Audience publishing status `In production` durumuna alındı.
   - Google Auth Platform Data Access tarafında yalnızca non-sensitive `userinfo.email`, `userinfo.profile` ve `openid` scope'ları var; sensitive/restricted scope yok.
-  - Branding URL'leri `https://riskdetected.com`, `https://riskdetected.com/gizlilik-politikasi`, `https://riskdetected.com/kullanim-kosullari` olarak kaydedildi; authorized domains içine `riskdetected.com` eklendi.
+  - Branding URL'leri `https://riskdetected.com`, `https://riskdetected.com/gizlilik`, `https://riskdetected.com/kullanim-kosullari` olarak kaydedildi; authorized domains içine `riskdetected.com` eklendi.
   - Branding developer contact listesine `info@riskdetected.com` eklendi. User support email olarak `info@riskdetected.com` seçilebilmesi için bu adresin Google hesabı/Workspace hesabı olarak giriş yapılan hesap olması veya giriş yapılan kullanıcı tarafından yönetilen bir Google Group olması gerekiyor.
   - Apple kodlandı ve Apple/Supabase ayarları yapıldı.
   - 2026-05-15 TestFlight gerçek cihazda Apple Sign In canlı testi geçti.

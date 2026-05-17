@@ -285,7 +285,7 @@ Required before real production push delivery:
 - Apple Developer > Keys: create APNs Auth Key (`.p8`).
 - Set Supabase Edge Function secrets: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, `APNS_PRIVATE_KEY`, `APNS_ENV`.
 - Use `APNS_ENV=sandbox` for development and `production` for production/TestFlight delivery.
-- Switch `aps-environment` entitlement from development to production/release signing configuration before release.
+- Final Archive / Xcode Organizer check is complete; release signing, APNs production entitlement and privacy manifests were verified.
 - Add trusted backend calls/triggers for analysis complete, report ready and account/security updates.
 
 ## Privacy, Legal and Retention
@@ -301,10 +301,10 @@ Completed/started:
 - Profile > Güvenlik ve gizlilik opens the same legal center for in-app access.
 - Legal documents are long-form markdown files rendered directly in a scrollable document reader.
 - Public website/domain: `https://riskdetected.com`.
-- Intended public legal URLs:
-  - `https://riskdetected.com/kvkk-aydinlatma-ve-acik-riza-metni`
+- Public legal URLs are live:
+  - `https://riskdetected.com/kvkk`
   - `https://riskdetected.com/kullanim-kosullari`
-  - `https://riskdetected.com/gizlilik-politikasi`
+  - `https://riskdetected.com/gizlilik`
 - Client photo preprocessing re-renders images before upload/analysis to strip EXIF/location/camera metadata.
 - Edge Function strips common JPEG/PNG metadata before Gemini and Storage persistence.
 - Client-side face blur is applied before upload/analysis.
@@ -329,7 +329,7 @@ Completed retention/delete work:
 Follow-up:
 
 - Account deletion completion flow is implemented and deployed as `account-deletion-complete`; run one disposable-account production spot-check before release.
-- Publish bundled legal markdown contents to the public website legal URLs once the website source/deploy project is available.
+- Public legal markdown contents have been published to the live website legal URLs.
 
 ## Error Handling and Supportability
 
@@ -444,15 +444,13 @@ Known image issue to keep checking:
 
 ### P3 - Later
 
-1. RevenueCat subscription integration.
-2. Provider fallback abstraction beyond Gemini.
-3. Stronger Pro analysis flow:
+1. Provider fallback abstraction beyond Gemini.
+2. Stronger Pro analysis flow:
    - stronger model;
    - multi-pass validation;
    - sector/procedure checklists;
    - low-confidence recheck.
-4. Corporate/OSGB workflows only after individual MVP is stable.
-5. Corporate/OSGB workflows only after individual MVP is stable.
+3. Corporate/OSGB workflows only after individual MVP is stable.
 
 ## Build and Simulator
 

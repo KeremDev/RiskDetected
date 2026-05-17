@@ -101,10 +101,11 @@ RiskDetected, İSG uzmanları ve saha ekipleri için destekleyici bir araçtır.
 | --- | --- |
 | Marketing URL | `https://riskdetected.com` |
 | Support URL | `https://riskdetected.com` or `mailto:info@riskdetected.com` if App Store Connect accepts mailto for the field; website URL is safer. |
-| Privacy Policy URL | `https://riskdetected.com/gizlilik-politikasi` |
+| Privacy Policy URL | `https://riskdetected.com/gizlilik` |
 | Terms URL | `https://riskdetected.com/kullanim-kosullari` |
+| KVKK URL | `https://riskdetected.com/kvkk` |
 
-Important: public website legal pages must be live before submission.
+Important: public website legal pages are live and ready for App Store Connect entry.
 
 ### Review Notes
 
@@ -231,14 +232,36 @@ Important nuance: workplace photos can theoretically contain injuries or sensiti
 
 ## 6. Current Blockers Before Submit
 
-1. Public website legal URLs must be live.
-2. App Store Connect subscription products must match RevenueCat:
+1. Done: Public website legal URLs are live:
+   - `https://riskdetected.com/gizlilik`
+   - `https://riskdetected.com/kullanim-kosullari`
+   - `https://riskdetected.com/kvkk`
+2. Archive / Organizer signing check:
+   - Done: local control archive created at `/tmp/RiskDetectedCheck.xcarchive`.
+   - Done: bundle id is `com.riskdetected.app`, version `0.1.0`, build `2`.
+   - Done: `TARGETED_DEVICE_FAMILY = 1` and the control archive app `UIDeviceFamily` is iPhone-only.
+   - Done: app root `PrivacyInfo.xcprivacy` is included in the new control archive.
+   - Done: GoogleSignIn and RevenueCat privacy manifests are included in the archive bundles.
+   - Done: Debug build setting keeps `APS_ENVIRONMENT = development`; Release build setting now uses `APS_ENVIRONMENT = production`.
+   - Done: manual `CODE_SIGN_IDENTITY` overrides were removed so Xcode automatic signing can choose the correct certificate/profile pair. Forcing `Apple Distribution` while Xcode only had a development managed profile caused the "conflicting provisioning settings" Archive error.
+   - Done: post-fix local archive succeeded at `/tmp/RiskDetectedArchiveAfterSigningFix.xcarchive`.
+   - Done: final Archive / Xcode Organizer check completed by owner.
+   - Done: final archive verification covered embedded entitlements, APNs production, distribution signing, privacy report, and GoogleSignIn / RevenueCat privacy manifests.
+3. Done: App Store Connect subscription products match RevenueCat:
    - Plus monthly/yearly
    - Pro monthly/yearly
-3. Pro purchase, restore, expiration/downgrade TestFlight sandbox pass still needs final confirmation.
-4. APNs production secrets/device test should be done if notifications remain enabled for release.
-5. Create final App Store screenshots from clean demo data.
-6. Provide App Review test account and OTP access plan.
+4. Done: Subscription validation checks completed:
+   - product IDs match between App Store Connect and RevenueCat.
+   - Plus monthly/yearly products are linked to the Plus entitlement.
+   - Pro monthly/yearly products are linked to the Pro entitlement.
+   - active offering includes the expected packages.
+   - TestFlight purchase, restore, expiration and downgrade checks are complete.
+5. Done: TestFlight paywall USD display was handled in-app; when StoreKit/RevenueCat returns USD in a Turkish context, the paywall falls back to the configured TL display prices while purchases still use the real App Store package.
+6. Enter/confirm the App Store privacy nutrition form in App Store Connect from the prepared draft.
+7. APNs production secrets/device test should be done if notifications remain enabled for release.
+8. Create final App Store screenshots from clean demo data.
+9. Provide App Review test account and OTP access plan.
+10. Optional: prepare a 15-30 second App Preview video.
 
 ## 7. Local Verification Completed
 

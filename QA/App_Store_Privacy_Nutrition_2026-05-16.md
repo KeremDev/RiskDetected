@@ -32,8 +32,8 @@ Gerekçe: IDFA yok, reklam SDK yok, üçüncü taraf siteler/uygulamalar arasın
 
 | Alan | Değer |
 | --- | --- |
-| Privacy Policy URL | `https://riskdetected.com/gizlilik-politikasi` |
-| Privacy Choices URL | Boş bırakılabilir. Zorunlu alan gibi gelirse geçici olarak `https://riskdetected.com/gizlilik-politikasi` kullanılabilir. |
+| Privacy Policy URL | `https://riskdetected.com/gizlilik` |
+| Privacy Choices URL | Boş bırakılabilir. Zorunlu alan gibi gelirse geçici olarak `https://riskdetected.com/gizlilik` kullanılabilir. |
 
 ### Data Linked To The User
 
@@ -116,9 +116,10 @@ Gerekçe: Uygulama `UserDefaults` ile onboarding tamamlandı bilgisi, tema ve di
 
 ## Final Submission Checklist
 
-1. Legal sayfaların URL'leri canlı olmalı:
-   - `https://riskdetected.com/gizlilik-politikasi`
+1. Done: Legal sayfaların URL'leri canlı:
+   - `https://riskdetected.com/gizlilik`
    - `https://riskdetected.com/kullanim-kosullari`
+   - `https://riskdetected.com/kvkk`
 2. App Store Connect > App Privacy ekranında yukarıdaki "Data Linked To The User" tablosu girilmeli.
 3. Tracking cevabı "No" olmalı.
 4. Payment/Credit Info seçilmemeli; Purchase History seçilmeli.

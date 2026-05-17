@@ -11,9 +11,9 @@ enum RDConfig {
     enum Web {
         static let websiteURL = URL(string: "https://riskdetected.com")!
         static let supportURL = URL(string: "https://riskdetected.com")!
-        static let privacyPolicyURL = URL(string: "https://riskdetected.com/gizlilik-politikasi")!
+        static let privacyPolicyURL = URL(string: "https://riskdetected.com/gizlilik")!
         static let termsURL = URL(string: "https://riskdetected.com/kullanim-kosullari")!
-        static let kvkkURL = URL(string: "https://riskdetected.com/kvkk-aydinlatma-ve-acik-riza-metni")!
+        static let kvkkURL = URL(string: "https://riskdetected.com/kvkk")!
     }
 
     /// Supabase proje URL'i.

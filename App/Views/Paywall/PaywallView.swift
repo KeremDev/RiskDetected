@@ -679,9 +679,17 @@ struct PaywallView: View {
         }
 
         if billing == .yearly {
-            return selectedPackage.monthlyEquivalentPrice ?? selectedPackage.price
+            if let monthlyEquivalentPrice = selectedPackage.monthlyEquivalentPrice,
+               !Self.shouldUseTRYFallback(for: monthlyEquivalentPrice) {
+                return monthlyEquivalentPrice
+            }
+            return Self.shouldUseTRYFallback(for: selectedPackage.price)
+                ? Self.currency(fallback.yearlyMonthlyPrice)
+                : selectedPackage.price
         }
-        return selectedPackage.price
+        return Self.shouldUseTRYFallback(for: selectedPackage.price)
+            ? Self.currency(fallback.monthlyPrice)
+            : selectedPackage.price
     }
 
     private func periodText(for tier: SubscriptionTier) -> String {
@@ -696,7 +704,7 @@ struct PaywallView: View {
     private func annualTotalText(for tier: SubscriptionTier) -> String {
         let fallback = planDisplay(for: tier)
         if let package = package(for: tier, billing: .yearly) {
-            return package.price
+            return Self.shouldUseTRYFallback(for: package.price) ? Self.currency(fallback.yearlyPrice) : package.price
         }
         return Self.currency(fallback.yearlyPrice)
     }
@@ -704,9 +712,19 @@ struct PaywallView: View {
     private func monthlyTotalText(for tier: SubscriptionTier) -> String {
         let fallback = planDisplay(for: tier)
         if let package = package(for: tier, billing: .monthly) {
-            return package.price
+            return Self.shouldUseTRYFallback(for: package.price) ? Self.currency(fallback.monthlyPrice) : package.price
         }
         return Self.currency(fallback.monthlyPrice)
+    }
+
+    private static func shouldUseTRYFallback(for price: String) -> Bool {
+        let locale = Locale.current
+        guard locale.region?.identifier == "TR" else { return false }
+
+        let normalized = price
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
+            .uppercased(with: Locale(identifier: "en_US"))
+        return normalized.contains("$") || normalized.contains("USD")
     }
 
     private static func currency(_ value: Double) -> String {

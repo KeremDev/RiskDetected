@@ -190,8 +190,8 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: Profile > Güvenlik ve gizlilik opens the same legal center for in-app access;
    - Done: legal center now renders the long-form markdown documents directly in a scrollable document window;
    - Done: legal documents use Riskdetected, `info@riskdetected.com`, Eskişehir and `https://riskdetected.com` as the public contact/site details.
+   - Done: public legal URLs are live at `https://riskdetected.com/gizlilik`, `https://riskdetected.com/kullanim-kosullari` and `https://riskdetected.com/kvkk`.
    - Done: App Store privacy nutrition disclosure draft prepared at `QA/App_Store_Privacy_Nutrition_2026-05-16.md`.
-   - Removed from active backlog: public website legal publication will be handled outside this implementation list.
 2. Visual data policy:
    - Done: client-side EXIF cleanup by pixel-only re-render before AI analysis/upload;
    - Done: Edge Function strips common JPEG/PNG metadata before Gemini and Storage persistence;
@@ -305,8 +305,10 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: Google provider credentials and redirect URL are configured in Supabase Dashboard.
    - Done: Google native SDK sign-in passed live existing-user and new-user tests.
    - Done: Google Auth Platform Audience publishing status is `In production`; Branding URLs use `riskdetected.com`; Data Access only contains non-sensitive `userinfo.email`, `userinfo.profile` and `openid` scopes.
-4. RevenueCat subscription integration.
-5. Replace local/mock Pro toggles with verified subscription/profile refresh only.
+4. Done: RevenueCat subscription integration.
+5. Done: RevenueCat/App Store Connect subscription products and entitlement/offering checks are complete.
+6. Done: TestFlight paywall USD display is handled with a TL fallback when StoreKit/RevenueCat returns USD in a Turkish context.
+7. Replace local/mock Pro toggles with verified subscription/profile refresh only.
 
 ### P2.5 - App Preferences and Localization
 
@@ -364,11 +366,12 @@ These items exist in some form, but need revision before we treat them as produc
    - fill missing content for account, preferences, reports, analyses, notifications and data/privacy areas.
 
 7. Paywall page redesign:
-   - redesign the Plus/Pro upgrade screen with the latest commercial limits;
-   - show Plus as 10 standard analyses/day, 2 detailed analyses/day and 150 reports/month;
-   - show Pro as 40 standard analyses/day, 10 detailed analyses/day and 750 reports/month;
-   - make RevenueCat package loading, current-plan state, purchase, restore and error states clearer;
-   - verify the refreshed paywall on TestFlight with real-device purchase/restore QA.
+   - Done: redesigned the Plus/Pro upgrade screen with the latest commercial limits;
+   - Done: Plus shows 10 standard analyses/day, 2 detailed analyses/day and 150 reports/month;
+   - Done: Pro shows 40 standard analyses/day, 10 detailed analyses/day and 750 reports/month;
+   - Done: RevenueCat package loading, current-plan state, purchase, restore and error states are clearer;
+   - Done: refreshed paywall purchase/restore QA completed on TestFlight.
+   - Done: USD price display is handled with TL fallback pricing for Turkish-context paywall rendering.
 
 ### P2.7 - Excel Risk Analysis Export
 

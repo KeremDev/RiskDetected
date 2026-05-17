@@ -198,12 +198,16 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 
 3. RevenueCat / gerçek entitlement
    - RevenueCat SDK, Plus/Pro ürünleri ve webhook entegrasyonu tamamlandı.
+   - App Store Connect subscription ürünleri RevenueCat ile bire bir eşleşiyor:
+     - Plus monthly/yearly
+     - Pro monthly/yearly
    - TestFlight sandbox Plus satın alma testi geçti:
      - `riskdetected_plus_monthly`
      - `entitlement_ids = [plus]`
      - Supabase `user_subscriptions.tier = plus`
      - Supabase `profiles.tier = plus`
-   - Kalan: Pro satın alma, restore purchase, iptal/expiration/downgrade eventleri test edilmeli.
+   - Pro satın alma, restore purchase, iptal/expiration/downgrade kontrolleri tamamlandı.
+   - Done: TestFlight paywall USD görünümü app tarafında ele alındı; StoreKit/RevenueCat Türkçe/Türkiye bağlamında USD döndürürse paywall TL fallback fiyatlarını gösteriyor.
 
 4. Son manuel QA
    - Done: 2026-05-16 simülatörde final manuel QA kapatıldı.
@@ -216,8 +220,11 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 5. Legal metin finali
    - Done: KVKK, Kullanım koşulları ve Gizlilik Politikası metinleri uygulama içine markdown belge olarak eklendi.
    - Done: Legal metinler Riskdetected, `info@riskdetected.com`, Eskişehir ve `https://riskdetected.com` bilgileriyle güncellendi.
+   - Done: Public legal URL'ler canlı:
+     - `https://riskdetected.com/gizlilik`
+     - `https://riskdetected.com/kullanim-kosullari`
+     - `https://riskdetected.com/kvkk`
    - Done: App Store privacy nutrition / veri kullanımı beyan taslağı `QA/App_Store_Privacy_Nutrition_2026-05-16.md` altında hazırlandı.
-   - Not in active backlog: website yayını kullanıcı tarafından yapılacak.
 
 6. Supabase migration geçmişi
    - Done: remote base migration history repoya fetch edildi.
@@ -314,12 +321,15 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 1. Apple Developer capability kontrolü
    - Done: Sign in with Apple, Push Notifications/APNs, In-App Purchase, camera/photo izinleri, URL scheme ve privacy manifest kontrol edildi.
    - Done: İlk release için hedef cihaz ailesi iPhone-only yapıldı; iPad screenshot/UI QA yükü sonraki faza bırakıldı.
-   - Follow-up: Archive sonrası embedded entitlements içinde APNs production, distribution signing ve privacy report Xcode Organizer'da kontrol edilmeli.
+   - Done: Local archive privacy manifest kontrolü tamamlandı; app root, GoogleSignIn ve RevenueCat `PrivacyInfo.xcprivacy` dosyaları archive içine giriyor.
+   - Done: Release build ayarı `APS_ENVIRONMENT=production` olacak şekilde netleştirildi; manual `CODE_SIGN_IDENTITY` override kaldırıldı ve Xcode automatic signing'e bırakıldı.
+   - Done: Xcode Archive'daki "conflicting provisioning settings" hatası giderildi; `/tmp/RiskDetectedArchiveAfterSigningFix.xcarchive` başarıyla oluştu.
+   - Done: Final Archive / Xcode Organizer kontrolü kullanıcı tarafından tamamlandı; embedded entitlements, APNs production, distribution signing, privacy report ve GoogleSignIn / RevenueCat privacy manifestleri kontrol edildi.
 
 2. App Store metadata
    - Done: App adı, subtitle, açıklama, keyword, kategori, review notes, support/legal URL, screenshot/video çekim planı, privacy nutrition özet formu ve age rating cevapları hazırlandı.
    - Done: Detay doküman: `QA/App_Store_Submission_Preparation_2026-05-16.md`.
-   - Follow-up: public legal URL'ler canlı olunca App Store Connect alanlarına girilmeli.
+   - Done: public legal URL'ler canlı ve App Store Connect alanlarına girilmeye hazır.
    - Follow-up: clean demo data ile final iPhone screenshot seti üretilmeli.
 
 3. TestFlight release checklist
@@ -327,7 +337,8 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Email OTP.
    - Apple/Google login.
    - Free günde 1 analiz limiti.
-   - Plus/Pro purchase/restore.
+   - Done: Plus/Pro purchase/restore.
+   - Done: Paywall USD fiyat görünümü için TL fallback uygulandı.
    - Photo permission / gallery / camera.
    - Analysis -> Result -> PDF/XLSX -> share.
    - Dark mode.
@@ -349,8 +360,9 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 
 ## Önerilen Sıradaki Uygulama Sırası
 
-1. Paywall sayfası yenileme ve Plus/Pro plan limit metinlerini UI'da netleştirme.
-2. RevenueCat Pro satın alma + restore purchase + expiration/downgrade testi.
-3. App Store privacy nutrition taslağını App Store Connect ekranında final soru setiyle bire bir kontrol edip girme.
-4. APNs real-device/TestFlight push testi.
-5. TestFlight tam uçtan uca release pass.
+1. App Store privacy nutrition taslağını App Store Connect ekranında final soru setiyle bire bir kontrol edip girme.
+2. APNs production secrets + real-device/TestFlight push testi.
+3. TestFlight tam uçtan uca release pass.
+4. Clean demo data ile final iPhone screenshot seti üretme.
+5. App Review test hesabı ve OTP erişim planını hazırlama.
+6. Opsiyonel: App Preview video hazırlama.
