@@ -115,7 +115,10 @@ Aktivasyon sonrası beklenen kontrol:
 - Google authorize endpoint artık `Unsupported provider` dönmüyor.
 - iOS simülatörde mevcut Google hesabıyla native SDK girişi geçti.
 - Fiziksel `Kerem iPhone` cihazında Google yeni kullanıcı kaydı geçti.
-- Google OAuth consent screen hâlâ test modunda; release öncesi production/publish adımı tamamlanmalı.
+- 2026-05-17 Google Auth Platform > Audience ekranında publishing status `In production` durumuna alındı.
+- Branding alanında homepage, privacy policy, terms URL'leri `riskdetected.com` altında dolduruldu; authorized domains içinde `riskdetected.com` eklendi.
+- Branding developer contact listesine `info@riskdetected.com` eklendi; User support email dropdown'ında şu an yalnızca giriş yapılan Google hesabı göründüğü için public support email hâlâ `kayalar.kerem21@gmail.com`.
+- Data Access tarafında yalnızca non-sensitive `userinfo.email`, `userinfo.profile` ve `openid` scope'ları var; sensitive/restricted scope yok.
 
 ## OAuth Marka Görünürlüğü Notu
 
@@ -146,8 +149,10 @@ Doğrulananlar:
 1. Email OTP ile yeni kullanıcı kayıt akışı geçti.
 2. Email OTP ile mevcut kullanıcı giriş akışı geçti.
 3. Resend/Supabase SMTP üzerinden kod teslimi doğrulandı.
+4. 2026-05-17 canlı endpoint smoke testinde `POST /auth/v1/otp` geçerli Gmail hesabı için `200 {}` döndürdü.
+5. Aynı akışta `/auth/v1/verify` gerçek OTP koduyla `200` döndürdü ve Supabase session üretti.
+6. Test edilen e-posta Google identity ile aynı kullanıcıya bağlı olduğu için OTP doğrulaması mevcut kullanıcı hesabına session üretti; bu beklenen ve olumlu sonuçtur.
 
 Kalan:
 
 1. Release öncesi Email OTP, Google ve Apple için kısa final smoke test yapılabilir.
-2. Google Cloud OAuth consent screen production/publish adımı release öncesi tamamlanmalı.

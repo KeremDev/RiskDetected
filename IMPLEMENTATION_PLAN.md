@@ -268,16 +268,17 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: `AuthService.sendEmailOTP(email:)` and `verifyEmailOTP(email:token:)` are wired to Supabase Email OTP.
    - Done: Supabase Email provider smoke test passed with `POST /auth/v1/otp` returning 200 for a valid mailbox-shaped address.
    - Done: Auth session issuance verified through Admin `generate_link` + `/auth/v1/verify` token hash flow.
+   - Done: 2026-05-17 live OTP smoke test passed with `POST /auth/v1/otp` returning `200 {}` and `/auth/v1/verify` returning `200` plus a real Supabase session for the delivered code.
+   - Done: Resend/Supabase SMTP delivery was verified with a real mailbox; OTP for an address already linked to Google identity produced a session for the same existing user.
    - Done: Email send rate-limit and invalid email errors are normalized into auth-specific Turkish user messages instead of generic AI/rate-limit messaging.
    - Done: Auth screen visual polish pass:
      - softened hero image to white transition;
      - lifted logo/slogan block in the email entry state;
      - changed Google button to a branded colored wordmark style;
      - changed email placeholder to muted grey and made the "Diger giris yontemleri" link more readable.
-   - Required external setup: Supabase Email provider must be enabled, and both `Confirm signup` and `Magic Link` templates must expose the 6-digit token using the repo templates under `supabase/templates/`.
-   - Required external setup: configure custom SMTP in Supabase Auth to avoid low built-in email rate limits and improve delivery.
-   - SMTP candidates: Resend, Postmark, SendGrid or Mailgun. Prefer verified-domain transactional SMTP before public launch.
-   - Remaining manual check: use a real accessible mailbox and confirm new-user and existing-user emails render the 6-digit OTP token instead of a link.
+   - Done: Supabase Email provider is enabled, and the `Confirm signup` / `Magic Link` templates expose the 6-digit token using the repo templates under `supabase/templates/`.
+   - Done: custom SMTP is configured in Supabase Auth to avoid low built-in email rate limits and improve delivery.
+   - Remaining manual check: release-candidate TestFlight smoke can repeat new-user and existing-user OTP once more before submission.
 
 2. Push notifications.
    - Done: APNs token registration and Supabase token/preference persistence.
@@ -296,11 +297,14 @@ These items exist in some form, but need revision before we treat them as produc
 2. Apple Sign In production hardening.
    - Started: iOS Apple Sign In service added with nonce hashing and Supabase `signInWithIdToken(provider: .apple)`.
    - Started: Sign in with Apple entitlement added to the target.
-   - Follow-up: configure Apple provider credentials in Supabase Dashboard and Apple Developer portal, then verify on a real Apple account.
+   - Done: Apple provider credentials were configured in Supabase Dashboard and Apple Developer portal.
+   - Done: 2026-05-15 TestFlight real-device Apple Sign In passed; Supabase `apple` identity and default `profiles` row were verified.
 3. Google Sign In production hardening.
-   - Started: Google button is wired to Supabase OAuth/PKCE web flow.
+   - Done: Google button uses native Google Sign-In SDK and passes the Google `idToken` to Supabase `signInWithIdToken(provider: .google)`.
    - Added: app URL scheme `io.supabase.riskdetected` is registered through `Config/RiskDetectedInfo.plist` for OAuth/magic-link callbacks.
-   - Follow-up: configure Google provider credentials and redirect URL in Supabase Dashboard; verify callback URL handling.
+   - Done: Google provider credentials and redirect URL are configured in Supabase Dashboard.
+   - Done: Google native SDK sign-in passed live existing-user and new-user tests.
+   - Done: Google Auth Platform Audience publishing status is `In production`; Branding URLs use `riskdetected.com`; Data Access only contains non-sensitive `userinfo.email`, `userinfo.profile` and `openid` scopes.
 4. RevenueCat subscription integration.
 5. Replace local/mock Pro toggles with verified subscription/profile refresh only.
 

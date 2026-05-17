@@ -24,7 +24,7 @@ Authentication > Providers:
   - Authentication > Emails > Magic Link
     - Subject: `RiskDetected giriş kodun`
     - Body: `supabase/templates/email-otp-magic-link.html`
-- Production mail teslimatı ve rate-limit kontrolü için özel SMTP bağlanmalı. Önerilen sağlayıcılar: Resend, Postmark, SendGrid veya Mailgun.
+- Production mail teslimatı ve rate-limit kontrolü için özel SMTP bağlı olmalı. Canlıda Resend/Supabase SMTP smoke testleri geçmiştir; yeni ortam kurulursa önerilen sağlayıcılar Resend, Postmark, SendGrid veya Mailgun.
 - Apple provider aktif olmalı.
   - Apple Services ID / Team ID / Key ID / private key Supabase tarafında tanımlanmalı.
 - Google provider aktif olmalı.
@@ -85,21 +85,25 @@ Google Cloud Console tarafında iki client kullanılır:
 - Apple/Google provider durumu:
   - 2026-05-12 canlı Supabase `/auth/v1/settings` kontrolünde `external.apple=true` ve `external.google=true` göründü.
   - Google native SDK ile mevcut kullanıcı girişi ve yeni kullanıcı kaydı geçti.
-  - Google Cloud OAuth consent screen hâlâ test modunda; release öncesi production/publish adımı yapılacak.
+  - 2026-05-17 Google Auth Platform Audience publishing status `In production` durumuna alındı.
+  - Google Auth Platform Data Access tarafında yalnızca non-sensitive `userinfo.email`, `userinfo.profile` ve `openid` scope'ları var; sensitive/restricted scope yok.
+  - Branding URL'leri `https://riskdetected.com`, `https://riskdetected.com/gizlilik-politikasi`, `https://riskdetected.com/kullanim-kosullari` olarak kaydedildi; authorized domains içine `riskdetected.com` eklendi.
+  - Branding developer contact listesine `info@riskdetected.com` eklendi. User support email olarak `info@riskdetected.com` seçilebilmesi için bu adresin Google hesabı/Workspace hesabı olarak giriş yapılan hesap olması veya giriş yapılan kullanıcı tarafından yönetilen bir Google Group olması gerekiyor.
   - Apple kodlandı ve Apple/Supabase ayarları yapıldı.
   - 2026-05-15 TestFlight gerçek cihazda Apple Sign In canlı testi geçti.
   - Apple provider `Client IDs` alanında Services ID yanında native iOS bundle id `com.riskdetected.app` da tanımlı olmalı; aksi durumda Supabase `Unacceptable audience in id_token` hatası verir.
   - Detaylı canlı kontrol notu: `AUTH_LIVE_VERIFICATION_2026-05-12.md`.
 - Özel SMTP kurulumu:
-  - Supabase Dashboard > Authentication > SMTP Settings altında SMTP sağlayıcısı bağlanacak.
-  - Tercih edilen seçenek: Resend veya Postmark ile doğrulanmış domain üzerinden gönderim.
+  - Supabase Dashboard > Authentication > SMTP Settings altında SMTP sağlayıcısı canlıda bağlandı.
+  - Resend/Supabase SMTP üzerinden gerçek kod teslimi ve OTP session üretimi doğrulandı.
   - Amaç: Supabase built-in mail servisinin düşük test limitlerine takılmamak ve gerçek kullanıcıya daha güvenilir kod teslimatı sağlamak.
-- Supabase dashboard provider ayarlarını tamamla.
+- Supabase dashboard provider ayarları Email, Apple ve Google için canlıda tamamlandı; release öncesi yalnızca kısa final smoke tekrarları önerilir.
 - Email OTP canlı kontrolü:
   - `POST /auth/v1/otp` geçerli Gmail formatlı test adresiyle `200` döndü; Email provider aktif.
   - Admin `generate_link` + `/auth/v1/verify` token hash testi access token döndürdü; Supabase session üretimi çalışıyor.
+  - 2026-05-17 canlı smoke testinde `POST /auth/v1/otp` `200 {}` döndürdü; kullanıcıya gelen gerçek OTP ile `/auth/v1/verify` `200` döndürüp Supabase session üretti.
+  - Test edilen e-posta Google identity ile aynı kullanıcıya bağlı olduğundan OTP doğrulaması mevcut kullanıcı hesabına session üretti.
   - Çok sık test isteği sonrası Supabase `over_email_send_rate_limit` döndürdü; uygulama bunu kullanıcıya "Kod gönderme sınırı" olarak gösterecek şekilde normalize ediyor.
   - Resend/Supabase SMTP ile Email OTP giriş ve kayıt canlı test edildi; geçti.
 - Release öncesi Apple/Google/Email OTP için kısa final smoke test yapılabilir.
-- Google Cloud OAuth consent screen production/publish durumunu release öncesi tamamla.
 - RevenueCat sonrası `profiles.tier` sadece doğrulanmış webhook/profil güncellemesiyle değişmeli.

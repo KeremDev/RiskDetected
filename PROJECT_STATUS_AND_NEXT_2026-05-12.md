@@ -1,6 +1,6 @@
 # RiskDetected - Güncel Durum ve Kalan İşler
 
-Tarih: 2026-05-15
+Tarih: 2026-05-17
 
 Bu dosya `IMPLEMENTATION_PLAN.md`, `PROJECT_HANDOFF.md`, `HANDOFF_2026-05-11_NEW_CHAT/*`,
 `AUTH_SETUP.md`, `PROMPT_SYSTEM_REVAMP_PLAN_2026-05-11.md` ve `QA/P1_5_Error_Test_Matrix.md`
@@ -35,6 +35,10 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Apple Sign In iOS tarafında gerçek Apple identity token + nonce ile Supabase akışına bağlı.
 - Apple Sign In gerçek Apple hesabıyla TestFlight cihazda doğrulandı; Supabase `apple` identity ve otomatik `profiles` satırı oluştu.
 - Google Sign In native Google SDK ile bağlı; Supabase'e Google `idToken` ile oturum açılıyor.
+- Google Auth Platform Audience publishing status `In production` durumuna alındı.
+- Google Auth Platform Data Access tarafında yalnızca non-sensitive `userinfo.email`, `userinfo.profile` ve `openid` scope'ları var; sensitive/restricted scope yok.
+- Google Auth Platform Branding URL'leri `riskdetected.com` altında dolduruldu; authorized domains içinde `riskdetected.com` eklendi.
+- Google Auth Platform developer contact listesine `info@riskdetected.com` eklendi; User support email hâlâ Google'ın seçilebilir hesap kuralı nedeniyle `kayalar.kerem21@gmail.com`.
 - Sosyal/e-posta giriş sonrası profil yoksa güvenli şekilde default `free` profil oluşturuluyor.
 - Profil bootstrap artık "profil yok" ile "profil okunamadı" hatasını ayırıyor.
 - Firebase/telefon auth tamamen kaldırıldı:
@@ -179,11 +183,14 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Supabase Google provider credentials girildi.
    - Google native SDK ile mevcut kullanıcı girişi geçti.
    - Google native SDK ile yeni kullanıcı kaydı geçti.
-   - Google Cloud OAuth consent screen şu an test modunda; release öncesi production/publish adımı tamamlanmalı.
+   - Google Cloud OAuth consent screen production/publish adımı tamamlandı; Audience publishing status `In production`.
    - `/auth/v1/settings` kontrolünde Apple/Google enabled görünüyor.
 
 2. Email OTP / SMTP son canlı teyit
    - Resend/Supabase SMTP ayarları canlıda doğrulandı.
+   - 2026-05-17 canlı smoke testinde `POST /auth/v1/otp` `200 {}` döndürdü.
+   - Kullanıcıya gelen gerçek OTP ile `/auth/v1/verify` `200` döndürdü ve Supabase session üretti.
+   - Test edilen e-posta Google identity ile aynı kullanıcıya bağlı olduğu için OTP doğrulaması mevcut kullanıcı hesabına session üretti.
    - Email OTP ile kayıt geçti.
    - Email OTP ile giriş geçti.
    - TestFlight gerçek cihazda mail ve kod alanlarının klavye üstünde görünür kaldığı doğrulandı.
