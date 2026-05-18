@@ -150,6 +150,89 @@ These items exist in some form, but need revision before we treat them as produc
 
 ## Next Priority Backlog
 
+### Active Release Checklist - 2026-05-18
+
+#### Done / Completed
+
+1. Google OAuth production/branding setup completed and documented.
+2. Public legal URLs are live and app/legal references use the current short paths:
+   - `https://riskdetected.com/gizlilik`
+   - `https://riskdetected.com/kullanim-kosullari`
+   - `https://riskdetected.com/kvkk`
+3. Email OTP live smoke test passed with real Supabase session issuance.
+4. RevenueCat/App Store Connect products, entitlements and offerings were checked for Plus monthly/yearly and Pro monthly/yearly.
+5. TestFlight purchase, restore, expiration/downgrade checks completed; TL price display was verified.
+6. Archive / Organizer review completed by owner:
+   - embedded entitlements;
+   - APNs production;
+   - distribution signing;
+   - privacy report;
+   - GoogleSignIn / RevenueCat privacy manifests.
+7. Xcode signing conflict fixed by removing manual `Apple Distribution` signing override and letting automatic signing choose the correct identity/profile.
+8. Support mail service is configured and verified through Resend/Supabase Edge Function.
+9. Support form now supports multiple attachments in the backend path; final UI/device check remains useful after attachment UX changes.
+10. Paywall V2 was created as the Plus-first paywall and Free quota/upgrade paths now route to it.
+11. Paywall V2 layout polish completed:
+    - Plus-first full-width card;
+    - Pro preview opens Paywall V1;
+    - headline contrast improved;
+    - Free selectable card removed;
+    - Free continuation moved to a low-contrast CTA link.
+12. Home logo tap navigates back to the home tab.
+13. Bottom tab center label changed from `Tara` to `Analiz` and spacing/font were adjusted.
+14. Auth email/OTP screens received readability fixes for dark/light backgrounds.
+15. Supabase auth session handling updated for `emitLocalSessionAsInitialSession` and expired-session filtering.
+16. Result screen fixed truncated `Mevzuat` info card text.
+17. PDF report wording changed from `AI Özeti` to `Uygunsuzluk Özeti`, and report detail text fitting was improved.
+18. Report/PDF logo behavior updated: if a profile/company logo exists, the report header uses it instead of the RiskDetected logo; RiskDetected remains the fallback.
+19. Free quota state now uses local cache to reduce the short delay where exhausted users could briefly see upload entry points again.
+
+#### Still To Do Before Submission
+
+1. Onboarding redesign:
+   - build the new first-launch onboarding flow;
+   - explain photo/text analysis, focus selection, reporting and Plus/Pro value;
+   - persist completion locally.
+2. App Store Connect metadata entry:
+   - App Store Name: `RiskDetected İSG Analizi`;
+   - Subtitle: `Fotoğrafla Risk Tespiti`;
+   - Keywords: `isg,risk,analiz,iş,güvenliği,saha,denetim,rapor,fine,kinney,5x5,matris,kkd,pdf,excel`.
+3. Enter/confirm App Store privacy nutrition form from `QA/App_Store_Privacy_Nutrition_2026-05-16.md`.
+4. Provide App Review test account and OTP access plan.
+5. APNs production real-device/TestFlight push test.
+6. Full TestFlight release pass:
+   - clean install;
+   - onboarding;
+   - Email OTP;
+   - Apple login;
+   - Google login;
+   - Free daily limit and Paywall V2 route;
+   - Plus/Pro purchase and restore;
+   - camera/gallery permissions;
+   - analysis -> result -> PDF/XLSX -> share;
+   - dark mode;
+   - account deletion request.
+7. Home `Son uygunsuzluklar` final verification:
+   - recent completed analyses must appear immediately after result close;
+   - photo analyses must show circular thumbnails;
+   - text analyses may show the text placeholder state.
+8. Support attachment UX final check:
+   - multiple attachments should remain attached and arrive together.
+9. Profile page future refresh:
+   - tabs/sections for account, preferences, reports, analyses, notifications and data/privacy.
+10. Final iPhone screenshot set:
+    - 6.9-inch primary set;
+    - optional 6.5/5.5 fallback;
+    - sequence: photo risk analysis, focus selection, score result, PDF/XLSX report, archive, Plus/Pro paywall.
+11. Optional App Preview video:
+    - 15-30 seconds;
+    - photo select -> analysis -> report -> share.
+12. Pro AI quality upgrade after launch or before paid scale-up:
+    - stronger paid Gemini model or provider fallback;
+    - multi-pass validation;
+    - sector/procedure checklist;
+    - low-confidence re-check.
+
 ### P0.5 - First Launch Onboarding
 
 1. Add first-install onboarding before the Auth screen:

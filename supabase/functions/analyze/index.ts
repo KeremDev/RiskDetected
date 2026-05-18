@@ -589,6 +589,21 @@ function safeLogError(error: unknown): Record<string, unknown> {
         .slice(0, 160),
     };
   }
+  if (error && typeof error === "object") {
+    const source = error as Record<string, unknown>;
+    return {
+      name: typeof source.name === "string" ? source.name : "object",
+      code: typeof source.code === "string" ? source.code : undefined,
+      message: typeof source.message === "string"
+        ? source.message.replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+          .slice(0, 160)
+        : undefined,
+      details: typeof source.details === "string"
+        ? source.details.slice(0, 240)
+        : undefined,
+      hint: typeof source.hint === "string" ? source.hint.slice(0, 160) : undefined,
+    };
+  }
   return { name: typeof error };
 }
 

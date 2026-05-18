@@ -373,6 +373,25 @@ struct AuthView: View {
             Text("E-posta Adresinizi Giriniz")
                 .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdInk)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.82),
+                            Color.rdPaper.opacity(0.68)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.74), lineWidth: 1)
+                )
+                .shadow(color: Color.white.opacity(0.7), radius: 10, x: 0, y: 0)
+                .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 3)
             HStack(spacing: 8) {
                 Image(systemName: "envelope.fill")
                     .font(.system(size: 18, weight: .bold, design: .rounded))

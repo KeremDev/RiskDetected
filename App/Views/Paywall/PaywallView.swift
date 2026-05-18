@@ -97,10 +97,10 @@ struct PaywallView: View {
     private func paywallContent(width contentWidth: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: layout == .plusFocused ? 7 : 8) {
             Color.clear
-                .frame(height: layout == .plusFocused ? 118 : 118)
+                .frame(height: layout == .plusFocused ? 90 : 118)
 
             paywallHeadline
-                .padding(.bottom, layout == .plusFocused ? 12 : 0)
+                .padding(.bottom, layout == .plusFocused ? 8 : 0)
 
             billingToggle
 
@@ -245,13 +245,13 @@ struct PaywallView: View {
                 .padding(4)
                 .background(cloud)
                 .clipShape(Capsule())
-                .padding(.top, 10)
+                .padding(.top, layout == .plusFocused ? 8 : 10)
 
                 giftBadge
-                    .position(x: proxy.size.width * 0.28, y: 10)
+                    .position(x: proxy.size.width * 0.28, y: layout == .plusFocused ? 8 : 10)
             }
         }
-        .frame(height: 52)
+        .frame(height: layout == .plusFocused ? 46 : 52)
     }
 
     private func billingOption(_ option: PaywallBilling) -> some View {
@@ -268,7 +268,7 @@ struct PaywallView: View {
                     .foregroundStyle(billing == option ? onyx : slate)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 38)
+            .frame(height: layout == .plusFocused ? 34 : 38)
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -283,8 +283,8 @@ struct PaywallView: View {
                 .font(.system(size: 11, weight: .black, design: .rounded))
         }
         .foregroundStyle(Color.white)
-        .padding(.horizontal, 12)
-        .frame(height: 28)
+        .padding(.horizontal, layout == .plusFocused ? 10 : 12)
+        .frame(height: layout == .plusFocused ? 26 : 28)
         .background(green)
         .clipShape(Capsule())
         .shadow(color: green.opacity(0.32), radius: 10, x: 0, y: 4)

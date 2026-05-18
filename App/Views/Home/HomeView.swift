@@ -16,6 +16,7 @@ private struct PaywallPresentation: Identifiable {
 }
 
 private let maxTextInputCharacters = AnalysisService.maxTextInputCharacters
+private let freeQuotaCachePrefix = "rd.home.freeQuota"
 
 struct HomeView: View {
     @EnvironmentObject var app: AppState
@@ -109,7 +110,13 @@ struct HomeView: View {
             await loadQuotaUsage()
         }
         .onAppear {
+            applyCachedQuotaUsageIfAvailable()
+            closeFreeQuotaEntryPointsIfNeeded()
             handlePendingQuickScanOnAppear()
+            Task {
+                await loadRecentItems()
+                await loadRecentReports()
+            }
         }
         .onChange(of: app.auth.session?.user.id) { _ in
             Task {
@@ -120,7 +127,12 @@ struct HomeView: View {
         }
         .onChange(of: app.currentTier) { _ in
             normalizeSelectedCanvasesForTier()
+            applyCachedQuotaUsageIfAvailable()
+            closeFreeQuotaEntryPointsIfNeeded()
             Task { await loadQuotaUsage() }
+        }
+        .onChange(of: quotaUsage) { _ in
+            closeFreeQuotaEntryPointsIfNeeded()
         }
         .onChange(of: app.quickScanRequestID) { _ in
             handleQuickScanRequest()
@@ -220,6 +232,9 @@ struct HomeView: View {
                 previewImage: job.previewImage,
                 onComplete: { result in
                     analysisResult = result
+                    if !app.currentTier.isPaid {
+                        markFreeQuotaExhaustedLocally()
+                    }
                     pendingJob = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                         showResult = true
@@ -987,6 +1002,7 @@ struct HomeView: View {
         let normalized = AppErrorMessage.make(rawMessage: msg, context: "Analiz tamamlanamadı", fallbackTitle: "Analiz tamamlanamadı")
         if normalized.category == .quotaExceeded {
             analysisError = nil
+            markFreeQuotaExhaustedLocally()
             showQuotaPaywall()
             Task { await loadQuotaUsage() }
         } else {
@@ -1056,14 +1072,20 @@ struct HomeView: View {
     }
 
     private func loadRecentItems() async {
-        guard app.auth.session != nil else { return }
+        guard app.auth.session != nil else {
+            recentItems = []
+            return
+        }
         do {
             let rows = try await AnalysisService.shared.listRecent(limit: 30)
-            let paths = try await AnalysisService.shared.firstPhotoPaths(analysisIDs: rows.map(\.id))
-            recentItems = rows.compactMap { row in
-                let photoPath = paths[row.id]
-                if row.kind != "text", photoPath == nil { return nil }
-                return RecentAnalysis(row: row, photoPath: photoPath)
+            let paths: [UUID: String]
+            do {
+                paths = try await AnalysisService.shared.firstPhotoPaths(analysisIDs: rows.map(\.id))
+            } catch {
+                paths = [:]
+            }
+            recentItems = rows.map { row in
+                RecentAnalysis(row: row, photoPath: paths[row.id])
             }
             .prefix(8)
             .map { $0 }
@@ -1089,11 +1111,73 @@ struct HomeView: View {
             quotaUsage = nil
             return
         }
+        applyCachedQuotaUsageIfAvailable()
         do {
-            quotaUsage = try await AnalysisService.shared.dailyQuotaUsage()
+            let usage = try await AnalysisService.shared.dailyQuotaUsage()
+            quotaUsage = usage
+            cacheQuotaUsage(usage)
         } catch {
-            quotaUsage = nil
+            if cachedQuotaUsageForCurrentUser() == nil {
+                quotaUsage = nil
+            }
         }
+    }
+
+    private func markFreeQuotaExhaustedLocally() {
+        guard !app.currentTier.isPaid else { return }
+        let usage = DailyQuotaUsage(
+            used: AnalysisService.freeDailyLimit,
+            limit: AnalysisService.freeDailyLimit
+        )
+        quotaUsage = usage
+        cacheQuotaUsage(usage)
+        closeFreeQuotaEntryPointsIfNeeded()
+    }
+
+    private func applyCachedQuotaUsageIfAvailable() {
+        guard !app.currentTier.isPaid,
+              let cached = cachedQuotaUsageForCurrentUser()
+        else { return }
+        quotaUsage = cached
+    }
+
+    private func closeFreeQuotaEntryPointsIfNeeded() {
+        guard isFreeQuotaExhausted else { return }
+        showSourceDialog = false
+        showCameraPicker = false
+        showGalleryPicker = false
+        showCanvasSheet = false
+    }
+
+    private func cacheQuotaUsage(_ usage: DailyQuotaUsage) {
+        guard let key = quotaCacheKeyForCurrentUser else { return }
+        UserDefaults.standard.set(usage.used, forKey: "\(key).used")
+        UserDefaults.standard.set(usage.limit, forKey: "\(key).limit")
+    }
+
+    private func cachedQuotaUsageForCurrentUser() -> DailyQuotaUsage? {
+        guard let key = quotaCacheKeyForCurrentUser,
+              UserDefaults.standard.object(forKey: "\(key).used") != nil,
+              UserDefaults.standard.object(forKey: "\(key).limit") != nil
+        else { return nil }
+        let used = UserDefaults.standard.integer(forKey: "\(key).used")
+        let limit = UserDefaults.standard.integer(forKey: "\(key).limit")
+        guard limit > 0 else { return nil }
+        return DailyQuotaUsage(used: used, limit: limit)
+    }
+
+    private var quotaCacheKeyForCurrentUser: String? {
+        guard let userID = app.auth.session?.user.id.uuidString else { return nil }
+        return "\(freeQuotaCachePrefix).\(userID).\(Self.istanbulDayKey())"
+    }
+
+    private static func istanbulDayKey() -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
     }
 
     private func openRecentAnalysis(_ item: RecentAnalysis) {

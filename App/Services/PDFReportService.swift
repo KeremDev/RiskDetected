@@ -265,15 +265,9 @@ final class PDFReportService: @unchecked Sendable {
         UIColor.rdPDFPaper.setFill()
         UIBezierPath(rect: pageRect).fill()
 
-        if let logo = UIImage(named: "RDLogo") {
-            drawImage(logo, in: CGRect(x: 42, y: 26, width: 120, height: 34), cornerRadius: 0, mode: .scaleAspectFit)
-        } else {
-            drawText("RiskDetected", in: CGRect(x: 42, y: 26, width: 140, height: 28), font: .systemFont(ofSize: 20, weight: .bold), color: .rdPDFBlack)
-        }
+        drawReportLogo(input: input, in: CGRect(x: 42, y: 26, width: 120, height: 34), fallbackTextRect: CGRect(x: 42, y: 26, width: 140, height: 28), companyCornerRadius: 6)
 
-        if let companyLogo = input.companyLogo {
-            drawImage(companyLogo, in: CGRect(x: 172, y: 26, width: 54, height: 34), cornerRadius: 6, mode: .scaleAspectFit)
-        } else if let companyName = input.options.companyName.nonEmpty {
+        if input.companyLogo == nil, let companyName = input.options.companyName.nonEmpty {
             drawText(companyName, in: CGRect(x: 172, y: 32, width: 110, height: 18), font: .systemFont(ofSize: 10, weight: .semibold), color: .rdPDFSlate)
         }
 
@@ -305,13 +299,18 @@ final class PDFReportService: @unchecked Sendable {
         roundedStroke(CGRect(x: margin, y: 24, width: pageRect.width - margin * 2, height: 42), radius: 0, stroke: .rdPDFBlack, fill: .white, lineWidth: 1.4)
         drawText(title, in: CGRect(x: margin + 12, y: 36, width: pageRect.width - margin * 2 - 24, height: 16), font: .systemFont(ofSize: 13, weight: .bold), color: .rdPDFBlack, alignment: .center)
 
-        if let logo = UIImage(named: "RDLogo") {
-            drawImage(logo, in: CGRect(x: margin + 8, y: 29, width: 104, height: 28), cornerRadius: 0, mode: .scaleAspectFit)
-        }
-        if let companyLogo = input.companyLogo {
-            drawImage(companyLogo, in: CGRect(x: pageRect.width - margin - 86, y: 29, width: 50, height: 28), cornerRadius: 4, mode: .scaleAspectFit)
-        }
+        drawReportLogo(input: input, in: CGRect(x: margin + 8, y: 29, width: 104, height: 28), fallbackTextRect: CGRect(x: margin + 8, y: 29, width: 104, height: 18), companyCornerRadius: 4)
         drawText("Sayfa \(page)", in: CGRect(x: pageRect.width - margin - 34, y: 38, width: 30, height: 12), font: .monospacedSystemFont(ofSize: 8, weight: .medium), color: .rdPDFSlate, alignment: .right)
+    }
+
+    private func drawReportLogo(input: ReportInput, in rect: CGRect, fallbackTextRect: CGRect, companyCornerRadius: CGFloat) {
+        if let companyLogo = input.companyLogo {
+            drawImage(companyLogo, in: rect, cornerRadius: companyCornerRadius, mode: .scaleAspectFit)
+        } else if let logo = UIImage(named: "RDLogo") {
+            drawImage(logo, in: rect, cornerRadius: 0, mode: .scaleAspectFit)
+        } else {
+            drawText("RiskDetected", in: fallbackTextRect, font: .systemFont(ofSize: 20, weight: .bold), color: .rdPDFBlack)
+        }
     }
 
     private func drawSummaryCards(input: ReportInput, origin: CGPoint) {

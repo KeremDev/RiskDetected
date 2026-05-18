@@ -12,7 +12,10 @@ final class SupabaseService {
             supabaseURL: RDConfig.supabaseURL,
             supabaseKey: RDConfig.supabasePublishableKey,
             options: SupabaseClientOptions(
-                auth: .init(redirectToURL: RDConfig.Auth.redirectURL)
+                auth: .init(
+                    redirectToURL: RDConfig.Auth.redirectURL,
+                    emitLocalSessionAsInitialSession: true
+                )
             )
         )
     }

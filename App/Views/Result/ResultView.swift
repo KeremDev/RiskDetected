@@ -1859,7 +1859,6 @@ struct FindingCard: View {
                 Text(value)
                     .font(.system(size: 10.5, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdGraphite)
-                    .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

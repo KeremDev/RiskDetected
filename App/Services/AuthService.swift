@@ -17,11 +17,11 @@ final class AuthService: ObservableObject {
 
     init() {
         // İlk başta cache'lenmiş session'ı oku
-        session = supabase.client.auth.currentSession
+        session = Self.validSession(supabase.client.auth.currentSession)
         startObservingAuthChanges()
         // Cache'den session geldiyse profili hemen tazele
-        if session?.user.id != nil {
-            Task { await ensureProfile(for: supabase.client.auth.currentSession?.user) }
+        if let session {
+            Task { await ensureProfile(for: session.user) }
         }
     }
 
@@ -313,7 +313,7 @@ final class AuthService: ObservableObject {
         stateTask = Task { [weak self] in
             guard let self else { return }
             for await change in supabase.auth.authStateChanges {
-                let newSession = change.session
+                let newSession = Self.validSession(change.session)
 
                 await MainActor.run {
                     self.session = newSession
@@ -326,6 +326,11 @@ final class AuthService: ObservableObject {
                 }
             }
         }
+    }
+
+    private static func validSession(_ session: Session?) -> Session? {
+        guard let session, !session.isExpired else { return nil }
+        return session
     }
 
     private func deepLinkURL() -> URL {
