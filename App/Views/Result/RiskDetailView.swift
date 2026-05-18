@@ -66,7 +66,7 @@ struct RiskDetailView: View {
         }
         .background(Color.rdPaper)
         .fullScreenCover(isPresented: $showPaywall) {
-            PaywallView(
+            FreeAwarePaywallView(
                 onClose: { showPaywall = false },
                 onSubscribe: {
                     showPaywall = false

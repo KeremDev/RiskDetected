@@ -152,7 +152,7 @@ struct ResultView: View {
             Text(pdfError ?? "")
         }
         .fullScreenCover(isPresented: $showPaywall) {
-            PaywallView(onClose: { showPaywall = false },
+            FreeAwarePaywallView(onClose: { showPaywall = false },
                         onSubscribe: {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }

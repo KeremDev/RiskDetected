@@ -426,11 +426,15 @@ struct AuthView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Doğrulama kodu")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.white)
+                    .shadow(color: Color.black.opacity(0.34), radius: 8, x: 0, y: 2)
                 Text("\(normalizedEmail.isEmpty ? "mail@ornek.com" : normalizedEmail) adresine gönderildi")
-                    .font(.system(size: 14, design: .rounded))
-                    .foregroundStyle(Color.rdInk)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.white.opacity(0.94))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: Color.black.opacity(0.38), radius: 8, x: 0, y: 2)
             }
             ZStack {
                 TextField("", text: $otpInput)
@@ -460,9 +464,13 @@ struct AuthView: View {
             }
 
             Text("Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin.")
-                .font(.system(size: 13, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.92))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
+                .shadow(color: Color.black.opacity(0.34), radius: 8, x: 0, y: 2)
 
             RDButton(
                 title: isVerifyingEmailCode ? "Doğrulanıyor..." : "Doğrula ve giriş yap",
@@ -478,10 +486,11 @@ struct AuthView: View {
             Button("← E-posta adresini değiştir") {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
-            .font(.system(size: 14, design: .rounded))
-            .foregroundStyle(Color.rdSlate)
+            .font(.system(size: 14, weight: .bold, design: .rounded))
+            .foregroundStyle(Color.white.opacity(0.94))
             .frame(maxWidth: .infinity)
             .padding(8)
+            .shadow(color: Color.black.opacity(0.34), radius: 8, x: 0, y: 2)
         }
     }
 

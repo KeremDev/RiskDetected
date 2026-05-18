@@ -40,9 +40,9 @@ struct RDTabBar: View {
             tabButton(.profile)
         }
         .padding(.horizontal, 12)
-        .padding(.top, 8)
+        .padding(.top, 7)
         .padding(.bottom, 24)
-        .frame(height: 92)
+        .frame(height: 96)
         .background(alignment: .top) {
             ZStack(alignment: .top) {
                 Rectangle()
@@ -85,26 +85,27 @@ struct RDTabBar: View {
 
     private var quickScanButton: some View {
         Button(action: onQuickScan) {
-            VStack(spacing: 3) {
+            VStack(spacing: 7) {
                 ZStack {
                     Circle()
                         .fill(Color.rdGreen)
-                        .frame(width: 58, height: 58)
+                        .frame(width: 56, height: 56)
                         .shadow(color: Color.rdGreen.opacity(0.35), radius: 18, x: 0, y: 8)
                     Circle()
                         .stroke(Color.rdWhite.opacity(0.92), lineWidth: 4)
-                        .frame(width: 58, height: 58)
+                        .frame(width: 56, height: 56)
                     Image(systemName: "viewfinder.circle.fill")
-                        .font(.system(size: 29, weight: .bold, design: .rounded))
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdWhite)
                 }
 
-                Text("Tara")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                Text("Analiz")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
             }
             .frame(maxWidth: .infinity)
-            .offset(y: -20)
+            .frame(height: 74, alignment: .top)
+            .offset(y: -18)
         }
         .buttonStyle(RDPressableButtonStyle())
         .accessibilityLabel("Hızlı tarama başlat")

@@ -172,7 +172,7 @@ final class PDFReportService: @unchecked Sendable {
 
         let summary = analysis.aiSummary?.trimmingCharacters(in: .whitespacesAndNewlines)
         drawInfoBox(
-            title: "AI ÖZETİ",
+            title: "Uygunsuzluk Özeti",
             body: summary?.isEmpty == false ? summary! : "\(input.findings.count) bulgu tespit edildi. Bulgular \(input.options.method.label) metoduna göre önceliklendirilmiştir.",
             rect: CGRect(x: margin, y: 340, width: 758, height: 86)
         )
@@ -619,20 +619,20 @@ final class PDFReportService: @unchecked Sendable {
 
     private func drawFindingRow(ordinal: Int, finding: Finding, method: RiskMethod, y: CGFloat) {
         let x: CGFloat = 42
-        let rowRect = CGRect(x: x, y: y, width: 758, height: 74)
+        let rowRect = CGRect(x: x, y: y, width: 758, height: 82)
         roundedStroke(rowRect, radius: 10, stroke: .rdPDFLine, fill: .white)
 
         drawText("\(ordinal)", in: CGRect(x: x + 12, y: y + 12, width: 24, height: 20), font: .monospacedSystemFont(ofSize: 12, weight: .bold), color: .rdPDFBlack)
 
-        drawText(finding.title, in: CGRect(x: x + 48, y: y + 10, width: 286, height: 18), font: .systemFont(ofSize: 12, weight: .bold), color: .rdPDFBlack)
-        drawText(finding.description, in: CGRect(x: x + 48, y: y + 30, width: 286, height: 34), font: .systemFont(ofSize: 9), color: .rdPDFSlate)
+        drawFittingText(finding.title, in: CGRect(x: x + 48, y: y + 9, width: 302, height: 18), baseFont: .systemFont(ofSize: 12, weight: .bold), minimumFontSize: 9.2, color: .rdPDFBlack)
+        drawFittingText(finding.description, in: CGRect(x: x + 48, y: y + 28, width: 302, height: 46), baseFont: .systemFont(ofSize: 9), minimumFontSize: 7.2, color: .rdPDFSlate)
 
         let band = finding.band(for: method)
         roundedFill(CGRect(x: x + 370, y: y + 14, width: 70, height: 34), radius: 8, color: band.level.pdfColor)
         drawText(scoreText(finding.score(for: method)), in: CGRect(x: x + 370, y: y + 19, width: 70, height: 20), font: .monospacedSystemFont(ofSize: 16, weight: .bold), color: .white, alignment: .center)
         drawText(band.label, in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
 
-        drawText(finding.action, in: CGRect(x: x + 462, y: y + 12, width: 286, height: 52), font: .systemFont(ofSize: 10), color: .rdPDFBlack)
+        drawFittingText(finding.action, in: CGRect(x: x + 462, y: y + 12, width: 296, height: 58), baseFont: .systemFont(ofSize: 10), minimumFontSize: 7.5, color: .rdPDFBlack)
     }
 
     private func drawImage(_ image: UIImage, in rect: CGRect, cornerRadius: CGFloat, mode: UIView.ContentMode = .scaleAspectFill) {
@@ -668,6 +668,42 @@ final class PDFReportService: @unchecked Sendable {
             .paragraphStyle: paragraph,
         ]
         text.draw(with: rect, options: [.usesLineFragmentOrigin, .usesFontLeading], attributes: attrs, context: nil)
+    }
+
+    private func drawFittingText(
+        _ text: String,
+        in rect: CGRect,
+        baseFont: UIFont,
+        minimumFontSize: CGFloat,
+        color: UIColor,
+        alignment: NSTextAlignment = .left
+    ) {
+        var size = baseFont.pointSize
+        while size > minimumFontSize {
+            let font = UIFont(descriptor: baseFont.fontDescriptor, size: size)
+            if measuredTextHeight(text, width: rect.width, font: font, alignment: alignment) <= rect.height {
+                drawText(text, in: rect, font: font, color: color, alignment: alignment)
+                return
+            }
+            size -= 0.4
+        }
+        drawText(text, in: rect, font: UIFont(descriptor: baseFont.fontDescriptor, size: minimumFontSize), color: color, alignment: alignment)
+    }
+
+    private func measuredTextHeight(_ text: String, width: CGFloat, font: UIFont, alignment: NSTextAlignment) -> CGFloat {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = alignment
+        paragraph.lineBreakMode = .byWordWrapping
+        let rect = NSString(string: text).boundingRect(
+            with: CGSize(width: width, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [
+                .font: font,
+                .paragraphStyle: paragraph,
+            ],
+            context: nil
+        )
+        return ceil(rect.height)
     }
 
     private func roundedFill(_ rect: CGRect, radius: CGFloat, color: UIColor) {

@@ -19,8 +19,14 @@ type RevenueCatEntitlement = {
 
 type RevenueCatSubscriberResponse = {
   subscriber?: {
+    original_app_user_id?: string | null;
     entitlements?: Record<string, RevenueCatEntitlement>;
   };
+};
+
+type SyncRequestBody = {
+  expected_tier?: string | null;
+  expected_entitlement_id?: string | null;
 };
 
 const PUBLIC_REVENUECAT_API_KEY = "appl_mckFFxUrvtNqzjShezjMIrFmItA";
@@ -73,6 +79,10 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
   };
 }
 
+function normalizeTier(value: unknown): PlanTier | null {
+  return value === "free" || value === "plus" || value === "pro" ? value : null;
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return json(405, { error: "method_not_allowed" });
@@ -92,6 +102,12 @@ serve(async (req) => {
   if (!authHeader) {
     return json(401, { error: "auth_required" });
   }
+
+  const body = await req.json().catch(() => ({})) as SyncRequestBody;
+  const expectedTier = normalizeTier(body.expected_tier);
+  const expectedEntitlementID = typeof body.expected_entitlement_id === "string"
+    ? body.expected_entitlement_id.trim().toLowerCase()
+    : null;
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -121,8 +137,47 @@ serve(async (req) => {
   }
 
   const payload = await revenueCatResponse.json() as RevenueCatSubscriberResponse;
+  const originalAppUserID = typeof payload.subscriber?.original_app_user_id === "string"
+    ? payload.subscriber.original_app_user_id.trim().toLowerCase()
+    : null;
+  if (originalAppUserID && originalAppUserID !== user.id.toLowerCase()) {
+    return json(409, {
+      error: "revenuecat_owner_mismatch",
+      tier: expectedTier ?? "free",
+      original_app_user_id: originalAppUserID,
+    });
+  }
+
   const entitlements = payload.subscriber?.entitlements ?? {};
   const resolved = entitlementTier(entitlements);
+  if (!expectedTier && resolved.tier !== "free") {
+    return json(409, {
+      error: "client_tier_assertion_required",
+      tier: "free",
+      resolved_tier: resolved.tier,
+    });
+  }
+
+  if (expectedTier && expectedTier !== resolved.tier) {
+    return json(409, {
+      error: "revenuecat_tier_mismatch",
+      tier: expectedTier,
+      resolved_tier: resolved.tier,
+    });
+  }
+
+  if (
+    expectedTier && expectedTier !== "free" &&
+    expectedEntitlementID && expectedEntitlementID !== resolved.entitlementID
+  ) {
+    return json(409, {
+      error: "revenuecat_entitlement_mismatch",
+      tier: expectedTier,
+      resolved_tier: resolved.tier,
+      resolved_entitlement_id: resolved.entitlementID,
+    });
+  }
+
   const entitlementIDs = Object.entries(entitlements)
     .filter(([, value]) => isActiveEntitlement(value))
     .map(([key]) => key);

@@ -592,6 +592,55 @@ function safeLogError(error: unknown): Record<string, unknown> {
   return { name: typeof error };
 }
 
+function safeLogText(value: unknown, maxLength = 220): string {
+  if (typeof value !== "string") return "";
+  return value.replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]").slice(
+    0,
+    maxLength,
+  );
+}
+
+function storageObjectURL(
+  supabaseUrl: string,
+  bucket: string,
+  path: string,
+): string {
+  const cleanUrl = supabaseUrl.replace(/\/$/, "");
+  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+  return `${cleanUrl}/storage/v1/object/${encodeURIComponent(bucket)}/${encodedPath}`;
+}
+
+async function uploadStorageObject(params: {
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  bucket: string;
+  path: string;
+  body: Uint8Array;
+  mimeType: string;
+}): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const res = await fetch(
+    storageObjectURL(params.supabaseUrl, params.bucket, params.path),
+    {
+      method: "POST",
+      headers: {
+        apikey: params.serviceRoleKey,
+        Authorization: `Bearer ${params.serviceRoleKey}`,
+        "Content-Type": params.mimeType,
+        "cache-control": "3600",
+        "x-upsert": "true",
+      },
+      body: params.body,
+    },
+  );
+
+  if (res.ok) return { ok: true };
+  return {
+    ok: false,
+    status: res.status,
+    error: safeLogText(await res.text().catch(() => ""), 500),
+  };
+}
+
 async function hashedID(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -853,10 +902,12 @@ serve(async (req: Request) => {
   }
 
   const startMs = Date.now();
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    supabaseUrl,
+    serviceRoleKey,
   );
 
   const fallbackRequestID = crypto.randomUUID();
@@ -1188,11 +1239,28 @@ serve(async (req: Request) => {
   // Inline gelen fotoğrafları kalıcı olarak Storage + photos tablosuna yaz.
   // Client tarafında Storage RLS'e takılmamak için bu işi service role ile Edge Function yapıyor.
   const persistedPhotoPaths: string[] = [];
+  const photoPersistErrors: Record<string, unknown>[] = [];
   if (sanitizedInlinePhotos.length > 0) {
-    await supabase.from("photos")
+    const { error: deletePhotoErr } = await supabase.from("photos")
       .delete()
       .eq("analysis_id", analysisID)
       .eq("user_id", user.id);
+
+    if (deletePhotoErr) {
+      photoPersistErrors.push({
+        stage: "delete_existing_metadata",
+        error: safeLogError(deletePhotoErr),
+      });
+      console.error(
+        "Persist inline photo cleanup error",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogError(deletePhotoErr),
+        }),
+      );
+    }
 
     for (let i = 0; i < sanitizedInlinePhotos.length; i++) {
       const part = sanitizedInlinePhotos[i];
@@ -1204,14 +1272,22 @@ serve(async (req: Request) => {
         ? part.bytes
         : part.bytes.slice();
 
-      const { error: uploadErr } = await supabase.storage
-        .from("photos")
-        .upload(storagePath, uploadBody, {
-          contentType: mimeType,
-          upsert: true,
-        });
+      const uploadResult = await uploadStorageObject({
+        supabaseUrl,
+        serviceRoleKey,
+        bucket: "photos",
+        path: storagePath,
+        body: uploadBody,
+        mimeType,
+      });
 
-      if (uploadErr) {
+      if (!uploadResult.ok) {
+        photoPersistErrors.push({
+          stage: "storage_upload",
+          photo_index: i + 1,
+          status: uploadResult.status,
+          error: safeLogText(uploadResult.error),
+        });
         console.error(
           "Persist inline photo upload error",
           JSON.stringify({
@@ -1219,7 +1295,8 @@ serve(async (req: Request) => {
             support_id: supportID,
             analysis_id: analysisID,
             photo_index: i + 1,
-            error: safeLogError(uploadErr),
+            status: uploadResult.status,
+            error: safeLogText(uploadResult.error),
           }),
         );
         continue;
@@ -1236,6 +1313,11 @@ serve(async (req: Request) => {
       });
 
       if (photoErr) {
+        photoPersistErrors.push({
+          stage: "metadata_insert",
+          photo_index: i + 1,
+          error: safeLogError(photoErr),
+        });
         console.error(
           "Persist inline photo metadata error",
           JSON.stringify({
@@ -1341,6 +1423,9 @@ serve(async (req: Request) => {
     inline_photo_count: inlinePhotoCount,
     storage_photo_count: storagePhotoCount,
     persisted_photo_count: persistedPhotoPaths.length,
+    persisted_photo_paths: persistedPhotoPaths,
+    photo_persist_error_count: photoPersistErrors.length,
+    photo_persist_errors: photoPersistErrors,
     gemini_image_part_count: imageBase64Parts.length,
     text_input_present: Boolean(text_input),
     user_prompt_present: Boolean(userPrompt),

@@ -1,5 +1,10 @@
 import SwiftUI
 
+enum PaywallPresentationStyle {
+    case standard
+    case plusFocused
+}
+
 struct PaywallView: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.openURL) private var openURL
@@ -7,11 +12,13 @@ struct PaywallView: View {
     var onClose: () -> Void
     var onSubscribe: () -> Void
     var notice: String? = nil
+    var layout: PaywallPresentationStyle = .standard
 
     @State private var selectedTier: SubscriptionTier = .plus
     @State private var billing: PaywallBilling = .yearly
     @State private var isWorking = false
     @State private var errorMessage: String?
+    @State private var showStandardPaywall = false
 
     private let paper = Color(hex: "#F5F6F4")
     private let cloud = Color(hex: "#EEF0EC")
@@ -33,39 +40,18 @@ struct PaywallView: View {
                 paper.ignoresSafeArea()
                 heroBackground(width: proxy.size.width)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Color.clear
-                            .frame(height: 170)
-
-                        billingToggle
-
-                        if let notice {
-                            noticeCard(notice)
-                        }
-
-                        Color.clear.frame(height: 4)
-                        freePlanStrip
-                        Color.clear.frame(height: 8)
-
-                        HStack(alignment: .top, spacing: 10) {
-                            paidPlanCard(.plus, recommended: true)
-                            paidPlanCard(.pro, recommended: false)
-                        }
-
-                        if let errorMessage {
-                            noticeCard(errorMessage)
-                        }
-
-                        if let packageLoadError {
-                            noticeCard(packageLoadError)
-                        }
+                if layout == .plusFocused {
+                    paywallContent(width: contentWidth)
+                        .padding(.horizontal, 20)
+                        .frame(width: proxy.size.width, alignment: .top)
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        paywallContent(width: contentWidth)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 188)
                     }
-                    .frame(width: contentWidth, alignment: .leading)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 188)
+                    .frame(width: proxy.size.width)
                 }
-                .frame(width: proxy.size.width)
 
                 topBar(width: contentWidth)
 
@@ -81,7 +67,9 @@ struct PaywallView: View {
         .task {
             await app.refreshSubscriptionOfferings()
             alignBillingWithAvailablePackage()
-            if app.currentTier == .plus {
+            if layout == .plusFocused {
+                selectedTier = .plus
+            } else if app.currentTier == .plus {
                 selectedTier = .pro
             } else if app.currentTier == .pro {
                 selectedTier = .pro
@@ -93,6 +81,46 @@ struct PaywallView: View {
         .onChange(of: selectedTier) { _ in
             alignBillingWithAvailablePackage()
         }
+        .fullScreenCover(isPresented: $showStandardPaywall) {
+            PaywallView(
+                onClose: { showStandardPaywall = false },
+                onSubscribe: {
+                    showStandardPaywall = false
+                    onSubscribe()
+                },
+                layout: .standard
+            )
+            .environmentObject(app)
+        }
+    }
+
+    private func paywallContent(width contentWidth: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: layout == .plusFocused ? 7 : 8) {
+            Color.clear
+                .frame(height: layout == .plusFocused ? 118 : 118)
+
+            paywallHeadline
+                .padding(.bottom, layout == .plusFocused ? 12 : 0)
+
+            billingToggle
+
+            if let notice {
+                noticeCard(notice)
+            }
+
+            Color.clear.frame(height: layout == .plusFocused ? 6 : 12)
+
+            planOptions
+
+            if let errorMessage {
+                noticeCard(errorMessage)
+            }
+
+            if let packageLoadError {
+                noticeCard(packageLoadError)
+            }
+        }
+        .frame(width: contentWidth, alignment: .leading)
     }
 
     private func heroBackground(width: CGFloat) -> some View {
@@ -149,6 +177,62 @@ struct PaywallView: View {
         }
         .frame(width: width)
         .padding(.top, 8)
+    }
+
+    private var paywallHeadline: some View {
+        VStack(spacing: 6) {
+            Text("İş Güvenliği Uzmanlarının Tercihi")
+                .font(.system(size: 24, weight: .black, design: .rounded))
+                .foregroundStyle(onyx)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.78)
+
+            Text("İSG Raporunu Dakikalar İçinde Hazırla")
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(graphite.opacity(0.82))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.68),
+                                Color.white.opacity(0.42),
+                                greenSoft.opacity(0.34)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                RoundedRectangle(cornerRadius: 22)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.82),
+                                green.opacity(0.34),
+                                Color.white.opacity(0.46)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
+            .shadow(color: Color.white.opacity(0.72), radius: 14, x: 0, y: 0)
+            .shadow(color: green.opacity(0.10), radius: 18, x: 0, y: 8)
+        )
+        .padding(.horizontal, 8)
+        .shadow(color: Color.white.opacity(0.86), radius: 4, x: 0, y: 1)
+        .accessibilityElement(children: .combine)
     }
 
     private var billingToggle: some View {
@@ -208,91 +292,98 @@ struct PaywallView: View {
         .animation(.easeInOut(duration: 0.18), value: billing)
     }
 
-    private var freePlanStrip: some View {
-        let selected = selectedTier == .free
-        let isCurrent = app.currentTier == .free
+    @ViewBuilder
+    private var planOptions: some View {
+        switch layout {
+        case .standard:
+            HStack(alignment: .top, spacing: 10) {
+                paidPlanCard(.plus, recommended: true)
+                paidPlanCard(.pro, recommended: false)
+            }
+        case .plusFocused:
+            VStack(alignment: .leading, spacing: 10) {
+                paidPlanCard(.plus, recommended: true)
+                proExploreLink
+            }
+        }
+    }
 
-        return Button {
-            selectedTier = .free
+    private var proExploreLink: some View {
+        Button {
+            showStandardPaywall = true
             UISelectionFeedbackGenerator().selectionChanged()
         } label: {
-            HStack(spacing: 10) {
-                radio(checked: selected, size: 21)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("Ücretsiz")
-                            .font(.system(size: 17, weight: .black, design: .rounded))
-                            .foregroundStyle(onyx)
-                        Text("· \(isCurrent ? "Mevcut planın" : "Başlangıç")")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(slate)
-                    }
-
-                    Text("1 analiz/gün · Standart rapor · Kısıtlı özellikler")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(slate)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.9)
+            VStack(spacing: 3) {
+                HStack(spacing: 5) {
+                    Text("Pro'yu incele")
+                        .font(.system(size: 12.5, weight: .black, design: .rounded))
+                    planIcon(for: .pro, size: 11)
                 }
+                .foregroundStyle(onyx.opacity(0.9))
 
-                Spacer(minLength: 8)
-
-                Text("₺0")
-                    .font(.system(size: 18, weight: .black, design: .rounded))
-                    .foregroundStyle(onyx)
+                Text("Daha yüksek limitler ve özellikler")
+                    .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(slate.opacity(0.9))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(selected ? greenSoft : Color.white.opacity(0.82))
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
+            .background(Color.white.opacity(0.56))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(selected ? green : line, lineWidth: selected ? 1.7 : 1)
+                    .stroke(line.opacity(0.78), lineWidth: 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Ücretsiz plan, 1 analiz gün, ücretsiz")
+        .accessibilityLabel("Pro'yu incele, klasik paywall ekranını aç")
     }
 
     private func paidPlanCard(_ tier: SubscriptionTier, recommended: Bool) -> some View {
         let selected = selectedTier == tier
         let display = planDisplay(for: tier)
         let current = app.currentTier == tier
+        let isPlusFocusedCard = layout == .plusFocused && tier == .plus
+        let cardMinHeight: CGFloat? = isPlusFocusedCard ? nil : 286
 
         return Button {
             selectedTier = tier
             UISelectionFeedbackGenerator().selectionChanged()
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: isPlusFocusedCard ? .center : .leading, spacing: isPlusFocusedCard ? 7 : 5) {
                 HStack(alignment: .center, spacing: 7) {
                     radio(checked: selected, size: 19)
 
                     Text(tier.title)
-                        .font(.system(size: 18, weight: .black, design: .rounded))
+                        .font(.system(size: isPlusFocusedCard ? 21 : 18, weight: .black, design: .rounded))
                         .foregroundStyle(onyx)
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
-                }
 
-                VStack(alignment: .leading, spacing: 3) {
+                    planIcon(for: tier, size: isPlusFocusedCard ? 15 : 13)
+                }
+                .frame(maxWidth: .infinity, alignment: isPlusFocusedCard ? .center : .leading)
+
+                VStack(alignment: isPlusFocusedCard ? .center : .leading, spacing: isPlusFocusedCard ? 4 : 3) {
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
                         Text(pricePerMonthText(for: tier))
-                            .font(.system(size: 22, weight: .black, design: .rounded))
+                            .font(.system(size: isPlusFocusedCard ? 30 : 22, weight: .black, design: .rounded))
                             .foregroundStyle(onyx)
                             .lineLimit(1)
                             .minimumScaleFactor(0.68)
                         Text("/ay")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .font(.system(size: isPlusFocusedCard ? 13 : 11, weight: .bold, design: .rounded))
                             .foregroundStyle(slate)
                     }
 
                     Text(periodText(for: tier))
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .font(.system(size: isPlusFocusedCard ? 12 : 10, weight: .medium, design: .rounded))
                         .foregroundStyle(slate)
                         .lineLimit(2)
                         .minimumScaleFactor(0.82)
                 }
+                .frame(maxWidth: .infinity, alignment: isPlusFocusedCard ? .center : .leading)
 
                 if let trialDays = display.trialDays {
                     trialChip(days: trialDays)
@@ -303,22 +394,38 @@ struct PaywallView: View {
                 Rectangle()
                     .fill(line)
                     .frame(height: 1)
-                    .padding(.vertical, 0)
+                    .padding(.vertical, isPlusFocusedCard ? 2 : 0)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(display.features, id: \.self) { feature in
-                        featureLine(feature)
+                if isPlusFocusedCard {
+                    VStack(alignment: .leading, spacing: 7) {
+                        ForEach(Array(stride(from: 0, to: display.features.count, by: 2)), id: \.self) { index in
+                            compactFeatureRow(
+                                left: display.features[index],
+                                right: index + 1 < display.features.count ? display.features[index + 1] : nil
+                            )
+                        }
                     }
+                    .frame(maxWidth: 326, alignment: .leading)
+                    .padding(.top, 1)
+                } else {
+                    VStack(alignment: .leading, spacing: 3) {
+                        ForEach(display.features, id: \.self) { feature in
+                            featureLine(feature)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                Spacer(minLength: 0)
+                if !isPlusFocusedCard {
+                    Spacer(minLength: 0)
+                }
 
                 if current {
                     currentPlanPill
                 }
             }
-            .padding(10)
-            .frame(maxWidth: .infinity, minHeight: 256, alignment: .topLeading)
+            .padding(isPlusFocusedCard ? 13 : 10)
+            .frame(maxWidth: .infinity, minHeight: cardMinHeight, alignment: isPlusFocusedCard ? .top : .topLeading)
             .background(selected ? greenSoft.opacity(0.62) : Color.white)
             .overlay(
                 RoundedRectangle(cornerRadius: 18)
@@ -359,6 +466,13 @@ struct PaywallView: View {
         .frame(width: size, height: size)
     }
 
+    private func planIcon(for tier: SubscriptionTier, size: CGFloat) -> some View {
+        Image(systemName: tier.badgeIcon)
+            .font(.system(size: size, weight: .black, design: .rounded))
+            .foregroundStyle(tier.accentColor)
+            .accessibilityHidden(true)
+    }
+
     private func trialChip(days: Int) -> some View {
         HStack(spacing: 5) {
             Image(systemName: "gift.fill")
@@ -368,26 +482,68 @@ struct PaywallView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.76)
         }
-        .foregroundStyle(greenDark)
+        .foregroundStyle(Color(hex: "#7A4300"))
         .padding(.horizontal, 7)
         .frame(height: 22)
-        .background(greenSoft)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(hex: "#FFE28A"),
+                    Color(hex: "#FFC94A")
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .clipShape(Capsule())
+        .overlay(Capsule().stroke(Color.white.opacity(0.62), lineWidth: 1))
+        .shadow(color: Color(hex: "#F2B400").opacity(0.28), radius: 8, x: 0, y: 3)
     }
 
-    private func featureLine(_ text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
+    private func featureLine(_ text: String, prominent: Bool = false) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: prominent ? 9 : 6) {
+            Image(systemName: "checkmark")
+                .font(.system(size: prominent ? 13 : 10, weight: .black, design: .rounded))
+                .foregroundStyle(green)
+                .frame(width: prominent ? 16 : 12)
+
+            Text(text)
+                .font(.system(size: prominent ? 14 : 10, weight: .semibold, design: .rounded))
+                .foregroundStyle(graphite)
+                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+        }
+    }
+
+    private func compactFeatureRow(left: String, right: String?) -> some View {
+        HStack(spacing: 8) {
+            compactFeatureLine(left)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let right {
+                Rectangle()
+                    .fill(line)
+                    .frame(width: 1, height: 18)
+
+                compactFeatureLine(right)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func compactFeatureLine(_ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
             Image(systemName: "checkmark")
                 .font(.system(size: 10, weight: .black, design: .rounded))
                 .foregroundStyle(green)
                 .frame(width: 12)
 
             Text(text)
-                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
                 .foregroundStyle(graphite)
-                .fixedSize(horizontal: false, vertical: true)
                 .lineLimit(2)
-                .minimumScaleFactor(0.82)
+                .minimumScaleFactor(0.74)
         }
     }
 
@@ -448,6 +604,15 @@ struct PaywallView: View {
             .buttonStyle(.plain)
             .disabled(primaryButtonDisabled)
 
+            Button {
+                onClose()
+            } label: {
+                Text("Ücretsiz devam et")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(slate.opacity(0.78))
+            }
+            .buttonStyle(.plain)
+
             Text(legalese)
                 .font(.system(size: 10, weight: .medium, design: .rounded))
                 .foregroundStyle(slate)
@@ -489,7 +654,6 @@ struct PaywallView: View {
 
     private var primaryButtonTitle: String {
         if isWorking { return "İşleniyor..." }
-        if selectedTier == .free { return "Ücretsiz ile devam et" }
         if app.currentTier == selectedTier { return "Planın aktif" }
         if selectedPackage == nil && packageLoadError != nil { return "Tekrar dene" }
         if selectedPackage == nil { return "Paket yükleniyor..." }
@@ -503,14 +667,14 @@ struct PaywallView: View {
         if selectedTier.isPaid && selectedPackage == nil && packageLoadError != nil { return Color.white }
         if selectedTier.isPaid && selectedPackage == nil { return graphite }
         if selectedTier.isPaid && app.currentTier == selectedTier { return graphite }
-        return selectedTier == .free ? graphite : Color.white
+        return Color.white
     }
 
     private var primaryButtonBackground: Color {
         if selectedTier.isPaid && selectedPackage == nil && packageLoadError != nil { return green }
         if selectedTier.isPaid && selectedPackage == nil { return cloud }
         if selectedTier.isPaid && app.currentTier == selectedTier { return cloud }
-        return selectedTier == .free ? cloud : green
+        return green
     }
 
     private var primaryButtonDisabled: Bool {
@@ -520,10 +684,6 @@ struct PaywallView: View {
     }
 
     private var legalese: String {
-        guard selectedTier.isPaid else {
-            return "Mevcut Ücretsiz planında kalırsın. İstediğin zaman yükseltebilirsin."
-        }
-
         let plan = planDisplay(for: selectedTier)
         let period = billing == .yearly
             ? "yılda \(annualTotalText(for: selectedTier))"
@@ -565,10 +725,6 @@ struct PaywallView: View {
     }
 
     private func handlePrimaryAction() {
-        if selectedTier == .free {
-            onClose()
-            return
-        }
         if selectedPackage == nil {
             reloadPackages()
             return
@@ -612,9 +768,13 @@ struct PaywallView: View {
         errorMessage = nil
         Task {
             do {
-                try await app.restoreSubscriptions()
+                let restoredState = try await app.restoreSubscriptions()
                 isWorking = false
-                onSubscribe()
+                if restoredState.tier.isPaid {
+                    onSubscribe()
+                } else {
+                    errorMessage = "Geri yüklenecek aktif abonelik bulunamadı."
+                }
             } catch {
                 isWorking = false
                 errorMessage = error.localizedDescription
@@ -648,10 +808,13 @@ struct PaywallView: View {
                 yearlyPrice: 1_999,
                 trialDays: 7,
                 features: [
-                    "10/gün analiz",
-                    "PDF/Excel",
-                    "Fine-Kinney",
-                    "5×5 Matris"
+                    "10/gün Analiz",
+                    "PDF/Excel Rapor",
+                    "Fine-Kinney Risk Analizi",
+                    "5*5 Matris Risk Analizi",
+                    "Gelişmiş Odak Analizi",
+                    "Mail ve Whatsapp ile Paylaşım",
+                    "Özelleştirilebilir Raporlar"
                 ]
             )
         case .pro:

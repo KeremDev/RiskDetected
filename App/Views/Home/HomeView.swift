@@ -13,7 +13,6 @@ struct AnalysisJob: Identifiable {
 
 private struct PaywallPresentation: Identifiable {
     let id = UUID()
-    let notice: String?
 }
 
 private let maxTextInputCharacters = AnalysisService.maxTextInputCharacters
@@ -260,14 +259,14 @@ struct HomeView: View {
         .fullScreenCover(item: $paywallPresentation, onDismiss: {
             restoreCanvasSheetAfterPaywallIfNeeded()
         }) { presentation in
-            PaywallView(
+            FreeAwarePaywallView(
                 onClose: {
                     paywallPresentation = nil
                 },
                 onSubscribe: {
                     handlePaywallSubscription()
                 },
-                notice: presentation.notice
+                notice: nil
             )
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -988,7 +987,7 @@ struct HomeView: View {
         let normalized = AppErrorMessage.make(rawMessage: msg, context: "Analiz tamamlanamadı", fallbackTitle: "Analiz tamamlanamadı")
         if normalized.category == .quotaExceeded {
             analysisError = nil
-            showQuotaPaywall(notice: "\(normalized.message) \(normalized.action) Destek kodu: \(normalized.supportID)")
+            showQuotaPaywall()
             Task { await loadQuotaUsage() }
         } else {
             analysisError = normalized.fullText
@@ -1011,23 +1010,14 @@ struct HomeView: View {
         selectedCanvases = allowed
     }
 
-    private func quotaPaywallNotice(supportID: String = AppErrorMessage.newSupportID()) -> String {
-        "Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam edebilirsin. Destek kodu: \(supportID)"
-    }
-
-    private func showQuotaPaywall(supportID: String = AppErrorMessage.newSupportID()) {
+    private func showQuotaPaywall() {
         restoreCanvasSheetAfterPaywall = false
-        paywallPresentation = PaywallPresentation(notice: quotaPaywallNotice(supportID: supportID))
-    }
-
-    private func showQuotaPaywall(notice: String) {
-        restoreCanvasSheetAfterPaywall = false
-        paywallPresentation = PaywallPresentation(notice: notice)
+        paywallPresentation = PaywallPresentation()
     }
 
     private func showPlainPaywall(restoreCanvasAfterDismiss: Bool = false) {
         restoreCanvasSheetAfterPaywall = restoreCanvasAfterDismiss
-        paywallPresentation = PaywallPresentation(notice: nil)
+        paywallPresentation = PaywallPresentation()
     }
 
     private func restoreCanvasSheetAfterPaywallIfNeeded() {
@@ -1068,11 +1058,15 @@ struct HomeView: View {
     private func loadRecentItems() async {
         guard app.auth.session != nil else { return }
         do {
-            let rows = try await AnalysisService.shared.listRecent(limit: 8)
+            let rows = try await AnalysisService.shared.listRecent(limit: 30)
             let paths = try await AnalysisService.shared.firstPhotoPaths(analysisIDs: rows.map(\.id))
-            recentItems = rows.map { row in
-                RecentAnalysis(row: row, photoPath: paths[row.id])
+            recentItems = rows.compactMap { row in
+                let photoPath = paths[row.id]
+                if row.kind != "text", photoPath == nil { return nil }
+                return RecentAnalysis(row: row, photoPath: photoPath)
             }
+            .prefix(8)
+            .map { $0 }
         } catch {
             recentItems = []
         }
@@ -1159,7 +1153,7 @@ private struct HomeHeader: View {
 
     var body: some View {
         HStack {
-            RDLogo(size: 18)
+            RDHeaderLogoButton(size: 18)
             Spacer()
             RDHeaderAccountCTA {
                 showPaywall = true
@@ -1170,7 +1164,7 @@ private struct HomeHeader: View {
         .padding(.bottom, 12)
         .zIndex(100)
         .fullScreenCover(isPresented: $showPaywall) {
-            PaywallView(onClose: { showPaywall = false },
+            FreeAwarePaywallView(onClose: { showPaywall = false },
                         onSubscribe: {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }

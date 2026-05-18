@@ -24,7 +24,7 @@ struct HistoryView: View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    RDLogo(size: 18)
+                    RDHeaderLogoButton(size: 18)
                     Spacer()
                     RDHeaderAccountCTA {
                         showPaywall = true
@@ -81,7 +81,7 @@ struct HistoryView: View {
                 .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showPaywall) {
-            PaywallView(onClose: { showPaywall = false },
+            FreeAwarePaywallView(onClose: { showPaywall = false },
                         onSubscribe: {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }

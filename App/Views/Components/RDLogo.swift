@@ -30,6 +30,23 @@ struct RDLogo: View {
     }
 }
 
+struct RDHeaderLogoButton: View {
+    @EnvironmentObject private var app: AppState
+
+    var size: CGFloat = 18
+
+    var body: some View {
+        Button {
+            app.activeTab = .home
+        } label: {
+            RDLogo(size: size)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Ana sayfaya dön")
+    }
+}
+
 #Preview {
     VStack(spacing: 24) {
         RDLogo(size: 14)

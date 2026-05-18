@@ -26,7 +26,7 @@ struct ProfileView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                RDLogo(size: 18)
+                RDHeaderLogoButton(size: 18)
                 Spacer()
                 RDHeaderAccountCTA {
                     showPaywall = true
@@ -60,7 +60,7 @@ struct ProfileView: View {
             Task { await loadStats() }
         }
         .fullScreenCover(isPresented: $showPaywall) {
-            PaywallView(onClose: { showPaywall = false },
+            FreeAwarePaywallView(onClose: { showPaywall = false },
                         onSubscribe: {
                             showPaywall = false
                             Task {

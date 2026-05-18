@@ -13,7 +13,7 @@ struct SupportContactSheet: View {
 
     @State private var subject = ""
     @State private var message = ""
-    @State private var attachment: SupportAttachmentDraft?
+    @State private var attachments: [SupportAttachmentDraft] = []
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showFileImporter = false
     @State private var isSending = false
@@ -185,50 +185,27 @@ struct SupportContactSheet: View {
     private var attachmentCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionLabel("Ek")
-            if let attachment {
-                HStack(spacing: 12) {
-                    Image(systemName: "paperclip")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdGreen)
-                        .frame(width: 44, height: 44)
-                        .background(Color.rdGreenSoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 13))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(attachment.filename)
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                            .lineLimit(1)
-                        Text(attachment.formattedSize)
-                            .font(.system(size: 12, design: .rounded))
-                            .foregroundStyle(Color.rdSlate)
-                    }
-                    Spacer()
-                    Button {
-                        self.attachment = nil
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                            .frame(width: 32, height: 32)
-                            .background(Color.rdFog)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
-                }
-                .padding(12)
-                .background(Color.rdFog)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+            ForEach(attachments) { attachment in
+                attachmentRow(attachment)
             }
 
-            HStack(spacing: 10) {
-                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                    attachmentButton(icon: "photo.on.rectangle.angled", title: "Fotoğraf")
+            if attachments.count >= 3 {
+                Text("En fazla 3 ek ekleyebilirsin.")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                HStack(spacing: 10) {
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        attachmentButton(icon: "photo.on.rectangle.angled", title: "Fotoğraf")
+                    }
+                    Button {
+                        showFileImporter = true
+                    } label: {
+                        attachmentButton(icon: "doc.badge.plus", title: "Dosya")
+                    }
+                    .buttonStyle(.plain)
                 }
-                Button {
-                    showFileImporter = true
-                } label: {
-                    attachmentButton(icon: "doc.badge.plus", title: "Dosya")
-                }
-                .buttonStyle(.plain)
             }
         }
         .padding(16)
@@ -238,6 +215,41 @@ struct SupportContactSheet: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func attachmentRow(_ attachment: SupportAttachmentDraft) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: attachment.mimeType.hasPrefix("image/") ? "photo.fill" : "paperclip")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreen)
+                .frame(width: 44, height: 44)
+                .background(Color.rdGreenSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 13))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(attachment.filename)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .lineLimit(1)
+                Text(attachment.formattedSize)
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+            }
+            Spacer()
+            Button {
+                attachments.removeAll { $0.id == attachment.id }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .frame(width: 32, height: 32)
+                    .background(Color.rdFog)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(12)
+        .background(Color.rdFog)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private var sendButton: some View {
@@ -334,7 +346,7 @@ struct SupportContactSheet: View {
                 SupportRequestInput(
                     subject: subject.trimmingCharacters(in: .whitespacesAndNewlines),
                     message: message.trimmingCharacters(in: .whitespacesAndNewlines),
-                    attachments: attachment.map { [$0] } ?? []
+                    attachments: attachments
                 )
             )
             let supportID = result.supportID ?? "oluşturuldu"
@@ -345,7 +357,7 @@ struct SupportContactSheet: View {
             }
             subject = ""
             message = ""
-            attachment = nil
+            attachments = []
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -385,12 +397,25 @@ struct SupportContactSheet: View {
     }
 
     private func setAttachment(data: Data, filename: String, mimeType: String) throws {
+        guard attachments.count < 3 else {
+            errorMessage = "En fazla 3 ek ekleyebilirsin."
+            return
+        }
         guard data.count <= 5_000_000 else {
             errorMessage = "Ek dosya 5 MB'dan küçük olmalı."
             return
         }
-        attachment = SupportAttachmentDraft(filename: filename, mimeType: mimeType, data: data)
+        attachments.append(SupportAttachmentDraft(filename: uniqueAttachmentName(filename), mimeType: mimeType, data: data))
         errorMessage = nil
+    }
+
+    private func uniqueAttachmentName(_ filename: String) -> String {
+        guard attachments.contains(where: { $0.filename == filename }) else { return filename }
+        let url = URL(fileURLWithPath: filename)
+        let base = url.deletingPathExtension().lastPathComponent
+        let ext = url.pathExtension
+        let suffix = attachments.count + 1
+        return ext.isEmpty ? "\(base)-\(suffix)" : "\(base)-\(suffix).\(ext)"
     }
 }
 

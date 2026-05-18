@@ -32,11 +32,14 @@ struct SubscriptionPlanPackage: Identifiable, Equatable {
 
 private enum SubscriptionManagerError: LocalizedError {
     case noPackagesConfigured
+    case restoredPurchaseBelongsToAnotherAccount
 
     var errorDescription: String? {
         switch self {
         case .noPackagesConfigured:
             return "Abonelik paketleri RevenueCat tarafında bulunamadı."
+        case .restoredPurchaseBelongsToAnotherAccount:
+            return "Geri yüklenen abonelik başka bir hesapla ilişkili görünüyor."
         }
     }
 }
@@ -53,7 +56,8 @@ protocol SubscriptionManaging: AnyObject {
     func loadOfferings() async
     func purchase(packageID: String) async throws
     func refreshCustomerInfo() async
-    func restorePurchases() async throws
+    @discardableResult
+    func restorePurchases() async throws -> SubscriptionState
 }
 
 @MainActor
@@ -73,6 +77,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
 
     private var isConfigured = false
     private var packageByID: [String: Package] = [:]
+    private var currentAppUserID: String?
 
     private override init() {
         super.init()
@@ -94,12 +99,15 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
         configure()
 
         guard let userID else {
+            currentAppUserID = nil
             state = .free
             return
         }
 
         do {
-            let result = try await Purchases.shared.logIn(userID.uuidString.lowercased())
+            let appUserID = userID.uuidString.lowercased()
+            currentAppUserID = appUserID
+            let result = try await Purchases.shared.logIn(appUserID)
             apply(result.customerInfo)
         } catch {
             apply(error: error)
@@ -182,13 +190,35 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
         }
     }
 
-    func restorePurchases() async throws {
+    @discardableResult
+    func restorePurchases() async throws -> SubscriptionState {
         configure()
         let customerInfo = try await Purchases.shared.restorePurchases()
-        apply(customerInfo)
+        let restoredState = Self.state(from: customerInfo)
+        if restoredState.tier.isPaid,
+           let currentAppUserID,
+           customerInfo.originalAppUserId.lowercased() != currentAppUserID {
+            let error = SubscriptionManagerError.restoredPurchaseBelongsToAnotherAccount
+            state = SubscriptionState(
+                tier: .free,
+                entitlementID: nil,
+                source: "revenuecat",
+                updatedAt: Date(),
+                errorMessage: error.localizedDescription
+            )
+            throw error
+        }
+        return apply(customerInfo)
     }
 
-    private func apply(_ customerInfo: CustomerInfo) {
+    @discardableResult
+    private func apply(_ customerInfo: CustomerInfo) -> SubscriptionState {
+        let nextState = Self.state(from: customerInfo)
+        state = nextState
+        return nextState
+    }
+
+    private static func state(from customerInfo: CustomerInfo) -> SubscriptionState {
         let tier: SubscriptionTier
         let entitlementID: String?
         if customerInfo.entitlements[RDConfig.Subscription.proEntitlementID]?.isActive == true {
@@ -202,7 +232,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             entitlementID = nil
         }
 
-        state = SubscriptionState(
+        return SubscriptionState(
             tier: tier,
             entitlementID: entitlementID,
             source: "revenuecat",

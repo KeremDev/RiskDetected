@@ -5,6 +5,7 @@ struct MainTabView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var showQuickSourceSheet = false
     @State private var showQuotaAlert = false
+    @State private var showPaywall = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -47,11 +48,21 @@ struct MainTabView: View {
         }
         .alert("Ücretsiz hak doldu", isPresented: $showQuotaAlert) {
             Button("Yükselt") {
-                app.activeTab = .profile
+                showPaywall = true
             }
             Button("Tamam", role: .cancel) {}
         } message: {
             Text("Günde 1 ücretsiz analiz hakkınızı kullandınız. Plus veya Pro ile devam edebilirsiniz.")
+        }
+        .fullScreenCover(isPresented: $showPaywall) {
+            FreeAwarePaywallView(
+                onClose: { showPaywall = false },
+                onSubscribe: {
+                    showPaywall = false
+                    Task { await app.refreshPlanState() }
+                }
+            )
+            .preferredColorScheme(preferredModalColorScheme)
         }
     }
 

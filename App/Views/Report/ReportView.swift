@@ -151,7 +151,7 @@ struct ReportView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                RDLogo(size: 18)
+                RDHeaderLogoButton(size: 18)
                 Spacer()
                 if isLoading {
                     ProgressView()
@@ -175,7 +175,7 @@ struct ReportView: View {
         .padding(.bottom, 12)
         .zIndex(100)
         .fullScreenCover(isPresented: $showPaywall) {
-            PaywallView(onClose: { showPaywall = false },
+            FreeAwarePaywallView(onClose: { showPaywall = false },
                         onSubscribe: {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }

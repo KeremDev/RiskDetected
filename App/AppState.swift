@@ -177,10 +177,12 @@ final class AppState: ObservableObject {
         await auth.refreshProfile()
     }
 
-    func restoreSubscriptions() async throws {
-        try await subscriptions.restorePurchases()
+    @discardableResult
+    func restoreSubscriptions() async throws -> SubscriptionState {
+        let restoredState = try await subscriptions.restorePurchases()
         await syncBackendSubscription()
         await auth.refreshProfile()
+        return restoredState
     }
 
     func setDarkMode(_ enabled: Bool) {
@@ -273,11 +275,7 @@ final class AppState: ObservableObject {
         if subscriptionTier.isPaid {
             return subscriptionTier
         }
-        #if DEBUG
-        return profileTier
-        #else
         return .free
-        #endif
     }
 
     private func applyTier(_ tier: SubscriptionTier) {
@@ -288,7 +286,10 @@ final class AppState: ObservableObject {
 
     private func syncBackendSubscription() async {
         guard auth.session != nil else { return }
-        struct EmptyBody: Encodable {}
+        struct SyncBody: Encodable {
+            let expected_tier: String
+            let expected_entitlement_id: String?
+        }
         struct SyncResponse: Decodable {
             let tier: String?
         }
@@ -296,7 +297,12 @@ final class AppState: ObservableObject {
         do {
             let response: SyncResponse = try await SupabaseService.shared.functions.invoke(
                 RDConfig.syncRevenueCatSubscriptionFunctionName,
-                options: FunctionInvokeOptions(body: EmptyBody())
+                options: FunctionInvokeOptions(
+                    body: SyncBody(
+                        expected_tier: subscriptions.state.tier.rawValue,
+                        expected_entitlement_id: subscriptions.state.entitlementID
+                    )
+                )
             )
             if let tier = response.tier.flatMap(SubscriptionTier.init(rawValue:)) {
                 applyTier(displayTier(profileTier: tier, subscriptionTier: subscriptions.state.tier))
