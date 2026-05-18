@@ -74,10 +74,15 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
   - Pro references promptu,
   - AI'a gönderilen system prompt.
 - AI maliyet/süre için token, model, key alias, attempt count ve destek kodu logları genişletildi.
-- Gemini key pool altyapısı eklendi:
+- Gemini key pool altyapısı eklendi ve Free/Paid olarak ayrıldı:
   - `GEMINI_API_KEY_PRIMARY`
   - `GEMINI_API_KEY_SECONDARY`
   - `GEMINI_API_KEY_TERTIARY`
+  - `GEMINI_API_KEY_PAID`
+  - `GEMINI_API_KEY_PAID_SECONDARY` (opsiyonel)
+- Free kullanıcılar yalnızca Free Gemini havuzunu; Plus/Pro kullanıcılar yalnızca backend subscription doğrulaması sonrası Paid Gemini havuzunu kullanır. Subscription lookup veya Paid secret eksikse Plus/Pro analizi Free key'e düşmeden destek koduyla fail-closed olur.
+- Free model sırası `gemini-2.5-flash` -> retryable hata/limit durumunda `gemini-2.5-flash-lite` olarak ayarlandı.
+- Plus/Pro model sırası `gemini-2.5-pro` -> retryable hata/limit durumunda `gemini-2.5-flash` olarak ayarlandı.
 
 ### Raporlar, PDF ve Excel
 
@@ -248,7 +253,9 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Analiz tamamlandı, rapor hazır ve güvenlik/account eventleri backend'den tetiklenmeli.
 
 2. AI maliyet ve quota operasyonu
-   - Ek Gemini API key'leri farklı Google Cloud projelerinden Supabase secrets'a girilmeli.
+   - Paid Gemini API key `GEMINI_API_KEY_PAID` olarak Supabase secrets'a girilmeli; opsiyonel yedek için `GEMINI_API_KEY_PAID_SECONDARY` kullanılabilir.
+   - Pending: Plus/Pro fallback kurulacak; önce ayrı paid Google project/account üzerinden `GEMINI_API_KEY_PAID_SECONDARY`, sonra gerekirse paid provider/model fallback değerlendirilecek. Plus/Pro fallback hiçbir durumda Free Gemini key havuzuna düşmemeli.
+   - Free havuz için ek Gemini API key'leri farklı Google Cloud projelerinden Supabase secrets'a girilmeli.
    - Her Google Cloud projesinde budget/quota alert açılmalı.
    - `ai_usage_logs` üzerinden günlük token, latency, fallback, error rate ve maliyet dashboard'u hazırlanmalı.
    - Pro için ücretli/kuota artırılmış model stratejisi netleştirilmeli.

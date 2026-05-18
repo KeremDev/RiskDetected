@@ -101,8 +101,8 @@ These items exist in some form, but need revision before we treat them as produc
    - Current state: Gemini model-level fallback exists.
    - Target: provider abstraction interface with health/fallback routing.
    - Initial chain:
-     - Free: Gemini Flash-Lite -> Gemini Flash -> fallback vision provider.
-     - Pro: strongest available Gemini paid model -> Claude/OpenAI/OpenRouter fallback, depending on cost and API availability.
+     - Free: Free Gemini key pool only (`GEMINI_API_KEY_PRIMARY` / legacy `GEMINI_API_KEY`, then secondary/tertiary) with `gemini-2.5-flash` primary -> `gemini-2.5-flash-lite` fallback.
+     - Plus/Pro: Paid Gemini key pool only (`GEMINI_API_KEY_PAID`, optional paid secondary) after backend subscription validation; `gemini-2.5-pro` primary -> `gemini-2.5-flash` fallback; no fallback to Free secrets.
 
 3. Image preprocessing
    - Current state: iOS resizes/compresses images before inline upload; Edge Function strips common JPEG/PNG metadata chunks/segments before AI + Storage persistence.
@@ -483,26 +483,41 @@ These items exist in some form, but need revision before we treat them as produc
 ### P3 - AI Reliability and Cost Control
 
 0. Gemini multi-project API key pool for MVP launch buffer:
-   - Status: backend implemented; wait until the user provides the additional Gemini API keys.
+   - Status: backend code now separates Free and Paid Gemini key pools; wait until the user provides the Paid Gemini API key before production deploy/use.
    - Context: keys will come from different Google accounts and different Google Cloud projects, so quota pools should be separate. Multiple keys in the same project would not increase quota.
-   - Done: `analyze` Edge Function key pool implemented and deployed.
+   - Done: `analyze` Edge Function key pool implemented for Free and Plus/Pro routing.
    - Done: `ai_usage_logs.api_key_alias` and `attempt_count` added.
-   - Supabase Edge Function secrets target:
+   - Supabase Edge Function Free secrets target:
      - `GEMINI_API_KEY_PRIMARY`;
      - `GEMINI_API_KEY_SECONDARY`;
      - `GEMINI_API_KEY_TERTIARY`.
    - Backward compatibility: existing `GEMINI_API_KEY` is treated as primary if `GEMINI_API_KEY_PRIMARY` is absent.
+   - Supabase Edge Function Paid secrets target:
+     - `GEMINI_API_KEY_PAID`;
+     - `GEMINI_API_KEY_PAID_SECONDARY` (optional).
+   - Backward compatibility: `GEMINI_PAID_API_KEY` is accepted as an alias for `GEMINI_API_KEY_PAID`; prefer `GEMINI_API_KEY_PAID`.
    - Routing target:
-     - normal traffic starts with `gemini_primary`;
-     - on retryable provider failures such as `429 RESOURCE_EXHAUSTED`, quota/rate-limit, `503`, `500/502/504` or timeout, retry the same analysis record with `gemini_secondary`, then `gemini_tertiary`;
+     - Free traffic starts with `gemini_primary`;
+     - Free model order is `gemini-2.5-flash` first, then `gemini-2.5-flash-lite` on retryable provider failures or limits;
+     - Plus/Pro traffic starts with `gemini_paid_primary`;
+     - Plus/Pro model order is `gemini-2.5-pro` first, then `gemini-2.5-flash` on retryable provider failures or limits;
+     - on retryable provider failures such as `429 RESOURCE_EXHAUSTED`, quota/rate-limit, `503`, `500/502/504` or timeout, retry the same analysis record within the same key pool only;
+     - do not cross-fallback between Free and Paid key pools;
+     - if subscription lookup fails, fail closed instead of falling back to the Free pool;
      - do not fallback for user/input errors such as invalid payload, unsupported image, validation failure or non-retryable `400`.
    - Logging target:
      - never log or return real API keys;
-     - log only aliases such as `gemini_primary`, `gemini_secondary`, `gemini_tertiary`;
+     - log only aliases such as `gemini_primary`, `gemini_secondary`, `gemini_tertiary`, `gemini_paid_primary`, `gemini_paid_secondary`;
      - write `attempt`, `provider`, `api_key_alias`, `model`, `http_status`, `error_code`, `fallback_source`, `latency_ms`, `request_id` and `support_id` into `ai_usage_logs` where possible.
    - Operational guardrails:
      - add Google Cloud budget alerts / quota monitoring per project before public traffic;
-     - treat this as a temporary MVP reliability bridge until paid quota, quota increase requests and broader provider fallback are in place.
+     - if Paid secret is missing, Plus/Pro analysis must fail closed with a support code instead of using Free keys;
+     - treat this as a temporary MVP reliability bridge until broader provider fallback is in place.
+   - Pending: Plus/Pro fallback hardening:
+     - add/test `GEMINI_API_KEY_PAID_SECONDARY` from a separate paid Google project/account;
+     - ensure retryable Plus/Pro failures fall back only within Paid pool;
+     - verify `ai_usage_logs.api_key_alias` records `gemini_paid_primary` -> `gemini_paid_secondary`;
+     - evaluate a later paid provider/model fallback, still gated by backend subscription checks.
 1. Provider abstraction interface:
    - `analyzePhoto`;
    - `analyzeText`;

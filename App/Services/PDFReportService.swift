@@ -212,21 +212,39 @@ final class PDFReportService: @unchecked Sendable {
     }
 
     private func drawFindingPages(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect) {
-        let rowsPerPage = 5
-        let chunks = input.findings.chunked(into: rowsPerPage)
-        guard !chunks.isEmpty else { return }
+        guard !input.findings.isEmpty else { return }
 
-        for (pageIndex, findings) in chunks.enumerated() {
+        let topY: CGFloat = 122
+        let bottomY = pageRect.height - 42
+        let rowSpacing: CGFloat = 8
+        let maxRowHeight = bottomY - topY
+        var page = 2
+        var y = topY
+
+        func beginFindingPage() {
             context.beginPage()
-            drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.localizedDetailTitle(language: input.options.language), page: pageIndex + 2)
+            drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.localizedDetailTitle(language: input.options.language), page: page)
             drawTableHeader(y: 92)
+            y = topY
+            page += 1
+        }
 
-            var y: CGFloat = 122
-            for (idx, finding) in findings.enumerated() {
-                let ordinal = pageIndex * rowsPerPage + idx + 1
-                drawFindingRow(ordinal: ordinal, finding: finding, method: input.options.method, y: y)
-                y += 86
+        beginFindingPage()
+
+        for (index, finding) in input.findings.enumerated() {
+            let rowHeight = min(standardFindingRowHeight(for: finding), maxRowHeight)
+            if y > topY, y + rowHeight > bottomY {
+                beginFindingPage()
             }
+
+            drawFindingRow(
+                ordinal: index + 1,
+                finding: finding,
+                method: input.options.method,
+                y: y,
+                height: rowHeight
+            )
+            y += rowHeight + rowSpacing
         }
     }
 
@@ -616,22 +634,79 @@ final class PDFReportService: @unchecked Sendable {
         UIBezierPath(rect: CGRect(x: 42, y: y + 22, width: 758, height: 1)).fill()
     }
 
-    private func drawFindingRow(ordinal: Int, finding: Finding, method: RiskMethod, y: CGFloat) {
+    private func standardFindingRowHeight(for finding: Finding) -> CGFloat {
+        let minHeight: CGFloat = 82
+        let titleHeight = max(
+            18,
+            measuredTextHeight(
+                finding.title,
+                width: 302,
+                font: .systemFont(ofSize: 12, weight: .bold),
+                alignment: .left
+            )
+        )
+        let descriptionHeight = measuredTextHeight(
+            finding.description,
+            width: 302,
+            font: .systemFont(ofSize: 9),
+            alignment: .left
+        )
+        let actionHeight = measuredTextHeight(
+            finding.action,
+            width: 296,
+            font: .systemFont(ofSize: 10),
+            alignment: .left
+        )
+
+        let riskColumnHeight = 10 + titleHeight + 7 + descriptionHeight + 12
+        let actionColumnHeight = 24 + actionHeight
+        return ceil(max(minHeight, riskColumnHeight, actionColumnHeight))
+    }
+
+    private func drawFindingRow(ordinal: Int, finding: Finding, method: RiskMethod, y: CGFloat, height: CGFloat) {
         let x: CGFloat = 42
-        let rowRect = CGRect(x: x, y: y, width: 758, height: 82)
+        let rowRect = CGRect(x: x, y: y, width: 758, height: height)
         roundedStroke(rowRect, radius: 10, stroke: .rdPDFLine, fill: .white)
 
         drawText("\(ordinal)", in: CGRect(x: x + 12, y: y + 12, width: 24, height: 20), font: .monospacedSystemFont(ofSize: 12, weight: .bold), color: .rdPDFBlack)
 
-        drawFittingText(finding.title, in: CGRect(x: x + 48, y: y + 9, width: 302, height: 18), baseFont: .systemFont(ofSize: 12, weight: .bold), minimumFontSize: 9.2, color: .rdPDFBlack)
-        drawFittingText(finding.description, in: CGRect(x: x + 48, y: y + 28, width: 302, height: 46), baseFont: .systemFont(ofSize: 9), minimumFontSize: 7.2, color: .rdPDFSlate)
+        let titleHeight = max(
+            18,
+            measuredTextHeight(
+                finding.title,
+                width: 302,
+                font: .systemFont(ofSize: 12, weight: .bold),
+                alignment: .left
+            )
+        )
+        let descriptionY = y + 10 + titleHeight + 7
+        drawFittingText(
+            finding.title,
+            in: CGRect(x: x + 48, y: y + 9, width: 302, height: titleHeight),
+            baseFont: .systemFont(ofSize: 12, weight: .bold),
+            minimumFontSize: 9.2,
+            color: .rdPDFBlack
+        )
+        drawFittingText(
+            finding.description,
+            in: CGRect(x: x + 48, y: descriptionY, width: 302, height: max(18, y + height - descriptionY - 12)),
+            baseFont: .systemFont(ofSize: 9),
+            minimumFontSize: 7.2,
+            color: .rdPDFSlate
+        )
 
         let band = finding.band(for: method)
         roundedFill(CGRect(x: x + 370, y: y + 14, width: 70, height: 34), radius: 8, color: band.level.pdfColor)
         drawText(scoreText(finding.score(for: method)), in: CGRect(x: x + 370, y: y + 19, width: 70, height: 20), font: .monospacedSystemFont(ofSize: 16, weight: .bold), color: .white, alignment: .center)
         drawText(band.label, in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
 
-        drawFittingText(finding.action, in: CGRect(x: x + 462, y: y + 12, width: 296, height: 58), baseFont: .systemFont(ofSize: 10), minimumFontSize: 7.5, color: .rdPDFBlack)
+        drawFittingText(
+            finding.action,
+            in: CGRect(x: x + 462, y: y + 12, width: 296, height: max(18, height - 24)),
+            baseFont: .systemFont(ofSize: 10),
+            minimumFontSize: 7.5,
+            color: .rdPDFBlack
+        )
     }
 
     private func drawImage(_ image: UIImage, in rect: CGRect, cornerRadius: CGFloat, mode: UIView.ContentMode = .scaleAspectFill) {
@@ -658,6 +733,11 @@ final class PDFReportService: @unchecked Sendable {
     }
 
     private func drawText(_ text: String, in rect: CGRect, font: UIFont, color: UIColor, alignment: NSTextAlignment = .left) {
+        guard let cgContext = UIGraphicsGetCurrentContext() else { return }
+        cgContext.saveGState()
+        UIBezierPath(rect: rect).addClip()
+        defer { cgContext.restoreGState() }
+
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = alignment
         paragraph.lineBreakMode = .byWordWrapping

@@ -108,8 +108,8 @@ Important migrations:
 
 Current intended routing:
 
-- Free users: lower-cost Gemini model path and smaller hazard budget.
-- Plus/Pro users: paid-plan model path and larger quota/capability budget.
+- Free users: `gemini-2.5-flash` primary, `gemini-2.5-flash-lite` fallback, smaller hazard budget and only the Free Gemini key pool.
+- Plus/Pro users: paid-plan Gemini key pool only after backend subscription validation, with `gemini-2.5-pro` primary and `gemini-2.5-flash` fallback.
 - Current product target: Free günde 1 standart analiz ve tek canvas, Plus sınırlı gelişmiş erişim, Pro 10 bulguya kadar detaylı analiz.
 
 Known product note:
@@ -117,20 +117,34 @@ Known product note:
 - Do not promise fixed confidence such as "Pro is always 90%".
 - Preferred copy: Pro analyses use stronger model and validation layers to target higher confidence.
 
-Gemini reliability bridge:
+Gemini key routing and reliability bridge:
 
-- User may provide up to three Gemini API keys from different Google accounts and different Google Cloud projects.
-- Important: multiple keys in the same Google Cloud project share quota and should not be treated as separate capacity.
-- `analyze` Edge Function key pool is implemented and deployed. Supported secrets:
+- Free users use the Free key pool only. Supported Free secrets:
   - `GEMINI_API_KEY_PRIMARY`
   - `GEMINI_API_KEY_SECONDARY`
   - `GEMINI_API_KEY_TERTIARY`
 - Existing legacy `GEMINI_API_KEY` is treated as primary fallback for backward compatibility.
+- Free model order is `gemini-2.5-flash` first, then `gemini-2.5-flash-lite` for retryable provider failures or limits.
+- Plus/Pro users use the Paid key pool only. Supported Paid secrets:
+  - `GEMINI_API_KEY_PAID`
+  - `GEMINI_API_KEY_PAID_SECONDARY` (optional fallback)
+- Plus/Pro model order is `gemini-2.5-pro` first, then `gemini-2.5-flash` for retryable provider failures or limits.
+- `GEMINI_PAID_API_KEY` is accepted as a backward-compatible alias for `GEMINI_API_KEY_PAID`, but `GEMINI_API_KEY_PAID` is preferred.
+- Important: multiple keys in the same Google Cloud project share quota and should not be treated as separate capacity.
+- The Edge Function resolves the effective plan from backend subscription state before selecting a key pool.
+- If backend subscription lookup fails, analysis fails closed instead of silently treating the user as Free.
+- No cross-pool fallback is allowed: Free traffic never uses Paid keys, and Plus/Pro traffic never falls back to Free keys. Missing Paid secrets fail closed with a support code.
 - Retry/fallback only on retryable provider failures such as `429 RESOURCE_EXHAUSTED`, quota/rate-limit, 5xx and timeout.
 - Do not fallback on invalid input/user errors.
-- Logs store only key aliases (`gemini_primary`, `gemini_secondary`, `gemini_tertiary`), never raw keys.
+- Logs store only key aliases (`gemini_primary`, `gemini_secondary`, `gemini_tertiary`, `gemini_paid_primary`, `gemini_paid_secondary`), never raw keys.
 - `ai_usage_logs` includes `api_key_alias` and `attempt_count`.
-- This is an MVP launch buffer until paid quota/quota increase and broader provider fallback are added.
+- This is the MVP launch buffer until broader provider fallback is added.
+
+Pending Plus/Pro fallback note:
+
+- Add and test a Plus/Pro-only fallback path before larger paid traffic. This must stay inside the Paid pool or another paid provider; Plus/Pro traffic must still never fall back to Free Gemini keys.
+- Preferred first step: add `GEMINI_API_KEY_PAID_SECONDARY` from a separate paid Google project/account, then verify `ai_usage_logs.api_key_alias` switches from `gemini_paid_primary` to `gemini_paid_secondary` on retryable failures.
+- Later step: evaluate a paid provider/model fallback behind the same backend entitlement checks.
 
 ### Risk Methods
 

@@ -34,9 +34,9 @@ const GEMINI_API_BASE =
 
 const MODEL_FREE_LITE = "gemini-2.5-flash-lite";
 const MODEL_FREE = "gemini-2.5-flash";
-// Gemini Pro model free quota bu API key'de 0 dönebiliyor.
-// Ücretli Google AI planı açılana kadar PRO kullanıcıyı da Flash üzerinde çalıştırıyoruz.
-const MODEL_PRO = "gemini-2.5-flash";
+// Plus/Pro traffic uses the isolated paid Gemini key pool.
+const MODEL_PRO = "gemini-2.5-pro";
+const MODEL_PRO_FALLBACK = "gemini-2.5-flash";
 
 type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
@@ -195,9 +195,17 @@ class GeminiAPIError extends Error {
   }
 }
 
+type GeminiKeyAlias =
+  | "gemini_primary"
+  | "gemini_secondary"
+  | "gemini_tertiary"
+  | "gemini_paid_primary"
+  | "gemini_paid_secondary";
+
 type GeminiKeyConfig = {
-  alias: "gemini_primary" | "gemini_secondary" | "gemini_tertiary";
+  alias: GeminiKeyAlias;
   key: string;
+  pool: "free" | "paid";
 };
 
 type AISimulationMode = "429" | "500" | "502" | "503" | "504" | "invalid_json";
@@ -299,14 +307,12 @@ function hasActiveSubscription(
 }
 
 function resolvePlanTier(
-  profileTier: unknown,
   subscription: {
     tier?: string | null;
     status?: string | null;
     current_period_ends_at?: string | null;
   } | null,
 ): PlanTier {
-  void profileTier;
   return hasActiveSubscription(subscription)
     ? normalizeTier(subscription?.tier)
     : "free";
@@ -443,19 +449,10 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function geminiKeyPool(): GeminiKeyConfig[] {
-  const primary = Deno.env.get("GEMINI_API_KEY_PRIMARY") ??
-    Deno.env.get("GEMINI_API_KEY");
-  const secondary = Deno.env.get("GEMINI_API_KEY_SECONDARY");
-  const tertiary = Deno.env.get("GEMINI_API_KEY_TERTIARY");
-
-  const keys = [
-    primary ? { alias: "gemini_primary" as const, key: primary } : null,
-    secondary ? { alias: "gemini_secondary" as const, key: secondary } : null,
-    tertiary ? { alias: "gemini_tertiary" as const, key: tertiary } : null,
-  ].filter((item): item is GeminiKeyConfig => item !== null);
-
-  const preferredAlias = Deno.env.get("GEMINI_PREFERRED_KEY_ALIAS")?.trim();
+function orderGeminiKeys(
+  keys: GeminiKeyConfig[],
+  preferredAlias: string | undefined,
+): GeminiKeyConfig[] {
   if (!preferredAlias) return keys;
 
   const preferredIndex = keys.findIndex((item) =>
@@ -468,6 +465,83 @@ function geminiKeyPool(): GeminiKeyConfig[] {
     preferred,
     ...keys.filter((_, index) => index !== preferredIndex),
   ];
+}
+
+function freeGeminiKeyPool(): GeminiKeyConfig[] {
+  const primary = Deno.env.get("GEMINI_API_KEY_PRIMARY") ??
+    Deno.env.get("GEMINI_API_KEY");
+  const secondary = Deno.env.get("GEMINI_API_KEY_SECONDARY");
+  const tertiary = Deno.env.get("GEMINI_API_KEY_TERTIARY");
+
+  const rawKeys: Array<GeminiKeyConfig | null> = [
+    primary
+      ? {
+        alias: "gemini_primary" as const,
+        key: primary,
+        pool: "free" as const,
+      }
+      : null,
+    secondary
+      ? {
+        alias: "gemini_secondary" as const,
+        key: secondary,
+        pool: "free" as const,
+      }
+      : null,
+    tertiary
+      ? {
+        alias: "gemini_tertiary" as const,
+        key: tertiary,
+        pool: "free" as const,
+      }
+      : null,
+  ];
+  const keys = rawKeys.filter((item): item is GeminiKeyConfig => item !== null);
+
+  return orderGeminiKeys(
+    keys,
+    Deno.env.get("GEMINI_FREE_PREFERRED_KEY_ALIAS")?.trim() ||
+      Deno.env.get("GEMINI_PREFERRED_KEY_ALIAS")?.trim(),
+  );
+}
+
+function paidGeminiKeyPool(): GeminiKeyConfig[] {
+  const primary = Deno.env.get("GEMINI_API_KEY_PAID") ??
+    Deno.env.get("GEMINI_PAID_API_KEY");
+  const secondary = Deno.env.get("GEMINI_API_KEY_PAID_SECONDARY");
+
+  const rawKeys: Array<GeminiKeyConfig | null> = [
+    primary
+      ? {
+        alias: "gemini_paid_primary" as const,
+        key: primary,
+        pool: "paid" as const,
+      }
+      : null,
+    secondary
+      ? {
+        alias: "gemini_paid_secondary" as const,
+        key: secondary,
+        pool: "paid" as const,
+      }
+      : null,
+  ];
+  const keys = rawKeys.filter((item): item is GeminiKeyConfig => item !== null);
+
+  return orderGeminiKeys(
+    keys,
+    Deno.env.get("GEMINI_PAID_PREFERRED_KEY_ALIAS")?.trim(),
+  );
+}
+
+function geminiKeyPoolForTier(tier: PlanTier): GeminiKeyConfig[] {
+  return tier === "free" ? freeGeminiKeyPool() : paidGeminiKeyPool();
+}
+
+function geminiRequiredSecretName(tier: PlanTier): string {
+  return tier === "free"
+    ? "GEMINI_API_KEY_PRIMARY veya GEMINI_API_KEY"
+    : "GEMINI_API_KEY_PAID";
 }
 
 function userFacingAIError(
@@ -521,9 +595,11 @@ async function callGeminiWithFallback(
   isPro: boolean,
   simulation?: AISimulationConfig,
 ) {
-  const models = preferredModel === MODEL_FREE_LITE
-    ? [MODEL_FREE_LITE, MODEL_FREE]
-    : [preferredModel, MODEL_FREE_LITE];
+  const models = preferredModel === MODEL_FREE
+    ? [MODEL_FREE, MODEL_FREE_LITE]
+    : preferredModel === MODEL_PRO
+    ? [MODEL_PRO, MODEL_PRO_FALLBACK]
+    : [preferredModel];
 
   let lastError: unknown = null;
   let attempt = 0;
@@ -601,7 +677,9 @@ function safeLogError(error: unknown): Record<string, unknown> {
       details: typeof source.details === "string"
         ? source.details.slice(0, 240)
         : undefined,
-      hint: typeof source.hint === "string" ? source.hint.slice(0, 160) : undefined,
+      hint: typeof source.hint === "string"
+        ? source.hint.slice(0, 160)
+        : undefined,
     };
   }
   return { name: typeof error };
@@ -622,7 +700,9 @@ function storageObjectURL(
 ): string {
   const cleanUrl = supabaseUrl.replace(/\/$/, "");
   const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-  return `${cleanUrl}/storage/v1/object/${encodeURIComponent(bucket)}/${encodedPath}`;
+  return `${cleanUrl}/storage/v1/object/${
+    encodeURIComponent(bucket)
+  }/${encodedPath}`;
 }
 
 async function uploadStorageObject(params: {
@@ -935,15 +1015,6 @@ serve(async (req: Request) => {
     newSupportID(),
   );
 
-  const geminiKeys = geminiKeyPool();
-  if (geminiKeys.length === 0) {
-    return errorResponse(500, "Gemini API key secret eksik.", {
-      code: "missing_secret",
-      requestID,
-      supportID,
-    });
-  }
-
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
     return errorResponse(401, "Authorization header eksik.", {
@@ -1057,19 +1128,73 @@ serve(async (req: Request) => {
   ];
   const analysisMode = normalizeAnalysisMode(analysis_mode, requestedCanvases);
 
-  // Profil + backend-synced subscription tier
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("tier")
-    .eq("id", user.id)
-    .single();
-  const { data: subscription } = await supabase
+  // Backend-synced subscription tier is the only source for paid AI routing.
+  const { data: subscription, error: subscriptionError } = await supabase
     .from("user_subscriptions")
     .select("tier,status,current_period_ends_at")
     .eq("user_id", user.id)
     .maybeSingle();
-  const planTier = resolvePlanTier(profile?.tier, subscription);
+  if (subscriptionError) {
+    console.error(
+      "Subscription lookup failed",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        error: safeLogError(subscriptionError),
+      }),
+    );
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `Abonelik bilgisi doğrulanamadı. Destek kodu: ${supportID}`,
+    });
+    return errorResponse(
+      500,
+      "Abonelik bilgisi doğrulanamadı. Lütfen tekrar dene.",
+      {
+        code: "subscription_lookup_failed",
+        requestID,
+        supportID,
+      },
+    );
+  }
+
+  const planTier = resolvePlanTier(subscription);
   const isPro = planTier === "pro";
+  const geminiKeys = geminiKeyPoolForTier(planTier);
+  const expectedGeminiPool = planTier === "free" ? "free" : "paid";
+
+  if (
+    geminiKeys.length === 0 ||
+    geminiKeys.some((item) => item.pool !== expectedGeminiPool)
+  ) {
+    console.error(
+      "Gemini key pool misconfigured",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        user_plan: planTier,
+        expected_pool: expectedGeminiPool,
+        available_aliases: geminiKeys.map((item) => item.alias),
+        required_secret: geminiRequiredSecretName(planTier),
+      }),
+    );
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `AI servis anahtarı yapılandırılmamış. Destek kodu: ${supportID}`,
+    });
+    return errorResponse(
+      500,
+      "AI servisi yapılandırılmamış. Lütfen destek ile iletişime geç.",
+      {
+        code: "missing_ai_secret",
+        requestID,
+        supportID,
+        tier: planTier,
+      },
+    );
+  }
 
   if (planTier === "free" && requestedCanvases.length > 1) {
     await updateOwnedAnalysis({
@@ -1215,7 +1340,7 @@ serve(async (req: Request) => {
     started_at: new Date().toISOString(),
   });
 
-  const model = planTier === "free" ? MODEL_FREE_LITE : MODEL_PRO;
+  const model = planTier === "free" ? MODEL_FREE : MODEL_PRO;
 
   // Storage → base64
   const imageBase64Parts: { mimeType: string; data: string }[] = [];
@@ -1457,6 +1582,7 @@ serve(async (req: Request) => {
     response_schema_includes_references: isPro,
     system_prompt_sent: systemPrompt,
     model,
+    gemini_key_pool: expectedGeminiPool,
     gemini_key_aliases_available: geminiKeys.map((item) => item.alias),
     test_simulation_enabled: aiSimulation.enabled,
     test_simulation_mode: aiSimulation.enabled ? aiSimulation.mode : null,
@@ -1469,6 +1595,7 @@ serve(async (req: Request) => {
   let modelUsed = model;
   let apiKeyAlias: string | null = null;
   let attemptCount = 0;
+  const primaryGeminiAlias = geminiKeys[0]?.alias ?? null;
 
   try {
     const out = await callGeminiWithFallback(
@@ -1635,7 +1762,7 @@ serve(async (req: Request) => {
     http_status: 200,
     fallback_source: [
       modelUsed !== model ? modelUsed : null,
-      apiKeyAlias && apiKeyAlias !== "gemini_primary" ? apiKeyAlias : null,
+      apiKeyAlias && apiKeyAlias !== primaryGeminiAlias ? apiKeyAlias : null,
     ].filter(Boolean).join(" -> ") || null,
     api_key_alias: apiKeyAlias,
     attempt_count: attemptCount || null,

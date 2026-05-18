@@ -762,7 +762,9 @@ struct HomeView: View {
                     .textCase(.uppercase)
                     .foregroundStyle(Color.rdSlate)
                 Spacer()
-                Button("Tümü") { /* navigate to history */ }
+                Button("Tümü") {
+                    app.activeTab = .analyses
+                }
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
             }

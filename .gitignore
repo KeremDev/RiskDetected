@@ -29,6 +29,7 @@ Packages/
 *.env
 App/GoogleService-Info.plist
 App/GoogleService-Info.plist.local
+QA/tmp/
 
 # Supabase local/link cache
 supabase/.temp/
