@@ -37,11 +37,22 @@ struct OnboardingViewV2: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(state.step == 9 ? Color(hex: "#0B0D0E") : Color.rdPaper)
         .onChange(of: isAuthenticated) { authenticated in
-            guard authenticated, state.step == 8 else { return }
+            guard authenticated else { return }
+            persistCurrentDraft()
+            Task {
+                await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+            }
+            guard state.step == 8 else { return }
             withAnimation(.obSpring) {
                 state.goTo(9)
             }
         }
+        .onChange(of: state.step) { _ in persistCurrentDraft() }
+        .onChange(of: state.certificate) { _ in persistCurrentDraft() }
+        .onChange(of: state.hazards) { _ in persistCurrentDraft() }
+        .onChange(of: state.sectors) { _ in persistCurrentDraft() }
+        .onChange(of: state.frequency) { _ in persistCurrentDraft() }
+        .onChange(of: state.selectedPlan) { _ in persistCurrentDraft() }
     }
 
     @ViewBuilder
@@ -70,19 +81,36 @@ struct OnboardingViewV2: View {
             OBAuthView(
                 state: state,
                 onBack: { state.back() },
-                onApple: { onAuthApple() },
-                onGoogle: { onAuthGoogle() },
-                onEmail: { onAuthEmail() },
-                onSignIn: { onSignInExisting() }
+                onApple: { startAuth(onAuthApple) },
+                onGoogle: { startAuth(onAuthGoogle) },
+                onEmail: { startAuth(onAuthEmail) },
+                onSignIn: { startAuth(onSignInExisting) }
             )
         case 9:
             OnboardingPaywallV2View(
-                onClose: { onFinish() },
-                onSubscribe: { onFinish() }
+                onClose: { finishOnboarding() },
+                onSubscribe: { finishOnboarding() }
             )
         default:
             Color.rdPaper.onAppear { onFinish() }
         }
+    }
+
+    private func persistCurrentDraft() {
+        OnboardingAnswersService.shared.savePendingDraft(state.makeAnswersDraft())
+    }
+
+    private func startAuth(_ action: () -> Void) {
+        persistCurrentDraft()
+        action()
+    }
+
+    private func finishOnboarding() {
+        persistCurrentDraft()
+        Task {
+            await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+        }
+        onFinish()
     }
 }
 

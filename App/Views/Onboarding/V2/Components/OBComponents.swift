@@ -724,15 +724,60 @@ struct OBHeroFrequency: View {
     }
 }
 
+// "Planın hazır, şimdi kilitleyelim" metaforu:
+// Kilit sürekli açılıp kapanan döngü + iç yeşil check her kapanışta belirir.
 struct OBHeroAuth: View {
+    @State private var isClosed: Bool = false
+    @State private var checkScale: CGFloat = 0
+    @State private var checkOpacity: Double = 0
+
     var body: some View {
         ZStack {
-            Image(systemName: "shield.fill")
-                .font(.system(size: 50, weight: .bold))
+            Image(systemName: isClosed ? "lock.fill" : "lock.open.fill")
+                .font(.system(size: 46, weight: .bold))
                 .foregroundStyle(Color.rdOnyx)
+                .id(isClosed)
+
             Image(systemName: "checkmark")
-                .font(.system(size: 22, weight: .heavy))
+                .font(.system(size: 16, weight: .heavy))
                 .foregroundStyle(Color(hex: "#4FE07E"))
+                .scaleEffect(checkScale)
+                .opacity(checkOpacity)
+                .offset(y: 6)
+        }
+        .onAppear { runLoop() }
+    }
+
+    private func runLoop() {
+        Task {
+            while !Task.isCancelled {
+                // Closed phase
+                await MainActor.run {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.6)) {
+                        isClosed = true
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                await MainActor.run {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.55)) {
+                        checkScale = 1
+                        checkOpacity = 1
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 1_800_000_000)
+
+                // Open phase
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        checkScale = 0.6
+                        checkOpacity = 0
+                    }
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.6)) {
+                        isClosed = false
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 1_400_000_000)
+            }
         }
     }
 }

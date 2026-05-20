@@ -129,6 +129,7 @@ final class AppState: ObservableObject {
             // Profile observer'ı zaten bağladığımız için fetch otomatik tetiklenir,
             // yine de kesinlik için bir kez daha refresh edelim.
             await auth.refreshProfile()
+            await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
             await subscriptions.identify(userID: auth.session?.user.id)
             await syncBackendSubscription()
             await auth.refreshProfile()
@@ -145,6 +146,9 @@ final class AppState: ObservableObject {
         hasSeenOnboarding = true
         UserDefaults.standard.set(true, forKey: "rd.onboarding.completed")
         if auth.isAuthenticated {
+            Task {
+                await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+            }
             activeTab = .home
             flow = .main
         } else {
@@ -237,6 +241,7 @@ final class AppState: ObservableObject {
                         await NotificationService.shared.refreshSettings()
                         NotificationService.shared.syncCurrentTokenIfPossible()
                         await self.subscriptions.identify(userID: session.user.id)
+                        await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
                     }
                     self.activeTab = .home
                     if self.flow == .onboarding && !self.hasSeenOnboarding {

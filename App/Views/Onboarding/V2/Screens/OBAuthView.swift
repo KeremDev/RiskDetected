@@ -122,6 +122,27 @@ struct OBAuthView: View {
                         .padding(.top, 24)
                         .obStage(delay: 0.3)
 
+                    HStack(spacing: 8) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.rdGreenDark)
+                        Text("Planın hesabına kilitlensin diye 10 saniyeni alacağız")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Color.rdSlate)
+                            .multilineTextAlignment(.leading)
+                            .lineSpacing(2)
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.rdGreenSoft.opacity(0.5))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.rdGreen.opacity(0.18), lineWidth: 1)
+                    )
+                    .padding(.top, 16)
+                    .obStage(delay: 0.32)
+
                     VStack(spacing: 10) {
                         authButton(
                             title: "Apple ile devam et",
@@ -130,11 +151,20 @@ struct OBAuthView: View {
                         ) { OBHaptic.light(); onApple() }
                         .obStage(delay: 0.36)
 
-                        authButton(
-                            title: "Google ile devam et",
-                            icon: { googleG },
-                            bg: .white, fg: Color.rdOnyx, bordered: true
-                        ) { OBHaptic.light(); onGoogle() }
+                        Button {
+                            OBHaptic.light(); onGoogle()
+                        } label: {
+                            HStack(spacing: 10) {
+                                googleG
+                                googleTextColored
+                            }
+                            .frame(maxWidth: .infinity).frame(height: 56)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdLine, lineWidth: 1))
+                            .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
+                        }
+                        .buttonStyle(OBPressStyle())
                         .obStage(delay: 0.44)
 
                         if emailPhase == .hidden {
@@ -164,23 +194,30 @@ struct OBAuthView: View {
                                 .obStage(delay: 0.52)
                         }
                     }
-                    .padding(.top, 28)
+                    .padding(.top, 14)
 
-                    HStack(spacing: 0) {
-                        Text("Zaten hesabım var")
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color.rdSlate)
-                        Circle().fill(Color.rdSlate.opacity(0.5)).frame(width: 3, height: 3).padding(.horizontal, 6)
-                        Button {
-                            OBHaptic.light()
-                            onSignIn()
-                            withAnimation(.obSpring) { emailPhase = .email }
-                        } label: {
-                            Text("Giriş Yap")
+                    Button {
+                        OBHaptic.light()
+                        onSignIn()
+                        withAnimation(.obSpring) { emailPhase = .email }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "person.crop.circle")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Color.rdSlate)
+                            Text("Zaten hesabım var · ")
+                                .font(.system(size: 13))
+                                .foregroundColor(Color.rdSlate)
+                            + Text("Giriş Yap")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Color.rdOnyx)
+                                .foregroundColor(Color.rdOnyx)
                         }
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .background(Color.rdFog.opacity(0.6))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(Color.rdLine, lineWidth: 1))
                     }
+                    .buttonStyle(OBPressStyle())
                     .frame(maxWidth: .infinity)
                     .padding(.top, 18)
                     .padding(.bottom, 12)
@@ -588,7 +625,7 @@ struct OBAuthView: View {
                 .overlay(Capsule().stroke(Color.rdGreen.opacity(0.22), lineWidth: 1))
                 .clipShape(Capsule())
 
-                Text("Plan oluşturuldu")
+                Text("Planın hazır, seni bekliyor")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
                 Text("47 şablon · \(state.primarySectorLabel) · \(state.certificateLabel)")
@@ -601,6 +638,9 @@ struct OBAuthView: View {
         .background(Color.rdFog)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdOnyx.opacity(0.06), lineWidth: 1))
+        .overlay(alignment: .topTrailing) {
+            OBPulseDot().padding(10)
+        }
     }
 
     private var finePrint: some View {
@@ -650,17 +690,96 @@ struct OBAuthView: View {
     }
 
     private var googleG: some View {
-        ZStack {
-            Circle().fill(Color.white)
-            Text("G")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(
-                    LinearGradient(colors: [Color(hex: "#4285F4"), Color(hex: "#EA4335"),
-                                            Color(hex: "#FBBC05"), Color(hex: "#34A853")],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                )
+        GoogleGLogo()
+            .frame(width: 20, height: 20)
+    }
+
+    private var googleTextColored: some View {
+        // "Google" with Google brand colors per letter
+        HStack(spacing: 0) {
+            Text("G").foregroundStyle(Color(hex: "#4285F4"))
+            Text("o").foregroundStyle(Color(hex: "#EA4335"))
+            Text("o").foregroundStyle(Color(hex: "#FBBC05"))
+            Text("g").foregroundStyle(Color(hex: "#4285F4"))
+            Text("l").foregroundStyle(Color(hex: "#34A853"))
+            Text("e").foregroundStyle(Color(hex: "#EA4335"))
+            Text(" ile devam et").foregroundStyle(Color.rdOnyx)
         }
-        .frame(width: 20, height: 20)
+        .font(.system(size: 16, weight: .semibold))
+    }
+}
+
+// MARK: - Pulse dot (planın yaşıyor hissi)
+
+private struct OBPulseDot: View {
+    @State private var scale: CGFloat = 1
+    @State private var opacity: Double = 0.6
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.rdGreen.opacity(0.35))
+                .frame(width: 14, height: 14)
+                .scaleEffect(scale)
+                .opacity(opacity)
+            Circle()
+                .fill(Color.rdGreen)
+                .frame(width: 8, height: 8)
+                .shadow(color: Color.rdGreen.opacity(0.5), radius: 4)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
+                scale = 1.8
+                opacity = 0
+            }
+        }
+    }
+}
+
+// MARK: - Google "G" logo (proper 4-color shape)
+
+private struct GoogleGLogo: View {
+    var body: some View {
+        Canvas { ctx, size in
+            let s = min(size.width, size.height)
+            let cx = size.width / 2
+            let cy = size.height / 2
+            let r = s * 0.46
+            let inner = s * 0.20
+
+            let blue = Color(hex: "#4285F4")
+            let red = Color(hex: "#EA4335")
+            let yellow = Color(hex: "#FBBC05")
+            let green = Color(hex: "#34A853")
+
+            func segment(start: CGFloat, end: CGFloat, color: Color) {
+                var p = Path()
+                p.addArc(center: CGPoint(x: cx, y: cy), radius: r,
+                         startAngle: .degrees(Double(start)),
+                         endAngle: .degrees(Double(end)),
+                         clockwise: false)
+                p.addLine(to: CGPoint(
+                    x: cx + cos(end * .pi / 180) * inner,
+                    y: cy + sin(end * .pi / 180) * inner
+                ))
+                p.addArc(center: CGPoint(x: cx, y: cy), radius: inner,
+                         startAngle: .degrees(Double(end)),
+                         endAngle: .degrees(Double(start)),
+                         clockwise: true)
+                p.closeSubpath()
+                ctx.fill(p, with: .color(color))
+            }
+
+            segment(start: -90, end: 0, color: red)
+            segment(start: 0, end: 80, color: yellow)
+            segment(start: 80, end: 200, color: green)
+            segment(start: 200, end: 270, color: blue)
+
+            // Horizontal bar (mouth of G) — small blue rect right side
+            let barRect = CGRect(x: cx + inner * 0.4, y: cy - s * 0.05,
+                                 width: r - inner * 0.4 + 0.5, height: s * 0.10)
+            ctx.fill(Path(barRect), with: .color(blue))
+        }
     }
 }
 

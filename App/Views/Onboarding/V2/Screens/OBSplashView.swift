@@ -11,7 +11,7 @@ struct OBSplashView: View {
             backdrop
 
             VStack(spacing: 0) {
-                Spacer(minLength: 40)
+                Spacer(minLength: 24)
                 hero
                     .offset(y: floatY)
                     .onAppear {
@@ -21,14 +21,18 @@ struct OBSplashView: View {
                         animateArrow()
                     }
 
-                Spacer()
+                Spacer(minLength: 12)
+
+                RDLogo(size: 22)
+                    .obStage(delay: 1.0)
+                    .padding(.bottom, 14)
 
                 VStack(spacing: 10) {
                     Text(attributedTitle)
                         .font(.system(size: 32, weight: .bold))
                         .tracking(-1.0)
                         .multilineTextAlignment(.center)
-                        .obStage(delay: 0.76)
+                        .obStage(delay: 1.06)
 
                     Text("Sahada gördüğünü dakikalar içinde\ndenetime hazır rapora dönüştür.")
                         .font(.system(size: 15))
@@ -36,7 +40,7 @@ struct OBSplashView: View {
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
                         .frame(maxWidth: 320)
-                        .obStage(delay: 0.86)
+                        .obStage(delay: 1.14)
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 22)
@@ -61,7 +65,7 @@ struct OBSplashView: View {
                 }
                 .buttonStyle(OBPressStyle())
                 .padding(.horizontal, 24)
-                .obStage(delay: 0.96)
+                .obStage(delay: 1.22)
 
                 HStack(spacing: 6) {
                     Capsule().fill(Color.rdOnyx).frame(width: 20, height: 6)
@@ -71,7 +75,7 @@ struct OBSplashView: View {
                 }
                 .padding(.top, 16)
                 .padding(.bottom, 28)
-                .obStage(delay: 1.06)
+                .obStage(delay: 1.3)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -101,51 +105,16 @@ struct OBSplashView: View {
             OBSplashCharacter()
                 .frame(width: 280, height: 280)
 
-            chip(text: "Yüksekte çalışma", dotColor: .rdCritical)
-                .offset(x: -100, y: -130)
-                .obStage(delay: 0.32)
-            chipMono(text: "Fine-Kinney 240", dotColor: .rdHigh)
-                .offset(x: 80, y: -150)
-                .obStage(delay: 0.42)
-            chipCheck(text: "Rapor hazır")
-                .offset(x: 92, y: 110)
-                .obStage(delay: 0.52)
+            // Clockwise from top-left, 7 chips around character.
+            // Each chip enters with stagger + scale, then floats infinitely
+            // with its own period for premium, organic feel.
+            ForEach(Array(OBSplashChip.all.enumerated()), id: \.offset) { i, chip in
+                OBSplashChipView(chip: chip, index: i)
+                    .offset(x: chip.x, y: chip.y)
+                    .obStage(delay: 0.36 + Double(i) * 0.08)
+            }
         }
-        .frame(width: 320, height: 320)
-    }
-
-    private func chip(text: String, dotColor: Color) -> some View {
-        HStack(spacing: 6) {
-            Circle().fill(dotColor).frame(width: 7, height: 7)
-                .overlay(Circle().stroke(dotColor.opacity(0.18), lineWidth: 3))
-            Text(text).font(.system(size: 12, weight: .semibold))
-        }
-        .padding(.horizontal, 11).padding(.vertical, 7)
-        .background(Color.white)
-        .clipShape(Capsule())
-        .shadow(color: .black.opacity(0.08), radius: 18, y: 4)
-    }
-
-    private func chipMono(text: String, dotColor: Color) -> some View {
-        HStack(spacing: 6) {
-            Circle().fill(dotColor).frame(width: 7, height: 7)
-            Text(text).font(.system(size: 12, weight: .semibold, design: .monospaced))
-        }
-        .padding(.horizontal, 11).padding(.vertical, 7)
-        .background(Color.white)
-        .clipShape(Capsule())
-        .shadow(color: .black.opacity(0.08), radius: 18, y: 4)
-    }
-
-    private func chipCheck(text: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Color.rdGreen)
-            Text(text).font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.rdLow)
-        }
-        .padding(.horizontal, 11).padding(.vertical, 7)
-        .background(Color.white)
-        .clipShape(Capsule())
-        .shadow(color: .black.opacity(0.08), radius: 18, y: 4)
+        .frame(width: 340, height: 340)
     }
 
     private func animateArrow() {
@@ -474,5 +443,91 @@ struct OBSplashCharacter: View {
                        style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [3, 4], dashPhase: scanDash))
         }
         .allowsHitTesting(false)
+    }
+}
+
+// MARK: - Splash chips (clockwise around character)
+
+struct OBSplashChip: Identifiable {
+    let id = UUID()
+    let emoji: String
+    let text: String
+    let accent: Color
+    let x: CGFloat
+    let y: CGFloat
+    let floatPeriod: Double
+    let floatDelay: Double
+
+    static let all: [OBSplashChip] = [
+        // Sol üst — ilk karşılama (kısa, tek satır)
+        .init(emoji: "👋", text: "Seni tanıyalım",
+              accent: Color(hex: "#F0A400"),
+              x: -96, y: -134, floatPeriod: 6.4, floatDelay: 0.0),
+        // Üst — sektörüne özel
+        .init(emoji: "🏗️", text: "Sektörüne özel",
+              accent: Color.rdOnyx,
+              x: 8, y: -168, floatPeriod: 6.8, floatDelay: 0.4),
+        // Sağ üst — fotoğraf (2 satır — uzun)
+        .init(emoji: "📸", text: "Fotoğraftan\nanaliz",
+              accent: Color.rdInfo,
+              x: 96, y: -130, floatPeriod: 6.0, floatDelay: 0.8),
+        // Sağ — Fine-Kinney / 5×5 (2 satır)
+        .init(emoji: "📋", text: "Fine-Kinney\n· 5×5",
+              accent: Color.rdHigh,
+              x: 124, y: 10, floatPeriod: 6.6, floatDelay: 1.2),
+        // Sağ alt — risk analizi
+        .init(emoji: "🔍", text: "Risk Analizi",
+              accent: Color.rdCritical,
+              x: 100, y: 132, floatPeriod: 6.2, floatDelay: 1.6),
+        // Alt — rapor hazır
+        .init(emoji: "✅", text: "Rapor hazır",
+              accent: Color.rdGreen,
+              x: -8, y: 168, floatPeriod: 6.8, floatDelay: 2.0),
+        // Sol — profesyonel asistan (2 satır)
+        .init(emoji: "⛑️", text: "Profesyonel\nasistan",
+              accent: Color.rdGreenDark,
+              x: -118, y: 14, floatPeriod: 6.4, floatDelay: 2.4),
+    ]
+}
+
+struct OBSplashChipView: View {
+    let chip: OBSplashChip
+    let index: Int
+    @State private var bobY: CGFloat = 0
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Text(chip.emoji)
+                .font(.system(size: 13))
+            Text(chip.text)
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(Color.rdOnyx)
+                .lineSpacing(1)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+            Circle()
+                .fill(chip.accent)
+                .frame(width: 6, height: 6)
+                .overlay(Circle().stroke(chip.accent.opacity(0.22), lineWidth: 3))
+        }
+        .padding(.horizontal, 11).padding(.vertical, 7)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.rdOnyx.opacity(0.05), lineWidth: 1)
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: chip.accent.opacity(0.12), radius: 14, y: 6)
+        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
+        .offset(y: bobY)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + chip.floatDelay) {
+                withAnimation(.easeInOut(duration: chip.floatPeriod).repeatForever(autoreverses: true)) {
+                    bobY = -7
+                }
+            }
+        }
     }
 }

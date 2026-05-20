@@ -108,7 +108,16 @@ enum OBFrequency: String, CaseIterable, Identifiable {
     }
 }
 
-enum OBPlan { case yearly, monthly }
+enum OBPlan: String, Codable, Equatable {
+    case yearly, monthly
+
+    var label: String {
+        switch self {
+        case .yearly: return "Yıllık"
+        case .monthly: return "Aylık"
+        }
+    }
+}
 
 @MainActor
 final class OnboardingV2State: ObservableObject {
@@ -131,6 +140,25 @@ final class OnboardingV2State: ObservableObject {
     }
 
     var certificateLabel: String { certificate?.label ?? "A Sınıfı" }
+
+    func makeAnswersDraft() -> OnboardingAnswersDraft {
+        let orderedHazards = OBHazardClass.allCases.filter { hazards.contains($0) }
+        return OnboardingAnswersDraft(
+            certificateClass: certificate.map {
+                OnboardingAnswerChoice(value: $0.rawValue, label: $0.label)
+            },
+            hazardClasses: orderedHazards.map {
+                OnboardingAnswerChoice(value: $0.rawValue, label: $0.label)
+            },
+            sectors: sectors.map {
+                OnboardingAnswerChoice(value: $0.rawValue, label: $0.label)
+            },
+            auditFrequency: frequency.map {
+                OnboardingAnswerChoice(value: $0.rawValue, label: $0.title)
+            },
+            selectedPlan: OnboardingAnswerChoice(value: selectedPlan.rawValue, label: selectedPlan.label)
+        )
+    }
 
     func toggleHazard(_ h: OBHazardClass) {
         if hazards.contains(h) { hazards.remove(h) } else { hazards.insert(h) }

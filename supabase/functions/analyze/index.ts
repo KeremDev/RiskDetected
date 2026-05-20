@@ -87,9 +87,6 @@ function geminiThinkingConfig(
   return null;
 }
 
-const COMMON_ANALYSIS_PROMPT =
-  `Fotoğrafı iş güvenliği uzmanı saha gözlemi gibi analiz et. Sadece görüntüde görülen bulgulara dayan. Görünmeyen veya emin olmadığın noktaları "kontrol edilmeli" diye belirt.`;
-
 const PRO_REFERENCES_PROMPT =
   `Fotoğrafı Türkiye İSG mevzuatı perspektifiyle değerlendir. Her bulgu için Türkiye İSG mevzuatıyla ilişkili uygun kanun/yönetmelik başlığını references alanında kısa yaz. References alanı kısaltılmış kanun/yönetmelik adı ve biliyorsan kısa madde bilgisini içersin; emin değilsen madde uydurma, "mevzuat karşılığı kontrol edilmeli" yaz. Standart numarası, ölçüm değeri veya uzun açıklama uydurma.`;
 
@@ -377,6 +374,19 @@ type AISimulationConfig = {
   remainingFailures: number;
 };
 
+type TraceMeta = {
+  requestID: string;
+  supportID: string;
+};
+
+type GeminiAttemptFailure = {
+  apiKeyAlias: GeminiKeyAlias;
+  model: string;
+  attempt: number;
+  retryable: boolean;
+  error: Record<string, unknown>;
+};
+
 function aiSimulationConfig(): AISimulationConfig {
   const enabled =
     Deno.env.get("RISKDETECTED_ENABLE_TEST_SIMULATION") === "true";
@@ -522,10 +532,7 @@ function buildSystemPrompt(canvases: string[], tier: PlanTier): string {
     canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") ||
     CANVAS_FOCUS["general"];
   return `Sen deneyimli bir iş güvenliği (HSE/İSG) uzmanısın. Görevin: verilen görsel ve/veya metin girdisinden İSG tehlikelerini ve risklerini tespit etmek.
-
-ORTAK YAKLAŞIM:
-${COMMON_ANALYSIS_PROMPT}
-${isPro ? `\nPRO MEVZUAT REFERANSI:\n${PRO_REFERENCES_PROMPT}` : ""}
+${isPro ? `\n\nPRO MEVZUAT REFERANSI:\n${PRO_REFERENCES_PROMPT}` : ""}
 
 ODAK: ${focusLines}
 
@@ -989,9 +996,11 @@ async function callGeminiWithFallback(
   imageBase64Parts: { mimeType: string; data: string }[],
   isPro: boolean,
   simulation?: AISimulationConfig,
+  trace?: TraceMeta,
 ) {
   let lastError: unknown = null;
   let attempt = 0;
+  const attemptFailures: GeminiAttemptFailure[] = [];
   for (
     const { keyConfig, model } of geminiAttemptSequence(
       keyPool,
@@ -1016,20 +1025,27 @@ async function callGeminiWithFallback(
         modelUsed: model,
         apiKeyAlias: keyConfig.alias,
         attempt,
+        geminiAttemptFailures: attemptFailures,
       };
     } catch (err) {
       lastError = err;
       const retryable = err instanceof SyntaxError ||
         (err instanceof GeminiAPIError &&
           [429, 500, 502, 503, 504].includes(err.status));
+      const failure: GeminiAttemptFailure = {
+        apiKeyAlias: keyConfig.alias,
+        model,
+        attempt,
+        retryable,
+        error: safeLogError(err),
+      };
+      attemptFailures.push(failure);
       console.error(
         "Gemini attempt failed",
         JSON.stringify({
-          apiKeyAlias: keyConfig.alias,
-          model,
-          attempt,
-          retryable,
-          error: safeLogError(err),
+          request_id: trace?.requestID ?? null,
+          support_id: trace?.supportID ?? null,
+          ...failure,
         }),
       );
       if (!retryable) throw err;
@@ -1048,6 +1064,7 @@ async function callFreeAIWithFallback(
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   simulation?: AISimulationConfig,
+  trace?: TraceMeta,
 ) {
   try {
     const out = await callGeminiWithFallback(
@@ -1059,6 +1076,7 @@ async function callFreeAIWithFallback(
       imageBase64Parts,
       false,
       simulation,
+      trace,
     );
     return {
       ...out,
@@ -1115,6 +1133,7 @@ async function callPaidAIWithFallback(
   imageBase64Parts: { mimeType: string; data: string }[],
   isPro: boolean,
   simulation?: AISimulationConfig,
+  trace?: TraceMeta,
 ) {
   try {
     const out = await callGeminiWithFallback(
@@ -1126,6 +1145,7 @@ async function callPaidAIWithFallback(
       imageBase64Parts,
       isPro,
       simulation,
+      trace,
     );
     return {
       ...out,
@@ -2111,7 +2131,6 @@ serve(async (req: Request) => {
     resolved_canvas_prompts: resolvedCanvasPrompts,
     min_hazards: PLAN_LIMITS[planTier].minHazards ?? null,
     max_hazards: PLAN_LIMITS[planTier].maxHazards ?? null,
-    common_analysis_prompt: COMMON_ANALYSIS_PROMPT,
     pro_references_prompt: isPro ? PRO_REFERENCES_PROMPT : null,
     references_requested: isPro,
     response_schema_includes_references: isPro,
@@ -2156,6 +2175,7 @@ serve(async (req: Request) => {
         userPrompt,
         imageBase64Parts,
         aiSimulation,
+        { requestID, supportID },
       )
       : await callPaidAIWithFallback(
         geminiKeys,
@@ -2166,6 +2186,7 @@ serve(async (req: Request) => {
         imageBase64Parts,
         isPro,
         aiSimulation,
+        { requestID, supportID },
       );
     geminiResult = out.result;
     inputTokens = out.inputTokens;
@@ -2183,6 +2204,9 @@ serve(async (req: Request) => {
     attemptCount = out.attempt ?? 0;
     inputAudit.api_key_alias = apiKeyAlias;
     inputAudit.provider = providerUsed;
+    inputAudit.gemini_attempt_failures = "geminiAttemptFailures" in out
+      ? out.geminiAttemptFailures
+      : [];
     if ("fallbackSource" in out) {
       aiFallbackSource = out.fallbackSource;
       inputAudit.fallback_source = aiFallbackSource;
