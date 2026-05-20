@@ -99,6 +99,18 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
   - `gemini_paid_secondary + gemini-2.5-pro`
   - tüm Paid Gemini havuzu retryable hata/limit ile tükenirse `groq_plus_pro_primary`.
 - Plus/Pro `gemini-3.1-flash-lite` çağrıları `thinkingLevel: "high"` ile çalışır.
+- 2026-05-20 prompt mimarisi canlıda parçalandı:
+  - sabit `CORE_ANALYSIS_PROMPT` korunuyor;
+  - onboarding, company ve tier context ayrı küçük bloklar olarak modele gidiyor;
+  - onboarding cevapları görsel kanıtı filtrelemiyor, yalnız öncelik/ton/derinlik etkiliyor;
+  - bu yapı Gemini implicit cache ihtimalini güçlendiriyor.
+- 2026-05-20 tier çıktısı güncel:
+  - Free: ayrı references ve root cause yok; mevzuat kartı boş/kilitli kalır, ancak `recommended_action` içinde pratik fayda varsa standart/mevzuat adı geçebilir.
+  - Plus: kısa references ve kısa root cause üretir.
+  - Pro: daha kapsamlı references ve daha teknik kök neden üretir.
+- `findings.root_cause_text` ve `ai_usage_logs` prompt/personalization/context/cache/thinking/token telemetry kolonları production DB'de doğrulandı.
+- `analyze` Edge Function production deploy edildi: version 76.
+- Remote migration listesi `20260520161706_add_root_cause_and_ai_usage_telemetry.sql` için local/remote eşit.
 
 ### Raporlar, PDF ve Excel
 
@@ -127,15 +139,46 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Risk analizi PDF/XLSX çıktılarında `Sorumlu` alanı geçici sabit değer olarak `İşveren/Vekili, Bölüm Yöneticisi` kullanacak şekilde ayarlandı.
 - Rapor PDF başlıklarında şirket logosu tanımlıysa RiskDetected yerine şirket logosu kullanılıyor.
 - PDF rapor başlıklarında sayfa numarası `Sayfa X/Y` formatında toplam sayfayı gösterecek şekilde güncellendi.
+- Sonuç detayında, kartlarda, PDF ve Excel raporlarında `Kök neden` alanı gösteriliyor.
+- Plus abonelikte kısa referans ve kök neden görünürlüğü aktif; Pro'da daha kapsamlı teknik içerik görünür.
+- `generate-excel-report` Edge Function production deploy edildi: version 30.
+
+### Çoklu Firma
+
+- Çoklu firma backend'i production DB'de canlı:
+  - `public.companies`
+  - `analyses.company_id`
+  - `reports.company_id`
+  - `reports.company_snapshot`
+- Firma kayıtları kullanıcıya bağlı; aynı firma adı farklı kullanıcılarda karışmaz.
+- Firma yazma kuralları DB/RLS/trigger ile Plus/Pro üyeliğe ve aktif firma limitlerine bağlıdır.
+- Aktif aynı firma adı aynı kullanıcı içinde engellenir.
+- Firma silme yerine v1'de arşivleme kullanılır; eski analiz/rapor bağlantıları bozulmaz.
+- `analyze` firma doğrulama ve prompt company context desteğiyle canlıda.
+- `generate-excel-report` firma snapshot, logo ve analiz backfill desteğiyle canlıda.
+- 2026-05-20 production RLS fix canlı:
+  - `private.company_limit_for_user(uuid)` için `authenticated` execute izni eklendi;
+  - Profil > Firmalarım ekranındaki `permission denied for function company_limit_for_user` kaynaklı "Firmalar yüklenemedi" hatası giderildi.
+- iOS tarafında lokal build'de hazır:
+  - Profil > Firmalarım,
+  - firma ekle/düzenle/arşivle,
+  - analiz öncesi firma seçimi,
+  - rapor ayarlarında firma seçimi,
+  - rapor sırasında seçilen firma ile analiz backfill,
+  - analiz geçmişi ve rapor arşivinde firma filtresi.
+- Not: kullanıcıların cihazında bu UI bölümleri ancak yeni TestFlight/App Store build'i dağıtılınca görünür.
 
 ### Profil, Tema ve UI
 
 - Profil bilgisi kaydetme çalışıyor.
 - Profil logosu seçme/kaydetme çalışıyor.
 - Profilde geçmiş analizler ve raporlar routing'i çalışıyor.
+- 2026-05-20 Profil dark tema polish yapıldı:
+  - avatar dark modda açık/beyaz yüzeye dönmüyor;
+  - istatistik kartları, hesap/ayar listeleri, satır ikonları ve Pro kart vurgusu daha koyu/mat yüzeylere çekildi.
 - Profil > Destek formu eklendi; konu, mesaj ve isteğe bağlı fotoğraf/dosya ekiyle `info@riskdetected.com` adresine mail gönderir.
   - Canlı mail gönderimi `RESEND_API_KEY` ile doğrulandı.
-  - Follow-up: Destek formunda birden fazla ek aynı anda gönderilebilecek şekilde geliştirme yapılacak.
+  - Destek formunda birden fazla ek aynı anda gönderme desteği yapıldı.
 - Dark mode foundation tamamlandı:
   - Sistem / Aydınlık / Karanlık seçenekleri.
   - Core renk tokenları dark/light uyumlu.
@@ -195,6 +238,18 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - `QA/P1_5_Error_Test_Matrix.md` içindeki E01-E18 satırları geçti olarak işaretli.
 - Xcode build + simulator run son durumda başarılı ve warning yok.
 - 2026-05-20 Onboarding V2 build + simulator run başarılı; email ve OTP paneli klavye üstünde test edildi.
+- 2026-05-20 Onboarding email/OTP klavye davranışı gerçek cihazda tekrar doğrulandı.
+- 2026-05-20 Onboarding `Atla` linkine üzgün yüz ikonlu onay ekranı eklendi; kullanıcı onaylarsa onboarding bitip auth/main akışına geçiyor.
+- 2026-05-20 Destek formunda birden fazla ek aynı anda gönderme desteği tamamlandı.
+- 2026-05-20 Onboarding V2 light color scheme'e kilitlendi; global dark mode ayarı onboarding ekranlarını değiştirmiyor.
+- 2026-05-20 TestFlight clean install akışı tamamlandı: Onboarding V2 -> Email OTP/Apple/Google -> onboarding paywall -> çarpı ile ana sayfa.
+- 2026-05-20 İlk üyelik hoş geldin maili backend/iOS entegrasyonu eklendi:
+  - `send-welcome-email` Edge Function Resend ile gönderir;
+  - onboarding cevaplarına göre kısa kişiselleştirme ekler;
+  - `profiles.welcome_email_sent_at/status/error` alanlarıyla duplicate gönderim engellenir;
+  - production DB migration ve Edge Function deploy tamamlandı.
+- 2026-05-20 Plus satın alma sonrası Pro görünme hatası düzeltildi; RevenueCat webhook/sync ve iOS tier çözümü güncellendi.
+- 2026-05-20 RevenueCat Plus/Pro plan yansıması ve Profil dark tema düzeltmeleri sonrası iOS Simulator Debug build/run başarılı.
 
 ## Kalan İşler
 
@@ -275,7 +330,16 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - TestFlight/gerçek cihaz push testi yapılmalı.
    - Analiz tamamlandı, rapor hazır ve güvenlik/account eventleri backend'den tetiklenmeli.
 
-2. AI maliyet ve quota operasyonu
+2. Bildirimler, üyelik e-postası ve asenkron analiz devamlılığı
+   - Done: Kullanıcı üyeliği başarıyla oluştuğunda otomatik "RiskDetected'a hoş geldiniz" e-postası için backend/iOS tetikleyici eklendi.
+   - Follow-up: yeni TestFlight build'i ile gerçek cihazda yeni kullanıcı kaydı, mail teslimi ve duplicate engelleme uçtan uca test edilecek.
+   - Bildirim izin akışı, cihaz token kaydı, kullanıcı bildirim tercihleri, APNs backend triggerları ve TestFlight gerçek cihaz teslimatı uçtan uca gözden geçirilecek.
+   - Analiz başlatıldıktan sonra kullanıcı uygulamadan çıksa bile analiz backend tarafında devam edecek.
+   - Analiz tamamlandığında kullanıcıya push bildirim gönderilecek.
+   - Uygulama tekrar açıldığında tamamlanan analiz sonucu senkron şekilde görünmeli; yarım kalan lokal loading ekranına bağımlı kalmamalı.
+   - Hata/timeout durumlarında kullanıcıya destek kodu ve tekrar deneme yolu gösterilecek.
+
+3. AI maliyet ve quota operasyonu
    - Paid Gemini API key `GEMINI_API_KEY_PAID` olarak Supabase secrets'a girilmeli; opsiyonel yedek için `GEMINI_API_KEY_PAID_SECONDARY` kullanılabilir.
    - Plus/Pro fallback kuruldu: Paid Gemini havuzu yeni model sırasıyla denenir; tüm paid havuz retryable hata/limit ile tükenirse ayrı `GROQ_API_KEY_PLUS_PRO` fallback devreye alınır. Plus/Pro fallback hiçbir durumda Free Gemini key havuzuna düşmemeli.
    - Free havuz için ek Gemini API key'leri farklı Google Cloud projelerinden Supabase secrets'a girilmeli.
@@ -292,14 +356,14 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
      - Cache başarısız/expired olduğunda analiz cache'siz devam etmeli; hiçbir durumda Plus/Pro trafiği Free Gemini havuzuna düşmemeli.
      - Düşük hacimde storage maliyeti faydayı azaltabileceği için önce ölçüm, sonra 30-60 dk TTL ile kontrollü test önerilir.
 
-3. Account deletion admin completion
+4. Account deletion admin completion
    - Kullanıcının hesap silme talebi alınabiliyor.
    - Done: `account-deletion-complete` privileged Edge Function eklendi.
    - Done: request kaydı Auth user silindikten sonra audit için korunacak şekilde migration eklendi.
    - Done: function Storage `photos`/`reports`/`logos` prefix temizliği, Supabase Auth admin delete ve request completion kaydı yapıyor.
    - Follow-up: disposable TestFlight hesabıyla production spot-check yapılmalı; detaylar `QA/Account_Deletion_Completion_2026-05-16.md`.
 
-4. Production hata ve log kontrolü
+5. Production hata ve log kontrolü
    - Done: iOS simulation flag'leri `#if DEBUG` ile release build'de kapalı.
    - Done: production Supabase secrets listesinde test simulation flag adı bulunmadı.
    - Done: Edge Function logları ham user id/path/provider detail yerine support/request id, hash ve bounded error summary kullanacak şekilde sıkılaştırıldı.
@@ -321,33 +385,64 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
      - Profile.
    - Follow-up: PDF/XLSX tüm statik tablo etiketleri için ikinci dil çevirileri eklenecek.
 
-2. Pro report defaults
+2. Çoklu firma, analiz eşleştirme ve rapor filtreleri
+   - Done: DB modeli, RLS, migration, firma limitleri, aynı kullanıcı duplicate engeli ve eski profil firma alanlarından ilk firma backfill eklendi.
+   - Done: `companies`, `analyses.company_id`, `reports.company_id`, `reports.company_snapshot` production DB'de canlı.
+   - Done: `analyze` ve `generate-excel-report` firma doğrulama, prompt context, snapshot ve analiz backfill desteğiyle deploy edildi.
+   - Done: iOS lokal build'de Profil > Firmalarım, analiz öncesi firma seçimi, rapor firma seçimi, analiz/rapor firma filtreleri hazır.
+   - Done: `Firmalarım` RLS helper execute grant hatası production DB'de düzeltildi; authenticated role ile boş liste sorgusu doğrulandı.
+   - Follow-up: bu UI'nın kullanıcı cihazına görünmesi için yeni TestFlight/App Store build'i dağıtılmalı.
+   - Follow-up: firma bazlı adres, sorumlu kişi, varsayılan termin/sorumlu gibi ek alanlar v2'de değerlendirilecek.
+
+3. Termin tarihi ve sorumlu alanları
+   - Termin tarihi ve sorumlu alanlarının kullanıcıya mı bırakılacağı, sabit varsayılan mı geleceği, yoksa firma/profil/analiz türüne göre önerileceği netleştirilecek.
+   - PDF/XLSX raporlarında `Sorumlu` ve `Termin` kolonlarının üretim mantığı bu karara göre güncellenecek.
+   - Kullanıcı düzenleyebilirse sonuç ekranı, rapor oluşturma ekranı ve arşiv tekrar üretim akışı birlikte ele alınacak.
+
+4. Pro report defaults
    - Done: profil logosu, şirket, uzman adı, unvan, belge no, firma bilgisi ve varsayılan metod otomatik rapor varsayılanı olarak kullanılıyor.
    - Done: PDF/XLSX default akışı kod QA + simülatör smoke ile doğrulandı; detaylar `QA/Reports_Defaults_Archive_QA_2026-05-15.md`.
    - Follow-up: TestFlight/gerçek cihazda uzun firma/unvan metniyle final görsel spot-check yapılmalı.
 
-3. Reports archive gelişimi
+5. Reports archive gelişimi
    - Done: açılır kart yapısı, arama/filtre, durum label'ları, boş/error state ve load-more davranışı yapıldı.
    - Done: 247 kayıt sentetik yoğun veri QA ile pagination, filtre, arama ve duplicate merge doğrulandı; detaylar `QA/Reports_Defaults_Archive_QA_2026-05-15.md`.
    - Done: production telemetry/performance spot-check alındı; canlı `reports` indeksleri ve satır dağılımı kontrol edildi, duplicate `reports_user_id_idx` migration ile kaldırıldı, app tarafında PII'siz initial/load-more telemetry eklendi. Detay: `QA/Reports_Archive_Production_Spot_Check_2026-05-16.md`.
 
-4. Profile ekranı içerik/tabs
+6. Profile ekranı içerik/tabs
    - Mevcut profil, tercihler, bildirimler, verilerim akışları var.
+   - Done: Karanlık temada profil avatarı, kart yüzeyleri, ikon arka planları ve Pro kart vurgusu daha koyu/mat hale getirildi.
    - Daha net tab/section yapısı ve eksik içerik düzeni tasarlanabilir.
 
-5. Paywall sayfası yenileme
+7. Onboarding cevapları, metin revizyonu ve prompt otomasyonu
+   - Done: Onboardingde alınan uzmanlık sınıfı, sektör, denetim sıklığı ve çalışılan tehlike sınıfı analiz promptlarına kontrollü şekilde yansıtılıyor.
+   - Done: Kullanıcıya özel prompt davranışı guardrail ile ayrıldı; görsel kanıt filtresi değil, öncelik/ton/derinlik bağlamı olarak kullanılıyor.
+   - Done: Prompt/personalization/context/cache/thinking/token telemetry kolonları production DB'de canlı.
+   - Done: Onboarding `Atla` linki onay ekranına bağlandı; "Sana özel sonuçlar veremeyeceğiz" mesajı ve üzgün yüz ikonu gösteriliyor.
+   - Done: Onboarding V2 her zaman beyaz/light temaya kilitlendi; cihaz dark mode ayarı onboarding ekranlarını değiştirmiyor.
+   - Onboarding ve uygulama içi bazı metin/sloganlarda revizyon yapılacak.
+
+8. Sabit analiz prompt revizyonu
+   - Done: Backend sabit prompt `CORE_ANALYSIS_PROMPT` olarak korundu; dynamic onboarding/company/tier context ayrı bloklara ayrıldı.
+   - Done: Tekrar eden/gereksiz prompt parçaları system prompt ve audit çıktılarından uzaklaştırıldı.
+   - Done: Free/Plus/Pro references ve root cause davranışı ayrıştırıldı.
+   - Done: `deno check`, `deno fmt --check`, iOS build/run ve ilgili dosyalarda `git diff --check` temiz geçti.
+
+9. Paywall sayfası yenileme
    - Done: Uygulama içi Paywall V1 ve Plus öncelikli Paywall V2 ayrıştırıldı.
    - Done: Free kota dolu / yükseltme girişleri Paywall V2'ye yönleniyor.
    - Done: Paywall V2'de seçilebilir Free kart kaldırıldı; düşük kontrastlı "Ücretsiz devam et" linki CTA altında kullanılıyor.
    - Done: Paywall V2 Plus kartı geniş, Pro ikincil inceleme linki olarak düzenlendi.
    - Follow-up: Onboarding sırasında alınan sektör/sınıf/frekans bilgilerine göre onboarding paywall metni kişiselleştirilecek.
+   - Onboarding cevaplarına göre farklı paywall sayfaları veya paywall varyasyonları gösterilecek.
    - TestFlight gerçek cihazda satın alma, restore ve plan geçiş görünümüyle QA alınacak.
+   - Done: Plus satın alma sonrası Pro görünme hatası backend webhook/sync ve iOS tier çözümünde düzeltildi.
 
-6. Image privacy ileri adımlar
+10. Image privacy ileri adımlar
    - Yüz blur var.
    - Company logo blur ve cleaned-image-only storage policy daha sıkı hale getirilebilir.
 
-7. Pro analiz kalitesi
+11. Pro analiz kalitesi
    - Pro max 10 ve references var.
    - Daha sonra:
      - stronger model,
@@ -372,9 +467,10 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Follow-up: clean demo data ile final iPhone screenshot seti üretilmeli.
 
 3. TestFlight release checklist
-   - Clean install Onboarding V2.
-   - Email OTP.
-   - Apple/Google login.
+   - Done: Clean install Onboarding V2.
+   - Done: Email OTP.
+   - Done: Apple/Google login.
+   - Done: Onboarding paywall -> çarpı ile ana sayfa akışı.
    - Free günde 1 analiz limiti.
    - Done: Plus/Pro purchase/restore.
    - Done: Paywall USD fiyat görünümü için TL fallback uygulandı.

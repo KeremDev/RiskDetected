@@ -130,6 +130,7 @@ final class AppState: ObservableObject {
             // yine de kesinlik için bir kez daha refresh edelim.
             await auth.refreshProfile()
             await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+            await sendWelcomeEmailIfPossible()
             await subscriptions.identify(userID: auth.session?.user.id)
             await syncBackendSubscription()
             await auth.refreshProfile()
@@ -148,6 +149,7 @@ final class AppState: ObservableObject {
         if auth.isAuthenticated {
             Task {
                 await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+                await self.sendWelcomeEmailIfPossible()
             }
             activeTab = .home
             flow = .main
@@ -242,6 +244,7 @@ final class AppState: ObservableObject {
                         NotificationService.shared.syncCurrentTokenIfPossible()
                         await self.subscriptions.identify(userID: session.user.id)
                         await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+                        await self.sendWelcomeEmailIfPossible()
                     }
                     self.activeTab = .home
                     if self.flow == .onboarding && !self.hasSeenOnboarding {
@@ -285,6 +288,9 @@ final class AppState: ObservableObject {
     }
 
     private func displayTier(profileTier: SubscriptionTier, subscriptionTier: SubscriptionTier) -> SubscriptionTier {
+        if profileTier.isPaid {
+            return profileTier
+        }
         if subscriptionTier.isPaid {
             return subscriptionTier
         }
@@ -323,6 +329,16 @@ final class AppState: ObservableObject {
         } catch {
             // RevenueCat SDK state remains the user-facing source; backend sync retry
             // happens on the next refresh/purchase/restore/bootstrap.
+        }
+    }
+
+    private func sendWelcomeEmailIfPossible() async {
+        guard auth.session != nil else { return }
+
+        do {
+            _ = try await WelcomeEmailService.shared.sendIfNeeded()
+        } catch {
+            // Welcome email delivery is tracked server-side and must not block sign-in.
         }
     }
 

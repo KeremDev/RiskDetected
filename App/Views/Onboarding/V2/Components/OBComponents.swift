@@ -293,6 +293,9 @@ struct OBPrimaryButton: View {
 
     enum Style { case onyx, green }
 
+    @State private var arrowOffset: CGFloat = -6
+    @State private var arrowOpacity: Double = 0
+
     var body: some View {
         Button {
             if enabled { OBHaptic.light(); action() }
@@ -303,6 +306,8 @@ struct OBPrimaryButton: View {
                 if let trailingIcon {
                     Image(systemName: trailingIcon)
                         .font(.system(size: 15, weight: .semibold))
+                        .offset(x: enabled ? arrowOffset : 0)
+                        .opacity(enabled ? arrowOpacity : 1)
                 }
             }
             .foregroundStyle(textColor)
@@ -315,6 +320,32 @@ struct OBPrimaryButton: View {
         }
         .buttonStyle(OBPressStyle())
         .disabled(!enabled)
+        .onAppear {
+            guard enabled else { return }
+            animateArrow()
+        }
+        .onChange(of: enabled) { newValue in
+            if newValue { animateArrow() }
+        }
+    }
+
+    private func animateArrow() {
+        Task { @MainActor in
+            while !Task.isCancelled, enabled {
+                arrowOffset = -6
+                arrowOpacity = 0
+                withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.4)) {
+                    arrowOffset = 0
+                    arrowOpacity = 1
+                }
+                try? await Task.sleep(nanoseconds: 700_000_000)
+                withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.6)) {
+                    arrowOffset = 10
+                    arrowOpacity = 0
+                }
+                try? await Task.sleep(nanoseconds: 700_000_000)
+            }
+        }
     }
 
     private var bgColor: Color {

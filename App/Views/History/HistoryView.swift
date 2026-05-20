@@ -6,6 +6,9 @@ struct HistoryView: View {
     @State private var search: String = ""
     @State private var activeChip: String = "Tümü"
     @State private var showFilter: Bool = false
+    @State private var showCompanyFilter: Bool = false
+    @State private var companies: [Company] = []
+    @State private var selectedCompanyFilter: Company?
     @State private var items: [HistoryItem] = []
     @State private var analysisResult: AnalysisResultBundle? = nil
     @State private var showResult = false
@@ -52,6 +55,7 @@ struct HistoryView: View {
                         ForEach(filteredItems) { item in
                             HistoryRow(
                                 item: item,
+                                companyName: companyName(for: item.companyID),
                                 isLoading: openingItemID == item.id,
                                 isDeleting: deletingItemID == item.id
                             ) {
@@ -79,6 +83,25 @@ struct HistoryView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .preferredColorScheme(preferredModalColorScheme)
+        }
+        .sheet(isPresented: $showCompanyFilter) {
+            CompanyPickerSheet(
+                title: "Analiz firma filtresi",
+                accessTier: app.currentTier,
+                selectedCompanyID: selectedCompanyFilter?.id,
+                allowNoCompany: true,
+                onSelect: { company in
+                    selectedCompanyFilter = company
+                },
+                onPaywall: {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        showPaywall = true
+                    }
+                }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showPaywall) {
             FreeAwarePaywallView(onClose: { showPaywall = false },
@@ -226,6 +249,9 @@ struct HistoryView: View {
         VStack(spacing: 10) {
             HStack(spacing: 8) {
                 searchField
+                if app.currentTier.isPaid {
+                    companyFilterButton
+                }
                 filterButton
             }
 
@@ -310,12 +336,35 @@ struct HistoryView: View {
         .buttonStyle(RDPressableButtonStyle())
     }
 
+    private var companyFilterButton: some View {
+        Button {
+            showCompanyFilter = true
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        } label: {
+            Image(systemName: selectedCompanyFilter == nil ? "building.2" : "building.2.fill")
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .frame(width: 40, height: 40)
+                .foregroundStyle(selectedCompanyFilter == nil ? Color.rdBlack : Color.rdGreenDark)
+                .background(selectedCompanyFilter == nil ? Color.rdCloud : Color.rdGreenSoft)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(selectedCompanyFilter == nil ? Color.rdLine : Color.rdGreen.opacity(0.32), lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel("Firma filtresi")
+    }
+
     private var filteredItems: [HistoryItem] {
         let needle = search.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return items.filter { item in
+            let companyName = companyName(for: item.companyID).lowercased(with: Locale(identifier: "tr_TR"))
             let matchesSearch = needle.isEmpty
                 || item.title.lowercased().contains(needle)
                 || item.kind.lowercased().contains(needle)
+                || companyName.contains(needle)
+            let matchesCompany = selectedCompanyFilter == nil || item.companyID == selectedCompanyFilter?.id
 
             let matchesChip: Bool
             switch activeChip {
@@ -331,7 +380,7 @@ struct HistoryView: View {
                 matchesChip = true
             }
 
-            return matchesSearch && matchesChip
+            return matchesSearch && matchesChip && matchesCompany
         }
     }
 
@@ -374,8 +423,13 @@ struct HistoryView: View {
     private func loadItems() async {
         guard app.auth.session != nil else { return }
         do {
-            let rows = try await AnalysisService.shared.listRecent(limit: 50)
+            async let rowsTask = AnalysisService.shared.listRecent(limit: 50)
+            async let companiesTask: [Company] = app.currentTier.isPaid
+                ? CompanyService.shared.listCompanies(includeArchived: true)
+                : []
+            let rows = try await rowsTask
             let paths = try await AnalysisService.shared.firstPhotoPaths(analysisIDs: rows.map(\.id))
+            companies = (try? await companiesTask) ?? []
             items = rows.map { row in
                 HistoryItem(row: row, photoPath: paths[row.id])
             }
@@ -436,12 +490,20 @@ struct HistoryView: View {
         let recentWeekStart = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
         return date >= recentWeekStart
     }
+
+    private func companyName(for companyID: UUID?) -> String {
+        guard let companyID,
+              let company = companies.first(where: { $0.id == companyID })
+        else { return "" }
+        return company.name
+    }
 }
 
 // MARK: - History Row
 
 private struct HistoryRow: View {
     let item: HistoryItem
+    let companyName: String
     var isLoading: Bool = false
     var isDeleting: Bool = false
     let action: () -> Void
@@ -537,9 +599,20 @@ private struct HistoryRow: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(item.status.bgColor)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
+                        .background(item.status.bgColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                    if !companyName.isEmpty {
+                        Text(companyName)
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdGreenDark)
+                            .lineLimit(1)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.rdGreenSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if isLoading || isDeleting {

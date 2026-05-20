@@ -26,6 +26,7 @@ type RequestBody = {
   analysis_id?: string;
   method?: "fine_kinney" | "matrix_5x5";
   report_kind?: "risk_analysis" | "standard";
+  company_id?: string | null;
   request_id?: string;
   support_id?: string;
 };
@@ -37,6 +38,7 @@ type AnalysisRow = Record<string, unknown> & {
   canvas?: string;
   kind?: string;
   status?: string;
+  company_id?: string | null;
   ai_summary?: string | null;
   total_score_fk?: number | null;
   total_score_m5?: number | null;
@@ -54,6 +56,7 @@ type FindingRow = Record<string, unknown> & {
   description?: string | null;
   recommended_action?: string | null;
   references_text?: string | null;
+  root_cause_text?: string | null;
   confidence?: number | null;
   fk_probability?: number | null;
   fk_frequency?: number | null;
@@ -79,6 +82,23 @@ type ProfileRow = Record<string, unknown> & {
 
 type PlanTier = "free" | "plus" | "pro";
 type RiskBand = "critical" | "high" | "medium" | "low" | "unknown";
+type CompanyHazardClass = "low" | "medium" | "high";
+
+type CompanyRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  hazard_class: CompanyHazardClass;
+  logo_path?: string | null;
+  is_archived?: boolean | null;
+};
+
+type CompanySnapshot = {
+  id: string;
+  name: string;
+  hazard_class: CompanyHazardClass;
+  logo_path: string | null;
+};
 
 const palette = {
   ink: "0B0F0E",
@@ -214,6 +234,12 @@ function safeText(value: unknown, fallback = ""): string {
   return String(value);
 }
 
+function actionWithRootCause(finding: FindingRow): string {
+  const rootCause = safeText(finding.root_cause_text).trim();
+  const action = safeText(finding.recommended_action);
+  return rootCause ? `${action}\n\nKök neden: ${rootCause}` : action;
+}
+
 function safeNumber(value: unknown, fallback = 0): number {
   const number = Number(value);
   return Number.isFinite(number) ? number : fallback;
@@ -243,6 +269,41 @@ function bandLabel(value: unknown): string {
     default:
       return "Bilinmiyor";
   }
+}
+
+function hazardClassLabel(value: unknown): string {
+  switch (value) {
+    case "low":
+      return "Az Tehlikeli";
+    case "high":
+      return "Çok Tehlikeli";
+    case "medium":
+    default:
+      return "Tehlikeli";
+  }
+}
+
+function companySnapshot(company: CompanyRow | null): CompanySnapshot | null {
+  if (!company) return null;
+  return {
+    id: company.id,
+    name: company.name,
+    hazard_class: company.hazard_class,
+    logo_path: company.logo_path ?? null,
+  };
+}
+
+function profileWithCompany(
+  profile: ProfileRow | null,
+  company: CompanyRow | null,
+): ProfileRow | null {
+  if (!company) return profile;
+  return {
+    ...(profile ?? {}),
+    company_name: company.name,
+    company_logo_url: company.logo_path ?? null,
+    phone: hazardClassLabel(company.hazard_class),
+  };
 }
 
 function normalizeBand(value: unknown): RiskBand {
@@ -1843,6 +1904,7 @@ function makeWorkbook(
     "Açıklama",
     ...metricHeaders,
     "Önerilen Önlem",
+    "Kök Neden",
     "Referans / İzleme",
     "Sorumlu",
     "Termin",
@@ -1858,6 +1920,7 @@ function makeWorkbook(
       safeText(finding.description),
       ...metricValues(finding),
       safeText(finding.recommended_action),
+      safeText(finding.root_cause_text),
       safeText(finding.references_text),
       RISK_ASSESSMENT_RESPONSIBLE,
       "",
@@ -1867,8 +1930,8 @@ function makeWorkbook(
   ];
   const riskSheet = appendSheet(workbook, "Risk Analiz Tablosu", riskRows);
   const riskColumnWidths = method === "matrix_5x5"
-    ? [6, 26, 18, 56, 11, 11, 12, 16, 56, 36, 18, 16, 14, 32]
-    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 56, 36, 18, 16, 14, 32];
+    ? [6, 26, 18, 56, 11, 11, 12, 16, 56, 34, 36, 18, 16, 14, 32]
+    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 56, 34, 36, 18, 16, 14, 32];
   const riskLastCol = XLSX.utils.encode_col(riskHeaders.length - 1);
   const riskLevelCol = XLSX.utils.encode_col(4 + metricHeaders.length - 1);
   const metricFirstCol = "E";
@@ -1934,7 +1997,7 @@ function makeWorkbook(
         safeText(finding.title),
         bandLabel(methodBand(finding, method)),
         methodScore(finding, method),
-        safeText(finding.recommended_action),
+        actionWithRootCause(finding),
         "",
       ]),
   ]);
@@ -2134,6 +2197,36 @@ serve(async (req: Request) => {
     });
   }
 
+  const requestedCompanyID = typeof body.company_id === "string"
+    ? body.company_id.trim()
+    : "";
+  const resolvedCompanyID = requestedCompanyID ||
+    safeText((analysis as AnalysisRow).company_id).trim();
+  let company: CompanyRow | null = null;
+  if (resolvedCompanyID.length > 0) {
+    const { data: companyRow, error: companyError } = await supabase
+      .from("companies")
+      .select("id,user_id,name,hazard_class,logo_path,is_archived")
+      .eq("id", resolvedCompanyID)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (companyError || !companyRow) {
+      return json(403, {
+        error: "company_not_authorized",
+        message: "Firma doğrulanamadı.",
+        request_id: requestID,
+        support_id: supportID,
+      });
+    }
+    company = companyRow as CompanyRow;
+  }
+
+  const effectiveProfile = profileWithCompany(
+    profile as ProfileRow | null,
+    company,
+  );
+
   const reportLimit = monthlyReportLimit(planTier);
   if (reportLimit !== null) {
     const { count: reportCount, error: reportCountError } = await supabase
@@ -2169,13 +2262,13 @@ serve(async (req: Request) => {
   const workbook = makeWorkbook(
     analysis as AnalysisRow,
     (findings ?? []) as FindingRow[],
-    profile as ProfileRow | null,
+    effectiveProfile,
     method,
     requestID,
     supportID,
     documentNo,
   );
-  const logo = await loadCompanyLogo(supabase, profile as ProfileRow | null);
+  const logo = await loadCompanyLogo(supabase, effectiveProfile);
   const rawBytes = workbookBuffer(workbook);
   const bytes = logo ? await embedCompanyLogo(rawBytes, logo) : rawBytes;
   const fileName = `${
@@ -2225,6 +2318,8 @@ serve(async (req: Request) => {
       file_size: bytes.byteLength,
       size_bytes: bytes.byteLength,
       page_count: 1,
+      company_id: company?.id ?? null,
+      company_snapshot: companySnapshot(company),
       request_id: requestID,
       support_id: supportID,
     })
@@ -2257,6 +2352,27 @@ serve(async (req: Request) => {
       request_id: requestID,
       support_id: supportID,
     });
+  }
+
+  if (company && !(analysis as AnalysisRow).company_id) {
+    const { error: backfillError } = await supabase
+      .from("analyses")
+      .update({ company_id: company.id })
+      .eq("id", analysisID)
+      .eq("user_id", user.id)
+      .is("company_id", null);
+    if (backfillError) {
+      console.warn(
+        "Excel company backfill failed",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          company_id: company.id,
+          error: safeLogError(backfillError),
+        }),
+      );
+    }
   }
 
   return json(200, {

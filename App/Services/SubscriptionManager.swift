@@ -219,6 +219,16 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
     }
 
     private static func state(from customerInfo: CustomerInfo) -> SubscriptionState {
+        if let productTier = tier(fromActiveSubscriptionsIn: customerInfo) {
+            return SubscriptionState(
+                tier: productTier,
+                entitlementID: productTier.isPaid ? productTier.rawValue : nil,
+                source: "revenuecat",
+                updatedAt: Date(),
+                errorMessage: nil
+            )
+        }
+
         let tier: SubscriptionTier
         let entitlementID: String?
         if customerInfo.entitlements[RDConfig.Subscription.proEntitlementID]?.isActive == true {
@@ -239,6 +249,32 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             updatedAt: Date(),
             errorMessage: nil
         )
+    }
+
+    private static func tier(fromActiveSubscriptionsIn customerInfo: CustomerInfo) -> SubscriptionTier? {
+        customerInfo.activeSubscriptions
+            .compactMap { productIdentifier -> (tier: SubscriptionTier, purchasedAt: Date)? in
+                guard let tier = tier(fromProductIdentifier: productIdentifier) else { return nil }
+                return (
+                    tier: tier,
+                    purchasedAt: customerInfo.purchaseDate(forProductIdentifier: productIdentifier) ?? .distantPast
+                )
+            }
+            .sorted {
+                if $0.purchasedAt == $1.purchasedAt {
+                    return $0.tier.rank > $1.tier.rank
+                }
+                return $0.purchasedAt > $1.purchasedAt
+            }
+            .first?
+            .tier
+    }
+
+    private static func tier(fromProductIdentifier productIdentifier: String) -> SubscriptionTier? {
+        let token = productIdentifier.lowercased()
+        if token.contains("plus") { return .plus }
+        if token.contains("pro") { return .pro }
+        return nil
     }
 
     private func apply(error: Error) {

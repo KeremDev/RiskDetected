@@ -26,6 +26,8 @@ struct HomeView: View {
     @State private var text: String = ""
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
     @State private var showCanvasSheet = false
+    @State private var showCompanyPicker = false
+    @State private var selectedCompany: Company?
     @State private var showAnnotate = false
     @State private var pendingAnnotateRequestID: UUID?
     @State private var showResult = false
@@ -168,7 +170,7 @@ struct HomeView: View {
                 onConfirm: {
                     showCanvasSheet = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        runAnalysis()
+                        continueAfterCanvasSelection()
                     }
                 },
                 onUpgradeRequested: {
@@ -179,6 +181,28 @@ struct HomeView: View {
                 }
             )
             .presentationDetents([.height(360), .large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
+        }
+        .sheet(isPresented: $showCompanyPicker) {
+            CompanyPickerSheet(
+                title: "Analiz firması",
+                accessTier: app.currentTier,
+                selectedCompanyID: selectedCompany?.id,
+                allowNoCompany: true,
+                onSelect: { company in
+                    selectedCompany = company
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                        runAnalysis()
+                    }
+                },
+                onPaywall: {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        showPlainPaywall()
+                    }
+                }
+            )
+            .presentationDetents([.large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -260,6 +284,7 @@ struct HomeView: View {
                 onClose: {
                     showResult = false
                     selectedImage = nil
+                    selectedCompany = nil
                     analysisResult = nil
                     Task {
                         await loadRecentItems()
@@ -950,6 +975,16 @@ struct HomeView: View {
     }
 
     /// Canvas seçimi onaylandıktan sonra çağrılır.
+    private func continueAfterCanvasSelection() {
+        if app.currentTier.isPaid {
+            showCompanyPicker = true
+        } else {
+            selectedCompany = nil
+            runAnalysis()
+        }
+    }
+
+    /// Canvas + opsiyonel firma seçimi tamamlandıktan sonra çağrılır.
     /// async closure oluştur → AnalyzingView'a ilet → o çalıştırır.
     private func runAnalysis() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -962,6 +997,7 @@ struct HomeView: View {
         let canvases = selectedCanvasesForCurrentTier()
         let capturedImage = selectedImage
         let capturedText = text
+        let capturedCompanyID = selectedCompany?.id
 
         switch mode {
         case .photo:
@@ -977,6 +1013,7 @@ struct HomeView: View {
                     userID: userID,
                     images: [img],
                     canvases: canvases,
+                    companyID: capturedCompanyID,
                     onProgress: progress
                 )
             }
@@ -994,6 +1031,7 @@ struct HomeView: View {
                     userID: userID,
                     text: trimmed,
                     canvases: canvases,
+                    companyID: capturedCompanyID,
                     onProgress: progress
                 )
             }

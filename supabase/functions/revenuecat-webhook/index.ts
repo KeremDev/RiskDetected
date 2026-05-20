@@ -40,17 +40,34 @@ function normalizeEntitlements(value: unknown): string[] {
     .filter(Boolean);
 }
 
-function tierFrom(entitlementIDs: string[], productID: string | null): PlanTier {
+function tierFrom(
+  entitlementIDs: string[],
+  productID: string | null,
+): PlanTier {
   const product = productID?.toLowerCase() ?? "";
   if (entitlementIDs.includes("pro") || product.includes("pro")) return "pro";
-  if (entitlementIDs.includes("plus") || product.includes("plus")) return "plus";
+  if (entitlementIDs.includes("plus") || product.includes("plus")) {
+    return "plus";
+  }
   return "free";
+}
+
+function tierFromProductFirst(
+  entitlementIDs: string[],
+  productID: string | null,
+): PlanTier {
+  const product = productID?.toLowerCase() ?? "";
+  if (product.includes("plus")) return "plus";
+  if (product.includes("pro")) return "pro";
+  return tierFrom(entitlementIDs, productID);
 }
 
 function uuidFrom(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const clean = value.trim().toLowerCase();
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(clean)
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+      clean,
+    )
     ? clean
     : null;
 }
@@ -94,7 +111,9 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const expectedAuthorization = Deno.env.get("REVENUECAT_WEBHOOK_AUTHORIZATION");
+  const expectedAuthorization = Deno.env.get(
+    "REVENUECAT_WEBHOOK_AUTHORIZATION",
+  );
 
   if (!supabaseUrl || !serviceRoleKey || !expectedAuthorization) {
     return json(500, { error: "RevenueCat webhook is not configured" });
@@ -112,11 +131,23 @@ serve(async (req) => {
 
   const eventID = String(event.id ?? event.event_id ?? crypto.randomUUID());
   const eventType = String(event.type ?? "UNKNOWN");
-  const productID = typeof event.product_id === "string" ? event.product_id : null;
+  const productID = typeof event.product_id === "string"
+    ? event.product_id
+    : null;
+  const newProductID = typeof event.new_product_id === "string"
+    ? event.new_product_id
+    : null;
+  const effectiveProductID = eventType === "PRODUCT_CHANGE" && newProductID
+    ? newProductID
+    : productID;
   const entitlementIDs = normalizeEntitlements(event.entitlement_ids);
-  const appUserID = typeof event.app_user_id === "string" ? event.app_user_id : null;
+  const appUserID = typeof event.app_user_id === "string"
+    ? event.app_user_id
+    : null;
   const userID = resolveUserID(event);
-  const environment = typeof event.environment === "string" ? event.environment : null;
+  const environment = typeof event.environment === "string"
+    ? event.environment
+    : null;
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -142,16 +173,17 @@ serve(async (req) => {
     return json(200, { ok: true, duplicate: true });
   }
 
-  const { error: insertError } = await supabase.from("subscription_events").insert({
-    event_id: eventID,
-    user_id: eventUserID,
-    app_user_id: appUserID,
-    event_type: eventType,
-    product_id: productID,
-    entitlement_ids: entitlementIDs,
-    environment,
-    raw_event: event,
-  });
+  const { error: insertError } = await supabase.from("subscription_events")
+    .insert({
+      event_id: eventID,
+      user_id: eventUserID,
+      app_user_id: appUserID,
+      event_type: eventType,
+      product_id: productID,
+      entitlement_ids: entitlementIDs,
+      environment,
+      raw_event: event,
+    });
   if (insertError) {
     return json(500, { error: "Failed to record subscription event" });
   }
@@ -165,8 +197,12 @@ serve(async (req) => {
     return json(200, { ok: true, ignored: true });
   }
 
-  const entitlementTier = tierFrom(entitlementIDs, productID);
-  const expiration = parseExpiration(event.expiration_at_ms ?? event.expiration_at);
+  const entitlementTier = eventType === "PRODUCT_CHANGE"
+    ? tierFromProductFirst(entitlementIDs, effectiveProductID)
+    : tierFrom(entitlementIDs, effectiveProductID);
+  const expiration = parseExpiration(
+    event.expiration_at_ms ?? event.expiration_at,
+  );
   let nextTier: PlanTier | null = null;
   let nextStatus = "inactive";
 
@@ -193,7 +229,7 @@ serve(async (req) => {
       source: "revenuecat",
       status: nextStatus,
       revenuecat_app_user_id: appUserID,
-      product_id: productID,
+      product_id: effectiveProductID,
       entitlement_id: entitlementTier === "free" ? null : entitlementTier,
       entitlement_ids: entitlementIDs,
       environment,

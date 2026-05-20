@@ -107,6 +107,7 @@ struct Finding: Identifiable, Hashable {
     let description: String
     let action: String
     let references: String
+    let rootCause: String
     let fk: FineKinneyParams
     let m5: FiveByFiveParams
 
@@ -155,6 +156,7 @@ extension Finding {
                 description: "İşçi 3 metre üzerinde çalışıyor; paraşüt tipi emniyet kemeri ve sabitleme noktası görünmüyor.",
                 action: "Çalışmayı derhal durdur. Uygun emniyet kemeri ve çift kancalı lanyard temin et. Sertifikalı sabitleme noktası belirle.",
                 references: "6331/4857 · ÇSGB Yüksekte Çalışma",
+                rootCause: "Yüksekte çalışma alanında toplu koruma ve ankraj planı eksik.",
                 fk: FineKinneyParams(probability: 6, frequency: 6, severity: 40),
                 m5: FiveByFiveParams(probability: 4, severity: 5)),
         Finding(id: 2,
@@ -164,6 +166,7 @@ extension Finding {
                 description: "Forklift trafiğinin olduğu alanda iki çalışanda yüksek görünürlüklü yelek bulunmuyor.",
                 action: "Tüm çalışanlara EN ISO 20471 sınıf 2 yelek dağıt. Vardiya başında KKD kontrol formu işlet.",
                 references: "EN ISO 20471",
+                rootCause: "KKD dağıtımı ve vardiya başlangıç kontrolü düzenli işletilmiyor.",
                 fk: FineKinneyParams(probability: 3, frequency: 6, severity: 15),
                 m5: FiveByFiveParams(probability: 4, severity: 4)),
         Finding(id: 3,
@@ -173,6 +176,7 @@ extension Finding {
                 description: "Yangın çıkış güzergâhı üzerinde geçici olarak istiflenmiş paletler tespit edildi.",
                 action: "Paletleri 24 saat içinde belirlenmiş depolama alanına taşı. Geçiş yolunu sarı şerit ile işaretle.",
                 references: "İSG-PRO-12",
+                rootCause: "Geçici istif alanı ve sorumluluk düzeni net tanımlanmamış.",
                 fk: FineKinneyParams(probability: 3, frequency: 3, severity: 15),
                 m5: FiveByFiveParams(probability: 3, severity: 3)),
         Finding(id: 4,
@@ -182,6 +186,7 @@ extension Finding {
                 description: "Çalışma alanının arka kısmında 200 lüks altında ışık seviyesi gözleniyor; net algı düşük.",
                 action: "Geçici LED projektör yerleştir. Kalıcı aydınlatma planı için elektrik ekibine bildir.",
                 references: "EN 12464-1",
+                rootCause: "Aydınlatma periyodik kontrolü ve saha değişiklikleri birlikte yönetilmiyor.",
                 fk: FineKinneyParams(probability: 3, frequency: 6, severity: 7),
                 m5: FiveByFiveParams(probability: 3, severity: 2)),
         Finding(id: 5,
@@ -191,6 +196,7 @@ extension Finding {
                 description: "Elektrik panosu yanındaki \"Yüksek Gerilim\" tabelasının okunabilirliği düşmüş.",
                 action: "Tabelayı 1 hafta içinde yenisiyle değiştir. Periyodik kontrol planına ekle.",
                 references: "TS EN 7010",
+                rootCause: "Saha işaretleri için düzenli görünürlük kontrolü yapılmıyor.",
                 fk: FineKinneyParams(probability: 1, frequency: 6, severity: 7),
                 m5: FiveByFiveParams(probability: 2, severity: 2))
     ]

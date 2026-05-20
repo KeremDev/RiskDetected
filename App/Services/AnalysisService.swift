@@ -63,6 +63,7 @@ final class AnalysisService {
         userID: UUID,
         images: [UIImage],
         canvases: [AnalysisCanvas],
+        companyID: UUID? = nil,
         title: String? = nil,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
     ) async throws -> AnalysisResultBundle {
@@ -79,7 +80,8 @@ final class AnalysisService {
             kind: "photo",
             canvases: canvases,
             title: title ?? defaultTitle(for: canvases),
-            textInput: nil
+            textInput: nil,
+            companyID: companyID
         )
 
         // 2) Fotoğrafları Edge Function'a inline base64 gönder.
@@ -93,7 +95,8 @@ final class AnalysisService {
         // 3) Edge function
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
-            textInput: nil, photoPaths: [], photoBase64Parts: photoParts,
+            textInput: nil, companyID: companyID,
+            photoPaths: [], photoBase64Parts: photoParts,
             onProgress: onProgress
         )
 
@@ -106,6 +109,7 @@ final class AnalysisService {
         userID: UUID,
         text: String,
         canvases: [AnalysisCanvas],
+        companyID: UUID? = nil,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
     ) async throws -> AnalysisResultBundle {
         guard !canvases.isEmpty else {
@@ -122,12 +126,14 @@ final class AnalysisService {
             kind: "text",
             canvases: canvases,
             title: defaultTitle(for: canvases),
-            textInput: trimmedText
+            textInput: trimmedText,
+            companyID: companyID
         )
 
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
-            textInput: trimmedText, photoPaths: [], photoBase64Parts: [],
+            textInput: trimmedText, companyID: companyID,
+            photoPaths: [], photoBase64Parts: [],
             onProgress: onProgress
         )
 
@@ -135,16 +141,29 @@ final class AnalysisService {
     }
 
     /// Geçmiş analizleri listeler.
-    func listRecent(limit: Int = 20) async throws -> [AnalysisRow] {
+    func listRecent(limit: Int = 20, companyID: UUID? = nil) async throws -> [AnalysisRow] {
         do {
-            let rows: [AnalysisRow] = try await supabase.client
-                .from("analyses")
-                .select()
-                .eq("status", value: "completed")
-                .order("created_at", ascending: false)
-                .limit(limit)
-                .execute()
-                .value
+            let rows: [AnalysisRow]
+            if let companyID {
+                rows = try await supabase.client
+                    .from("analyses")
+                    .select()
+                    .eq("status", value: "completed")
+                    .eq("company_id", value: companyID.uuidString)
+                    .order("created_at", ascending: false)
+                    .limit(limit)
+                    .execute()
+                    .value
+            } else {
+                rows = try await supabase.client
+                    .from("analyses")
+                    .select()
+                    .eq("status", value: "completed")
+                    .order("created_at", ascending: false)
+                    .limit(limit)
+                    .execute()
+                    .value
+            }
             return rows
         } catch {
             throw AnalysisError.databaseFailed(error.localizedDescription)
@@ -154,6 +173,22 @@ final class AnalysisService {
     /// Tek bir tamamlanmış analizin sonucunu detay ekranı için getirir.
     func result(analysisID: UUID) async throws -> AnalysisResultBundle {
         try await fetchResult(analysisID: analysisID)
+    }
+
+    func assignCompany(to analysisID: UUID, companyID: UUID) async throws {
+        struct Payload: Encodable {
+            let company_id: String
+        }
+
+        do {
+            try await supabase.client
+                .from("analyses")
+                .update(Payload(company_id: companyID.uuidString))
+                .eq("id", value: analysisID.uuidString)
+                .execute()
+        } catch {
+            throw AnalysisError.databaseFailed("Firma analize bağlanamadı.")
+        }
     }
 
     /// Liste kartları için ilk fotoğraf path'lerini getirir.
@@ -200,17 +235,30 @@ final class AnalysisService {
     }
 
     /// Kullanıcının kayıtlı PDF raporlarını listeler.
-    func listReports(limit: Int = 20, offset: Int = 0) async throws -> [ReportRow] {
+    func listReports(limit: Int = 20, offset: Int = 0, companyID: UUID? = nil) async throws -> [ReportRow] {
         do {
             let start = max(offset, 0)
             let end = start + max(limit, 1) - 1
-            let rows: [ReportRow] = try await supabase.client
-                .from("reports")
-                .select("id,user_id,analysis_id,format,kind,method,title,storage_path,file_name,mime_type,file_size,request_id,support_id,created_at")
-                .order("created_at", ascending: false)
-                .range(from: start, to: end)
-                .execute()
-                .value
+            let select = "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,request_id,support_id,created_at"
+            let rows: [ReportRow]
+            if let companyID {
+                rows = try await supabase.client
+                    .from("reports")
+                    .select(select)
+                    .eq("company_id", value: companyID.uuidString)
+                    .order("created_at", ascending: false)
+                    .range(from: start, to: end)
+                    .execute()
+                    .value
+            } else {
+                rows = try await supabase.client
+                    .from("reports")
+                    .select(select)
+                    .order("created_at", ascending: false)
+                    .range(from: start, to: end)
+                    .execute()
+                    .value
+            }
             return rows
         } catch {
             throw AnalysisError.databaseFailed(error.localizedDescription)
@@ -222,6 +270,7 @@ final class AnalysisService {
         analysisID: UUID,
         method: RiskMethod,
         language: RDLanguage = .turkish,
+        companyID: UUID? = nil,
         requestID: String,
         supportID: String
     ) async throws -> ReportRow {
@@ -230,6 +279,7 @@ final class AnalysisService {
             let method: String
             let report_kind: String
             let report_language: String
+            let company_id: String?
             let request_id: String
             let support_id: String
         }
@@ -251,6 +301,7 @@ final class AnalysisService {
             method: Self.databaseReportMethodValue(method),
             report_kind: PDFReportKind.riskAnalysis.rawValue,
             report_language: language.rawValue,
+            company_id: companyID?.uuidString,
             request_id: requestID,
             support_id: supportID
         )
@@ -281,6 +332,7 @@ final class AnalysisService {
         fileURL: URL,
         kind: PDFReportKind,
         method: RiskMethod,
+        company: Company? = nil,
         requestID: String,
         supportID: String
     ) async throws -> ReportRow {
@@ -346,6 +398,8 @@ final class AnalysisService {
             let file_size: Int
             let size_bytes: Int
             let page_count: Int
+            let company_id: String?
+            let company_snapshot: CompanySnapshot?
             let request_id: String
             let support_id: String
         }
@@ -370,6 +424,8 @@ final class AnalysisService {
             file_size: fileSize,
             size_bytes: fileSize,
             page_count: Self.estimatedPageCount(for: kind, findingCount: bundle.findings.count),
+            company_id: company?.id.uuidString,
+            company_snapshot: company.map(CompanySnapshot.init(company:)),
             request_id: requestID,
             support_id: supportID
         )
@@ -872,7 +928,8 @@ final class AnalysisService {
         kind: String,
         canvases: [AnalysisCanvas],
         title: String,
-        textInput: String?
+        textInput: String?,
+        companyID: UUID?
     ) async throws -> UUID {
         struct InsertPayload: Encodable {
             let user_id: String
@@ -880,6 +937,7 @@ final class AnalysisService {
             let canvas: String
             let title: String
             let text_input: String?
+            let company_id: String?
             let status: String
         }
         // `canvas` field = primary (first sorted) id — legacy single-id contract korunuyor.
@@ -892,6 +950,7 @@ final class AnalysisService {
             canvas: primaryID,
             title: title,
             text_input: textInput,
+            company_id: companyID?.uuidString,
             status: "pending"
         )
         do {
@@ -963,6 +1022,7 @@ final class AnalysisService {
         analysisID: UUID,
         canvases: [AnalysisCanvas],
         textInput: String?,
+        companyID: UUID?,
         photoPaths: [String],
         photoBase64Parts: [InlinePhotoPart],
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)?
@@ -975,6 +1035,7 @@ final class AnalysisService {
             let text_input: String?
             let request_id: String
             let support_id: String
+            let company_id: String?
             let photo_paths: [String]
             let photo_base64_parts: [InlinePhotoPart]
         }
@@ -992,6 +1053,7 @@ final class AnalysisService {
             text_input: textInput,
             request_id: requestID,
             support_id: supportID,
+            company_id: companyID?.uuidString,
             photo_paths: photoPaths,
             photo_base64_parts: photoBase64Parts
         )
@@ -1361,6 +1423,8 @@ struct ReportRow: Codable, Identifiable, Equatable {
     let id: UUID
     let userID: UUID
     let analysisID: UUID?
+    let companyID: UUID?
+    let companySnapshot: CompanySnapshot?
     let format: String?
     let kind: String
     let method: String
@@ -1377,6 +1441,8 @@ struct ReportRow: Codable, Identifiable, Equatable {
         case id
         case userID = "user_id"
         case analysisID = "analysis_id"
+        case companyID = "company_id"
+        case companySnapshot = "company_snapshot"
         case format
         case kind
         case method
@@ -1404,6 +1470,7 @@ extension ReportRow {
 struct AnalysisRow: Codable, Identifiable, Equatable {
     let id: UUID
     let userID: UUID
+    let companyID: UUID?
     let title: String
     let kind: String
     let canvas: String
@@ -1419,6 +1486,7 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
     enum CodingKeys: String, CodingKey {
         case id
         case userID         = "user_id"
+        case companyID      = "company_id"
         case title
         case kind
         case canvas
@@ -1442,6 +1510,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
     let description: String?
     let recommendedAction: String?
     let referencesText: String?
+    let rootCauseText: String?
     let confidence: Double
     let fkProbability: Double
     let fkFrequency: Double
@@ -1462,6 +1531,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
         case description
         case recommendedAction  = "recommended_action"
         case referencesText     = "references_text"
+        case rootCauseText      = "root_cause_text"
         case confidence
         case fkProbability      = "fk_probability"
         case fkFrequency        = "fk_frequency"
@@ -1484,6 +1554,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
             description: description ?? "",
             action: recommendedAction ?? "",
             references: referencesText ?? "",
+            rootCause: rootCauseText ?? "",
             fk: FineKinneyParams(
                 probability: fkProbability,
                 frequency: fkFrequency,

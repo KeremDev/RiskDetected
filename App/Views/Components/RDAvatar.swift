@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct RDAvatar: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var initials: String = "EY"
     var size: CGFloat = 36
     var tier: SubscriptionTier = .free
@@ -10,10 +12,17 @@ struct RDAvatar: View {
         pro ? .pro : tier
     }
 
+    private var gradientColors: [Color] {
+        if colorScheme == .dark {
+            return [Color(hex: "#17201A"), Color(hex: "#0F1512")]
+        }
+        return [Color(hex: "#DDE5E0"), Color(hex: "#C9D4CD")]
+    }
+
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color.rdGraphite, Color.rdCharcoal],
+                colors: gradientColors,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -21,10 +30,14 @@ struct RDAvatar: View {
 
             Text(initials)
                 .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .tracking(-0.3)
+                .foregroundStyle(colorScheme == .dark ? Color.rdCharcoal : .white)
+                .tracking(0)
         }
         .frame(width: size, height: size)
+        .overlay(
+            Circle()
+                .stroke(colorScheme == .dark ? Color.white.opacity(0.08) : Color.white.opacity(0.55), lineWidth: 1)
+        )
         .overlay(alignment: .bottomTrailing) {
             if effectiveTier.isPaid {
                 Circle()
@@ -36,7 +49,7 @@ struct RDAvatar: View {
                             .foregroundStyle(.white)
                     }
                     .overlay(
-                        Circle().stroke(.white, lineWidth: 2)
+                        Circle().stroke(Color.rdPaper, lineWidth: 2)
                     )
                     .offset(x: 2, y: 2)
             }

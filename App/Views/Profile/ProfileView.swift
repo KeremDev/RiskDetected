@@ -9,6 +9,7 @@ struct ProfileView: View {
     @StateObject private var notifications = NotificationService.shared
     @State private var showPaywall = false
     @State private var showProfileEditor = false
+    @State private var showCompanyPicker = false
     @State private var showNotificationSettings = false
     @State private var showDataControls = false
     @State private var showPreferences = false
@@ -21,6 +22,15 @@ struct ProfileView: View {
     @State private var shareItem: ShareItem?
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
+    }
+    private var profileCardFill: Color {
+        colorScheme == .dark ? Color(hex: "#101413") : Color.rdWhite
+    }
+    private var profileElevatedFill: Color {
+        colorScheme == .dark ? Color(hex: "#151A18") : Color.rdWhite
+    }
+    private var profileLine: Color {
+        colorScheme == .dark ? Color.white.opacity(0.08) : Color.rdLine
     }
 
     var body: some View {
@@ -92,6 +102,24 @@ struct ProfileView: View {
                     showProfileEditor = false
                 },
                 onClose: { showProfileEditor = false }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
+        }
+        .sheet(isPresented: $showCompanyPicker) {
+            CompanyPickerSheet(
+                title: "Firmalarım",
+                accessTier: app.currentTier,
+                selectedCompanyID: nil,
+                allowNoCompany: false,
+                allowsSelection: false,
+                onSelect: { _ in },
+                onPaywall: {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        showPaywall = true
+                    }
+                }
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
@@ -220,10 +248,10 @@ struct ProfileView: View {
                 .padding(.vertical, 12)
                 .background(
                     RoundedRectangle(cornerRadius: RDRadius.lg)
-                        .fill(Color.rdWhite)
+                        .fill(profileElevatedFill)
                         .overlay(
                             RoundedRectangle(cornerRadius: RDRadius.lg)
-                                .stroke(Color.rdLine, lineWidth: 1)
+                                .stroke(profileLine, lineWidth: 1)
                         )
                 )
             }
@@ -235,7 +263,7 @@ struct ProfileView: View {
     private var proCard: some View {
         ZStack(alignment: .topLeading) {
             Circle()
-                .fill(app.currentTier.accentColor.opacity(0.18))
+                .fill(app.currentTier.accentColor.opacity(colorScheme == .dark ? 0.09 : 0.18))
                 .frame(width: 120, height: 120)
                 .offset(x: 230, y: -45)
 
@@ -259,7 +287,11 @@ struct ProfileView: View {
             .padding(16)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.rdOnyx)
+        .background(colorScheme == .dark ? Color(hex: "#080B0A") : Color.rdOnyx)
+        .overlay(
+            RoundedRectangle(cornerRadius: RDRadius.lg)
+                .stroke(profileLine, lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         .allowsHitTesting(false)
     }
@@ -323,6 +355,18 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
+                    showCompanyPicker = true
+                    UISelectionFeedbackGenerator().selectionChanged()
+                } label: {
+                    ProfileRow(
+                        icon: app.currentTier.isPaid ? "building.2" : "lock.fill",
+                        title: "Firmalarım",
+                        detail: app.currentTier.isPaid ? "Yönet" : "Plus/Pro"
+                    )
+                }
+                .buttonStyle(.plain)
+                Divider().background(Color.rdLine).padding(.leading, 60)
+                Button {
                     withAnimation(.easeInOut(duration: 0.15)) {
                         app.activeTab = .analyses
                     }
@@ -349,10 +393,10 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .background(Color.rdWhite)
+            .background(profileCardFill)
             .overlay(
                 RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .stroke(Color.rdLine, lineWidth: 1)
+                    .stroke(profileLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         }
@@ -407,10 +451,10 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .background(Color.rdWhite)
+            .background(profileCardFill)
             .overlay(
                 RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .stroke(Color.rdLine, lineWidth: 1)
+                    .stroke(profileLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         }
@@ -422,10 +466,10 @@ struct ProfileView: View {
         } label: {
             ProfileRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış yap",
                        danger: true, showsChevron: false)
-                .background(Color.rdWhite)
+                .background(profileCardFill)
                 .overlay(
                     RoundedRectangle(cornerRadius: RDRadius.lg)
-                        .stroke(Color.rdLine, lineWidth: 1)
+                        .stroke(profileLine, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         }
@@ -1228,19 +1272,33 @@ private struct ProfileDataControlsSheet: View {
 }
 
 struct ProfileRow: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let icon: String
     let title: String
     var detail: String? = nil
     var danger: Bool = false
     var showsChevron: Bool = true
 
+    private var iconFill: Color {
+        if danger {
+            return colorScheme == .dark ? Color.rdCritical.opacity(0.16) : Color.rdCriticalBg
+        }
+        return colorScheme == .dark ? Color(hex: "#1B2220") : Color.rdFog
+    }
+
+    private var iconColor: Color {
+        if danger { return Color.rdCriticalText }
+        return colorScheme == .dark ? Color.rdSlate : Color.rdCharcoal
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .frame(width: 32, height: 32)
-                .foregroundStyle(danger ? Color.rdCriticalText : Color.rdCharcoal)
-                .background(danger ? Color.rdCriticalBg : Color.rdFog)
+                .foregroundStyle(iconColor)
+                .background(iconFill)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Text(title)

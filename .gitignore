@@ -33,6 +33,7 @@ QA/tmp/
 
 # Supabase local/link cache
 supabase/.temp/
+supabase/.branches/
 supabase/supabase/
 
 # App Store screenshots editor

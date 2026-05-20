@@ -20,12 +20,16 @@ struct ReportView: View {
     @State private var errorMessage: String?
     @State private var showPaywall = false
     @State private var reportOptions = PDFReportOptions()
+    @State private var selectedReportCompany: Company?
     @State private var reportCompanyLogo: UIImage?
     @State private var shareItem: ShareItem?
     @State private var showSourceReportSheet = false
     @State private var visibleReportCount = 5
     @State private var reportSearch = ""
     @State private var reportFilter: ReportArchiveFilter = .all
+    @State private var companies: [Company] = []
+    @State private var selectedCompanyFilter: Company?
+    @State private var showCompanyFilter = false
     @State private var reportsLoadError: String?
     @State private var canLoadMoreStoredReports = false
     @State private var isLoadingMoreStoredReports = false
@@ -82,6 +86,9 @@ struct ReportView: View {
         .onChange(of: reportFilter) { _ in
             resetReportArchivePagination()
         }
+        .onChange(of: selectedCompanyFilter?.id) { _ in
+            resetReportArchivePagination()
+        }
         .alert("Rapor Hatası", isPresented: .init(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -94,6 +101,25 @@ struct ReportView: View {
             DocumentPreview(url: item.url)
                 .preferredColorScheme(preferredModalColorScheme)
         }
+        .sheet(isPresented: $showCompanyFilter) {
+            CompanyPickerSheet(
+                title: "Rapor firma filtresi",
+                accessTier: app.currentTier,
+                selectedCompanyID: selectedCompanyFilter?.id,
+                allowNoCompany: true,
+                onSelect: { company in
+                    selectedCompanyFilter = company
+                },
+                onPaywall: {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        showPaywall = true
+                    }
+                }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
+        }
         .sheet(isPresented: $showSourceReportSheet) {
             if let selectedBundle {
                 ReportSourceSheet(
@@ -105,6 +131,7 @@ struct ReportView: View {
                     isExcelGenerating: excelGenerationID == selectedBundle.analysis.id,
                     pdfGeneration: pdfGeneration,
                     reportOptions: $reportOptions,
+                    selectedCompany: $selectedReportCompany,
                     companyLogo: $reportCompanyLogo,
                     onGenerateCustom: { options, logo in
                         generateSelectedReport(options: options, companyLogo: logo)
@@ -445,6 +472,26 @@ struct ReportView: View {
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
+                if app.currentTier.isPaid {
+                    Button {
+                        showCompanyFilter = true
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    } label: {
+                        Image(systemName: selectedCompanyFilter == nil ? "building.2" : "building.2.fill")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(selectedCompanyFilter == nil ? Color.rdBlack : Color.rdGreenDark)
+                            .frame(width: 40, height: 40)
+                            .background(selectedCompanyFilter == nil ? Color.rdCloud : Color.rdGreenSoft)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(selectedCompanyFilter == nil ? Color.rdLine : Color.rdGreen.opacity(0.32), lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(RDPressableButtonStyle())
+                    .accessibilityLabel("Firma filtresi")
+                }
+
                 if hasActiveReportArchiveFilters {
                     Button {
                         clearReportArchiveFilters()
@@ -595,7 +642,10 @@ struct ReportView: View {
         let needle = normalizedReportSearch(reportSearch)
         return storedReports.filter { report in
             let matchesSearch = needle.isEmpty || normalizedReportSearch(reportSearchText(for: report)).contains(needle)
-            return matchesSearch && matchesReportFilter(report)
+            let matchesCompany = selectedCompanyFilter == nil ||
+                report.companyID == selectedCompanyFilter?.id ||
+                report.companySnapshot?.id == selectedCompanyFilter?.id
+            return matchesSearch && matchesReportFilter(report) && matchesCompany
         }
     }
 
@@ -605,6 +655,7 @@ struct ReportView: View {
 
     private var hasActiveReportArchiveFilters: Bool {
         !reportSearch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || reportFilter != .all
+            || selectedCompanyFilter != nil
     }
 
     private var nextVisibleReportCount: Int {
@@ -702,7 +753,9 @@ struct ReportView: View {
             report.method,
             report.format ?? "",
             report.mimeType,
-            report.createdAt ?? ""
+            report.createdAt ?? "",
+            report.companySnapshot?.name ?? "",
+            report.companySnapshot?.hazardClass.title ?? ""
         ].joined(separator: " ")
     }
 
@@ -771,6 +824,7 @@ struct ReportView: View {
         withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
             reportSearch = ""
             reportFilter = .all
+            selectedCompanyFilter = nil
             resetReportArchivePagination()
         }
     }
@@ -801,7 +855,11 @@ struct ReportView: View {
             let archiveStartedAt = Date()
             async let analysisRows = AnalysisService.shared.listRecent(limit: 12)
             async let reportRows = AnalysisService.shared.listReports(limit: reportArchiveFetchPageSize)
+            async let companyRows: [Company] = app.currentTier.isPaid
+                ? CompanyService.shared.listCompanies(includeArchived: true)
+                : []
             let rows = try await analysisRows
+            companies = (try? await companyRows) ?? []
             do {
                 let reports = try await reportRows
                 storedReports = reports
@@ -860,8 +918,13 @@ struct ReportView: View {
 
         Task {
             do {
-                selectedBundle = try await AnalysisService.shared.result(analysisID: row.id)
-                reportOptions = defaultReportOptions(kind: reportOptions.kind == .standard ? .riskAnalysis : reportOptions.kind)
+                let bundle = try await AnalysisService.shared.result(analysisID: row.id)
+                selectedBundle = bundle
+                selectedReportCompany = await company(for: bundle.analysis.companyID)
+                reportOptions = resolvedReportOptions(
+                    defaultReportOptions(kind: reportOptions.kind == .standard ? .riskAnalysis : reportOptions.kind),
+                    company: selectedReportCompany
+                )
                 await app.refreshPlanState()
                 _ = await refreshReportQuotaState()
                 _ = try? await loadProfileLogoIfNeeded()
@@ -901,14 +964,17 @@ struct ReportView: View {
                 }
                 let reportImage = try await loadReportImage(for: selectedBundle)
                 pdfGeneration.advance(to: 0.23)
-                let resolvedOptions = options ?? defaultReportOptions(kind: .standard)
-                let resolvedLogo = try await loadProfileLogoIfNeeded()
+                let company = selectedReportCompany
+                let resolvedOptions = resolvedReportOptions(options ?? defaultReportOptions(kind: .standard), company: company)
+                let companyStoredLogo = try await loadCompanyLogo(for: company)
+                let profileLogo = try await loadProfileLogoIfNeeded()
+                let resolvedLogo = companyLogo ?? companyStoredLogo ?? profileLogo
                 let input = PDFReportService.ReportInput(
                     bundle: selectedBundle,
                     findings: sortedFindings(selectedBundle.findings.map(\.asFinding), method: resolvedOptions.method),
                     profile: app.profile,
                     image: reportImage,
-                    companyLogo: companyLogo ?? resolvedLogo,
+                    companyLogo: resolvedLogo,
                     options: resolvedOptions
                 )
                 let url = try await PDFReportService.shared.generateAsync(input: input)
@@ -921,9 +987,11 @@ struct ReportView: View {
                         fileURL: url,
                         kind: resolvedOptions.kind,
                         method: resolvedOptions.method,
+                        company: company,
                         requestID: requestID,
                         supportID: supportID
                     )
+                    try await backfillAnalysisCompanyIfNeeded(bundle: selectedBundle, company: company)
                     mergeStoredReport(report)
                 } catch {
                     Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
@@ -977,9 +1045,11 @@ struct ReportView: View {
                     analysisID: selectedBundle.analysis.id,
                     method: reportOptions.method,
                     language: reportOptions.language,
+                    companyID: selectedReportCompany?.id,
                     requestID: requestID,
                     supportID: supportID
                 )
+                try await backfillAnalysisCompanyIfNeeded(bundle: selectedBundle, company: selectedReportCompany)
                 mergeStoredReport(report)
                 let url = try await AnalysisService.shared.reportFileURL(
                     for: report,
@@ -1106,8 +1176,33 @@ struct ReportView: View {
             certificateNumber: app.profile?.certificateNumber ?? "",
             companyName: app.profile?.companyName ?? "",
             companyInfo: app.profile?.phone ?? "",
+            companyID: nil,
             language: app.languagePreference
         )
+    }
+
+    private func resolvedReportOptions(_ options: PDFReportOptions, company: Company?) -> PDFReportOptions {
+        guard let company else { return options }
+        var resolved = options
+        resolved.companyID = company.id
+        resolved.companyName = company.name
+        resolved.companyInfo = company.hazardClass.title
+        return resolved
+    }
+
+    private func backfillAnalysisCompanyIfNeeded(bundle: AnalysisResultBundle, company: Company?) async throws {
+        guard let company, bundle.analysis.companyID == nil else { return }
+        try await AnalysisService.shared.assignCompany(to: bundle.analysis.id, companyID: company.id)
+    }
+
+    private func company(for companyID: UUID?) async -> Company? {
+        guard let companyID, app.currentTier.isPaid else { return nil }
+        do {
+            let companies = try await CompanyService.shared.listCompanies(includeArchived: true)
+            return companies.first { $0.id == companyID }
+        } catch {
+            return nil
+        }
     }
 
     @discardableResult
@@ -1119,6 +1214,11 @@ struct ReportView: View {
             reportCompanyLogo = image
         }
         return image
+    }
+
+    private func loadCompanyLogo(for company: Company?) async throws -> UIImage? {
+        guard let path = company?.logoPath, !path.isEmpty else { return nil }
+        return try await CompanyService.shared.logoImage(path: path)
     }
 
     private func sortedFindings(_ findings: [Finding], method: RiskMethod) -> [Finding] {
@@ -1401,6 +1501,7 @@ private struct ReportSourceSheet: View {
     let isExcelGenerating: Bool
     @ObservedObject var pdfGeneration: PDFGenerationProgressController
     @Binding var reportOptions: PDFReportOptions
+    @Binding var selectedCompany: Company?
     @Binding var companyLogo: UIImage?
     let onGenerateCustom: (PDFReportOptions, UIImage?) -> Void
     let onGenerateExcel: () -> Void
@@ -1425,6 +1526,7 @@ private struct ReportSourceSheet: View {
         .sheet(isPresented: $showSettings) {
             ReportSettingsSheet(
                 options: $reportOptions,
+                selectedCompany: $selectedCompany,
                 companyLogo: $companyLogo,
                 presentationDetent: $reportSettingsDetent,
                 profile: profile,
@@ -1503,8 +1605,9 @@ private struct ReportSourceSheet: View {
                 preparedBy: profile?.displayName ?? "",
                 preparedTitle: profile?.title ?? "",
                 certificateNumber: profile?.certificateNumber ?? "",
-                companyName: profile?.companyName ?? "",
-                companyInfo: profile?.phone ?? "",
+                companyName: selectedCompany?.name ?? profile?.companyName ?? "",
+                companyInfo: selectedCompany?.hazardClass.title ?? profile?.phone ?? "",
+                companyID: selectedCompany?.id,
                 language: reportOptions.language
             )
             reportSettingsDetent = .height(440)
@@ -1901,6 +2004,17 @@ private struct StoredReportRow: View {
                         .background(statusStyle.background)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .fixedSize(horizontal: true, vertical: false)
+
+                    if let companyLabel {
+                        Text(companyLabel)
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdGreenDark)
+                            .lineLimit(1)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background(Color.rdGreenSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
                 }
 
                 Text(dateText)
@@ -1984,6 +2098,13 @@ private struct StoredReportRow: View {
             return (Color.rdHighText, Color.rdHighBg.opacity(0.75))
         }
         return (Color.rdLowText, Color.rdLowBg.opacity(0.8))
+    }
+
+    private var companyLabel: String? {
+        guard let name = report.companySnapshot?.name,
+              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return nil }
+        return name
     }
 
     private var reportTitle: String {

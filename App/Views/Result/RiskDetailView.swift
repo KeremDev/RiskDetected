@@ -39,6 +39,7 @@ struct RiskDetailView: View {
                     section("Önerilen önlem", body: finding.action,
                             accent: Color.rdGreenSoft, accentText: Color.rdGreenDark,
                             icon: "shield.lefthalf.filled")
+                    rootCauseSection
                     referenceSection
 
                     Color.clear.frame(height: 12)
@@ -300,8 +301,8 @@ struct RiskDetailView: View {
 
     @ViewBuilder
     private var referenceSection: some View {
-        if app.isPro {
-            section("Mevzuat referansları", body: finding.references,
+        if app.currentTier.isPaid {
+            section("Mevzuat referansları", body: finding.references.isEmpty ? "Kontrol edilmeli" : finding.references,
                     accent: Color.rdFog, accentText: Color.rdGraphite,
                     icon: "books.vertical")
         } else {
@@ -311,7 +312,7 @@ struct RiskDetailView: View {
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .tracking(0.6)
                         .foregroundStyle(Color.rdSlate)
-                    RDProBadge(small: true)
+                    RDTierBadge(tier: .plus, small: true)
                 }
 
                 Button {
@@ -324,10 +325,10 @@ struct RiskDetailView: View {
                             .foregroundStyle(Color.rdBlack)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Mevzuat Referansları Pro'da Açıktır")
+                            Text("Mevzuat Referansları Plus'ta Açıktır")
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
-                            Text("İlgili kanun, yönetmelik ve standart karşılıklarını görmek için Pro'ya geç.")
+                            Text("İlgili kanun, yönetmelik ve standart karşılıklarını görmek için Plus veya Pro'ya geç.")
                                 .font(.system(size: 11, design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                                 .lineLimit(2)
@@ -335,7 +336,7 @@ struct RiskDetailView: View {
 
                         Spacer(minLength: 8)
 
-                        RDProBadge(small: true)
+                        RDTierBadge(tier: .plus, small: true)
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -344,6 +345,15 @@ struct RiskDetailView: View {
                 }
                 .buttonStyle(.plain)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var rootCauseSection: some View {
+        if app.currentTier.isPaid, !finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            section("Kök neden", body: finding.rootCause,
+                    accent: Color.rdPlanPlusSoft, accentText: Color.rdPlanPlusDark,
+                    icon: "point.3.connected.trianglepath.dotted")
         }
     }
 }

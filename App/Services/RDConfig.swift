@@ -30,6 +30,7 @@ enum RDConfig {
     static let revenueCatWebhookFunctionName = "revenuecat-webhook"
     static let syncRevenueCatSubscriptionFunctionName = "sync-revenuecat-subscription"
     static let supportContactFunctionName = "support-contact"
+    static let sendWelcomeEmailFunctionName = "send-welcome-email"
 
     /// RevenueCat client-side public SDK config. This key is intentionally public;
     /// subscription truth for backend limits must still be synced server-side.

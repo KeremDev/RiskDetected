@@ -68,6 +68,7 @@ struct PDFReportOptions: Equatable {
     var certificateNumber: String = ""
     var companyName: String = ""
     var companyInfo: String = ""
+    var companyID: UUID?
     var language: RDLanguage = .turkish
 
     static func standard(method: RiskMethod) -> PDFReportOptions {
@@ -597,7 +598,7 @@ final class PDFReportService: @unchecked Sendable {
             scoreText(finding.fk.severity),
             scoreText(finding.fkScore),
             finding.fkBand.label,
-            finding.action,
+            actionTextWithRootCause(for: finding),
             finding.references,
             Self.riskAssessmentResponsible,
             suggestedTerm(for: finding.fkBand.level),
@@ -614,7 +615,7 @@ final class PDFReportService: @unchecked Sendable {
             "\(finding.m5.severity)",
             "\(finding.m5Score)",
             finding.m5Band.label,
-            finding.action,
+            actionTextWithRootCause(for: finding),
             finding.references,
             suggestedTerm(for: finding.m5Band.level),
         ]
@@ -748,6 +749,12 @@ final class PDFReportService: @unchecked Sendable {
         UIBezierPath(rect: CGRect(x: 42, y: y + 22, width: 758, height: 1)).fill()
     }
 
+    private func actionTextWithRootCause(for finding: Finding) -> String {
+        let rootCause = finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !rootCause.isEmpty else { return finding.action }
+        return "\(finding.action)\n\nKök neden: \(rootCause)"
+    }
+
     private func standardFindingRowHeight(for finding: Finding) -> CGFloat {
         let minHeight: CGFloat = 82
         let titleHeight = max(
@@ -766,7 +773,7 @@ final class PDFReportService: @unchecked Sendable {
             alignment: .left
         )
         let actionHeight = measuredTextHeight(
-            finding.action,
+            actionTextWithRootCause(for: finding),
             width: 296,
             font: .systemFont(ofSize: 10),
             alignment: .left
@@ -815,7 +822,7 @@ final class PDFReportService: @unchecked Sendable {
         drawText(band.label, in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
 
         drawFittingText(
-            finding.action,
+            actionTextWithRootCause(for: finding),
             in: CGRect(x: x + 462, y: y + 12, width: 296, height: max(18, height - 24)),
             baseFont: .systemFont(ofSize: 10),
             minimumFontSize: 7.5,

@@ -6,6 +6,7 @@
  *   canvas       : string (primary canvas id, single-value enum)
  *   canvases     : string[] (all selected; Free supports one, paid plans support multiple)
  *   text_input   : string | null
+ *   company_id   : string | null (optional, Plus/Pro owned company)
  *   user_prompt  : string | null (optional, max 100 chars; user focus note)
  *   request_id   : string | null (client trace id)
  *   support_id   : string | null (user-facing support code)
@@ -55,6 +56,37 @@ const GROQ_MAX_BASE64_IMAGE_BYTES = 4 * 1024 * 1024;
 
 type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
+type CompanyHazardClass = "low" | "medium" | "high";
+type ReferenceMode = "none" | "short" | "full";
+
+type CompanyRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  hazard_class: CompanyHazardClass;
+  logo_path?: string | null;
+  is_archived?: boolean | null;
+};
+
+type OnboardingAnswersRow = {
+  certificate_class?: string | null;
+  hazard_classes?: string[] | null;
+  sectors?: string[] | null;
+  audit_frequency?: string | null;
+  updated_at?: string | null;
+};
+
+type OnboardingContext = {
+  block: string;
+  applied: boolean;
+  certificateClass: string | null;
+  hazardClasses: string[];
+  sectors: string[];
+  auditFrequency: string | null;
+};
+
+const PROMPT_VERSION = "isg-photo-personalized-v2026-05-20";
+const PERSONALIZATION_VERSION = "onboarding-v1";
 
 const PLAN_LIMITS: Record<PlanTier, {
   dailyStandardLimit?: number;
@@ -87,29 +119,25 @@ function geminiThinkingConfig(
   return null;
 }
 
-const PRO_REFERENCES_PROMPT =
-  `Fotoğrafı Türkiye İSG mevzuatı perspektifiyle değerlendir. Her bulgu için Türkiye İSG mevzuatıyla ilişkili uygun kanun/yönetmelik başlığını references alanında kısa yaz. References alanı kısaltılmış kanun/yönetmelik adı ve biliyorsan kısa madde bilgisini içersin; emin değilsen madde uydurma, "mevzuat karşılığı kontrol edilmeli" yaz. Standart numarası, ölçüm değeri veya uzun açıklama uydurma.`;
-
-const FREE_ANALYSIS_PROMPT =
-  `Sen Türkiye'de 20 yıllık saha deneyimi olan kıdemli bir İSG uzmanısın (A sınıfı). İnşaat, üretim, depo/lojistik, enerji,fabrika ve ofis sahalarında binlerce denetim yapmış, ölümcül kazaları önlemiş, mevzuata hâkim bir profesyonelsin.
+const CORE_ANALYSIS_PROMPT =
+  `Sen Türkiye'de 20 yıllık saha deneyimi olan kıdemli bir İSG uzmanısın (A sınıfı). İnşaat, üretim, depo/lojistik, enerji, fabrika ve ofis sahalarında binlerce denetim yapmış, ölümcül kazaları önlemiş, mevzuata hâkim bir profesyonelsin.
 
 GÖREV: Sana verilen görsel veya metin girdisinden, sahada fiziksel olarak bulunan bir denetçinin yakalayacağı tüm İSG tehlikelerini sistematik olarak tespit et ve raporla.
 
-TARAMA PROSEDÜRÜ — Her görseli SIRAYLA şu 6 katmanda tara:
+TARAMA PROSEDÜRÜ — Her görseli SIRAYLA şu 7 katmanda tara:
 1. ZEMİN VE SAHA DÜZENİ: ıslaklık, çamur, su birikintisi, boşluk, kot farkı, dağınık malzeme, kablo, hortum, kayma/takılma zeminleri.
 2. ÇALIŞAN(LAR) VE KKD: baret, gözlük, eldiven, ayakkabı, yelek, emniyet kemeri, maske; duruş ve manuel taşıma ergonomisi.
 3. YÜKSEKTE ÇALIŞMA: kenar koruması, korkuluk, iskele bütünlüğü, merdiven açısı, platform, yaşam hattı, ankraj, açık kenar, boşluk, düşen cisim tehlikesi.
 4. ELEKTRİK VE ENERJİ: kablo, pano, fiş, jeneratör, su+elektrik teması, topraklama, geçici tesisat.
 5. MAKİNE, EKİPMAN VE KİMYASAL: hareketli parça, koruma, kaldırma ekipmanı, varil/şişe, etiketleme, depolama, yangın yükü.
 6. ÇEVRE VE ACİL DURUM: işaretleme, acil çıkış, yangın söndürücü, ilk yardım görünürlüğü, trafik, üst yapı, hava koşulu.
-7. EĞİTİM : Personelin ilgili mevzuat eğitimleri, yada işe özgü özel eğitimleri sorgulanmalı.Mesleki yeterlilik belgesi sorgulanmalı.
+7. EĞİTİM VE YETKİNLİK: Görsel/metin kanıtı destekliyorsa işe özgü eğitim, talimat, yetkilendirme ve mesleki yeterlilik belgesi ihtiyacını "sahada doğrulanmalı" tonuyla sorgula.
 
 Her katmanı gözden geçir; bir katmanda risk yoksa atla, ama tarama atlama.
 
-ÇIKTI HEDEFİ:
-- 6 ile 9 arasında bulgu döndür. Daha azı eksik, daha fazlası odak dağıtır.
+ÖNCELİKLENDİRME:
 - ÖLÜMCÜL POTANSİYELİ olan bulgular (düşme, elektrik, ezilme, kimyasal, düşen cisim) en üstte.
-- Sonra yüksek frekanslı bulgular (zemin, ergonomi, KKD,eğitim,belge).
+- Sonra yüksek frekanslı bulgular (zemin, ergonomi, KKD, eğitim, belge).
 - En altta düşük etkili ama mevzuat ihlali olan bulgular.
 
 RİSK PUANLAMA KALİBRASYONU — Fine-Kinney ŞİDDET:
@@ -142,7 +170,8 @@ KALİTE FİLTRESİ — KAÇIN:
 - Görselde olmayan riski uydurma.
 - Aynı kök nedenli riskleri tek bulguda topla.
 - Hassas ölçü uydurma; "yaklaşık 3m" veya "1 kat yüksekliğinde" yaz.
-- "Eğitim verilmeli" jenerik aksiyonundan kaçın; spesifik ne yapılacağını söyle.
+- "Eğitim verilmeli" jenerik aksiyonundan kaçın; hangi iş/ekipman/risk için ne doğrulanacağını söyle.
+- Kullanıcı profili veya firma bağlamı görsel kanıtı filtrelemez; profili yalnızca ton, öncelik ve açıklama derinliği için kullan.
 
 ÖRNEK BULGU (kopyalama, sadece kalite referansı):
 {
@@ -247,7 +276,14 @@ function m5Band(score: number): "low" | "medium" | "high" | "critical" {
   return "critical";
 }
 
-function responseSchema(isPro: boolean) {
+function referenceModeForTier(tier: PlanTier): ReferenceMode {
+  if (tier === "pro") return "full";
+  if (tier === "plus") return "short";
+  return "none";
+}
+
+function responseSchema(tier: PlanTier) {
+  const includesPaidFields = tier !== "free";
   const hazardProperties: Record<string, unknown> = {
     title: { type: "STRING" },
     category: { type: "STRING" },
@@ -261,9 +297,24 @@ function responseSchema(isPro: boolean) {
     m5_probability: { type: "NUMBER" },
     m5_severity: { type: "NUMBER" },
   };
-  if (isPro) {
+  if (includesPaidFields) {
     hazardProperties.references = { type: "STRING" };
+    hazardProperties.root_cause = { type: "STRING" };
   }
+  const requiredHazardFields = [
+    "title",
+    "category",
+    "observed_evidence",
+    "description",
+    "recommended_action",
+    "confidence",
+    "fk_probability",
+    "fk_frequency",
+    "fk_severity",
+    "m5_probability",
+    "m5_severity",
+    ...(includesPaidFields ? ["references", "root_cause"] : []),
+  ];
 
   return {
     type: "OBJECT",
@@ -273,19 +324,7 @@ function responseSchema(isPro: boolean) {
         items: {
           type: "OBJECT",
           properties: hazardProperties,
-          required: [
-            "title",
-            "category",
-            "observed_evidence",
-            "description",
-            "recommended_action",
-            "confidence",
-            "fk_probability",
-            "fk_frequency",
-            "fk_severity",
-            "m5_probability",
-            "m5_severity",
-          ],
+          required: requiredHazardFields,
         },
       },
       ai_summary: { type: "STRING" },
@@ -295,9 +334,17 @@ function responseSchema(isPro: boolean) {
   };
 }
 
-function groqResponseSchemaInstruction(isPro: boolean): string {
-  const referencesField = isPro
-    ? `,\n      "references": "kısa mevzuat referansı veya mevzuat karşılığı kontrol edilmeli"`
+function groqResponseSchemaInstruction(tier: PlanTier): string {
+  const paidFields = tier !== "free"
+    ? `,\n      "references": "${
+      tier === "pro"
+        ? "tam veya doğrulanmalı mevzuat referansı"
+        : "kısa mevzuat referansı veya mevzuat karşılığı kontrol edilmeli"
+    }",\n      "root_cause": "${
+      tier === "pro"
+        ? "sistematik kök neden özeti"
+        : "kısa saha diliyle kök neden"
+    }"`
     : "";
   return `Aşağıdaki JSON yapısına birebir uy. Markdown, açıklama veya kod bloğu ekleme:
 {
@@ -313,7 +360,7 @@ function groqResponseSchemaInstruction(isPro: boolean): string {
       "fk_frequency": 1,
       "fk_severity": 1,
       "m5_probability": 1,
-      "m5_severity": 1${referencesField}
+      "m5_severity": 1${paidFields}
     }
   ],
   "ai_summary": "kısa özet",
@@ -517,59 +564,247 @@ function istanbulDayStartISO(): string {
   return `${day}T00:00:00+03:00`;
 }
 
-function buildSystemPrompt(canvases: string[], tier: PlanTier): string {
-  if (tier === "free") return FREE_ANALYSIS_PROMPT;
+function buildSystemPrompt(): string {
+  return CORE_ANALYSIS_PROMPT;
+}
 
-  const isPro = tier === "pro";
+function buildSubscriptionContext(tier: PlanTier): string {
   const minHazards = PLAN_LIMITS[tier].minHazards;
   const maxHazards = PLAN_LIMITS[tier].maxHazards;
   const hazardCountRule = minHazards && maxHazards
-    ? `- ${minHazards} ile ${maxHazards} arasında tehlike döndür; önem sırasına göre sırala.`
+    ? `${minHazards} ile ${maxHazards} arasında tehlike döndür; önem sırasına göre sırala.`
     : maxHazards
-    ? `- En fazla ${maxHazards} tehlike döndür; önem sırasına göre sırala.`
-    : "- Fotoğrafta/metinde net kanıtı olan tüm önemli tehlikeleri önem sırasına göre döndür.";
-  const focusLines =
-    canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") ||
-    CANVAS_FOCUS["general"];
-  return `Sen deneyimli bir iş güvenliği (HSE/İSG) uzmanısın. Görevin: verilen görsel ve/veya metin girdisinden İSG tehlikelerini ve risklerini tespit etmek.
-${isPro ? `\n\nPRO MEVZUAT REFERANSI:\n${PRO_REFERENCES_PROMPT}` : ""}
+    ? `En fazla ${maxHazards} tehlike döndür; önem sırasına göre sırala.`
+    : "6 ile 9 arasında bulgu döndür. Daha azı eksik, daha fazlası odak dağıtır.";
 
-ODAK: ${focusLines}
-
-KURALLAR:
-- Yalnızca fotoğrafta/metinde GÖZLEMLENEN kanıtlara dayan. Tahmin etme.
-- Emin olmadığın noktalar için confidence değerini düşür (0.3–0.6).
-${hazardCountRule}
-- Her tehlike için description alanını kısa tut; yalnızca görünen kanıt ve riskin özünü 1-2 kısa cümleyle anlat.
-- Her tehlike için recommended_action alanını kısa, uygulanabilir ve en fazla 180 karakter olacak şekilde yaz.
-${
-    isPro
-      ? `- Her tehlike için references alanını kısa tut; kısaltılmış kanun/yönetmelik adı + varsa kısa madde bilgisini yaz veya "mevzuat karşılığı kontrol edilmeli" yaz.`
-      : ""
+  if (tier === "free") {
+    return `<abonelik_seviyesi tier="free">
+ÇIKTI KAPSAMI:
+- ${hazardCountRule}
+- references ve root_cause alanı üretme; ayrı mevzuat/referans alanı Free'de kapalı.
+- recommended_action alanında kullanıcıya uygulanabilir değer sağlayan standart veya mevzuat adı geçebilir.
+- RG tarihi, uzun mevzuat dökümü, madde listesi veya ayrı referans açıklaması verme.
+</abonelik_seviyesi>`;
   }
-- Her tehlike için Fine-Kinney girdilerini (fk_probability, fk_frequency, fk_severity) ve 5×5 girdilerini (m5_probability 1-5, m5_severity 1-5) öner.
-- Fine-Kinney ihtimal değerleri (sadece bunlar): 0.2 / 0.5 / 1 / 3 / 6 / 10
-- Fine-Kinney frekans değerleri (sadece bunlar): 0.5 / 1 / 2 / 3 / 6 / 10
-- Fine-Kinney şiddet değerleri (sadece bunlar): 1 / 3 / 7 / 15 / 40 / 100
-- Skorları hesaplama — yalnızca ham girdileri ver; sistem hesaplar.
-- Türkçe yanıt ver.
-- Yalnızca JSON döndür.`;
+
+  if (tier === "plus") {
+    return `<abonelik_seviyesi tier="plus">
+ÇIKTI KAPSAMI:
+- ${hazardCountRule}
+- Her bulguda references alanını kısa tut: kanun/yönetmelik adı + yalnız emin olduğun kısa madde bilgisi.
+- RG tarihi verme; standart numarasını sadece kritik ve güvenli olduğun durumda kısa yaz.
+- Her bulguda root_cause alanını en fazla 1 kısa cümleyle, saha diliyle yaz.
+</abonelik_seviyesi>`;
+  }
+
+  return `<abonelik_seviyesi tier="pro">
+ÇIKTI KAPSAMI:
+- ${hazardCountRule}
+- Her bulguda references alanını daha tam yaz: yönetmelik/kanun + madde + güvenliysen RG tarihi.
+- TS EN/ISO gibi standartları yalnız ilgili ve emin olduğun bulgularda kullan; emin değilsen "doğrulanmalı" yaz.
+- Her bulguda root_cause alanını sistematik, teknik ve kısa kök neden perspektifiyle yaz.
+</abonelik_seviyesi>`;
+}
+
+function safeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => typeof item === "string" ? item.trim() : "")
+    .filter((item) => item.length > 0);
+}
+
+function certificateContext(value: string | null): string {
+  switch (value) {
+    case "A":
+      return "Uzmanlık: A sınıfı İSG uzmanı. Teknik derinlik yüksek; sistem etkileşimleri, ölümcül potansiyel ve kök neden dili daha profesyonel olabilir.";
+    case "B":
+      return "Uzmanlık: B sınıfı İSG uzmanı. Saha uygulamasına dönük, profesyonel ama hızlı tüketilebilir aksiyonlar öncelikli.";
+    case "C":
+      return "Uzmanlık: C sınıfı İSG uzmanı. Pratik, anlaşılır ve sahada hemen uygulanabilir aksiyon dili kullan.";
+    case "doctor":
+      return "Profil: İşyeri hekimi. Sağlık gözetimi, maruziyet, ergonomi ve hijyen boyutunu uygun olduğunda hatırlat; İSG uzmanı yetkisi varsayma.";
+    case "otherHealth":
+      return "Profil: Diğer sağlık personeli. Sağlık gözetimi, ilk yardım, maruziyet ve saha bildirimlerini uygun olduğunda sade dille hatırlat.";
+    default:
+      return "Uzmanlık: Belirtilmedi. Nötr, profesyonel ve uygulanabilir İSG dili kullan.";
+  }
+}
+
+function onboardingHazardContext(values: string[]): string {
+  if (values.length === 0) {
+    return "Tehlike sınıfı: Belirtilmedi. Görsel/metin kanıtına göre standart risk kalibrasyonu uygula.";
+  }
+
+  const labels = values.map((value) => {
+    switch (value) {
+      case "critical":
+        return "Çok Tehlikeli";
+      case "high":
+        return "Tehlikeli";
+      case "low":
+        return "Az Tehlikeli";
+      default:
+        return value;
+    }
+  }).join(", ");
+
+  const guidance: string[] = [];
+  if (values.includes("critical")) {
+    guidance.push(
+      "ölümcül potansiyelli düşme, elektrik, ezilme, patlama, kapalı alan ve kaldırma risklerini güçlü önceliklendir",
+    );
+  }
+  if (values.includes("high")) {
+    guidance.push(
+      "makine koruyucu, kimyasal maruziyet, manuel taşıma, yangın ve yetkinlik kontrollerini öne çıkar",
+    );
+  }
+  if (values.includes("low")) {
+    guidance.push(
+      "ergonomi, ekranlı çalışma, aydınlatma, tahliye, ilk yardım ve psikososyal riskleri uygun olduğunda hatırlat",
+    );
+  }
+
+  return `Tehlike sınıfı odağı: ${labels}. ${
+    guidance.join("; ")
+  }. Profil puanlamayı yumuşatmaz; görselde kritik risk varsa kritik puanla.`;
+}
+
+function sectorContext(values: string[]): string {
+  if (values.length === 0) {
+    return "Sektör: Belirtilmedi. Görselde baskın sektör neyse ona göre risk ailelerini seç.";
+  }
+
+  const guidance = values.slice(0, 2).map((value) => {
+    switch (value) {
+      case "construction":
+        return "İnşaat: yüksekten düşme, açık kenar, iskele, kazı, vinç, düşen cisim ve saha düzeni";
+      case "manufacturing":
+        return "İmalat: makine koruyucuları, acil stop, LOTO, CE, gürültü, titreşim, toz ve kimyasal maruziyet";
+      case "energy":
+        return "Enerji: LOTO, elektrik yaklaşma mesafesi, ark riski, topraklama, kapalı alan ve patlayıcı ortam";
+      case "mining":
+        return "Maden: göçük, havalandırma, toz, patlayıcı atmosfer, hareketli ekipman ve acil kaçış";
+      case "office":
+        return "Ofis/hizmet: ergonomi, aydınlatma, iç hava kalitesi, tahliye, yangın ekipmanı ve psikososyal riskler";
+      case "other":
+        return "Diğer: görsel/metin kanıtına göre lojistik, sağlık, tarım veya perakende risklerini dikkatle ayır";
+      default:
+        return value;
+    }
+  });
+
+  return `Sektör odağı: ${
+    guidance.join(" | ")
+  }. Sektör profili filtre değildir; fotoğraftaki baskın gerçeklik önceliklidir.`;
+}
+
+function frequencyContext(value: string | null): string {
+  switch (value) {
+    case "1":
+      return "Denetim sıklığı: Tek odak/az denetim. Aksiyonları biraz daha açıklayıcı ve adım odaklı yaz.";
+    case "2-5":
+      return "Denetim sıklığı: Standart yoğunluk. Dengeli teknik dil ve kısa açıklayıcı notlar kullan.";
+    case "6-15":
+      return "Denetim sıklığı: Yüksek tempo. Doğrudan, taranabilir ve net saha komutu dili kullan.";
+    case "15+":
+      return "Denetim sıklığı: Çok yoğun saha. Jenerik açıklamayı azalt; aksiyonları kısa, net ve öncelik odaklı yaz.";
+    default:
+      return "Denetim sıklığı: Belirtilmedi. Dengeli teknik dil kullan.";
+  }
+}
+
+function buildOnboardingContext(
+  row: OnboardingAnswersRow | null,
+): OnboardingContext {
+  const certificateClass = typeof row?.certificate_class === "string"
+    ? row.certificate_class
+    : null;
+  const hazardClasses = safeStringArray(row?.hazard_classes);
+  const sectors = safeStringArray(row?.sectors).slice(0, 2);
+  const auditFrequency = typeof row?.audit_frequency === "string"
+    ? row.audit_frequency
+    : null;
+  const applied = Boolean(
+    certificateClass || hazardClasses.length > 0 || sectors.length > 0 ||
+      auditFrequency,
+  );
+
+  const block = `<kullanici_profili applied="${applied ? "true" : "false"}">
+Bu profil çıktının tonunu ve önceliklerini şekillendirir; tarama prosedürünü veya görsel/metin kanıtını asla atlatmaz.
+- ${certificateContext(certificateClass)}
+- ${onboardingHazardContext(hazardClasses)}
+- ${sectorContext(sectors)}
+- ${frequencyContext(auditFrequency)}
+</kullanici_profili>`;
+
+  return {
+    block,
+    applied,
+    certificateClass,
+    hazardClasses,
+    sectors,
+    auditFrequency,
+  };
+}
+
+function buildAnalysisContext(params: {
+  canvases: string[];
+  tier: PlanTier;
+  onboardingContext: OnboardingContext;
+  companyContext: string | null;
+}): string {
+  const focusLines =
+    params.canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") ||
+    CANVAS_FOCUS["general"];
+
+  return `<analiz_baglami prompt_version="${PROMPT_VERSION}" personalization_version="${PERSONALIZATION_VERSION}">
+<odak>${focusLines}</odak>
+${buildSubscriptionContext(params.tier)}
+${params.onboardingContext.block}
+${params.companyContext ?? ""}
+KRİTİK ÇELİŞKİ KURALLARI:
+- Abonelik kapsamı çıktı alanlarını belirler.
+- Profil veya firma "ofis/az tehlikeli" dese bile görselde inşaat, elektrik, yüksekte çalışma veya ölümcül risk varsa onu raporla.
+- Emin olmadığın mevzuat maddesini, RG tarihini, ölçüm değerini veya standart numarasını uydurma.
+</analiz_baglami>`;
+}
+
+function hazardClassLabel(value: unknown): string {
+  switch (value) {
+    case "low":
+      return "Az Tehlikeli";
+    case "high":
+      return "Çok Tehlikeli";
+    case "medium":
+    default:
+      return "Tehlikeli";
+  }
+}
+
+function companyPromptContext(company: CompanyRow | null): string | null {
+  if (!company) return null;
+  return `FİRMA BAĞLAMI: Analiz "${company.name}" firması için yapılıyor. Firma tehlike sınıfı: ${
+    hazardClassLabel(company.hazard_class)
+  }. Bu bağlamı risk önceliklendirmede kullan; ancak görsel/metin kanıtı olmayan bulgu veya mevzuat detayı uydurma.`;
 }
 
 async function callGemini(
   apiKey: string,
   model: string,
   systemPrompt: string,
+  analysisContext: string,
   userText: string | null,
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   pool: "free" | "paid",
-  isPro: boolean,
+  tier: PlanTier,
   simulation?: AISimulationConfig,
 ) {
   maybeSimulateAIError(simulation);
 
   const parts: unknown[] = [];
+  parts.push({ text: analysisContext });
   for (const img of imageBase64Parts) {
     parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
   }
@@ -591,7 +826,7 @@ async function callGemini(
     contents: [{ role: "user", parts }],
     generationConfig: {
       responseMimeType: "application/json",
-      responseSchema: responseSchema(isPro),
+      responseSchema: responseSchema(tier),
       temperature: 0.2,
       maxOutputTokens: 12000,
       ...(thinkingConfig ? { thinkingConfig } : {}),
@@ -620,6 +855,9 @@ async function callGemini(
     result: JSON.parse(text),
     inputTokens: json.usageMetadata?.promptTokenCount ?? 0,
     outputTokens: json.usageMetadata?.candidatesTokenCount ?? 0,
+    cachedTokens: json.usageMetadata?.cachedContentTokenCount ?? null,
+    thoughtsTokens: json.usageMetadata?.thoughtsTokenCount ?? null,
+    totalTokens: json.usageMetadata?.totalTokenCount ?? null,
   };
 }
 
@@ -637,10 +875,11 @@ async function callGroq(
   apiKey: string,
   model: string,
   systemPrompt: string,
+  analysisContext: string,
   userText: string | null,
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
-  isPro: boolean,
+  tier: PlanTier,
   simulation?: AISimulationConfig,
 ) {
   maybeSimulateAIError(simulation);
@@ -658,7 +897,8 @@ async function callGroq(
     {
       type: "text",
       text: [
-        groqResponseSchemaInstruction(isPro),
+        groqResponseSchemaInstruction(tier),
+        analysisContext,
         userPrompt
           ? `Kullanıcının özel analiz talebi: ${userPrompt}\nBu talebi yalnızca görsel/metin kanıtları destekliyorsa önceliklendir; kanıt yoksa uydurma.`
           : null,
@@ -715,6 +955,10 @@ async function callGroq(
     result: JSON.parse(text),
     inputTokens: json.usage?.prompt_tokens ?? 0,
     outputTokens: json.usage?.completion_tokens ?? 0,
+    cachedTokens: null,
+    thoughtsTokens: null,
+    totalTokens: json.usage?.total_tokens ??
+      ((json.usage?.prompt_tokens ?? 0) + (json.usage?.completion_tokens ?? 0)),
   };
 }
 
@@ -991,10 +1235,11 @@ async function callGeminiWithFallback(
   keyPool: GeminiKeyConfig[],
   preferredModel: string,
   systemPrompt: string,
+  analysisContext: string,
   userText: string | null,
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
-  isPro: boolean,
+  tier: PlanTier,
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
 ) {
@@ -1013,11 +1258,12 @@ async function callGeminiWithFallback(
         keyConfig.key,
         model,
         systemPrompt,
+        analysisContext,
         userText,
         userPrompt,
         imageBase64Parts,
         keyConfig.pool,
-        isPro,
+        tier,
         simulation,
       );
       return {
@@ -1060,6 +1306,7 @@ async function callFreeAIWithFallback(
   geminiKeyPool: GeminiKeyConfig[],
   preferredModel: string,
   systemPrompt: string,
+  analysisContext: string,
   userText: string | null,
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
@@ -1071,10 +1318,11 @@ async function callFreeAIWithFallback(
       geminiKeyPool,
       preferredModel,
       systemPrompt,
+      analysisContext,
       userText,
       userPrompt,
       imageBase64Parts,
-      false,
+      "free",
       simulation,
       trace,
     );
@@ -1107,10 +1355,11 @@ async function callFreeAIWithFallback(
       groqKey.key,
       freeGroqModel(),
       systemPrompt,
+      analysisContext,
       userText,
       userPrompt,
       imageBase64Parts,
-      false,
+      "free",
       simulation,
     );
     return {
@@ -1128,10 +1377,11 @@ async function callPaidAIWithFallback(
   geminiKeyPool: GeminiKeyConfig[],
   preferredModel: string,
   systemPrompt: string,
+  analysisContext: string,
   userText: string | null,
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
-  isPro: boolean,
+  tier: PlanTier,
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
 ) {
@@ -1140,10 +1390,11 @@ async function callPaidAIWithFallback(
       geminiKeyPool,
       preferredModel,
       systemPrompt,
+      analysisContext,
       userText,
       userPrompt,
       imageBase64Parts,
-      isPro,
+      tier,
       simulation,
       trace,
     );
@@ -1176,10 +1427,11 @@ async function callPaidAIWithFallback(
       groqKey.key,
       plusProGroqModel(),
       systemPrompt,
+      analysisContext,
       userText,
       userPrompt,
       imageBase64Parts,
-      isPro,
+      tier,
       simulation,
     );
     return {
@@ -1606,12 +1858,16 @@ serve(async (req: Request) => {
     canvases,
     analysis_mode,
     text_input,
+    company_id,
     photo_paths = [],
     photo_base64_parts = [],
   } = body;
   requestID = normalizedTraceValue(body.request_id, requestID);
   supportID = normalizedTraceValue(body.support_id, supportID);
   const userPrompt = sanitizedUserPrompt(body.user_prompt);
+  const requestedCompanyID = typeof company_id === "string"
+    ? company_id.trim()
+    : "";
   if (!analysis_id) {
     return errorResponse(400, "analysis_id zorunlu.", {
       code: "validation_failed",
@@ -1713,9 +1969,30 @@ serve(async (req: Request) => {
   }
 
   const planTier = resolvePlanTier(subscription);
-  const isPro = planTier === "pro";
   const geminiKeys = geminiKeyPoolForTier(planTier);
   const expectedGeminiPool = planTier === "free" ? "free" : "paid";
+  let company: CompanyRow | null = null;
+  let onboardingAnswers: OnboardingAnswersRow | null = null;
+
+  const { data: onboardingRow, error: onboardingError } = await supabase
+    .from("user_onboarding_answers")
+    .select(
+      "certificate_class,hazard_classes,sectors,audit_frequency,updated_at",
+    )
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (onboardingError) {
+    console.warn(
+      "Onboarding personalization lookup failed; continuing neutral",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        error: safeLogError(onboardingError),
+      }),
+    );
+  } else {
+    onboardingAnswers = onboardingRow as OnboardingAnswersRow | null;
+  }
 
   if (
     geminiKeys.length === 0 ||
@@ -1747,6 +2024,50 @@ serve(async (req: Request) => {
         tier: planTier,
       },
     );
+  }
+
+  if (requestedCompanyID.length > 0) {
+    if (planTier === "free") {
+      await updateOwnedAnalysis({
+        status: "failed",
+        status_message:
+          `Firma bazlı analiz Plus veya Pro üyelik gerektirir. Destek kodu: ${supportID}`,
+      });
+      return errorResponse(
+        403,
+        "Firma bazlı analiz Plus veya Pro üyelik gerektirir.",
+        {
+          code: "plan_required",
+          requestID,
+          supportID,
+          tier: planTier,
+          feature: "companies",
+        },
+      );
+    }
+
+    const { data: companyRow, error: companyError } = await supabase
+      .from("companies")
+      .select("id,user_id,name,hazard_class,logo_path,is_archived")
+      .eq("id", requestedCompanyID)
+      .eq("user_id", user.id)
+      .eq("is_archived", false)
+      .maybeSingle();
+
+    if (companyError || !companyRow) {
+      await updateOwnedAnalysis({
+        status: "failed",
+        status_message: `Firma doğrulanamadı. Destek kodu: ${supportID}`,
+      });
+      return errorResponse(403, "Firma doğrulanamadı.", {
+        code: "company_not_authorized",
+        requestID,
+        supportID,
+      });
+    }
+
+    company = companyRow as CompanyRow;
+    await updateOwnedAnalysis({ company_id: company.id });
   }
 
   if (planTier === "free" && requestedCanvases.length > 1) {
@@ -2109,9 +2430,27 @@ serve(async (req: Request) => {
   const resolvedCanvasPrompts = resolvedCanvases
     .map((id) => ({ id, prompt: CANVAS_FOCUS[id] }))
     .filter((item) => Boolean(item.prompt));
-  const systemPrompt = buildSystemPrompt(resolvedCanvases, planTier);
+  const systemPrompt = buildSystemPrompt();
+  const onboardingContext = buildOnboardingContext(onboardingAnswers);
+  const companyContext = companyPromptContext(company);
+  const analysisContext = buildAnalysisContext({
+    canvases: resolvedCanvases,
+    tier: planTier,
+    onboardingContext,
+    companyContext,
+  });
+  const contextHash = await hashedID(analysisContext);
+  const referenceMode = referenceModeForTier(planTier);
   const aiSimulation = aiSimulationConfig();
   const inputAudit: Record<string, unknown> = {
+    prompt_version: PROMPT_VERSION,
+    personalization_version: PERSONALIZATION_VERSION,
+    personalization_applied: onboardingContext.applied,
+    certificate_class: onboardingContext.certificateClass,
+    hazard_classes: onboardingContext.hazardClasses,
+    sectors: onboardingContext.sectors,
+    audit_frequency: onboardingContext.auditFrequency,
+    context_hash: contextHash,
     input_mode: imageBase64Parts.length > 0 ? "photo" : "text",
     inline_photo_count: inlinePhotoCount,
     storage_photo_count: storagePhotoCount,
@@ -2129,11 +2468,19 @@ serve(async (req: Request) => {
     support_id: supportID,
     selected_canvas_ids: resolvedCanvases,
     resolved_canvas_prompts: resolvedCanvasPrompts,
+    company_id: company?.id ?? null,
+    company_name: company?.name ?? null,
+    company_hazard_class: company?.hazard_class ?? null,
+    company_prompt_context: companyContext,
+    onboarding_context_sent: onboardingContext.block,
+    analysis_context_sent: analysisContext,
     min_hazards: PLAN_LIMITS[planTier].minHazards ?? null,
     max_hazards: PLAN_LIMITS[planTier].maxHazards ?? null,
-    pro_references_prompt: isPro ? PRO_REFERENCES_PROMPT : null,
-    references_requested: isPro,
-    response_schema_includes_references: isPro,
+    reference_mode: referenceMode,
+    references_requested: planTier !== "free",
+    root_cause_requested: planTier !== "free",
+    response_schema_includes_references: planTier !== "free",
+    response_schema_includes_root_cause: planTier !== "free",
     system_prompt_sent: systemPrompt,
     model,
     gemini_key_pool: expectedGeminiPool,
@@ -2157,6 +2504,9 @@ serve(async (req: Request) => {
   // deno-lint-ignore no-explicit-any
   let geminiResult: any;
   let inputTokens = 0, outputTokens = 0;
+  let cachedTokens: number | null = null;
+  let thoughtsTokens: number | null = null;
+  let totalTokens: number | null = null;
   let aiError: string | null = null;
   let modelUsed = model;
   let providerUsed: AIProvider = "gemini";
@@ -2171,6 +2521,7 @@ serve(async (req: Request) => {
         geminiKeys,
         model,
         systemPrompt,
+        analysisContext,
         text_input ?? null,
         userPrompt,
         imageBase64Parts,
@@ -2181,16 +2532,20 @@ serve(async (req: Request) => {
         geminiKeys,
         model,
         systemPrompt,
+        analysisContext,
         text_input ?? null,
         userPrompt,
         imageBase64Parts,
-        isPro,
+        planTier,
         aiSimulation,
         { requestID, supportID },
       );
     geminiResult = out.result;
     inputTokens = out.inputTokens;
     outputTokens = out.outputTokens;
+    cachedTokens = out.cachedTokens;
+    thoughtsTokens = out.thoughtsTokens;
+    totalTokens = out.totalTokens;
     modelUsed = out.modelUsed;
     providerUsed = "providerUsed" in out ? out.providerUsed : "gemini";
     inputAudit.model = out.modelUsed;
@@ -2204,6 +2559,11 @@ serve(async (req: Request) => {
     attemptCount = out.attempt ?? 0;
     inputAudit.api_key_alias = apiKeyAlias;
     inputAudit.provider = providerUsed;
+    inputAudit.promptTokenCount = inputTokens;
+    inputAudit.candidatesTokenCount = outputTokens;
+    inputAudit.cachedContentTokenCount = cachedTokens;
+    inputAudit.thoughtsTokenCount = thoughtsTokens;
+    inputAudit.totalTokenCount = totalTokens;
     inputAudit.gemini_attempt_failures = "geminiAttemptFailures" in out
       ? out.geminiAttemptFailures
       : [];
@@ -2251,6 +2611,12 @@ serve(async (req: Request) => {
         (modelUsed === model ? null : modelUsed),
       api_key_alias: apiKeyAlias,
       attempt_count: attemptCount || null,
+      prompt_version: PROMPT_VERSION,
+      personalization_version: PERSONALIZATION_VERSION,
+      context_hash: contextHash,
+      cached_tokens: null,
+      thoughts_tokens: null,
+      total_tokens: null,
     });
     return errorResponse(cleanError.status, cleanError.message, {
       code: cleanError.code,
@@ -2293,7 +2659,8 @@ serve(async (req: Request) => {
       category: h.category ?? "",
       description: `${h.observed_evidence}\n\n${h.description}`.trim(),
       recommended_action: h.recommended_action,
-      references_text: isPro ? h.references ?? "" : "",
+      references_text: planTier !== "free" ? h.references ?? "" : "",
+      root_cause_text: planTier !== "free" ? h.root_cause ?? "" : "",
       confidence: Math.max(0, Math.min(1, h.confidence)),
       fk_probability: fkP,
       fk_frequency: fkF,
@@ -2372,6 +2739,12 @@ serve(async (req: Request) => {
     ].filter(Boolean).join(" -> ") || null),
     api_key_alias: apiKeyAlias,
     attempt_count: attemptCount || null,
+    prompt_version: PROMPT_VERSION,
+    personalization_version: PERSONALIZATION_VERSION,
+    context_hash: contextHash,
+    cached_tokens: cachedTokens,
+    thoughts_tokens: thoughtsTokens,
+    total_tokens: totalTokens,
   });
 
   return new Response(

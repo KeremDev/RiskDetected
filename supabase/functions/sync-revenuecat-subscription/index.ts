@@ -17,10 +17,17 @@ type RevenueCatEntitlement = {
   product_identifier?: string | null;
 };
 
+type RevenueCatSubscription = {
+  expires_date?: string | null;
+  product_identifier?: string | null;
+  purchase_date?: string | null;
+};
+
 type RevenueCatSubscriberResponse = {
   subscriber?: {
     original_app_user_id?: string | null;
     entitlements?: Record<string, RevenueCatEntitlement>;
+    subscriptions?: Record<string, RevenueCatSubscription>;
   };
 };
 
@@ -38,7 +45,9 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
-function isActiveEntitlement(entitlement: RevenueCatEntitlement | undefined): boolean {
+function isActiveEntitlement(
+  entitlement: RevenueCatEntitlement | undefined,
+): boolean {
   if (!entitlement) return false;
   if (!entitlement.expires_date) return true;
   const expiresAt = Date.parse(entitlement.expires_date);
@@ -76,6 +85,51 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
     entitlementID: null,
     productID: null,
     expiration: null,
+  };
+}
+
+function tierFromProductIdentifier(productID: string): PlanTier | null {
+  const product = productID.toLowerCase();
+  if (product.includes("plus")) return "plus";
+  if (product.includes("pro")) return "pro";
+  return null;
+}
+
+function subscriptionTier(
+  subscriptions: Record<string, RevenueCatSubscription>,
+): {
+  tier: PlanTier;
+  entitlementID: string | null;
+  productID: string | null;
+  expiration: string | null;
+} | null {
+  const active = Object.entries(subscriptions)
+    .map(([productID, value]) => ({
+      productID,
+      tier: tierFromProductIdentifier(productID),
+      expiration: value.expires_date ?? null,
+      purchaseTime: Date.parse(value.purchase_date ?? ""),
+    }))
+    .filter((item) =>
+      item.tier && isActiveEntitlement({ expires_date: item.expiration })
+    )
+    .sort((a, b) => {
+      const aTime = Number.isFinite(a.purchaseTime) ? a.purchaseTime : 0;
+      const bTime = Number.isFinite(b.purchaseTime) ? b.purchaseTime : 0;
+      if (aTime === bTime) {
+        return (b.tier === "pro" ? 1 : 0) - (a.tier === "pro" ? 1 : 0);
+      }
+      return bTime - aTime;
+    });
+
+  const current = active[0];
+  if (!current?.tier) return null;
+
+  return {
+    tier: current.tier,
+    entitlementID: current.tier,
+    productID: current.productID,
+    expiration: current.expiration,
   };
 }
 
@@ -136,11 +190,17 @@ serve(async (req) => {
     });
   }
 
-  const payload = await revenueCatResponse.json() as RevenueCatSubscriberResponse;
-  const originalAppUserID = typeof payload.subscriber?.original_app_user_id === "string"
-    ? payload.subscriber.original_app_user_id.trim().toLowerCase()
-    : null;
-  if (originalAppUserID && originalAppUserID !== user.id.toLowerCase()) {
+  const payload = await revenueCatResponse
+    .json() as RevenueCatSubscriberResponse;
+  const originalAppUserID =
+    typeof payload.subscriber?.original_app_user_id === "string"
+      ? payload.subscriber.original_app_user_id.trim().toLowerCase()
+      : null;
+  if (
+    originalAppUserID &&
+    originalAppUserID !== user.id.toLowerCase() &&
+    !originalAppUserID.startsWith("$rcanonymousid:")
+  ) {
     return json(409, {
       error: "revenuecat_owner_mismatch",
       tier: expectedTier ?? "free",
@@ -149,7 +209,9 @@ serve(async (req) => {
   }
 
   const entitlements = payload.subscriber?.entitlements ?? {};
-  const resolved = entitlementTier(entitlements);
+  const subscriptions = payload.subscriber?.subscriptions ?? {};
+  const resolved = subscriptionTier(subscriptions) ??
+    entitlementTier(entitlements);
   if (!expectedTier && resolved.tier !== "free") {
     return json(409, {
       error: "client_tier_assertion_required",

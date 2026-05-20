@@ -52,6 +52,7 @@ struct ResultView: View {
     @State private var activityShareItem: ShareItem?
     @State private var showReportSettings: Bool = false
     @State private var reportOptions = PDFReportOptions()
+    @State private var selectedReportCompany: Company?
     @State private var reportCompanyLogo: UIImage?
     @State private var reportQuotaExhausted: Bool = false
     @State private var reportSettingsDetent: PresentationDetent = .height(440)
@@ -117,6 +118,7 @@ struct ResultView: View {
         .sheet(isPresented: $showReportSettings) {
             ReportSettingsSheet(
                 options: $reportOptions,
+                selectedCompany: $selectedReportCompany,
                 companyLogo: $reportCompanyLogo,
                 presentationDetent: $reportSettingsDetent,
                 profile: app.profile,
@@ -163,6 +165,9 @@ struct ResultView: View {
             if let preferredMethod = app.profile?.preferredMethod?.domain {
                 method = preferredMethod
             }
+        }
+        .task(id: bundle?.analysis.companyID) {
+            await loadInitialReportCompanyIfNeeded()
         }
         .onDisappear {
             pdfGeneration.cancel()
@@ -720,7 +725,8 @@ struct ResultView: View {
         Task {
             await app.refreshPlanState()
             _ = await refreshReportQuotaState()
-            reportOptions = defaultReportOptions(kind: .standard)
+            await loadInitialReportCompanyIfNeeded()
+            reportOptions = resolvedReportOptions(defaultReportOptions(kind: .standard), company: selectedReportCompany)
             reportSettingsDetent = .height(440)
             showReportSettings = true
             if !reportQuotaExhausted {
@@ -784,8 +790,11 @@ struct ResultView: View {
                 }
                 let reportImage = try await loadReportImage()
                 pdfGeneration.advance(to: 0.23)
-                let resolvedOptions = options ?? defaultReportOptions(kind: .standard)
-                let resolvedLogo = try await loadProfileLogoIfNeeded()
+                let company = selectedReportCompany
+                let resolvedOptions = resolvedReportOptions(options ?? defaultReportOptions(kind: .standard), company: company)
+                let companyLogo = try await loadCompanyLogo(for: company)
+                let profileLogo = try await loadProfileLogoIfNeeded()
+                let resolvedLogo = companyLogo ?? profileLogo
                 let input = PDFReportService.ReportInput(
                     bundle: bundle,
                     findings: sortedFindings(for: resolvedOptions.method),
@@ -805,9 +814,11 @@ struct ResultView: View {
                             fileURL: url,
                             kind: resolvedOptions.kind,
                             method: resolvedOptions.method,
+                            company: company,
                             requestID: requestID,
                             supportID: supportID
                         )
+                        try await backfillAnalysisCompanyIfNeeded(bundle: bundle, company: company)
                         pdfGeneration.advance(to: 0.92)
                     } catch {
                         Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
@@ -873,9 +884,11 @@ struct ResultView: View {
                     analysisID: bundle.analysis.id,
                     method: method,
                     language: reportOptions.language,
+                    companyID: selectedReportCompany?.id,
                     requestID: requestID,
                     supportID: supportID
                 )
+                try await backfillAnalysisCompanyIfNeeded(bundle: bundle, company: selectedReportCompany)
                 let url = try await AnalysisService.shared.reportFileURL(
                     for: report,
                     requestID: requestID,
@@ -964,8 +977,36 @@ struct ResultView: View {
             certificateNumber: app.profile?.certificateNumber ?? "",
             companyName: app.profile?.companyName ?? "",
             companyInfo: app.profile?.phone ?? "",
+            companyID: nil,
             language: app.languagePreference
         )
+    }
+
+    private func resolvedReportOptions(_ options: PDFReportOptions, company: Company?) -> PDFReportOptions {
+        guard let company else { return options }
+        var resolved = options
+        resolved.companyID = company.id
+        resolved.companyName = company.name
+        resolved.companyInfo = company.hazardClass.title
+        return resolved
+    }
+
+    private func backfillAnalysisCompanyIfNeeded(bundle: AnalysisResultBundle, company: Company?) async throws {
+        guard let company, bundle.analysis.companyID == nil else { return }
+        try await AnalysisService.shared.assignCompany(to: bundle.analysis.id, companyID: company.id)
+    }
+
+    private func loadInitialReportCompanyIfNeeded() async {
+        guard selectedReportCompany == nil,
+              let companyID = bundle?.analysis.companyID,
+              app.currentTier.isPaid
+        else { return }
+        do {
+            let companies = try await CompanyService.shared.listCompanies(includeArchived: true)
+            selectedReportCompany = companies.first { $0.id == companyID }
+        } catch {
+            selectedReportCompany = nil
+        }
     }
 
     @discardableResult
@@ -977,6 +1018,11 @@ struct ResultView: View {
             reportCompanyLogo = image
         }
         return image
+    }
+
+    private func loadCompanyLogo(for company: Company?) async throws -> UIImage? {
+        guard let path = company?.logoPath, !path.isEmpty else { return nil }
+        return try await CompanyService.shared.logoImage(path: path)
     }
 }
 
@@ -1013,6 +1059,7 @@ private enum ReportOutputFormat: String, CaseIterable, Identifiable {
 struct ReportSettingsSheet: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var options: PDFReportOptions
+    @Binding var selectedCompany: Company?
     @Binding var companyLogo: UIImage?
     @Binding var presentationDetent: PresentationDetent
     let profile: UserProfile?
@@ -1025,6 +1072,7 @@ struct ReportSettingsSheet: View {
     let onClose: () -> Void
     @State private var selectedLogoItem: PhotosPickerItem?
     @State private var outputFormat: ReportOutputFormat = .pdf
+    @State private var showCompanyPicker = false
 
     private var isDarkMode: Bool { colorScheme == .dark }
     private var lockedCardBackground: Color {
@@ -1065,6 +1113,7 @@ struct ReportSettingsSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     reportTypeSection
                     languageSection
+                    companySelectionSection
 
                     if options.kind == .riskAnalysis {
                         VStack(alignment: .leading, spacing: 18) {
@@ -1099,6 +1148,22 @@ struct ReportSettingsSheet: View {
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                 }
             }
+        }
+        .sheet(isPresented: $showCompanyPicker) {
+            CompanyPickerSheet(
+                title: "Rapor firması",
+                accessTier: accessTier,
+                selectedCompanyID: selectedCompany?.id,
+                allowNoCompany: true,
+                onSelect: { company in
+                    selectedCompany = company
+                    applyCompanyToOptions(company)
+                },
+                onPaywall: onPaywall
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(colorScheme)
         }
     }
 
@@ -1448,6 +1513,85 @@ struct ReportSettingsSheet: View {
         }
     }
 
+    private var companySelectionSection: some View {
+        settingsSection(title: "FİRMA") {
+            if accessTier.isPaid {
+                Button {
+                    showCompanyPicker = true
+                    UISelectionFeedbackGenerator().selectionChanged()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: selectedCompany == nil ? "building.2.crop.circle" : "building.2.fill")
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .foregroundStyle(selectedCompany == nil ? Color.rdSlate : Color.rdGreenDark)
+                            .frame(width: 40, height: 40)
+                            .background(selectedCompany == nil ? Color.rdFog : Color.rdGreenSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(selectedCompany?.name ?? "Firma seçmeden devam et")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.rdBlack)
+                                .lineLimit(1)
+                            Text(selectedCompany?.hazardClass.title ?? "Raporu firmasız oluşturabilir veya hızlı firma ekleyebilirsin.")
+                                .font(.system(size: 12, design: .rounded))
+                                .foregroundStyle(Color.rdSlate)
+                                .lineLimit(2)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdSlate)
+                    }
+                    .padding(12)
+                    .background(Color.rdWhite)
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdLine, lineWidth: 1))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button {
+                    onPaywall()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(SubscriptionTier.plus.accentTextColor)
+                            .frame(width: 38, height: 38)
+                            .background(SubscriptionTier.plus.accentSoftColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 11))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Firma bazlı rapor Plus ve Pro’da")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.rdBlack)
+                            Text("Logo, tehlike sınıfı ve firma arşivi için yükselt.")
+                                .font(.system(size: 12, design: .rounded))
+                                .foregroundStyle(Color.rdSlate)
+                        }
+                        Spacer()
+                        Image(systemName: "arrow.up.circle.fill")
+                            .foregroundStyle(SubscriptionTier.plus.accentTextColor)
+                    }
+                    .padding(12)
+                    .background(Color.rdWhite)
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(SubscriptionTier.plus.accentColor.opacity(0.28), lineWidth: 1))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func applyCompanyToOptions(_ company: Company?) {
+        options.companyID = company?.id
+        if let company {
+            options.companyName = company.name
+            options.companyInfo = company.hazardClass.title
+        } else {
+            options.companyName = profile?.companyName ?? ""
+            options.companyInfo = profile?.phone ?? ""
+        }
+    }
+
     private var selectedCheckmark: some View {
         Image(systemName: "checkmark.circle.fill")
             .font(.system(size: 16, weight: .bold, design: .rounded))
@@ -1461,8 +1605,10 @@ struct ReportSettingsSheet: View {
                 labeledField("Hazırlayan", text: $options.preparedBy, placeholder: profile?.displayName ?? "Ad Soyad")
                 labeledField("Unvan", text: $options.preparedTitle, placeholder: profile?.title ?? "İSG Uzmanı")
                 labeledField("Belge no", text: $options.certificateNumber, placeholder: profile?.certificateNumber ?? "Sertifika / belge no")
-                labeledField("Firma", text: $options.companyName, placeholder: profile?.companyName ?? "Firma adı")
-                labeledField("Firma bilgisi", text: $options.companyInfo, placeholder: profile?.phone ?? "Telefon veya kısa bilgi")
+                if selectedCompany == nil {
+                    labeledField("Firma", text: $options.companyName, placeholder: profile?.companyName ?? "Firma adı")
+                    labeledField("Firma bilgisi", text: $options.companyInfo, placeholder: profile?.phone ?? "Telefon veya kısa bilgi")
+                }
             }
         }
     }
@@ -1733,6 +1879,8 @@ struct FindingCard: View {
 
                     actionBlock
 
+                    rootCauseBlock
+
                     findingMetaCards(band: band)
                 }
             }
@@ -1814,6 +1962,29 @@ struct FindingCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
+    @ViewBuilder
+    private var rootCauseBlock: some View {
+        if currentTier.isPaid,
+           !finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "point.3.connected.trianglepath.dotted")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(SubscriptionTier.plus.accentTextColor)
+                    .padding(.top, 2)
+                (
+                    Text("Kök neden · ").font(.system(size: 12, weight: .bold, design: .rounded)) +
+                    Text(finding.rootCause).font(.system(size: 12, design: .rounded))
+                )
+                .foregroundStyle(Color.rdGraphite)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(SubscriptionTier.plus.accentSoftColor)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
     private func findingMetaCards(band: RiskBand) -> some View {
         let referencesTier = requiredTier(for: band.level)
         let referencesUnlocked = currentTier.includes(referencesTier)
@@ -1833,13 +2004,8 @@ struct FindingCard: View {
         }
     }
 
-    private func requiredTier(for level: RiskLevel) -> SubscriptionTier {
-        switch level {
-        case .critical, .high:
-            return .pro
-        case .medium, .low, .unknown:
-            return .plus
-        }
+    private func requiredTier(for _: RiskLevel) -> SubscriptionTier {
+        .plus
     }
 
     private func infoCard(icon: String, title: String, value: String, tint: Color) -> some View {
