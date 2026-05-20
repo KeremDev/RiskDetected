@@ -1,6 +1,6 @@
 # RiskDetected - Güncel Durum ve Kalan İşler
 
-Tarih: 2026-05-17
+Tarih: 2026-05-20
 
 Bu dosya `IMPLEMENTATION_PLAN.md`, `PROJECT_HANDOFF.md`, `HANDOFF_2026-05-11_NEW_CHAT/*`,
 `AUTH_SETUP.md`, `PROMPT_SYSTEM_REVAMP_PLAN_2026-05-11.md` ve `QA/P1_5_Error_Test_Matrix.md`
@@ -20,7 +20,8 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Plus standart analiz limiti günde 10, Pro standart analiz limiti günde 40 olarak uygulanıyor.
 - Rapor kotası Free 3/ay, Plus 150/ay, Pro 750/ay olarak uygulanıyor.
 - Free kullanıcı yalnızca 1 canvas seçebiliyor; Plus sınırlı gelişmiş canvas, Pro tam gelişmiş canvas erişimine sahip.
-- Pro bulgu limiti 10 olarak güncellendi.
+- Free analizde backend tarafındaki sabit bulgu kırpma kaldırıldı; Free prompt kalite hedefi 6-9 bulgu olarak güncellendi.
+- Plus/Pro analizlerde bulgu hedefi 11-14 aralığına çıkarıldı.
 - Free limit dolu senaryosunda Home ve orta Tara butonu yükseltme uyarısına yönlendiriyor.
 
 ### Auth
@@ -50,10 +51,12 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 
 ### Onboarding
 
-- İlk kurulum onboarding akışı eklendi.
-- Kullanıcı onboarding'i tamamlayınca `rd.onboarding.completed` ile lokal saklanıyor.
-- Onboarding görselleri ve kısa eğitim metinleri mevcut.
-- Auth ekranından önce sadece ilk kullanımda gösteriliyor.
+- Onboarding V2 akışı eklendi ve RootView üzerinden aktif edildi.
+- İlk kullanımda onboarding tamamlanmadan auth/main akışına geçiş engelleniyor; tamamlanınca `rd.onboarding.completed` lokal saklanıyor.
+- Onboarding sonunda Apple, Google ve Email OTP girişleri doğrudan onboarding ekranı içinde çalışıyor.
+- Onboarding email/OTP giriş paneli ayrı floating layer olarak klavye üstüne yerleşiyor; ana sayfa aşağı kaydırılmıyor.
+- Onboarding sonrası gösterilecek ayrı Paywall V2 ekranı eklendi; uygulama içi paywall'dan bağımsız yönetilebilir.
+- Paywall V2 Plus öncelikli tasarıma taşındı; Pro "Pro'yu incele" bağlantısı ile mevcut paywall'a yönleniyor.
 
 ### AI Canvas ve Prompt Sistemi
 
@@ -81,8 +84,21 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
   - `GEMINI_API_KEY_PAID`
   - `GEMINI_API_KEY_PAID_SECONDARY` (opsiyonel)
 - Free kullanıcılar yalnızca Free Gemini havuzunu; Plus/Pro kullanıcılar yalnızca backend subscription doğrulaması sonrası Paid Gemini havuzunu kullanır. Subscription lookup veya Paid secret eksikse Plus/Pro analizi Free key'e düşmeden destek koduyla fail-closed olur.
-- Free model sırası `gemini-2.5-flash` -> retryable hata/limit durumunda `gemini-2.5-flash-lite` olarak ayarlandı.
-- Plus/Pro model sırası `gemini-2.5-pro` -> retryable hata/limit durumunda `gemini-2.5-flash` olarak ayarlandı.
+- Free model sırası güncel:
+  - `gemini_primary + gemini-2.5-flash`
+  - `gemini_secondary + gemini-2.5-flash`
+  - `gemini_primary + gemini-3.1-flash-lite`
+  - `gemini_secondary + gemini-3.1-flash-lite`
+  - tüm Free Gemini havuzu retryable hata/limit ile tükenirse `groq_free_primary`.
+- Free `gemini-3.1-flash-lite` çağrıları `thinkingLevel: "medium"` ile çalışır.
+- Plus/Pro model sırası güncel:
+  - `gemini_paid_primary + gemini-2.5-flash`
+  - `gemini_paid_primary + gemini-2.5-pro`
+  - `gemini_paid_primary + gemini-3.1-flash-lite`
+  - `gemini_paid_secondary + gemini-2.5-flash`
+  - `gemini_paid_secondary + gemini-2.5-pro`
+  - tüm Paid Gemini havuzu retryable hata/limit ile tükenirse `groq_plus_pro_primary`.
+- Plus/Pro `gemini-3.1-flash-lite` çağrıları `thinkingLevel: "high"` ile çalışır.
 
 ### Raporlar, PDF ve Excel
 
@@ -106,6 +122,11 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
   - profil logosu rapor logosu olarak otomatik yükleniyor;
   - hazırlayan adı, unvan, belge no, firma adı/bilgisi ve varsayılan metod PDF ayarlarına otomatik doluyor;
   - standart PDF, detaylı PDF ve XLSX metadata alanları aynı profil varsayılanlarını kullanıyor.
+- Standart PDF bulgu detay kartlarında Risk/Kanıt ve öneri metinleri karakter uzunluğuna göre dinamik satır yüksekliği kullanıyor; kısa bulgularda minimum yükseklik korunuyor.
+- Detaylı risk analizi PDF tablolarında uzun "tehlikeli durum / davranış" metinleri için satır yüksekliği değişken hesaplanıyor.
+- Risk analizi PDF/XLSX çıktılarında `Sorumlu` alanı geçici sabit değer olarak `İşveren/Vekili, Bölüm Yöneticisi` kullanacak şekilde ayarlandı.
+- Rapor PDF başlıklarında şirket logosu tanımlıysa RiskDetected yerine şirket logosu kullanılıyor.
+- PDF rapor başlıklarında sayfa numarası `Sayfa X/Y` formatında toplam sayfayı gösterecek şekilde güncellendi.
 
 ### Profil, Tema ve UI
 
@@ -113,7 +134,8 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Profil logosu seçme/kaydetme çalışıyor.
 - Profilde geçmiş analizler ve raporlar routing'i çalışıyor.
 - Profil > Destek formu eklendi; konu, mesaj ve isteğe bağlı fotoğraf/dosya ekiyle `info@riskdetected.com` adresine mail gönderir.
-  - Canlı mail gönderimi için Supabase Edge Function secret'ına `RESEND_API_KEY` eklenmeli.
+  - Canlı mail gönderimi `RESEND_API_KEY` ile doğrulandı.
+  - Follow-up: Destek formunda birden fazla ek aynı anda gönderilebilecek şekilde geliştirme yapılacak.
 - Dark mode foundation tamamlandı:
   - Sistem / Aydınlık / Karanlık seçenekleri.
   - Core renk tokenları dark/light uyumlu.
@@ -172,6 +194,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Data action simülasyonları test edildi.
 - `QA/P1_5_Error_Test_Matrix.md` içindeki E01-E18 satırları geçti olarak işaretli.
 - Xcode build + simulator run son durumda başarılı ve warning yok.
+- 2026-05-20 Onboarding V2 build + simulator run başarılı; email ve OTP paneli klavye üstünde test edildi.
 
 ## Kalan İşler
 
@@ -254,11 +277,20 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 
 2. AI maliyet ve quota operasyonu
    - Paid Gemini API key `GEMINI_API_KEY_PAID` olarak Supabase secrets'a girilmeli; opsiyonel yedek için `GEMINI_API_KEY_PAID_SECONDARY` kullanılabilir.
-   - Pending: Plus/Pro fallback kurulacak; önce ayrı paid Google project/account üzerinden `GEMINI_API_KEY_PAID_SECONDARY`, sonra gerekirse paid provider/model fallback değerlendirilecek. Plus/Pro fallback hiçbir durumda Free Gemini key havuzuna düşmemeli.
+   - Plus/Pro fallback kuruldu: Paid Gemini havuzu yeni model sırasıyla denenir; tüm paid havuz retryable hata/limit ile tükenirse ayrı `GROQ_API_KEY_PLUS_PRO` fallback devreye alınır. Plus/Pro fallback hiçbir durumda Free Gemini key havuzuna düşmemeli.
    - Free havuz için ek Gemini API key'leri farklı Google Cloud projelerinden Supabase secrets'a girilmeli.
+   - Free fallback: Gemini Free havuzu `gemini_primary/secondary + gemini-2.5-flash`, ardından `gemini_primary/secondary + gemini-3.1-flash-lite` sırasıyla denenir; tüm havuz retryable hata/limit ile tükenirse Groq vision fallback devreye girer. Secret adı `GROQ_API_KEY_FREE`; opsiyonel model override `GROQ_FREE_MODEL`. Varsayılan model `meta-llama/llama-4-scout-17b-16e-instruct`.
+   - Plus/Pro continuity fallback: Paid Gemini havuzu retryable hata/limit ile tükenirse ayrı Groq fallback devreye alınabilir. Secret adı `GROQ_API_KEY_PLUS_PRO`; opsiyonel model override `GROQ_PLUS_PRO_MODEL`. Groq free tier key kullanılsa bile Free fallback secret'ından ayrı tutulmalı; log alias `groq_plus_pro_primary` olmalı.
    - Her Google Cloud projesinde budget/quota alert açılmalı.
    - `ai_usage_logs` üzerinden günlük token, latency, fallback, error rate ve maliyet dashboard'u hazırlanmalı.
    - Pro için ücretli/kuota artırılmış model stratejisi netleştirilmeli.
+   - Later: Gemini Prompt/Context Caching değerlendirilecek.
+     - Önce davranış değiştirmeden cache metrikleri izlenecek: `cachedContentTokenCount`, cache hit ratio, prompt version/hash, model ve api key alias.
+     - Explicit cache yalnızca Plus/Pro paid Gemini havuzu için düşünülmeli; Free tarafı şimdilik implicit caching + log gözlemiyle kalabilir.
+     - Cache'e kullanıcı fotoğrafı, metni, firma bilgisi veya özel kullanıcı prompt'u konmamalı; sadece statik RiskDetected İSG talimatları, metodoloji, mevzuat/checklist ve JSON kuralları konmalı.
+     - `gemini-2.5-pro` ve fallback `gemini-2.5-flash` için ayrı cache gerekir; cache model bazlıdır.
+     - Cache başarısız/expired olduğunda analiz cache'siz devam etmeli; hiçbir durumda Plus/Pro trafiği Free Gemini havuzuna düşmemeli.
+     - Düşük hacimde storage maliyeti faydayı azaltabileceği için önce ölçüm, sonra 30-60 dk TTL ile kontrollü test önerilir.
 
 3. Account deletion admin completion
    - Kullanıcının hesap silme talebi alınabiliyor.
@@ -304,11 +336,11 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Daha net tab/section yapısı ve eksik içerik düzeni tasarlanabilir.
 
 5. Paywall sayfası yenileme
-   - Plus ve Pro plan kartları yeni limitlerle uyumlu olacak:
-     - Plus: 10 standart analiz/gün, 2 detaylı analiz/gün, 150 rapor/ay.
-     - Pro: 40 standart analiz/gün, 10 detaylı analiz/gün, 750 rapor/ay.
-   - RevenueCat paketleri, restore purchase ve mevcut plan durumları daha net gösterilecek.
-   - Limit dolu/free upgrade girişleriyle aynı görsel dilde, daha modern ve güven veren bir tasarım yapılacak.
+   - Done: Uygulama içi Paywall V1 ve Plus öncelikli Paywall V2 ayrıştırıldı.
+   - Done: Free kota dolu / yükseltme girişleri Paywall V2'ye yönleniyor.
+   - Done: Paywall V2'de seçilebilir Free kart kaldırıldı; düşük kontrastlı "Ücretsiz devam et" linki CTA altında kullanılıyor.
+   - Done: Paywall V2 Plus kartı geniş, Pro ikincil inceleme linki olarak düzenlendi.
+   - Follow-up: Onboarding sırasında alınan sektör/sınıf/frekans bilgilerine göre onboarding paywall metni kişiselleştirilecek.
    - TestFlight gerçek cihazda satın alma, restore ve plan geçiş görünümüyle QA alınacak.
 
 6. Image privacy ileri adımlar
@@ -340,7 +372,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Follow-up: clean demo data ile final iPhone screenshot seti üretilmeli.
 
 3. TestFlight release checklist
-   - Clean install onboarding.
+   - Clean install Onboarding V2.
    - Email OTP.
    - Apple/Google login.
    - Free günde 1 analiz limiti.

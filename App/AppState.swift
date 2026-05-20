@@ -144,7 +144,12 @@ final class AppState: ObservableObject {
     func finishOnboarding() {
         hasSeenOnboarding = true
         UserDefaults.standard.set(true, forKey: "rd.onboarding.completed")
-        flow = .auth
+        if auth.isAuthenticated {
+            activeTab = .home
+            flow = .main
+        } else {
+            flow = .auth
+        }
     }
 
     /// Auth tarafı zaten signedIn yayınladığında otomatik geçilecek; manuel çağrıyı
@@ -234,6 +239,9 @@ final class AppState: ObservableObject {
                         await self.subscriptions.identify(userID: session.user.id)
                     }
                     self.activeTab = .home
+                    if self.flow == .onboarding && !self.hasSeenOnboarding {
+                        return
+                    }
                     if self.flow != .main {
                         self.flow = .main
                     }

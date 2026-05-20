@@ -34,3 +34,11 @@ QA/tmp/
 # Supabase local/link cache
 supabase/.temp/
 supabase/supabase/
+
+# App Store screenshots editor
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.env*.local

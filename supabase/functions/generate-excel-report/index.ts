@@ -13,6 +13,7 @@ import XLSX from "npm:xlsx-js-style@1.2.0";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const RISK_ASSESSMENT_RESPONSIBLE = "İşveren/Vekili, Bölüm Yöneticisi";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -1858,7 +1859,7 @@ function makeWorkbook(
       ...metricValues(finding),
       safeText(finding.recommended_action),
       safeText(finding.references_text),
-      "",
+      RISK_ASSESSMENT_RESPONSIBLE,
       "",
       "Açık",
       "",

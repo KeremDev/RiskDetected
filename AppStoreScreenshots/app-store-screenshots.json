@@ -1,0 +1,302 @@
+{
+  "appName": "RiskDetected",
+  "themeId": "dark-bold",
+  "locales": [
+    "tr"
+  ],
+  "locale": "tr",
+  "device": "iphone",
+  "orientation": "portrait",
+  "appIcon": "/app-icon.png",
+  "slidesByDevice": {
+    "iphone": [
+      {
+        "id": "rd_tr_01",
+        "layout": "hero",
+        "label": {
+          "tr": "RISKDETECTED"
+        },
+        "headline": {
+          "tr": "Fotoğraftan\nİSG risk analizi"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/04.png",
+        "transforms": {
+          "device": {
+            "x": 153.18224783861672,
+            "y": 1112.7839999999999,
+            "width": 1013.6355043227666,
+            "height": 2064.96,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "rd_tr_02",
+        "layout": "device-bottom",
+        "label": {
+          "tr": "FOTOĞRAF"
+        },
+        "headline": {
+          "tr": "Sahadan çek,\nanında tara"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/01.png",
+        "inverted": true
+      },
+      {
+        "id": "rd_tr_03",
+        "layout": "two-devices",
+        "label": {
+          "tr": "ODAKLI ANALİZ"
+        },
+        "headline": {
+          "tr": "Tehlikeli alanı\nkendin işaretle"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/05.png",
+        "screenshotSecondary": "/screenshots/apple/iphone/{locale}/02.png",
+        "transforms": {
+          "device": {
+            "x": 486.92804610951003,
+            "y": 952.1759999999999,
+            "width": 912.27195389049,
+            "height": 1858.4640000000002,
+            "rotation": 0,
+            "zIndex": 3
+          },
+          "deviceSecondary": {
+            "x": -79.2,
+            "y": 949.8070450097847,
+            "width": 871.2,
+            "height": 1774.7929549902153,
+            "rotation": 0,
+            "zIndex": 2
+          }
+        }
+      },
+      {
+        "id": "rd_tr_04",
+        "layout": "device-top",
+        "label": {
+          "tr": "AI ÖZETİ"
+        },
+        "headline": {
+          "tr": "Riskleri\nderinlemesine gör"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/08.png",
+        "inverted": true
+      },
+      {
+        "id": "rd_tr_05",
+        "layout": "device-bottom",
+        "label": {
+          "tr": "METOTLAR"
+        },
+        "headline": {
+          "tr": "Fine-Kinney\nve 5x5 hazır"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/06.png"
+      },
+      {
+        "id": "rd_tr_06",
+        "layout": "device-top",
+        "label": {
+          "tr": "RAPOR"
+        },
+        "headline": {
+          "tr": "PDF veya Excel\nraporu oluştur"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/03.png",
+        "inverted": true
+      },
+      {
+        "id": "rd_tr_07",
+        "layout": "device-bottom",
+        "label": {
+          "tr": "ÇIKTI"
+        },
+        "headline": {
+          "tr": "Risk tablon\ntek dokunuşta"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/09.png"
+      },
+      {
+        "id": "rd_tr_08",
+        "layout": "two-devices",
+        "label": {
+          "tr": "BAŞLANGIÇ"
+        },
+        "headline": {
+          "tr": "Kamera ya da\ngaleriden başla"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/07.png",
+        "screenshotSecondary": "/screenshots/apple/iphone/{locale}/01.png",
+        "inverted": true
+      },
+      {
+        "id": "rd_tr_09",
+        "layout": "no-device",
+        "label": {
+          "tr": "SAHA İÇİN HIZLI KARAR"
+        },
+        "headline": {
+          "tr": "Fotoğraf\nAnaliz\nRapor"
+        },
+        "screenshot": ""
+      }
+    ],
+    "android": [
+      {
+        "id": "s_mpck8dr3_9",
+        "layout": "hero",
+        "label": {
+          "tr": "RISKDETECTED"
+        },
+        "headline": {
+          "tr": "Fotoğraftan\nriskleri yakala"
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mpck8dr3_a",
+        "layout": "device-bottom",
+        "label": {
+          "tr": "ÖZELLİK"
+        },
+        "headline": {
+          "tr": "Hızlı analiz\nhazır rapor."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mpck8dr3_b",
+        "layout": "two-devices",
+        "label": {
+          "tr": "RAPOR"
+        },
+        "headline": {
+          "tr": "PDF ve Excel\nçıktısı al."
+        },
+        "screenshot": "",
+        "screenshotSecondary": ""
+      },
+      {
+        "id": "s_mpck8dr3_c",
+        "layout": "device-top",
+        "label": {
+          "tr": "METOT"
+        },
+        "headline": {
+          "tr": "Fine-Kinney\nve 5x5."
+        },
+        "screenshot": "",
+        "inverted": true
+      },
+      {
+        "id": "s_mpck8dr3_d",
+        "layout": "no-device",
+        "label": {
+          "tr": "ÖZET"
+        },
+        "headline": {
+          "tr": "Fotoğraf\nAnaliz\nRapor."
+        },
+        "screenshot": ""
+      }
+    ],
+    "ipad": [
+      {
+        "id": "s_mpck8dr3_e",
+        "layout": "hero",
+        "label": {
+          "tr": "RISKDETECTED"
+        },
+        "headline": {
+          "tr": "Büyük ekranda\nrisk analizi."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mpck8dr3_f",
+        "layout": "device-bottom",
+        "label": {
+          "tr": "ODAK"
+        },
+        "headline": {
+          "tr": "Saha bulgularını\ndüzenle."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mpck8dr3_g",
+        "layout": "device-top",
+        "label": {
+          "tr": "RAPOR"
+        },
+        "headline": {
+          "tr": "Raporu hazırla."
+        },
+        "screenshot": "",
+        "inverted": true
+      }
+    ],
+    "android-7": [
+      {
+        "id": "s_mpck8dr3_h",
+        "layout": "hero",
+        "label": {
+          "tr": "RISKDETECTED"
+        },
+        "headline": {
+          "tr": "Sahada\nhızlı karar."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mpck8dr3_i",
+        "layout": "split-landscape",
+        "label": {
+          "tr": "RAPOR"
+        },
+        "headline": {
+          "tr": "Geniş tabloda\nnet sonuç."
+        },
+        "screenshot": ""
+      }
+    ],
+    "android-10": [
+      {
+        "id": "s_mpck8dr3_j",
+        "layout": "hero",
+        "label": {
+          "tr": "RISKDETECTED"
+        },
+        "headline": {
+          "tr": "Ekipler için\nrisk görünümü."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mpck8dr3_k",
+        "layout": "split-landscape",
+        "label": {
+          "tr": "RAPOR"
+        },
+        "headline": {
+          "tr": "Geniş tabloda\nnet sonuç."
+        },
+        "screenshot": ""
+      }
+    ],
+    "feature-graphic": [
+      {
+        "id": "s_mpck8dr3_l",
+        "layout": "feature-graphic",
+        "label": {},
+        "headline": {
+          "tr": "Fotoğraftan İSG risk analizi ve rapor."
+        },
+        "screenshot": ""
+      }
+    ]
+  }
+}

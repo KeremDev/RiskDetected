@@ -24,6 +24,14 @@
  *   - fk_probability check: [0.2, 0.5, 1, 3, 6, 10]
  *   - fk_frequency   check: [0.5, 1, 2, 3, 6, 10]
  *   - fk_severity    check: [1, 3, 7, 15, 40, 100]
+ *
+ * Free AI fallback:
+ *   Gemini free key/model pool -> optional Groq vision fallback.
+ *   Configure with GROQ_API_KEY_FREE; optional GROQ_FREE_MODEL override.
+ *
+ * Plus/Pro continuity fallback:
+ *   Paid Gemini key/model pool -> optional separate Groq vision fallback.
+ *   Configure with GROQ_API_KEY_PLUS_PRO; optional GROQ_PLUS_PRO_MODEL override.
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
@@ -31,12 +39,19 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const GEMINI_API_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-const MODEL_FREE_LITE = "gemini-2.5-flash-lite";
+const MODEL_FLASH_LITE = "gemini-3.1-flash-lite";
 const MODEL_FREE = "gemini-2.5-flash";
+const MODEL_FREE_FALLBACK = MODEL_FLASH_LITE;
 // Plus/Pro traffic uses the isolated paid Gemini key pool.
 const MODEL_PRO = "gemini-2.5-pro";
 const MODEL_PRO_FALLBACK = "gemini-2.5-flash";
+const MODEL_PAID_FAST = MODEL_PRO_FALLBACK;
+const MODEL_GROQ_FREE_DEFAULT = "meta-llama/llama-4-scout-17b-16e-instruct";
+const MODEL_GROQ_PLUS_PRO_DEFAULT = MODEL_GROQ_FREE_DEFAULT;
+const GROQ_MAX_BASE64_IMAGES = 5;
+const GROQ_MAX_BASE64_IMAGE_BYTES = 4 * 1024 * 1024;
 
 type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
@@ -44,18 +59,117 @@ type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
 const PLAN_LIMITS: Record<PlanTier, {
   dailyStandardLimit?: number;
   dailyDetailedLimit?: number;
-  maxHazards: number;
+  minHazards?: number;
+  maxHazards?: number;
 }> = {
-  free: { dailyStandardLimit: 1, maxHazards: 4 },
-  plus: { dailyStandardLimit: 10, dailyDetailedLimit: 2, maxHazards: 8 },
-  pro: { dailyStandardLimit: 40, dailyDetailedLimit: 10, maxHazards: 10 },
+  free: { dailyStandardLimit: 1 },
+  plus: {
+    dailyStandardLimit: 10,
+    dailyDetailedLimit: 2,
+    minHazards: 11,
+    maxHazards: 14,
+  },
+  pro: {
+    dailyStandardLimit: 40,
+    dailyDetailedLimit: 10,
+    minHazards: 11,
+    maxHazards: 14,
+  },
 };
+
+function geminiThinkingConfig(
+  model: string,
+  pool: "free" | "paid",
+): Record<string, string> | null {
+  if (model === MODEL_FLASH_LITE) {
+    return { thinkingLevel: pool === "paid" ? "high" : "medium" };
+  }
+  return null;
+}
 
 const COMMON_ANALYSIS_PROMPT =
   `Fotoğrafı iş güvenliği uzmanı saha gözlemi gibi analiz et. Sadece görüntüde görülen bulgulara dayan. Görünmeyen veya emin olmadığın noktaları "kontrol edilmeli" diye belirt.`;
 
 const PRO_REFERENCES_PROMPT =
   `Fotoğrafı Türkiye İSG mevzuatı perspektifiyle değerlendir. Her bulgu için Türkiye İSG mevzuatıyla ilişkili uygun kanun/yönetmelik başlığını references alanında kısa yaz. References alanı kısaltılmış kanun/yönetmelik adı ve biliyorsan kısa madde bilgisini içersin; emin değilsen madde uydurma, "mevzuat karşılığı kontrol edilmeli" yaz. Standart numarası, ölçüm değeri veya uzun açıklama uydurma.`;
+
+const FREE_ANALYSIS_PROMPT =
+  `Sen Türkiye'de 20 yıllık saha deneyimi olan kıdemli bir İSG uzmanısın (A sınıfı). İnşaat, üretim, depo/lojistik, enerji,fabrika ve ofis sahalarında binlerce denetim yapmış, ölümcül kazaları önlemiş, mevzuata hâkim bir profesyonelsin.
+
+GÖREV: Sana verilen görsel veya metin girdisinden, sahada fiziksel olarak bulunan bir denetçinin yakalayacağı tüm İSG tehlikelerini sistematik olarak tespit et ve raporla.
+
+TARAMA PROSEDÜRÜ — Her görseli SIRAYLA şu 6 katmanda tara:
+1. ZEMİN VE SAHA DÜZENİ: ıslaklık, çamur, su birikintisi, boşluk, kot farkı, dağınık malzeme, kablo, hortum, kayma/takılma zeminleri.
+2. ÇALIŞAN(LAR) VE KKD: baret, gözlük, eldiven, ayakkabı, yelek, emniyet kemeri, maske; duruş ve manuel taşıma ergonomisi.
+3. YÜKSEKTE ÇALIŞMA: kenar koruması, korkuluk, iskele bütünlüğü, merdiven açısı, platform, yaşam hattı, ankraj, açık kenar, boşluk, düşen cisim tehlikesi.
+4. ELEKTRİK VE ENERJİ: kablo, pano, fiş, jeneratör, su+elektrik teması, topraklama, geçici tesisat.
+5. MAKİNE, EKİPMAN VE KİMYASAL: hareketli parça, koruma, kaldırma ekipmanı, varil/şişe, etiketleme, depolama, yangın yükü.
+6. ÇEVRE VE ACİL DURUM: işaretleme, acil çıkış, yangın söndürücü, ilk yardım görünürlüğü, trafik, üst yapı, hava koşulu.
+7. EĞİTİM : Personelin ilgili mevzuat eğitimleri, yada işe özgü özel eğitimleri sorgulanmalı.Mesleki yeterlilik belgesi sorgulanmalı.
+
+Her katmanı gözden geçir; bir katmanda risk yoksa atla, ama tarama atlama.
+
+ÇIKTI HEDEFİ:
+- 6 ile 9 arasında bulgu döndür. Daha azı eksik, daha fazlası odak dağıtır.
+- ÖLÜMCÜL POTANSİYELİ olan bulgular (düşme, elektrik, ezilme, kimyasal, düşen cisim) en üstte.
+- Sonra yüksek frekanslı bulgular (zemin, ergonomi, KKD,eğitim,belge).
+- En altta düşük etkili ama mevzuat ihlali olan bulgular.
+
+RİSK PUANLAMA KALİBRASYONU — Fine-Kinney ŞİDDET:
+- 100 = Birden fazla ölüm veya kalıcı çevre felaketi.
+- 40  = Tek ölüm veya kalıcı iş göremezlik (elektrik çarpması, korumasız 3m+ düşme).
+- 15  = Ağır yaralanma, uzun süreli iş göremezlik (kırık, ciddi kesi).
+- 7   = Önemli yaralanma, kısa süreli iş göremezlik (burkulma, dikiş).
+- 3   = Hafif yaralanma, ilk yardım yeterli.
+- 1   = Çok hafif, etkisiz.
+
+5×5 ŞİDDET, Fine-Kinney ile uyumlu:
+- FK Ş ≥ 40 → m5_severity = 5
+- FK Ş = 15 → m5_severity = 4
+- FK Ş = 7  → m5_severity = 3
+- FK Ş = 3  → m5_severity = 2
+- FK Ş = 1  → m5_severity = 1
+
+KRİTİK KURAL: 2m+ yükseklikte koruma yoksa Ş değeri ASLA 40'ın altına düşmesin; m5_severity = 5 olmalı. Bu Türkiye'de en sık ölümlü iş kazası nedenidir.
+
+CONFIDENCE:
+- 0.90-0.98: net, tartışmasız kanıt.
+- 0.70-0.89: güçlü kanıt, bazı detaylar belirsiz.
+- 0.50-0.69: ipucu var, kesin değil.
+- 0.30-0.49: sadece bağlamsal şüphe.
+- < 0.30: bulguyu döndürme.
+Confidence < 0.50 ise description sonuna "(sahada doğrulanmalı)" ekle.
+
+KALİTE FİLTRESİ — KAÇIN:
+- Genel ifade ("güvenlik önlemleri alınmalı") yerine somut teknik aksiyon yaz.
+- Görselde olmayan riski uydurma.
+- Aynı kök nedenli riskleri tek bulguda topla.
+- Hassas ölçü uydurma; "yaklaşık 3m" veya "1 kat yüksekliğinde" yaz.
+- "Eğitim verilmeli" jenerik aksiyonundan kaçın; spesifik ne yapılacağını söyle.
+
+ÖRNEK BULGU (kopyalama, sadece kalite referansı):
+{
+  "title": "Açık kenar — düşmeyi önleyici korkuluk eksikliği",
+  "category": "Yüksekte Çalışma",
+  "description": "Üst katın doğu kenarında korkuluk yok; çalışan kenara yakın malzeme taşıyor. Yaklaşık 4m yükseklikten ölümcül düşme potansiyeli.",
+  "recommended_action": "Tüm açık kenarlara TS EN 13374 uyumlu korkuluk kur; korkuluk takılana kadar bölgeye giriş kısıtlansın.",
+  "confidence": 0.92,
+  "fk_probability": 6,
+  "fk_frequency": 6,
+  "fk_severity": 100,
+  "m5_probability": 5,
+  "m5_severity": 5
+}
+
+ÇIKTI KURALLARI:
+- Yalnızca JSON döndür; önünde/arkasında açıklama yazma.
+- Tüm metin Türkçe.
+- description max 200 karakter; recommended_action max 180 karakter.
+- Skorları HESAPLAMA, ham girdileri ver — sistem hesaplar.
+- Fine-Kinney ihtimal: 0.2 / 0.5 / 1 / 3 / 6 / 10
+- Fine-Kinney frekans:  0.5 / 1 / 2 / 3 / 6 / 10
+- Fine-Kinney şiddet:   1 / 3 / 7 / 15 / 40 / 100
+- m5_probability: 1-5, m5_severity: 1-5`;
 
 const CANVAS_FOCUS: Record<string, string> = {
   general:
@@ -184,12 +298,49 @@ function responseSchema(isPro: boolean) {
   };
 }
 
+function groqResponseSchemaInstruction(isPro: boolean): string {
+  const referencesField = isPro
+    ? `,\n      "references": "kısa mevzuat referansı veya mevzuat karşılığı kontrol edilmeli"`
+    : "";
+  return `Aşağıdaki JSON yapısına birebir uy. Markdown, açıklama veya kod bloğu ekleme:
+{
+  "hazards": [
+    {
+      "title": "kısa tehlike başlığı",
+      "category": "risk kategorisi",
+      "observed_evidence": "görüntü/metinde görülen kanıt",
+      "description": "riskin kısa açıklaması",
+      "recommended_action": "kısa uygulanabilir önlem",
+      "confidence": 0.0,
+      "fk_probability": 1,
+      "fk_frequency": 1,
+      "fk_severity": 1,
+      "m5_probability": 1,
+      "m5_severity": 1${referencesField}
+    }
+  ],
+  "ai_summary": "kısa özet",
+  "limitations": "varsa belirsizlikler"
+}`;
+}
+
 class GeminiAPIError extends Error {
   status: number;
   body: string;
 
   constructor(status: number, body: string) {
     super(`Gemini HTTP ${status}: ${body}`);
+    this.status = status;
+    this.body = body;
+  }
+}
+
+class GroqAPIError extends Error {
+  status: number;
+  body: string;
+
+  constructor(status: number, body: string) {
+    super(`Groq HTTP ${status}: ${body}`);
     this.status = status;
     this.body = body;
   }
@@ -202,10 +353,19 @@ type GeminiKeyAlias =
   | "gemini_paid_primary"
   | "gemini_paid_secondary";
 
+type GroqKeyAlias = "groq_free_primary" | "groq_plus_pro_primary";
+
+type AIProvider = "gemini" | "groq";
+
 type GeminiKeyConfig = {
   alias: GeminiKeyAlias;
   key: string;
   pool: "free" | "paid";
+};
+
+type GroqKeyConfig = {
+  alias: GroqKeyAlias;
+  key: string;
 };
 
 type AISimulationMode = "429" | "500" | "502" | "503" | "504" | "invalid_json";
@@ -348,8 +508,16 @@ function istanbulDayStartISO(): string {
 }
 
 function buildSystemPrompt(canvases: string[], tier: PlanTier): string {
+  if (tier === "free") return FREE_ANALYSIS_PROMPT;
+
   const isPro = tier === "pro";
+  const minHazards = PLAN_LIMITS[tier].minHazards;
   const maxHazards = PLAN_LIMITS[tier].maxHazards;
+  const hazardCountRule = minHazards && maxHazards
+    ? `- ${minHazards} ile ${maxHazards} arasında tehlike döndür; önem sırasına göre sırala.`
+    : maxHazards
+    ? `- En fazla ${maxHazards} tehlike döndür; önem sırasına göre sırala.`
+    : "- Fotoğrafta/metinde net kanıtı olan tüm önemli tehlikeleri önem sırasına göre döndür.";
   const focusLines =
     canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") ||
     CANVAS_FOCUS["general"];
@@ -364,7 +532,7 @@ ODAK: ${focusLines}
 KURALLAR:
 - Yalnızca fotoğrafta/metinde GÖZLEMLENEN kanıtlara dayan. Tahmin etme.
 - Emin olmadığın noktalar için confidence değerini düşür (0.3–0.6).
-- En fazla ${maxHazards} tehlike döndür; önem sırasına göre sırala.
+${hazardCountRule}
 - Her tehlike için description alanını kısa tut; yalnızca görünen kanıt ve riskin özünü 1-2 kısa cümleyle anlat.
 - Her tehlike için recommended_action alanını kısa, uygulanabilir ve en fazla 180 karakter olacak şekilde yaz.
 ${
@@ -388,6 +556,7 @@ async function callGemini(
   userText: string | null,
   userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
+  pool: "free" | "paid",
   isPro: boolean,
   simulation?: AISimulationConfig,
 ) {
@@ -409,6 +578,7 @@ async function callGemini(
     throw new Error("En az bir fotoğraf veya metin girdisi gerekli.");
   }
 
+  const thinkingConfig = geminiThinkingConfig(model, pool);
   const body = {
     system_instruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: "user", parts }],
@@ -417,6 +587,7 @@ async function callGemini(
       responseSchema: responseSchema(isPro),
       temperature: 0.2,
       maxOutputTokens: 12000,
+      ...(thinkingConfig ? { thinkingConfig } : {}),
     },
   };
 
@@ -442,6 +613,101 @@ async function callGemini(
     result: JSON.parse(text),
     inputTokens: json.usageMetadata?.promptTokenCount ?? 0,
     outputTokens: json.usageMetadata?.candidatesTokenCount ?? 0,
+  };
+}
+
+function decodedBase64ByteLength(base64: string): number {
+  const normalized = base64.replace(/\s/g, "");
+  const padding = normalized.endsWith("==")
+    ? 2
+    : normalized.endsWith("=")
+    ? 1
+    : 0;
+  return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding);
+}
+
+async function callGroq(
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  userText: string | null,
+  userPrompt: string | null,
+  imageBase64Parts: { mimeType: string; data: string }[],
+  isPro: boolean,
+  simulation?: AISimulationConfig,
+) {
+  maybeSimulateAIError(simulation);
+
+  if (imageBase64Parts.length === 0 && !userText) {
+    throw new Error("En az bir fotoğraf veya metin girdisi gerekli.");
+  }
+  if (imageBase64Parts.length > GROQ_MAX_BASE64_IMAGES) {
+    throw new Error(
+      `Groq fallback en fazla ${GROQ_MAX_BASE64_IMAGES} fotoğraf destekler.`,
+    );
+  }
+
+  const content: unknown[] = [
+    {
+      type: "text",
+      text: [
+        groqResponseSchemaInstruction(isPro),
+        userPrompt
+          ? `Kullanıcının özel analiz talebi: ${userPrompt}\nBu talebi yalnızca görsel/metin kanıtları destekliyorsa önceliklendir; kanıt yoksa uydurma.`
+          : null,
+        userText ? `Kullanıcı saha/metin girdisi: ${userText}` : null,
+      ].filter(Boolean).join("\n\n"),
+    },
+  ];
+
+  for (const img of imageBase64Parts) {
+    const byteLength = decodedBase64ByteLength(img.data);
+    if (byteLength > GROQ_MAX_BASE64_IMAGE_BYTES) {
+      throw new Error(
+        "Groq fallback fotoğraf boyutu limitini aşıyor.",
+      );
+    }
+    content.push({
+      type: "image_url",
+      image_url: {
+        url: `data:${img.mimeType};base64,${img.data}`,
+      },
+    });
+  }
+
+  const body = {
+    model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.2,
+    max_completion_tokens: 6000,
+  };
+
+  const res = await fetch(GROQ_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new GroqAPIError(res.status, errText);
+  }
+
+  const json = await res.json();
+  const text = json.choices?.[0]?.message?.content;
+  if (!text) throw new Error("Groq yanıtında metin yok.");
+
+  return {
+    result: JSON.parse(text),
+    inputTokens: json.usage?.prompt_tokens ?? 0,
+    outputTokens: json.usage?.completion_tokens ?? 0,
   };
 }
 
@@ -534,6 +800,37 @@ function paidGeminiKeyPool(): GeminiKeyConfig[] {
   );
 }
 
+function freeGroqKeyConfig(): GroqKeyConfig | null {
+  const key = Deno.env.get("GROQ_API_KEY_FREE") ?? Deno.env.get("GROQ_API_KEY");
+  return key
+    ? {
+      alias: "groq_free_primary",
+      key,
+    }
+    : null;
+}
+
+function freeGroqModel(): string {
+  return Deno.env.get("GROQ_FREE_MODEL")?.trim() || MODEL_GROQ_FREE_DEFAULT;
+}
+
+function plusProGroqKeyConfig(): GroqKeyConfig | null {
+  const key = Deno.env.get("GROQ_API_KEY_PLUS_PRO") ??
+    Deno.env.get("GROQ_API_KEY_PAID");
+  return key
+    ? {
+      alias: "groq_plus_pro_primary",
+      key,
+    }
+    : null;
+}
+
+function plusProGroqModel(): string {
+  return Deno.env.get("GROQ_PLUS_PRO_MODEL")?.trim() ||
+    Deno.env.get("GROQ_PAID_MODEL")?.trim() ||
+    MODEL_GROQ_PLUS_PRO_DEFAULT;
+}
+
 function geminiKeyPoolForTier(tier: PlanTier): GeminiKeyConfig[] {
   return tier === "free" ? freeGeminiKeyPool() : paidGeminiKeyPool();
 }
@@ -570,6 +867,29 @@ function userFacingAIError(
     };
   }
 
+  if (err instanceof GroqAPIError) {
+    if (err.status === 429) {
+      return {
+        status: 429,
+        code: "ai_rate_limited",
+        message:
+          "AI modeli şu anda yoğun veya kota limitine takıldı. Biraz sonra tekrar dene.",
+      };
+    }
+    if ([500, 502, 503, 504].includes(err.status)) {
+      return {
+        status: 503,
+        code: "ai_unavailable",
+        message: "AI modeli şu anda yoğun. Biraz sonra tekrar dene.",
+      };
+    }
+    return {
+      status: 502,
+      code: "ai_provider_error",
+      message: `AI servis hatası (${err.status}).`,
+    };
+  }
+
   if (err instanceof SyntaxError) {
     return {
       status: 502,
@@ -585,6 +905,81 @@ function userFacingAIError(
   };
 }
 
+function isRetryableAIError(err: unknown): boolean {
+  if (err instanceof SyntaxError) return true;
+  if (err instanceof GeminiAPIError || err instanceof GroqAPIError) {
+    return [429, 500, 502, 503, 504].includes(err.status);
+  }
+  return false;
+}
+
+function uniqueModels(models: string[]): string[] {
+  return [...new Set(models)];
+}
+
+function geminiAttemptSequence(
+  keyPool: GeminiKeyConfig[],
+  preferredModel: string,
+): Array<{ keyConfig: GeminiKeyConfig; model: string }> {
+  const attempts: Array<{ keyConfig: GeminiKeyConfig; model: string }> = [];
+  const pushAttempts = (keyConfig: GeminiKeyConfig, models: string[]) => {
+    for (const model of uniqueModels(models)) {
+      attempts.push({ keyConfig, model });
+    }
+  };
+
+  const isPaidPool = keyPool.some((item) => item.pool === "paid");
+  if (isPaidPool) {
+    const primary = keyPool.find((item) =>
+      item.alias === "gemini_paid_primary"
+    );
+    const secondary = keyPool.find((item) =>
+      item.alias === "gemini_paid_secondary"
+    );
+
+    if (primary) {
+      pushAttempts(primary, [MODEL_PAID_FAST, MODEL_PRO, MODEL_FLASH_LITE]);
+    }
+    if (secondary) {
+      pushAttempts(secondary, [MODEL_PAID_FAST, MODEL_PRO]);
+    }
+
+    const knownPaidAliases = new Set([
+      "gemini_paid_primary",
+      "gemini_paid_secondary",
+    ]);
+    for (const keyConfig of keyPool) {
+      if (!knownPaidAliases.has(keyConfig.alias)) {
+        pushAttempts(keyConfig, [MODEL_PAID_FAST, MODEL_PRO]);
+      }
+    }
+
+    return attempts;
+  }
+
+  if (preferredModel !== MODEL_FREE) {
+    for (const keyConfig of keyPool) {
+      pushAttempts(keyConfig, [preferredModel]);
+    }
+    return attempts;
+  }
+
+  const primary = keyPool.find((item) => item.alias === "gemini_primary");
+  const secondary = keyPool.find((item) => item.alias === "gemini_secondary");
+  const orderedFreeKeys = [primary, secondary].filter(
+    (item): item is GeminiKeyConfig => Boolean(item),
+  );
+
+  for (const keyConfig of orderedFreeKeys) {
+    pushAttempts(keyConfig, [MODEL_FREE]);
+  }
+  for (const keyConfig of orderedFreeKeys) {
+    pushAttempts(keyConfig, [MODEL_FREE_FALLBACK]);
+  }
+
+  return attempts;
+}
+
 async function callGeminiWithFallback(
   keyPool: GeminiKeyConfig[],
   preferredModel: string,
@@ -595,65 +990,203 @@ async function callGeminiWithFallback(
   isPro: boolean,
   simulation?: AISimulationConfig,
 ) {
-  const models = preferredModel === MODEL_FREE
-    ? [MODEL_FREE, MODEL_FREE_LITE]
-    : preferredModel === MODEL_PRO
-    ? [MODEL_PRO, MODEL_PRO_FALLBACK]
-    : [preferredModel];
-
   let lastError: unknown = null;
   let attempt = 0;
-  for (const keyConfig of keyPool) {
-    for (const model of [...new Set(models)]) {
-      attempt += 1;
-      try {
-        const out = await callGemini(
-          keyConfig.key,
-          model,
-          systemPrompt,
-          userText,
-          userPrompt,
-          imageBase64Parts,
-          isPro,
-          simulation,
-        );
-        return {
-          ...out,
-          modelUsed: model,
+  for (
+    const { keyConfig, model } of geminiAttemptSequence(
+      keyPool,
+      preferredModel,
+    )
+  ) {
+    attempt += 1;
+    try {
+      const out = await callGemini(
+        keyConfig.key,
+        model,
+        systemPrompt,
+        userText,
+        userPrompt,
+        imageBase64Parts,
+        keyConfig.pool,
+        isPro,
+        simulation,
+      );
+      return {
+        ...out,
+        modelUsed: model,
+        apiKeyAlias: keyConfig.alias,
+        attempt,
+      };
+    } catch (err) {
+      lastError = err;
+      const retryable = err instanceof SyntaxError ||
+        (err instanceof GeminiAPIError &&
+          [429, 500, 502, 503, 504].includes(err.status));
+      console.error(
+        "Gemini attempt failed",
+        JSON.stringify({
           apiKeyAlias: keyConfig.alias,
+          model,
           attempt,
-        };
-      } catch (err) {
-        lastError = err;
-        const retryable = err instanceof SyntaxError ||
-          (err instanceof GeminiAPIError &&
-            [429, 500, 502, 503, 504].includes(err.status));
-        console.error(
-          "Gemini attempt failed",
-          JSON.stringify({
-            apiKeyAlias: keyConfig.alias,
-            model,
-            attempt,
-            retryable,
-            error: safeLogError(err),
-          }),
-        );
-        if (!retryable) throw err;
-        await delay(500);
-      }
+          retryable,
+          error: safeLogError(err),
+        }),
+      );
+      if (!retryable) throw err;
+      await delay(500);
     }
   }
 
   throw lastError ?? new Error("Gemini analizi başarısız.");
 }
 
+async function callFreeAIWithFallback(
+  geminiKeyPool: GeminiKeyConfig[],
+  preferredModel: string,
+  systemPrompt: string,
+  userText: string | null,
+  userPrompt: string | null,
+  imageBase64Parts: { mimeType: string; data: string }[],
+  simulation?: AISimulationConfig,
+) {
+  try {
+    const out = await callGeminiWithFallback(
+      geminiKeyPool,
+      preferredModel,
+      systemPrompt,
+      userText,
+      userPrompt,
+      imageBase64Parts,
+      false,
+      simulation,
+    );
+    return {
+      ...out,
+      providerUsed: "gemini" as AIProvider,
+      fallbackSource: [
+        out.modelUsed !== preferredModel ? out.modelUsed : null,
+        out.apiKeyAlias && out.apiKeyAlias !== geminiKeyPool[0]?.alias
+          ? out.apiKeyAlias
+          : null,
+      ].filter(Boolean).join(" -> ") || null,
+    };
+  } catch (err) {
+    if (!isRetryableAIError(err)) throw err;
+
+    const groqKey = freeGroqKeyConfig();
+    if (!groqKey) throw err;
+
+    console.warn(
+      "Free Gemini pool exhausted; trying Groq fallback",
+      JSON.stringify({
+        apiKeyAlias: groqKey.alias,
+        model: freeGroqModel(),
+        gemini_error: safeLogError(err),
+      }),
+    );
+
+    const out = await callGroq(
+      groqKey.key,
+      freeGroqModel(),
+      systemPrompt,
+      userText,
+      userPrompt,
+      imageBase64Parts,
+      false,
+      simulation,
+    );
+    return {
+      ...out,
+      providerUsed: "groq" as AIProvider,
+      modelUsed: freeGroqModel(),
+      apiKeyAlias: groqKey.alias,
+      attempt: null,
+      fallbackSource: `gemini_free_pool -> ${groqKey.alias}`,
+    };
+  }
+}
+
+async function callPaidAIWithFallback(
+  geminiKeyPool: GeminiKeyConfig[],
+  preferredModel: string,
+  systemPrompt: string,
+  userText: string | null,
+  userPrompt: string | null,
+  imageBase64Parts: { mimeType: string; data: string }[],
+  isPro: boolean,
+  simulation?: AISimulationConfig,
+) {
+  try {
+    const out = await callGeminiWithFallback(
+      geminiKeyPool,
+      preferredModel,
+      systemPrompt,
+      userText,
+      userPrompt,
+      imageBase64Parts,
+      isPro,
+      simulation,
+    );
+    return {
+      ...out,
+      providerUsed: "gemini" as AIProvider,
+      fallbackSource: [
+        out.modelUsed !== preferredModel ? out.modelUsed : null,
+        out.apiKeyAlias && out.apiKeyAlias !== geminiKeyPool[0]?.alias
+          ? out.apiKeyAlias
+          : null,
+      ].filter(Boolean).join(" -> ") || null,
+    };
+  } catch (err) {
+    if (!isRetryableAIError(err)) throw err;
+
+    const groqKey = plusProGroqKeyConfig();
+    if (!groqKey) throw err;
+
+    console.warn(
+      "Paid Gemini pool exhausted; trying Plus/Pro Groq continuity fallback",
+      JSON.stringify({
+        apiKeyAlias: groqKey.alias,
+        model: plusProGroqModel(),
+        gemini_error: safeLogError(err),
+      }),
+    );
+
+    const out = await callGroq(
+      groqKey.key,
+      plusProGroqModel(),
+      systemPrompt,
+      userText,
+      userPrompt,
+      imageBase64Parts,
+      isPro,
+      simulation,
+    );
+    return {
+      ...out,
+      providerUsed: "groq" as AIProvider,
+      modelUsed: plusProGroqModel(),
+      apiKeyAlias: groqKey.alias,
+      attempt: null,
+      fallbackSource: `gemini_paid_pool -> ${groqKey.alias}`,
+    };
+  }
+}
+
 function newSupportID(): string {
   return `RD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+function providerDisplayName(provider: AIProvider): string {
+  return provider === "groq" ? "Groq" : "Gemini";
 }
 
 function safeLogError(error: unknown): Record<string, unknown> {
   if (error instanceof GeminiAPIError) {
     return { name: "GeminiAPIError", status: error.status };
+  }
+  if (error instanceof GroqAPIError) {
+    return { name: "GroqAPIError", status: error.status };
   }
   if (error instanceof SyntaxError) {
     return { name: "SyntaxError" };
@@ -1340,7 +1873,7 @@ serve(async (req: Request) => {
     started_at: new Date().toISOString(),
   });
 
-  const model = planTier === "free" ? MODEL_FREE : MODEL_PRO;
+  const model = planTier === "free" ? MODEL_FREE : MODEL_PAID_FAST;
 
   // Storage → base64
   const imageBase64Parts: { mimeType: string; data: string }[] = [];
@@ -1576,6 +2109,8 @@ serve(async (req: Request) => {
     support_id: supportID,
     selected_canvas_ids: resolvedCanvases,
     resolved_canvas_prompts: resolvedCanvasPrompts,
+    min_hazards: PLAN_LIMITS[planTier].minHazards ?? null,
+    max_hazards: PLAN_LIMITS[planTier].maxHazards ?? null,
     common_analysis_prompt: COMMON_ANALYSIS_PROMPT,
     pro_references_prompt: isPro ? PRO_REFERENCES_PROMPT : null,
     references_requested: isPro,
@@ -1584,6 +2119,18 @@ serve(async (req: Request) => {
     model,
     gemini_key_pool: expectedGeminiPool,
     gemini_key_aliases_available: geminiKeys.map((item) => item.alias),
+    groq_free_fallback_configured: planTier === "free"
+      ? Boolean(freeGroqKeyConfig())
+      : false,
+    groq_free_model: planTier === "free" && freeGroqKeyConfig()
+      ? freeGroqModel()
+      : null,
+    groq_plus_pro_fallback_configured: planTier !== "free"
+      ? Boolean(plusProGroqKeyConfig())
+      : false,
+    groq_plus_pro_model: planTier !== "free" && plusProGroqKeyConfig()
+      ? plusProGroqModel()
+      : null,
     test_simulation_enabled: aiSimulation.enabled,
     test_simulation_mode: aiSimulation.enabled ? aiSimulation.mode : null,
   };
@@ -1593,30 +2140,58 @@ serve(async (req: Request) => {
   let inputTokens = 0, outputTokens = 0;
   let aiError: string | null = null;
   let modelUsed = model;
+  let providerUsed: AIProvider = "gemini";
   let apiKeyAlias: string | null = null;
   let attemptCount = 0;
+  let aiFallbackSource: string | null = null;
   const primaryGeminiAlias = geminiKeys[0]?.alias ?? null;
 
   try {
-    const out = await callGeminiWithFallback(
-      geminiKeys,
-      model,
-      systemPrompt,
-      text_input ?? null,
-      userPrompt,
-      imageBase64Parts,
-      isPro,
-      aiSimulation,
-    );
+    const out = planTier === "free"
+      ? await callFreeAIWithFallback(
+        geminiKeys,
+        model,
+        systemPrompt,
+        text_input ?? null,
+        userPrompt,
+        imageBase64Parts,
+        aiSimulation,
+      )
+      : await callPaidAIWithFallback(
+        geminiKeys,
+        model,
+        systemPrompt,
+        text_input ?? null,
+        userPrompt,
+        imageBase64Parts,
+        isPro,
+        aiSimulation,
+      );
     geminiResult = out.result;
     inputTokens = out.inputTokens;
     outputTokens = out.outputTokens;
     modelUsed = out.modelUsed;
+    providerUsed = "providerUsed" in out ? out.providerUsed : "gemini";
     inputAudit.model = out.modelUsed;
+    inputAudit.gemini_thinking_config = providerUsed === "gemini"
+      ? geminiThinkingConfig(
+        out.modelUsed,
+        planTier === "free" ? "free" : "paid",
+      )
+      : null;
     apiKeyAlias = out.apiKeyAlias;
-    attemptCount = out.attempt;
+    attemptCount = out.attempt ?? 0;
     inputAudit.api_key_alias = apiKeyAlias;
-    inputAudit.gemini_attempt_count = attemptCount;
+    inputAudit.provider = providerUsed;
+    if ("fallbackSource" in out) {
+      aiFallbackSource = out.fallbackSource;
+      inputAudit.fallback_source = aiFallbackSource;
+    }
+    if (providerUsed === "gemini") {
+      inputAudit.gemini_attempt_count = attemptCount;
+    } else {
+      inputAudit.groq_fallback_used = true;
+    }
   } catch (err) {
     aiError = String(err);
     const cleanError = userFacingAIError(err);
@@ -1637,7 +2212,7 @@ serve(async (req: Request) => {
     await logUsage(supabase, {
       analysis_id: analysisID,
       user_id: user.id,
-      provider: "gemini",
+      provider: providerUsed,
       model,
       tokens_in: 0,
       tokens_out: 0,
@@ -1648,7 +2223,8 @@ serve(async (req: Request) => {
       support_id: supportID,
       error_code: cleanError.code,
       http_status: cleanError.status,
-      fallback_source: modelUsed === model ? null : modelUsed,
+      fallback_source: aiFallbackSource ??
+        (modelUsed === model ? null : modelUsed),
       api_key_alias: apiKeyAlias,
       attempt_count: attemptCount || null,
     });
@@ -1659,7 +2235,11 @@ serve(async (req: Request) => {
     });
   }
 
-  const hazards = geminiResult.hazards ?? [];
+  const rawHazards = Array.isArray(geminiResult.hazards)
+    ? geminiResult.hazards
+    : [];
+  const maxHazards = PLAN_LIMITS[planTier].maxHazards;
+  const hazards = maxHazards ? rawHazards.slice(0, maxHazards) : rawHazards;
   let totalScoreFK = 0, totalScoreM5 = 0;
   let highestBandFK: "low" | "medium" | "high" | "critical" = "low";
   let highestBandM5: "low" | "medium" | "high" | "critical" = "low";
@@ -1730,7 +2310,9 @@ serve(async (req: Request) => {
 
   await updateOwnedAnalysis({
     status: "completed",
-    status_message: `Gemini ${modelUsed} · ${imageBase64Parts.length} foto · ${
+    status_message: `${
+      providerDisplayName(providerUsed)
+    } ${modelUsed} · ${imageBase64Parts.length} foto · ${
       text_input ? "metin var" : "metin yok"
     } · ${supportID}`,
     completed_at: new Date().toISOString(),
@@ -1749,7 +2331,7 @@ serve(async (req: Request) => {
   await logUsage(supabase, {
     analysis_id: analysisID,
     user_id: user.id,
-    provider: "gemini",
+    provider: providerUsed,
     model: modelUsed,
     tokens_in: inputTokens,
     tokens_out: outputTokens,
@@ -1760,10 +2342,10 @@ serve(async (req: Request) => {
     support_id: supportID,
     error_code: null,
     http_status: 200,
-    fallback_source: [
+    fallback_source: aiFallbackSource ?? ([
       modelUsed !== model ? modelUsed : null,
       apiKeyAlias && apiKeyAlias !== primaryGeminiAlias ? apiKeyAlias : null,
-    ].filter(Boolean).join(" -> ") || null,
+    ].filter(Boolean).join(" -> ") || null),
     api_key_alias: apiKeyAlias,
     attempt_count: attemptCount || null,
   });

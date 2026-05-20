@@ -708,14 +708,14 @@ struct AuthView: View {
                 .fill(Color.white)
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
-                        .stroke(isActive ? Color.rdGreen : (hasValue ? Color.rdBlack : Color.rdLine), lineWidth: isActive ? 2 : 1.5)
+                        .stroke(isActive ? Color.rdGreen : (hasValue ? Color.rdOnyx.opacity(0.72) : Color.rdLine), lineWidth: isActive ? 2 : 1.5)
                 )
                 .shadow(color: isActive ? Color.rdGreen.opacity(0.18) : .clear, radius: 12, x: 0, y: 4)
 
             Text(code[index])
                 .multilineTextAlignment(.center)
                 .font(.system(size: 28, weight: .bold, design: .monospaced))
-                .foregroundStyle(Color.rdBlack)
+                .foregroundStyle(Color.rdOnyx)
 
             if isActive && !hasValue {
                 RoundedRectangle(cornerRadius: 1)

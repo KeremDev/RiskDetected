@@ -77,6 +77,13 @@ struct PDFReportOptions: Equatable {
 
 final class PDFReportService: @unchecked Sendable {
     static let shared = PDFReportService()
+    private static let riskAssessmentResponsible = "İşveren/Vekili, Bölüm Yöneticisi"
+
+    private struct AssessmentTableRow {
+        let ordinal: Int
+        let finding: Finding
+        let height: CGFloat
+    }
 
     private init() {}
 
@@ -116,11 +123,14 @@ final class PDFReportService: @unchecked Sendable {
         try renderer.writePDF(to: fileURL) { context in
             switch input.options.kind {
             case .standard:
-                drawCoverPage(input: input, context: context, pageRect: pageRect)
-                drawFindingPages(input: input, context: context, pageRect: pageRect)
+                let totalPages = standardTotalPageCount(input: input, pageRect: pageRect)
+                drawCoverPage(input: input, context: context, pageRect: pageRect, totalPages: totalPages)
+                drawFindingPages(input: input, context: context, pageRect: pageRect, totalPages: totalPages)
             case .riskAnalysis:
-                drawRiskMethodReferencePage(input: input, context: context, pageRect: pageRect)
-                drawRiskAnalysisTablePages(input: input, context: context, pageRect: pageRect)
+                let assessmentPages = riskAssessmentPages(input: input, pageRect: pageRect)
+                let totalPages = max(1, assessmentPages.count + 1)
+                drawRiskMethodReferencePage(input: input, context: context, pageRect: pageRect, totalPages: totalPages)
+                drawRiskAnalysisTablePages(input: input, context: context, pageRect: pageRect, pages: assessmentPages, totalPages: totalPages)
             }
         }
 
@@ -137,9 +147,9 @@ final class PDFReportService: @unchecked Sendable {
         return FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
     }
 
-    private func drawCoverPage(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect) {
+    private func drawCoverPage(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect, totalPages: Int) {
         context.beginPage()
-        drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.localizedHeaderTitle(language: input.options.language), page: 1)
+        drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.localizedHeaderTitle(language: input.options.language), page: 1, totalPages: totalPages)
 
         let margin: CGFloat = 42
         let contentTop: CGFloat = 92
@@ -211,7 +221,7 @@ final class PDFReportService: @unchecked Sendable {
         drawMethodLegend(input: input, rect: CGRect(x: margin, y: 482, width: 758, height: 54))
     }
 
-    private func drawFindingPages(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect) {
+    private func drawFindingPages(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect, totalPages: Int) {
         guard !input.findings.isEmpty else { return }
 
         let topY: CGFloat = 122
@@ -223,7 +233,7 @@ final class PDFReportService: @unchecked Sendable {
 
         func beginFindingPage() {
             context.beginPage()
-            drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.localizedDetailTitle(language: input.options.language), page: page)
+            drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.localizedDetailTitle(language: input.options.language), page: page, totalPages: totalPages)
             drawTableHeader(y: 92)
             y = topY
             page += 1
@@ -248,9 +258,66 @@ final class PDFReportService: @unchecked Sendable {
         }
     }
 
-    private func drawRiskMethodReferencePage(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect) {
+    private func standardTotalPageCount(input: ReportInput, pageRect: CGRect) -> Int {
+        guard !input.findings.isEmpty else { return 1 }
+
+        let topY: CGFloat = 122
+        let bottomY = pageRect.height - 42
+        let rowSpacing: CGFloat = 8
+        let maxRowHeight = bottomY - topY
+        var pages = 1
+        var y = topY
+        var hasFindingPage = false
+
+        for finding in input.findings {
+            let rowHeight = min(standardFindingRowHeight(for: finding), maxRowHeight)
+            if !hasFindingPage {
+                pages += 1
+                hasFindingPage = true
+                y = topY
+            } else if y > topY, y + rowHeight > bottomY {
+                pages += 1
+                y = topY
+            }
+            y += rowHeight + rowSpacing
+        }
+
+        return pages
+    }
+
+    private func riskAssessmentPages(input: ReportInput, pageRect: CGRect) -> [[AssessmentTableRow]] {
+        guard !input.findings.isEmpty else { return [] }
+
+        let headerH: CGFloat = 44
+        let topY: CGFloat = 82 + headerH
+        let bottomY = pageRect.height - 32
+        let maxRowHeight = bottomY - topY
+        var pages: [[AssessmentTableRow]] = []
+        var currentRows: [AssessmentTableRow] = []
+        var usedHeight: CGFloat = 0
+
+        for (index, finding) in input.findings.enumerated() {
+            let rowHeight = min(assessmentRowHeight(input: input, finding: finding, ordinal: index + 1), maxRowHeight)
+            if !currentRows.isEmpty, usedHeight + rowHeight > maxRowHeight {
+                pages.append(currentRows)
+                currentRows.removeAll(keepingCapacity: true)
+                usedHeight = 0
+            }
+
+            currentRows.append(AssessmentTableRow(ordinal: index + 1, finding: finding, height: rowHeight))
+            usedHeight += rowHeight
+        }
+
+        if !currentRows.isEmpty {
+            pages.append(currentRows)
+        }
+
+        return pages
+    }
+
+    private func drawRiskMethodReferencePage(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect, totalPages: Int) {
         context.beginPage()
-        drawRiskAnalysisChrome(input: input, pageRect: pageRect, title: input.options.method == .fineKinney ? "FINE-KINNEY METODU REFERANS TABLOSU" : "5x5 L-TİPİ MATRİS REFERANS TABLOSU", page: 1)
+        drawRiskAnalysisChrome(input: input, pageRect: pageRect, title: input.options.method == .fineKinney ? "FINE-KINNEY METODU REFERANS TABLOSU" : "5x5 L-TİPİ MATRİS REFERANS TABLOSU", page: 1, totalPages: totalPages)
 
         let margin: CGFloat = 32
         if input.options.method == .fineKinney {
@@ -262,24 +329,22 @@ final class PDFReportService: @unchecked Sendable {
         drawRiskAnalysisInfoStrip(input: input, rect: CGRect(x: margin, y: 520, width: pageRect.width - margin * 2, height: 42))
     }
 
-    private func drawRiskAnalysisTablePages(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect) {
-        let rowsPerPage = input.options.method == .fineKinney ? 4 : 4
-        let chunks = input.findings.chunked(into: rowsPerPage)
-        guard !chunks.isEmpty else { return }
+    private func drawRiskAnalysisTablePages(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect, pages: [[AssessmentTableRow]], totalPages: Int) {
+        guard !pages.isEmpty else { return }
 
-        for (pageIndex, findings) in chunks.enumerated() {
+        for (pageIndex, rows) in pages.enumerated() {
             context.beginPage()
-            drawRiskAnalysisChrome(input: input, pageRect: pageRect, title: input.options.method == .fineKinney ? "TEHLİKE VE RİSK DEĞERLENDİRME FORMU (FINE-KINNEY)" : "TEHLİKE VE RİSK DEĞERLENDİRME FORMU (5x5 L-TİPİ)", page: pageIndex + 2)
+            drawRiskAnalysisChrome(input: input, pageRect: pageRect, title: input.options.method == .fineKinney ? "TEHLİKE VE RİSK DEĞERLENDİRME FORMU (FINE-KINNEY)" : "TEHLİKE VE RİSK DEĞERLENDİRME FORMU (5x5 L-TİPİ)", page: pageIndex + 2, totalPages: totalPages)
 
             if input.options.method == .fineKinney {
-                drawFineKinneyAssessmentTable(input: input, findings: findings, pageIndex: pageIndex, rowsPerPage: rowsPerPage)
+                drawFineKinneyAssessmentTable(input: input, rows: rows)
             } else {
-                drawMatrixAssessmentTable(input: input, findings: findings, pageIndex: pageIndex, rowsPerPage: rowsPerPage)
+                drawMatrixAssessmentTable(input: input, rows: rows)
             }
         }
     }
 
-    private func drawPageChrome(input: ReportInput, pageRect: CGRect, title: String, page: Int) {
+    private func drawPageChrome(input: ReportInput, pageRect: CGRect, title: String, page: Int, totalPages: Int) {
         UIColor.rdPDFPaper.setFill()
         UIBezierPath(rect: pageRect).fill()
 
@@ -298,7 +363,7 @@ final class PDFReportService: @unchecked Sendable {
         )
 
         drawText(
-            "Sayfa \(page)",
+            "Sayfa \(page)/\(totalPages)",
             in: CGRect(x: pageRect.width - 118, y: 31, width: 76, height: 18),
             font: .monospacedSystemFont(ofSize: 10, weight: .medium),
             color: .rdPDFSlate,
@@ -309,7 +374,7 @@ final class PDFReportService: @unchecked Sendable {
         UIBezierPath(rect: CGRect(x: 42, y: 70, width: pageRect.width - 84, height: 2)).fill()
     }
 
-    private func drawRiskAnalysisChrome(input: ReportInput, pageRect: CGRect, title: String, page: Int) {
+    private func drawRiskAnalysisChrome(input: ReportInput, pageRect: CGRect, title: String, page: Int, totalPages: Int) {
         UIColor.white.setFill()
         UIBezierPath(rect: pageRect).fill()
 
@@ -318,7 +383,7 @@ final class PDFReportService: @unchecked Sendable {
         drawText(title, in: CGRect(x: margin + 12, y: 36, width: pageRect.width - margin * 2 - 24, height: 16), font: .systemFont(ofSize: 13, weight: .bold), color: .rdPDFBlack, alignment: .center)
 
         drawReportLogo(input: input, in: CGRect(x: margin + 8, y: 29, width: 104, height: 28), fallbackTextRect: CGRect(x: margin + 8, y: 29, width: 104, height: 18), companyCornerRadius: 4)
-        drawText("Sayfa \(page)", in: CGRect(x: pageRect.width - margin - 34, y: 38, width: 30, height: 12), font: .monospacedSystemFont(ofSize: 8, weight: .medium), color: .rdPDFSlate, alignment: .right)
+        drawText("Sayfa \(page)/\(totalPages)", in: CGRect(x: pageRect.width - margin - 54, y: 38, width: 50, height: 12), font: .monospacedSystemFont(ofSize: 8, weight: .medium), color: .rdPDFSlate, alignment: .right)
     }
 
     private func drawReportLogo(input: ReportInput, in rect: CGRect, fallbackTextRect: CGRect, companyCornerRadius: CGFloat) {
@@ -483,70 +548,106 @@ final class PDFReportService: @unchecked Sendable {
         drawText("Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())", in: CGRect(x: rect.minX + 548, y: rect.minY + 23, width: 200, height: 10), font: .monospacedSystemFont(ofSize: 7.5, weight: .semibold), color: .rdPDFBlack, alignment: .right)
     }
 
-    private func drawFineKinneyAssessmentTable(input: ReportInput, findings: [Finding], pageIndex: Int, rowsPerPage: Int) {
+    private func drawFineKinneyAssessmentTable(input: ReportInput, rows: [AssessmentTableRow]) {
         let x: CGFloat = 32
         let y: CGFloat = 82
         let headerH: CGFloat = 44
-        let rowH: CGFloat = 112
         let widths: [CGFloat] = [22, 52, 124, 58, 22, 22, 22, 36, 54, 150, 130, 44, 42]
         let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "F", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Mevzuat", "Sorumlu", "Termin"]
 
         drawGridHeader(x: x, y: y, widths: widths, height: headerH, headers: headers, fill: .rdPDFTableBlue)
 
-        for (idx, finding) in findings.enumerated() {
-            let ordinal = pageIndex * rowsPerPage + idx + 1
-            let rowY = y + headerH + CGFloat(idx) * rowH
+        var rowY = y + headerH
+        for row in rows {
+            let finding = row.finding
             let band = finding.fkBand
-            let activityArea = canvasLabel(input.bundle.analysis.canvas)
-            let values = [
-                "\(ordinal)",
-                activityArea,
-                finding.title + "\n" + finding.description,
-                finding.category,
-                scoreText(finding.fk.probability),
-                scoreText(finding.fk.frequency),
-                scoreText(finding.fk.severity),
-                scoreText(finding.fkScore),
-                band.label,
-                finding.action,
-                finding.references,
-                input.options.preparedBy.nonEmpty ?? "İşveren",
-                suggestedTerm(for: band.level),
-            ]
-            drawAssessmentRow(x: x, y: rowY, widths: widths, height: rowH, values: values, band: band.level, scoreColumn: 7, bandColumn: 8)
+            let values = fineKinneyAssessmentValues(input: input, finding: finding, ordinal: row.ordinal)
+            drawAssessmentRow(x: x, y: rowY, widths: widths, height: row.height, values: values, band: band.level, scoreColumn: 7, bandColumn: 8)
+            rowY += row.height
         }
     }
 
-    private func drawMatrixAssessmentTable(input: ReportInput, findings: [Finding], pageIndex: Int, rowsPerPage: Int) {
+    private func drawMatrixAssessmentTable(input: ReportInput, rows: [AssessmentTableRow]) {
         let x: CGFloat = 32
         let y: CGFloat = 82
         let headerH: CGFloat = 44
-        let rowH: CGFloat = 100
         let widths: [CGFloat] = [22, 58, 132, 66, 26, 26, 38, 56, 170, 130, 54]
         let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Mevzuat", "Termin"]
 
         drawGridHeader(x: x, y: y, widths: widths, height: headerH, headers: headers, fill: .rdPDFTableBlue)
 
-        for (idx, finding) in findings.enumerated() {
-            let ordinal = pageIndex * rowsPerPage + idx + 1
-            let rowY = y + headerH + CGFloat(idx) * rowH
+        var rowY = y + headerH
+        for row in rows {
+            let finding = row.finding
             let band = finding.m5Band
-            let activityArea = canvasLabel(input.bundle.analysis.canvas)
-            let values = [
-                "\(ordinal)",
-                activityArea,
-                finding.title + "\n" + finding.description,
-                finding.category,
-                "\(finding.m5.probability)",
-                "\(finding.m5.severity)",
-                "\(finding.m5Score)",
-                band.label,
-                finding.action,
-                finding.references,
-                suggestedTerm(for: band.level),
-            ]
-            drawAssessmentRow(x: x, y: rowY, widths: widths, height: rowH, values: values, band: band.level, scoreColumn: 6, bandColumn: 7)
+            let values = matrixAssessmentValues(input: input, finding: finding, ordinal: row.ordinal)
+            drawAssessmentRow(x: x, y: rowY, widths: widths, height: row.height, values: values, band: band.level, scoreColumn: 6, bandColumn: 7)
+            rowY += row.height
         }
+    }
+
+    private func fineKinneyAssessmentValues(input: ReportInput, finding: Finding, ordinal: Int) -> [String] {
+        [
+            "\(ordinal)",
+            canvasLabel(input.bundle.analysis.canvas),
+            finding.title + "\n" + finding.description,
+            finding.category,
+            scoreText(finding.fk.probability),
+            scoreText(finding.fk.frequency),
+            scoreText(finding.fk.severity),
+            scoreText(finding.fkScore),
+            finding.fkBand.label,
+            finding.action,
+            finding.references,
+            Self.riskAssessmentResponsible,
+            suggestedTerm(for: finding.fkBand.level),
+        ]
+    }
+
+    private func matrixAssessmentValues(input: ReportInput, finding: Finding, ordinal: Int) -> [String] {
+        [
+            "\(ordinal)",
+            canvasLabel(input.bundle.analysis.canvas),
+            finding.title + "\n" + finding.description,
+            finding.category,
+            "\(finding.m5.probability)",
+            "\(finding.m5.severity)",
+            "\(finding.m5Score)",
+            finding.m5Band.label,
+            finding.action,
+            finding.references,
+            suggestedTerm(for: finding.m5Band.level),
+        ]
+    }
+
+    private func assessmentRowHeight(input: ReportInput, finding: Finding, ordinal: Int) -> CGFloat {
+        let isFineKinney = input.options.method == .fineKinney
+        let widths: [CGFloat] = isFineKinney
+            ? [22, 52, 124, 58, 22, 22, 22, 36, 54, 150, 130, 44, 42]
+            : [22, 58, 132, 66, 26, 26, 38, 56, 170, 130, 54]
+        let values = isFineKinney
+            ? fineKinneyAssessmentValues(input: input, finding: finding, ordinal: ordinal)
+            : matrixAssessmentValues(input: input, finding: finding, ordinal: ordinal)
+        let scoreColumn = isFineKinney ? 7 : 6
+        let bandColumn = isFineKinney ? 8 : 7
+        let minHeight: CGFloat = isFineKinney ? 92 : 84
+
+        var requiredHeight = minHeight
+        for (idx, value) in values.enumerated() {
+            let font: UIFont
+            if idx == scoreColumn {
+                font = .systemFont(ofSize: 10, weight: .bold)
+            } else if idx == bandColumn || idx == 0 {
+                font = .systemFont(ofSize: 7, weight: .bold)
+            } else {
+                font = .systemFont(ofSize: 6.8)
+            }
+            let alignment: NSTextAlignment = idx <= 1 || idx == scoreColumn || idx == bandColumn ? .center : .left
+            let measured = measuredTextHeight(value, width: max(8, widths[idx] - 8), font: font, alignment: alignment)
+            requiredHeight = max(requiredHeight, measured + 18)
+        }
+
+        return ceil(requiredHeight)
     }
 
     private func drawInfoBox(title: String, body: String, rect: CGRect) {
@@ -619,7 +720,20 @@ final class PDFReportService: @unchecked Sendable {
             let font: UIFont = idx == scoreColumn || idx == bandColumn || idx == 0
                 ? .systemFont(ofSize: idx == scoreColumn ? 10 : 7, weight: .bold)
                 : .systemFont(ofSize: 6.8)
-            drawText(values[safe: idx] ?? "", in: CGRect(x: currentX + 4, y: y + 7, width: width - 8, height: height - 14), font: font, color: textColor, alignment: idx <= 1 || idx == scoreColumn || idx == bandColumn ? .center : .left)
+            let alignment: NSTextAlignment = idx <= 1 || idx == scoreColumn || idx == bandColumn ? .center : .left
+            let textRect = CGRect(x: currentX + 4, y: y + 7, width: width - 8, height: height - 14)
+            if idx == scoreColumn || idx == bandColumn || idx == 0 {
+                drawText(values[safe: idx] ?? "", in: textRect, font: font, color: textColor, alignment: alignment)
+            } else {
+                drawFittingText(
+                    values[safe: idx] ?? "",
+                    in: textRect,
+                    baseFont: font,
+                    minimumFontSize: 5.4,
+                    color: textColor,
+                    alignment: alignment
+                )
+            }
             currentX += width
         }
     }

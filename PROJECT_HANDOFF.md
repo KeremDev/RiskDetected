@@ -3,7 +3,7 @@
 > Güncel tek yapılacaklar özeti için bkz. `PROJECT_STATUS_AND_NEXT_2026-05-12.md`.
 > Bu handoff dosyası mimari ve tarihsel bağlamı korur; en güncel yapılacak sırası yeni status dosyasındadır.
 
-Last updated: 2026-05-10
+Last updated: 2026-05-20
 
 This file is the single-context handoff for continuing RiskDetected in a new Codex/Claude session.
 
@@ -108,9 +108,9 @@ Important migrations:
 
 Current intended routing:
 
-- Free users: `gemini-2.5-flash` primary, `gemini-2.5-flash-lite` fallback, smaller hazard budget and only the Free Gemini key pool.
-- Plus/Pro users: paid-plan Gemini key pool only after backend subscription validation, with `gemini-2.5-pro` primary and `gemini-2.5-flash` fallback.
-- Current product target: Free günde 1 standart analiz ve tek canvas, Plus sınırlı gelişmiş erişim, Pro 10 bulguya kadar detaylı analiz.
+- Free users: `gemini_primary + gemini-2.5-flash`, then `gemini_secondary + gemini-2.5-flash`, then `gemini_primary + gemini-3.1-flash-lite`, then `gemini_secondary + gemini-3.1-flash-lite`; all Free Gemini retryable failures fall back to `groq_free_primary`.
+- Plus/Pro users: paid-plan Gemini key pool only after backend subscription validation. Current paid order is `gemini_paid_primary + gemini-2.5-flash`, `gemini_paid_primary + gemini-2.5-pro`, `gemini_paid_primary + gemini-3.1-flash-lite`, `gemini_paid_secondary + gemini-2.5-flash`, then `gemini_paid_secondary + gemini-2.5-pro`; all Paid Gemini retryable failures fall back to `groq_plus_pro_primary`.
+- Current product target: Free günde 1 standart analiz ve tek canvas; Plus/Pro gelişmiş canvas erişimi ve 11-14 bulgu hedefi.
 
 Known product note:
 
@@ -124,12 +124,16 @@ Gemini key routing and reliability bridge:
   - `GEMINI_API_KEY_SECONDARY`
   - `GEMINI_API_KEY_TERTIARY`
 - Existing legacy `GEMINI_API_KEY` is treated as primary fallback for backward compatibility.
-- Free model order is `gemini-2.5-flash` first, then `gemini-2.5-flash-lite` for retryable provider failures or limits.
+- Free model order is `gemini_primary + gemini-2.5-flash`, `gemini_secondary + gemini-2.5-flash`, `gemini_primary + gemini-3.1-flash-lite`, then `gemini_secondary + gemini-3.1-flash-lite` for retryable provider failures or limits.
+- Free `gemini-3.1-flash-lite` requests use Gemini `thinkingConfig.thinkingLevel = "medium"` across all Free key aliases.
 - Plus/Pro users use the Paid key pool only. Supported Paid secrets:
   - `GEMINI_API_KEY_PAID`
   - `GEMINI_API_KEY_PAID_SECONDARY` (optional fallback)
-- Plus/Pro model order is `gemini-2.5-pro` first, then `gemini-2.5-flash` for retryable provider failures or limits.
+- Plus/Pro model order is `gemini_paid_primary + gemini-2.5-flash`, `gemini_paid_primary + gemini-2.5-pro`, `gemini_paid_primary + gemini-3.1-flash-lite`, `gemini_paid_secondary + gemini-2.5-flash`, then `gemini_paid_secondary + gemini-2.5-pro` for retryable provider failures or limits.
+- Plus/Pro `gemini-3.1-flash-lite` requests use Gemini `thinkingConfig.thinkingLevel = "high"` across the paid primary alias.
 - `GEMINI_PAID_API_KEY` is accepted as a backward-compatible alias for `GEMINI_API_KEY_PAID`, but `GEMINI_API_KEY_PAID` is preferred.
+- Free traffic may use Groq only after the Free Gemini key/model pool is exhausted by retryable provider errors. Configure `GROQ_API_KEY_FREE`; optional `GROQ_FREE_MODEL` defaults to `meta-llama/llama-4-scout-17b-16e-instruct`.
+- Plus/Pro traffic may use a separate Groq continuity fallback only after the Paid Gemini key/model pool is exhausted by retryable provider errors. Configure `GROQ_API_KEY_PLUS_PRO`; optional `GROQ_PLUS_PRO_MODEL` defaults to the same Groq vision model as Free. The Groq API may still be free tier, but the secret and log alias must stay separate from Free (`groq_plus_pro_primary`).
 - Important: multiple keys in the same Google Cloud project share quota and should not be treated as separate capacity.
 - The Edge Function resolves the effective plan from backend subscription state before selecting a key pool.
 - If backend subscription lookup fails, analysis fails closed instead of silently treating the user as Free.
@@ -140,11 +144,20 @@ Gemini key routing and reliability bridge:
 - `ai_usage_logs` includes `api_key_alias` and `attempt_count`.
 - This is the MVP launch buffer until broader provider fallback is added.
 
-Pending Plus/Pro fallback note:
+Plus/Pro fallback note:
 
-- Add and test a Plus/Pro-only fallback path before larger paid traffic. This must stay inside the Paid pool or another paid provider; Plus/Pro traffic must still never fall back to Free Gemini keys.
-- Preferred first step: add `GEMINI_API_KEY_PAID_SECONDARY` from a separate paid Google project/account, then verify `ai_usage_logs.api_key_alias` switches from `gemini_paid_primary` to `gemini_paid_secondary` on retryable failures.
-- Later step: evaluate a paid provider/model fallback behind the same backend entitlement checks.
+- Plus/Pro-only Groq continuity fallback is implemented after Paid Gemini pool exhaustion. It uses `GROQ_API_KEY_PLUS_PRO` / `GROQ_PLUS_PRO_MODEL` and logs as `groq_plus_pro_primary`.
+- Plus/Pro traffic must still never fall back to Free Gemini keys.
+- Next telemetry pass should verify `ai_usage_logs.api_key_alias`, model, attempt count, token count and support codes across Paid Gemini and Groq fallback paths.
+
+Later Prompt/Context Caching note:
+
+- Evaluate Gemini context caching after launch telemetry is stable.
+- First add passive measurement only: cached input token count, hit ratio, prompt version/hash, model, latency and API key alias.
+- Explicit cache should be considered mainly for Plus/Pro paid traffic, especially `gemini-2.5-pro`; Free can remain on implicit caching plus usage logs unless volume/cost changes.
+- Cache only static RiskDetected material: HSE/ISG instructions, Fine-Kinney/5x5 methodology, legislation/checklist guidance and JSON output rules. Never cache user photos, text input, company data or user-specific prompts.
+- Keep model-specific cache entries for `gemini-2.5-pro` and fallback `gemini-2.5-flash`.
+- Cache failures/expiry must fall back to a normal non-cached paid call. Paid traffic must never fall back to Free Gemini keys.
 
 ### Risk Methods
 
@@ -200,6 +213,10 @@ Phone/Firebase status:
 
 Latest UI changes:
 
+- Onboarding V2 is active from `RootView` for first install / reset flows.
+- Onboarding final step now runs Apple, Google and Email OTP directly inside the onboarding screen instead of redirecting users back to the legacy auth landing screen.
+- Onboarding email and OTP panels use a floating keyboard-aware layer so the base page stays visually stable.
+- Onboarding completion shows a separate Plus-first onboarding paywall variant, kept independent from the in-app paywall for later personalization.
 - Auth hero photo-to-white transition is softened.
 - Logo and slogan in email entry screen are lifted upward.
 - Google button uses a lightweight colored Google wordmark style.
