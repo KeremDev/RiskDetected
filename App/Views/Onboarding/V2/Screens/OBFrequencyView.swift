@@ -47,11 +47,12 @@ struct OBFrequencyView: View {
             }
 
             OBFooter {
-                OBPrimaryButton(title: "Planımı Hazırla", enabled: state.frequency != nil) { onNext() }
+                OBPrimaryButton(title: "Planımı Hazırla", enabled: state.frequency != nil, accessibilityID: "onboarding.frequency.prepare") { onNext() }
                     .obStage(delay: 0.68)
             }
         }
         .background(Color.rdPaper)
+        .accessibilityIdentifier("onboarding.frequency")
     }
 
     private func freqCard(_ f: OBFrequency) -> some View {
@@ -97,5 +98,6 @@ struct OBFrequencyView: View {
             .shadow(color: .black.opacity(selected ? 0.08 : 0.04), radius: selected ? 14 : 8, y: selected ? 8 : 4)
         }
         .buttonStyle(OBPressStyle())
+        .accessibilityIdentifier("onboarding.frequency.\(f.rawValue.replacingOccurrences(of: "+", with: "_plus").replacingOccurrences(of: "-", with: "_"))")
     }
 }

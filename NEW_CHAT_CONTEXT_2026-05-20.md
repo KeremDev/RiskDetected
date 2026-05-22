@@ -24,6 +24,7 @@ Son commit: `Add company flows and welcome email automation`
 - Google OAuth production, branding/legal URL/domain ayarları tamam.
 - Email OTP/SMTP Resend ile canlı çalışıyor.
 - RevenueCat/App Store ürün eşleşmeleri ve TL gösterimi kontrol edildi; restore/Pro/Plus testleri tamamlandı.
+- App Store Connect abonelik ticari ayarları tamamlandı: yıllık Plus/Pro 7 gün ücretsiz deneme + aylık fiyat x 11, aylık Plus/Pro deneme/indirim yok. Kalan kontrol: bu ayarların RevenueCat packages ve app paywall tarafında doğru görünmesi.
 
 ## Son Büyük Değişiklikler
 
@@ -38,6 +39,10 @@ Son commit: `Add company flows and welcome email automation`
 - Çoklu firma iOS UI'sı lokal build'de hazır: Profil > Firmalarım, analiz öncesi firma seçimi, rapor firma seçimi, analiz/rapor firma filtreleri. Kullanıcı cihazına görünmesi için yeni TestFlight/App Store build'i dağıtılmalı.
 - Firma RLS production fix canlıda: `private.company_limit_for_user(uuid)` için `authenticated` execute grant eklendi; `Firmalarım` ekranındaki `permission denied for function company_limit_for_user` hatası giderildi.
 - İlk üyelik hoş geldin maili backend'i canlıda: `send-welcome-email` Edge Function Resend ile gönderir, onboarding cevaplarına göre kısa kişiselleştirme ekler ve `profiles.welcome_email_*` alanlarıyla idempotency sağlar.
+- Hoş geldin maili TestFlight gerçek cihaz QA tamamlandı: onboarding cevapları kaydoluyor, mail başarılı gidiyor, tekrar girişte duplicate mail gönderilmiyor.
+- Asenkron analiz backend'i canlıda: `analysis_jobs` kuyruğu, `queued` status, worker operasyon alanları ve cron fallback eklendi; `analyze` enqueue modelinde, `process-analysis-jobs` worker active, analiz tamamlanınca `analysis_complete` push event'i tetikleniyor.
+- APNs production secrets girildi ve doğrulandı: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, `APNS_PRIVATE_KEY`, `APNS_ENV`. TestFlight gerçek cihaz push teslim testi bekleniyor.
+- Rapor hazır ve account event push triggerları canlıda: PDF rapor arşivinden sonra `send-report-ready-notification`, XLSX backend üretimi sonrası `report_ready`, RevenueCat/sync/account deletion eventlerinde `account_updates` push tetikleniyor.
 - RevenueCat Plus/Pro plan yansıması düzeltildi: `PRODUCT_CHANGE` webhook'u `new_product_id` esas alır; iOS ve sync function aktif subscription product ve en güncel purchase tarihine göre tier çözer.
 - Profil dark tema polish yapıldı: avatar, istatistik kartları, liste yüzeyleri, ikon arka planları ve Pro kart vurgusu dark mode'da daha koyu/mat hale getirildi.
 - `App/RootView.swift`, `App/AppState.swift`: Onboarding V2 ilk kurulum akışına bağlandı.
@@ -46,8 +51,9 @@ Son commit: `Add company flows and welcome email automation`
 - `App/Views/Onboarding/V2/OnboardingViewV2.swift`: Onboarding `Atla` linki artık üzgün yüz ikonlu onay ekranı gösteriyor; onaylanırsa onboarding bitip auth/main akışına geçiyor.
 - `App/Views/Onboarding/V2/OnboardingViewV2.swift`: Onboarding V2 color scheme light'a kilitlendi; global dark mode ayarından etkilenmez.
 - `supabase/functions/analyze/index.ts`: AI routing güncel.
-- `App/Services/PDFReportService.swift`: şirket logosu, dinamik PDF satır yüksekliği, `Sayfa X/Y`, sorumlu alanı düzeltmeleri.
-- `supabase/functions/generate-excel-report/index.ts`: XLSX sorumlu alanı sabit: `İşveren/Vekili, Bölüm Yöneticisi`.
+- Rapor alanları V1 kararı çalışıyor: PDF/XLSX raporlarda `Sorumlu` alanı kaldırıldı, `Termin` risk seviyesine göre otomatik öneriliyor; firma/bölüm bazlı sorumlu şablonları V2'de değerlendirilecek.
+- `App/Services/PDFReportService.swift`: şirket logosu, dinamik PDF satır yüksekliği, `Sayfa X/Y`, sorumlu/termin V1 düzeni.
+- `supabase/functions/generate-excel-report/index.ts`: XLSX sorumlu alanı kaldırıldı, termin risk seviyesine göre doluyor.
 - `AppStoreScreenshots/` ve `.agents/skills/app-store-screenshots/`: App Store screenshot editor ve mevcut görseller eklendi.
 
 ## AI Hiyerarşisi
@@ -93,16 +99,15 @@ Kurallar:
 
 1. Yeni iOS build'i TestFlight/App Store'a dağıt: çoklu firma UI'sı, root cause/references görünürlüğü, hoş geldin maili iOS tetikleyicisi, RevenueCat Plus/Pro UI fix'i ve profil dark tema polish'i cihazlara ancak yeni build ile görünür.
 2. Onboarding paywall'u sonradan onboarding cevaplarına göre kişiselleştir.
-3. Hoş geldin maili için TestFlight yeni kullanıcı uçtan uca testi yapılacak: onboarding cevapları + mail teslimi + tekrar girişte duplicate olmaması.
-4. Bildirimler ile ilgili tüm akışları gözden geçir: izin, cihaz token kaydı, kullanıcı tercihleri, APNs backend triggerları ve TestFlight teslimatı.
-5. Analiz başlatıldıktan sonra kullanıcı uygulamadan çıksa bile backend tarafında analiz devam etmeli; analiz tamamlanınca push bildirim gönderilmeli ve uygulama açıldığında sonuç senkron görünmeli.
-6. Termin tarihi ve sorumlu alanları için ürün kararı verilecek: kullanıcı serbest mi girecek, varsayılan/sabit mi gelecek, yoksa firma/profil bazlı mı önerilecek.
-7. Onboarding ve uygulama içi bazı metin/sloganlarda revizyon yapılacak.
-8. Onboarding cevaplarına göre farklı paywall sayfaları veya paywall varyasyonları gösterilecek.
-9. APNs production gerçek cihaz/TestFlight testi.
-10. Final screenshot seti ve opsiyonel 15-30 sn app preview.
-11. App Store Connect privacy nutrition ve metadata girişlerini finalleştir.
-12. AI maliyet/kalite dashboard'u: yeni telemetry kolonları üzerinden cache hit, token, fallback, latency ve prompt version/hash takibi.
+3. Bildirimler/asenkron analiz TestFlight gerçek cihaz QA: izin, cihaz token kaydı, kullanıcı tercihleri, APNs teslimatı, uygulamadan çıkınca analiz devamı, tamamlanınca push ve push tap ile Analiz geçmişi yönlendirmesi doğrulanacak.
+4. Rapor hazır ve güvenlik/account eventleri için backend push triggerları bağlandı; TestFlight gerçek cihazda rapor ve account push davranışı doğrulanacak.
+5. App Store Connect abonelik deneme/fiyat ayarlarının RevenueCat packages ve app paywall tarafında doğru göründüğü test edilecek.
+6. Onboarding ve uygulama içi bazı metin/sloganlarda revizyon yapılacak.
+7. Onboarding cevaplarına göre farklı paywall sayfaları veya paywall varyasyonları gösterilecek.
+8. APNs production gerçek cihaz/TestFlight testi.
+9. Final screenshot seti ve opsiyonel 15-30 sn app preview.
+10. App Store Connect privacy nutrition ve metadata girişlerini finalleştir.
+11. AI maliyet/kalite dashboard'u: yeni telemetry kolonları üzerinden cache hit, token, fallback, latency ve prompt version/hash takibi.
 
 ## Dikkat
 

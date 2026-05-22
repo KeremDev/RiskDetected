@@ -11,8 +11,8 @@ import SwiftUI
 //
 // Steps:
 //   0 Splash · 1 PainPoint · 2 Certificate · 3 Hazard · 4 Sector
-//   5 Frequency · 6 Loading (auto-advance) · 7 PlanSummary
-//   8 Auth · 9 Paywall (dismissible)
+//   5 Frequency · 6 Loading (auto-advance) · 7 Personal Plan
+//   8 Auth · 9 Trial Invite · 10 Timeline Paywall (dismissible)
 
 struct OnboardingViewV2: View {
     @StateObject private var state = OnboardingV2State()
@@ -57,21 +57,37 @@ struct OnboardingViewV2: View {
         .animation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.42), value: state.step)
         .animation(.obSpring, value: showSkipConfirmation)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(state.step == 9 ? Color(hex: "#0B0D0E") : Color.rdPaper)
+        .background(state.step == 10 ? Color(hex: "#0B0D0E") : Color.rdPaper)
         .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
+        .accessibilityIdentifier("onboarding.v2")
         .onChange(of: isAuthenticated) { authenticated in
             guard authenticated else { return }
             persistCurrentDraft()
+            PaywallEventService.shared.flushPendingIfPossible()
             Task {
                 await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+                await MainActor.run {
+                    PaywallEventService.shared.flushPendingIfPossible()
+                }
             }
             guard state.step == 8 else { return }
             withAnimation(.obSpring) {
                 state.goTo(9)
             }
         }
-        .onChange(of: state.step) { _ in persistCurrentDraft() }
+        .onChange(of: state.step) { step in
+            persistCurrentDraft()
+            #if DEBUG
+            if step == 8 && Self.isUITestAuthBypassLaunch {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                    withAnimation(.obSpring) {
+                        state.goTo(9)
+                    }
+                }
+            }
+            #endif
+        }
         .onChange(of: state.certificate) { _ in persistCurrentDraft() }
         .onChange(of: state.hazards) { _ in persistCurrentDraft() }
         .onChange(of: state.sectors) { _ in persistCurrentDraft() }
@@ -116,9 +132,25 @@ struct OnboardingViewV2: View {
                 onSignIn: { startAuth(onSignInExisting) }
             )
         case 9:
-            OnboardingPaywallV2View(
-                onClose: { finishOnboarding() },
-                onSubscribe: { finishOnboarding() }
+            OBTrialInviteView {
+                state.goTo(10)
+            }
+        case 10:
+            OBTimelinePaywallView(
+                onStart: { plan in
+                    state.selectedPlan = plan
+                    onPurchase(plan) {
+                        finishOnboarding()
+                    }
+                },
+                onRestore: {
+                    onPurchase(state.selectedPlan) {
+                        finishOnboarding()
+                    }
+                },
+                onTerms: {},
+                onPrivacy: {},
+                onDismiss: { finishOnboarding() }
             )
         default:
             Color.rdPaper.onAppear { onFinish() }
@@ -141,6 +173,12 @@ struct OnboardingViewV2: View {
         }
         onFinish()
     }
+
+    #if DEBUG
+    private static var isUITestAuthBypassLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_BYPASS_AUTH")
+    }
+    #endif
 }
 
 private struct OBSkipConfirmationView: View {

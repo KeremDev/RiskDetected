@@ -13,6 +13,7 @@ struct OBAuthView: View {
     @State private var emailPhase: EmailPhase = .hidden
     @State private var email = ""
     @State private var otpInput = ""
+    @State private var autoVerifiedCode: String?
     @State private var code = Array(repeating: "", count: 6)
     @State private var isSendingEmailCode = false
     @State private var isVerifyingEmailCode = false
@@ -64,6 +65,7 @@ struct OBAuthView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .animation(.obSpring, value: emailPhase)
         .animation(.easeOut(duration: keyboard.animationDuration), value: keyboard.visibleHeight)
+        .accessibilityIdentifier("onboarding.auth")
         .onChange(of: emailPhase) { newPhase in
             if newPhase == .email {
                 focusEmailField()
@@ -149,6 +151,7 @@ struct OBAuthView: View {
                             icon: { Image(systemName: "apple.logo").font(.system(size: 18, weight: .medium)) },
                             bg: .black, fg: .white, bordered: false
                         ) { OBHaptic.light(); onApple() }
+                        .accessibilityIdentifier("onboarding.auth.apple")
                         .obStage(delay: 0.36)
 
                         Button {
@@ -165,6 +168,7 @@ struct OBAuthView: View {
                             .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
                         }
                         .buttonStyle(OBPressStyle())
+                        .accessibilityIdentifier("onboarding.auth.google")
                         .obStage(delay: 0.44)
 
                         if emailPhase == .hidden {
@@ -188,6 +192,7 @@ struct OBAuthView: View {
                                 .shadow(color: .black.opacity(0.04), radius: 8, y: 3)
                             }
                             .buttonStyle(OBPressStyle())
+                            .accessibilityIdentifier("onboarding.auth.email")
                             .obStage(delay: 0.52)
                         } else {
                             activeEmailRow
@@ -218,6 +223,7 @@ struct OBAuthView: View {
                         .overlay(Capsule().stroke(Color.rdLine, lineWidth: 1))
                     }
                     .buttonStyle(OBPressStyle())
+                    .accessibilityIdentifier("onboarding.auth.sign_in_existing")
                     .frame(maxWidth: .infinity)
                     .padding(.top, 18)
                     .padding(.bottom, 12)
@@ -300,6 +306,7 @@ struct OBAuthView: View {
                 }
                 .buttonStyle(OBPressStyle())
                 .disabled(!canSendEmailCode)
+                .accessibilityIdentifier("onboarding.auth.email.send_code")
             } else {
                 otpInputRow
 
@@ -319,6 +326,7 @@ struct OBAuthView: View {
                 }
                 .buttonStyle(OBPressStyle())
                 .disabled(!canVerifyEmailCode)
+                .accessibilityIdentifier("onboarding.auth.email.verify_code")
 
                 HStack {
                     Button("Yeni kod gönder") {
@@ -329,6 +337,7 @@ struct OBAuthView: View {
                     Button("E-postayı değiştir") {
                         withAnimation(.obSpring) { emailPhase = .email }
                         otpInput = ""
+                        autoVerifiedCode = nil
                         authErrorMessage = nil
                         focusEmailField()
                     }
@@ -356,6 +365,7 @@ struct OBAuthView: View {
         .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color.rdLine.opacity(0.78), lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: 24))
         .shadow(color: Color.black.opacity(0.08), radius: 18, y: 8)
+        .accessibilityIdentifier(emailPhase == .otp ? "onboarding.auth.otp_panel" : "onboarding.auth.email_panel")
     }
 
     private var panelHeader: some View {
@@ -467,6 +477,7 @@ struct OBAuthView: View {
             .opacity(0.01)
             .allowsHitTesting(false)
             .accessibilityLabel("Doğrulama kodu")
+            .accessibilityIdentifier("onboarding.auth.otp_input")
         }
         .frame(maxWidth: .infinity)
         .frame(height: 58)
@@ -486,6 +497,7 @@ struct OBAuthView: View {
         Task {
             do {
                 try await app.auth.sendEmailOTP(email: normalizedEmail)
+                autoVerifiedCode = nil
                 otpInput = ""
                 code = Array(repeating: "", count: 6)
                 withAnimation(.obSpring) { emailPhase = .otp }
@@ -570,6 +582,16 @@ struct OBAuthView: View {
         }
         code = nextCode
         authErrorMessage = nil
+
+        if sanitized.count < 6 {
+            autoVerifiedCode = nil
+        } else if sanitized.count == 6, autoVerifiedCode != sanitized, !isVerifyingEmailCode {
+            autoVerifiedCode = sanitized
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                guard otpInput == sanitized else { return }
+                verifyEmailCode()
+            }
+        }
     }
 
     private func otpDigitBox(index: Int) -> some View {

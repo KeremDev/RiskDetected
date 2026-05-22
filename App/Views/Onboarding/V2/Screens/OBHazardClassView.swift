@@ -48,6 +48,7 @@ struct OBHazardClassView: View {
                                 subtitle: item.sub,
                                 isSelected: state.hazards.contains(item.cls),
                                 multi: true,
+                                accessibilityID: "onboarding.hazard.\(item.cls.rawValue)",
                                 leading: { hazardIcon(item.cls, icon: item.icon) }
                             ) {
                                 OBHaptic.medium()
@@ -65,11 +66,12 @@ struct OBHazardClassView: View {
             }
 
             OBFooter {
-                OBPrimaryButton(title: "Devam", enabled: !state.hazards.isEmpty) { onNext() }
+                OBPrimaryButton(title: "Devam", enabled: !state.hazards.isEmpty, accessibilityID: "onboarding.hazard.continue") { onNext() }
                     .obStage(delay: 0.7)
             }
         }
         .background(Color.rdPaper)
+        .accessibilityIdentifier("onboarding.hazard")
     }
 
     private func hazardIcon(_ cls: OBHazardClass, icon: String) -> some View {

@@ -26,6 +26,7 @@ enum RDConfig {
     /// Edge Function endpoint adı.
     static let analyzeFunctionName = "analyze"
     static let sendPushNotificationFunctionName = "send-push-notification"
+    static let sendReportReadyNotificationFunctionName = "send-report-ready-notification"
     static let generateExcelReportFunctionName = "generate-excel-report"
     static let revenueCatWebhookFunctionName = "revenuecat-webhook"
     static let syncRevenueCatSubscriptionFunctionName = "sync-revenuecat-subscription"

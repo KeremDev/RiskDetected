@@ -63,6 +63,7 @@ struct ProfileView: View {
             }
         }
         .background(Color.rdPaper)
+        .accessibilityIdentifier("profile.root")
         .task {
             await loadStats()
         }
@@ -353,6 +354,7 @@ struct ProfileView: View {
                     ProfileRow(icon: "person.text.rectangle", title: "Profil bilgileri")
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile.row.info")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     showCompanyPicker = true
@@ -365,6 +367,7 @@ struct ProfileView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile.row.companies")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) {
@@ -375,6 +378,7 @@ struct ProfileView: View {
                     ProfileRow(icon: "doc.text", title: "Geçmiş analizler", detail: stats.map { "\($0.analysisCount)" } ?? "—")
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile.row.history")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) {
@@ -385,6 +389,7 @@ struct ProfileView: View {
                     ProfileRow(icon: "arrow.down.to.line", title: "Raporlarım", detail: stats.map { "\($0.reportCount)" } ?? "—")
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile.row.reports")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     showNotificationSettings = true
@@ -392,6 +397,7 @@ struct ProfileView: View {
                     ProfileRow(icon: "bell", title: "Bildirimler")
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile.row.notifications")
             }
             .background(profileCardFill)
             .overlay(

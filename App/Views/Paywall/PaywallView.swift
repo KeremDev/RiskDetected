@@ -3,6 +3,13 @@ import SwiftUI
 enum PaywallPresentationStyle {
     case standard
     case plusFocused
+
+    var analyticsValue: String {
+        switch self {
+        case .standard: return "standard"
+        case .plusFocused: return "plus_focused"
+        }
+    }
 }
 
 struct PaywallView: View {
@@ -12,6 +19,8 @@ struct PaywallView: View {
     var onClose: () -> Void
     var onSubscribe: () -> Void
     var notice: String? = nil
+    var source: PaywallSource = .inApp
+    var variantID: String = "standard_v1"
     var layout: PaywallPresentationStyle = .standard
 
     @State private var selectedTier: SubscriptionTier = .plus
@@ -19,6 +28,8 @@ struct PaywallView: View {
     @State private var isWorking = false
     @State private var errorMessage: String?
     @State private var showStandardPaywall = false
+    @State private var funnelSessionID = UUID()
+    @State private var didLogView = false
 
     private let paper = Color(hex: "#F5F6F4")
     private let cloud = Color(hex: "#EEF0EC")
@@ -65,6 +76,7 @@ struct PaywallView: View {
         }
         .preferredColorScheme(.light)
         .task {
+            logPaywallViewIfNeeded()
             await app.refreshSubscriptionOfferings()
             alignBillingWithAvailablePackage()
             if layout == .plusFocused {
@@ -140,6 +152,7 @@ struct PaywallView: View {
                 .init(color: paper, location: 1.0)
             ], startPoint: .top, endPoint: .bottom)
             .frame(width: width, height: 350)
+
         }
         .frame(width: width, height: 350, alignment: .top)
         .frame(maxHeight: .infinity, alignment: .top)
@@ -148,7 +161,7 @@ struct PaywallView: View {
 
     private func topBar(width: CGFloat) -> some View {
         HStack {
-            Button(action: onClose) {
+            Button(action: closePaywall) {
                 Image(systemName: "xmark")
                     .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundStyle(graphite)
@@ -255,8 +268,12 @@ struct PaywallView: View {
     }
 
     private func billingOption(_ option: PaywallBilling) -> some View {
-        Button {
+        return Button {
+            let changed = billing != option
             billing = option
+            if changed {
+                logPaywallEvent(.billingSelect)
+            }
             UISelectionFeedbackGenerator().selectionChanged()
         } label: {
             ZStack {
@@ -348,7 +365,11 @@ struct PaywallView: View {
         let cardMinHeight: CGFloat? = isPlusFocusedCard ? nil : 286
 
         return Button {
+            let changed = selectedTier != tier
             selectedTier = tier
+            if changed {
+                logPaywallEvent(.planSelect)
+            }
             UISelectionFeedbackGenerator().selectionChanged()
         } label: {
             VStack(alignment: isPlusFocusedCard ? .center : .leading, spacing: isPlusFocusedCard ? 7 : 5) {
@@ -605,7 +626,7 @@ struct PaywallView: View {
             .disabled(primaryButtonDisabled)
 
             Button {
-                onClose()
+                closePaywall()
             } label: {
                 Text("Ücretsiz devam et")
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
@@ -711,6 +732,42 @@ struct PaywallView: View {
         return "Seçili abonelik paketi şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
     }
 
+    private func closePaywall() {
+        logPaywallEvent(.close)
+        onClose()
+    }
+
+    private func logPaywallViewIfNeeded() {
+        guard !didLogView else { return }
+        didLogView = true
+        logPaywallEvent(.view)
+    }
+
+    private func logPaywallEvent(
+        _ event: PaywallEventName,
+        purchaseError: String? = nil
+    ) {
+        PaywallEventService.shared.record(
+            event,
+            funnelSessionID: funnelSessionID,
+            source: source,
+            variantID: variantID,
+            segmentKey: nil,
+            selectedTier: selectedTier,
+            billing: billing.rawValue,
+            productIdentifier: selectedPackage?.productIdentifier,
+            metadata: PaywallEventMetadata(
+                layout: layout.analyticsValue,
+                currentTier: app.currentTier.rawValue,
+                selectedPackageID: selectedPackage?.id,
+                noticePresent: notice != nil,
+                errorMessage: errorMessage,
+                contextHeadline: nil,
+                purchaseError: purchaseError
+            )
+        )
+    }
+
     private func packages(for tier: SubscriptionTier) -> [SubscriptionPlanPackage] {
         app.subscriptionPackages.filter { $0.tier == tier }
     }
@@ -725,6 +782,7 @@ struct PaywallView: View {
     }
 
     private func handlePrimaryAction() {
+        logPaywallEvent(.ctaTap)
         if selectedPackage == nil {
             reloadPackages()
             return
@@ -750,14 +808,17 @@ struct PaywallView: View {
         }
         isWorking = true
         errorMessage = nil
+        logPaywallEvent(.purchaseStarted)
         Task {
             do {
                 try await app.purchaseSubscription(packageID: selectedPackage.id)
                 isWorking = false
+                logPaywallEvent(.purchaseSucceeded)
                 onSubscribe()
             } catch {
                 isWorking = false
                 errorMessage = error.localizedDescription
+                logPaywallEvent(.purchaseFailed, purchaseError: error.localizedDescription)
             }
         }
     }
@@ -766,6 +827,7 @@ struct PaywallView: View {
         guard !isWorking else { return }
         isWorking = true
         errorMessage = nil
+        logPaywallEvent(.restoreTap)
         Task {
             do {
                 let restoredState = try await app.restoreSubscriptions()

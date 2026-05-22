@@ -157,6 +157,7 @@ struct AuthView: View {
         }
         .ignoresSafeArea()
         .background(Color.rdPaper)
+        .accessibilityIdentifier("auth.root")
         .sheet(isPresented: $showLegalInfo) {
             LegalInfoSheet(onClose: { showLegalInfo = false })
                 .presentationDetents([.medium, .large])
@@ -208,6 +209,7 @@ struct AuthView: View {
             RDButton(title: "E-posta ile giriş yap", style: .secondary, icon: "envelope.fill") {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
+            .accessibilityIdentifier("auth.email.start")
 
             HStack(spacing: 12) {
                 Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
@@ -229,11 +231,13 @@ struct AuthView: View {
             }
             .disabled(isSigningInWithApple)
             .opacity(isSigningInWithApple ? 0.75 : 1)
+            .accessibilityIdentifier("auth.apple")
             googleButton {
                 runGoogleSignIn()
             }
             .disabled(isSigningInWithGoogle)
             .opacity(isSigningInWithGoogle ? 0.75 : 1)
+            .accessibilityIdentifier("auth.google")
 
             legalNotice
 

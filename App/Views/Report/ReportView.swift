@@ -67,6 +67,7 @@ struct ReportView: View {
             }
         }
         .background(Color.rdCloud)
+        .accessibilityIdentifier("report.root")
         .overlay {
             if pdfGeneration.isActive {
                 PDFGenerationOverlay(progress: pdfGeneration.progress)
@@ -1185,8 +1186,12 @@ struct ReportView: View {
         guard let company else { return options }
         var resolved = options
         resolved.companyID = company.id
-        resolved.companyName = company.name
-        resolved.companyInfo = company.hazardClass.title
+        if resolved.companyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            resolved.companyName = company.name
+        }
+        if resolved.companyInfo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            resolved.companyInfo = company.hazardClass.title
+        }
         return resolved
     }
 
@@ -1520,6 +1525,7 @@ private struct ReportSourceSheet: View {
             .padding(.bottom, 110)
         }
         .background(Color.rdCloud)
+        .accessibilityIdentifier("report.source_sheet")
         .safeAreaInset(edge: .bottom, spacing: 0) {
             reportActionsBar
         }
@@ -1614,6 +1620,7 @@ private struct ReportSourceSheet: View {
             showSettings = true
         }
         .disabled(isExcelGenerating || pdfGeneration.isActive)
+        .accessibilityIdentifier("report.source_sheet.open_settings")
     }
 }
 

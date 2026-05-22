@@ -95,8 +95,25 @@ final class AuthService: ObservableObject {
 
     /// Çıkış yapar.
     func signOut() async throws {
-        try await supabase.auth.signOut()
+        do {
+            try await supabase.auth.signOut()
+        } catch {
+            try? await supabase.auth.signOut(scope: .local)
+            session = nil
+            profile = nil
+            lastError = nil
+            throw error
+        }
+        session = nil
+        profile = nil
+        lastError = nil
     }
+
+    #if DEBUG
+    func resetLocalSessionForUITests() async {
+        await clearStaleLocalSession(reason: "ui_test_reset")
+    }
+    #endif
 
     /// Aktif kullanıcının profilini yeniler (currentUserID üzerinden — observer fallback).
     func refreshProfile() async {
@@ -261,6 +278,11 @@ final class AuthService: ObservableObject {
                 .execute()
             await fetchProfile(userID: user.id)
         } catch {
+            if Self.isDeletedAuthUserProfileError(error) {
+                await clearStaleLocalSession(reason: "profile_bootstrap_user_missing")
+                return
+            }
+
             // If a profile appeared between fetch and insert, read it again instead of surfacing a false failure.
             if case .found(let profile) = await fetchProfile(userID: user.id) {
                 await backfillProviderIdentityIfNeeded(
@@ -273,6 +295,14 @@ final class AuthService: ObservableObject {
             }
             self.lastError = "Profile bootstrap: \(error.localizedDescription)"
         }
+    }
+
+    private func clearStaleLocalSession(reason: String) async {
+        Self.logger.warning("Clearing stale local auth session: \(reason, privacy: .public)")
+        try? await supabase.auth.signOut(scope: .local)
+        session = nil
+        profile = nil
+        lastError = nil
     }
 
     private func backfillProviderIdentityIfNeeded(
@@ -375,6 +405,18 @@ final class AuthService: ObservableObject {
         if error.code == "PGRST116" { return true }
         let lower = error.message.lowercased(with: Locale(identifier: "en_US_POSIX"))
         return lower.contains("0 rows") || lower.contains("no rows")
+    }
+
+    private static func isDeletedAuthUserProfileError(_ error: Error) -> Bool {
+        guard let postgrestError = error as? PostgrestError else { return false }
+        guard postgrestError.code == "23503" else { return false }
+
+        let message = postgrestError.message.lowercased(with: Locale(identifier: "en_US_POSIX"))
+        let detail = postgrestError.detail?.lowercased(with: Locale(identifier: "en_US_POSIX")) ?? ""
+        return message.contains("profiles_id_fkey") ||
+            message.contains("foreign key") ||
+            detail.contains("profiles_id_fkey") ||
+            detail.contains("auth.users")
     }
 
     private static func providerEmail(for user: User, fallback: String?) -> String? {

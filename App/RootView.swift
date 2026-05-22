@@ -33,6 +33,16 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.32), value: app.flow)
+        .accessibilityIdentifier("root.\(flowIdentifier)")
+    }
+
+    private var flowIdentifier: String {
+        switch app.flow {
+        case .splash: return "splash"
+        case .onboarding: return "onboarding"
+        case .auth: return "auth"
+        case .main: return "main"
+        }
     }
 
     private func runAppleSignIn() {

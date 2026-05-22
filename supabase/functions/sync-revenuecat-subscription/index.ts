@@ -137,6 +137,57 @@ function normalizeTier(value: unknown): PlanTier | null {
   return value === "free" || value === "plus" || value === "pro" ? value : null;
 }
 
+function safeLogText(value: unknown, maxLength = 180): string {
+  return String(value)
+    .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+    .slice(0, maxLength);
+}
+
+async function sendAccountSyncPush(params: {
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  userID: string;
+  tier: PlanTier;
+  status: string;
+}) {
+  if (params.tier === "free") return;
+  const planName = params.tier === "pro" ? "Pro" : "Plus";
+  const response = await fetch(
+    `${params.supabaseUrl}/functions/v1/send-push-notification`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${params.serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: params.userID,
+        kind: "account_updates",
+        title: `${planName} plan aktif`,
+        body: `RiskDetected ${planName} üyeliğin hesabına tanımlandı.`,
+        data: {
+          destination: "profile",
+          source: "revenuecat_sync",
+          tier: params.tier,
+          status: params.status,
+        },
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    console.warn(
+      "Account sync push failed",
+      JSON.stringify({
+        user_id: params.userID,
+        tier: params.tier,
+        status: response.status,
+        body: safeLogText(await response.text()),
+      }),
+    );
+  }
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return json(405, { error: "method_not_allowed" });
@@ -244,6 +295,11 @@ serve(async (req) => {
     .filter(([, value]) => isActiveEntitlement(value))
     .map(([key]) => key);
   const status = resolved.tier === "free" ? "inactive" : "active";
+  const { data: previousSubscription } = await supabase
+    .from("user_subscriptions")
+    .select("tier,status")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   await supabase.from("user_subscriptions").upsert({
     user_id: user.id,
@@ -262,6 +318,23 @@ serve(async (req) => {
     .from("profiles")
     .update({ tier: resolved.tier })
     .eq("id", user.id);
+
+  const previousTier = normalizeTier(previousSubscription?.tier);
+  const previousStatus = typeof previousSubscription?.status === "string"
+    ? previousSubscription.status
+    : null;
+  if (
+    resolved.tier !== "free" &&
+    (previousTier !== resolved.tier || previousStatus !== status)
+  ) {
+    await sendAccountSyncPush({
+      supabaseUrl,
+      serviceRoleKey,
+      userID: user.id,
+      tier: resolved.tier,
+      status,
+    });
+  }
 
   return json(200, {
     ok: true,

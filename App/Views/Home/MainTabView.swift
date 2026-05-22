@@ -26,6 +26,7 @@ struct MainTabView: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
+        .accessibilityIdentifier("main_tab.\(app.activeTab.rawValue)")
         .sheet(isPresented: $showQuickSourceSheet) {
             PhotoSourceSheet(
                 onCamera: {

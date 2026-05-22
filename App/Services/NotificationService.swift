@@ -13,6 +13,8 @@ final class NotificationService: NSObject, ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var lastDeviceToken: String?
     @Published private(set) var isRegistering = false
+    @Published var pendingAnalysisHistoryID: UUID?
+    @Published var pendingDestinationTab: RDTab?
 
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "NotificationService")
     private let supabase = SupabaseService.shared
@@ -141,7 +143,47 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound, .badge]
+        let kind = notification.request.content.userInfo["kind"] as? String
+        if kind == "analysis_complete" || kind == "report_ready" {
+            return []
+        }
+        return [.banner, .sound, .badge]
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        let userInfo = response.notification.request.content.userInfo
+        let kind = userInfo["kind"] as? String
+        let data = userInfo["data"] as? [String: Any]
+        if kind == "report_ready" ||
+            data?["destination"] as? String == "reports" {
+            await MainActor.run {
+                NotificationService.shared.pendingDestinationTab = .reports
+            }
+            return
+        }
+        if kind == "account_updates" ||
+            data?["destination"] as? String == "profile" {
+            await MainActor.run {
+                NotificationService.shared.pendingDestinationTab = .profile
+            }
+            return
+        }
+        let rawAnalysisID = (data?["analysis_id"] as? String) ??
+            (userInfo["analysis_id"] as? String) ??
+            ((userInfo["data"] as? String).flatMap { rawData in
+                guard let bytes = rawData.data(using: .utf8),
+                      let json = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any] else {
+                    return nil
+                }
+                return json["analysis_id"] as? String
+            })
+        guard let rawAnalysisID, let analysisID = UUID(uuidString: rawAnalysisID) else { return }
+        await MainActor.run {
+            NotificationService.shared.pendingAnalysisHistoryID = analysisID
+        }
     }
 }
 

@@ -8,6 +8,8 @@ struct OnboardingPaywallV2View: View {
         PaywallView(
             onClose: onClose,
             onSubscribe: onSubscribe,
+            source: .onboardingV2,
+            variantID: OnboardingPersonalPlanContext.variantID,
             layout: .plusFocused
         )
     }

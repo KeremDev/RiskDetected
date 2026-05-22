@@ -58,6 +58,7 @@ enum QuickScanSource {
 
 @MainActor
 final class AppState: ObservableObject {
+    private static let onboardingCompletedKey = "rd.onboarding.completed"
     private static let darkModeKey = "rd.theme.darkModeEnabled"
     private static let themePreferenceKey = "rd.theme.preference"
     private static let languagePreferenceKey = "rd.language.preference"
@@ -94,17 +95,22 @@ final class AppState: ObservableObject {
     let auth: AuthService
     let subscriptions: any SubscriptionManaging
 
+    private var pendingNotificationAnalysisID: UUID?
     private var cancellables = Set<AnyCancellable>()
 
     init(
         auth: AuthService? = nil,
         subscriptions: (any SubscriptionManaging)? = nil
     ) {
+        #if DEBUG
+        Self.prepareForUITestLaunchIfNeeded()
+        #endif
+
         let resolved = auth ?? AuthService()
         let resolvedSubscriptions = subscriptions ?? RevenueCatSubscriptionManager.shared
         self.auth = resolved
         self.subscriptions = resolvedSubscriptions
-        self.hasSeenOnboarding = UserDefaults.standard.bool(forKey: "rd.onboarding.completed")
+        self.hasSeenOnboarding = UserDefaults.standard.bool(forKey: Self.onboardingCompletedKey)
         let storedTheme = UserDefaults.standard.string(forKey: Self.themePreferenceKey)
             .flatMap(RDThemePreference.init(rawValue:))
         let resolvedTheme = storedTheme ?? (UserDefaults.standard.bool(forKey: Self.darkModeKey) ? .dark : .system)
@@ -119,11 +125,31 @@ final class AppState: ObservableObject {
         resolvedSubscriptions.configure()
         observeAuth()
         observeSubscriptions()
+        observeNotificationRouting()
+
+        #if DEBUG
+        if Self.isUITestResetLaunch {
+            flow = .onboarding
+            Task { await resolved.resetLocalSessionForUITests() }
+            return
+        }
+        #endif
+
         Task { await bootstrap() }
     }
 
     func bootstrap() async {
         try? await Task.sleep(nanoseconds: 800_000_000)
+
+        #if DEBUG
+        if Self.isUITestResetLaunch {
+            await auth.resetLocalSessionForUITests()
+            profile = nil
+            applyTier(displayTier(profileTier: .free, subscriptionTier: .free))
+            flow = .onboarding
+            return
+        }
+        #endif
 
         if auth.isAuthenticated {
             // Profile observer'ı zaten bağladığımız için fetch otomatik tetiklenir,
@@ -135,8 +161,8 @@ final class AppState: ObservableObject {
             await syncBackendSubscription()
             await auth.refreshProfile()
             await subscriptions.loadOfferings()
-            activeTab = .home
             flow = .main
+            routePendingNotificationIfReady(defaultTab: .home)
             return
         }
 
@@ -145,14 +171,14 @@ final class AppState: ObservableObject {
 
     func finishOnboarding() {
         hasSeenOnboarding = true
-        UserDefaults.standard.set(true, forKey: "rd.onboarding.completed")
+        UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
         if auth.isAuthenticated {
             Task {
                 await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
                 await self.sendWelcomeEmailIfPossible()
             }
-            activeTab = .home
             flow = .main
+            routePendingNotificationIfReady(defaultTab: .home)
         } else {
             flow = .auth
         }
@@ -161,8 +187,8 @@ final class AppState: ObservableObject {
     /// Auth tarafı zaten signedIn yayınladığında otomatik geçilecek; manuel çağrıyı
     /// AuthView'in geçici "demo giriş" senaryosu için saklıyoruz.
     func signIn() {
-        activeTab = .home
         flow = .main
+        routePendingNotificationIfReady(defaultTab: .home)
     }
 
     func signOut() {
@@ -215,6 +241,25 @@ final class AppState: ObservableObject {
         return preference
     }
 
+    #if DEBUG
+    private static var isUITestResetLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_RESET_STATE")
+    }
+
+    private static func prepareForUITestLaunchIfNeeded() {
+        guard isUITestResetLaunch else { return }
+        let defaults = UserDefaults.standard
+        [
+            onboardingCompletedKey,
+            "rd.onboarding.v2.pendingAnswers",
+            "rd.theme.darkModeEnabled",
+            "rd.theme.preference",
+            "rd.language.preference",
+            "rd.paywall.funnelSessionID",
+        ].forEach { defaults.removeObject(forKey: $0) }
+    }
+    #endif
+
     // MARK: - Observation
 
     /// Combine .sink ile auth state'ini SENKRON olarak mirror'lar.
@@ -246,13 +291,13 @@ final class AppState: ObservableObject {
                         await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
                         await self.sendWelcomeEmailIfPossible()
                     }
-                    self.activeTab = .home
                     if self.flow == .onboarding && !self.hasSeenOnboarding {
                         return
                     }
                     if self.flow != .main {
                         self.flow = .main
                     }
+                    self.routePendingNotificationIfReady(defaultTab: .home)
                 } else if self.flow == .main {
                     Task { await self.subscriptions.identify(userID: nil) }
                     self.flow = .auth
@@ -267,6 +312,44 @@ final class AppState: ObservableObject {
                 self?.authError = err
             }
             .store(in: &cancellables)
+    }
+
+    private func observeNotificationRouting() {
+        NotificationService.shared.$pendingAnalysisHistoryID
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] analysisID in
+                guard let self, let analysisID else { return }
+                self.pendingNotificationAnalysisID = analysisID
+                self.routePendingNotificationIfReady()
+            }
+            .store(in: &cancellables)
+
+        NotificationService.shared.$pendingDestinationTab
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] tab in
+                guard let self, let tab else { return }
+                self.routePendingNotificationIfReady(defaultTab: tab)
+                if self.flow == .main, self.auth.isAuthenticated {
+                    NotificationService.shared.pendingDestinationTab = nil
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func routePendingNotificationIfReady(defaultTab: RDTab? = nil) {
+        guard flow == .main, auth.isAuthenticated else {
+            if let defaultTab, pendingNotificationAnalysisID == nil {
+                activeTab = defaultTab
+            }
+            return
+        }
+        if pendingNotificationAnalysisID != nil {
+            activeTab = .analyses
+            pendingNotificationAnalysisID = nil
+            NotificationService.shared.pendingAnalysisHistoryID = nil
+        } else if let defaultTab {
+            activeTab = defaultTab
+        }
     }
 
     private func observeSubscriptions() {

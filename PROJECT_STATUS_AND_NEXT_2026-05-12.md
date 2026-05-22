@@ -136,7 +136,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
   - standart PDF, detaylı PDF ve XLSX metadata alanları aynı profil varsayılanlarını kullanıyor.
 - Standart PDF bulgu detay kartlarında Risk/Kanıt ve öneri metinleri karakter uzunluğuna göre dinamik satır yüksekliği kullanıyor; kısa bulgularda minimum yükseklik korunuyor.
 - Detaylı risk analizi PDF tablolarında uzun "tehlikeli durum / davranış" metinleri için satır yüksekliği değişken hesaplanıyor.
-- Risk analizi PDF/XLSX çıktılarında `Sorumlu` alanı geçici sabit değer olarak `İşveren/Vekili, Bölüm Yöneticisi` kullanacak şekilde ayarlandı.
+- Risk analizi PDF/XLSX çıktılarında V1 karar uygulandı: `Sorumlu` alanı kaldırıldı, `Termin` risk seviyesine göre otomatik öneriliyor.
 - Rapor PDF başlıklarında şirket logosu tanımlıysa RiskDetected yerine şirket logosu kullanılıyor.
 - PDF rapor başlıklarında sayfa numarası `Sayfa X/Y` formatında toplam sayfayı gösterecek şekilde güncellendi.
 - Sonuç detayında, kartlarda, PDF ve Excel raporlarında `Kök neden` alanı gösteriliyor.
@@ -248,6 +248,10 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
   - onboarding cevaplarına göre kısa kişiselleştirme ekler;
   - `profiles.welcome_email_sent_at/status/error` alanlarıyla duplicate gönderim engellenir;
   - production DB migration ve Edge Function deploy tamamlandı.
+- 2026-05-22 Hoş geldin maili TestFlight gerçek cihaz QA tamamlandı:
+  - yeni kullanıcıda onboarding cevapları kaydoluyor;
+  - welcome mail başarılı şekilde gidiyor;
+  - tekrar girişte duplicate mail gönderimi engelleniyor.
 - 2026-05-20 Plus satın alma sonrası Pro görünme hatası düzeltildi; RevenueCat webhook/sync ve iOS tier çözümü güncellendi.
 - 2026-05-20 RevenueCat Plus/Pro plan yansıması ve Profil dark tema düzeltmeleri sonrası iOS Simulator Debug build/run başarılı.
 
@@ -284,6 +288,10 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - App Store Connect subscription ürünleri RevenueCat ile bire bir eşleşiyor:
      - Plus monthly/yearly
      - Pro monthly/yearly
+   - Done: App Store Connect abonelik ticari ayarları tamamlandı:
+     - Yıllık Plus/Pro ürünlerinde 7 gün ücretsiz deneme var.
+     - Yıllık fiyat aylık fiyat x 11 mantığıyla ayarlandı.
+     - Aylık Plus/Pro ürünlerinde deneme veya indirim yok.
    - TestFlight sandbox Plus satın alma testi geçti:
      - `riskdetected_plus_monthly`
      - `entitlement_ids = [plus]`
@@ -291,6 +299,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
      - Supabase `profiles.tier = plus`
    - Pro satın alma, restore purchase, iptal/expiration/downgrade kontrolleri tamamlandı.
    - Done: TestFlight paywall USD görünümü app tarafında ele alındı; StoreKit/RevenueCat Türkçe/Türkiye bağlamında USD döndürürse paywall TL fallback fiyatlarını gösteriyor.
+   - Follow-up: Yeni App Store Connect deneme/fiyat ayarlarının RevenueCat packages ve app paywall tarafında doğru göründüğü test edilecek.
 
 4. Son manuel QA
    - Done: 2026-05-16 simülatörde final manuel QA kapatıldı.
@@ -320,24 +329,29 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 ### P1 - Güvenilirlik ve Operasyon
 
 1. APNs gerçek push teslimatı
-   - Apple Developer'da APNs `.p8` key oluşturulmalı.
-   - Supabase secrets girilmeli:
+   - Done: Apple Developer'da APNs `.p8` key oluşturuldu.
+   - Done: Supabase secrets girildi ve varlığı doğrulandı:
      - `APNS_KEY_ID`
      - `APNS_TEAM_ID`
      - `APNS_BUNDLE_ID`
      - `APNS_PRIVATE_KEY`
      - `APNS_ENV`
-   - TestFlight/gerçek cihaz push testi yapılmalı.
-   - Analiz tamamlandı, rapor hazır ve güvenlik/account eventleri backend'den tetiklenmeli.
+   - Done: `send-push-notification` production deploy edildi; son doğrulamada active version `21`.
+   - Follow-up: TestFlight/gerçek cihaz push teslimatı test edilecek.
+   - Follow-up: rapor hazır ve güvenlik/account eventleri için backend push triggerları ayrıca bağlanacak.
 
 2. Bildirimler, üyelik e-postası ve asenkron analiz devamlılığı
    - Done: Kullanıcı üyeliği başarıyla oluştuğunda otomatik "RiskDetected'a hoş geldiniz" e-postası için backend/iOS tetikleyici eklendi.
-   - Follow-up: yeni TestFlight build'i ile gerçek cihazda yeni kullanıcı kaydı, mail teslimi ve duplicate engelleme uçtan uca test edilecek.
-   - Bildirim izin akışı, cihaz token kaydı, kullanıcı bildirim tercihleri, APNs backend triggerları ve TestFlight gerçek cihaz teslimatı uçtan uca gözden geçirilecek.
-   - Analiz başlatıldıktan sonra kullanıcı uygulamadan çıksa bile analiz backend tarafında devam edecek.
-   - Analiz tamamlandığında kullanıcıya push bildirim gönderilecek.
-   - Uygulama tekrar açıldığında tamamlanan analiz sonucu senkron şekilde görünmeli; yarım kalan lokal loading ekranına bağımlı kalmamalı.
-   - Hata/timeout durumlarında kullanıcıya destek kodu ve tekrar deneme yolu gösterilecek.
+   - Done: TestFlight gerçek cihazda yeni kullanıcı kaydı, onboarding cevapları, mail teslimi ve duplicate engelleme uçtan uca doğrulandı.
+   - Done: Analiz akışı kuyruklu modele geçirildi; `analysis_jobs` kuyruğu, `queued` status, worker operasyon alanları ve cron fallback production DB'ye uygulandı.
+   - Done: `analyze` enqueue modeline geçti; `process-analysis-jobs` worker eklendi ve production deploy edildi.
+   - Done: Analiz tamamlanınca backend `analysis_complete` push event'i tetikliyor; push hedefi Analiz geçmişi.
+   - Done: PDF/XLSX rapor hazır olduğunda `report_ready` push event'i tetikleniyor; push hedefi Raporlar.
+   - Done: RevenueCat abonelik/sync ve hesap silme tamamlama akışlarında `account_updates` push event'i tetikleniyor; push hedefi Profil.
+   - Done: iOS analiz ekranı backend status polling ile sonucu bekliyor; uygulama kapanırsa backend job devam ediyor.
+   - Done: Uygulama foreground'dayken `analysis_complete` banner'ı bastırılıyor; push tap Analiz geçmişi/Raporlar/Profil sekmelerine yönlendiriyor.
+   - Follow-up: TestFlight gerçek cihazda izin, token kaydı, uygulamadan çıkınca analiz devamı, analiz/rapor/account push teslimi ve sekme yönlendirmesi uçtan uca test edilecek.
+   - Follow-up: Hata/timeout durumlarında kullanıcı mesajı ve destek kodu gerçek cihazda doğrulanacak.
 
 3. AI maliyet ve quota operasyonu
    - Paid Gemini API key `GEMINI_API_KEY_PAID` olarak Supabase secrets'a girilmeli; opsiyonel yedek için `GEMINI_API_KEY_PAID_SECONDARY` kullanılabilir.
@@ -395,9 +409,10 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Follow-up: firma bazlı adres, sorumlu kişi, varsayılan termin/sorumlu gibi ek alanlar v2'de değerlendirilecek.
 
 3. Termin tarihi ve sorumlu alanları
-   - Termin tarihi ve sorumlu alanlarının kullanıcıya mı bırakılacağı, sabit varsayılan mı geleceği, yoksa firma/profil/analiz türüne göre önerileceği netleştirilecek.
-   - PDF/XLSX raporlarında `Sorumlu` ve `Termin` kolonlarının üretim mantığı bu karara göre güncellenecek.
-   - Kullanıcı düzenleyebilirse sonuç ekranı, rapor oluşturma ekranı ve arşiv tekrar üretim akışı birlikte ele alınacak.
+   - Done: V1 ürün kararı uygulandı ve çalışıyor.
+   - Done: `Sorumlu` kolonu raporlardan kaldırıldı.
+   - Done: `Termin` alanı risk seviyesine göre otomatik öneriliyor.
+   - Later: firma/bölüm bazlı sorumlu şablonları V2'de ayrıca değerlendirilecek.
 
 4. Pro report defaults
    - Done: profil logosu, şirket, uzman adı, unvan, belge no, firma bilgisi ve varsayılan metod otomatik rapor varsayılanı olarak kullanılıyor.

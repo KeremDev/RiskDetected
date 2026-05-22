@@ -78,7 +78,6 @@ struct PDFReportOptions: Equatable {
 
 final class PDFReportService: @unchecked Sendable {
     static let shared = PDFReportService()
-    private static let riskAssessmentResponsible = "İşveren/Vekili, Bölüm Yöneticisi"
 
     private struct AssessmentTableRow {
         let ordinal: Int
@@ -553,8 +552,8 @@ final class PDFReportService: @unchecked Sendable {
         let x: CGFloat = 32
         let y: CGFloat = 82
         let headerH: CGFloat = 44
-        let widths: [CGFloat] = [22, 52, 124, 58, 22, 22, 22, 36, 54, 150, 130, 44, 42]
-        let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "F", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Mevzuat", "Sorumlu", "Termin"]
+        let widths: [CGFloat] = [22, 54, 130, 62, 24, 24, 24, 38, 58, 168, 140, 58]
+        let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "F", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Mevzuat", "Termin"]
 
         drawGridHeader(x: x, y: y, widths: widths, height: headerH, headers: headers, fill: .rdPDFTableBlue)
 
@@ -600,7 +599,6 @@ final class PDFReportService: @unchecked Sendable {
             finding.fkBand.label,
             actionTextWithRootCause(for: finding),
             finding.references,
-            Self.riskAssessmentResponsible,
             suggestedTerm(for: finding.fkBand.level),
         ]
     }
@@ -624,7 +622,7 @@ final class PDFReportService: @unchecked Sendable {
     private func assessmentRowHeight(input: ReportInput, finding: Finding, ordinal: Int) -> CGFloat {
         let isFineKinney = input.options.method == .fineKinney
         let widths: [CGFloat] = isFineKinney
-            ? [22, 52, 124, 58, 22, 22, 22, 36, 54, 150, 130, 44, 42]
+            ? [22, 54, 130, 62, 24, 24, 24, 38, 58, 168, 140, 58]
             : [22, 58, 132, 66, 26, 26, 38, 56, 170, 130, 54]
         let values = isFineKinney
             ? fineKinneyAssessmentValues(input: input, finding: finding, ordinal: ordinal)
@@ -950,11 +948,11 @@ final class PDFReportService: @unchecked Sendable {
 
     private func suggestedTerm(for level: RiskLevel) -> String {
         switch level {
-        case .critical: return "Hemen"
-        case .high: return "30 gün"
-        case .medium: return "90 gün"
-        case .low: return "Kontrol"
-        case .unknown: return "Belirle"
+        case .critical: return "Acil / 1-3 gün"
+        case .high: return "7 gün"
+        case .medium: return "15 gün"
+        case .low: return "30 gün"
+        case .unknown: return "Değerlendirilecek"
         }
     }
 }

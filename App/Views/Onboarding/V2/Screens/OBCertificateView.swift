@@ -50,6 +50,7 @@ struct OBCertificateView: View {
                                 title: item.title,
                                 subtitle: item.sub,
                                 isSelected: state.certificate == item.cert,
+                                accessibilityID: "onboarding.certificate.\(item.cert.rawValue.lowercased())",
                                 leading: {
                                     HelmetBadge(letter: item.cert.rawValue,
                                                 hatColor: item.hatColor,
@@ -69,11 +70,12 @@ struct OBCertificateView: View {
             }
 
             OBFooter {
-                OBPrimaryButton(title: "Devam", enabled: state.certificate != nil) { onNext() }
+                OBPrimaryButton(title: "Devam", enabled: state.certificate != nil, accessibilityID: "onboarding.certificate.continue") { onNext() }
                     .obStage(delay: 0.7)
             }
         }
         .background(Color.rdPaper)
+        .accessibilityIdentifier("onboarding.certificate")
     }
 }
 

@@ -20,6 +20,12 @@ struct AnalysisProgressUpdate: Equatable {
         message: "Analizi tamamlamak için uygun yedek model devreye alındı.",
         icon: "sparkles"
     )
+
+    static let queued = AnalysisProgressUpdate(
+        title: "Analiz kuyruğa alındı",
+        message: "Uygulamadan çıksan bile analiz backend tarafında devam edecek.",
+        icon: "clock.arrow.circlepath"
+    )
 }
 
 /// Analiz akışını orkestre eder:
@@ -100,8 +106,8 @@ final class AnalysisService {
             onProgress: onProgress
         )
 
-        // 4) Sonucu çek
-        return try await fetchResult(analysisID: analysisID)
+        // 4) Backend kuyruğa aldıktan sonra sonucu DB status ile izle.
+        return try await waitForCompletedResult(analysisID: analysisID, onProgress: onProgress)
     }
 
     /// Metin bazlı analiz akışı.
@@ -137,7 +143,7 @@ final class AnalysisService {
             onProgress: onProgress
         )
 
-        return try await fetchResult(analysisID: analysisID)
+        return try await waitForCompletedResult(analysisID: analysisID, onProgress: onProgress)
     }
 
     /// Geçmiş analizleri listeler.
@@ -444,6 +450,11 @@ final class AnalysisService {
                 .single()
                 .execute()
                 .value
+            await sendReportReadyNotificationIfPossible(
+                reportID: row.id,
+                requestID: requestID,
+                supportID: supportID
+            )
             return row
         } catch {
             Self.logger.error("Report metadata save failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
@@ -455,6 +466,33 @@ final class AnalysisService {
                 Self.logger.error("Report orphan cleanup failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) path=\(storagePath, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
             }
             throw AnalysisError.databaseFailed("PDF oluşturuldu ancak rapor arşiv kaydı tamamlanamadı. Destek kodu: \(supportID)")
+        }
+    }
+
+    private func sendReportReadyNotificationIfPossible(
+        reportID: UUID,
+        requestID: String,
+        supportID: String
+    ) async {
+        struct Body: Encodable {
+            let report_id: String
+            let request_id: String
+            let support_id: String
+        }
+
+        do {
+            try await supabase.functions.invoke(
+                RDConfig.sendReportReadyNotificationFunctionName,
+                options: FunctionInvokeOptions(
+                    body: Body(
+                        report_id: reportID.uuidString,
+                        request_id: requestID,
+                        support_id: supportID
+                    )
+                )
+            )
+        } catch {
+            Self.logger.error("Report ready notification failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(reportID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -1064,6 +1102,7 @@ final class AnalysisService {
                     RDConfig.analyzeFunctionName,
                     options: FunctionInvokeOptions(body: body)
                 )
+                onProgress?(.queued)
                 return
             } catch let FunctionsError.httpError(code, data) {
                 let payload = Self.functionErrorPayload(from: data)
@@ -1111,6 +1150,36 @@ final class AnalysisService {
 
     private static func analysisMode(for canvases: [AnalysisCanvas]) -> String {
         canvases.contains { $0.isPaid } ? "detailed" : "standard"
+    }
+
+    private func waitForCompletedResult(
+        analysisID: UUID,
+        onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)?
+    ) async throws -> AnalysisResultBundle {
+        let deadline = Date().addingTimeInterval(300)
+        var didShowQueued = false
+
+        while Date() < deadline {
+            try Task.checkCancellation()
+            let bundle = try await fetchResult(analysisID: analysisID)
+
+            switch bundle.analysis.status {
+            case "completed":
+                return bundle
+            case "failed":
+                throw AnalysisError.aiFailed(bundle.analysis.statusMessage ?? "Analiz arka planda tamamlanamadı. Lütfen tekrar dene.")
+            case "queued", "pending", "analyzing":
+                if !didShowQueued {
+                    onProgress?(.queued)
+                    didShowQueued = true
+                }
+                try await Task.sleep(nanoseconds: 2_000_000_000)
+            default:
+                try await Task.sleep(nanoseconds: 2_000_000_000)
+            }
+        }
+
+        throw AnalysisError.aiFailed("Analiz arka planda devam ediyor. Tamamlandığında bildirim göndereceğiz; sonucu Geçmiş analizler ekranından açabilirsin.")
     }
 
     private func fetchResult(analysisID: UUID) async throws -> AnalysisResultBundle {
@@ -1475,6 +1544,7 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
     let kind: String
     let canvas: String
     let status: String
+    let statusMessage: String?
     let aiSummary: String?
     let totalScoreFK: Double?
     let totalScoreM5: Int?
@@ -1491,6 +1561,7 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
         case kind
         case canvas
         case status
+        case statusMessage   = "status_message"
         case aiSummary      = "ai_summary"
         case totalScoreFK   = "total_score_fk"
         case totalScoreM5   = "total_score_m5"

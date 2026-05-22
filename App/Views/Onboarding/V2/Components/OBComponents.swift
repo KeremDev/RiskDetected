@@ -183,6 +183,7 @@ struct OBCard<Leading: View, Trailing: View>: View {
     let subtitle: String?
     let isSelected: Bool
     var multi: Bool = false
+    var accessibilityID: String?
     @ViewBuilder var leading: Leading
     @ViewBuilder var trailing: Trailing
     let action: () -> Void
@@ -192,6 +193,7 @@ struct OBCard<Leading: View, Trailing: View>: View {
         subtitle: String? = nil,
         isSelected: Bool,
         multi: Bool = false,
+        accessibilityID: String? = nil,
         @ViewBuilder leading: () -> Leading,
         @ViewBuilder trailing: () -> Trailing,
         action: @escaping () -> Void
@@ -200,6 +202,7 @@ struct OBCard<Leading: View, Trailing: View>: View {
         self.subtitle = subtitle
         self.isSelected = isSelected
         self.multi = multi
+        self.accessibilityID = accessibilityID
         self.leading = leading()
         self.trailing = trailing()
         self.action = action
@@ -235,6 +238,7 @@ struct OBCard<Leading: View, Trailing: View>: View {
             .shadow(color: .black.opacity(isSelected ? 0.08 : 0.05), radius: isSelected ? 14 : 8, y: isSelected ? 8 : 4)
         }
         .buttonStyle(OBPressStyle())
+        .accessibilityIdentifier(accessibilityID ?? "ob.card.\(obIdentifierSlug(title))")
     }
 
     @ViewBuilder
@@ -266,11 +270,12 @@ extension OBCard where Trailing == EmptyView {
         subtitle: String? = nil,
         isSelected: Bool,
         multi: Bool = false,
+        accessibilityID: String? = nil,
         @ViewBuilder leading: () -> Leading,
         action: @escaping () -> Void
     ) {
         self.init(title: title, subtitle: subtitle, isSelected: isSelected, multi: multi,
-                  leading: leading, trailing: { EmptyView() }, action: action)
+                  accessibilityID: accessibilityID, leading: leading, trailing: { EmptyView() }, action: action)
     }
 }
 
@@ -289,6 +294,7 @@ struct OBPrimaryButton: View {
     var trailingIcon: String? = "arrow.right"
     var enabled: Bool = true
     var style: Style = .onyx
+    var accessibilityID: String?
     let action: () -> Void
 
     enum Style { case onyx, green }
@@ -320,6 +326,7 @@ struct OBPrimaryButton: View {
         }
         .buttonStyle(OBPressStyle())
         .disabled(!enabled)
+        .accessibilityIdentifier(accessibilityID ?? "ob.primary.\(obIdentifierSlug(title))")
         .onAppear {
             guard enabled else { return }
             animateArrow()
@@ -368,6 +375,14 @@ struct OBPrimaryButton: View {
         case .green: return Color.rdGreen.opacity(0.32)
         }
     }
+}
+
+private func obIdentifierSlug(_ value: String) -> String {
+    value
+        .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "tr_TR"))
+        .lowercased(with: Locale(identifier: "en_US_POSIX"))
+        .replacingOccurrences(of: "[^a-z0-9]+", with: "_", options: .regularExpression)
+        .trimmingCharacters(in: CharacterSet(charactersIn: "_"))
 }
 
 // MARK: - Footer container

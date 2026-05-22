@@ -37,6 +37,7 @@ struct CompanyPickerSheet: View {
             .background(Color.rdPaper)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier("company_picker.root")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Kapat") { dismiss() }
@@ -117,6 +118,7 @@ struct CompanyPickerSheet: View {
             }
             .disabled(companies.count >= companyLimit)
             .opacity(companies.count >= companyLimit ? 0.58 : 1)
+            .accessibilityIdentifier("company_picker.add")
         }
     }
 
@@ -143,6 +145,7 @@ struct CompanyPickerSheet: View {
                 dismiss()
                 onPaywall()
             }
+            .accessibilityIdentifier("company_picker.paywall")
         }
         .padding(16)
         .background(Color.rdWhite)

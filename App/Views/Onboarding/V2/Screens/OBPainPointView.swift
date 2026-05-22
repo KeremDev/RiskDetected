@@ -72,7 +72,7 @@ struct OBPainPointView: View {
             }
 
             OBFooter {
-                OBPrimaryButton(title: "Devam") { onNext() }
+                OBPrimaryButton(title: "Devam", accessibilityID: "onboarding.pain.continue") { onNext() }
                     .obStage(delay: 0.78)
                 Button {
                     OBHaptic.soft(); onSkip()
@@ -83,10 +83,12 @@ struct OBPainPointView: View {
                         .padding(.vertical, 6)
                 }
                 .obStage(delay: 0.88)
+                .accessibilityIdentifier("onboarding.pain.skip")
             }
         }
         .background(Color.rdPaper)
         .onAppear { runCheckSequence() }
+        .accessibilityIdentifier("onboarding.pain_point")
     }
 
     private func painCard(icon: String, text: String, isChecked: Bool) -> some View {

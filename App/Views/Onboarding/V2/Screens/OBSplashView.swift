@@ -7,79 +7,63 @@ struct OBSplashView: View {
     @State private var floatY: CGFloat = 0
 
     var body: some View {
-        ZStack {
-            backdrop
+        GeometryReader { geo in
+            ZStack(alignment: .bottom) {
+                // Background tinted to match image's bottom curve color
+                // (image curve has subtle gray, not pure white — match it
+                // so the transition between image bottom and solid bg is
+                // invisible).
+                Color(hex: "#F4F6F4").ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer(minLength: 24)
-                hero
-                    .offset(y: floatY)
-                    .onAppear {
-                        withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
-                            floatY = -5
-                        }
-                        animateArrow()
-                    }
+                // Image pinned to top — takes ~70% of screen height. Image
+                // already has natural white curve at its bottom that blends
+                // seamlessly with the white safe-area below (no card needed).
+                Image("SplashBg")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: geo.size.width, height: geo.size.height * 0.87)
+                    .clipped()
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .ignoresSafeArea(edges: .top)
 
-                Spacer(minLength: 12)
-
-                RDLogo(size: 22)
-                    .obStage(delay: 1.0)
-                    .padding(.bottom, 14)
-
-                VStack(spacing: 10) {
+                // Bottom content — sits in white area
+                VStack(spacing: 0) {
                     Text(attributedTitle)
-                        .font(.system(size: 32, weight: .bold))
-                        .tracking(-1.0)
+                        .font(.system(size: 30, weight: .bold))
+                        .tracking(-0.9)
                         .multilineTextAlignment(.center)
-                        .obStage(delay: 1.06)
+                        .padding(.bottom, 12)
+                        .obStage(delay: 0.18)
 
                     Text("Sahada gördüğünü dakikalar içinde\ndenetime hazır rapora dönüştür.")
-                        .font(.system(size: 15))
+                        .font(.system(size: 14))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
-                        .lineSpacing(3)
+                        .lineSpacing(2)
                         .frame(maxWidth: 320)
-                        .obStage(delay: 1.14)
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 22)
+                        .padding(.bottom, 24)
+                        .obStage(delay: 0.26)
 
-                Button {
-                    OBHaptic.light(); onNext()
-                } label: {
-                    HStack(spacing: 10) {
-                        Text("Başlayalım")
-                            .font(.system(size: 16, weight: .semibold))
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 15, weight: .bold))
-                            .offset(x: arrowOffset)
-                            .opacity(arrowOpacity)
+                    OBPrimaryButton(title: "Başlayalım", accessibilityID: "onboarding.splash.start") { onNext() }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 20)
+                        .obStage(delay: 0.34)
+
+                    HStack(spacing: 6) {
+                        Capsule().fill(Color.rdOnyx).frame(width: 20, height: 6)
+                        Circle().fill(Color.rdOnyx.opacity(0.14)).frame(width: 6, height: 6)
+                        Circle().fill(Color.rdOnyx.opacity(0.14)).frame(width: 6, height: 6)
+                        Circle().fill(Color.rdOnyx.opacity(0.14)).frame(width: 6, height: 6)
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Color.rdOnyx)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .shadow(color: Color.rdOnyx.opacity(0.2), radius: 28, y: 10)
+                    .padding(.bottom, 28)
+                    .obStage(delay: 0.42)
                 }
-                .buttonStyle(OBPressStyle())
-                .padding(.horizontal, 24)
-                .obStage(delay: 1.22)
-
-                HStack(spacing: 6) {
-                    Capsule().fill(Color.rdOnyx).frame(width: 20, height: 6)
-                    Circle().fill(Color.rdOnyx.opacity(0.14)).frame(width: 6, height: 6)
-                    Circle().fill(Color.rdOnyx.opacity(0.14)).frame(width: 6, height: 6)
-                    Circle().fill(Color.rdOnyx.opacity(0.14)).frame(width: 6, height: 6)
-                }
-                .padding(.top, 16)
-                .padding(.bottom, 28)
-                .obStage(delay: 1.3)
+                .frame(maxWidth: .infinity)
             }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white)
+        .ignoresSafeArea()
+        .accessibilityIdentifier("onboarding.splash")
     }
 
     private var attributedTitle: AttributedString {
@@ -111,7 +95,6 @@ struct OBSplashView: View {
             ForEach(Array(OBSplashChip.all.enumerated()), id: \.offset) { i, chip in
                 OBSplashChipView(chip: chip, index: i)
                     .offset(x: chip.x, y: chip.y)
-                    .obStage(delay: 0.36 + Double(i) * 0.08)
             }
         }
         .frame(width: 340, height: 340)
@@ -458,49 +441,43 @@ struct OBSplashChip: Identifiable {
     let floatPeriod: Double
     let floatDelay: Double
 
+    // Sequential clockwise reveal: top → right → bottom → left
+    // Each chip fades in, stays ~1.4s, fades out. Next starts after
+    // 1.2s offset so 2-3 chips visible simultaneously.
     static let all: [OBSplashChip] = [
-        // Sol üst — ilk karşılama (kısa, tek satır)
-        .init(emoji: "👋", text: "Seni tanıyalım",
-              accent: Color(hex: "#F0A400"),
-              x: -96, y: -134, floatPeriod: 6.4, floatDelay: 0.0),
-        // Üst — sektörüne özel
-        .init(emoji: "🏗️", text: "Sektörüne özel",
+        .init(emoji: "🏗️", text: "Sektöre Özel",
               accent: Color.rdOnyx,
-              x: 8, y: -168, floatPeriod: 6.8, floatDelay: 0.4),
-        // Sağ üst — fotoğraf (2 satır — uzun)
-        .init(emoji: "📸", text: "Fotoğraftan\nanaliz",
+              x: 8, y: -158, floatPeriod: 5.0, floatDelay: 0.0),
+        .init(emoji: "📸", text: "Fotoğraf\nAnaliz",
               accent: Color.rdInfo,
-              x: 96, y: -130, floatPeriod: 6.0, floatDelay: 0.8),
-        // Sağ — Fine-Kinney / 5×5 (2 satır)
-        .init(emoji: "📋", text: "Fine-Kinney\n· 5×5",
-              accent: Color.rdHigh,
-              x: 124, y: 10, floatPeriod: 6.6, floatDelay: 1.2),
-        // Sağ alt — risk analizi
+              x: 120, y: 8, floatPeriod: 5.2, floatDelay: 0.3),
         .init(emoji: "🔍", text: "Risk Analizi",
               accent: Color.rdCritical,
-              x: 100, y: 132, floatPeriod: 6.2, floatDelay: 1.6),
-        // Alt — rapor hazır
-        .init(emoji: "✅", text: "Rapor hazır",
+              x: -8, y: 168, floatPeriod: 5.4, floatDelay: 0.6),
+        .init(emoji: "✅", text: "Rapor",
               accent: Color.rdGreen,
-              x: -8, y: 168, floatPeriod: 6.8, floatDelay: 2.0),
-        // Sol — profesyonel asistan (2 satır)
-        .init(emoji: "⛑️", text: "Profesyonel\nasistan",
-              accent: Color.rdGreenDark,
-              x: -118, y: 14, floatPeriod: 6.4, floatDelay: 2.4),
+              x: -126, y: 8, floatPeriod: 5.0, floatDelay: 0.9),
     ]
 }
+
+// Cycle params shared by chip view
+private let chipCycleStagger: Double = 1.2     // delay between consecutive chip entries
+private let chipVisibleDuration: Double = 1.4  // time fully visible
+private let chipFadeDuration: Double = 0.4
+private var chipCyclePeriod: Double { Double(OBSplashChip.all.count) * chipCycleStagger }
 
 struct OBSplashChipView: View {
     let chip: OBSplashChip
     let index: Int
-    @State private var bobY: CGFloat = 0
+    @State private var visible: Bool = false
+    @State private var scale: CGFloat = 0.85
 
     var body: some View {
         HStack(spacing: 7) {
             Text(chip.emoji)
                 .font(.system(size: 13))
             Text(chip.text)
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color.rdOnyx)
                 .lineSpacing(1)
                 .multilineTextAlignment(.leading)
@@ -510,7 +487,7 @@ struct OBSplashChipView: View {
                 .frame(width: 6, height: 6)
                 .overlay(Circle().stroke(chip.accent.opacity(0.22), lineWidth: 3))
         }
-        .padding(.horizontal, 11).padding(.vertical, 7)
+        .padding(.horizontal, 12).padding(.vertical, 8)
         .background(
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white)
@@ -519,14 +496,32 @@ struct OBSplashChipView: View {
             }
         )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: chip.accent.opacity(0.12), radius: 14, y: 6)
+        .shadow(color: chip.accent.opacity(0.14), radius: 14, y: 6)
         .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
-        .offset(y: bobY)
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + chip.floatDelay) {
-                withAnimation(.easeInOut(duration: chip.floatPeriod).repeatForever(autoreverses: true)) {
-                    bobY = -7
+        .opacity(visible ? 1 : 0)
+        .scaleEffect(scale)
+        .onAppear { runCycle() }
+    }
+
+    // Each chip cycles: fade in → visible → fade out → hidden → repeat.
+    // Initial delay = index * stagger so chips appear sequentially clockwise.
+    private func runCycle() {
+        let startDelay = Double(index) * chipCycleStagger
+        let hiddenAfterFadeOut = chipCyclePeriod - chipFadeDuration - chipVisibleDuration - chipFadeDuration
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(startDelay * 1_000_000_000))
+            while !Task.isCancelled {
+                withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: chipFadeDuration)) {
+                    visible = true
+                    scale = 1.0
                 }
+                try? await Task.sleep(nanoseconds: UInt64((chipFadeDuration + chipVisibleDuration) * 1_000_000_000))
+                withAnimation(.easeIn(duration: chipFadeDuration)) {
+                    visible = false
+                    scale = 0.9
+                }
+                try? await Task.sleep(nanoseconds: UInt64((chipFadeDuration + max(0, hiddenAfterFadeOut)) * 1_000_000_000))
+                scale = 0.85
             }
         }
     }

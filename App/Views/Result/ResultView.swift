@@ -986,8 +986,12 @@ struct ResultView: View {
         guard let company else { return options }
         var resolved = options
         resolved.companyID = company.id
-        resolved.companyName = company.name
-        resolved.companyInfo = company.hazardClass.title
+        if resolved.companyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            resolved.companyName = company.name
+        }
+        if resolved.companyInfo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            resolved.companyInfo = company.hazardClass.title
+        }
         return resolved
     }
 
@@ -1073,6 +1077,7 @@ struct ReportSettingsSheet: View {
     @State private var selectedLogoItem: PhotosPickerItem?
     @State private var outputFormat: ReportOutputFormat = .pdf
     @State private var showCompanyPicker = false
+    @State private var showReportOverrides = false
 
     private var isDarkMode: Bool { colorScheme == .dark }
     private var lockedCardBackground: Color {
@@ -1120,7 +1125,7 @@ struct ReportSettingsSheet: View {
                             methodSection
                             outputFormatSection
                             identitySection
-                            companyLogoSection
+                            reportOverridesSection
                         }
                         .transition(.asymmetric(
                             insertion: .move(edge: .top).combined(with: .opacity),
@@ -1140,6 +1145,7 @@ struct ReportSettingsSheet: View {
             }
             .navigationTitle(RDLocalization.shared.text(.reportCreateTitle, language: options.language))
             .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier("report.settings")
             .animation(.spring(response: 0.34, dampingFraction: 0.86), value: options.kind)
             .animation(.spring(response: 0.28, dampingFraction: 0.9), value: outputFormat)
             .toolbar {
@@ -1215,6 +1221,7 @@ struct ReportSettingsSheet: View {
                 .padding(.top, 2)
                 .padding(.bottom, 10)
                 .background(Color.rdPaper.opacity(0.98))
+                .accessibilityIdentifier("report.settings.generate")
         }
     }
 
@@ -1307,6 +1314,7 @@ struct ReportSettingsSheet: View {
         }
         .frame(minHeight: active && locked && kind == .riskAnalysis ? 286 : 118)
         .buttonStyle(RDPressableButtonStyle())
+        .accessibilityIdentifier("report.settings.kind.\(kind.rawValue)")
     }
 
     @ViewBuilder
@@ -1514,7 +1522,7 @@ struct ReportSettingsSheet: View {
     }
 
     private var companySelectionSection: some View {
-        settingsSection(title: "FİRMA") {
+        settingsSection(title: "RAPOR FİRMASI") {
             if accessTier.isPaid {
                 Button {
                     showCompanyPicker = true
@@ -1532,12 +1540,17 @@ struct ReportSettingsSheet: View {
                                 .font(.system(size: 14, weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                                 .lineLimit(1)
-                            Text(selectedCompany?.hazardClass.title ?? "Raporu firmasız oluşturabilir veya hızlı firma ekleyebilirsin.")
+                            Text(selectedCompany?.hazardClass.title ?? "Arşiv, filtre ve firma bazlı rapor için firma seçebilir veya hızlıca ekleyebilirsin.")
                                 .font(.system(size: 12, design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                                 .lineLimit(2)
                         }
                         Spacer()
+                        if selectedCompany != nil {
+                            Text("Değiştir")
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.rdGreenDark)
+                        }
                         Image(systemName: "chevron.right")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
@@ -1600,77 +1613,131 @@ struct ReportSettingsSheet: View {
     }
 
     private var identitySection: some View {
-        settingsSection(title: "OPSİYONEL BİLGİLER") {
+        settingsSection(title: "HAZIRLAYAN BİLGİLERİ") {
             VStack(spacing: 10) {
                 labeledField("Hazırlayan", text: $options.preparedBy, placeholder: profile?.displayName ?? "Ad Soyad")
                 labeledField("Unvan", text: $options.preparedTitle, placeholder: profile?.title ?? "İSG Uzmanı")
                 labeledField("Belge no", text: $options.certificateNumber, placeholder: profile?.certificateNumber ?? "Sertifika / belge no")
-                if selectedCompany == nil {
-                    labeledField("Firma", text: $options.companyName, placeholder: profile?.companyName ?? "Firma adı")
-                    labeledField("Firma bilgisi", text: $options.companyInfo, placeholder: profile?.phone ?? "Telefon veya kısa bilgi")
+            }
+        }
+    }
+
+    private var reportOverridesSection: some View {
+        settingsSection(title: "BU RAPORA ÖZEL DÜZENLE") {
+            VStack(spacing: 10) {
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.88)) {
+                        showReportOverrides.toggle()
+                    }
+                    UISelectionFeedbackGenerator().selectionChanged()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdGreenDark)
+                            .frame(width: 38, height: 38)
+                            .background(Color.rdGreenSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 11))
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Tek seferlik firma bilgisi veya logo")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.rdBlack)
+                            Text(overrideSummaryText)
+                                .font(.system(size: 12, design: .rounded))
+                                .foregroundStyle(Color.rdSlate)
+                                .lineLimit(2)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdSlate)
+                            .rotationEffect(.degrees(showReportOverrides ? 180 : 0))
+                    }
+                    .padding(12)
+                    .background(Color.rdWhite)
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdLine, lineWidth: 1))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+
+                if showReportOverrides {
+                    VStack(spacing: 10) {
+                        labeledField("Firma adı", text: $options.companyName, placeholder: selectedCompany?.name ?? profile?.companyName ?? "Firma adı")
+                        labeledField("Firma bilgisi", text: $options.companyInfo, placeholder: selectedCompany?.hazardClass.title ?? profile?.phone ?? "Telefon veya kısa bilgi")
+                        companyLogoOverrideCard
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
     }
 
-    private var companyLogoSection: some View {
-        settingsSection(title: "OPSİYONEL LOGO") {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.rdWhite)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.rdLine, lineWidth: 1)
-                        )
-                    if let companyLogo {
-                        Image(uiImage: companyLogo)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(8)
-                    } else {
-                        Image(systemName: "building.2.crop.circle")
-                            .font(.system(size: 24, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.rdSlate)
-                    }
-                }
-                .frame(width: 68, height: 58)
+    private var overrideSummaryText: String {
+        if selectedCompany != nil {
+            return "Seçili firma korunur; sadece bu raporun görünen metinlerini veya logosunu değiştirebilirsin."
+        }
+        return "Firma eklemeden yalnızca bu raporda görünecek firma adı, bilgi veya logo girebilirsin."
+    }
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(companyLogo == nil ? "Logo seçilmedi" : "Logo rapora eklenecek")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                    Text("Profilindeki logo varsayılan gelir; istersen bu çıktı için farklı logo seçebilirsin.")
-                        .font(.system(size: 12, design: .rounded))
+    private var companyLogoOverrideCard: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.rdWhite)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.rdLine, lineWidth: 1)
+                    )
+                if let companyLogo {
+                    Image(uiImage: companyLogo)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(8)
+                } else {
+                    Image(systemName: "building.2.crop.circle")
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer()
-
-                PhotosPicker(selection: $selectedLogoItem, matching: .images) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .frame(width: 34, height: 34)
-                        .foregroundStyle(Color.rdGreenDark)
-                        .background(Color.rdGreenSoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
             }
-            .padding(12)
-            .background(Color.rdWhite)
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.rdLine, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .onChange(of: selectedLogoItem) { newItem in
-                guard let newItem else { return }
-                Task {
-                    if let data = try? await newItem.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        companyLogo = image
-                    }
+            .frame(width: 68, height: 58)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(companyLogo == nil ? "Logo seçilmedi" : "Logo rapora eklenecek")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text(selectedCompany == nil ? "Firma eklemeden bu rapora özel logo seçebilirsin." : "Seçili firma logosu korunur; istersen bu rapor için farklı logo seçebilirsin.")
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer()
+
+            PhotosPicker(selection: $selectedLogoItem, matching: .images) {
+                Image(systemName: "plus")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .frame(width: 34, height: 34)
+                    .foregroundStyle(Color.rdGreenDark)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+        }
+        .padding(12)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .onChange(of: selectedLogoItem) { newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    companyLogo = image
                 }
             }
         }

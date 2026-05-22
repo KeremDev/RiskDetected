@@ -104,6 +104,105 @@ function isFutureExpiration(value: string | null): boolean {
   return Number.isFinite(parsed) && parsed > Date.now();
 }
 
+function safeLogText(value: unknown, maxLength = 180): string {
+  return String(value)
+    .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+    .slice(0, maxLength);
+}
+
+function accountPushCopy(eventType: string, tier: PlanTier | null): {
+  title: string;
+  body: string;
+} | null {
+  if (eventType === "INITIAL_PURCHASE" || eventType === "PRODUCT_CHANGE") {
+    const planName = tier === "pro" ? "Pro" : tier === "plus" ? "Plus" : null;
+    if (!planName) return null;
+    return {
+      title: `${planName} plan aktif`,
+      body: `RiskDetected ${planName} üyeliğin hesabına tanımlandı.`,
+    };
+  }
+  if (eventType === "RENEWAL" || eventType === "UNCANCELLATION") {
+    return {
+      title: "Üyeliğin aktif",
+      body: "RiskDetected üyeliğin sorunsuz şekilde devam ediyor.",
+    };
+  }
+  if (eventType === "CANCELLATION") {
+    return {
+      title: "Üyelik iptali alındı",
+      body: "Planın dönem sonuna kadar aktif kalmaya devam edecek.",
+    };
+  }
+  if (eventType === "EXPIRATION") {
+    return {
+      title: "Üyelik süren doldu",
+      body: "RiskDetected hesabın ücretsiz plana geçirildi.",
+    };
+  }
+  if (eventType === "BILLING_ISSUE") {
+    return {
+      title: "Ödeme kontrolü gerekiyor",
+      body:
+        "Üyeliğinin devam etmesi için App Store ödeme bilgilerini kontrol et.",
+    };
+  }
+  if (eventType === "SUBSCRIPTION_PAUSED") {
+    return {
+      title: "Üyelik duraklatıldı",
+      body: "RiskDetected hesabın geçici olarak ücretsiz plana alındı.",
+    };
+  }
+  return null;
+}
+
+async function sendAccountUpdatePush(params: {
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  userID: string;
+  eventID: string;
+  eventType: string;
+  tier: PlanTier | null;
+}) {
+  const copy = accountPushCopy(params.eventType, params.tier);
+  if (!copy) return;
+
+  const response = await fetch(
+    `${params.supabaseUrl}/functions/v1/send-push-notification`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${params.serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: params.userID,
+        kind: "account_updates",
+        title: copy.title,
+        body: copy.body,
+        data: {
+          destination: "profile",
+          event_id: params.eventID,
+          event_type: params.eventType,
+          tier: params.tier,
+        },
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    console.warn(
+      "Account update push failed",
+      JSON.stringify({
+        event_id: params.eventID,
+        event_type: params.eventType,
+        status: response.status,
+        body: safeLogText(await response.text()),
+      }),
+    );
+  }
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return json(405, { error: "Method not allowed" });
@@ -260,6 +359,15 @@ serve(async (req) => {
         .eq("id", eventUserID);
     }
   }
+
+  await sendAccountUpdatePush({
+    supabaseUrl,
+    serviceRoleKey,
+    userID: eventUserID,
+    eventID,
+    eventType,
+    tier: nextTier ?? (entitlementTier === "free" ? null : entitlementTier),
+  });
 
   await supabase
     .from("subscription_events")

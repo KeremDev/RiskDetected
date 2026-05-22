@@ -13,7 +13,6 @@ import XLSX from "npm:xlsx-js-style@1.2.0";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-const RISK_ASSESSMENT_RESPONSIBLE = "İşveren/Vekili, Bölüm Yöneticisi";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -196,6 +195,12 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
+function safeLogText(value: unknown, maxLength = 180): string {
+  return String(value)
+    .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+    .slice(0, maxLength);
+}
+
 function newSupportID(): string {
   return `RD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 }
@@ -227,6 +232,76 @@ function requiredEnv(name: string): string {
   const value = Deno.env.get(name);
   if (!value) throw new Error(`${name} is not configured`);
   return value;
+}
+
+async function sendReportReadyPush(params: {
+  // deno-lint-ignore no-explicit-any
+  supabase: any;
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  userID: string;
+  reportID: string;
+  analysisID: string;
+  format: string;
+  kind: string;
+  requestID: string;
+  supportID: string;
+}) {
+  const { data: reportRow } = await params.supabase
+    .from("reports")
+    .select("report_ready_push_sent_at")
+    .eq("id", params.reportID)
+    .eq("user_id", params.userID)
+    .maybeSingle();
+  if (reportRow?.report_ready_push_sent_at) return;
+
+  const response = await fetch(
+    `${params.supabaseUrl}/functions/v1/send-push-notification`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${params.serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: params.userID,
+        kind: "report_ready",
+        title: "Rapor Hazır",
+        body: "Risk raporun oluşturuldu, raporlar bölümünden inceleyebilirsin.",
+        data: {
+          report_id: params.reportID,
+          analysis_id: params.analysisID,
+          destination: "reports",
+          format: params.format,
+          kind: params.kind,
+          request_id: params.requestID,
+          support_id: params.supportID,
+        },
+      }),
+    },
+  );
+
+  const responseText = await response.text();
+  if (!response.ok) {
+    console.warn(
+      "Report ready push failed",
+      JSON.stringify({
+        request_id: params.requestID,
+        support_id: params.supportID,
+        report_id: params.reportID,
+        status: response.status,
+        body: safeLogText(responseText),
+      }),
+    );
+    return;
+  }
+
+  await params.supabase
+    .from("reports")
+    .update({ report_ready_push_sent_at: new Date().toISOString() })
+    .eq("id", params.reportID)
+    .eq("user_id", params.userID)
+    .is("report_ready_push_sent_at", null);
 }
 
 function safeText(value: unknown, fallback = ""): string {
@@ -268,6 +343,21 @@ function bandLabel(value: unknown): string {
       return "Düşük";
     default:
       return "Bilinmiyor";
+  }
+}
+
+function suggestedTerm(value: unknown): string {
+  switch (normalizeBand(value)) {
+    case "critical":
+      return "Acil / 1-3 gün";
+    case "high":
+      return "7 gün";
+    case "medium":
+      return "15 gün";
+    case "low":
+      return "30 gün";
+    default:
+      return "Değerlendirilecek";
   }
 }
 
@@ -1906,7 +1996,6 @@ function makeWorkbook(
     "Önerilen Önlem",
     "Kök Neden",
     "Referans / İzleme",
-    "Sorumlu",
     "Termin",
     "Durum",
     "Not",
@@ -1922,16 +2011,15 @@ function makeWorkbook(
       safeText(finding.recommended_action),
       safeText(finding.root_cause_text),
       safeText(finding.references_text),
-      RISK_ASSESSMENT_RESPONSIBLE,
-      "",
+      suggestedTerm(methodBand(finding, method)),
       "Açık",
       "",
     ]),
   ];
   const riskSheet = appendSheet(workbook, "Risk Analiz Tablosu", riskRows);
   const riskColumnWidths = method === "matrix_5x5"
-    ? [6, 26, 18, 56, 11, 11, 12, 16, 56, 34, 36, 18, 16, 14, 32]
-    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 56, 34, 36, 18, 16, 14, 32];
+    ? [6, 26, 18, 56, 11, 11, 12, 16, 56, 34, 36, 16, 14, 32]
+    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 56, 34, 36, 16, 14, 32];
   const riskLastCol = XLSX.utils.encode_col(riskHeaders.length - 1);
   const riskLevelCol = XLSX.utils.encode_col(4 + metricHeaders.length - 1);
   const metricFirstCol = "E";
@@ -2071,10 +2159,9 @@ serve(async (req: Request) => {
     });
   }
 
-  const supabase = createClient(
-    requiredEnv("SUPABASE_URL"),
-    requiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
-  );
+  const supabaseUrl = requiredEnv("SUPABASE_URL");
+  const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   let requestID = cleanTrace(
     req.headers.get("x-request-id"),
@@ -2374,6 +2461,19 @@ serve(async (req: Request) => {
       );
     }
   }
+
+  await sendReportReadyPush({
+    supabase,
+    supabaseUrl,
+    serviceRoleKey,
+    userID: user.id,
+    reportID: report.id,
+    analysisID,
+    format: "xlsx",
+    kind: "risk_analysis",
+    requestID,
+    supportID,
+  });
 
   return json(200, {
     report,

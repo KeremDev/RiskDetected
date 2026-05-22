@@ -81,6 +81,7 @@ struct RDTabBar: View {
             .frame(height: 56)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("tab.\(tab.rawValue)")
     }
 
     private var quickScanButton: some View {
@@ -109,6 +110,7 @@ struct RDTabBar: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .accessibilityLabel("Hızlı tarama başlat")
+        .accessibilityIdentifier("tab.quick_scan")
     }
 }
 

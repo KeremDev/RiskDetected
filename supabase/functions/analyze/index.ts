@@ -38,9 +38,15 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+declare const EdgeRuntime: {
+  waitUntil: (promise: Promise<unknown>) => void;
+} | undefined;
+
 const GEMINI_API_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const ANALYSIS_QUEUE_NAME = "analysis_jobs";
+const PROCESS_ANALYSIS_FUNCTION_NAME = "process-analysis-jobs";
 
 const MODEL_FLASH_LITE = "gemini-3.1-flash-lite";
 const MODEL_FREE = "gemini-2.5-flash";
@@ -112,7 +118,10 @@ const PLAN_LIMITS: Record<PlanTier, {
 function geminiThinkingConfig(
   model: string,
   pool: "free" | "paid",
-): Record<string, string> | null {
+): Record<string, string | number> | null {
+  if (model === MODEL_PAID_FAST && pool === "paid") {
+    return { thinkingBudget: 1024 };
+  }
   if (model === MODEL_FLASH_LITE) {
     return { thinkingLevel: pool === "paid" ? "high" : "medium" };
   }
@@ -1718,6 +1727,271 @@ function sanitizedDimension(value: unknown): number {
     : 0;
 }
 
+async function persistInlinePhotosForQueue(params: {
+  // deno-lint-ignore no-explicit-any
+  supabase: any;
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  userID: string;
+  analysisID: string;
+  // deno-lint-ignore no-explicit-any
+  inlinePhotoParts: any[];
+}): Promise<string[]> {
+  const persistedPhotoPaths: string[] = [];
+  const inlinePhotoParts = Array.isArray(params.inlinePhotoParts)
+    ? params.inlinePhotoParts
+    : [];
+  if (inlinePhotoParts.length === 0) return persistedPhotoPaths;
+
+  const { error: deletePhotoErr } = await params.supabase.from("photos")
+    .delete()
+    .eq("analysis_id", params.analysisID)
+    .eq("user_id", params.userID);
+  if (deletePhotoErr) {
+    throw new Error(
+      `photo_cleanup_failed:${safeLogText(JSON.stringify(deletePhotoErr))}`,
+    );
+  }
+
+  for (let i = 0; i < inlinePhotoParts.length; i++) {
+    const part = inlinePhotoParts[i];
+    if (!part?.data) continue;
+    const mimeType = normalizedImageMimeType(part.mime_type ?? part.mimeType);
+    const rawBytes = base64ToBytes(part.data);
+    const bytes = stripImageMetadata(rawBytes, mimeType);
+    const ext = mimeType.includes("png") ? "png" : "jpg";
+    const storagePath = `${params.userID}/${params.analysisID}/p${
+      i + 1
+    }.${ext}`;
+    const uploadBody = bytes.byteOffset === 0 &&
+        bytes.byteLength === bytes.buffer.byteLength
+      ? bytes
+      : bytes.slice();
+
+    const uploadResult = await uploadStorageObject({
+      supabaseUrl: params.supabaseUrl,
+      serviceRoleKey: params.serviceRoleKey,
+      bucket: "photos",
+      path: storagePath,
+      body: uploadBody,
+      mimeType,
+    });
+
+    if (!uploadResult.ok) {
+      throw new Error(
+        `photo_upload_failed:${uploadResult.status}:${
+          safeLogText(uploadResult.error)
+        }`,
+      );
+    }
+
+    const { error: photoErr } = await params.supabase.from("photos").insert({
+      analysis_id: params.analysisID,
+      user_id: params.userID,
+      storage_path: storagePath,
+      width: sanitizedDimension(part.width),
+      height: sanitizedDimension(part.height),
+      size_bytes: bytes.byteLength,
+      mime_type: mimeType,
+    });
+
+    if (photoErr) {
+      throw new Error(
+        `photo_metadata_failed:${safeLogText(JSON.stringify(photoErr))}`,
+      );
+    }
+
+    persistedPhotoPaths.push(storagePath);
+  }
+
+  return persistedPhotoPaths;
+}
+
+async function enqueueAnalysisJob(params: {
+  // deno-lint-ignore no-explicit-any
+  supabase: any;
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  // deno-lint-ignore no-explicit-any
+  body: any;
+  userID: string;
+  analysisID: string;
+  requestID: string;
+  supportID: string;
+}): Promise<{ queuedPhotoPaths: string[] }> {
+  const requestedPhotoPaths = Array.isArray(params.body.photo_paths)
+    ? params.body.photo_paths
+      .map((path: unknown) => typeof path === "string" ? path.trim() : "")
+      .filter((path: string) => path.length > 0)
+    : [];
+
+  const persistedPhotoPaths = await persistInlinePhotosForQueue({
+    supabase: params.supabase,
+    supabaseUrl: params.supabaseUrl,
+    serviceRoleKey: params.serviceRoleKey,
+    userID: params.userID,
+    analysisID: params.analysisID,
+    inlinePhotoParts: Array.isArray(params.body.photo_base64_parts)
+      ? params.body.photo_base64_parts
+      : [],
+  });
+
+  const queuedPhotoPaths = [
+    ...new Set([
+      ...requestedPhotoPaths,
+      ...persistedPhotoPaths,
+    ]),
+  ];
+  const jobBody = {
+    ...params.body,
+    __worker: true,
+    user_id: params.userID,
+    request_id: params.requestID,
+    support_id: params.supportID,
+    photo_paths: queuedPhotoPaths,
+    photo_base64_parts: [],
+  };
+
+  const { error: updateErr } = await params.supabase
+    .from("analyses")
+    .update({
+      status: "queued",
+      queued_at: new Date().toISOString(),
+      status_message: `Analiz kuyruğa alındı. Destek kodu: ${params.supportID}`,
+      last_worker_error: null,
+    })
+    .eq("id", params.analysisID)
+    .eq("user_id", params.userID);
+
+  if (updateErr) {
+    throw new Error(`analysis_queue_update_failed:${safeLogError(updateErr)}`);
+  }
+
+  const { error: queueErr } = await params.supabase.rpc(
+    "enqueue_analysis_job_message",
+    { p_message: jobBody },
+  );
+
+  if (queueErr) {
+    await params.supabase
+      .from("analyses")
+      .update({
+        status: "failed",
+        status_message:
+          `Analiz kuyruğa alınamadı. Destek kodu: ${params.supportID}`,
+        last_worker_error: safeLogText(JSON.stringify(queueErr)),
+      })
+      .eq("id", params.analysisID)
+      .eq("user_id", params.userID);
+    throw new Error(`analysis_queue_send_failed:${safeLogError(queueErr)}`);
+  }
+
+  return { queuedPhotoPaths };
+}
+
+function triggerAnalysisWorker(params: {
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  requestID: string;
+  supportID: string;
+}) {
+  const run = fetch(
+    `${params.supabaseUrl}/functions/v1/${PROCESS_ANALYSIS_FUNCTION_NAME}`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${params.serviceRoleKey}`,
+        "Content-Type": "application/json",
+        "x-request-id": params.requestID,
+        "x-support-id": params.supportID,
+      },
+      body: JSON.stringify({ source: "analyze_enqueue", limit: 3 }),
+    },
+  ).catch((error) => {
+    console.error(
+      "Analysis worker trigger failed",
+      JSON.stringify({
+        request_id: params.requestID,
+        support_id: params.supportID,
+        error: safeLogText(error),
+      }),
+    );
+  });
+
+  if (typeof EdgeRuntime !== "undefined") {
+    EdgeRuntime.waitUntil(run);
+  }
+}
+
+async function sendAnalysisCompletePush(params: {
+  // deno-lint-ignore no-explicit-any
+  supabase: any;
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  userID: string;
+  analysisID: string;
+  requestID: string;
+  supportID: string;
+}) {
+  const { data: analysisRow } = await params.supabase
+    .from("analyses")
+    .select("completion_push_sent_at")
+    .eq("id", params.analysisID)
+    .eq("user_id", params.userID)
+    .maybeSingle();
+  if (analysisRow?.completion_push_sent_at) return;
+
+  const response = await fetch(
+    `${params.supabaseUrl}/functions/v1/send-push-notification`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${params.serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: params.userID,
+        kind: "analysis_complete",
+        title: "Analiz Hazır !",
+        body: "Risk analizin seni bekliyor, hemen incele.",
+        data: {
+          analysis_id: params.analysisID,
+          destination: "history",
+          request_id: params.requestID,
+          support_id: params.supportID,
+        },
+      }),
+    },
+  );
+
+  const responseText = await response.text();
+  if (!response.ok) {
+    await params.supabase
+      .from("analyses")
+      .update({ last_worker_error: `push_failed:${response.status}` })
+      .eq("id", params.analysisID)
+      .eq("user_id", params.userID);
+    console.warn(
+      "Analysis completion push failed",
+      JSON.stringify({
+        request_id: params.requestID,
+        support_id: params.supportID,
+        analysis_id: params.analysisID,
+        status: response.status,
+        body: safeLogText(responseText),
+      }),
+    );
+    return;
+  }
+
+  await params.supabase
+    .from("analyses")
+    .update({ completion_push_sent_at: new Date().toISOString() })
+    .eq("id", params.analysisID)
+    .eq("user_id", params.userID)
+    .is("completion_push_sent_at", null);
+}
+
 function sanitizedUserPrompt(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const cleaned = value
@@ -1820,26 +2094,6 @@ serve(async (req: Request) => {
     newSupportID(),
   );
 
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return errorResponse(401, "Authorization header eksik.", {
-      code: "auth_required",
-      requestID,
-      supportID,
-    });
-  }
-
-  const { data: { user }, error: authErr } = await supabase.auth.getUser(
-    authHeader.replace("Bearer ", ""),
-  );
-  if (authErr || !user) {
-    return errorResponse(401, "Geçersiz token.", {
-      code: "auth_invalid",
-      requestID,
-      supportID,
-    });
-  }
-
   // deno-lint-ignore no-explicit-any
   let body: any;
   try {
@@ -1852,6 +2106,41 @@ serve(async (req: Request) => {
     });
   }
 
+  requestID = normalizedTraceValue(body.request_id, requestID);
+  supportID = normalizedTraceValue(body.support_id, supportID);
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return errorResponse(401, "Authorization header eksik.", {
+      code: "auth_required",
+      requestID,
+      supportID,
+    });
+  }
+
+  const isWorkerInvocation = authHeader === `Bearer ${serviceRoleKey}` &&
+    body.__worker === true &&
+    typeof body.user_id === "string" &&
+    body.user_id.length > 0;
+
+  let user: { id: string };
+  if (isWorkerInvocation) {
+    user = { id: body.user_id };
+  } else {
+    const { data: { user: authUser }, error: authErr } = await supabase.auth
+      .getUser(
+        authHeader.replace("Bearer ", ""),
+      );
+    if (authErr || !authUser) {
+      return errorResponse(401, "Geçersiz token.", {
+        code: "auth_invalid",
+        requestID,
+        supportID,
+      });
+    }
+    user = { id: authUser.id };
+  }
+
   const {
     analysis_id,
     canvas,
@@ -1862,8 +2151,6 @@ serve(async (req: Request) => {
     photo_paths = [],
     photo_base64_parts = [],
   } = body;
-  requestID = normalizedTraceValue(body.request_id, requestID);
-  supportID = normalizedTraceValue(body.support_id, supportID);
   const userPrompt = sanitizedUserPrompt(body.user_prompt);
   const requestedCompanyID = typeof company_id === "string"
     ? company_id.trim()
@@ -1894,7 +2181,7 @@ serve(async (req: Request) => {
 
   const { data: ownedAnalysis, error: analysisOwnerErr } = await supabase
     .from("analyses")
-    .select("id,user_id")
+    .select("id,user_id,status,worker_attempt_count")
     .eq("id", analysisID)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -1921,12 +2208,75 @@ serve(async (req: Request) => {
     );
   }
 
+  if (isWorkerInvocation && ownedAnalysis.status === "completed") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        status: "already_completed",
+        analysis_id: analysisID,
+        request_id: requestID,
+        support_id: supportID,
+      }),
+      { headers: { "Content-Type": "application/json" } },
+    );
+  }
+
   // deno-lint-ignore no-explicit-any
   const updateOwnedAnalysis = (patch: Record<string, any>) =>
     supabase.from("analyses")
       .update(patch)
       .eq("id", analysisID)
       .eq("user_id", user.id);
+
+  if (!isWorkerInvocation) {
+    try {
+      const { queuedPhotoPaths } = await enqueueAnalysisJob({
+        supabase,
+        supabaseUrl,
+        serviceRoleKey,
+        body,
+        userID: user.id,
+        analysisID,
+        requestID,
+        supportID,
+      });
+      triggerAnalysisWorker({
+        supabaseUrl,
+        serviceRoleKey,
+        requestID,
+        supportID,
+      });
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          status: "queued",
+          analysis_id: analysisID,
+          queued_photo_count: queuedPhotoPaths.length,
+          request_id: requestID,
+          support_id: supportID,
+        }),
+        {
+          status: 202,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    } catch (error) {
+      console.error(
+        "Analyze enqueue failed",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogError(error),
+        }),
+      );
+      return errorResponse(500, "Analiz kuyruğa alınamadı.", {
+        code: "analysis_enqueue_failed",
+        requestID,
+        supportID,
+      });
+    }
+  }
 
   const requestedCanvases = [
     ...new Set(
@@ -2212,6 +2562,9 @@ serve(async (req: Request) => {
     status: "analyzing",
     analysis_mode: analysisMode,
     started_at: new Date().toISOString(),
+    worker_started_at: new Date().toISOString(),
+    worker_attempt_count: (ownedAnalysis.worker_attempt_count ?? 0) + 1,
+    last_worker_error: null,
   });
 
   const model = planTier === "free" ? MODEL_FREE : MODEL_PAID_FAST;
@@ -2718,6 +3071,18 @@ serve(async (req: Request) => {
   });
 
   await completeAnalysisQuota(supabase, analysisID, user.id);
+
+  if (isWorkerInvocation) {
+    await sendAnalysisCompletePush({
+      supabase,
+      supabaseUrl,
+      serviceRoleKey,
+      userID: user.id,
+      analysisID,
+      requestID,
+      supportID,
+    });
+  }
 
   await logUsage(supabase, {
     analysis_id: analysisID,

@@ -55,11 +55,12 @@ struct OBSectorView: View {
             Spacer(minLength: 8)
 
             OBFooter {
-                OBPrimaryButton(title: "Devam", enabled: !state.sectors.isEmpty) { onNext() }
+                OBPrimaryButton(title: "Devam", enabled: !state.sectors.isEmpty, accessibilityID: "onboarding.sector.continue") { onNext() }
                     .obStage(delay: 0.7)
             }
         }
         .background(Color.rdPaper)
+        .accessibilityIdentifier("onboarding.sector")
     }
 
     private func sectorCard(_ s: OBSector) -> some View {
@@ -121,5 +122,6 @@ struct OBSectorView: View {
             }
         }
         .buttonStyle(OBPressStyle())
+        .accessibilityIdentifier("onboarding.sector.\(s.rawValue)")
     }
 }

@@ -42,6 +42,7 @@ struct OBLoadingView: View {
         .opacity(leaving ? 0 : 1)
         .animation(.easeInOut(duration: 0.32), value: leaving)
         .onAppear { runSequence() }
+        .accessibilityIdentifier("onboarding.loading")
     }
 
     private var loader: some View {
@@ -133,21 +134,21 @@ struct OBLoadingView: View {
             var highlight = AttributedString(state.primarySectorLabel)
             highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
             s.append(highlight)
-            s.append(AttributedString(" için risk şablonları yükleniyor"))
+            s.append(AttributedString(" için risk analiz şablonları yükleniyor..."))
             return s
         case 1:
             var s = AttributedString("")
             var highlight = AttributedString(state.hazardsLabel)
             highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
             s.append(highlight)
-            s.append(AttributedString(" sınıf checklist'leri hazırlanıyor"))
+            s.append(AttributedString(" sınıfı için kontrol listesi hazırlanıyor..."))
             return s
         default:
             var s = AttributedString("")
             var highlight = AttributedString(state.certificateLabel)
             highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
             s.append(highlight)
-            s.append(AttributedString(" rapor formatı ayarlanıyor"))
+            s.append(AttributedString(" için rapor formatı kişiselleştiriliyor..."))
             return s
         }
     }
@@ -165,4 +166,12 @@ struct OBLoadingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 4.5)  { leaving = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4.85) { onComplete() }
     }
+}
+
+#Preview {
+    let state = OnboardingV2State()
+    state.certificate = .A
+    state.hazards = [.critical]
+    state.sectors = [.construction]
+    return OBLoadingView(state: state) {}
 }
