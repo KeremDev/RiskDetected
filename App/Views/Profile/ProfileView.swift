@@ -16,6 +16,7 @@ struct ProfileView: View {
     @State private var showLegalInfo = false
     @State private var showSupport = false
     @State private var stats: ProfileStats? = nil
+    @State private var professionalProgressSummary: ProfessionalProgressSummary? = nil
     @State private var dataActionInProgress: ProfileDataAction?
     @State private var pendingDataAction: ProfileDataAction?
     @State private var dataMessage: String?
@@ -50,7 +51,13 @@ struct ProfileView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
                     profileHeader
-                    statsRow
+                    if RDConfig.Features.professionalProgressEnabled,
+                       let professionalProgressSummary {
+                        ProfessionalProgressProfileSection(
+                            summary: professionalProgressSummary,
+                            onRefresh: { await loadProfessionalProgress() }
+                        )
+                    }
                     if app.currentTier.isPaid { proCard } else { upsellCard }
                     accountList
                     settingsList
@@ -66,9 +73,13 @@ struct ProfileView: View {
         .accessibilityIdentifier("profile.root")
         .task {
             await loadStats()
+            await loadProfessionalProgress()
         }
         .onChange(of: app.auth.session?.user.id) { _ in
-            Task { await loadStats() }
+            Task {
+                await loadStats()
+                await loadProfessionalProgress()
+            }
         }
         .fullScreenCover(isPresented: $showPaywall) {
             FreeAwarePaywallView(onClose: { showPaywall = false },
@@ -541,6 +552,14 @@ struct ProfileView: View {
         }
     }
 
+    private func loadProfessionalProgress() async {
+        guard app.auth.session != nil, RDConfig.Features.professionalProgressEnabled else {
+            professionalProgressSummary = nil
+            return
+        }
+        professionalProgressSummary = await ProfessionalProgressService.shared.fetchSummary()
+    }
+
     private func runDataAction(_ action: ProfileDataAction) {
         guard dataActionInProgress == nil else { return }
         pendingDataAction = nil
@@ -998,6 +1017,24 @@ private struct NotificationSettingsSheet: View {
                     notificationRow(icon: "checkmark.seal", title: "Analiz tamamlandı", subtitle: "Uzun süren analizlerde sonucu kaçırma.")
                     notificationRow(icon: "doc.richtext", title: "Rapor hazır", subtitle: "PDF arşivleme ve paylaşım akışlarında haber ver.")
                     notificationRow(icon: "person.crop.circle.badge.checkmark", title: "Hesap ve güvenlik", subtitle: "Oturum, profil ve önemli hesap durumları.")
+                    progressPreferenceRow(
+                        icon: "chart.line.uptrend.xyaxis",
+                        title: "Haftalık mesleki özet",
+                        subtitle: "Rapor, analiz ve yetkinlik özetini haftalık al.",
+                        preference: .weeklySummary
+                    )
+                    progressPreferenceRow(
+                        icon: "calendar",
+                        title: "Aylık mesleki özet",
+                        subtitle: "Ay sonu MDP, ünvan ve kategori birikimini gör.",
+                        preference: .monthlySummary
+                    )
+                    progressPreferenceRow(
+                        icon: "rosette",
+                        title: "Rozet ve ünvan",
+                        subtitle: "Yeni başarı ve ünvan değişimlerini sakin bildirimlerle gör.",
+                        preference: .milestones
+                    )
                 }
 
                 if let lastError = notificationService.lastError {
@@ -1117,6 +1154,48 @@ private struct NotificationSettingsSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
+        }
+        .padding(12)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func progressPreferenceRow(
+        icon: String,
+        title: String,
+        subtitle: String,
+        preference: NotificationService.ProgressPreference
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdGreenDark)
+                .frame(width: 38, height: 38)
+                .background(Color.rdGreenSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 11))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text(subtitle)
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Toggle(
+                "",
+                isOn: Binding(
+                    get: { notificationService.progressPreferenceEnabled(preference) },
+                    set: { notificationService.setProgressPreference(preference, enabled: $0) }
+                )
+            )
+            .labelsHidden()
+            .tint(Color.rdGreen)
         }
         .padding(12)
         .background(Color.rdWhite)

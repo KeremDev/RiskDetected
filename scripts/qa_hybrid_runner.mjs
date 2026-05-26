@@ -256,6 +256,91 @@ function edgeFunctionCheck(command) {
   };
 }
 
+function fileContains(path, terms) {
+  if (!existsSync(path)) {
+    return { exists: false, missing: terms };
+  }
+  const content = readFileSync(path, "utf8");
+  return {
+    exists: true,
+    missing: terms.filter((term) => !content.includes(term)),
+  };
+}
+
+function staticProfessionalProgressChecks() {
+  const migrationPath = "supabase/migrations/20260526093512_professional_progress_module.sql";
+  const migrationTerms = [
+    "professional_progress_profiles",
+    "professional_progress_events",
+    "unique (user_id, event_key)",
+    "professional_progress_finding_classifications",
+    "classifier_version",
+    "pp_competency_for_finding",
+    "unclassified",
+    "enable row level security",
+    "grant update (seen_at)",
+    "progress_weekly_summary",
+  ];
+  const migration = fileContains(migrationPath, migrationTerms);
+  const moduleFiles = [
+    "App/Features/ProfessionalProgress/ProfessionalProgressService.swift",
+    "App/Features/ProfessionalProgress/ProfessionalProgressModels.swift",
+    "App/Features/ProfessionalProgress/ProfessionalProgressHomeCard.swift",
+    "App/Features/ProfessionalProgress/ProfessionalProgressProfileSection.swift",
+    "App/Features/ProfessionalProgress/ProfessionalProgressBadgesView.swift",
+    "App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift",
+    "App/Features/ProfessionalProgress/ProfessionalProgressCelebrationSheet.swift",
+  ];
+  const missingModuleFiles = moduleFiles.filter((path) => !existsSync(path));
+  const config = fileContains("App/Services/RDConfig.swift", ["professionalProgressEnabled"]);
+  const models = fileContains("App/Features/ProfessionalProgress/ProfessionalProgressModels.swift", [
+    "case fire",
+    "case chemical",
+    "case electrical",
+    "case mechanical",
+    "case ergonomics",
+    "case psychosocial",
+    "case workingAtHeight",
+    "case ppe",
+    "case mining",
+    "case construction",
+    "case factory",
+  ]);
+
+  return [
+    {
+      name: "Professional Progress migration static contract",
+      status: migration.exists && migration.missing.length === 0 ? "PASS" : "FAIL",
+      note: migration.exists
+        ? migration.missing.length === 0
+          ? "ledger, classifier, RLS/preference hooks present"
+          : `missing terms: ${migration.missing.join(", ")}`
+        : `${migrationPath} missing`,
+    },
+    {
+      name: "Professional Progress iOS module files",
+      status: missingModuleFiles.length === 0 ? "PASS" : "FAIL",
+      note: missingModuleFiles.length === 0
+        ? `${moduleFiles.length} module files present`
+        : `missing files: ${missingModuleFiles.join(", ")}`,
+    },
+    {
+      name: "Professional Progress feature flag",
+      status: config.exists && config.missing.length === 0 ? "PASS" : "FAIL",
+      note: config.exists && config.missing.length === 0
+        ? "RDConfig.Features.professionalProgressEnabled present"
+        : "feature flag missing",
+    },
+    {
+      name: "Professional Progress competency taxonomy",
+      status: models.exists && models.missing.length === 0 ? "PASS" : "FAIL",
+      note: models.exists && models.missing.length === 0
+        ? "11 fixed competency cases present"
+        : `missing taxonomy terms: ${models.missing.join(", ")}`,
+    },
+  ];
+}
+
 function buildReport({ checks, commands, dbChecks, args, startedAt, finishedAt }) {
   const counts = summarizeStatus(checks);
   const failed = checks.filter((check) => check.status === "FAIL");
@@ -370,6 +455,10 @@ function main() {
   const functionsList = runCommand("Edge Function list", "supabase", ["functions", "list", "--project-ref", PROJECT_REF]);
   commands.push(functionsList);
   checks.push(edgeFunctionCheck(functionsList));
+
+  for (const check of staticProfessionalProgressChecks()) {
+    checks.push(check);
+  }
 
   if (!args.skipDeno) {
     for (const functionName of DENO_CHECK_FUNCTIONS) {

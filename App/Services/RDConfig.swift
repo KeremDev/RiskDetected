@@ -54,4 +54,8 @@ enum RDConfig {
     enum Auth {
         static let redirectURL = URL(string: "io.supabase.riskdetected://login-callback")!
     }
+
+    enum Features {
+        static let professionalProgressEnabled = true
+    }
 }

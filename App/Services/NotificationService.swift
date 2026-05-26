@@ -13,8 +13,23 @@ final class NotificationService: NSObject, ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var lastDeviceToken: String?
     @Published private(set) var isRegistering = false
+    @Published private var notificationPreferences: NotificationPreferencesRow?
     @Published var pendingAnalysisHistoryID: UUID?
     @Published var pendingDestinationTab: RDTab?
+
+    enum ProgressPreference {
+        case weeklySummary
+        case monthlySummary
+        case milestones
+
+        fileprivate var columnName: String {
+            switch self {
+            case .weeklySummary: return "progress_weekly_summary"
+            case .monthlySummary: return "progress_monthly_summary"
+            case .milestones: return "progress_milestones"
+            }
+        }
+    }
 
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "NotificationService")
     private let supabase = SupabaseService.shared
@@ -31,6 +46,7 @@ final class NotificationService: NSObject, ObservableObject {
     func refreshSettings() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         authorizationStatus = settings.authorizationStatus
+        await refreshPreferences()
     }
 
     func requestPermissionAndRegister() {
@@ -128,13 +144,68 @@ final class NotificationService: NSObject, ObservableObject {
             analysisComplete: enabled,
             reportReady: enabled,
             accountUpdates: enabled,
-            marketing: false
+            marketing: false,
+            progressWeeklySummary: enabled,
+            progressMonthlySummary: enabled,
+            progressMilestones: enabled
         )
 
         try await supabase.client
             .from("notification_preferences")
             .upsert(payload, onConflict: "user_id")
             .execute()
+        await refreshPreferences()
+    }
+
+    func progressPreferenceEnabled(_ preference: ProgressPreference) -> Bool {
+        guard let notificationPreferences else { return true }
+        switch preference {
+        case .weeklySummary:
+            return notificationPreferences.progressWeeklySummary
+        case .monthlySummary:
+            return notificationPreferences.progressMonthlySummary
+        case .milestones:
+            return notificationPreferences.progressMilestones
+        }
+    }
+
+    func setProgressPreference(_ preference: ProgressPreference, enabled: Bool) {
+        Task {
+            do {
+                guard let userID = supabase.currentUserID else { return }
+                if notificationPreferences == nil {
+                    try await setPreference(enabled: authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral)
+                }
+                try await supabase.client
+                    .from("notification_preferences")
+                    .update(ProgressPreferencePayload(preference: preference, enabled: enabled))
+                    .eq("user_id", value: userID.uuidString)
+                    .execute()
+                await refreshPreferences()
+            } catch {
+                Self.logger.error("Progress notification preference update failed column=\(preference.columnName, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                lastError = "Mesleki bildirim tercihi kaydedilemedi."
+            }
+        }
+    }
+
+    private func refreshPreferences() async {
+        guard let userID = supabase.currentUserID else {
+            notificationPreferences = nil
+            return
+        }
+        do {
+            let rows: [NotificationPreferencesRow] = try await supabase.client
+                .from("notification_preferences")
+                .select()
+                .eq("user_id", value: userID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            notificationPreferences = rows.first
+        } catch {
+            Self.logger.error("Notification preferences fetch failed error=\(error.localizedDescription, privacy: .public)")
+        }
     }
 }
 
@@ -165,6 +236,7 @@ extension NotificationService: UNUserNotificationCenterDelegate {
             return
         }
         if kind == "account_updates" ||
+            kind?.hasPrefix("progress_") == true ||
             data?["destination"] as? String == "profile" {
             await MainActor.run {
                 NotificationService.shared.pendingDestinationTab = .profile
@@ -240,6 +312,9 @@ private struct NotificationPreferencePayload: Encodable {
     let reportReady: Bool
     let accountUpdates: Bool
     let marketing: Bool
+    let progressWeeklySummary: Bool
+    let progressMonthlySummary: Bool
+    let progressMilestones: Bool
 
     enum CodingKeys: String, CodingKey {
         case userID = "user_id"
@@ -248,5 +323,43 @@ private struct NotificationPreferencePayload: Encodable {
         case reportReady = "report_ready"
         case accountUpdates = "account_updates"
         case marketing
+        case progressWeeklySummary = "progress_weekly_summary"
+        case progressMonthlySummary = "progress_monthly_summary"
+        case progressMilestones = "progress_milestones"
+    }
+}
+
+private struct ProgressPreferencePayload: Encodable {
+    let preference: NotificationService.ProgressPreference
+    let enabled: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case progressWeeklySummary = "progress_weekly_summary"
+        case progressMonthlySummary = "progress_monthly_summary"
+        case progressMilestones = "progress_milestones"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch preference {
+        case .weeklySummary:
+            try container.encode(enabled, forKey: .progressWeeklySummary)
+        case .monthlySummary:
+            try container.encode(enabled, forKey: .progressMonthlySummary)
+        case .milestones:
+            try container.encode(enabled, forKey: .progressMilestones)
+        }
+    }
+}
+
+private struct NotificationPreferencesRow: Decodable {
+    let progressWeeklySummary: Bool
+    let progressMonthlySummary: Bool
+    let progressMilestones: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case progressWeeklySummary = "progress_weekly_summary"
+        case progressMonthlySummary = "progress_monthly_summary"
+        case progressMilestones = "progress_milestones"
     }
 }

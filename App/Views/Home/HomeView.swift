@@ -47,6 +47,8 @@ struct HomeView: View {
     @State private var openingRecentID: UUID? = nil
     @State private var openingReportID: UUID? = nil
     @State private var quotaUsage: DailyQuotaUsage? = nil
+    @State private var professionalProgressSummary: ProfessionalProgressSummary? = nil
+    @State private var showProfessionalTitlesSheet = false
     @State private var paywallPresentation: PaywallPresentation? = nil
     @State private var restoreCanvasSheetAfterPaywall = false
     @State private var reportPreviewItem: ShareItem?
@@ -90,6 +92,21 @@ struct HomeView: View {
                     .frame(height: 56)
                     .padding(.top, 14)
 
+                    if RDConfig.Features.professionalProgressEnabled,
+                       let professionalProgressSummary {
+                        VStack(spacing: 8) {
+                            ProfessionalProgressHomeCard(
+                                summary: professionalProgressSummary,
+                                onTap: { showProfessionalTitlesSheet = true }
+                            )
+                            ProfessionalProgressWeeklyTrackingCard(
+                                summary: professionalProgressSummary,
+                                displayStyle: .compact
+                            )
+                        }
+                        .padding(.top, 18)
+                    }
+
                     recentSection
                         .padding(.top, 28)
 
@@ -110,6 +127,7 @@ struct HomeView: View {
             await loadRecentItems()
             await loadRecentReports()
             await loadQuotaUsage()
+            await loadProfessionalProgress()
         }
         .onAppear {
             applyCachedQuotaUsageIfAvailable()
@@ -118,6 +136,7 @@ struct HomeView: View {
             Task {
                 await loadRecentItems()
                 await loadRecentReports()
+                await loadProfessionalProgress()
             }
         }
         .onChange(of: app.auth.session?.user.id) { _ in
@@ -125,6 +144,7 @@ struct HomeView: View {
                 await loadRecentItems()
                 await loadRecentReports()
                 await loadQuotaUsage()
+                await loadProfessionalProgress()
             }
         }
         .onChange(of: app.currentTier) { _ in
@@ -276,6 +296,14 @@ struct HomeView: View {
         .sheet(item: $reportPreviewItem) { item in
             DocumentPreview(url: item.url)
                 .preferredColorScheme(preferredModalColorScheme)
+        }
+        .sheet(isPresented: $showProfessionalTitlesSheet) {
+            if let professionalProgressSummary {
+                ProfessionalProgressTitlesSheet(summary: professionalProgressSummary)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .preferredColorScheme(preferredModalColorScheme)
+            }
         }
         .fullScreenCover(isPresented: $showResult) {
             ResultView(
@@ -1161,6 +1189,14 @@ struct HomeView: View {
                 quotaUsage = nil
             }
         }
+    }
+
+    private func loadProfessionalProgress() async {
+        guard app.auth.session != nil, RDConfig.Features.professionalProgressEnabled else {
+            professionalProgressSummary = nil
+            return
+        }
+        professionalProgressSummary = await ProfessionalProgressService.shared.fetchSummary()
     }
 
     private func markFreeQuotaExhaustedLocally() {
