@@ -66,7 +66,7 @@ struct SupportContactSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Kapat") {
+                    RDModalCloseButton {
                         dismiss()
                         onClose()
                     }

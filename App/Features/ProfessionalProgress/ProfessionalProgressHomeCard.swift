@@ -11,6 +11,7 @@ struct ProfessionalProgressHomeCard: View {
     var displayStyle: DisplayStyle = .compactStrip
     var onTap: (() -> Void)?
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var animateProgress = false
     @State private var animateStripMarker = false
 
@@ -28,6 +29,9 @@ struct ProfessionalProgressHomeCard: View {
         let progress = animateProgress ? summary.titleProgress : 0
         let accent = Color.rdPlanPlus
         let accentSoft = Color.rdPlanPlusSoft
+        let isDarkMode = colorScheme == .dark
+        let primaryText = isDarkMode ? Color.white : Color.rdBlack
+        let secondaryText = isDarkMode ? Color.white.opacity(0.66) : Color.rdSlate
 
         return HStack(spacing: 10) {
             ZStack {
@@ -50,19 +54,20 @@ struct ProfessionalProgressHomeCard: View {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(formattedNumber(summary.profile.totalMDP))
                         .rdMono(size: 14, weight: .bold)
-                        .foregroundStyle(Color.rdBlack)
+                        .foregroundStyle(primaryText)
                     Text("/ \(formattedNumber(nextTitleThreshold)) MDP")
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
+                        .foregroundStyle(secondaryText)
                     Spacer(minLength: 0)
                     Text("%\(titleProgressPercent)")
                         .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
+                        .foregroundStyle(secondaryText)
                 }
 
                 GeometryReader { geo in
-                    let filledWidth = max(28, geo.size.width * progress)
-                    let markerX = min(max(filledWidth, 26), geo.size.width - 12)
+                    let fillProgress = titleProgressPercent > 0 ? progress : 0
+                    let filledWidth = geo.size.width * fillProgress
+                    let markerX = min(max(filledWidth, 9), geo.size.width - 9)
 
                     ZStack(alignment: .leading) {
                         Capsule()
@@ -87,27 +92,49 @@ struct ProfessionalProgressHomeCard: View {
                     }
                 }
                 .frame(height: 18)
+
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.right.circle.fill")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                    Text("Kıdemini yükselt")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                    if let nextTitle = summary.nextTitle {
+                        Text("· \(nextTitle.label)")
+                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .foregroundStyle(secondaryText)
+                            .lineLimit(1)
+                    }
+                }
+                .foregroundStyle(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
             }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.vertical, 11)
         .background {
             LinearGradient(
-                colors: [
-                    accentSoft.opacity(0.86),
-                    Color(hex: "#FFF9EA"),
-                    Color.rdGreenSoft.opacity(0.32)
-                ],
+                colors: isDarkMode
+                    ? [
+                        Color(hex: "#292416"),
+                        Color(hex: "#1E211E"),
+                        Color(hex: "#17231B")
+                    ]
+                    : [
+                        accentSoft.opacity(0.86),
+                        Color(hex: "#FFF9EA"),
+                        Color.rdGreenSoft.opacity(0.32)
+                    ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         }
         .overlay(
             RoundedRectangle(cornerRadius: RDRadius.lg)
-                .stroke(accent.opacity(0.24), lineWidth: 1)
+                .stroke(accent.opacity(isDarkMode ? 0.36 : 0.24), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-        .shadow(color: accent.opacity(0.10), radius: 12, x: 0, y: 6)
+        .shadow(color: accent.opacity(isDarkMode ? 0.16 : 0.10), radius: 12, x: 0, y: 6)
         .contentShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         .onTapGesture {
             onTap?()
@@ -135,6 +162,7 @@ struct ProfessionalProgressHomeCard: View {
         let accent = Color.rdPlanPlus
         let accentText = Color.rdPlanPlusDark
         let accentSoft = Color.rdPlanPlusSoft
+        let ink = Color.rdBlack
 
         return HStack(spacing: 12) {
             titleTile(accent: accent, accentSoft: accentSoft)
@@ -144,29 +172,47 @@ struct ProfessionalProgressHomeCard: View {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(formattedNumber(summary.profile.totalMDP))
                             .rdMono(size: 25, weight: .bold)
-                            .foregroundStyle(Color.white)
-                            .shadow(color: Color.white.opacity(0.28), radius: 8, x: 0, y: 0)
+                            .foregroundStyle(ink)
                         Text("/ \(formattedNumber(nextTitleThreshold))")
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.white.opacity(0.58))
+                            .foregroundStyle(Color.rdSlate)
                         Spacer(minLength: 0)
                     }
                     Text(nextTitleLabel)
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.white.opacity(0.62))
+                        .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
                 }
 
                 GeometryReader { geo in
+                    let fillProgress = titleProgressPercent > 0 ? progress : 0
+
                     ZStack(alignment: .leading) {
                         Capsule()
-                            .fill(Color.white.opacity(0.12))
+                            .fill(Color.rdBlack.opacity(0.10))
                         Capsule()
-                            .fill(Color.white.opacity(0.92))
-                            .frame(width: max(30, geo.size.width * progress))
-                            .shadow(color: Color.white.opacity(0.55), radius: 10, x: 0, y: 0)
-                            .shadow(color: accent.opacity(0.35), radius: 8, x: 0, y: 0)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(hex: "#050607"),
+                                        Color(hex: "#202426"),
+                                        Color(hex: "#050607")
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: geo.size.width * fillProgress)
+                            .overlay(alignment: .top) {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.34))
+                                    .frame(height: 5)
+                                    .padding(.horizontal, 3)
+                                    .padding(.top, 2)
+                            }
+                            .shadow(color: Color.rdBlack.opacity(0.32), radius: 8, x: 0, y: 2)
+                            .shadow(color: Color.white.opacity(0.22), radius: 8, x: 0, y: 0)
                     }
                 }
                 .frame(height: 15)
@@ -177,33 +223,34 @@ struct ProfessionalProgressHomeCard: View {
         .padding(12)
         .background {
             ZStack {
-                LinearGradient(
+                Color.rdWhite
+                RadialGradient(
                     colors: [
-                        Color(hex: "#050708"),
-                        Color(hex: "#101416"),
-                        Color(hex: "#07090A")
+                        Color.rdPlanPlusSoft.opacity(0.34),
+                        Color.clear
                     ],
-                    startPoint: .top,
-                    endPoint: .bottom
+                    center: .topTrailing,
+                    startRadius: 16,
+                    endRadius: 180
                 )
-                LinearGradient(
+                RadialGradient(
                     colors: [
-                        accent.opacity(0.20),
-                        Color.clear,
-                        Color.rdGreen.opacity(0.10)
+                        Color.rdGreenSoft.opacity(0.22),
+                        Color.clear
                     ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    center: .bottomLeading,
+                    startRadius: 10,
+                    endRadius: 160
                 )
             }
         }
         .overlay(
             RoundedRectangle(cornerRadius: RDRadius.lg)
-                .stroke(Color.white.opacity(0.09), lineWidth: 1)
+                .stroke(Color.rdBlack, lineWidth: 1.6)
         )
         .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-        .shadow(color: Color.rdOnyx.opacity(0.18), radius: 18, x: 0, y: 10)
-        .shadow(color: accent.opacity(0.10), radius: 22, x: 0, y: 8)
+        .shadow(color: Color.rdBlack.opacity(0.08), radius: 14, x: 0, y: 8)
+        .shadow(color: accent.opacity(0.06), radius: 16, x: 0, y: 6)
         .contentShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         .onTapGesture {
             onTap?()
@@ -249,8 +296,8 @@ struct ProfessionalProgressHomeCard: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                accent.opacity(0.34),
-                                Color(hex: "#FF6B35").opacity(0.16),
+                                accent.opacity(0.26),
+                                Color(hex: "#FF8A3D").opacity(0.12),
                                 Color.clear
                             ],
                             center: .center,
@@ -274,15 +321,15 @@ struct ProfessionalProgressHomeCard: View {
                             endPoint: .bottom
                         )
                     )
-                    .shadow(color: accent.opacity(0.62), radius: 14, x: 0, y: 0)
-                    .shadow(color: Color(hex: "#FF6B35").opacity(0.34), radius: 18, x: 0, y: 6)
+                    .shadow(color: accent.opacity(0.42), radius: 10, x: 0, y: 0)
+                    .shadow(color: Color(hex: "#FF6B35").opacity(0.20), radius: 14, x: 0, y: 5)
             }
             .frame(height: 54)
 
             VStack(spacing: 1) {
                 Text(summary.currentTitle.label)
                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(Color.rdBlack)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.72)
@@ -296,8 +343,8 @@ struct ProfessionalProgressHomeCard: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(0.12),
-                            Color.white.opacity(0.045)
+                            Color.rdFog.opacity(0.70),
+                            Color.rdWhite
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -305,7 +352,7 @@ struct ProfessionalProgressHomeCard: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 24)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        .stroke(Color.rdBlack.opacity(0.14), lineWidth: 1)
                 )
         }
     }
@@ -317,7 +364,7 @@ struct ProfessionalProgressHomeCard: View {
                 let reached = stage <= currentTitleStage
                 VStack(spacing: 4) {
                     Circle()
-                        .fill(reached ? accent : Color.white.opacity(0.08))
+                        .fill(reached ? accent : Color.rdFog)
                         .frame(width: 23, height: 23)
                         .overlay {
                             if reached {
@@ -327,14 +374,14 @@ struct ProfessionalProgressHomeCard: View {
                             } else {
                                 Text("\(stage)")
                                     .font(.system(size: 9, weight: .bold, design: .rounded))
-                                    .foregroundStyle(Color.white.opacity(0.28))
+                                    .foregroundStyle(Color.rdSlate.opacity(0.70))
                             }
                         }
                         .shadow(color: reached ? accent.opacity(0.25) : Color.clear, radius: 8, x: 0, y: 0)
 
                     Text(stageLabel(for: title))
                         .font(.system(size: 7.5, weight: .semibold, design: .rounded))
-                        .foregroundStyle(reached ? Color.white.opacity(0.82) : Color.white.opacity(0.40))
+                        .foregroundStyle(reached ? Color.rdBlack.opacity(0.78) : Color.rdSlate.opacity(0.74))
                         .lineLimit(1)
                         .minimumScaleFactor(0.68)
                 }
@@ -343,7 +390,7 @@ struct ProfessionalProgressHomeCard: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
-        .background(Color.white.opacity(0.065))
+        .background(Color.rdFog.opacity(0.76))
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 

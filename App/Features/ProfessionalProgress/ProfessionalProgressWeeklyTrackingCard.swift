@@ -52,14 +52,45 @@ struct ProfessionalProgressWeeklyTrackingCard: View {
     }
 
     private var statusIcon: some View {
-        ZStack {
+        let boxSize: CGFloat = isCompact ? 34 : 40
+        let innerSize: CGFloat = isCompact ? 23 : 27
+
+        return ZStack {
             RoundedRectangle(cornerRadius: isCompact ? 12 : 14)
                 .fill(iconBackground)
-                .frame(width: isCompact ? 34 : 40, height: isCompact ? 34 : 40)
+                .frame(width: boxSize, height: boxSize)
 
-            Image(systemName: tracking.hasActivity ? "checkmark.seal.fill" : "sparkles")
-                .font(.system(size: isCompact ? 17 : 19, weight: .black, design: .rounded))
-                .foregroundStyle(iconColor)
+            if tracking.hasActivity {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: isCompact ? 17 : 19, weight: .black, design: .rounded))
+                    .foregroundStyle(iconColor)
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.rdInfo, Color(hex: "#7C5CFF")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: innerSize, height: innerSize)
+                        .shadow(color: Color.rdInfo.opacity(0.24), radius: 5, x: 0, y: 2)
+
+                    Image(systemName: "play.fill")
+                        .font(.system(size: isCompact ? 9 : 10, weight: .black, design: .rounded))
+                        .foregroundStyle(Color.white)
+                        .offset(x: 1)
+
+                    Image(systemName: "sparkle")
+                        .font(.system(size: isCompact ? 7 : 8, weight: .black, design: .rounded))
+                        .foregroundStyle(Color.rdInfo)
+                        .frame(width: isCompact ? 14 : 16, height: isCompact ? 14 : 16)
+                        .background(Color.rdWhite.opacity(0.94))
+                        .clipShape(Circle())
+                        .offset(x: isCompact ? 10 : 12, y: isCompact ? -10 : -12)
+                }
+            }
         }
     }
 
@@ -72,25 +103,25 @@ struct ProfessionalProgressWeeklyTrackingCard: View {
             ]
         }
         return [
-            Color.rdPlanPlusSoft.opacity(0.70),
+            Color(hex: "#EEF6FF"),
             Color.rdWhite,
-            Color.rdFog.opacity(0.85)
+            Color(hex: "#F6F3FF")
         ]
     }
 
     private var iconBackground: Color {
-        tracking.hasActivity ? Color.rdGreen.opacity(0.14) : Color.rdPlanPlus.opacity(0.14)
+        tracking.hasActivity ? Color.rdGreen.opacity(0.14) : Color.rdInfo.opacity(0.13)
     }
 
     private var iconColor: Color {
-        tracking.hasActivity ? Color.rdGreenDark : Color.rdPlanPlusDark
+        tracking.hasActivity ? Color.rdGreenDark : Color.rdInfo
     }
 
     private var borderColor: Color {
-        tracking.hasActivity ? Color.rdGreen.opacity(0.18) : Color.rdPlanPlus.opacity(0.20)
+        tracking.hasActivity ? Color.rdGreen.opacity(0.18) : Color.rdInfo.opacity(0.18)
     }
 
     private var shadowColor: Color {
-        tracking.hasActivity ? Color.rdGreen.opacity(0.08) : Color.rdPlanPlus.opacity(0.08)
+        tracking.hasActivity ? Color.rdGreen.opacity(0.08) : Color.rdInfo.opacity(0.07)
     }
 }

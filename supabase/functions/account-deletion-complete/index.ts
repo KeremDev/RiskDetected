@@ -32,7 +32,7 @@ type CompletionBody = {
 
 type SupabaseAdmin = ReturnType<typeof createClient<any, "public">>;
 
-const BUCKETS = ["photos", "reports", "logos"] as const;
+const BUCKETS = ["photos", "reports", "logos", "avatars"] as const;
 const BATCH_SIZE = 100;
 
 function json(status: number, body: Record<string, unknown>) {
@@ -379,6 +379,7 @@ serve(async (req) => {
         deleted_photo_objects: removed.photos ?? 0,
         deleted_report_objects: removed.reports ?? 0,
         deleted_logo_objects: removed.logos ?? 0,
+        deleted_avatar_objects: removed.avatars ?? 0,
         auth_user_deleted: true,
         updated_at: completedAt,
       })

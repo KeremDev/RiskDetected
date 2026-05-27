@@ -13,6 +13,7 @@ struct UserProfile: Codable, Identifiable, Equatable {
     let certificateNumber: String?
     let companyName: String?
     let companyLogoURL: String?
+    let avatarURL: String?
     let phone: String?
     let tier: SubscriptionTier
     let preferredMethod: RiskMethodWire?
@@ -31,6 +32,7 @@ struct UserProfile: Codable, Identifiable, Equatable {
         case certificateNumber     = "certificate_number"
         case companyName           = "company_name"
         case companyLogoURL        = "company_logo_url"
+        case avatarURL             = "avatar_url"
         case phone
         case tier
         case preferredMethod       = "preferred_method"

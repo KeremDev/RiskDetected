@@ -161,6 +161,25 @@ struct RDButton: View {
     }
 }
 
+struct RDModalCloseButton: View {
+    var accessibilityLabel: String = "Pencereyi kapat"
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .frame(width: 38, height: 38)
+                .background(Color.rdWhite.opacity(0.96))
+                .clipShape(Circle())
+                .shadow(color: Color.rdOnyx.opacity(0.12), radius: 9, x: 0, y: 5)
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel(accessibilityLabel)
+    }
+}
+
 struct RDPressableButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

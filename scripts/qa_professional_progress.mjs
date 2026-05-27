@@ -237,11 +237,11 @@ with qa as (
          'expected no stat row'
   union all
   select 'MDP-01/02/03 total MDP exact',
-         (select total_mdp from public.professional_progress_profiles where user_id = ${sqlString(U1)}::uuid) = 925,
+         (select total_mdp from public.professional_progress_profiles where user_id = ${sqlString(U1)}::uuid) = 425,
          (select total_mdp::text from public.professional_progress_profiles where user_id = ${sqlString(U1)}::uuid)
   union all
-  select 'MDP-05 title threshold field_observer',
-         (select current_title_key from public.professional_progress_profiles where user_id = ${sqlString(U1)}::uuid) = 'field_observer',
+  select 'MDP-05 title threshold candidate',
+         (select current_title_key from public.professional_progress_profiles where user_id = ${sqlString(U1)}::uuid) = 'candidate',
          (select current_title_key from public.professional_progress_profiles where user_id = ${sqlString(U1)}::uuid)
   union all
   select 'MDP idempotent duplicate report event rejected',
@@ -252,8 +252,8 @@ with qa as (
          (select count(*) from public.professional_progress_events where user_id = ${sqlString(U1)}::uuid and event_type = 'weekly_report_bonus') = 1,
          (select count(*)::text from public.professional_progress_events where user_id = ${sqlString(U1)}::uuid and event_type = 'weekly_report_bonus')
   union all
-  select 'BADGE report/risk/onboarding/risk-report/title badges',
-         (select count(*) from public.professional_progress_badges where user_id = ${sqlString(U1)}::uuid and badge_key in ('reports:1','risk:first_high','onboarding_area:first_report:mining','report_kind:first_risk_analysis','title:field_observer','competency:3')) = 6,
+  select 'BADGE report/risk/onboarding/risk-report/diversity badges',
+         (select count(*) from public.professional_progress_badges where user_id = ${sqlString(U1)}::uuid and badge_key in ('reports:1','risk:first_high','onboarding_area:first_report:mining','report_kind:first_risk_analysis','competency:3')) = 5,
          (select string_agg(badge_key, ', ' order by badge_key) from public.professional_progress_badges where user_id = ${sqlString(U1)}::uuid)
   union all
   select 'MSG safe language scan',
@@ -353,7 +353,7 @@ rollback;
 
 const verifyMdpUnchangedSql = `
 select 'DB-05 client MDP cannot mutate',
-       case when total_mdp = 925 then 'PASS' else 'FAIL' end,
+       case when total_mdp = 425 then 'PASS' else 'FAIL' end,
        total_mdp::text
 from public.professional_progress_profiles
 where user_id = ${sqlString(U1)}::uuid;

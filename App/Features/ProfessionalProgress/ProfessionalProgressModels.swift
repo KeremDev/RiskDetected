@@ -407,13 +407,13 @@ struct ProfessionalProgressSummary: Equatable {
     ) -> String {
         var body: String
         if reports == 0 && analyses == 0 {
-            body = "Bu hafta henüz analiz veya rapor oluşturmadın. İlk saha kaydın haftalık takip izini başlatır."
+            body = "Bu hafta ilk analizini başlat. 😔"
         } else if reports == 0 {
-            body = "Bu hafta \(analyses) analiz yaptın. Uygun olanları rapora dönüştürmek mesleki arşivini güçlendirir."
+            body = "\(analyses) analiz tamamladın. Şimdi rapora dönüştür."
         } else if reports == 1 {
-            body = "Bu hafta ilk raporunu tamamladın, devam et."
+            body = "İlk rapor tamam. Devam et."
         } else {
-            body = "Bu hafta \(reports) rapor tamamladın. Raporlama disiplinin güçleniyor."
+            body = "Bu hafta \(reports) rapor tamamladın. 💪"
         }
 
         return body

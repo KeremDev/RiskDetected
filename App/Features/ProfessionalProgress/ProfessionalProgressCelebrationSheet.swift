@@ -6,10 +6,11 @@ struct ProfessionalProgressCelebrationSheet: View {
 
     var body: some View {
         VStack(spacing: RDSpacing.lg) {
-            Capsule()
-                .fill(Color.rdLine)
-                .frame(width: 46, height: 5)
-                .padding(.top, RDSpacing.sm)
+            HStack {
+                Spacer()
+                RDModalCloseButton(action: onClose)
+            }
+            .padding(.top, RDSpacing.sm)
 
             Image(systemName: badge.iconName)
                 .font(.system(size: 34, weight: .bold, design: .rounded))

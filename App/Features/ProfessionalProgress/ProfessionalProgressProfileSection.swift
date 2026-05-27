@@ -11,16 +11,14 @@ struct ProfessionalProgressProfileSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: RDSpacing.sm) {
-            sectionHeader
             mdpCard
             ProfessionalProgressWeeklyTrackingCard(summary: summary)
-            quickStats
             competencyPreview
             messagesPreview
         }
         .sheet(isPresented: $showBadges) {
-            ProfessionalProgressBadgesView(badges: summary.badges)
-                .presentationDetents([.large])
+            ProfessionalProgressBadgesView(summary: summary)
+                .presentationDetents([.height(360)])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showCompetencies) {
@@ -32,6 +30,13 @@ struct ProfessionalProgressProfileSection: View {
                 .background(Color.rdPaper)
                 .navigationTitle("Yetkinlik Haritası")
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        RDModalCloseButton {
+                            showCompetencies = false
+                        }
+                    }
+                }
             }
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
@@ -59,25 +64,6 @@ struct ProfessionalProgressProfileSection: View {
         }
     }
 
-    private var sectionHeader: some View {
-        HStack {
-            Text("Mesleki İlerleme")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .tracking(0.4)
-                .textCase(.uppercase)
-                .foregroundStyle(Color.rdSlate)
-            Spacer()
-            Button {
-                showBadges = true
-            } label: {
-                Label("Başarılarım", systemImage: "rosette")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdGreenDark)
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
     private var mdpCard: some View {
         ProfessionalProgressHomeCard(
             summary: summary,
@@ -85,65 +71,6 @@ struct ProfessionalProgressProfileSection: View {
             displayStyle: .showcase,
             onTap: { showTitlesSheet = true }
         )
-    }
-
-    private var quickStats: some View {
-        HStack(spacing: 7) {
-            stat(
-                value: summary.profile.totalAnalyses,
-                label: "Analiz",
-                icon: "waveform.path.ecg",
-                color: .rdInfo
-            )
-            stat(
-                value: summary.profile.totalReports,
-                label: "Rapor",
-                icon: "doc.text.fill",
-                color: .rdGreen
-            )
-            stat(
-                value: summary.weeklyTracking.reportsCount,
-                label: "Bu hafta",
-                icon: "calendar.badge.checkmark",
-                color: .rdPlanPlus
-            )
-            stat(
-                value: summary.profile.criticalFindings + summary.profile.highFindings,
-                label: "Yüksek/Kritik",
-                icon: "exclamationmark.triangle.fill",
-                color: .rdCritical
-            )
-        }
-    }
-
-    private func stat(value: Int, label: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 11, weight: .black, design: .rounded))
-                .foregroundStyle(color)
-                .frame(width: 22, height: 22)
-                .background(color.opacity(0.11))
-                .clipShape(RoundedRectangle(cornerRadius: RDRadius.xs))
-            Text("\(value)")
-                .rdMono(size: 18, weight: .bold)
-                .foregroundStyle(Color.rdBlack)
-            Text(label)
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: 78)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 4)
-        .background(Color.rdWhite)
-        .overlay(
-            RoundedRectangle(cornerRadius: RDRadius.md)
-                .stroke(Color.rdLine, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: RDRadius.md))
     }
 
     private var competencyPreview: some View {

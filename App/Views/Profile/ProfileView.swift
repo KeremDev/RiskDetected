@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import Supabase
 import UIKit
 import UserNotifications
 
@@ -15,8 +16,15 @@ struct ProfileView: View {
     @State private var showPreferences = false
     @State private var showLegalInfo = false
     @State private var showSupport = false
+    @State private var showProfessionalTitlesFromHeader = false
+    @State private var profileBadgesSheet: ProfileBadgesSheetItem?
     @State private var stats: ProfileStats? = nil
     @State private var professionalProgressSummary: ProfessionalProgressSummary? = nil
+    @State private var onboardingSummary: ProfileOnboardingSummary? = nil
+    @State private var selectedProfileAvatarItem: PhotosPickerItem?
+    @State private var profileAvatarImage: UIImage?
+    @State private var isUpdatingProfileAvatar = false
+    @State private var profileAvatarError: String?
     @State private var dataActionInProgress: ProfileDataAction?
     @State private var pendingDataAction: ProfileDataAction?
     @State private var dataMessage: String?
@@ -36,18 +44,6 @@ struct ProfileView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                RDHeaderLogoButton(size: 18)
-                Spacer()
-                RDHeaderAccountCTA {
-                    showPaywall = true
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-            .zIndex(100)
-
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
                     profileHeader
@@ -65,7 +61,7 @@ struct ProfileView: View {
                     versionFootnote
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 14)
+                .padding(.top, 0)
                 .padding(.bottom, 110)
             }
         }
@@ -74,12 +70,22 @@ struct ProfileView: View {
         .task {
             await loadStats()
             await loadProfessionalProgress()
+            await loadOnboardingSummary()
+        }
+        .task(id: app.profile?.avatarURL) {
+            await loadProfileAvatarImage()
         }
         .onChange(of: app.auth.session?.user.id) { _ in
             Task {
                 await loadStats()
                 await loadProfessionalProgress()
+                await loadOnboardingSummary()
+                await loadProfileAvatarImage()
             }
+        }
+        .onChange(of: selectedProfileAvatarItem) { newItem in
+            guard let newItem else { return }
+            Task { await handleProfileAvatarSelection(newItem) }
         }
         .fullScreenCover(isPresented: $showPaywall) {
             FreeAwarePaywallView(onClose: { showPaywall = false },
@@ -133,7 +139,7 @@ struct ProfileView: View {
                     }
                 }
             )
-            .presentationDetents([.large])
+            .presentationDetents(app.currentTier.isPaid ? [.large] : [.height(370)])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -142,7 +148,7 @@ struct ProfileView: View {
                 notificationService: notifications,
                 onClose: { showNotificationSettings = false }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.height(690), .large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -173,9 +179,31 @@ struct ProfileView: View {
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
+        .sheet(isPresented: $showProfessionalTitlesFromHeader) {
+            if let professionalProgressSummary {
+                ProfessionalProgressTitlesSheet(summary: professionalProgressSummary)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .preferredColorScheme(preferredModalColorScheme)
+            }
+        }
+        .sheet(item: $profileBadgesSheet) { item in
+            ProfessionalProgressBadgesView(summary: item.summary)
+                .presentationDetents([.height(360)])
+                .presentationDragIndicator(.visible)
+                .preferredColorScheme(preferredModalColorScheme)
+        }
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
                 .preferredColorScheme(preferredModalColorScheme)
+        }
+        .alert("Profil fotoğrafı güncellenemedi", isPresented: Binding(
+            get: { profileAvatarError != nil },
+            set: { if !$0 { profileAvatarError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) { profileAvatarError = nil }
+        } message: {
+            Text(profileAvatarError ?? "")
         }
         .confirmationDialog(
             pendingDataAction?.confirmationTitle ?? "İşlem onayı",
@@ -209,64 +237,415 @@ struct ProfileView: View {
     // MARK: - Header
 
     private var profileHeader: some View {
-        HStack(spacing: 14) {
-            RDAvatar(
-                initials: app.profile?.displayInitials ?? "—",
-                size: 64,
-                tier: app.currentTier
-            )
-            VStack(alignment: .leading, spacing: 2) {
-                Text(app.profile?.displayName ?? "Kullanıcı")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
-                if let title = app.profile?.title {
-                    Text(title)
-                        .font(.system(size: 13, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
+        VStack(spacing: 0) {
+            ZStack(alignment: .topLeading) {
+                VStack(spacing: 0) {
+                    profileCover
+                        .frame(height: 148)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(profileDisplayName)
+                            .font(.system(size: 23, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdBlack)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .padding(.top, 50)
+
+                        Text(profileExpertiseLabel)
+                            .font(.system(size: 13.5, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color.rdSlate)
+                            .lineSpacing(2)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        if let professionalProgressSummary {
+                            Button {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                showProfileBadges(professionalProgressSummary)
+                            } label: {
+                                Label("Başarılarım", systemImage: "rosette")
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .foregroundStyle(Color.rdGreenDark)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.top, 6)
+                            .accessibilityLabel("Başarılarım")
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, professionalProgressSummary == nil ? 16 : 12)
+
+                    profileHeroStatsRow
                 }
-                if let email = app.profile?.email {
-                    Text(email)
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                }
+
+                profileAvatarPicker
+                    .offset(x: 28, y: 96)
+
+                professionalTitleBadge
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 202)
+                    .padding(.trailing, 16)
+                    .offset(y: 172)
             }
-            Spacer()
+        }
+        .background(profileCardFill)
+        .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .stroke(profileLine, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.22 : 0.07), radius: 18, x: 0, y: 10)
+        .accessibilityIdentifier("profile.hero.card")
+    }
+
+    private var profileCover: some View {
+        ZStack {
+            LinearGradient(
+                colors: colorScheme == .dark
+                    ? [Color(hex: "#1A2529"), Color(hex: "#202C31"), Color(hex: "#0D1514")]
+                    : [Color(hex: "#C8E0EF"), Color(hex: "#E0EFF7"), Color(hex: "#AFCFE4")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            Circle()
+                .fill(Color.white.opacity(colorScheme == .dark ? 0.10 : 0.40))
+                .frame(width: 150, height: 150)
+                .blur(radius: 9)
+                .offset(x: 52, y: -44)
+
+            Capsule()
+                .fill(Color.white.opacity(colorScheme == .dark ? 0.08 : 0.34))
+                .frame(width: 160, height: 70)
+                .blur(radius: 10)
+                .offset(x: 112, y: 2)
+
+            Circle()
+                .fill(Color.rdGreen.opacity(colorScheme == .dark ? 0.14 : 0.10))
+                .frame(width: 150, height: 150)
+                .blur(radius: 22)
+                .offset(x: -138, y: 54)
+
+            profileCoverClouds
+
+            LinearGradient(
+                colors: [.clear, profileCardFill.opacity(0.74)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
         }
     }
 
-    // MARK: - Stats
+    private var profileCoverClouds: some View {
+        ZStack {
+            Group {
+                Circle()
+                    .frame(width: 76, height: 76)
+                    .offset(x: -60, y: -8)
+                Circle()
+                    .frame(width: 116, height: 116)
+                    .offset(x: 0, y: -26)
+                Circle()
+                    .frame(width: 88, height: 88)
+                    .offset(x: 66, y: -10)
+                Capsule(style: .continuous)
+                    .frame(width: 196, height: 56)
+                    .offset(x: 8, y: 12)
+            }
+            .foregroundStyle(Color.white.opacity(colorScheme == .dark ? 0.34 : 0.96))
 
-    private struct Stat { let value: String; let label: String }
-    private var statCards: [Stat] {
+            Group {
+                Circle()
+                    .frame(width: 54, height: 54)
+                    .offset(x: 98, y: -22)
+                Capsule(style: .continuous)
+                    .frame(width: 112, height: 34)
+                    .offset(x: 94, y: 12)
+            }
+            .foregroundStyle(Color.white.opacity(colorScheme == .dark ? 0.24 : 0.78))
+        }
+        .blur(radius: 1.4)
+        .shadow(color: Color(hex: "#AFC6D6").opacity(colorScheme == .dark ? 0.10 : 0.20), radius: 14, x: 0, y: 8)
+        .offset(x: 48, y: 10)
+        .allowsHitTesting(false)
+    }
+
+    private var profileAvatarPicker: some View {
+        PhotosPicker(
+            selection: $selectedProfileAvatarItem,
+            matching: .images,
+            photoLibrary: .shared()
+        ) {
+            profileAvatarContent
+        }
+        .buttonStyle(.plain)
+        .disabled(isUpdatingProfileAvatar)
+        .accessibilityLabel("Profil fotoğrafı")
+        .accessibilityHint("Fotoğraf seçmek veya değiştirmek için dokun")
+    }
+
+    private var profileAvatarContent: some View {
+        ZStack {
+            if let profileAvatarImage {
+                Image(uiImage: profileAvatarImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 96, height: 96)
+                    .clipShape(Circle())
+            } else {
+                RDAvatar(
+                    initials: app.profile?.displayInitials ?? "—",
+                    size: 96,
+                    tier: .free
+                )
+            }
+
+            if isUpdatingProfileAvatar {
+                Circle()
+                    .fill(Color.black.opacity(0.28))
+                    .frame(width: 96, height: 96)
+                ProgressView()
+                    .tint(.white)
+            }
+        }
+        .frame(width: 96, height: 96)
+        .overlay(Circle().stroke(profileCardFill, lineWidth: 5))
+        .overlay(alignment: .topTrailing) {
+            profileAvatarTierBadge
+                .offset(x: 5, y: -5)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Image(systemName: "camera.fill")
+                .font(.system(size: 11, weight: .black, design: .rounded))
+                .foregroundStyle(Color.rdWhite)
+                .frame(width: 26, height: 26)
+                .background(Color.rdBlack.opacity(0.88))
+                .clipShape(Circle())
+                .overlay(Circle().stroke(profileCardFill, lineWidth: 3))
+                .offset(x: 3, y: 3)
+        }
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.28 : 0.12), radius: 12, x: 0, y: 7)
+    }
+
+    @ViewBuilder
+    private var profileAvatarTierBadge: some View {
+        switch app.currentTier {
+        case .plus:
+            Image(systemName: "crown.fill")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(Color.rdWhite)
+                .frame(width: 28, height: 28)
+                .background(Color.rdPlanPlus)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(profileCardFill, lineWidth: 3))
+                .shadow(color: Color.rdPlanPlus.opacity(0.30), radius: 8, x: 0, y: 4)
+        case .pro:
+            Image(systemName: "star.fill")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(Color.rdWhite)
+                .frame(width: 28, height: 28)
+                .background(Color.rdGreen)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(profileCardFill, lineWidth: 3))
+                .shadow(color: Color.rdGreen.opacity(0.30), radius: 8, x: 0, y: 4)
+        case .free:
+            EmptyView()
+        }
+    }
+
+    private var professionalTitleBadge: some View {
+        Button {
+            guard professionalProgressSummary != nil else { return }
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            showProfessionalTitlesFromHeader = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: professionalTitleIcon)
+                    .font(.system(size: 10.5, weight: .black, design: .rounded))
+                    .foregroundStyle(Color.rdWhite)
+                    .frame(width: 21, height: 21)
+                    .background(professionalTitleAccent)
+                    .clipShape(Circle())
+
+                Text(professionalTitleLabel)
+                    .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .padding(.vertical, 5)
+            .padding(.leading, 6)
+            .padding(.trailing, 9)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(profileCardFill.opacity(colorScheme == .dark ? 0.94 : 0.92))
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(professionalTitleAccent.opacity(0.22), lineWidth: 1)
+            )
+            .shadow(color: professionalTitleAccent.opacity(0.12), radius: 7, x: 0, y: 4)
+            .frame(maxWidth: 155, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .disabled(professionalProgressSummary == nil)
+        .accessibilityLabel("Mesleki ünvan: \(professionalTitleLabel)")
+        .accessibilityHint("Mesleki ilerleme penceresini açar")
+    }
+
+    private var profileHeroStatsRow: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(profileHeroStats.enumerated()), id: \.offset) { index, item in
+                if index > 0 {
+                    Rectangle()
+                        .fill(profileLine)
+                        .frame(width: 1)
+                }
+
+                HStack(spacing: 8) {
+                    Image(systemName: item.icon)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(item.color)
+                        .frame(width: 22, height: 22)
+                        .background(item.color.opacity(colorScheme == .dark ? 0.16 : 0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(item.value)
+                            .rdMono(size: 17, weight: .bold)
+                            .foregroundStyle(Color.rdBlack)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.64)
+
+                        Text(item.label)
+                            .font(.system(size: 9, weight: .semibold, design: .rounded))
+                            .foregroundStyle(Color.rdSlate)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.68)
+                    }
+                    .frame(width: 42, alignment: .leading)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(height: 54)
+                .padding(.horizontal, 2)
+            }
+        }
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(profileLine)
+                .frame(height: 1)
+        }
+        .accessibilityIdentifier("profile.hero.stats")
+    }
+
+    private struct ProfileHeroStat {
+        let value: String
+        let label: String
+        let icon: String
+        let color: Color
+    }
+
+    private var profileHeroStats: [ProfileHeroStat] {
         [
-            .init(value: stats.map { "\($0.analysisCount)" } ?? "—", label: "Analiz"),
-            .init(value: stats.map { "\($0.reportCount)" } ?? "—", label: "Rapor"),
-            .init(value: stats.map { "\($0.weeklyAnalysisCount)" } ?? "—", label: "Bu hafta")
+            .init(
+                value: stats.map { "\($0.analysisCount)" } ?? "—",
+                label: "Analiz",
+                icon: "waveform.path.ecg",
+                color: .rdInfo
+            ),
+            .init(
+                value: stats.map { "\($0.reportCount)" } ?? "—",
+                label: "Rapor",
+                icon: "doc.text.fill",
+                color: .rdGreen
+            ),
+            .init(
+                value: weeklyProfileStatValue,
+                label: "Bu hafta",
+                icon: "calendar.badge.checkmark",
+                color: .rdPlanPlus
+            ),
+            .init(
+                value: professionalProgressSummary.map { "\($0.profile.highFindings + $0.profile.criticalFindings)" } ?? "—",
+                label: "Yüksek/\nKritik",
+                icon: "exclamationmark.triangle.fill",
+                color: .rdCritical
+            )
         ]
     }
 
-    private var statsRow: some View {
-        HStack(spacing: 8) {
-            ForEach(Array(statCards.enumerated()), id: \.offset) { _, s in
-                VStack(spacing: 2) {
-                    Text(s.value)
-                        .rdMono(size: 22, weight: .bold)
-                        .foregroundStyle(Color.rdBlack)
-                    Text(s.label)
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: RDRadius.lg)
-                        .fill(profileElevatedFill)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: RDRadius.lg)
-                                .stroke(profileLine, lineWidth: 1)
-                        )
-                )
+    private var weeklyProfileStatValue: String {
+        if let professionalProgressSummary {
+            return "\(professionalProgressSummary.weeklyTracking.reportsCount)"
+        }
+        return stats.map { "\($0.weeklyAnalysisCount)" } ?? "—"
+    }
+
+    private var profileDisplayName: String {
+        app.profile?.displayName ?? "Kullanıcı"
+    }
+
+    private var profileExpertiseLabel: String {
+        switch onboardingSummary?.certificateClass {
+        case "A":
+            return "A Sınıfı İş Güvenliği Uzmanı"
+        case "B":
+            return "B Sınıfı İş Güvenliği Uzmanı"
+        case "C":
+            return "C Sınıfı İş Güvenliği Uzmanı"
+        case "doctor":
+            return "İşyeri Hekimi"
+        case "otherHealth":
+            return "Diğer Sağlık Personeli"
+        default:
+            if let title = app.profile?.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty {
+                return title
             }
+            return "İSG Uzmanı"
+        }
+    }
+
+    private var professionalTitleLabel: String {
+        professionalProgressSummary?.currentTitle.label ?? ProfessionalProgressTitle.candidate.label
+    }
+
+    private var professionalTitleIcon: String {
+        switch professionalProgressSummary?.currentTitle ?? .candidate {
+        case .fieldObserver:
+            return "binoculars.fill"
+        case .riskHunter:
+            return "scope"
+        case .hazardAnalyst:
+            return "exclamationmark.triangle.fill"
+        case .seniorRiskSpecialist:
+            return "shield.checkered"
+        case .safetyStrategist:
+            return "flag.checkered"
+        case .masterHSESpecialist:
+            return "crown.fill"
+        case .candidate:
+            return "person.crop.circle.badge.checkmark"
+        }
+    }
+
+    private var professionalTitleAccent: Color {
+        switch professionalProgressSummary?.currentTitle ?? .candidate {
+        case .fieldObserver:
+            return Color(hex: "#9A5B00")
+        case .riskHunter:
+            return Color(hex: "#8F421D")
+        case .hazardAnalyst:
+            return Color(hex: "#8F2B13")
+        case .seniorRiskSpecialist:
+            return Color(hex: "#4F6F98")
+        case .safetyStrategist:
+            return Color.rdPlanPlusDark
+        case .masterHSESpecialist:
+            return Color(hex: "#102A43")
+        case .candidate:
+            return Color(hex: "#087C5B")
         }
     }
 
@@ -314,23 +693,37 @@ struct ProfileView: View {
         } label: {
             ZStack(alignment: .topTrailing) {
                 Circle()
-                    .fill(Color.rdPlanPlus.opacity(0.18))
-                    .frame(width: 132, height: 132)
-                    .offset(x: 48, y: -58)
+                    .fill(Color.rdPlanPlus.opacity(0.16))
+                    .frame(width: 96, height: 96)
+                    .blur(radius: 16)
+                    .offset(x: 42, y: -58)
 
-                VStack(alignment: .leading, spacing: 7) {
-                    HStack(spacing: 6) {
+                Circle()
+                    .fill(Color.rdGreen.opacity(0.10))
+                    .frame(width: 86, height: 86)
+                    .blur(radius: 18)
+                    .offset(x: -214, y: 78)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 7) {
                         RDTierBadge(tier: .plus)
                         RDTierBadge(tier: .pro)
+                        Spacer()
+                        Image(systemName: "arrow.up.right.circle.fill")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.rdPlanPlusDark)
                     }
+
                     Text("Plus veya Pro'ya yükselt")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .padding(.top, 8)
-                    Text("Günlük daha yüksek analiz hakkı, detaylı analiz, gelişmiş raporlama, gelişmiş canvas kullanımı, Fine-Kinney ve 5*5 Matris risk analiz methodları, özelleştirilmiş PDF ve Excel rapor çıktıları ve daha fazlası...")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.78))
-                        .fixedSize(horizontal: false, vertical: true)
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+
+                    VStack(alignment: .leading, spacing: 7) {
+                        upsellBenefit("Daha fazla günlük analiz")
+                        upsellBenefit("Detaylı risk raporları")
+                        upsellBenefit("Fine-Kinney + 5x5 matris")
+                        upsellBenefit("PDF ve Excel dışa aktarım")
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -338,19 +731,40 @@ struct ProfileView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 LinearGradient(
-                    colors: [Color.rdOnyx, Color.rdOnyx.opacity(0.94), Color.rdPlanPlus.opacity(0.14), Color.rdGreen.opacity(0.12)],
+                    colors: [
+                        Color(hex: "#F8FAF9"),
+                        Color(hex: "#EEF2F1"),
+                        Color(hex: "#F6F0DF")
+                    ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .stroke(Color.rdPlanPlus.opacity(0.28), lineWidth: 1)
+                    .stroke(Color.rdLine.opacity(0.95), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-            .shadow(color: Color.rdPlanPlus.opacity(0.14), radius: 18, x: 0, y: 10)
+            .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 8)
         }
         .buttonStyle(RDPressableButtonStyle())
+    }
+
+    private func upsellBenefit(_ text: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 9, weight: .black, design: .rounded))
+                .foregroundStyle(Color.rdOnyx)
+                .frame(width: 18, height: 18)
+                .background(Color.rdPlanPlus)
+                .clipShape(Circle())
+
+            Text(text)
+                .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+        }
     }
 
     // MARK: - Lists
@@ -543,6 +957,52 @@ struct ProfileView: View {
         return withFraction.date(from: raw) ?? plain.date(from: raw)
     }
 
+    private func showProfileBadges(_ summary: ProfessionalProgressSummary) {
+        profileBadgesSheet = ProfileBadgesSheetItem(summary: summary)
+    }
+
+    private func loadProfileAvatarImage() async {
+        guard let path = app.profile?.avatarURL?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty
+        else {
+            profileAvatarImage = nil
+            return
+        }
+
+        do {
+            profileAvatarImage = try await app.auth.profileAvatarImage(path: path)
+        } catch {
+            profileAvatarImage = nil
+        }
+    }
+
+    private func handleProfileAvatarSelection(_ item: PhotosPickerItem) async {
+        isUpdatingProfileAvatar = true
+        defer {
+            isUpdatingProfileAvatar = false
+            selectedProfileAvatarItem = nil
+        }
+
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self),
+                  let image = UIImage(data: data)
+            else {
+                throw NSError(
+                    domain: "RiskDetected.ProfileView",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "Fotoğraf okunamadı. Lütfen farklı bir görsel seç."]
+                )
+            }
+
+            try await app.auth.saveProfileAvatar(image)
+            await app.auth.refreshProfile()
+            await loadProfileAvatarImage()
+            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+        } catch {
+            profileAvatarError = error.localizedDescription
+        }
+    }
+
     private func loadStats() async {
         guard app.auth.session != nil else { return }
         do {
@@ -558,6 +1018,28 @@ struct ProfileView: View {
             return
         }
         professionalProgressSummary = await ProfessionalProgressService.shared.fetchSummary()
+    }
+
+    private func loadOnboardingSummary() async {
+        guard app.auth.session != nil,
+              let userID = SupabaseService.shared.currentUserID
+        else {
+            onboardingSummary = nil
+            return
+        }
+
+        do {
+            let rows: [ProfileOnboardingSummary] = try await SupabaseService.shared.client
+                .from("user_onboarding_answers")
+                .select("certificate_class")
+                .eq("user_id", value: userID.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            onboardingSummary = rows.first
+        } catch {
+            onboardingSummary = nil
+        }
     }
 
     private func runDataAction(_ action: ProfileDataAction) {
@@ -737,8 +1219,7 @@ private struct ProfileEditSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Kapat", action: onClose)
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    RDModalCloseButton(action: onClose)
                 }
             }
             .alert("Profil kaydedilemedi", isPresented: Binding(
@@ -991,29 +1472,29 @@ private struct NotificationSettingsSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
                 RDCard {
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: 10) {
                         Image(systemName: iconName)
-                            .font(.system(size: 22, weight: .semibold, design: .rounded))
+                            .font(.system(size: 19, weight: .semibold, design: .rounded))
                             .foregroundStyle(iconColor)
-                            .frame(width: 48, height: 48)
+                            .frame(width: 42, height: 42)
                             .background(iconColor.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .clipShape(RoundedRectangle(cornerRadius: 13))
 
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(statusTitle)
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             Text(statusMessage)
-                                .font(.system(size: 13, design: .rounded))
+                                .font(.system(size: 12, design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
 
-                VStack(spacing: 10) {
+                VStack(spacing: 8) {
                     notificationRow(icon: "checkmark.seal", title: "Analiz tamamlandı", subtitle: "Uzun süren analizlerde sonucu kaçırma.")
                     notificationRow(icon: "doc.richtext", title: "Rapor hazır", subtitle: "PDF arşivleme ve paylaşım akışlarında haber ver.")
                     notificationRow(icon: "person.crop.circle.badge.checkmark", title: "Hesap ve güvenlik", subtitle: "Oturum, profil ve önemli hesap durumları.")
@@ -1051,7 +1532,7 @@ private struct NotificationSettingsSheet: View {
                         title: "Ayarlar'dan aç",
                         style: .primary,
                         icon: "gearshape.fill",
-                        height: 52
+                        height: 48
                     ) {
                         openSystemSettings()
                     }
@@ -1060,7 +1541,7 @@ private struct NotificationSettingsSheet: View {
                         title: "Bildirimleri kapat",
                         style: .secondary,
                         icon: "bell.slash",
-                        height: 52
+                        height: 48
                     ) {
                         notificationService.disableNotifications()
                     }
@@ -1069,7 +1550,7 @@ private struct NotificationSettingsSheet: View {
                         title: notificationService.isRegistering ? "Bildirimler kuruluyor..." : "Bildirimleri aç",
                         style: .detect,
                         icon: notificationService.isRegistering ? "hourglass" : "bell.badge.fill",
-                        height: 52
+                        height: 48
                     ) {
                         notificationService.requestPermissionAndRegister()
                     }
@@ -1077,14 +1558,15 @@ private struct NotificationSettingsSheet: View {
                     .opacity(notificationService.isRegistering ? 0.72 : 1)
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 18)
             .background(Color.rdPaper)
             .navigationTitle("Bildirimler")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Kapat", action: onClose)
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    RDModalCloseButton(action: onClose)
                 }
             }
             .task {
@@ -1273,7 +1755,7 @@ private struct ProfileDataControlsSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Kapat", action: onClose)
+                    RDModalCloseButton(action: onClose)
                 }
             }
         }
@@ -1466,9 +1948,9 @@ private struct ProfilePreferencesSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Kapat") { dismiss() }
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
+                    RDModalCloseButton {
+                        dismiss()
+                    }
                 }
             }
         }
@@ -1548,6 +2030,19 @@ private struct PreferenceOptionRow: View {
         .accessibilityLabel(title)
         .accessibilityValue(isSelected ? "Seçili" : "Seçili değil")
     }
+}
+
+private struct ProfileOnboardingSummary: Decodable, Equatable {
+    let certificateClass: String?
+
+    enum CodingKeys: String, CodingKey {
+        case certificateClass = "certificate_class"
+    }
+}
+
+private struct ProfileBadgesSheetItem: Identifiable {
+    let id = UUID()
+    let summary: ProfessionalProgressSummary
 }
 
 #Preview {

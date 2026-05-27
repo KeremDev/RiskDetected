@@ -922,7 +922,7 @@ struct ResultView: View {
 
     private func refreshReportQuotaState() async -> Bool {
         do {
-            let usage = try await AnalysisService.shared.monthlyReportQuotaUsage(tier: app.profile?.tier ?? app.currentTier)
+            let usage = try await AnalysisService.shared.monthlyReportQuotaUsage(tier: app.currentTier)
             reportQuotaExhausted = usage.isExhausted
         } catch {
             reportQuotaExhausted = false
@@ -1150,8 +1150,7 @@ struct ReportSettingsSheet: View {
             .animation(.spring(response: 0.28, dampingFraction: 0.9), value: outputFormat)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Kapat", action: onClose)
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    RDModalCloseButton(action: onClose)
                 }
             }
         }
@@ -1167,14 +1166,20 @@ struct ReportSettingsSheet: View {
                 },
                 onPaywall: onPaywall
             )
-            .presentationDetents([.large])
+            .presentationDetents(accessTier.isPaid ? [.large] : [.height(370)])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(colorScheme)
         }
     }
 
     private var primaryButtonTitle: String {
-        if reportQuotaExhausted { return "Yükselt" }
+        if reportQuotaExhausted {
+            switch accessTier {
+            case .free: return "Yükselt"
+            case .plus: return "Pro'ya yükselt"
+            case .pro: return "Tamam"
+            }
+        }
         if options.kind == .standard { return "Rapor oluştur" }
         return outputFormat == .excel ? "Excel risk tablosu oluştur" : "Risk analizi PDF oluştur"
     }
@@ -1204,7 +1209,11 @@ struct ReportSettingsSheet: View {
                      shadowOverride: Color.rdGreen.opacity(0.16),
                      action: {
                          if reportQuotaExhausted {
-                             onPaywall()
+                             if accessTier == .pro {
+                                 onClose()
+                             } else {
+                                 onPaywall()
+                             }
                              return
                          }
                          if options.kind == .riskAnalysis, riskAnalysisLocked {
@@ -1230,7 +1239,7 @@ struct ReportSettingsSheet: View {
             reportKindRow(
                 kind: .standard,
                 title: "Standart Rapor",
-                subtitle: reportQuotaExhausted ? "Aylık rapor kotan doldu. Devam etmek için Plus'a yükselt." : "Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur.",
+                subtitle: reportQuotaExhausted ? quotaExceededSubtitle : "Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur.",
                 icon: "doc.richtext",
                 locked: standardReportLocked
             )
@@ -1241,6 +1250,17 @@ struct ReportSettingsSheet: View {
                 icon: "tablecells",
                 locked: riskAnalysisLocked
             )
+        }
+    }
+
+    private var quotaExceededSubtitle: String {
+        switch accessTier {
+        case .free:
+            return "Aylık rapor kotan doldu. Devam etmek için Plus'a yükselt."
+        case .plus:
+            return "Plus aylık rapor limitin doldu. Pro ile limiti artırabilirsin."
+        case .pro:
+            return "Pro aylık rapor limitin doldu. Yeni rapor için gelecek ayı beklemelisin."
         }
     }
 

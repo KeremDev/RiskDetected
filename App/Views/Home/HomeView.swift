@@ -66,7 +66,16 @@ struct HomeView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     modeSegment
-                        .padding(.bottom, 14)
+                        .padding(.bottom, 10)
+
+                    if RDConfig.Features.professionalProgressEnabled,
+                       let professionalProgressSummary {
+                        ProfessionalProgressWeeklyTrackingCard(
+                            summary: professionalProgressSummary,
+                            displayStyle: .compact
+                        )
+                        .padding(.bottom, 12)
+                    }
 
                     if mode == .photo {
                         photoUploadCard
@@ -94,16 +103,10 @@ struct HomeView: View {
 
                     if RDConfig.Features.professionalProgressEnabled,
                        let professionalProgressSummary {
-                        VStack(spacing: 8) {
-                            ProfessionalProgressHomeCard(
-                                summary: professionalProgressSummary,
-                                onTap: { showProfessionalTitlesSheet = true }
-                            )
-                            ProfessionalProgressWeeklyTrackingCard(
-                                summary: professionalProgressSummary,
-                                displayStyle: .compact
-                            )
-                        }
+                        ProfessionalProgressHomeCard(
+                            summary: professionalProgressSummary,
+                            onTap: { showProfessionalTitlesSheet = true }
+                        )
                         .padding(.top, 18)
                     }
 
@@ -222,7 +225,7 @@ struct HomeView: View {
                     }
                 }
             )
-            .presentationDetents([.large])
+            .presentationDetents(app.currentTier.isPaid ? [.large] : [.height(370)])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }

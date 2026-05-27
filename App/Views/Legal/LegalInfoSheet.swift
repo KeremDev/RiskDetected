@@ -19,9 +19,7 @@ struct LegalInfoSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Kapat", action: onClose)
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
+                    RDModalCloseButton(action: onClose)
                 }
             }
         }

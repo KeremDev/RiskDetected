@@ -60,23 +60,15 @@ begin
   limit 1;
 
   if coalesce(v_reports, 0) = 0 and coalesce(v_analyses, 0) = 0 then
-    v_body := 'Bu hafta henüz analiz veya rapor oluşturmadın. İlk saha kaydın haftalık takip izini başlatır.';
+    v_body := 'Bu hafta ilk analizini başlat. 😔';
   elsif coalesce(v_reports, 0) = 0 then
-    v_body := 'Bu hafta ' || coalesce(v_analyses, 0)::text ||
-      ' analiz yaptın. Uygun olanları rapora dönüştürmek mesleki arşivini güçlendirir.';
+    v_body := coalesce(v_analyses, 0)::text ||
+      ' analiz tamamladın. Şimdi rapora dönüştür.';
   elsif coalesce(v_reports, 0) = 1 then
-    v_body := 'Bu hafta ilk raporunu tamamladın, devam et.';
+    v_body := 'İlk rapor tamam. Devam et.';
   else
     v_body := 'Bu hafta ' || coalesce(v_reports, 0)::text ||
-      ' rapor tamamladın. Raporlama disiplinin güçleniyor.';
-  end if;
-
-  if coalesce(v_findings, 0) > 0 then
-    v_body := v_body || ' ' || coalesce(v_findings, 0)::text || ' risk kaydı görünür oldu.';
-  end if;
-
-  if v_top_competency is not null then
-    v_body := v_body || ' Öne çıkan alan: ' || private.pp_competency_label(v_top_competency) || '.';
+      ' rapor tamamladın. 💪';
   end if;
 
   insert into public.professional_progress_weekly_summaries (
@@ -155,5 +147,7 @@ select cron.schedule(
   select private.pp_refresh_weekly_summaries_for_week(now());
   $$
 );
+
+select private.pp_refresh_weekly_summaries_for_week(now());
 
 select pg_notify('pgrst', 'reload schema');

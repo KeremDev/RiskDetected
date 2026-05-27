@@ -117,7 +117,7 @@ struct ReportView: View {
                     }
                 }
             )
-            .presentationDetents([.large])
+            .presentationDetents(app.currentTier.isPaid ? [.large] : [.height(370)])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -1099,7 +1099,7 @@ struct ReportView: View {
 
     private func refreshReportQuotaState() async -> Bool {
         do {
-            let usage = try await AnalysisService.shared.monthlyReportQuotaUsage(tier: app.profile?.tier ?? app.currentTier)
+            let usage = try await AnalysisService.shared.monthlyReportQuotaUsage(tier: app.currentTier)
             reportQuotaExhausted = usage.isExhausted
         } catch {
             reportQuotaExhausted = false

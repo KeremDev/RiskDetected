@@ -191,6 +191,47 @@ final class AuthService: ObservableObject {
         return UIImage(data: data)
     }
 
+    func saveProfileAvatar(_ image: UIImage) async throws {
+        guard let userID = supabase.currentUserID else {
+            throw NSError(
+                domain: "RiskDetected.AuthService",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Oturum bulunamadı."]
+            )
+        }
+        guard let data = image.centeredSquareJPEG(side: 512, compressionQuality: 0.86) else {
+            throw NSError(
+                domain: "RiskDetected.AuthService",
+                code: -2,
+                userInfo: [NSLocalizedDescriptionKey: "Profil fotoğrafı hazırlanamadı."]
+            )
+        }
+
+        let path = "\(userID.uuidString.lowercased())/avatar.jpg"
+        _ = try await supabase.storage
+            .from(RDConfig.Bucket.avatars)
+            .upload(
+                path,
+                data: data,
+                options: FileOptions(contentType: "image/jpeg", upsert: true)
+            )
+
+        try await supabase.client
+            .from("profiles")
+            .update(ProfileAvatarPatchPayload(avatarURL: path))
+            .eq("id", value: userID.uuidString)
+            .execute()
+
+        await fetchProfile(userID: userID)
+    }
+
+    func profileAvatarImage(path: String) async throws -> UIImage? {
+        let data = try await supabase.storage
+            .from(RDConfig.Bucket.avatars)
+            .download(path: path)
+        return UIImage(data: data)
+    }
+
     // MARK: - Private
 
     /// Profile fetch'in tek kaynağı. Hatayı `lastError`'a yazıyor ki UI gösterebilsin.
@@ -518,6 +559,14 @@ private struct ProfileUpdatePayload: Encodable {
     }
 }
 
+private struct ProfileAvatarPatchPayload: Encodable {
+    let avatarURL: String
+
+    enum CodingKeys: String, CodingKey {
+        case avatarURL = "avatar_url"
+    }
+}
+
 private struct ProfileBootstrapPayload: Encodable {
     let id: String
     let email: String?
@@ -562,6 +611,30 @@ private extension UIImage {
         let renderer = UIGraphicsImageRenderer(size: targetSize)
         let normalized = renderer.image { _ in
             draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        return normalized.jpegData(compressionQuality: compressionQuality)
+    }
+
+    func centeredSquareJPEG(side: CGFloat, compressionQuality: CGFloat) -> Data? {
+        let targetSize = CGSize(width: side, height: side)
+        let sourceSize = size
+        guard sourceSize.width > 0, sourceSize.height > 0 else { return nil }
+
+        let scale = max(side / sourceSize.width, side / sourceSize.height)
+        let drawSize = CGSize(width: sourceSize.width * scale, height: sourceSize.height * scale)
+        let origin = CGPoint(
+            x: (side - drawSize.width) / 2,
+            y: (side - drawSize.height) / 2
+        )
+
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
+        let normalized = renderer.image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(origin: .zero, size: targetSize))
+            draw(in: CGRect(origin: origin, size: drawSize))
         }
         return normalized.jpegData(compressionQuality: compressionQuality)
     }

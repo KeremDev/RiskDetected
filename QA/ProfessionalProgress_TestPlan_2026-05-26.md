@@ -149,7 +149,7 @@ Create a completed detailed analysis with one high/critical risk.
 Expected:
 
 - One `analysis_completed:{analysis_id}` event.
-- MDP delta includes detailed analysis `150` and high/critical analysis `200`.
+- MDP delta includes detailed analysis `70` and high/critical analysis `120`.
 - `total_analyses` increments by 1.
 - Re-running trigger or backfill does not create a duplicate event.
 
@@ -160,9 +160,9 @@ Create a standard report.
 Expected:
 
 - One `report_created:{report_id}` event.
-- MDP +100.
+- MDP +60.
 - `total_reports` increments by 1.
-- Weekly bonus event may appear once for `weekly_bonus:{week_start}` with +75.
+- Weekly bonus event may appear once for `weekly_bonus:{week_start}` with +25.
 
 ### MDP-03 Risk Analysis Export Bonus
 
@@ -170,7 +170,7 @@ Create a risk analysis report with `kind in ('riskAnalysis', 'risk_analysis')` o
 
 Expected:
 
-- Report MDP is `100 + 150`.
+- Report MDP is `60 + 90`.
 - Badge `report_kind:first_risk_analysis` unlocks once.
 
 ### MDP-04 First Competency Bonus
@@ -180,26 +180,27 @@ First real classified finding in a competency area.
 Expected:
 
 - One `first_competency_used:{competency_key}` event.
-- MDP +50 once per competency.
+- MDP +20 once per competency.
 - Repeated findings in the same competency do not add this bonus again.
+- One analysis/report workflow is capped at `400` MDP.
 
 ### MDP-05 Title Thresholds
 
 Seed MDP around boundaries:
 
 - 0
-- 499
-- 500
-- 1499
-- 1500
-- 3999
-- 4000
-- 7999
-- 8000
+- 999
+- 1000
+- 4999
+- 5000
 - 14999
 - 15000
-- 29999
-- 30000
+- 39999
+- 40000
+- 89999
+- 90000
+- 179999
+- 180000
 
 Expected title keys:
 

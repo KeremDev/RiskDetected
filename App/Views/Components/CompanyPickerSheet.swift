@@ -40,8 +40,9 @@ struct CompanyPickerSheet: View {
             .accessibilityIdentifier("company_picker.root")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Kapat") { dismiss() }
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    RDModalCloseButton {
+                        dismiss()
+                    }
                 }
             }
         }
@@ -391,7 +392,7 @@ private struct CompanyEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Kapat", action: onClose)
+                    RDModalCloseButton(action: onClose)
                 }
             }
         }

@@ -99,7 +99,7 @@ struct HistoryView: View {
                     }
                 }
             )
-            .presentationDetents([.large])
+            .presentationDetents(app.currentTier.isPaid ? [.large] : [.height(370)])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
