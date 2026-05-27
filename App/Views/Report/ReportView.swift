@@ -117,7 +117,7 @@ struct ReportView: View {
                     }
                 }
             )
-            .presentationDetents(app.currentTier.isPaid ? [.large] : [.height(370)])
+            .presentationDetents(CompanyPickerSheet.presentationDetents(for: app.currentTier))
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }

@@ -20,6 +20,15 @@
   - Fonksiyon remote Supabase'e deploy edildi.
   - Simulator'da Plus kullanıcı için `Rapor Oluştur` sheet'i tekrar test edildi; yanlış `LİMİT DOLDU` görünmüyor.
 
+## 2026-05-28 Çalışma Güncellemesi
+
+- İçerik özeti:
+  - Analiz kuyruğu kullanıcı metni teknik/backend dilden arındırıldı.
+  - Firma seçimi/filtresi sheet'leri kompakt detent ile açılacak şekilde ayarlandı.
+  - Firma filtresi UI kartları ve satırları daha sakin font/ölçü düzenine çekildi.
+  - `Yeni firma ekle` CTA'sı gri yerine siyah olarak tasarlandı.
+  - Simulator build/run geçti ve `Analiz firma filtresi` görsel QA yapıldı.
+
 ## 2026-05-26 Commit Güncellemesi
 
 - Hash: `ebc25ed`

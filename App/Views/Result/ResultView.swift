@@ -1166,7 +1166,7 @@ struct ReportSettingsSheet: View {
                 },
                 onPaywall: onPaywall
             )
-            .presentationDetents(accessTier.isPaid ? [.large] : [.height(370)])
+            .presentationDetents(CompanyPickerSheet.presentationDetents(for: accessTier))
             .presentationDragIndicator(.visible)
             .preferredColorScheme(colorScheme)
         }

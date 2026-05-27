@@ -5,6 +5,10 @@ import UIKit
 struct CompanyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
+    static func presentationDetents(for accessTier: SubscriptionTier) -> Set<PresentationDetent> {
+        accessTier.isPaid ? [.height(400), .large] : [.height(370)]
+    }
+
     let title: String
     let accessTier: SubscriptionTier
     var selectedCompanyID: UUID?
@@ -109,24 +113,14 @@ struct CompanyPickerSheet: View {
                 }
             }
 
-            RDButton(
-                title: companies.count >= companyLimit ? "Firma limiti doldu" : "Yeni firma ekle",
-                style: .secondary,
-                icon: "plus.circle.fill",
-                height: 52
-            ) {
-                presentEditor(CompanyDraft())
-            }
-            .disabled(companies.count >= companyLimit)
-            .opacity(companies.count >= companyLimit ? 0.58 : 1)
-            .accessibilityIdentifier("company_picker.add")
+            addCompanyButton
         }
     }
 
     private var lockedContent: some View {
         VStack(alignment: .leading, spacing: 14) {
             Image(systemName: "building.2.crop.circle")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .font(.system(size: 32, weight: .semibold))
                 .foregroundStyle(Color.rdPlanPlus)
                 .frame(width: 64, height: 64)
                 .background(Color.rdPlanPlusSoft)
@@ -134,10 +128,10 @@ struct CompanyPickerSheet: View {
 
             VStack(alignment: .leading, spacing: 7) {
                 Text("Firma arşivi Plus ve Pro’da")
-                    .font(.system(size: 21, weight: .bold, design: .rounded))
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Color.rdBlack)
                 Text("Analizlerini firmalara bağla, raporlarını firma logosu ve tehlike sınıfıyla paylaş.")
-                    .font(.system(size: 14, design: .rounded))
+                    .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -155,35 +149,35 @@ struct CompanyPickerSheet: View {
     }
 
     private var headerCard: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             Image(systemName: "building.2.fill")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.rdGreenDark)
-                .frame(width: 44, height: 44)
+                .frame(width: 38, height: 38)
                 .background(Color.rdGreenSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 13))
+                .clipShape(RoundedRectangle(cornerRadius: 11))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(companies.count)/\(companyLimit) firma")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.rdBlack)
                 Text("Firma adı, logo ve tehlike sınıfı raporlarında kullanılacak.")
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.system(size: 11))
                     .foregroundStyle(Color.rdSlate)
             }
             Spacer()
         }
-        .padding(14)
+        .padding(12)
         .background(Color.rdWhite)
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.rdLine, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rdLine, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private var loadingCard: some View {
         HStack(spacing: 10) {
             ProgressView()
             Text("Firmalar yükleniyor")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -195,10 +189,10 @@ struct CompanyPickerSheet: View {
     private var emptyCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Henüz firma yok")
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color.rdBlack)
             Text("İlk firmayı buradan ekleyip analiz veya raporla eşleştirebilirsin.")
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -253,11 +247,11 @@ struct CompanyPickerSheet: View {
                 }
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.rdSlate)
-                    .frame(width: 44, height: 54)
+                    .frame(width: 40, height: 48)
                     .background(Color.rdWhite)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .clipShape(RoundedRectangle(cornerRadius: 13))
             }
         }
     }
@@ -268,34 +262,58 @@ struct CompanyPickerSheet: View {
         isEditorPresented = true
     }
 
-    private func rowContent(icon: String, title: String, subtitle: String, isSelected: Bool) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundStyle(isSelected ? Color.rdGreenDark : Color.rdSlate)
-                .frame(width: 40, height: 40)
-                .background(isSelected ? Color.rdGreenSoft : Color.rdFog)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+    private var addCompanyButton: some View {
+        Button {
+            presentEditor(CompanyDraft())
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                Text(companies.count >= companyLimit ? "Firma limiti doldu" : "Yeni firma ekle")
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .foregroundStyle(.white)
+            .background(Color.rdOnyx)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .shadow(color: Color.rdOnyx.opacity(0.12), radius: 10, x: 0, y: 5)
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .disabled(companies.count >= companyLimit)
+        .opacity(companies.count >= companyLimit ? 0.58 : 1)
+        .accessibilityIdentifier("company_picker.add")
+    }
 
-            VStack(alignment: .leading, spacing: 3) {
+    private func rowContent(icon: String, title: String, subtitle: String, isSelected: Bool) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(isSelected ? Color.rdGreenDark : Color.rdSlate)
+                .frame(width: 34, height: 34)
+                .background(isSelected ? Color.rdGreenSoft : Color.rdFog)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
                 Text(subtitle)
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.system(size: 11))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
             }
             Spacer()
             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: 19, weight: .semibold, design: .rounded))
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(isSelected ? Color.rdGreen : Color.rdSlate.opacity(0.35))
         }
-        .padding(12)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
         .background(Color.rdWhite)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(isSelected ? Color.rdGreen.opacity(0.45) : Color.rdLine, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(isSelected ? Color.rdGreen.opacity(0.36) : Color.rdLine, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     private var companyLimit: Int {
@@ -422,7 +440,7 @@ private struct CompanyEditorSheet: View {
                         .padding(9)
                 } else {
                     Image(systemName: "building.2.crop.circle")
-                        .font(.system(size: 27, weight: .semibold, design: .rounded))
+                        .font(.system(size: 27, weight: .semibold))
                         .foregroundStyle(Color.rdSlate)
                 }
             }
@@ -430,16 +448,16 @@ private struct CompanyEditorSheet: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text("Firma logosu")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.rdBlack)
                 Text("Opsiyonel. Rapor başlığında görünür.")
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(Color.rdSlate)
             }
             Spacer()
             PhotosPicker(selection: $selectedLogoItem, matching: .images) {
                 Image(systemName: selectedLogoImage == nil ? "plus" : "arrow.triangle.2.circlepath")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold))
                     .frame(width: 36, height: 36)
                     .foregroundStyle(Color.rdGreenDark)
                     .background(Color.rdGreenSoft)
@@ -454,7 +472,7 @@ private struct CompanyEditorSheet: View {
     private var hazardSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Tehlike sınıfı")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color.rdSlate)
             ForEach(CompanyHazardClass.allCases) { hazard in
                 Button {
@@ -462,7 +480,7 @@ private struct CompanyEditorSheet: View {
                 } label: {
                     HStack {
                         Text(hazard.title)
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(Color.rdBlack)
                         Spacer()
                         Image(systemName: draft.hazardClass == hazard ? "checkmark.circle.fill" : "circle")
@@ -481,10 +499,10 @@ private struct CompanyEditorSheet: View {
     private func field(_ title: String, text: Binding<String>, placeholder: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color.rdSlate)
             TextField(placeholder, text: text)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .font(.system(size: 15, weight: .regular))
                 .textInputAutocapitalization(.words)
                 .padding(.horizontal, 12)
                 .frame(height: 46)

@@ -22,8 +22,8 @@ struct AnalysisProgressUpdate: Equatable {
     )
 
     static let queued = AnalysisProgressUpdate(
-        title: "Analiz kuyruğa alındı",
-        message: "Uygulamadan çıksan bile analiz backend tarafında devam edecek.",
+        title: "Analiz hazırlanıyor",
+        message: "Uygulamadan çıksan bile analiz güvenli şekilde tamamlanacak.",
         icon: "clock.arrow.circlepath"
     )
 }
