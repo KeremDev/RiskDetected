@@ -263,7 +263,36 @@ serve(async (req) => {
   const subscriptions = payload.subscriber?.subscriptions ?? {};
   const resolved = subscriptionTier(subscriptions) ??
     entitlementTier(entitlements);
-  if (!expectedTier && resolved.tier !== "free") {
+
+  const { data: previousSubscription } = await supabase
+    .from("user_subscriptions")
+    .select("tier,status,current_period_ends_at,entitlement_id,product_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const previousTier = normalizeTier(previousSubscription?.tier);
+  const previousStatus = typeof previousSubscription?.status === "string"
+    ? previousSubscription.status
+    : null;
+
+  if (resolved.tier === "free") {
+    // Webhooks are the source of truth for cancellations/downgrades. This
+    // authenticated fallback exists to repair missing paid access when the SDK
+    // sees an active entitlement; it must not downgrade an existing backend
+    // subscription just because RevenueCat briefly returns no active entitlement.
+    return json(200, {
+      ok: true,
+      tier: previousTier ?? "free",
+      status: previousStatus ?? "inactive",
+      entitlement_id: previousSubscription?.entitlement_id ?? null,
+      product_id: previousSubscription?.product_id ?? null,
+      current_period_ends_at:
+        previousSubscription?.current_period_ends_at ?? null,
+      revenuecat_tier: resolved.tier,
+      skipped_downgrade: true,
+    });
+  }
+
+  if (!expectedTier) {
     return json(409, {
       error: "client_tier_assertion_required",
       tier: "free",
@@ -280,7 +309,7 @@ serve(async (req) => {
   }
 
   if (
-    expectedTier && expectedTier !== "free" &&
+    expectedTier &&
     expectedEntitlementID && expectedEntitlementID !== resolved.entitlementID
   ) {
     return json(409, {
@@ -294,12 +323,7 @@ serve(async (req) => {
   const entitlementIDs = Object.entries(entitlements)
     .filter(([, value]) => isActiveEntitlement(value))
     .map(([key]) => key);
-  const status = resolved.tier === "free" ? "inactive" : "active";
-  const { data: previousSubscription } = await supabase
-    .from("user_subscriptions")
-    .select("tier,status")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const status = "active";
 
   await supabase.from("user_subscriptions").upsert({
     user_id: user.id,
@@ -319,14 +343,7 @@ serve(async (req) => {
     .update({ tier: resolved.tier })
     .eq("id", user.id);
 
-  const previousTier = normalizeTier(previousSubscription?.tier);
-  const previousStatus = typeof previousSubscription?.status === "string"
-    ? previousSubscription.status
-    : null;
-  if (
-    resolved.tier !== "free" &&
-    (previousTier !== resolved.tier || previousStatus !== status)
-  ) {
+  if (previousTier !== resolved.tier || previousStatus !== status) {
     await sendAccountSyncPush({
       supabaseUrl,
       serviceRoleKey,
