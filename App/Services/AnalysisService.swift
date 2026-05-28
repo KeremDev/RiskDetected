@@ -178,7 +178,12 @@ final class AnalysisService {
 
     /// Tek bir tamamlanmış analizin sonucunu detay ekranı için getirir.
     func result(analysisID: UUID) async throws -> AnalysisResultBundle {
-        try await fetchResult(analysisID: analysisID)
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            return Self.uiTestResultBundle(analysisID: analysisID)
+        }
+        #endif
+        return try await fetchResult(analysisID: analysisID)
     }
 
     func assignCompany(to analysisID: UUID, companyID: UUID) async throws {
@@ -1374,6 +1379,58 @@ final class AnalysisService {
             return 1 + max(Int(ceil(Double(max(findingCount, 1)) / 5.0)), 1)
         }
     }
+
+    #if DEBUG
+    private static var isUITestMainLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_MAIN")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
+    }
+
+    private static func uiTestResultBundle(analysisID: UUID) -> AnalysisResultBundle {
+        let userID = UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!
+        let analysis = AnalysisRow(
+            id: analysisID,
+            userID: userID,
+            companyID: nil,
+            title: "UI Test Saha Analizi",
+            kind: "text",
+            canvas: "ppe",
+            status: "completed",
+            statusMessage: nil,
+            aiSummary: "UI test fixture analizi tamamlandı. Bulgular rapor ve PDF akışını gerçek ekran üzerinde doğrulamak için hazırlanmıştır.",
+            totalScoreFK: 1_920,
+            totalScoreM5: 62,
+            highestBandFK: RiskLevel.critical.rawValue,
+            highestBandM5: RiskLevel.critical.rawValue,
+            findingCount: Finding.mock.count,
+            createdAt: ISO8601DateFormatter().string(from: Date())
+        )
+        let rows = Finding.mock.map { finding in
+            FindingRow(
+                id: UUID(),
+                analysisID: analysisID,
+                ordinal: finding.id,
+                title: finding.title,
+                category: finding.category,
+                description: finding.description,
+                recommendedAction: finding.action,
+                referencesText: finding.references,
+                rootCauseText: finding.rootCause,
+                confidence: finding.confidence,
+                fkProbability: finding.fk.probability,
+                fkFrequency: finding.fk.frequency,
+                fkSeverity: finding.fk.severity,
+                fkScore: finding.fkScore,
+                fkBand: finding.fkBand.level.rawValue,
+                m5Probability: finding.m5.probability,
+                m5Severity: finding.m5.severity,
+                m5Score: finding.m5Score,
+                m5Band: finding.m5Band.level.rawValue
+            )
+        }
+        return AnalysisResultBundle(analysis: analysis, findings: rows, photos: [])
+    }
+    #endif
 }
 
 private struct SanitizedImage {
@@ -1466,6 +1523,7 @@ private extension UIImage {
     }
 
     private static let ciContext = CIContext(options: [.cacheIntermediates: false])
+
 }
 
 // MARK: - Wire row types
