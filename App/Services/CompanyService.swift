@@ -53,11 +53,21 @@ final class CompanyService {
                 let name: String
                 let hazard_class: String
                 let logo_path: String?
+                let address: String?
+                let contact_person: String?
+                let department: String?
+                let default_responsible: String?
+                let default_due_days: Int?
             }
             let payload = UpdatePayload(
                 name: draft.trimmedName,
                 hazard_class: draft.hazardClass.rawValue,
-                logo_path: draft.logoPath
+                logo_path: draft.logoPath,
+                address: draft.address.trimmedNonEmpty,
+                contact_person: draft.contactPerson.trimmedNonEmpty,
+                department: draft.department.trimmedNonEmpty,
+                default_responsible: draft.defaultResponsible.trimmedNonEmpty,
+                default_due_days: draft.defaultDueDays
             )
             do {
                 let row: Company = try await supabase.client
@@ -79,12 +89,22 @@ final class CompanyService {
                 let name: String
                 let hazard_class: String
                 let logo_path: String?
+                let address: String?
+                let contact_person: String?
+                let department: String?
+                let default_responsible: String?
+                let default_due_days: Int?
             }
             let payload = InsertPayload(
                 user_id: userID.uuidString,
                 name: draft.trimmedName,
                 hazard_class: draft.hazardClass.rawValue,
-                logo_path: draft.logoPath
+                logo_path: draft.logoPath,
+                address: draft.address.trimmedNonEmpty,
+                contact_person: draft.contactPerson.trimmedNonEmpty,
+                department: draft.department.trimmedNonEmpty,
+                default_responsible: draft.defaultResponsible.trimmedNonEmpty,
+                default_due_days: draft.defaultDueDays
             )
             do {
                 let row: Company = try await supabase.client
@@ -158,11 +178,21 @@ final class CompanyService {
         if message.localizedCaseInsensitiveContains("company_limit_exceeded") {
             return AnalysisService.AnalysisError.invalidInput("Planındaki firma limitine ulaştın.")
         }
+        if message.localizedCaseInsensitiveContains("company_default_due_days_invalid") {
+            return AnalysisService.AnalysisError.invalidInput("Varsayılan termin 1-365 gün arasında olmalı.")
+        }
         if message.localizedCaseInsensitiveContains("duplicate") ||
             message.localizedCaseInsensitiveContains("companies_user_active_name_idx") {
             return AnalysisService.AnalysisError.invalidInput("Bu firma adı zaten listende var.")
         }
         return AnalysisService.AnalysisError.databaseFailed("Firma kaydedilemedi.")
+    }
+}
+
+private extension String {
+    var trimmedNonEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 

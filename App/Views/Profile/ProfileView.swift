@@ -295,7 +295,7 @@ struct ProfileView: View {
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .stroke(profileLine, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.22 : 0.07), radius: 18, x: 0, y: 10)
+        .profileCardDepth(colorScheme: colorScheme, accent: Color(hex: "#AFC6D6"))
         .accessibilityIdentifier("profile.hero.card")
     }
 
@@ -503,33 +503,7 @@ struct ProfileView: View {
                         .frame(width: 1)
                 }
 
-                HStack(spacing: 8) {
-                    Image(systemName: item.icon)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(item.color)
-                        .frame(width: 22, height: 22)
-                        .background(item.color.opacity(colorScheme == .dark ? 0.16 : 0.10))
-                        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(item.value)
-                            .rdMono(size: 17, weight: .bold)
-                            .foregroundStyle(Color.rdBlack)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.64)
-
-                        Text(item.label)
-                            .font(.system(size: 9, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.rdSlate)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.68)
-                    }
-                    .frame(width: 42, alignment: .leading)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .frame(height: 54)
-                .padding(.horizontal, 2)
+                profileHeroStatCell(item, index: index)
             }
         }
         .overlay(alignment: .top) {
@@ -538,6 +512,53 @@ struct ProfileView: View {
                 .frame(height: 1)
         }
         .accessibilityIdentifier("profile.hero.stats")
+    }
+
+    private func profileHeroStatCell(_ item: ProfileHeroStat, index: Int) -> some View {
+        Button {
+            switch index {
+            case 0:
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    app.activeTab = .analyses
+                }
+                UISelectionFeedbackGenerator().selectionChanged()
+            case 1:
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    app.activeTab = .reports
+                }
+                UISelectionFeedbackGenerator().selectionChanged()
+            default:
+                break
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: item.icon)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(item.color)
+                    .frame(width: 22, height: 22)
+                    .background(item.color.opacity(colorScheme == .dark ? 0.16 : 0.10))
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(item.value)
+                        .rdMono(size: 17, weight: .bold)
+                        .foregroundStyle(Color.rdBlack)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.64)
+
+                    Text(item.label)
+                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.68)
+                }
+                .fixedSize(horizontal: true, vertical: false)
+            }
+            .frame(maxWidth: .infinity, minHeight: 54, alignment: .center)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(index == 0 ? "profile.hero.stat.analyses" : index == 1 ? "profile.hero.stat.reports" : "profile.hero.stat.\(index)")
     }
 
     private struct ProfileHeroStat {
@@ -652,38 +673,46 @@ struct ProfileView: View {
     // MARK: - Pro card
 
     private var proCard: some View {
-        ZStack(alignment: .topLeading) {
-            Circle()
-                .fill(app.currentTier.accentColor.opacity(colorScheme == .dark ? 0.09 : 0.18))
-                .frame(width: 120, height: 120)
-                .offset(x: 230, y: -45)
+        HStack(spacing: 12) {
+            RDTierBadge(tier: app.currentTier, small: true)
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 10) {
-                    RDTierBadge(tier: app.currentTier, small: true)
-                    Text("Aktif · \(subscriptionPeriodLabel)")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
-                }
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(subscriptionPaymentTitle) aktif")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .lineLimit(1)
 
-                Text(subscriptionPaymentTitle)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.top, 4)
-
-                Text(subscriptionRenewalLabel)
-                    .rdMono(size: 13, weight: .medium)
-                    .foregroundStyle(.white.opacity(0.7))
+                Text("\(subscriptionPeriodLabel) · \(subscriptionRenewalLabel)")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
             }
-            .padding(16)
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundStyle(app.currentTier.accentColor)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(colorScheme == .dark ? Color(hex: "#080B0A") : Color.rdOnyx)
+        .background(
+            LinearGradient(
+                colors: colorScheme == .dark
+                    ? [Color(hex: "#2A2416"), Color(hex: "#181A16")]
+                    : [Color(hex: "#FFF7DE"), Color(hex: "#FFFDF6")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .overlay(
             RoundedRectangle(cornerRadius: RDRadius.lg)
-                .stroke(profileLine, lineWidth: 1)
+                .stroke(Color.rdPlanPlus.opacity(colorScheme == .dark ? 0.28 : 0.35), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+        .profileCardDepth(colorScheme: colorScheme, accent: Color.rdPlanPlus)
         .allowsHitTesting(false)
     }
 
@@ -745,7 +774,7 @@ struct ProfileView: View {
                     .stroke(Color.rdLine.opacity(0.95), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-            .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 8)
+            .profileCardDepth(colorScheme: colorScheme, accent: Color.rdPlanPlus)
         }
         .buttonStyle(RDPressableButtonStyle())
     }
@@ -830,6 +859,7 @@ struct ProfileView: View {
                     .stroke(profileLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+            .profileCardDepth(colorScheme: colorScheme)
         }
     }
 
@@ -888,6 +918,7 @@ struct ProfileView: View {
                     .stroke(profileLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+            .profileCardDepth(colorScheme: colorScheme)
         }
     }
 
@@ -903,6 +934,7 @@ struct ProfileView: View {
                         .stroke(profileLine, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+                .profileCardDepth(colorScheme: colorScheme)
         }
         .buttonStyle(.plain)
     }
@@ -2043,6 +2075,12 @@ private struct ProfileOnboardingSummary: Decodable, Equatable {
 private struct ProfileBadgesSheetItem: Identifiable {
     let id = UUID()
     let summary: ProfessionalProgressSummary
+}
+
+private extension View {
+    func profileCardDepth(colorScheme: ColorScheme, accent: Color = Color.rdBlack) -> some View {
+        rdCardShadow(colorScheme: colorScheme, accent: accent)
+    }
 }
 
 #Preview {

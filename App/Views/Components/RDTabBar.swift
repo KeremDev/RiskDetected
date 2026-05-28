@@ -79,8 +79,12 @@ struct RDTabBar: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 56)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(tab.label)
+            .accessibilityIdentifier("tab.\(tab.rawValue)")
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(tab.label)
         .accessibilityIdentifier("tab.\(tab.rawValue)")
     }
 

@@ -33,11 +33,6 @@ struct HistoryView: View {
                         showPaywall = true
                     }
                 }
-
-                Text("Analizler")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .tracking(-0.6)
-                    .foregroundStyle(Color.rdBlack)
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -153,96 +148,104 @@ struct HistoryView: View {
     }
 
     private var analysisOverview: some View {
-        VStack(alignment: .leading, spacing: 15) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "viewfinder")
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreenDark)
+                    .frame(width: 42, height: 42)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+
                 VStack(alignment: .leading, spacing: 7) {
-                    HStack(spacing: 7) {
-                        Image(systemName: "viewfinder")
-                            .font(.system(size: 13, weight: .heavy, design: .rounded))
-                        Text("ANALİZ MERKEZİ")
-                            .rdMono(size: 11, weight: .bold)
-                    }
-                    .foregroundStyle(Color.rdGreen)
+                    Text("Saha taramaları")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
 
-                    Text("\(items.count) saha taraması")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .tracking(-0.3)
-                        .foregroundStyle(.white)
-
-                    Text("Riskleri, bulgu sayılarını ve durumları hızlıca tara; detay için karta dokun.")
+                    Text("Analizlerini, kritik riskleri ve bulgu sayısını tek yerden takip et.")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.72))
+                        .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                VStack(spacing: 4) {
-                    Text("\(criticalCount)")
-                        .rdMono(size: 25, weight: .bold)
-                        .foregroundStyle(.white)
-                    Text("KRT")
+                VStack(spacing: 2) {
+                    Text("\(items.count)")
+                        .rdMono(size: 22, weight: .bold)
+                        .foregroundStyle(Color.rdWhite)
+                    Text("Analiz")
                         .rdMono(size: 10, weight: .bold)
-                        .foregroundStyle(.white.opacity(0.58))
+                        .foregroundStyle(Color.rdWhite.opacity(0.72))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
                 }
-                .frame(width: 66, height: 66)
-                .background(Color.white.opacity(0.10))
+                .frame(width: 58, height: 54)
+                .background(Color.rdBlack)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.rdBlack, lineWidth: 1)
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .historyCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
             }
 
             HStack(spacing: 8) {
                 overviewMetric(icon: "calendar", title: "Bu hafta", value: "\(weekCount)")
-                overviewMetric(icon: "exclamationmark.triangle.fill", title: "Bulgu", value: "\(findingTotal)")
-                overviewMetric(icon: "checkmark.seal.fill", title: "İncelenen", value: "\(reviewedCount)")
+                overviewMetric(icon: "exclamationmark.triangle.fill", title: "Kritik", value: "\(criticalCount)")
+                overviewMetric(icon: "checkmark.seal.fill", title: "Bulgu", value: "\(findingTotal)")
             }
         }
-        .padding(18)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            ZStack(alignment: .topTrailing) {
-                Color.rdOnyx
-                Circle()
-                    .fill(Color.rdGreen.opacity(0.24))
-                    .frame(width: 170, height: 170)
-                    .offset(x: 58, y: -78)
-                Circle()
-                    .fill(Color.rdGreen.opacity(0.10))
-                    .frame(width: 94, height: 94)
-                    .offset(x: -210, y: 86)
-            }
+            LinearGradient(
+                colors: [
+                    Color(hex: "#F7FBFF"),
+                    Color(hex: "#F2F7FA"),
+                    Color(hex: "#EEF8F2")
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: Color.rdOnyx.opacity(0.14), radius: 18, x: 0, y: 10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.rdBlack, lineWidth: 1.4)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .historyCardDepth(colorScheme: colorScheme, accent: Color.rdGreen, radius: 5, x: 6, y: 8)
     }
 
     private func overviewMetric(icon: String, title: String, value: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdGreen)
+                .foregroundStyle(Color.rdWhite)
                 .frame(width: 26, height: 26)
-                .background(Color.white.opacity(0.10))
+                .background(Color.rdWhite.opacity(0.14))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)
                     .rdMono(size: 14, weight: .bold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.rdWhite)
                     .lineLimit(1)
                 Text(title)
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.58))
+                    .foregroundStyle(Color.rdWhite.opacity(0.70))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(9)
         .frame(maxWidth: .infinity)
-        .background(Color.white.opacity(0.075))
+        .background(Color.rdBlack)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdBlack, lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 14))
+        .historyCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
     }
 
     private var filterSurface: some View {
@@ -271,6 +274,7 @@ struct HistoryView: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
+        .historyCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
     }
 
     private func filterChip(_ title: String) -> some View {
@@ -354,6 +358,7 @@ struct HistoryView: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .accessibilityLabel("Firma filtresi")
+        .accessibilityIdentifier("analysis.company_filter")
     }
 
     private var filteredItems: [HistoryItem] {
@@ -414,10 +419,6 @@ struct HistoryView: View {
 
     private var findingTotal: Int {
         items.reduce(0) { $0 + $1.count }
-    }
-
-    private var reviewedCount: Int {
-        items.filter { $0.status == .reviewed }.count
     }
 
     private func loadItems() async {
@@ -632,6 +633,7 @@ private struct HistoryRow: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .contentShape(Rectangle())
+        .historyRowDepth()
         .onTapGesture {
             action()
         }
@@ -672,6 +674,22 @@ private struct HistoryRow: View {
                 options: [.regularExpression, .caseInsensitive]
             )
         }
+    }
+}
+
+private extension View {
+    func historyCardDepth(
+        colorScheme: ColorScheme,
+        accent: Color = Color.rdBlack,
+        radius: CGFloat = 4,
+        x: CGFloat = 5,
+        y: CGFloat = 6
+    ) -> some View {
+        rdCardShadow(colorScheme: colorScheme, accent: accent, radius: radius, x: x, y: y)
+    }
+
+    func historyRowDepth() -> some View {
+        rdRowShadow()
     }
 }
 

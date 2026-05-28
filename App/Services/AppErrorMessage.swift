@@ -46,10 +46,20 @@ struct AppErrorMessage: Equatable {
         let lower = raw.lowercased(with: Locale(identifier: "tr_TR"))
         let supportID = Self.existingSupportID(in: raw) ?? Self.newSupportID()
 
+        if isFreeRiskAnalysisTrialExhausted(rawMessage) {
+            return AppErrorMessage(
+                title: "Risk analizi hakkı kullanıldı",
+                message: "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
+                action: "Risk analizi tablolarını kullanmaya devam etmek için Plus veya Pro'ya geç.",
+                category: .quotaExceeded,
+                supportID: supportID
+            )
+        }
+
         if isReportQuotaExceeded(rawMessage) {
             return AppErrorMessage(
                 title: "Rapor limiti doldu",
-                message: "Bu plan için aylık rapor oluşturma limitin dolmuş görünüyor.",
+                message: "Bu plan için rapor oluşturma limitin dolmuş görünüyor.",
                 action: "Bir üst plana yükselt veya yeni kota dönemini bekle.",
                 category: .quotaExceeded,
                 supportID: supportID
@@ -301,8 +311,17 @@ struct AppErrorMessage: Equatable {
     static func isReportQuotaExceeded(_ rawMessage: String) -> Bool {
         let lower = rawMessage.lowercased(with: Locale(identifier: "tr_TR"))
         return lower.contains("report_quota_exceeded") ||
+            lower.contains("free_risk_analysis_trial_exhausted") ||
+            lower.contains("risk analizi") && lower.contains("deneme hakk") ||
             lower.contains("aylık rapor kot") ||
+            lower.contains("standart rapor hakk") ||
             lower.contains("rapor") && lower.contains("limit") && lower.contains("dol")
+    }
+
+    static func isFreeRiskAnalysisTrialExhausted(_ rawMessage: String) -> Bool {
+        let lower = rawMessage.lowercased(with: Locale(identifier: "tr_TR"))
+        return lower.contains("free_risk_analysis_trial_exhausted") ||
+            lower.contains("risk analizi") && lower.contains("deneme hakk")
     }
 
     private static func make(

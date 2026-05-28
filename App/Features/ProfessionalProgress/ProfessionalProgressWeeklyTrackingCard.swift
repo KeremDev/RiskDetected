@@ -8,6 +8,7 @@ struct ProfessionalProgressWeeklyTrackingCard: View {
 
     let summary: ProfessionalProgressSummary
     var displayStyle: DisplayStyle = .regular
+    @Environment(\.colorScheme) private var colorScheme
 
     private var tracking: ProfessionalProgressWeeklyTracking {
         summary.weeklyTracking
@@ -46,7 +47,13 @@ struct ProfessionalProgressWeeklyTrackingCard: View {
                 .stroke(borderColor, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-        .shadow(color: shadowColor, radius: isCompact ? 8 : 10, x: 0, y: isCompact ? 4 : 6)
+        .rdCardShadow(
+            colorScheme: colorScheme,
+            accent: tracking.hasActivity ? Color.rdGreen : Color.rdInfo,
+            radius: isCompact ? 4 : 5,
+            x: isCompact ? 5 : 6,
+            y: isCompact ? 6 : 8
+        )
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier(isCompact ? "professionalProgress.weeklyTracking.home" : "professionalProgress.weeklyTracking.profile")
     }

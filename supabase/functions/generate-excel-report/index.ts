@@ -2275,14 +2275,6 @@ serve(async (req: Request) => {
     (profile as ProfileRow | null)?.tier,
     subscription,
   );
-  if (planTier === "free") {
-    return json(402, {
-      error: "plan_required",
-      message: "Excel risk tablosu Plus veya Pro üyelik ile kullanılabilir.",
-      request_id: requestID,
-      support_id: supportID,
-    });
-  }
 
   const requestedCompanyID = typeof body.company_id === "string"
     ? body.company_id.trim()
@@ -2314,8 +2306,38 @@ serve(async (req: Request) => {
     company,
   );
 
+  let freeRiskAnalysisTrialAvailable = false;
+  if (planTier === "free") {
+    const { count: trialCount, error: trialCountError } = await supabase
+      .from("reports")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .or("kind.in.(riskAnalysis,risk_analysis),format.eq.xlsx");
+
+    if (trialCountError) {
+      return json(500, {
+        error: "risk_analysis_trial_check_failed",
+        message: "Risk analizi hakkı kontrol edilemedi.",
+        request_id: requestID,
+        support_id: supportID,
+      });
+    }
+
+    if ((trialCount ?? 0) >= 1) {
+      return json(429, {
+        error: "free_risk_analysis_trial_exhausted",
+        message:
+          "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
+        request_id: requestID,
+        support_id: supportID,
+      });
+    }
+
+    freeRiskAnalysisTrialAvailable = true;
+  }
+
   const reportLimit = monthlyReportLimit(planTier);
-  if (reportLimit !== null) {
+  if (reportLimit !== null && !freeRiskAnalysisTrialAvailable) {
     const { count: reportCount, error: reportCountError } = await supabase
       .from("reports")
       .select("id", { count: "exact", head: true })
@@ -2425,6 +2447,15 @@ serve(async (req: Request) => {
     );
     await supabase.storage.from("reports").remove([storagePath]);
     const message = String(reportError.message ?? "");
+    if (message.includes("free_risk_analysis_trial_exhausted")) {
+      return json(429, {
+        error: "free_risk_analysis_trial_exhausted",
+        message:
+          "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
+        request_id: requestID,
+        support_id: supportID,
+      });
+    }
     if (message.includes("report_quota_exceeded")) {
       return json(429, {
         error: "report_quota_exceeded",

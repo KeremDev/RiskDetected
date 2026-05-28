@@ -5,18 +5,29 @@ struct RDCard<Content: View>: View {
     var cornerRadius: CGFloat = RDRadius.lg
     var background: Color = .rdWhite
     var borderColor: Color = .rdLine
+    var showsShadow: Bool = true
+    @Environment(\.colorScheme) private var colorScheme
     @ViewBuilder var content: () -> Content
 
     var body: some View {
+        if showsShadow {
+            cardBody
+                .rdCardShadow(colorScheme: colorScheme)
+        } else {
+            cardBody
+        }
+    }
+
+    private var cardBody: some View {
         content()
-            .padding(padding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(background)
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(borderColor, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .padding(padding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(background)
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(borderColor, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
 }
 

@@ -37,10 +37,14 @@ struct ReportView: View {
     @State private var isStoredReportsExpanded = false
     @State private var isAnalysisSelectorExpanded = false
     @State private var reportQuotaExhausted = false
+    @State private var freeRiskAnalysisTrialUsed = false
     private let reportArchivePageSize = 5
     private let reportArchiveFetchPageSize = 100
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
+    }
+    private var freeRiskAnalysisTrialRemaining: Int {
+        app.currentTier == .free && !freeRiskAnalysisTrialUsed ? 1 : 0
     }
 
     var body: some View {
@@ -50,7 +54,9 @@ struct ReportView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
                     reportOverview
-                    reportValuePanel
+                    if !app.planCapabilities.canUseDetailedRiskTable {
+                        reportValuePanel
+                    }
                     if isLoading && storedReports.isEmpty && analyses.isEmpty {
                         loadingCard
                         storedReportsSection
@@ -128,6 +134,7 @@ struct ReportView: View {
                     profile: app.profile,
                     accessTier: app.currentTier,
                     canUseRiskAnalysis: app.planCapabilities.canUseDetailedRiskTable,
+                    freeRiskAnalysisTrialRemaining: freeRiskAnalysisTrialRemaining,
                     reportQuotaExhausted: reportQuotaExhausted,
                     isExcelGenerating: excelGenerationID == selectedBundle.analysis.id,
                     pdfGeneration: pdfGeneration,
@@ -177,7 +184,7 @@ struct ReportView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 RDHeaderLogoButton(size: 18)
                 Spacer()
@@ -189,18 +196,10 @@ struct ReportView: View {
                     showPaywall = true
                 }
             }
-
-            HStack {
-                Text("Raporlar")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .tracking(-0.6)
-                    .foregroundStyle(Color.rdBlack)
-                Spacer()
-            }
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
-        .padding(.bottom, 12)
+        .padding(.bottom, 10)
         .zIndex(100)
         .fullScreenCover(isPresented: $showPaywall) {
             FreeAwarePaywallView(onClose: { showPaywall = false },
@@ -213,96 +212,103 @@ struct ReportView: View {
     }
 
     private var reportOverview: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreenDark)
+                    .frame(width: 42, height: 42)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+
                 VStack(alignment: .leading, spacing: 7) {
-                    HStack(spacing: 7) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .font(.system(size: 13, weight: .heavy, design: .rounded))
-                        Text("RAPOR MERKEZİ")
-                            .rdMono(size: 11, weight: .bold)
-                    }
-                    .foregroundStyle(Color.rdGreen)
-
                     Text("Denetime hazır çıktılar")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .tracking(-0.3)
-                        .foregroundStyle(.white)
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
 
-                    Text("Tamamlanan analizleri PDF/Excel çıktıya çevir, arşivden indir veya risk tablosuyla ayrıntılandır.")
+                    Text("PDF, Excel ve risk tablolarını tek yerden yönet.")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.72))
+                        .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                VStack(spacing: 4) {
+                VStack(spacing: 2) {
                     Text("\(storedReports.count)")
-                        .rdMono(size: 25, weight: .bold)
-                        .foregroundStyle(.white)
+                        .rdMono(size: 22, weight: .bold)
+                        .foregroundStyle(Color.rdWhite)
                     Text("dosya")
                         .rdMono(size: 10, weight: .bold)
-                        .foregroundStyle(.white.opacity(0.58))
+                        .foregroundStyle(Color.rdWhite.opacity(0.72))
                 }
-                .frame(width: 66, height: 66)
-                .background(Color.white.opacity(0.10))
+                .frame(width: 58, height: 54)
+                .background(Color.rdBlack)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.rdBlack, lineWidth: 1)
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
             }
 
             HStack(spacing: 8) {
-                overviewMetric(icon: "chart.bar.doc.horizontal", title: "Kaynak", value: "\(analyses.count)")
-                overviewMetric(icon: "tablecells", title: "Risk", value: "\(riskReportCount)")
-                overviewMetric(icon: app.currentTier.badgeIcon, title: "Plan", value: app.currentTier.title)
+                overviewMetric(icon: "chart.bar.doc.horizontal", title: "Analiz", value: "\(analyses.count)")
+                overviewMetric(icon: "tablecells", title: "Risk Tablosu", value: "\(riskReportCount)")
+                overviewMetric(icon: "archivebox.fill", title: "Arşiv", value: "\(storedReports.count)")
             }
         }
-        .padding(18)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            ZStack(alignment: .topTrailing) {
-                Color.rdOnyx
-                Circle()
-                    .fill(Color.rdGreen.opacity(0.24))
-                    .frame(width: 170, height: 170)
-                    .offset(x: 58, y: -76)
-                Circle()
-                    .fill(Color.rdGreen.opacity(0.10))
-                    .frame(width: 96, height: 96)
-                    .offset(x: -210, y: 92)
-            }
+            LinearGradient(
+                colors: [
+                    Color(hex: "#F7FBFF"),
+                    Color(hex: "#F2F7FA"),
+                    Color(hex: "#EEF8F2")
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: Color.rdOnyx.opacity(0.14), radius: 18, x: 0, y: 10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.rdBlack, lineWidth: 1.4)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .reportCardDepth(colorScheme: colorScheme, accent: Color.rdGreen, radius: 5, x: 6, y: 8)
     }
 
     private func overviewMetric(icon: String, title: String, value: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdGreen)
+                .foregroundStyle(Color.rdWhite)
                 .frame(width: 26, height: 26)
-                .background(Color.white.opacity(0.10))
+                .background(Color.rdWhite.opacity(0.14))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)
                     .rdMono(size: 14, weight: .bold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.rdWhite)
                     .lineLimit(1)
                 Text(title)
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.58))
+                    .foregroundStyle(Color.rdWhite.opacity(0.70))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.76)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(9)
         .frame(maxWidth: .infinity)
-        .background(Color.white.opacity(0.075))
+        .background(Color.rdBlack)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdBlack, lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 14))
+        .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
     }
 
     private var reportValuePanel: some View {
@@ -349,6 +355,7 @@ struct ReportView: View {
                     .stroke(app.planCapabilities.canUseDetailedRiskTable ? Color.rdGreen.opacity(0.26) : Color.rdLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 18))
+            .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
         }
         .buttonStyle(RDPressableButtonStyle())
         .disabled(app.planCapabilities.canUseDetailedRiskTable)
@@ -435,6 +442,7 @@ struct ReportView: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
+        .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
         .animation(.spring(response: 0.32, dampingFraction: 0.88), value: isStoredReportsExpanded)
     }
 
@@ -491,6 +499,7 @@ struct ReportView: View {
                     }
                     .buttonStyle(RDPressableButtonStyle())
                     .accessibilityLabel("Firma filtresi")
+                    .accessibilityIdentifier("report.company_filter")
                 }
 
                 if hasActiveReportArchiveFilters {
@@ -532,6 +541,7 @@ struct ReportView: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .reportCardDepth(colorScheme: colorScheme, radius: 3.5, x: 4, y: 5)
     }
 
     private var analysisSelector: some View {
@@ -574,6 +584,7 @@ struct ReportView: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
+        .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
         .animation(.spring(response: 0.32, dampingFraction: 0.88), value: isAnalysisSelectorExpanded)
     }
 
@@ -838,9 +849,27 @@ struct ReportView: View {
     }
 
     private func loadReports() async {
+        #if DEBUG
+        if Self.usesUITestReportFixtures {
+            let company = Self.uiTestCompany
+            companies = [company]
+            storedReports = [Self.uiTestReport(company: company)]
+            updateFreeRiskAnalysisTrialStateFromCachedReports()
+            analyses = []
+            selectedBundle = nil
+            selectedID = nil
+            reportsLoadError = nil
+            canLoadMoreStoredReports = false
+            isLoadingMoreStoredReports = false
+            isStoredReportsExpanded = true
+            return
+        }
+        #endif
+
         guard app.auth.session != nil else {
             analyses = []
             storedReports = []
+            updateFreeRiskAnalysisTrialStateFromCachedReports()
             selectedBundle = nil
             selectedID = nil
             reportsLoadError = nil
@@ -864,6 +893,7 @@ struct ReportView: View {
             do {
                 let reports = try await reportRows
                 storedReports = reports
+                updateFreeRiskAnalysisTrialStateFromCachedReports()
                 canLoadMoreStoredReports = reports.count == reportArchiveFetchPageSize
                 reportsLoadError = nil
                 logReportArchiveTelemetry(
@@ -882,6 +912,7 @@ struct ReportView: View {
                     fallbackTitle: "Rapor arşivi yüklenemedi"
                 ).fullText
                 storedReports = []
+                updateFreeRiskAnalysisTrialStateFromCachedReports()
                 canLoadMoreStoredReports = false
             }
             visibleReportCount = min(visibleReportCount, max(filteredStoredReports.count, reportArchivePageSize))
@@ -892,6 +923,7 @@ struct ReportView: View {
             errorMessage = AppErrorMessage.make(error, context: "Raporlar yüklenemedi", fallbackTitle: "Raporlar yüklenemedi").fullText
             analyses = []
             storedReports = []
+            updateFreeRiskAnalysisTrialStateFromCachedReports()
             selectedBundle = nil
             selectedID = nil
             reportsLoadError = nil
@@ -899,6 +931,52 @@ struct ReportView: View {
             isLoadingMoreStoredReports = false
         }
     }
+
+    #if DEBUG
+    private static var usesUITestReportFixtures: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_REPORT_FIXTURES")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_REPORT_FIXTURES"] == "1"
+    }
+
+    private static var uiTestCompany: Company {
+        Company(
+            id: UUID(uuidString: "00000000-0000-0000-0000-00000000c001")!,
+            userID: UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!,
+            name: "QA Aktif Firma",
+            hazardClass: .high,
+            logoPath: nil,
+            address: "Test Mah. Güvenlik Cad. No: 10",
+            contactPerson: "Ayşe Denetim",
+            department: "Bakım Ekibi",
+            defaultResponsible: "Saha Şefi",
+            defaultDueDays: 30,
+            isArchived: false,
+            createdAt: nil,
+            updatedAt: nil
+        )
+    }
+
+    private static func uiTestReport(company: Company) -> ReportRow {
+        ReportRow(
+            id: UUID(uuidString: "00000000-0000-0000-0000-00000000a101")!,
+            userID: company.userID,
+            analysisID: UUID(uuidString: "00000000-0000-0000-0000-00000000a001")!,
+            companyID: company.id,
+            companySnapshot: CompanySnapshot(company: company),
+            format: "pdf",
+            kind: "standard",
+            method: "fine_kinney",
+            title: "QA Firma Raporu",
+            storagePath: "ui-test/reports/qa-firma-raporu.pdf",
+            fileName: "qa-firma-raporu.pdf",
+            mimeType: "application/pdf",
+            fileSize: 128_000,
+            requestID: nil,
+            supportID: nil,
+            createdAt: "2026-05-28T00:00:00Z"
+        )
+    }
+    #endif
 
     private func logReportArchiveTelemetry(
         event: String,
@@ -928,6 +1006,7 @@ struct ReportView: View {
                 )
                 await app.refreshPlanState()
                 _ = await refreshReportQuotaState()
+                await refreshFreeRiskAnalysisTrialState()
                 _ = try? await loadProfileLogoIfNeeded()
                 showSourceReportSheet = true
             } catch {
@@ -957,7 +1036,15 @@ struct ReportView: View {
         pdfGeneration.start()
         Task {
             do {
-                if await refreshReportQuotaState() {
+                let company = selectedReportCompany
+                let resolvedOptions = resolvedReportOptions(options ?? defaultReportOptions(kind: .standard), company: company)
+                if resolvedOptions.kind == .riskAnalysis,
+                   await riskAnalysisTrialExhaustedBeforeGeneration() {
+                    pdfGeneration.stop()
+                    return
+                }
+                if !shouldBypassReportQuota(for: resolvedOptions),
+                   await refreshReportQuotaState() {
                     pdfGeneration.stop()
                     reportOptions.kind = .standard
                     showSourceReportSheet = true
@@ -965,8 +1052,6 @@ struct ReportView: View {
                 }
                 let reportImage = try await loadReportImage(for: selectedBundle)
                 pdfGeneration.advance(to: 0.23)
-                let company = selectedReportCompany
-                let resolvedOptions = resolvedReportOptions(options ?? defaultReportOptions(kind: .standard), company: company)
                 let companyStoredLogo = try await loadCompanyLogo(for: company)
                 let profileLogo = try await loadProfileLogoIfNeeded()
                 let resolvedLogo = companyLogo ?? companyStoredLogo ?? profileLogo
@@ -1036,7 +1121,13 @@ struct ReportView: View {
 
         Task {
             do {
-                if await refreshReportQuotaState() {
+                let resolvedOptions = resolvedReportOptions(reportOptions, company: selectedReportCompany)
+                if await riskAnalysisTrialExhaustedBeforeGeneration() {
+                    excelGenerationID = nil
+                    return
+                }
+                if !shouldBypassReportQuota(for: resolvedOptions),
+                   await refreshReportQuotaState() {
                     reportOptions.kind = .standard
                     showSourceReportSheet = true
                     excelGenerationID = nil
@@ -1077,6 +1168,9 @@ struct ReportView: View {
         reportsLoadError = nil
         storedReports.removeAll { $0.id == report.id || $0.storagePath == report.storagePath }
         storedReports.insert(report, at: 0)
+        if report.usesRiskAnalysisTrial {
+            freeRiskAnalysisTrialUsed = true
+        }
         visibleReportCount = max(visibleReportCount, min(filteredStoredReports.count, reportArchivePageSize))
     }
 
@@ -1086,10 +1180,18 @@ struct ReportView: View {
         let existingPaths = Set(storedReports.map(\.storagePath))
         let uniqueReports = reports.filter { !existingIDs.contains($0.id) && !existingPaths.contains($0.storagePath) }
         storedReports.append(contentsOf: uniqueReports)
+        updateFreeRiskAnalysisTrialStateFromCachedReports()
     }
 
     @discardableResult
     private func handleReportQuotaIfNeeded(_ error: Error) -> Bool {
+        if AppErrorMessage.isFreeRiskAnalysisTrialExhausted(error.localizedDescription) {
+            freeRiskAnalysisTrialUsed = true
+            reportQuotaExhausted = false
+            reportOptions.kind = .standard
+            showSourceReportSheet = true
+            return true
+        }
         guard AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) else { return false }
         reportQuotaExhausted = true
         reportOptions.kind = .standard
@@ -1105,6 +1207,41 @@ struct ReportView: View {
             reportQuotaExhausted = false
         }
         return reportQuotaExhausted
+    }
+
+    private func updateFreeRiskAnalysisTrialStateFromCachedReports() {
+        freeRiskAnalysisTrialUsed = storedReports.contains { $0.usesRiskAnalysisTrial }
+    }
+
+    private func refreshFreeRiskAnalysisTrialState() async {
+        guard app.currentTier == .free else {
+            freeRiskAnalysisTrialUsed = false
+            return
+        }
+        do {
+            let usage = try await AnalysisService.shared.freeRiskAnalysisTrialUsage()
+            freeRiskAnalysisTrialUsed = usage.isExhausted
+        } catch {
+            updateFreeRiskAnalysisTrialStateFromCachedReports()
+        }
+    }
+
+    private func shouldBypassReportQuota(for options: PDFReportOptions) -> Bool {
+        app.currentTier == .free && options.kind == .riskAnalysis && !freeRiskAnalysisTrialUsed
+    }
+
+    private func riskAnalysisTrialExhaustedBeforeGeneration() async -> Bool {
+        guard app.currentTier == .free else { return false }
+        await refreshFreeRiskAnalysisTrialState()
+        guard freeRiskAnalysisTrialUsed else { return false }
+        reportOptions.kind = .standard
+        showSourceReportSheet = true
+        errorMessage = AppErrorMessage.make(
+            rawMessage: "free_risk_analysis_trial_exhausted:1/1",
+            context: "Risk analizi tablosu oluşturulamadı",
+            fallbackTitle: "Risk analizi tablosu oluşturulamadı"
+        ).fullText
+        return true
     }
 
     private func download(_ report: ReportRow) {
@@ -1190,7 +1327,7 @@ struct ReportView: View {
             resolved.companyName = company.name
         }
         if resolved.companyInfo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            resolved.companyInfo = company.hazardClass.title
+            resolved.companyInfo = company.reportInfoText
         }
         return resolved
     }
@@ -1502,6 +1639,7 @@ private struct ReportSourceSheet: View {
     let profile: UserProfile?
     let accessTier: SubscriptionTier
     let canUseRiskAnalysis: Bool
+    let freeRiskAnalysisTrialRemaining: Int
     let reportQuotaExhausted: Bool
     let isExcelGenerating: Bool
     @ObservedObject var pdfGeneration: PDFGenerationProgressController
@@ -1512,7 +1650,7 @@ private struct ReportSourceSheet: View {
     let onGenerateExcel: () -> Void
     let onPaywall: () -> Void
     @State private var showSettings = false
-    @State private var reportSettingsDetent: PresentationDetent = .height(440)
+    @State private var reportSettingsDetent: PresentationDetent = .height(430)
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -1538,6 +1676,7 @@ private struct ReportSourceSheet: View {
                 profile: profile,
                 accessTier: accessTier,
                 canUseRiskAnalysis: canUseRiskAnalysis,
+                freeRiskAnalysisTrialRemaining: freeRiskAnalysisTrialRemaining,
                 reportQuotaExhausted: reportQuotaExhausted,
                 onGenerate: {
                     showSettings = false
@@ -1553,7 +1692,7 @@ private struct ReportSourceSheet: View {
                 },
                 onClose: { showSettings = false }
             )
-            .presentationDetents([.height(440), .large], selection: $reportSettingsDetent)
+            .presentationDetents([.height(430), .large], selection: $reportSettingsDetent)
             .presentationDragIndicator(.visible)
             .preferredColorScheme(colorScheme)
         }
@@ -1612,11 +1751,11 @@ private struct ReportSourceSheet: View {
                 preparedTitle: profile?.title ?? "",
                 certificateNumber: profile?.certificateNumber ?? "",
                 companyName: selectedCompany?.name ?? profile?.companyName ?? "",
-                companyInfo: selectedCompany?.hazardClass.title ?? profile?.phone ?? "",
+                companyInfo: selectedCompany?.reportInfoText ?? profile?.phone ?? "",
                 companyID: selectedCompany?.id,
                 language: reportOptions.language
             )
-            reportSettingsDetent = .height(440)
+            reportSettingsDetent = .height(430)
             showSettings = true
         }
         .disabled(isExcelGenerating || pdfGeneration.isActive)
@@ -1747,6 +1886,7 @@ private struct ReportEmptyInlineCard: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
+        .reportRowDepth()
     }
 }
 
@@ -1866,6 +2006,7 @@ private struct ReportArchiveStateCard: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
+        .reportRowDepth()
     }
 }
 
@@ -1922,6 +2063,7 @@ private struct ReportArchiveLoadMoreButton: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(RDPressableButtonStyle())
+        .reportRowDepth()
     }
 }
 
@@ -1950,10 +2092,10 @@ private struct StoredReportRow: View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isRiskAnalysis ? Color.rdGreenSoft : Color.rdFog)
+                    .fill(isExcel ? Color(hex: "#EAF1FF") : isRiskAnalysis ? Color.rdGreenSoft : Color.rdFog)
                 Image(systemName: iconName)
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(isRiskAnalysis ? Color.rdGreen : Color.rdCharcoal)
+                    .foregroundStyle(isExcel ? Color(hex: "#2563EB") : isRiskAnalysis ? Color.rdGreen : Color.rdCharcoal)
             }
             .frame(width: 46, height: 46)
 
@@ -2051,6 +2193,7 @@ private struct StoredReportRow: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .contentShape(Rectangle())
+        .reportRowDepth()
         .onTapGesture {
             action()
         }
@@ -2081,7 +2224,7 @@ private struct StoredReportRow: View {
         if isRiskAnalysis {
             return (Color.rdGreen, Color.rdGreenSoft)
         }
-        return (Color(hex: "#6D5DF6"), Color(hex: "#EFEDFF"))
+        return (Color.rdCharcoal, Color.rdFog)
     }
 
     private var methodLabel: String {
@@ -2142,6 +2285,22 @@ private struct StoredReportRow: View {
         fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = fractional.date(from: raw) { return date }
         return ISO8601DateFormatter().date(from: raw)
+    }
+}
+
+private extension View {
+    func reportCardDepth(
+        colorScheme: ColorScheme,
+        accent: Color = Color.rdBlack,
+        radius: CGFloat = 4,
+        x: CGFloat = 5,
+        y: CGFloat = 6
+    ) -> some View {
+        rdCardShadow(colorScheme: colorScheme, accent: accent, radius: radius, x: x, y: y)
+    }
+
+    func reportRowDepth() -> some View {
+        rdRowShadow()
     }
 }
 

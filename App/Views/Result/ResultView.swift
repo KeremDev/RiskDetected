@@ -55,9 +55,13 @@ struct ResultView: View {
     @State private var selectedReportCompany: Company?
     @State private var reportCompanyLogo: UIImage?
     @State private var reportQuotaExhausted: Bool = false
-    @State private var reportSettingsDetent: PresentationDetent = .height(440)
+    @State private var freeRiskAnalysisTrialUsed: Bool = false
+    @State private var reportSettingsDetent: PresentationDetent = .height(430)
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
+    }
+    private var freeRiskAnalysisTrialRemaining: Int {
+        app.currentTier == .free && !freeRiskAnalysisTrialUsed ? 1 : 0
     }
 
     var body: some View {
@@ -73,7 +77,6 @@ struct ResultView: View {
                         emptyFindingsCard
                     } else {
                         findingsSection
-                        if !app.planCapabilities.canUseDetailedRiskTable { proUpsellCard }
                     }
                 }
                 .padding(.horizontal, 20)
@@ -124,6 +127,7 @@ struct ResultView: View {
                 profile: app.profile,
                 accessTier: app.currentTier,
                 canUseRiskAnalysis: app.planCapabilities.canUseDetailedRiskTable,
+                freeRiskAnalysisTrialRemaining: freeRiskAnalysisTrialRemaining,
                 reportQuotaExhausted: reportQuotaExhausted,
                 onGenerate: {
                     showReportSettings = false
@@ -141,7 +145,7 @@ struct ResultView: View {
                 },
                 onClose: { showReportSettings = false }
             )
-            .presentationDetents([.height(440), .large], selection: $reportSettingsDetent)
+            .presentationDetents([.height(430), .large], selection: $reportSettingsDetent)
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -402,7 +406,6 @@ struct ResultView: View {
         let topScore = findings.map { $0.score(for: method) }.max() ?? 0
         let topBand = findings.map { $0.band(for: method) }
             .max(by: { rankFor($0.level) < rankFor($1.level) }) ?? RiskBands.fineKinney(0)
-        let totalScore = findings.map { $0.score(for: method) }.reduce(0, +)
         let counts = countsByLevel(method: method)
 
         return RDCard {
@@ -455,14 +458,6 @@ struct ResultView: View {
                         }
                     }
                 }
-
-                Text(aiSummary(totalScore: totalScore))
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(Color.rdGraphite)
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.rdFog)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
     }
@@ -486,25 +481,6 @@ struct ResultView: View {
                 .font(.system(size: 8, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
         }
-    }
-
-    private func aiSummary(totalScore: Double) -> AttributedString {
-        var attr = AttributedString("AI özeti. ")
-        attr.font = .system(size: 12, weight: .bold)
-
-        var rest = AttributedString("\(findings.count) bulgu tespit edildi · Toplam \(method.label) skoru ")
-        rest.font = .system(size: 12)
-        attr += rest
-
-        var score = AttributedString(scoreText(totalScore, method: method))
-        score.font = .system(size: 12, weight: .bold, design: .monospaced)
-        attr += score
-
-        var tail = AttributedString(". Aşağıdaki bulgu kartlarında tehlike, hesaplama ve önerilen önlem birlikte gösterilir.")
-        tail.font = .system(size: 12)
-        attr += tail
-
-        return attr
     }
 
     // MARK: - Findings list
@@ -617,52 +593,6 @@ struct ResultView: View {
         }
     }
 
-    // MARK: - Pro upsell
-
-    private var proUpsellCard: some View {
-        Button {
-            showPaywall = true
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "tablecells")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdGreen)
-                    .frame(width: 42, height: 42)
-                    .background(Color.rdGreenSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text("Pro risk analizi")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                        RDProBadge(small: true)
-                            .scaleEffect(0.78)
-                    }
-                    Text("Fine-Kinney, 5×5, PDF/Excel ve özelleştirme açılır.")
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                        .lineLimit(2)
-                }
-
-                Spacer(minLength: 6)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdSlate.opacity(0.8))
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, minHeight: 68, alignment: .leading)
-            .background(Color.rdWhite)
-            .overlay(
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.rdGreen.opacity(0.18), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-        }
-        .buttonStyle(RDPressableButtonStyle())
-    }
-
     // MARK: - Report CTA
 
     private var stickyReportCTA: some View {
@@ -725,9 +655,10 @@ struct ResultView: View {
         Task {
             await app.refreshPlanState()
             _ = await refreshReportQuotaState()
+            await refreshFreeRiskAnalysisTrialState()
             await loadInitialReportCompanyIfNeeded()
             reportOptions = resolvedReportOptions(defaultReportOptions(kind: .standard), company: selectedReportCompany)
-            reportSettingsDetent = .height(440)
+            reportSettingsDetent = .height(430)
             showReportSettings = true
             if !reportQuotaExhausted {
                 _ = try? await loadProfileLogoIfNeeded()
@@ -781,17 +712,23 @@ struct ResultView: View {
         pdfGeneration.start()
         Task {
             do {
-                if await refreshReportQuotaState() {
+                let company = selectedReportCompany
+                let resolvedOptions = resolvedReportOptions(options ?? defaultReportOptions(kind: .standard), company: company)
+                if resolvedOptions.kind == .riskAnalysis,
+                   await riskAnalysisTrialExhaustedBeforeGeneration() {
+                    pdfGeneration.stop()
+                    return
+                }
+                if !shouldBypassReportQuota(for: resolvedOptions),
+                   await refreshReportQuotaState() {
                     pdfGeneration.stop()
                     reportOptions = defaultReportOptions(kind: .standard)
-                    reportSettingsDetent = .height(440)
+                    reportSettingsDetent = .height(430)
                     showReportSettings = true
                     return
                 }
                 let reportImage = try await loadReportImage()
                 pdfGeneration.advance(to: 0.23)
-                let company = selectedReportCompany
-                let resolvedOptions = resolvedReportOptions(options ?? defaultReportOptions(kind: .standard), company: company)
                 let companyLogo = try await loadCompanyLogo(for: company)
                 let profileLogo = try await loadProfileLogoIfNeeded()
                 let resolvedLogo = companyLogo ?? profileLogo
@@ -819,6 +756,9 @@ struct ResultView: View {
                             supportID: supportID
                         )
                         try await backfillAnalysisCompanyIfNeeded(bundle: bundle, company: company)
+                        if app.currentTier == .free, resolvedOptions.kind == .riskAnalysis {
+                            freeRiskAnalysisTrialUsed = true
+                        }
                         pdfGeneration.advance(to: 0.92)
                     } catch {
                         Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
@@ -873,9 +813,15 @@ struct ResultView: View {
         isExcelGenerating = true
         Task {
             do {
-                if await refreshReportQuotaState() {
+                let resolvedOptions = resolvedReportOptions(reportOptions, company: selectedReportCompany)
+                if await riskAnalysisTrialExhaustedBeforeGeneration() {
+                    isExcelGenerating = false
+                    return
+                }
+                if !shouldBypassReportQuota(for: resolvedOptions),
+                   await refreshReportQuotaState() {
                     reportOptions.kind = .standard
-                    reportSettingsDetent = .height(440)
+                    reportSettingsDetent = .height(430)
                     showReportSettings = true
                     isExcelGenerating = false
                     return
@@ -889,6 +835,9 @@ struct ResultView: View {
                     supportID: supportID
                 )
                 try await backfillAnalysisCompanyIfNeeded(bundle: bundle, company: selectedReportCompany)
+                if app.currentTier == .free {
+                    freeRiskAnalysisTrialUsed = true
+                }
                 let url = try await AnalysisService.shared.reportFileURL(
                     for: report,
                     requestID: requestID,
@@ -912,10 +861,18 @@ struct ResultView: View {
 
     @discardableResult
     private func handleReportQuotaIfNeeded(_ error: Error) -> Bool {
+        if AppErrorMessage.isFreeRiskAnalysisTrialExhausted(error.localizedDescription) {
+            freeRiskAnalysisTrialUsed = true
+            reportQuotaExhausted = false
+            reportOptions.kind = .standard
+            reportSettingsDetent = .height(430)
+            showReportSettings = true
+            return true
+        }
         guard AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) else { return false }
         reportQuotaExhausted = true
         reportOptions.kind = .standard
-        reportSettingsDetent = .height(440)
+        reportSettingsDetent = .height(430)
         showReportSettings = true
         return true
     }
@@ -928,6 +885,38 @@ struct ResultView: View {
             reportQuotaExhausted = false
         }
         return reportQuotaExhausted
+    }
+
+    private func refreshFreeRiskAnalysisTrialState() async {
+        guard app.currentTier == .free else {
+            freeRiskAnalysisTrialUsed = false
+            return
+        }
+        do {
+            let usage = try await AnalysisService.shared.freeRiskAnalysisTrialUsage()
+            freeRiskAnalysisTrialUsed = usage.isExhausted
+        } catch {
+            freeRiskAnalysisTrialUsed = false
+        }
+    }
+
+    private func shouldBypassReportQuota(for options: PDFReportOptions) -> Bool {
+        app.currentTier == .free && options.kind == .riskAnalysis && !freeRiskAnalysisTrialUsed
+    }
+
+    private func riskAnalysisTrialExhaustedBeforeGeneration() async -> Bool {
+        guard app.currentTier == .free else { return false }
+        await refreshFreeRiskAnalysisTrialState()
+        guard freeRiskAnalysisTrialUsed else { return false }
+        reportOptions.kind = .standard
+        reportSettingsDetent = .height(430)
+        showReportSettings = true
+        pdfError = AppErrorMessage.make(
+            rawMessage: "free_risk_analysis_trial_exhausted:1/1",
+            context: "Risk analizi tablosu oluşturulamadı",
+            fallbackTitle: "Risk analizi tablosu oluşturulamadı"
+        ).fullText
+        return true
     }
 
     private func loadReportImage() async throws -> UIImage? {
@@ -990,7 +979,7 @@ struct ResultView: View {
             resolved.companyName = company.name
         }
         if resolved.companyInfo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            resolved.companyInfo = company.hazardClass.title
+            resolved.companyInfo = company.reportInfoText
         }
         return resolved
     }
@@ -1069,6 +1058,7 @@ struct ReportSettingsSheet: View {
     let profile: UserProfile?
     let accessTier: SubscriptionTier
     let canUseRiskAnalysis: Bool
+    let freeRiskAnalysisTrialRemaining: Int
     let reportQuotaExhausted: Bool
     let onGenerate: () -> Void
     let onGenerateExcel: (() -> Void)?
@@ -1106,22 +1096,27 @@ struct ReportSettingsSheet: View {
         isDarkMode ? Color.rdWhite.opacity(0.08) : Color.rdWhite.opacity(0.76)
     }
     private var riskAnalysisLocked: Bool {
-        !canUseRiskAnalysis || reportQuotaExhausted
+        if hasFreeRiskAnalysisTrial { return false }
+        return reportQuotaExhausted || !canUseRiskAnalysis
     }
     private var standardReportLocked: Bool {
         reportQuotaExhausted
+    }
+    private var hasFreeRiskAnalysisTrial: Bool {
+        accessTier == .free && freeRiskAnalysisTrialRemaining > 0
+    }
+    private var shouldShowRiskAnalysisStatusBadge: Bool {
+        accessTier == .free || reportQuotaExhausted || !canUseRiskAnalysis
     }
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
-                    reportTypeSection
-                    languageSection
-                    companySelectionSection
-
                     if options.kind == .riskAnalysis {
                         VStack(alignment: .leading, spacing: 18) {
+                            reportTypeSection
+                            companySelectionSection
                             methodSection
                             outputFormatSection
                             identitySection
@@ -1131,6 +1126,8 @@ struct ReportSettingsSheet: View {
                             insertion: .move(edge: .top).combined(with: .opacity),
                             removal: .opacity.combined(with: .scale(scale: 0.98, anchor: .top))
                         ))
+                    } else {
+                        reportTypeSection
                     }
                 }
                 .padding(.horizontal, 14)
@@ -1173,7 +1170,7 @@ struct ReportSettingsSheet: View {
     }
 
     private var primaryButtonTitle: String {
-        if reportQuotaExhausted {
+        if reportQuotaExhausted && !(options.kind == .riskAnalysis && hasFreeRiskAnalysisTrial) {
             switch accessTier {
             case .free: return "Yükselt"
             case .plus: return "Pro'ya yükselt"
@@ -1185,7 +1182,9 @@ struct ReportSettingsSheet: View {
     }
 
     private var primaryButtonIcon: String {
-        if reportQuotaExhausted { return "arrow.up.circle.fill" }
+        if reportQuotaExhausted && !(options.kind == .riskAnalysis && hasFreeRiskAnalysisTrial) {
+            return "arrow.up.circle.fill"
+        }
         if options.kind == .standard { return "doc.richtext.fill" }
         return outputFormat == .excel ? "tablecells" : "doc.text.magnifyingglass"
     }
@@ -1206,9 +1205,9 @@ struct ReportSettingsSheet: View {
                      height: 54,
                      backgroundOverride: .rdCTA,
                      foregroundOverride: .white,
-                     shadowOverride: Color.rdGreen.opacity(0.16),
+                     shadowOverride: .clear,
                      action: {
-                         if reportQuotaExhausted {
+                         if reportQuotaExhausted && !(options.kind == .riskAnalysis && hasFreeRiskAnalysisTrial) {
                              if accessTier == .pro {
                                  onClose()
                              } else {
@@ -1230,6 +1229,7 @@ struct ReportSettingsSheet: View {
                 .padding(.top, 2)
                 .padding(.bottom, 10)
                 .background(Color.rdPaper.opacity(0.98))
+                .rdCardShadow(colorScheme: colorScheme, radius: 5, x: 7, y: 9)
                 .accessibilityIdentifier("report.settings.generate")
         }
     }
@@ -1239,24 +1239,48 @@ struct ReportSettingsSheet: View {
             reportKindRow(
                 kind: .standard,
                 title: "Standart Rapor",
-                subtitle: reportQuotaExhausted ? quotaExceededSubtitle : "Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur.",
+                subtitle: standardReportSubtitle,
                 icon: "doc.richtext",
-                locked: standardReportLocked
+                locked: options.kind == .standard && standardReportLocked
             )
-            reportKindRow(
-                kind: .riskAnalysis,
-                title: "Risk Analizi Tablosu",
-                subtitle: "Fine-Kinney veya 5×5 Matris Metodu PDF ve Excel çıktısı, ayrıca özelleştirilebilir alanlar.",
-                icon: "tablecells",
-                locked: riskAnalysisLocked
-            )
+            VStack(spacing: 0) {
+                if hasFreeRiskAnalysisTrial {
+                    freeRiskAnalysisTrialRibbon
+                        .padding(.bottom, -1)
+                }
+                reportKindRow(
+                    kind: .riskAnalysis,
+                    title: "Risk Analizi Tablosu",
+                    subtitle: riskAnalysisSubtitle,
+                    icon: "tablecells",
+                    locked: riskAnalysisLocked
+                )
+            }
         }
+    }
+
+    private var standardReportSubtitle: String {
+        if options.kind == .standard, reportQuotaExhausted {
+            return quotaExceededSubtitle
+        }
+        return "Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur."
+    }
+
+    private var riskAnalysisSubtitle: String {
+        if hasFreeRiskAnalysisTrial {
+            return "Tebrikler! Bir tane risk analizi oluşturma hakkı tanımlandı. Hemen deneyebilirsin."
+        }
+        if accessTier == .free {
+            return "Bir kez tanımlanan hakkını kullandın. Risk analizi tabloları Plus ile devam eder."
+        }
+        if reportQuotaExhausted { return quotaExceededSubtitle }
+        return "Fine-Kinney veya 5×5 Matris Metodu PDF ve Excel çıktısı, ayrıca özelleştirilebilir alanlar."
     }
 
     private var quotaExceededSubtitle: String {
         switch accessTier {
         case .free:
-            return "Aylık rapor kotan doldu. Devam etmek için Plus'a yükselt."
+            return "Bugünkü standart rapor hakkın doldu. Hakların yarın yenilenir."
         case .plus:
             return "Plus aylık rapor limitin doldu. Pro ile limiti artırabilirsin."
         case .pro:
@@ -1281,7 +1305,7 @@ struct ReportSettingsSheet: View {
                     options.kind = kind
                     if kind == .standard {
                         outputFormat = .pdf
-                        presentationDetent = .height(440)
+                        presentationDetent = .height(430)
                     } else {
                         presentationDetent = .large
                     }
@@ -1302,7 +1326,7 @@ struct ReportSettingsSheet: View {
                             Text(title)
                                 .font(.system(size: 17, weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
-                            if locked {
+                            if kind == .riskAnalysis, shouldShowRiskAnalysisStatusBadge {
                                 riskAnalysisStatusBadge
                             }
                         }
@@ -1332,14 +1356,19 @@ struct ReportSettingsSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .shadow(color: active ? Color.rdGreen.opacity(0.12) : Color.clear, radius: 14, x: 0, y: 8)
         }
-        .frame(minHeight: active && locked && kind == .riskAnalysis ? 286 : 118)
+        .frame(minHeight: active && locked && kind == .riskAnalysis ? 286 : 104)
         .buttonStyle(RDPressableButtonStyle())
         .accessibilityIdentifier("report.settings.kind.\(kind.rawValue)")
     }
 
     @ViewBuilder
     private var riskAnalysisStatusBadge: some View {
-        if reportQuotaExhausted {
+        if hasFreeRiskAnalysisTrial {
+            EmptyView()
+        } else if accessTier == .free || !canUseRiskAnalysis {
+            RDTierBadge(tier: .plus, small: true)
+                .scaleEffect(0.82)
+        } else if reportQuotaExhausted {
             HStack(spacing: 3) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 8, weight: .bold, design: .rounded))
@@ -1352,10 +1381,46 @@ struct ReportSettingsSheet: View {
             .foregroundStyle(Color.rdCriticalText)
             .background(Color.rdCriticalBg)
             .clipShape(RoundedRectangle(cornerRadius: 6))
-        } else {
-            RDTierBadge(tier: .plus, small: true)
-                .scaleEffect(0.82)
         }
+    }
+
+    private var freeRiskAnalysisTrialRibbon: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "gift.fill")
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(SubscriptionTier.plus.accentTextColor)
+                .frame(width: 28, height: 28)
+                .background(Color.rdWhite.opacity(0.72))
+                .clipShape(RoundedRectangle(cornerRadius: 9))
+
+            Text("Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!")
+                .font(.system(size: 13.5, weight: .bold, design: .rounded))
+                .foregroundStyle(SubscriptionTier.plus.accentTextColor)
+                .lineLimit(2)
+                .minimumScaleFactor(0.86)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 9)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(
+                colors: [
+                    SubscriptionTier.plus.accentSoftColor.opacity(0.98),
+                    Color.rdWhite.opacity(0.96)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(SubscriptionTier.plus.accentColor.opacity(0.34), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan.")
     }
 
     private var riskAnalysisPreview: some View {
@@ -1436,7 +1501,7 @@ struct ReportSettingsSheet: View {
     @ViewBuilder
     private var outputFormatSection: some View {
         if onGenerateExcel != nil {
-            settingsSection(title: "DOSYA TÜRÜ") {
+            settingsCardSection(title: "Dosya türü", icon: "doc.on.doc.fill") {
                 HStack(spacing: 8) {
                     ForEach(ReportOutputFormat.allCases) { format in
                         let active = outputFormat == format
@@ -1482,7 +1547,7 @@ struct ReportSettingsSheet: View {
     }
 
     private var methodSection: some View {
-        settingsSection(title: "RİSK ANALİZ METODU") {
+        settingsCardSection(title: "Risk analiz metodu", icon: "function") {
             HStack(spacing: 8) {
                 ForEach(RiskMethod.allCases) { method in
                     let active = options.method == method
@@ -1560,7 +1625,7 @@ struct ReportSettingsSheet: View {
                                 .font(.system(size: 14, weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                                 .lineLimit(1)
-                            Text(selectedCompany?.hazardClass.title ?? "Arşiv, filtre ve firma bazlı rapor için firma seçebilir veya hızlıca ekleyebilirsin.")
+                            Text(selectedCompany?.listSubtitle ?? "Arşiv, filtre ve firma bazlı rapor için firma seçebilir veya hızlıca ekleyebilirsin.")
                                 .font(.system(size: 12, design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                                 .lineLimit(2)
@@ -1618,7 +1683,7 @@ struct ReportSettingsSheet: View {
         options.companyID = company?.id
         if let company {
             options.companyName = company.name
-            options.companyInfo = company.hazardClass.title
+            options.companyInfo = company.reportInfoText
         } else {
             options.companyName = profile?.companyName ?? ""
             options.companyInfo = profile?.phone ?? ""
@@ -1633,7 +1698,7 @@ struct ReportSettingsSheet: View {
     }
 
     private var identitySection: some View {
-        settingsSection(title: "HAZIRLAYAN BİLGİLERİ") {
+        settingsCardSection(title: "Hazırlayan bilgileri", icon: "person.text.rectangle.fill") {
             VStack(spacing: 10) {
                 labeledField("Hazırlayan", text: $options.preparedBy, placeholder: profile?.displayName ?? "Ad Soyad")
                 labeledField("Unvan", text: $options.preparedTitle, placeholder: profile?.title ?? "İSG Uzmanı")
@@ -1686,7 +1751,7 @@ struct ReportSettingsSheet: View {
                 if showReportOverrides {
                     VStack(spacing: 10) {
                         labeledField("Firma adı", text: $options.companyName, placeholder: selectedCompany?.name ?? profile?.companyName ?? "Firma adı")
-                        labeledField("Firma bilgisi", text: $options.companyInfo, placeholder: selectedCompany?.hazardClass.title ?? profile?.phone ?? "Telefon veya kısa bilgi")
+                        labeledField("Firma bilgisi", text: $options.companyInfo, placeholder: selectedCompany?.reportInfoText ?? profile?.phone ?? "Telefon veya kısa bilgi")
                         companyLogoOverrideCard
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -1761,6 +1826,39 @@ struct ReportSettingsSheet: View {
                 }
             }
         }
+    }
+
+    private func settingsCardSection<Content: View>(
+        title: String,
+        icon: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 9) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreenDark)
+                    .frame(width: 30, height: 30)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
+
+                Text(title)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+
+                Spacer(minLength: 0)
+            }
+
+            content()
+        }
+        .padding(12)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .shadow(color: Color.rdBlack.opacity(0.035), radius: 12, x: 0, y: 6)
     }
 
     private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {

@@ -12,7 +12,7 @@ struct ProfessionalProgressHomeCard: View {
     var onTap: (() -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
-    @State private var animateProgress = false
+    @State private var animateProgress = true
     @State private var animateStripMarker = false
 
     @ViewBuilder
@@ -134,7 +134,7 @@ struct ProfessionalProgressHomeCard: View {
                 .stroke(accent.opacity(isDarkMode ? 0.36 : 0.24), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-        .shadow(color: accent.opacity(isDarkMode ? 0.16 : 0.10), radius: 12, x: 0, y: 6)
+        .rdCardShadow(colorScheme: colorScheme, accent: accent, radius: 5, x: 6, y: 8)
         .contentShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         .onTapGesture {
             onTap?()
@@ -142,9 +142,7 @@ struct ProfessionalProgressHomeCard: View {
         .accessibilityIdentifier(accessibilityIdentifier)
         .accessibilityAddTraits(.isButton)
         .onAppear {
-            withAnimation(.snappy(duration: 0.55)) {
-                animateProgress = true
-            }
+            animateProgress = true
             animateStripMarker = true
         }
         .onChange(of: summary.profile.totalMDP) { _ in
@@ -249,8 +247,7 @@ struct ProfessionalProgressHomeCard: View {
                 .stroke(Color.rdBlack, lineWidth: 1.6)
         )
         .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-        .shadow(color: Color.rdBlack.opacity(0.08), radius: 14, x: 0, y: 8)
-        .shadow(color: accent.opacity(0.06), radius: 16, x: 0, y: 6)
+        .rdCardShadow(colorScheme: colorScheme, accent: accent, radius: 5, x: 6, y: 8)
         .contentShape(RoundedRectangle(cornerRadius: RDRadius.lg))
         .onTapGesture {
             onTap?()
@@ -258,9 +255,7 @@ struct ProfessionalProgressHomeCard: View {
         .accessibilityIdentifier(accessibilityIdentifier)
         .accessibilityAddTraits(.isButton)
         .onAppear {
-            withAnimation(.snappy(duration: 0.65)) {
-                animateProgress = true
-            }
+            animateProgress = true
         }
         .onChange(of: summary.profile.totalMDP) { _ in
             animateProgress = false

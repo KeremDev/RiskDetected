@@ -39,7 +39,7 @@ struct RDButton: View {
                     }
                     Text(title)
                         .font(.system(size: titleFontSize, weight: .semibold, design: .rounded))
-                        .tracking(-0.2)
+                        .tracking(0)
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
                     if inlineTrailingIconStyle, let trailingIcon {
@@ -177,6 +177,7 @@ struct RDModalCloseButton: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .accessibilityLabel(accessibilityLabel)
+        .accessibilityIdentifier(accessibilityLabel)
     }
 }
 

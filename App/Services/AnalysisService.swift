@@ -271,6 +271,16 @@ final class AnalysisService {
         }
     }
 
+    /// Free plandaki tek seferlik risk analizi tablosu deneme hakkını döndürür.
+    func freeRiskAnalysisTrialUsage() async throws -> DailyQuotaUsage {
+        guard supabase.currentUserID != nil else {
+            throw AnalysisError.notAuthenticated
+        }
+        let rows = try await listReports(limit: 1000)
+        let used = rows.contains { $0.usesRiskAnalysisTrial } ? 1 : 0
+        return DailyQuotaUsage(used: used, limit: 1)
+    }
+
     @discardableResult
     func generateExcelReport(
         analysisID: UUID,
@@ -464,6 +474,12 @@ final class AnalysisService {
                     .remove(paths: [storagePath])
             } catch {
                 Self.logger.error("Report orphan cleanup failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) path=\(storagePath, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+            }
+            if AppErrorMessage.isFreeRiskAnalysisTrialExhausted(error.localizedDescription) {
+                throw AnalysisError.databaseFailed("free_risk_analysis_trial_exhausted:1/1\nDestek kodu: \(supportID)")
+            }
+            if AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) {
+                throw AnalysisError.databaseFailed("report_quota_exceeded\nDestek kodu: \(supportID)")
             }
             throw AnalysisError.databaseFailed("PDF oluşturuldu ancak rapor arşiv kaydı tamamlanamadı. Destek kodu: \(supportID)")
         }
@@ -885,22 +901,29 @@ final class AnalysisService {
         )
     }
 
-    /// Kullanıcının içinde bulunduğu takvim ayındaki rapor kullanımını verir.
+    /// Kullanıcının rapor kotası kullanımını verir. Free standart rapor hakkı günlük,
+    /// paid plan rapor hakları aylık takip edilir.
     func monthlyReportQuotaUsage(tier: SubscriptionTier) async throws -> DailyQuotaUsage {
         guard let userID = supabase.currentUserID else {
             throw AnalysisError.notAuthenticated
         }
-        let monthStart = Self.istanbulStartOfCurrentMonthISO()
+        let periodStart = tier == .free
+            ? Self.istanbulStartOfTodayISO()
+            : Self.istanbulStartOfCurrentMonthISO()
         let rows: [ReportRow] = try await supabase.client
             .from("reports")
             .select()
             .eq("user_id", value: userID.uuidString)
-            .gte("created_at", value: monthStart)
+            .gte("created_at", value: periodStart)
             .execute()
             .value
 
+        let used = tier == .free
+            ? rows.filter { !$0.usesRiskAnalysisTrial }.count
+            : rows.count
+
         return DailyQuotaUsage(
-            used: rows.count,
+            used: used,
             limit: Self.monthlyReportLimit(for: tier)
         )
     }
@@ -934,7 +957,7 @@ final class AnalysisService {
 
     private static func monthlyReportLimit(for tier: SubscriptionTier) -> Int {
         switch tier {
-        case .free: return 3
+        case .free: return 1
         case .plus: return 150
         case .pro: return 750
         }
@@ -1533,6 +1556,10 @@ extension ReportRow {
 
     var isRiskAnalysisReport: Bool {
         kind == PDFReportKind.riskAnalysis.rawValue || kind == "risk_analysis"
+    }
+
+    var usesRiskAnalysisTrial: Bool {
+        isRiskAnalysisReport || isExcelReport
     }
 }
 

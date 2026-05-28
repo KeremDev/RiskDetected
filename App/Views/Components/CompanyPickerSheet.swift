@@ -227,7 +227,7 @@ struct CompanyPickerSheet: View {
                 rowContent(
                     icon: "building.2",
                     title: company.name,
-                    subtitle: company.hazardClass.title,
+                    subtitle: company.listSubtitle,
                     isSelected: selectedCompanyID == company.id
                 )
             }
@@ -239,7 +239,12 @@ struct CompanyPickerSheet: View {
                         id: company.id,
                         name: company.name,
                         hazardClass: company.hazardClass,
-                        logoPath: company.logoPath
+                        logoPath: company.logoPath,
+                        address: company.address ?? "",
+                        contactPerson: company.contactPerson ?? "",
+                        department: company.department ?? "",
+                        defaultResponsible: company.defaultResponsible ?? "",
+                        defaultDueDaysText: company.defaultDueDays.map(String.init) ?? ""
                     ))
                 }
                 Button("Arşivle", role: .destructive) {
@@ -326,6 +331,12 @@ struct CompanyPickerSheet: View {
 
     private func loadCompanies() async {
         guard accessTier.isPaid else { return }
+        #if DEBUG
+        if Self.usesUITestCompanyFixtures {
+            companies = Self.uiTestCompanies
+            return
+        }
+        #endif
         isLoading = true
         defer { isLoading = false }
         do {
@@ -372,6 +383,33 @@ struct CompanyPickerSheet: View {
             }
         }
     }
+
+    #if DEBUG
+    private static var usesUITestCompanyFixtures: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_COMPANY_FIXTURES")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_COMPANY_FIXTURES"] == "1"
+    }
+
+    private static var uiTestCompanies: [Company] {
+        [
+            Company(
+                id: UUID(uuidString: "00000000-0000-0000-0000-00000000c001")!,
+                userID: UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!,
+                name: "QA Aktif Firma",
+                hazardClass: .high,
+                logoPath: nil,
+                address: "Test Mah. Güvenlik Cad. No: 10",
+                contactPerson: "Ayşe Denetim",
+                department: "Bakım Ekibi",
+                defaultResponsible: "Saha Şefi",
+                defaultDueDays: 30,
+                isArchived: false,
+                createdAt: nil,
+                updatedAt: nil
+            )
+        ]
+    }
+    #endif
 }
 
 private struct CompanyEditorSheet: View {
@@ -390,6 +428,8 @@ private struct CompanyEditorSheet: View {
                     logoSection
                     field("Firma adı", text: $draft.name, placeholder: "Örn. ABC İnşaat")
                     hazardSection
+                    v2DetailsSection
+                    defaultsSection
 
                     RDButton(
                         title: isSaving ? "Kaydediliyor..." : "Firmayı kaydet",
@@ -496,13 +536,46 @@ private struct CompanyEditorSheet: View {
         }
     }
 
-    private func field(_ title: String, text: Binding<String>, placeholder: String) -> some View {
+    private var v2DetailsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Firma detayları")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.rdSlate)
+            field("Adres", text: $draft.address, placeholder: "Şantiye, fabrika veya merkez adresi")
+            field("İlgili kişi", text: $draft.contactPerson, placeholder: "İSG sorumlusu veya firma yetkilisi")
+            field("Departman / ekip", text: $draft.department, placeholder: "Üretim, bakım, maden sahası...")
+        }
+    }
+
+    private var defaultsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Rapor varsayılanları")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.rdSlate)
+            field("Varsayılan sorumlu", text: $draft.defaultResponsible, placeholder: "Bakım ekibi, saha şefi...")
+            field("Varsayılan termin günü", text: $draft.defaultDueDaysText, placeholder: "Örn. 30", keyboardType: .numberPad)
+            if !draft.defaultDueDaysText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               draft.defaultDueDays == nil || !(1...365).contains(draft.defaultDueDays ?? 0) {
+                Text("Termin günü 1-365 arasında olmalı.")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.rdCritical)
+            }
+        }
+    }
+
+    private func field(
+        _ title: String,
+        text: Binding<String>,
+        placeholder: String,
+        keyboardType: UIKeyboardType = .default
+    ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color.rdSlate)
             TextField(placeholder, text: text)
                 .font(.system(size: 15, weight: .regular))
+                .keyboardType(keyboardType)
                 .textInputAutocapitalization(.words)
                 .padding(.horizontal, 12)
                 .frame(height: 46)

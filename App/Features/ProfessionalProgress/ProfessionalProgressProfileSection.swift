@@ -4,6 +4,7 @@ struct ProfessionalProgressProfileSection: View {
     let summary: ProfessionalProgressSummary
     let onRefresh: () async -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showBadges = false
     @State private var showCompetencies = false
     @State private var showTitlesSheet = false
@@ -14,7 +15,6 @@ struct ProfessionalProgressProfileSection: View {
             mdpCard
             ProfessionalProgressWeeklyTrackingCard(summary: summary)
             competencyPreview
-            messagesPreview
         }
         .sheet(isPresented: $showBadges) {
             ProfessionalProgressBadgesView(summary: summary)
@@ -103,6 +103,7 @@ struct ProfessionalProgressProfileSection: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+        .rdCardShadow(colorScheme: colorScheme, accent: Color.rdGreen)
     }
 
     private var emptyCompetency: some View {
@@ -121,34 +122,4 @@ struct ProfessionalProgressProfileSection: View {
         }
     }
 
-    @ViewBuilder
-    private var messagesPreview: some View {
-        if let message = summary.messages.first {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "quote.bubble.fill")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdGreenDark)
-                    .frame(width: 36, height: 36)
-                    .background(Color.rdGreenSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: RDRadius.sm))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(message.title)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                    Text(message.body)
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(14)
-            .background(Color.rdWhite)
-            .overlay(
-                RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .stroke(Color.rdLine, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-        }
-    }
 }

@@ -133,6 +133,12 @@ final class AppState: ObservableObject {
             Task { await resolved.resetLocalSessionForUITests() }
             return
         }
+        if Self.isUITestMainLaunch {
+            profile = Self.uiTestProfile
+            applyTier(displayTier(profileTier: .plus, subscriptionTier: .plus))
+            flow = .main
+            return
+        }
         #endif
 
         Task { await bootstrap() }
@@ -244,19 +250,54 @@ final class AppState: ObservableObject {
     #if DEBUG
     private static var isUITestResetLaunch: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_RESET_STATE")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_RESET_STATE"] == "1"
+    }
+
+    private static var isUITestMainLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_MAIN")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
     }
 
     private static func prepareForUITestLaunchIfNeeded() {
-        guard isUITestResetLaunch else { return }
+        guard isUITestResetLaunch || isUITestMainLaunch else { return }
         let defaults = UserDefaults.standard
-        [
-            onboardingCompletedKey,
-            "rd.onboarding.v2.pendingAnswers",
-            "rd.theme.darkModeEnabled",
-            "rd.theme.preference",
-            "rd.language.preference",
-            "rd.paywall.funnelSessionID",
-        ].forEach { defaults.removeObject(forKey: $0) }
+        if isUITestResetLaunch {
+            [
+                onboardingCompletedKey,
+                "rd.onboarding.v2.pendingAnswers",
+                "rd.theme.darkModeEnabled",
+                "rd.theme.preference",
+                "rd.language.preference",
+                "rd.paywall.funnelSessionID",
+            ].forEach { defaults.removeObject(forKey: $0) }
+        }
+
+        if CommandLine.arguments.contains("RD_UI_TEST_DARK_MODE")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_DARK_MODE"] == "1" {
+            defaults.set(RDThemePreference.dark.rawValue, forKey: themePreferenceKey)
+        }
+    }
+
+    private static var uiTestProfile: UserProfile {
+        UserProfile(
+            id: UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!,
+            email: "ui-test@riskdetected.app",
+            fullName: "UI Test Kullanıcı",
+            initials: "UT",
+            title: "İSG Uzmanı · A Sınıfı",
+            certificateNumber: "UI-TEST-001",
+            companyName: "RiskDetected Test Firma",
+            companyLogoURL: nil,
+            avatarURL: nil,
+            phone: "Test profil",
+            tier: .plus,
+            preferredMethod: .fineKinney,
+            dailyQuotaUsed: 0,
+            dailyQuotaResetAt: nil,
+            subscriptionPeriod: "monthly",
+            subscriptionRenewalAt: nil,
+            createdAt: nil
+        )
     }
     #endif
 
@@ -271,6 +312,9 @@ final class AppState: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newProfile in
                 guard let self else { return }
+                #if DEBUG
+                guard !Self.isUITestMainLaunch else { return }
+                #endif
                 self.profile = newProfile
                 self.applyTier(self.displayTier(profileTier: newProfile?.tier ?? .free, subscriptionTier: self.subscriptionState.tier))
             }
@@ -281,6 +325,9 @@ final class AppState: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] session in
                 guard let self else { return }
+                #if DEBUG
+                guard !Self.isUITestMainLaunch else { return }
+                #endif
                 if let session {
                     Task {
                         await LegalAcceptanceService.shared
@@ -357,6 +404,9 @@ final class AppState: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 guard let self else { return }
+                #if DEBUG
+                guard !Self.isUITestMainLaunch else { return }
+                #endif
                 self.subscriptionState = state
                 self.applyTier(self.displayTier(profileTier: self.profile?.tier ?? .free, subscriptionTier: state.tier))
             }

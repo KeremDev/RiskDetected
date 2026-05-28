@@ -94,11 +94,12 @@ struct HomeView: View {
                         icon: "sparkles",
                         backgroundOverride: .rdCTA,
                         foregroundOverride: .white,
-                        shadowOverride: Color.rdGreen.opacity(0.18)
+                        shadowOverride: .clear
                     ) {
                         startAnalysisFlow()
                     }
                     .frame(height: 56)
+                    .rdCardShadow(colorScheme: colorScheme, radius: 5, x: 7, y: 9)
                     .padding(.top, 14)
 
                     if RDConfig.Features.professionalProgressEnabled,
@@ -411,6 +412,7 @@ struct HomeView: View {
                         .stroke(Color.rdLine, lineWidth: 1)
                 )
         )
+        .homeCardDepth(colorScheme: colorScheme, radius: 12, y: 5)
     }
 
     private var photoUploadCard: some View {
@@ -524,6 +526,7 @@ struct HomeView: View {
             }
         }
         .buttonStyle(RDPressableButtonStyle())
+        .homeCardDepth(colorScheme: colorScheme, radius: 18, y: 8)
     }
 
     private var lockedPhotoUploadContent: some View {
@@ -684,6 +687,7 @@ struct HomeView: View {
                                     .stroke(Color.rdLine, lineWidth: 1)
                             )
                     )
+                    .homeCardDepth(colorScheme: colorScheme, radius: 14, y: 6)
 
                     HStack {
                         Text("Maks. \(maxTextInputCharacters) karakter")
@@ -702,7 +706,9 @@ struct HomeView: View {
     private var freeQuotaHint: some View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            showPlainPaywall()
+            if isFreeQuotaExhausted {
+                showPlainPaywall()
+            }
         } label: {
             HStack(spacing: 10) {
                 ZStack {
@@ -718,7 +724,7 @@ struct HomeView: View {
                     Text("Ücretsiz Analiz Hakkı")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("Günde 1 ücretsiz analiz, daha fazlası için hesabını yükselt !")
+                    Text(freeQuotaHintSubtitle)
                         .font(.system(size: 11, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
@@ -726,7 +732,7 @@ struct HomeView: View {
 
                 Spacer(minLength: 4)
 
-                Image(systemName: SubscriptionTier.plus.badgeIcon)
+                Image(systemName: "gift.fill")
                     .font(.system(size: 12, weight: .heavy, design: .rounded))
                     .foregroundStyle(SubscriptionTier.plus.accentTextColor)
                     .frame(width: 28, height: 28)
@@ -743,12 +749,20 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(RDPressableButtonStyle())
-        .accessibilityLabel("Free kullanım bilgisi. Günde 1 ücretsiz analiz, daha fazlası için hesabını yükselt.")
+        .homeCardDepth(colorScheme: colorScheme, radius: 14, y: 6)
+        .accessibilityLabel("Free kullanım bilgisi. \(freeQuotaHintSubtitle)")
     }
 
     private var freeQuotaCompactText: String {
         guard let quotaUsage else { return "1/1" }
         return "\(quotaUsage.remaining)/\(quotaUsage.limit)"
+    }
+
+    private var freeQuotaHintSubtitle: String {
+        if isFreeQuotaExhausted {
+            return "Bugünkü hakkın doldu. Daha fazlası için hesabını yükselt."
+        }
+        return "Günde 1 ücretsiz analiz hakkın hazır."
     }
 
     private func lockedInputContent(title: String, subtitle: String, icon: String) -> some View {
@@ -810,19 +824,14 @@ struct HomeView: View {
     }
 
     private var recentSection: some View {
-        VStack(spacing: 10) {
-            HStack {
-                Text("Son uygunsuzluklar")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .tracking(0.4)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Color.rdSlate)
-                Spacer()
-                Button("Tümü") {
-                    app.activeTab = .analyses
-                }
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
+        homeSectionCard {
+            sectionHeader(
+                title: "Son uygunsuzluklar",
+                icon: "exclamationmark.triangle.fill",
+                tint: Color.rdCritical,
+                countLabel: "\(recentItems.count) kayıt"
+            ) {
+                app.activeTab = .analyses
             }
 
             if recentItems.isEmpty {
@@ -839,36 +848,27 @@ struct HomeView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
                     .padding(.vertical, 4)
                 }
-                .padding(.horizontal, -20)
-                .background(Color.rdWhite)
             }
         }
-        .background(Color.rdWhite)
     }
 
     private var generatedReportsSection: some View {
-        VStack(spacing: 10) {
-            HStack {
-                Text("Oluşturulan Raporlar")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .tracking(0.4)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Color.rdSlate)
-                Spacer()
-                Button("Tümü") {
-                    app.activeTab = .reports
-                }
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.rdBlack)
+        homeSectionCard {
+            sectionHeader(
+                title: "Oluşturulan raporlar",
+                icon: "doc.richtext.fill",
+                tint: Color.rdGreen,
+                countLabel: "\(recentReports.count) dosya"
+            ) {
+                app.activeTab = .reports
             }
 
             if recentReports.isEmpty {
                 emptyReportsCard
             } else {
-                VStack(spacing: 8) {
+                VStack(spacing: 9) {
                     ForEach(recentReports.prefix(5)) { report in
                         HomeReportRow(
                             report: report,
@@ -880,7 +880,67 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private func homeSectionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            content()
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: RDRadius.lg)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+        .homeCardDepth(colorScheme: colorScheme, radius: 18, y: 8)
+    }
+
+    private func sectionHeader(
+        title: String,
+        icon: String,
+        tint: Color,
+        countLabel: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(tint)
+                .frame(width: 28, height: 28)
+                .background(tint.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .lineLimit(1)
+
+                Text(countLabel)
+                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate.opacity(0.82))
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Button(action: action) {
+                HStack(spacing: 4) {
+                    Text("Tümü")
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 8.5, weight: .black, design: .rounded))
+                }
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreenDark)
+                .padding(.horizontal, 10)
+                .frame(height: 28)
+                .background(Color.rdGreenSoft.opacity(0.72))
+                .clipShape(Capsule())
+            }
+            .buttonStyle(RDPressableButtonStyle())
+        }
     }
 
     private var emptyReportsCard: some View {
@@ -1143,6 +1203,12 @@ struct HomeView: View {
     }
 
     private func loadRecentItems() async {
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            recentItems = RecentAnalysis.mock
+            return
+        }
+        #endif
         guard app.auth.session != nil else {
             recentItems = []
             return
@@ -1166,6 +1232,12 @@ struct HomeView: View {
     }
 
     private func loadRecentReports() async {
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            recentReports = Self.uiTestReports
+            return
+        }
+        #endif
         guard app.auth.session != nil else {
             recentReports = []
             return
@@ -1178,6 +1250,12 @@ struct HomeView: View {
     }
 
     private func loadQuotaUsage() async {
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            quotaUsage = nil
+            return
+        }
+        #endif
         guard app.auth.session != nil, !app.currentTier.isPaid else {
             quotaUsage = nil
             return
@@ -1195,12 +1273,143 @@ struct HomeView: View {
     }
 
     private func loadProfessionalProgress() async {
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            professionalProgressSummary = Self.uiTestProfessionalProgressSummary
+            return
+        }
+        #endif
         guard app.auth.session != nil, RDConfig.Features.professionalProgressEnabled else {
             professionalProgressSummary = nil
             return
         }
         professionalProgressSummary = await ProfessionalProgressService.shared.fetchSummary()
     }
+
+    #if DEBUG
+    private static var isUITestMainLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_MAIN")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
+    }
+
+    private static var uiTestReports: [ReportRow] {
+        [
+            ReportRow(
+                id: UUID(uuidString: "00000000-0000-0000-0000-00000000d301")!,
+                userID: UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!,
+                analysisID: UUID(uuidString: "00000000-0000-0000-0000-00000000a301")!,
+                companyID: nil,
+                companySnapshot: nil,
+                format: "pdf",
+                kind: PDFReportKind.standard.rawValue,
+                method: "fine_kinney",
+                title: "Genel · UI Test",
+                storagePath: "ui-test/report-standard.pdf",
+                fileName: "report-standard.pdf",
+                mimeType: "application/pdf",
+                fileSize: 128_000,
+                requestID: "ui-test-report-1",
+                supportID: "UI-TEST",
+                createdAt: Self.uiTestISODate(minutesAgo: 8)
+            ),
+            ReportRow(
+                id: UUID(uuidString: "00000000-0000-0000-0000-00000000d302")!,
+                userID: UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!,
+                analysisID: UUID(uuidString: "00000000-0000-0000-0000-00000000a302")!,
+                companyID: nil,
+                companySnapshot: nil,
+                format: "xlsx",
+                kind: "risk_analysis",
+                method: "matrix_5x5",
+                title: "Risk Analizi · UI Test",
+                storagePath: "ui-test/report-risk.xlsx",
+                fileName: "report-risk.xlsx",
+                mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileSize: 96_000,
+                requestID: "ui-test-report-2",
+                supportID: "UI-TEST",
+                createdAt: Self.uiTestISODate(minutesAgo: 16)
+            )
+        ]
+    }
+
+    private static var uiTestProfessionalProgressSummary: ProfessionalProgressSummary {
+        let userID = UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!
+        return ProfessionalProgressSummary(
+            profile: ProfessionalProgressProfileRow(
+                userID: userID,
+                totalMDP: 1_065,
+                currentTitleKey: ProfessionalProgressTitle.fieldObserver.rawValue,
+                totalAnalyses: 8,
+                totalReports: 2,
+                totalFindings: 14,
+                criticalFindings: 1,
+                highFindings: 4,
+                mediumFindings: 7,
+                lowFindings: 2,
+                unknownFindings: 0,
+                activeDays: 4,
+                lastEventAt: Self.uiTestISODate(minutesAgo: 8),
+                lastTitleChangeAt: Self.uiTestISODate(minutesAgo: 8)
+            ),
+            competencies: [
+                Self.uiTestCompetency(userID: userID, key: .ppe, findings: 5, reports: 2),
+                Self.uiTestCompetency(userID: userID, key: .chemical, findings: 4, reports: 1),
+                Self.uiTestCompetency(userID: userID, key: .construction, findings: 3, reports: 1),
+                Self.uiTestCompetency(userID: userID, key: .workingAtHeight, findings: 2, reports: 1)
+            ],
+            badges: [],
+            messages: [],
+            weeklySummary: ProfessionalProgressWeeklySummary(
+                id: UUID(uuidString: "00000000-0000-0000-0000-00000000e301")!,
+                weekStart: Self.uiTestWeekStart,
+                reportsCount: 2,
+                analysesCount: 3,
+                findingsCount: 8,
+                topCompetencyKey: ProfessionalProgressCompetency.ppe.rawValue,
+                messageTitle: "Haftalık Takip",
+                messageBody: "Bu hafta 2 rapor tamamladın. 💪"
+            )
+        )
+    }
+
+    private static func uiTestCompetency(
+        userID: UUID,
+        key: ProfessionalProgressCompetency,
+        findings: Int,
+        reports: Int
+    ) -> ProfessionalProgressCompetencyStat {
+        ProfessionalProgressCompetencyStat(
+            userID: userID,
+            competencyKey: key.rawValue,
+            analysisCount: max(reports, 1),
+            reportCount: reports,
+            findingCount: findings,
+            criticalCount: key == .ppe ? 1 : 0,
+            highCount: max(findings / 2, 0),
+            mediumCount: max(findings / 2, 0),
+            lowCount: 0,
+            unknownCount: 0,
+            onboardingSeed: false,
+            lastDetectedAt: Self.uiTestISODate(minutesAgo: 10)
+        )
+    }
+
+    private static var uiTestWeekStart: String {
+        var calendar = Calendar(identifier: .iso8601)
+        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.timeZone = calendar.timeZone
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: start)
+    }
+
+    private static func uiTestISODate(minutesAgo: Int) -> String {
+        ISO8601DateFormatter().string(from: Date().addingTimeInterval(TimeInterval(-minutesAgo * 60)))
+    }
+    #endif
 
     private func markFreeQuotaExhaustedLocally() {
         guard !app.currentTier.isPaid else { return }
@@ -1415,6 +1624,7 @@ struct RecentAnalysisCard: View {
                 }
             }
             .frame(width: ringSize + 8, height: ringSize + 8)
+            .rdRowShadow()
         }
         .buttonStyle(RDPressableButtonStyle())
     }
@@ -1475,6 +1685,7 @@ private struct HomeReportRow: View {
                     .stroke(Color.rdLine, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 16))
+            .rdRowShadow()
         }
         .buttonStyle(RDPressableButtonStyle())
     }
@@ -1504,7 +1715,7 @@ private struct HomeReportRow: View {
         if isRiskAnalysis {
             return (Color.rdGreen, Color.rdGreenSoft)
         }
-        return (Color(hex: "#6D5DF6"), Color(hex: "#EFEDFF"))
+        return (Color.rdCharcoal, Color.rdFog)
     }
 
     private var reportTitle: String {
@@ -1632,6 +1843,17 @@ struct PhotoSourceSheet: View {
         .buttonStyle(RDPressableButtonStyle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel(title)
+    }
+}
+
+private extension View {
+    func homeCardDepth(colorScheme: ColorScheme, radius: CGFloat = 16, y: CGFloat = 7) -> some View {
+        rdCardShadow(
+            colorScheme: colorScheme,
+            radius: max(radius * 0.34, 3.5),
+            x: max(y * 0.80, 4),
+            y: y
+        )
     }
 }
 
