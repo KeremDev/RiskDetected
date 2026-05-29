@@ -211,10 +211,11 @@ final class PDFReportService: @unchecked Sendable {
             "Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())"
         ].compactMap { $0 }
         let footer = footerParts.joined(separator: " · ")
-        drawText(
+        drawFittingText(
             footer,
             in: CGRect(x: margin, y: 448, width: 758, height: 22),
-            font: .monospacedSystemFont(ofSize: 10, weight: .medium),
+            baseFont: .monospacedSystemFont(ofSize: 9.5, weight: .medium),
+            minimumFontSize: 7,
             color: .rdPDFSlate
         )
 
@@ -538,14 +539,28 @@ final class PDFReportService: @unchecked Sendable {
         let title = input.options.preparedTitle.nonEmpty ?? input.profile?.title ?? "Belirtilmedi"
         let certificate = input.options.certificateNumber.nonEmpty ?? input.profile?.certificateNumber ?? "Belirtilmedi"
         let companyInfo = input.options.companyInfo.nonEmpty ?? input.profile?.phone
-        drawText("Analiz: \(analysis.title)", in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 260, height: 10), font: .systemFont(ofSize: 7.5, weight: .bold), color: .rdPDFBlack)
-        drawText("Firma: \(company)", in: CGRect(x: rect.minX + 10, y: rect.minY + 18, width: 260, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Firma bilgisi: \(companyInfo ?? "Belirtilmedi")", in: CGRect(x: rect.minX + 10, y: rect.minY + 31, width: 260, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Hazırlayan: \(prepared)", in: CGRect(x: rect.minX + 294, y: rect.minY + 5, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Ünvan: \(title)", in: CGRect(x: rect.minX + 294, y: rect.minY + 18, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Belge No: \(certificate)", in: CGRect(x: rect.minX + 294, y: rect.minY + 31, width: 220, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate)
-        drawText("Tarih: \(formattedDate(analysis.createdAt, language: input.options.language))", in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: 10), font: .systemFont(ofSize: 7.5), color: .rdPDFSlate, alignment: .right)
-        drawText("Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())", in: CGRect(x: rect.minX + 548, y: rect.minY + 23, width: 200, height: 10), font: .monospacedSystemFont(ofSize: 7.5, weight: .semibold), color: .rdPDFBlack, alignment: .right)
+        drawFittingText(
+            "Analiz: \(analysis.title)\nFirma: \(company)\nFirma bilgisi: \(companyInfo ?? "Belirtilmedi")",
+            in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 260, height: 37),
+            baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
+            minimumFontSize: 5.8,
+            color: .rdPDFSlate
+        )
+        drawFittingText(
+            "Hazırlayan: \(prepared)\nÜnvan: \(title)\nBelge No: \(certificate)",
+            in: CGRect(x: rect.minX + 294, y: rect.minY + 5, width: 220, height: 37),
+            baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
+            minimumFontSize: 5.8,
+            color: .rdPDFSlate
+        )
+        drawFittingText(
+            "Tarih: \(formattedDate(analysis.createdAt, language: input.options.language))\nDoküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())",
+            in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: 24),
+            baseFont: .monospacedSystemFont(ofSize: 7.4, weight: .semibold),
+            minimumFontSize: 5.8,
+            color: .rdPDFBlack,
+            alignment: .right
+        )
     }
 
     private func drawFineKinneyAssessmentTable(input: ReportInput, rows: [AssessmentTableRow]) {

@@ -5,12 +5,12 @@ struct OnboardingPaywallV2View: View {
     var onSubscribe: () -> Void
 
     var body: some View {
-        PaywallView(
-            onClose: onClose,
-            onSubscribe: onSubscribe,
-            source: .onboardingV2,
-            variantID: OnboardingPersonalPlanContext.variantID,
-            layout: .plusFocused
+        OBTimelinePaywallView(
+            onStart: { _ in onSubscribe() },
+            onRestore: onSubscribe,
+            onTerms: {},
+            onPrivacy: {},
+            onDismiss: onClose
         )
     }
 }

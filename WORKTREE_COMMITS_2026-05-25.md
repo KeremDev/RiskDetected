@@ -30,6 +30,17 @@
   - Tasarım kararı: Dark mode'da kart ayrımı shadow yerine yüzey/stroke ile yapılacak.
   - Doğrulama: iOS Simulator Debug build/run geçti.
 
+## 2026-05-29 Uzun Metin QA Güncellemesi
+
+- Durum: tamamlandı, commit bekliyor.
+- İçerik özeti:
+  - Uzun firma adı, uzun uzman adı ve uzun unvan rapor oluşturma sheet'inde simulator ile kontrol edildi.
+  - PDF risk analiz çıktısı yeniden üretildi ve önizleme ile kontrol edildi.
+  - Bulunan bug: PDF risk analiz bilgi strip'i uzun firma/hazırlayan/unvan alanlarında kırpma riski taşıyordu.
+  - Fix: `App/Services/PDFReportService.swift` cover footer ve risk analiz bilgi strip'i fitting/multi-line text çizimine geçirildi.
+  - PDF text extraction ile uzun firma/uzman/unvan alanlarının çıktıda bulunduğu doğrulandı.
+  - TODO ve handoff dosyaları uzun metin QA tamamlandı olarak güncellendi.
+
 ## 2026-05-27 Commit Güncellemesi
 
 - Hash: `1b000b1`
@@ -49,6 +60,22 @@
   - Firma filtresi UI kartları ve satırları daha sakin font/ölçü düzenine çekildi.
   - `Yeni firma ekle` CTA'sı gri yerine siyah olarak tasarlandı.
   - Simulator build/run geçti ve `Analiz firma filtresi` görsel QA yapıldı.
+
+## 2026-05-29 Time Paywall Tasarım Güncellemesi
+
+- Durum: Tamamlandı, commit bekliyor.
+- İçerik özeti:
+  - `OBTimelinePaywallView` final Time Paywall görsel kararına göre yenilendi.
+  - Eski baret/sallanan hero yerine sade başlık, deneme fiyat alt metni, güven chip'leri, küçük yıllık/aylık segment ve timeline kartı eklendi.
+  - Üstteki yatay mini gün şeridi ve özellik listesi kaldırıldı.
+  - Yıllık planda CTA `₺0,00'ye dene`, aylık planda `Aboneliği başlat` olarak korunuyor.
+  - Satın alma, restore, terms/privacy ve dismiss callback'lerine dokunulmadı.
+  - Paywall yönlendirme audit'i yapıldı; aktif app içi paywall hattı `InAppPaywallView`, onboarding hattı `OBTimelinePaywallView` olarak sabitlendi.
+  - Eski `PaywallV2View` ve `OnboardingPaywallV2View` wrapper'ları eski `PaywallView` yerine yeni doğru ekranlara bağlandı.
+- Doğrulama:
+  - `git diff --check` temiz.
+  - `RiskDetectedUITests/RiskDetectedUITests/testTrialInviteAndTimelinePaywallRenderWithAuthBypass` geçti.
+  - iOS Simulator Debug build/run geçti.
 
 ## 2026-05-26 Commit Güncellemesi
 

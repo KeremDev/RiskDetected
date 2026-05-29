@@ -37,6 +37,13 @@ Bu dosya yeni sohbet penceresine aktarılacak kısa bağlamdır. Detay arşiv do
   - `avatars` bucket'a temp avatar yüklendi.
   - `account-deletion-complete` local Edge Function service role ile çağrıldı.
   - Function `200` döndü, auth user silindi, `deleted_avatar_objects = 1`, storage avatar objesi temizlendi.
+- Uzun metin görsel QA tamamlandı:
+  - Uzun firma adı, uzun uzman adı ve uzun unvan rapor oluşturma sheet'inde simulator ile kontrol edildi.
+  - PDF risk analiz çıktısı simulator'da yeniden üretildi ve önizlendi.
+  - Bulunan bug: PDF risk analiz bilgi strip'i uzun firma/hazırlayan/unvan metinlerini dar tek satır alanlarda kırpabiliyordu.
+  - Fix: `App/Services/PDFReportService.swift` içinde cover footer ve risk analiz bilgi strip'i fitting/multi-line çizime geçirildi.
+  - PDF metin çıkarımında uzun firma, uzman ve unvan alanlarının çıktı içinde yer aldığı doğrulandı.
+  - XLSX uzun metin/logo/snapshot QA gerçek workbook ile doğrulanmış durumda.
 - Worktree notu:
   - Kod tarafı commit/push yapıldı.
   - App Store icon varyant PNG'leri hâlâ untracked bırakıldı; bilinçli olarak commitlenmedi.
@@ -129,6 +136,18 @@ Bu dosya yeni sohbet penceresine aktarılacak kısa bağlamdır. Detay arşiv do
 - Yeni onboarding akışı:
   - Sorular -> kişiselleştiriliyor animasyonu -> kişisel plan ekranı -> hesap oluşturma -> ücretsiz deneme davet ekranı -> sabit Time Paywall.
 - Kişisel plan ekranı onboarding cevaplarına göre metin/timeline/chip gösteriyor.
+- Nihai Time Paywall tasarımı uygulandı:
+  - Eski baret ağırlıklı görsel kaldırıldı.
+  - Başlık `Ücretsiz Deneme Nasıl Çalışır` oldu; üst ikonu ve yatay mini gün şeridi kaldırıldı.
+  - Ekran artık fiyat/deneme alt metni, güven chip'leri, küçük yıllık/aylık segment, alt timeline kartı ve net `₺0,00'ye dene` CTA'sı ile ilerliyor.
+  - Özellik listesi şimdilik kaldırıldı.
+  - Satın alma, restore ve yasal link callback'leri korunarak sadece görsel katman değiştirildi.
+- Paywall yönlendirme audit'i yapıldı:
+  - Ana uygulama içindeki paywall tetikleri `FreeAwarePaywallView -> InAppPaywallView` hattına gidiyor.
+  - Onboarding paywall `OBTimelinePaywallView` hattına gidiyor.
+  - Eski wrapper'lar yanlışlıkla eski paywall açmasın diye güncellendi:
+    - `PaywallV2View` artık `InAppPaywallView` açıyor.
+    - `OnboardingPaywallV2View` artık `OBTimelinePaywallView` açıyor.
 - Paywall event logging eklendi:
   - `paywall_events`, `PaywallEventService`, variant: `onboarding_personal_plan_time_paywall_v1`.
 - Hybrid QA Runner eklendi:
@@ -192,6 +211,7 @@ Bu dosya yeni sohbet penceresine aktarılacak kısa bağlamdır. Detay arşiv do
 - Hybrid QA: `QA/Hybrid_QA_2026-05-22.md`, PASS=25/WARN=0/FAIL=0.
 - iOS Simulator Debug build/run geçti.
 - UI tests: onboarding personal plan + trial invite/time paywall smoke testleri geçti.
+- UI test: `testTrialInviteAndTimelinePaywallRenderWithAuthBypass` yeni Time Paywall tasarımıyla geçti.
 - `deno check` ilgili Edge Function dosyalarında geçti.
 - `node --check scripts/qa_hybrid_runner.mjs` geçti.
 - `plutil`/`xmllint` proje/scheme kontrolleri geçti.

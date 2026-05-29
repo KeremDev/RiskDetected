@@ -43,7 +43,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["₺199,90/ay — istediğin zaman iptal"].waitForExistence(timeout: 3))
 
         tap("Yıllık")
-        XCTAssertTrue(app.staticTexts["7 gün ücretsiz, sonra ₺1.999 (₺166,58/ay)"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["7 gün ücretsiz, sonra 1.999 TL (166.58/ay)"].waitForExistence(timeout: 3))
     }
 
     func testMainTabsProfileAndDarkModeRenderWithBypass() throws {
