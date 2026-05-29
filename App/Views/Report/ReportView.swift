@@ -69,7 +69,7 @@ struct ReportView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 110)
+                .padding(.bottom, RDTabBar.contentClearance)
             }
         }
         .background(Color.rdCloud)

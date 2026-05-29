@@ -134,8 +134,9 @@ final class AppState: ObservableObject {
             return
         }
         if Self.isUITestMainLaunch {
-            profile = Self.uiTestProfile
-            applyTier(displayTier(profileTier: .plus, subscriptionTier: .plus))
+            let testTier: SubscriptionTier = Self.isUITestFreeTierLaunch ? .free : .plus
+            profile = Self.uiTestProfile(tier: testTier)
+            applyTier(displayTier(profileTier: testTier, subscriptionTier: testTier))
             flow = .main
             return
         }
@@ -258,6 +259,11 @@ final class AppState: ObservableObject {
             || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
     }
 
+    private static var isUITestFreeTierLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_FREE_TIER")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_FREE_TIER"] == "1"
+    }
+
     private static func prepareForUITestLaunchIfNeeded() {
         guard isUITestResetLaunch || isUITestMainLaunch else { return }
         let defaults = UserDefaults.standard
@@ -278,7 +284,7 @@ final class AppState: ObservableObject {
         }
     }
 
-    private static var uiTestProfile: UserProfile {
+    private static func uiTestProfile(tier: SubscriptionTier = .plus) -> UserProfile {
         UserProfile(
             id: UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!,
             email: "ui-test@riskdetected.app",
@@ -290,7 +296,7 @@ final class AppState: ObservableObject {
             companyLogoURL: nil,
             avatarURL: nil,
             phone: "Test profil",
-            tier: .plus,
+            tier: tier,
             preferredMethod: .fineKinney,
             dailyQuotaUsed: 0,
             dailyQuotaResetAt: nil,

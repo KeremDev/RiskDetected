@@ -32,6 +32,10 @@ final class RiskDetectedUITests: XCTestCase {
 
         tapScrolling("₺0,00'ye dene", timeout: 10)
 
+        XCTAssertTrue(waitFor("onboarding.notification_permission", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Şimdi ödeme alınmayacak").exists)
+        tap("onboarding.notification_permission.cta")
+
         XCTAssertTrue(waitFor("Yıllık", timeout: 8).exists)
         XCTAssertTrue(waitFor("Aylık").exists)
 
@@ -58,6 +62,36 @@ final class RiskDetectedUITests: XCTestCase {
 
         tapTab(.home)
         XCTAssertTrue(waitFor("Saha fotoğrafı yükle").exists)
+    }
+
+    func testInAppPaywallClaudePlusAndProRenderWithFreeTier() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("Yükselt")
+
+        XCTAssertTrue(waitFor("İlk haftanız bizden.", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Neler dahil?").exists)
+        XCTAssertTrue(waitFor("Ücretsiz denemeyi başlat").exists)
+        let companyTracking = waitFor("Firma takibi")
+        let plusCTA = waitFor("Ücretsiz denemeyi başlat")
+        XCTAssertLessThan(companyTracking.frame.maxY, plusCTA.frame.minY)
+
+        tap("Aylık")
+        XCTAssertTrue(waitFor("Plus’a abone olun.").exists)
+        XCTAssertTrue(waitFor("Aboneliği Başlat").exists)
+
+        tap("in_app_paywall.plus.pro_link")
+        XCTAssertTrue(waitFor("Limitsiz Özellikler").exists)
+        XCTAssertTrue(waitFor("Tüm Plus özellikleri dahil").exists)
+        tap("Aylık")
+        XCTAssertTrue(waitFor("Tüm Pro özellikleri aylık ₺499,90 ile.").exists)
+        tap("Yıllık")
+        XCTAssertTrue(waitFor("Yıllık ₺4.999 ile tüm Pro özellikleri.").exists)
+        XCTAssertTrue(waitFor("Plus aboneliğini incele").exists)
+
+        tap("in_app_paywall.pro.plus_link")
+        XCTAssertTrue(waitFor("İlk haftanız bizden.").exists)
     }
 
     func testCompanyPickerV2FieldsRenderWithFixtures() throws {
@@ -97,6 +131,35 @@ final class RiskDetectedUITests: XCTestCase {
         tap("report.company_filter")
         XCTAssertTrue(waitFor("Rapor firma filtresi").exists)
         XCTAssertTrue(waitFor("QA Aktif Firma").exists)
+    }
+
+    func testFreeRiskAnalysisTrialDoesNotLockStandardReport() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_LONG_REPORT_FIELDS", "RD_UI_TEST_REPORT_LOGO"])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        app.swipeUp()
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.22, dy: 0.53)).tap()
+        XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 8).exists)
+
+        tapScrolling("Rapor Oluştur", timeout: 10)
+        XCTAssertTrue(waitFor("report.settings", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!").exists)
+        XCTAssertTrue(waitFor("Tebrikler! Bir tane risk analizi oluşturma hakkı tanımlandı. Hemen deneyebilirsin.").exists)
+        XCTAssertTrue(waitFor("Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur.").exists)
+
+        tap("report.settings.kind.riskAnalysis")
+        XCTAssertTrue(waitFor("Risk analizi PDF oluştur", timeout: 5).exists)
+        XCTAssertFalse(app.staticTexts["Bugünkü standart rapor hakkın doldu. Hakların yarın yenilenir."].exists)
+
+        tap("Risk analizi PDF oluştur")
+        XCTAssertTrue(waitFor("Önizlemeyi kapat", timeout: 12).exists)
+        tap("Önizlemeyi kapat")
+
+        tapScrolling("Rapor Oluştur", timeout: 10)
+        XCTAssertTrue(waitFor("report.settings", timeout: 8).exists)
+        XCTAssertFalse(app.staticTexts["Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!"].exists)
+        XCTAssertTrue(waitFor("Bir kez tanımlanan hakkını kullandın. Risk analizi tabloları Plus ile devam eder.").exists)
+        XCTAssertTrue(waitFor("Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur.").exists)
     }
 
     private func launchApp(extraArguments: [String] = []) {
@@ -212,19 +275,18 @@ final class RiskDetectedUITests: XCTestCase {
         case reports
         case profile
 
-        var normalizedX: CGFloat {
+        var identifier: String {
             switch self {
-            case .home: return 0.13
-            case .analyses: return 0.30
-            case .reports: return 0.70
-            case .profile: return 0.88
+            case .home: return "tab.home"
+            case .analyses: return "tab.analyses"
+            case .reports: return "tab.reports"
+            case .profile: return "tab.profile"
             }
         }
     }
 
     private func tapTab(_ tab: TestTab) {
-        let coordinate = app.coordinate(withNormalizedOffset: CGVector(dx: tab.normalizedX, dy: 0.94))
-        coordinate.tap()
+        tap(tab.identifier, timeout: 8)
         RunLoop.current.run(until: Date().addingTimeInterval(0.4))
     }
 

@@ -25,8 +25,8 @@ struct OBTimelinePaywallView: View {
 
     private var priceLine: String {
         switch selectedPlan {
-        case .yearly:  return "7 gün ücretsiz, sonra ₺1.999 (₺166,58/ay)"
-        case .monthly: return "₺199,90/ay — istediğin zaman iptal"
+        case .yearly:  return OBTrialPriceCopy.yearlyPaywallLine
+        case .monthly: return OBTrialPriceCopy.monthlyPaywallLine
         }
     }
 

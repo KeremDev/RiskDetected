@@ -732,12 +732,17 @@ struct ResultView: View {
                 let companyLogo = try await loadCompanyLogo(for: company)
                 let profileLogo = try await loadProfileLogoIfNeeded()
                 let resolvedLogo = companyLogo ?? profileLogo
+                #if DEBUG
+                let uiTestLogo = Self.uiTestReportLogoIfRequested()
+                #else
+                let uiTestLogo: UIImage? = nil
+                #endif
                 let input = PDFReportService.ReportInput(
                     bundle: bundle,
                     findings: sortedFindings(for: resolvedOptions.method),
                     profile: app.profile,
                     image: reportImage,
-                    companyLogo: reportCompanyLogo ?? resolvedLogo,
+                    companyLogo: reportCompanyLogo ?? resolvedLogo ?? uiTestLogo,
                     options: resolvedOptions
                 )
                 let url = try await PDFReportService.shared.generateAsync(input: input)
@@ -756,9 +761,7 @@ struct ResultView: View {
                             supportID: supportID
                         )
                         try await backfillAnalysisCompanyIfNeeded(bundle: bundle, company: company)
-                        if app.currentTier == .free, resolvedOptions.kind == .riskAnalysis {
-                            freeRiskAnalysisTrialUsed = true
-                        }
+                        markFreeRiskAnalysisTrialUsedIfNeeded(for: resolvedOptions.kind)
                         pdfGeneration.advance(to: 0.92)
                     } catch {
                         Self.logger.error("Report archive failed after PDF generation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
@@ -774,6 +777,7 @@ struct ResultView: View {
                         pdfGeneration.advance(to: 0.92)
                     }
                 }
+                markFreeRiskAnalysisTrialUsedIfNeeded(for: resolvedOptions.kind)
                 await pdfGeneration.complete()
                 if let archiveWarning {
                     pdfError = archiveWarning
@@ -835,9 +839,7 @@ struct ResultView: View {
                     supportID: supportID
                 )
                 try await backfillAnalysisCompanyIfNeeded(bundle: bundle, company: selectedReportCompany)
-                if app.currentTier == .free {
-                    freeRiskAnalysisTrialUsed = true
-                }
+                markFreeRiskAnalysisTrialUsedIfNeeded(for: .riskAnalysis)
                 let url = try await AnalysisService.shared.reportFileURL(
                     for: report,
                     requestID: requestID,
@@ -896,12 +898,19 @@ struct ResultView: View {
             let usage = try await AnalysisService.shared.freeRiskAnalysisTrialUsage()
             freeRiskAnalysisTrialUsed = usage.isExhausted
         } catch {
-            freeRiskAnalysisTrialUsed = false
+            // Keep the last known local state. A transient auth/network failure should not
+            // visually re-grant the one-time risk analysis trial.
         }
     }
 
     private func shouldBypassReportQuota(for options: PDFReportOptions) -> Bool {
         app.currentTier == .free && options.kind == .riskAnalysis && !freeRiskAnalysisTrialUsed
+    }
+
+    @MainActor
+    private func markFreeRiskAnalysisTrialUsedIfNeeded(for kind: PDFReportKind) {
+        guard app.currentTier == .free, kind == .riskAnalysis else { return }
+        freeRiskAnalysisTrialUsed = true
     }
 
     private func riskAnalysisTrialExhaustedBeforeGeneration() async -> Bool {
@@ -958,7 +967,7 @@ struct ResultView: View {
     }
 
     private func defaultReportOptions(kind: PDFReportKind = .standard) -> PDFReportOptions {
-        PDFReportOptions(
+        var options = PDFReportOptions(
             kind: kind,
             method: method,
             preparedBy: app.profile?.displayName ?? "",
@@ -969,6 +978,16 @@ struct ResultView: View {
             companyID: nil,
             language: app.languagePreference
         )
+        #if DEBUG
+        if Self.usesUITestLongReportFields {
+            options.preparedBy = "QA Çok Uzun Uzman Adı Soyadı Denetim ve Risk Yönetimi Sorumlusu"
+            options.preparedTitle = "A Sınıfı İş Güvenliği Uzmanı ve Çok Tehlikeli Saha Denetim Koordinatörü"
+            options.certificateNumber = "QA-BELGE-2026-ÇOK-UZUN-0000000001"
+            options.companyName = "QA Çok Uzun Firma Adı Sanayi ve Ticaret Anonim Şirketi Kuzey Marmara Bölge Müdürlüğü"
+            options.companyInfo = "Çok Tehlikeli · Bakım ve Üretim Sahası · Uzun şirket bilgisi satır kırılım kontrolü"
+        }
+        #endif
+        return options
     }
 
     private func resolvedReportOptions(_ options: PDFReportOptions, company: Company?) -> PDFReportOptions {
@@ -1017,6 +1036,39 @@ struct ResultView: View {
         guard let path = company?.logoPath, !path.isEmpty else { return nil }
         return try await CompanyService.shared.logoImage(path: path)
     }
+
+    #if DEBUG
+    private static var usesUITestLongReportFields: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_LONG_REPORT_FIELDS")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_LONG_REPORT_FIELDS"] == "1"
+    }
+
+    private static var usesUITestReportLogo: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_REPORT_LOGO")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_REPORT_LOGO"] == "1"
+    }
+
+    private static func uiTestReportLogoIfRequested() -> UIImage? {
+        guard usesUITestReportLogo else { return nil }
+        let size = CGSize(width: 180, height: 80)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            UIColor(red: 0.96, green: 0.73, blue: 0.05, alpha: 1).setFill()
+            UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 18).fill()
+            UIColor(red: 0.02, green: 0.03, blue: 0.03, alpha: 1).setFill()
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 34, weight: .black),
+                .foregroundColor: UIColor(red: 0.02, green: 0.03, blue: 0.03, alpha: 1)
+            ]
+            NSString(string: "QA").draw(in: CGRect(x: 46, y: 18, width: 90, height: 44), withAttributes: attrs)
+            UIColor.white.withAlphaComponent(0.72).setStroke()
+            let path = UIBezierPath(roundedRect: CGRect(x: 8, y: 8, width: size.width - 16, height: size.height - 16), cornerRadius: 14)
+            path.lineWidth = 4
+            path.stroke()
+            _ = context
+        }
+    }
+    #endif
 }
 
 // MARK: - Report Settings

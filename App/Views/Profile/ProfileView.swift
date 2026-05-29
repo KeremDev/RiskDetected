@@ -62,7 +62,7 @@ struct ProfileView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 0)
-                .padding(.bottom, 110)
+                .padding(.bottom, RDTabBar.contentClearance)
             }
         }
         .background(Color.rdPaper)

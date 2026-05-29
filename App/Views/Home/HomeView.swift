@@ -92,14 +92,14 @@ struct HomeView: View {
                         title: "Taramayı Başlat",
                         style: .detect,
                         icon: "sparkles",
-                        backgroundOverride: .rdCTA,
+                        backgroundOverride: .rdOnyx,
                         foregroundOverride: .white,
                         shadowOverride: .clear
                     ) {
                         startAnalysisFlow()
                     }
                     .frame(height: 56)
-                    .rdCardShadow(colorScheme: colorScheme, radius: 5, x: 7, y: 9)
+                    .rdCardShadow(colorScheme: colorScheme, radius: 3, x: 8, y: 10)
                     .padding(.top, 14)
 
                     if RDConfig.Features.professionalProgressEnabled,
@@ -119,7 +119,7 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
-                .padding(.bottom, 110) // tab bar clearance
+                .padding(.bottom, RDTabBar.contentClearance)
                 .keyboardAdaptivePadding(extra: 16)
                 .background(Color.rdWhite)
             }

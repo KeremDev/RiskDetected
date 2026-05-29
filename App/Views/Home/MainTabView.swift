@@ -24,9 +24,15 @@ struct MainTabView: View {
                 }
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             }
+
+            if Self.isUITestLaunch {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityIdentifier("main_tab.\(app.activeTab.rawValue)")
+            }
         }
         .ignoresSafeArea(edges: .bottom)
-        .accessibilityIdentifier("main_tab.\(app.activeTab.rawValue)")
         .sheet(isPresented: $showQuickSourceSheet) {
             PhotoSourceSheet(
                 onCamera: {
@@ -84,6 +90,11 @@ struct MainTabView: View {
 
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
+    }
+
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
     }
 }
 

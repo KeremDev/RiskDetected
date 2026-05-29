@@ -76,6 +76,54 @@ final class NotificationService: NSObject, ObservableObject {
         }
     }
 
+    func requestPermissionAndRegisterFromOnboarding() async {
+        guard !Self.isUITestLaunch else {
+            await refreshSettings()
+            return
+        }
+        guard !isRegistering else { return }
+        isRegistering = true
+        lastError = nil
+
+        do {
+            let settings = await UNUserNotificationCenter.current().notificationSettings()
+            authorizationStatus = settings.authorizationStatus
+
+            switch settings.authorizationStatus {
+            case .notDetermined:
+                let granted = try await UNUserNotificationCenter.current().requestAuthorization(
+                    options: [.alert, .badge, .sound]
+                )
+                await refreshSettings()
+
+                guard granted else {
+                    try? await setPreference(enabled: false)
+                    isRegistering = false
+                    return
+                }
+
+                UIApplication.shared.registerForRemoteNotifications()
+
+            case .authorized, .provisional, .ephemeral:
+                await refreshSettings()
+                UIApplication.shared.registerForRemoteNotifications()
+
+            case .denied:
+                try? await setPreference(enabled: false)
+                await refreshSettings()
+                isRegistering = false
+
+            @unknown default:
+                await refreshSettings()
+                isRegistering = false
+            }
+        } catch {
+            Self.logger.error("Onboarding notification authorization failed error=\(error.localizedDescription, privacy: .public)")
+            await refreshSettings()
+            isRegistering = false
+        }
+    }
+
     func disableNotifications() {
         Task {
             do {
@@ -206,6 +254,11 @@ final class NotificationService: NSObject, ObservableObject {
         } catch {
             Self.logger.error("Notification preferences fetch failed error=\(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
     }
 }
 

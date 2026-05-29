@@ -31,9 +31,15 @@ struct RootView: View {
                 MainTabView()
                     .transition(.opacity)
             }
+
+            if Self.isUITestLaunch {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityIdentifier("root.\(flowIdentifier)")
+            }
         }
         .animation(.easeInOut(duration: 0.32), value: app.flow)
-        .accessibilityIdentifier("root.\(flowIdentifier)")
     }
 
     private var flowIdentifier: String {
@@ -43,6 +49,11 @@ struct RootView: View {
         case .auth: return "auth"
         case .main: return "main"
         }
+    }
+
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
     }
 
     private func runAppleSignIn() {

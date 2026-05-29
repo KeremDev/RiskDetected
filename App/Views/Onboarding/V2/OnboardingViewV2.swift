@@ -1,6 +1,6 @@
 import SwiftUI
 
-// New 10-step onboarding flow ported from the Claude Design handoff bundle
+// New 11-step onboarding flow ported from the Claude Design handoff bundle
 // (riskdetected-onboard). Each step is a self-contained view; this coordinator
 // owns the shared OnboardingV2State and transitions.
 //
@@ -12,7 +12,7 @@ import SwiftUI
 // Steps:
 //   0 Splash · 1 PainPoint · 2 Certificate · 3 Hazard · 4 Sector
 //   5 Frequency · 6 Loading (auto-advance) · 7 Personal Plan
-//   8 Auth · 9 Trial Invite · 10 Timeline Paywall (dismissible)
+//   8 Auth · 9 Trial Invite · 10 Push Permission · 11 Timeline Paywall (dismissible)
 
 struct OnboardingViewV2: View {
     @StateObject private var state = OnboardingV2State()
@@ -53,14 +53,20 @@ struct OnboardingViewV2: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
                 .zIndex(10)
             }
+
+            if Self.isUITestLaunch {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityIdentifier("onboarding.v2")
+            }
         }
         .animation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.42), value: state.step)
         .animation(.obSpring, value: showSkipConfirmation)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(state.step == 10 ? Color(hex: "#0B0D0E") : Color.rdPaper)
+        .background(state.step == 11 ? Color(hex: "#0B0D0E") : Color.rdPaper)
         .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
-        .accessibilityIdentifier("onboarding.v2")
         .onChange(of: isAuthenticated) { authenticated in
             guard authenticated else { return }
             persistCurrentDraft()
@@ -136,6 +142,10 @@ struct OnboardingViewV2: View {
                 state.goTo(10)
             }
         case 10:
+            OBNotificationPermissionView {
+                state.goTo(11)
+            }
+        case 11:
             OBTimelinePaywallView(
                 onStart: { plan in
                     state.selectedPlan = plan
@@ -179,6 +189,11 @@ struct OnboardingViewV2: View {
         CommandLine.arguments.contains("RD_UI_TEST_BYPASS_AUTH")
     }
     #endif
+
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+    }
 }
 
 private struct OBSkipConfirmationView: View {
