@@ -9,6 +9,27 @@
 - Son kontrol: `main` remote'u takip ediyor.
 - Not: App icon varyantları ve bu handoff dosyaları oluşturulduktan sonra worktree'de untracked/modified görünebilir.
 
+## 2026-05-29 Commit Güncellemesi
+
+- Hash: `9a2beea`
+- Mesaj: `Verify report quotas and polish app UI`
+- Remote: `origin/main` branch'e pushlandı.
+- İçerik özeti:
+  - Free kullanıcı risk analiz tablosu deneme hakkının standart rapor hakkını bozmaması için UI/test kapsamı eklendi.
+  - `testFreeRiskAnalysisTrialDoesNotLockStandardReport` UI testi eklendi ve geçti.
+  - Report sheet, onboarding/paywall, tab bar clearance ve kart derinliği polish değişiklikleri commitlendi.
+  - Account deletion avatar cleanup temp-user destructive QA tamamlandı.
+  - XLSX logo/snapshot/uzun metin QA gerçek local Edge Function çağrısı ve indirilen workbook ile doğrulandı.
+
+- Hash: bu handoff güncellemesini içeren mevcut commit
+- Mesaj: `Disable dark mode card shadows`
+- İçerik özeti:
+  - `App/DesignSystem/RDShadow.swift` merkezi tasarım token'ı güncellendi.
+  - `rdCardShadow` ve `rdRowShadow` dark mode'da gölge basmayacak.
+  - Light mode sağ-alt net gölge sistemi korunacak.
+  - Tasarım kararı: Dark mode'da kart ayrımı shadow yerine yüzey/stroke ile yapılacak.
+  - Doğrulama: iOS Simulator Debug build/run geçti.
+
 ## 2026-05-27 Commit Güncellemesi
 
 - Hash: `1b000b1`
@@ -49,15 +70,19 @@
 
 ## Son Commit
 
-- Hash: `1b000b1`
-- Mesaj: `Prevent fallback subscription sync downgrades`
+- Hash: `9a2beea`
+- Mesaj: `Verify report quotas and polish app UI`
 - İçerik özeti:
-  - RevenueCat fallback sync'in aktif backend aboneliğini yanlış downgrade etmesi engellendi.
-  - Plus rapor limiti simulator QA ile doğrulandı.
+  - Free rapor/risk analiz hakkı QA kapsamı, report flow polish ve UI test doğrulamaları.
 
 ## Son Commit Geçmişi
 
 ```text
+9a2beea Verify report quotas and polish app UI
+53f45ec Fix UI test analysis result fixture
+12a7b11 Polish report flows and card depth
+c22c51f Polish company picker sheets
+59bae77 Update handoff and TODO status
 1b000b1 Prevent fallback subscription sync downgrades
 ebc25ed Polish professional progress UI
 c294f0c Add professional progress module

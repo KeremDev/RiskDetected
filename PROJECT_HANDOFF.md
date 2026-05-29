@@ -496,10 +496,18 @@ Use XcodeBuildMCP with defaults:
 - bundle id: `com.riskdetected.app`
 - derived data: `/Users/keremkayalar/Library/Developer/Xcode/DerivedData/RiskDetected-codex`
 
-Last verified after AuthView changes:
+Last verified after dark-mode card shadow change:
 
 - Build succeeded.
 - App launched on simulator.
+
+## 2026-05-29 Design Decision
+
+- Card depth is now centralized in `App/DesignSystem/RDShadow.swift`.
+- Light mode keeps the right/bottom card depth shadow.
+- Dark mode disables card and row shadows because the previous dark shadows created a muddy halo on dark surfaces.
+- For dark mode, separate cards with surface tone and stroke instead of shadow activity.
+- New cards should continue using `rdCardShadow` / `rdRowShadow`; the design token handles light/dark behavior.
 
 ## Supporting Docs
 

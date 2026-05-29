@@ -10,6 +10,37 @@ Bu dosya yeni sohbet penceresine aktarılacak kısa bağlamdır. Detay arşiv do
 - AI: Gemini/Groq routing; Free/Plus/Pro davranışı ayrılmış. Paid analizlerde `gemini-2.5-flash`, `thinkingBudget: 1024`.
 - Release odağı: TestFlight gerçek cihaz QA, abonelik görünümü, push, firma akışı, onboarding/paywall polish.
 
+## 2026-05-29 Güncel Durum
+
+- Son push edilen commitler:
+  - `9a2beea Verify report quotas and polish app UI`
+  - `9a2beea` remote `main` branch'e pushlandı.
+- Dark mode kart gölge kararı uygulandı:
+  - `App/DesignSystem/RDShadow.swift` merkezi shadow token'ı güncellendi.
+  - Light mode'da sağ-alt net kart derinliği korunuyor.
+  - Dark mode'da kart/row shadow kapatıldı; koyu zeminde kirli halo ve göz yoran gölge oluşmuyor.
+  - Yeni eklenecek kartlar `rdCardShadow` / `rdRowShadow` kullandığı sürece aynı davranışı otomatik alacak.
+- Free kullanıcı rapor/risk analiz hakkı uçtan uca doğrulandı:
+  - Free standart rapor hakkı günlük 1 hak olarak doğrulandı.
+  - Free risk analiz tablosu tek seferlik deneme hakkı olarak doğrulandı.
+  - Risk analiz denemesi standart rapor hakkını bozmuyor.
+  - Kullanımdan sonra `1 hak` etiketi kayboluyor ve Plus devam mesajı görünüyor.
+  - UI test: `testFreeRiskAnalysisTrialDoesNotLockStandardReport` geçti.
+- Rapor çıktı QA genişletildi:
+  - PDF üretimi simulator'da oluşturma/önizleme akışına kadar doğrulandı.
+  - XLSX Edge Function gerçek local çağrıyla çalıştırıldı.
+  - XLSX içinde firma logosu embed edildi.
+  - Uzun firma adı, uzman adı ve unvan XLSX içinde doğrulandı.
+  - Firma sonradan değiştirildiğinde `reports.company_snapshot` eski firma adını ve logo path'ini koruyor.
+- Account deletion avatar cleanup destructive QA tamamlandı:
+  - Temp kullanıcı Supabase Auth Admin API ile oluşturuldu.
+  - `avatars` bucket'a temp avatar yüklendi.
+  - `account-deletion-complete` local Edge Function service role ile çağrıldı.
+  - Function `200` döndü, auth user silindi, `deleted_avatar_objects = 1`, storage avatar objesi temizlendi.
+- Worktree notu:
+  - Kod tarafı commit/push yapıldı.
+  - App Store icon varyant PNG'leri hâlâ untracked bırakıldı; bilinçli olarak commitlenmedi.
+
 ## 2026-05-27 Güncel Durum
 
 - GitHub repo oluşturuldu:
