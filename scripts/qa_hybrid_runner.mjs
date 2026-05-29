@@ -530,7 +530,12 @@ function main() {
       ),
       runSupabaseQuery(
         "Recent AI usage distribution",
-        `select user_plan, provider, model, coalesce(api_key_alias, '-') as api_key_alias,
+        `select user_plan,
+                coalesce(quality_tier, user_plan) as quality_tier,
+                coalesce(ai_execution_route, '-') as ai_execution_route,
+                provider,
+                model,
+                coalesce(api_key_alias, '-') as api_key_alias,
                 coalesce(fallback_source, '-') as fallback_source,
                 count(*)::int as calls,
                 coalesce(sum(total_tokens), 0)::int as total_tokens,
@@ -539,7 +544,7 @@ function main() {
                 coalesce(round(avg(duration_ms))::int, 0) as avg_duration_ms
          from public.ai_usage_logs
          where created_at >= now() - interval '24 hours'
-         group by user_plan, provider, model, api_key_alias, fallback_source
+         group by user_plan, quality_tier, ai_execution_route, provider, model, api_key_alias, fallback_source
          order by calls desc, total_tokens desc
          limit 20`,
         (rows) => ({

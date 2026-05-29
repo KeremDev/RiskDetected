@@ -64,6 +64,8 @@ type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
 type CompanyHazardClass = "low" | "medium" | "high";
 type ReferenceMode = "none" | "short" | "full";
+type AIExecutionRoute = "free_legacy" | "free_paid_trial" | "paid_plan";
+type GeminiPoolName = "free" | "paid";
 
 type CompanyRow = {
   id: string;
@@ -1091,14 +1093,57 @@ function plusProGroqModel(): string {
     MODEL_GROQ_PLUS_PRO_DEFAULT;
 }
 
-function geminiKeyPoolForTier(tier: PlanTier): GeminiKeyConfig[] {
-  return tier === "free" ? freeGeminiKeyPool() : paidGeminiKeyPool();
+function freeStandardAnalysisRouteFlag(): "paid_trial" | "free_legacy" {
+  const rawValue = Deno.env.get("FREE_STANDARD_ANALYSIS_AI_ROUTE")?.trim()
+    .toLowerCase();
+  return rawValue === "free_legacy" ? "free_legacy" : "paid_trial";
 }
 
-function geminiRequiredSecretName(tier: PlanTier): string {
-  return tier === "free"
+function resolveAIExecutionRoute(
+  planTier: PlanTier,
+  analysisMode: AnalysisMode,
+): AIExecutionRoute {
+  if (planTier !== "free") return "paid_plan";
+  if (
+    analysisMode === "standard" &&
+    freeStandardAnalysisRouteFlag() === "paid_trial"
+  ) {
+    return "free_paid_trial";
+  }
+  return "free_legacy";
+}
+
+function resolveQualityTier(
+  planTier: PlanTier,
+  aiExecutionRoute: AIExecutionRoute,
+): PlanTier {
+  return aiExecutionRoute === "free_paid_trial" ? "plus" : planTier;
+}
+
+function geminiKeyPoolForRoute(
+  aiExecutionRoute: AIExecutionRoute,
+): GeminiKeyConfig[] {
+  return aiExecutionRoute === "free_legacy"
+    ? freeGeminiKeyPool()
+    : paidGeminiKeyPool();
+}
+
+function expectedGeminiPoolForRoute(
+  aiExecutionRoute: AIExecutionRoute,
+): GeminiPoolName {
+  return aiExecutionRoute === "free_legacy" ? "free" : "paid";
+}
+
+function geminiRequiredSecretNameForRoute(
+  aiExecutionRoute: AIExecutionRoute,
+): string {
+  return aiExecutionRoute === "free_legacy"
     ? "GEMINI_API_KEY_PRIMARY veya GEMINI_API_KEY"
     : "GEMINI_API_KEY_PAID";
+}
+
+function primaryModelForRoute(aiExecutionRoute: AIExecutionRoute): string {
+  return aiExecutionRoute === "free_legacy" ? MODEL_FREE : MODEL_PAID_FAST;
 }
 
 function userFacingAIError(
@@ -1240,6 +1285,36 @@ function geminiAttemptSequence(
   return attempts;
 }
 
+function freePaidTrialPaidGeminiAttemptSequence(
+  keyPool: GeminiKeyConfig[],
+): Array<{ keyConfig: GeminiKeyConfig; model: string }> {
+  const attempts: Array<{ keyConfig: GeminiKeyConfig; model: string }> = [];
+  const paidKeys = keyPool.filter((item) => item.pool === "paid");
+  const primary = paidKeys.find((item) => item.alias === "gemini_paid_primary");
+  const secondary = paidKeys.find((item) =>
+    item.alias === "gemini_paid_secondary"
+  );
+  const knownPaidAliases = new Set([
+    "gemini_paid_primary",
+    "gemini_paid_secondary",
+  ]);
+  const orderedKeys = [
+    primary,
+    secondary,
+    ...paidKeys.filter((item) => !knownPaidAliases.has(item.alias)),
+  ].filter((item): item is GeminiKeyConfig => Boolean(item));
+
+  for (const keyConfig of orderedKeys) {
+    attempts.push({ keyConfig, model: MODEL_PAID_FAST });
+    attempts.push({ keyConfig, model: MODEL_PAID_FAST });
+  }
+  for (const keyConfig of orderedKeys) {
+    attempts.push({ keyConfig, model: MODEL_FLASH_LITE });
+  }
+
+  return attempts;
+}
+
 async function callGeminiWithFallback(
   keyPool: GeminiKeyConfig[],
   preferredModel: string,
@@ -1251,12 +1326,13 @@ async function callGeminiWithFallback(
   tier: PlanTier,
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
+  attemptSequence?: Array<{ keyConfig: GeminiKeyConfig; model: string }>,
 ) {
   let lastError: unknown = null;
   let attempt = 0;
   const attemptFailures: GeminiAttemptFailure[] = [];
   for (
-    const { keyConfig, model } of geminiAttemptSequence(
+    const { keyConfig, model } of attemptSequence ?? geminiAttemptSequence(
       keyPool,
       preferredModel,
     )
@@ -1451,6 +1527,122 @@ async function callPaidAIWithFallback(
       attempt: null,
       fallbackSource: `gemini_paid_pool -> ${groqKey.alias}`,
     };
+  }
+}
+
+async function callFreePaidTrialAIWithFallback(
+  paidGeminiKeyPool: GeminiKeyConfig[],
+  freeGeminiKeyPool: GeminiKeyConfig[],
+  preferredModel: string,
+  systemPrompt: string,
+  analysisContext: string,
+  userText: string | null,
+  userPrompt: string | null,
+  imageBase64Parts: { mimeType: string; data: string }[],
+  simulation?: AISimulationConfig,
+  trace?: TraceMeta,
+) {
+  try {
+    const out = await callGeminiWithFallback(
+      paidGeminiKeyPool,
+      preferredModel,
+      systemPrompt,
+      analysisContext,
+      userText,
+      userPrompt,
+      imageBase64Parts,
+      "plus",
+      simulation,
+      trace,
+      freePaidTrialPaidGeminiAttemptSequence(paidGeminiKeyPool),
+    );
+    return {
+      ...out,
+      providerUsed: "gemini" as AIProvider,
+      fallbackSource: [
+        out.modelUsed !== preferredModel ? out.modelUsed : null,
+        out.apiKeyAlias && out.apiKeyAlias !== paidGeminiKeyPool[0]?.alias
+          ? out.apiKeyAlias
+          : null,
+      ].filter(Boolean).join(" -> ") || null,
+    };
+  } catch (paidErr) {
+    if (!isRetryableAIError(paidErr) || freeGeminiKeyPool.length === 0) {
+      throw paidErr;
+    }
+
+    console.warn(
+      "Free paid trial Gemini pool exhausted; trying free Gemini continuity fallback",
+      JSON.stringify({
+        free_aliases: freeGeminiKeyPool.map((item) => item.alias),
+        paid_error: safeLogError(paidErr),
+      }),
+    );
+
+    try {
+      const out = await callGeminiWithFallback(
+        freeGeminiKeyPool,
+        MODEL_FREE,
+        systemPrompt,
+        analysisContext,
+        userText,
+        userPrompt,
+        imageBase64Parts,
+        "plus",
+        simulation,
+        trace,
+      );
+      const fallbackDetails = [
+        out.modelUsed !== MODEL_FREE ? out.modelUsed : null,
+        out.apiKeyAlias && out.apiKeyAlias !== freeGeminiKeyPool[0]?.alias
+          ? out.apiKeyAlias
+          : null,
+      ].filter(Boolean);
+      return {
+        ...out,
+        providerUsed: "gemini" as AIProvider,
+        fallbackSource: [
+          "gemini_paid_pool",
+          "gemini_free_pool",
+          ...fallbackDetails,
+        ].join(" -> "),
+      };
+    } catch (freeErr) {
+      if (!isRetryableAIError(freeErr)) throw freeErr;
+
+      const groqKey = freeGroqKeyConfig();
+      if (!groqKey) throw freeErr;
+
+      console.warn(
+        "Free Gemini continuity fallback exhausted; trying free Groq fallback",
+        JSON.stringify({
+          apiKeyAlias: groqKey.alias,
+          model: freeGroqModel(),
+          free_gemini_error: safeLogError(freeErr),
+        }),
+      );
+
+      const out = await callGroq(
+        groqKey.key,
+        freeGroqModel(),
+        systemPrompt,
+        analysisContext,
+        userText,
+        userPrompt,
+        imageBase64Parts,
+        "plus",
+        simulation,
+      );
+      return {
+        ...out,
+        providerUsed: "groq" as AIProvider,
+        modelUsed: freeGroqModel(),
+        apiKeyAlias: groqKey.alias,
+        attempt: null,
+        fallbackSource:
+          `gemini_paid_pool -> gemini_free_pool -> ${groqKey.alias}`,
+      };
+    }
   }
 }
 
@@ -2319,8 +2511,13 @@ serve(async (req: Request) => {
   }
 
   const planTier = resolvePlanTier(subscription);
-  const geminiKeys = geminiKeyPoolForTier(planTier);
-  const expectedGeminiPool = planTier === "free" ? "free" : "paid";
+  const aiExecutionRoute = resolveAIExecutionRoute(planTier, analysisMode);
+  const qualityTier = resolveQualityTier(planTier, aiExecutionRoute);
+  const geminiKeys = geminiKeyPoolForRoute(aiExecutionRoute);
+  const freeFallbackGeminiKeys = aiExecutionRoute === "free_paid_trial"
+    ? freeGeminiKeyPool()
+    : [];
+  const expectedGeminiPool = expectedGeminiPoolForRoute(aiExecutionRoute);
   let company: CompanyRow | null = null;
   let onboardingAnswers: OnboardingAnswersRow | null = null;
 
@@ -2354,9 +2551,11 @@ serve(async (req: Request) => {
         request_id: requestID,
         support_id: supportID,
         user_plan: planTier,
+        quality_tier: qualityTier,
+        ai_execution_route: aiExecutionRoute,
         expected_pool: expectedGeminiPool,
         available_aliases: geminiKeys.map((item) => item.alias),
-        required_secret: geminiRequiredSecretName(planTier),
+        required_secret: geminiRequiredSecretNameForRoute(aiExecutionRoute),
       }),
     );
     await updateOwnedAnalysis({
@@ -2567,7 +2766,7 @@ serve(async (req: Request) => {
     last_worker_error: null,
   });
 
-  const model = planTier === "free" ? MODEL_FREE : MODEL_PAID_FAST;
+  const model = primaryModelForRoute(aiExecutionRoute);
 
   // Storage → base64
   const imageBase64Parts: { mimeType: string; data: string }[] = [];
@@ -2788,12 +2987,12 @@ serve(async (req: Request) => {
   const companyContext = companyPromptContext(company);
   const analysisContext = buildAnalysisContext({
     canvases: resolvedCanvases,
-    tier: planTier,
+    tier: qualityTier,
     onboardingContext,
     companyContext,
   });
   const contextHash = await hashedID(analysisContext);
-  const referenceMode = referenceModeForTier(planTier);
+  const referenceMode = referenceModeForTier(qualityTier);
   const aiSimulation = aiSimulationConfig();
   const inputAudit: Record<string, unknown> = {
     prompt_version: PROMPT_VERSION,
@@ -2817,6 +3016,9 @@ serve(async (req: Request) => {
     user_prompt: userPrompt,
     analysis_mode: analysisMode,
     user_plan: planTier,
+    quality_tier: qualityTier,
+    ai_execution_route: aiExecutionRoute,
+    free_standard_analysis_route_flag: freeStandardAnalysisRouteFlag(),
     request_id: requestID,
     support_id: supportID,
     selected_canvas_ids: resolvedCanvases,
@@ -2827,27 +3029,31 @@ serve(async (req: Request) => {
     company_prompt_context: companyContext,
     onboarding_context_sent: onboardingContext.block,
     analysis_context_sent: analysisContext,
-    min_hazards: PLAN_LIMITS[planTier].minHazards ?? null,
-    max_hazards: PLAN_LIMITS[planTier].maxHazards ?? null,
+    min_hazards: PLAN_LIMITS[qualityTier].minHazards ?? null,
+    max_hazards: PLAN_LIMITS[qualityTier].maxHazards ?? null,
     reference_mode: referenceMode,
-    references_requested: planTier !== "free",
-    root_cause_requested: planTier !== "free",
-    response_schema_includes_references: planTier !== "free",
-    response_schema_includes_root_cause: planTier !== "free",
+    references_requested: qualityTier !== "free",
+    root_cause_requested: qualityTier !== "free",
+    response_schema_includes_references: qualityTier !== "free",
+    response_schema_includes_root_cause: qualityTier !== "free",
     system_prompt_sent: systemPrompt,
     model,
     gemini_key_pool: expectedGeminiPool,
     gemini_key_aliases_available: geminiKeys.map((item) => item.alias),
-    groq_free_fallback_configured: planTier === "free"
+    free_gemini_fallback_aliases_available: freeFallbackGeminiKeys.map((item) =>
+      item.alias
+    ),
+    groq_free_fallback_configured: aiExecutionRoute !== "paid_plan"
       ? Boolean(freeGroqKeyConfig())
       : false,
-    groq_free_model: planTier === "free" && freeGroqKeyConfig()
+    groq_free_model: aiExecutionRoute !== "paid_plan" && freeGroqKeyConfig()
       ? freeGroqModel()
       : null,
-    groq_plus_pro_fallback_configured: planTier !== "free"
+    groq_plus_pro_fallback_configured: aiExecutionRoute === "paid_plan"
       ? Boolean(plusProGroqKeyConfig())
       : false,
-    groq_plus_pro_model: planTier !== "free" && plusProGroqKeyConfig()
+    groq_plus_pro_model: aiExecutionRoute === "paid_plan" &&
+        plusProGroqKeyConfig()
       ? plusProGroqModel()
       : null,
     test_simulation_enabled: aiSimulation.enabled,
@@ -2869,9 +3075,22 @@ serve(async (req: Request) => {
   const primaryGeminiAlias = geminiKeys[0]?.alias ?? null;
 
   try {
-    const out = planTier === "free"
+    const out = aiExecutionRoute === "free_legacy"
       ? await callFreeAIWithFallback(
         geminiKeys,
+        model,
+        systemPrompt,
+        analysisContext,
+        text_input ?? null,
+        userPrompt,
+        imageBase64Parts,
+        aiSimulation,
+        { requestID, supportID },
+      )
+      : aiExecutionRoute === "free_paid_trial"
+      ? await callFreePaidTrialAIWithFallback(
+        geminiKeys,
+        freeFallbackGeminiKeys,
         model,
         systemPrompt,
         analysisContext,
@@ -2905,7 +3124,7 @@ serve(async (req: Request) => {
     inputAudit.gemini_thinking_config = providerUsed === "gemini"
       ? geminiThinkingConfig(
         out.modelUsed,
-        planTier === "free" ? "free" : "paid",
+        aiExecutionRoute === "free_legacy" ? "free" : "paid",
       )
       : null;
     apiKeyAlias = out.apiKeyAlias;
@@ -2956,6 +3175,8 @@ serve(async (req: Request) => {
       duration_ms: Date.now() - startMs,
       error: aiError,
       user_plan: planTier,
+      quality_tier: qualityTier,
+      ai_execution_route: aiExecutionRoute,
       request_id: requestID,
       support_id: supportID,
       error_code: cleanError.code,
@@ -2981,7 +3202,7 @@ serve(async (req: Request) => {
   const rawHazards = Array.isArray(geminiResult.hazards)
     ? geminiResult.hazards
     : [];
-  const maxHazards = PLAN_LIMITS[planTier].maxHazards;
+  const maxHazards = PLAN_LIMITS[qualityTier].maxHazards;
   const hazards = maxHazards ? rawHazards.slice(0, maxHazards) : rawHazards;
   let totalScoreFK = 0, totalScoreM5 = 0;
   let highestBandFK: "low" | "medium" | "high" | "critical" = "low";
@@ -3012,8 +3233,8 @@ serve(async (req: Request) => {
       category: h.category ?? "",
       description: `${h.observed_evidence}\n\n${h.description}`.trim(),
       recommended_action: h.recommended_action,
-      references_text: planTier !== "free" ? h.references ?? "" : "",
-      root_cause_text: planTier !== "free" ? h.root_cause ?? "" : "",
+      references_text: qualityTier !== "free" ? h.references ?? "" : "",
+      root_cause_text: qualityTier !== "free" ? h.root_cause ?? "" : "",
       confidence: Math.max(0, Math.min(1, h.confidence)),
       fk_probability: fkP,
       fk_frequency: fkF,
@@ -3094,6 +3315,8 @@ serve(async (req: Request) => {
     duration_ms: Date.now() - startMs,
     error: null,
     user_plan: planTier,
+    quality_tier: qualityTier,
+    ai_execution_route: aiExecutionRoute,
     request_id: requestID,
     support_id: supportID,
     error_code: null,
