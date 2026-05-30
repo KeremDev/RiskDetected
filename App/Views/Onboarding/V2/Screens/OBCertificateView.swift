@@ -118,3 +118,11 @@ private struct HelmetBadge: View {
         .frame(width: 44, height: 44)
     }
 }
+
+#Preview {
+    OBCertificateView(
+        state: OnboardingV2State.previewSample(step: 2),
+        onBack: {},
+        onNext: {}
+    )
+}

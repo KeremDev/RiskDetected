@@ -526,3 +526,7 @@ struct OBSplashChipView: View {
         }
     }
 }
+
+#Preview {
+    OBSplashView(onNext: {})
+}

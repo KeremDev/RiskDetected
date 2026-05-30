@@ -84,3 +84,11 @@ struct OBHazardClassView: View {
         .frame(width: 44, height: 44)
     }
 }
+
+#Preview {
+    OBHazardClassView(
+        state: OnboardingV2State.previewSample(step: 3),
+        onBack: {},
+        onNext: {}
+    )
+}

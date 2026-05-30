@@ -125,3 +125,11 @@ struct OBSectorView: View {
         .accessibilityIdentifier("onboarding.sector.\(s.rawValue)")
     }
 }
+
+#Preview {
+    OBSectorView(
+        state: OnboardingV2State.previewSample(step: 4),
+        onBack: {},
+        onNext: {}
+    )
+}

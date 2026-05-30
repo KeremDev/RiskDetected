@@ -101,3 +101,11 @@ struct OBFrequencyView: View {
         .accessibilityIdentifier("onboarding.frequency.\(f.rawValue.replacingOccurrences(of: "+", with: "_plus").replacingOccurrences(of: "-", with: "_"))")
     }
 }
+
+#Preview {
+    OBFrequencyView(
+        state: OnboardingV2State.previewSample(step: 5),
+        onBack: {},
+        onNext: {}
+    )
+}

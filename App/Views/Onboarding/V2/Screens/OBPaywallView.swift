@@ -253,3 +253,11 @@ struct OBPaywallView: View {
             .padding(.horizontal, 5)
     }
 }
+
+#Preview {
+    OBPaywallView(
+        state: OnboardingV2State.previewSample(step: 11),
+        onStartTrial: {},
+        onDismiss: {}
+    )
+}

@@ -185,3 +185,7 @@ struct OBPainPointView: View {
         }
     }
 }
+
+#Preview {
+    OBPainPointView(onNext: {}, onSkip: {})
+}

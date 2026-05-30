@@ -436,3 +436,11 @@ private struct OBPersonalPlanConfettiBurstPiece: Identifiable {
     let color: Color
     let rotation: Double
 }
+
+#Preview {
+    OBPlanSummaryView(
+        state: OnboardingV2State.previewSample(step: 7),
+        onNext: {}
+    )
+    .environmentObject(AppState())
+}

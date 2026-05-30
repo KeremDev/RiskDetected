@@ -997,3 +997,15 @@ private final class OBKeyboardObserver: ObservableObject {
         notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0.25
     }
 }
+
+#Preview {
+    OBAuthView(
+        state: OnboardingV2State.previewSample(step: 8),
+        onBack: {},
+        onApple: {},
+        onGoogle: {},
+        onEmail: {},
+        onSignIn: {}
+    )
+    .environmentObject(AppState())
+}
