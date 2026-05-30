@@ -17,6 +17,7 @@ struct RootView: View {
             case .onboarding:
                 OnboardingViewV2(
                     isAuthenticated: app.auth.isAuthenticated,
+                    currentTier: app.currentTier,
                     onFinish: { app.finishOnboarding() },
                     onAuthApple: { runAppleSignIn() },
                     onAuthGoogle: { runGoogleSignIn() },
@@ -128,6 +129,8 @@ struct RootView: View {
                 }
                 try await app.purchaseSubscription(packageID: package.id)
                 onComplete()
+            } catch is CancellationError {
+                return
             } catch {
                 app.authError = AppErrorMessage.make(
                     error,

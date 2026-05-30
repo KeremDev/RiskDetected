@@ -75,13 +75,13 @@ struct OBTimelinePaywallView: View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Ücretsiz Deneme Nasıl Çalışır")
-                    .font(.system(size: 27, weight: .bold, design: .rounded))
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineSpacing(1)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text(headerSubtitle)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -229,12 +229,12 @@ struct OBTimelinePaywallView: View {
             }
         } label: {
             Text(label)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: 11.5, weight: .bold, design: .rounded))
                 .foregroundStyle(selected ? Color.rdBlack : Color.rdSlate)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
             .frame(maxWidth: .infinity)
-            .frame(height: 32)
+            .frame(height: 25)
             .background(selected ? Color.white : Color.clear)
             .clipShape(Capsule())
             .overlay(

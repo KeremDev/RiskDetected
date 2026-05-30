@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RDUpgradeCTA: View {
     var tier: SubscriptionTier
@@ -70,6 +71,7 @@ struct RDUpgradeCTA: View {
 struct RDHeaderAccountCTA: View {
     @EnvironmentObject private var app: AppState
     @State private var showMenu = false
+    @State private var avatarImage: UIImage?
     var onUpgrade: () -> Void
 
     var body: some View {
@@ -90,6 +92,7 @@ struct RDHeaderAccountCTA: View {
             } label: {
                 RDAvatar(
                     initials: app.profile?.displayInitials ?? "—",
+                    image: avatarImage,
                     size: 36,
                     tier: app.currentTier
                 )
@@ -134,6 +137,9 @@ struct RDHeaderAccountCTA: View {
                 }
             }
         }
+        .task(id: app.profile?.avatarURL) {
+            await loadAvatarImage()
+        }
         .zIndex(30)
     }
 
@@ -145,6 +151,21 @@ struct RDHeaderAccountCTA: View {
     private func closeMenu() {
         withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
             showMenu = false
+        }
+    }
+
+    private func loadAvatarImage() async {
+        guard let path = app.profile?.avatarURL?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty
+        else {
+            avatarImage = nil
+            return
+        }
+
+        do {
+            avatarImage = try await app.auth.profileAvatarImage(path: path)
+        } catch {
+            avatarImage = nil
         }
     }
 }

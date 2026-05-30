@@ -571,6 +571,8 @@ struct InAppPaywallView: View {
                     logPaywallEvent(.purchaseSucceeded, screen: purchaseScreen, billing: purchaseBilling)
                     onSubscribe()
                 }
+            } catch is CancellationError {
+                isWorking = false
             } catch {
                 isWorking = false
                 errorMessage = error.localizedDescription

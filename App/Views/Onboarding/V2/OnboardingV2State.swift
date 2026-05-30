@@ -134,6 +134,10 @@ final class OnboardingV2State: ObservableObject {
     @Published var frequency: OBFrequency?
     @Published var selectedPlan: OBPlan = .yearly
 
+    init(step: Int = 0) {
+        self.step = step
+    }
+
     let totalQuestionSteps: Int = 5
 
     var primarySectorLabel: String {
@@ -186,6 +190,18 @@ final class OnboardingV2State: ObservableObject {
     func next() { withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) { step += 1 } }
     func back() { withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) { step = max(0, step - 1) } }
     func goTo(_ i: Int) { withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) { step = i } }
+}
+
+extension OnboardingV2State {
+    static func previewSample(step: Int = 0) -> OnboardingV2State {
+        let state = OnboardingV2State(step: step)
+        state.certificate = .A
+        state.hazards = [.critical, .high]
+        state.sectors = [.construction, .manufacturing]
+        state.frequency = .sixToFifteen
+        state.selectedPlan = .yearly
+        return state
+    }
 }
 
 enum OBHaptic {

@@ -815,6 +815,8 @@ struct PaywallView: View {
                 isWorking = false
                 logPaywallEvent(.purchaseSucceeded)
                 onSubscribe()
+            } catch is CancellationError {
+                isWorking = false
             } catch {
                 isWorking = false
                 errorMessage = error.localizedDescription

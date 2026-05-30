@@ -175,7 +175,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             )
         }
         let result = try await Purchases.shared.purchase(package: package)
-        guard !result.userCancelled else { return }
+        guard !result.userCancelled else { throw CancellationError() }
         apply(result.customerInfo)
     }
 

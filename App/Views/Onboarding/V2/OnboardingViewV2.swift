@@ -16,11 +16,12 @@ import SwiftUI
 
 struct OnboardingViewV2: View {
     @Environment(\.openURL) private var openURL
-    @StateObject private var state = OnboardingV2State()
+    @StateObject private var state: OnboardingV2State
     @State private var showSkipConfirmation = false
     @State private var paywallNoticeMessage: String?
     @State private var isPaywallWorking = false
     var isAuthenticated: Bool = false
+    var currentTier: SubscriptionTier = .free
     var onFinish: () -> Void = {}
     var onAuthApple: () -> Void = {}
     var onAuthGoogle: () -> Void = {}
@@ -28,6 +29,30 @@ struct OnboardingViewV2: View {
     var onSignInExisting: () -> Void = {}
     var onPurchase: (OBPlan, @escaping () -> Void) -> Void = { _, complete in complete() }
     var onRestorePurchases: () async throws -> Bool = { false }
+
+    init(
+        initialStep: Int = 0,
+        isAuthenticated: Bool = false,
+        currentTier: SubscriptionTier = .free,
+        onFinish: @escaping () -> Void = {},
+        onAuthApple: @escaping () -> Void = {},
+        onAuthGoogle: @escaping () -> Void = {},
+        onAuthEmail: @escaping () -> Void = {},
+        onSignInExisting: @escaping () -> Void = {},
+        onPurchase: @escaping (OBPlan, @escaping () -> Void) -> Void = { _, complete in complete() },
+        onRestorePurchases: @escaping () async throws -> Bool = { false }
+    ) {
+        _state = StateObject(wrappedValue: OnboardingV2State(step: initialStep))
+        self.isAuthenticated = isAuthenticated
+        self.currentTier = currentTier
+        self.onFinish = onFinish
+        self.onAuthApple = onAuthApple
+        self.onAuthGoogle = onAuthGoogle
+        self.onAuthEmail = onAuthEmail
+        self.onSignInExisting = onSignInExisting
+        self.onPurchase = onPurchase
+        self.onRestorePurchases = onRestorePurchases
+    }
 
     var body: some View {
         ZStack {
@@ -86,8 +111,16 @@ struct OnboardingViewV2: View {
                 state.goTo(9)
             }
         }
+        .onChange(of: currentTier) { tier in
+            guard isAuthenticated, tier.isPaid, state.step >= 9 else { return }
+            finishOnboarding()
+        }
         .onChange(of: state.step) { step in
             persistCurrentDraft()
+            if isAuthenticated, currentTier.isPaid, step >= 9 {
+                finishOnboarding()
+                return
+            }
             #if DEBUG
             if step == 8 && Self.isUITestAuthBypassLaunch {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
@@ -331,6 +364,19 @@ private struct SadFaceShape: Shape {
     }
 }
 
-#Preview {
-    OnboardingViewV2()
+#Preview("00 Splash") {
+    OnboardingViewV2(initialStep: 0)
+}
+
+#Preview("02 Certificate") {
+    OnboardingViewV2(initialStep: 2)
+}
+
+#Preview("07 Personal Plan") {
+    OnboardingViewV2(initialStep: 7)
+        .environmentObject(AppState())
+}
+
+#Preview("11 Paywall") {
+    OnboardingViewV2(initialStep: 11)
 }
