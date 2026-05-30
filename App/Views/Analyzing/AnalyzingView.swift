@@ -18,7 +18,6 @@ struct AnalyzingView: View {
     ]
 
     @State private var currentStep: Int = 0
-    @State private var scanY: CGFloat = -1
     @State private var animTask: Task<Void, Never>?
     @State private var workTask: Task<Void, Never>?
     @State private var workDone = false
@@ -50,7 +49,7 @@ struct AnalyzingView: View {
                 }
                 .padding(.bottom, progressUpdate == nil ? 18 : 12)
 
-                if let progressUpdate {
+                if let progressUpdate, progressUpdate != .queued {
                     progressStatus(progressUpdate)
                         .padding(.bottom, 18)
                         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -91,20 +90,19 @@ struct AnalyzingView: View {
                     RDPlaceholderPhoto(label: "Analiz ediliyor", cornerRadius: 24)
                 }
 
-                GeometryReader { geo in
-                    let h = geo.size.height
-                    LinearGradient(
-                        colors: [.clear, Color.rdGreen.opacity(0.62), Color.rdGreen.opacity(0.22), .clear],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                    .frame(height: 64)
-                    .offset(y: scanY * h)
-                    .onAppear {
-                        withAnimation(
-                            .linear(duration: 1.6).repeatForever(autoreverses: false)
-                        ) {
-                            scanY = 1
-                        }
+                TimelineView(.animation(minimumInterval: 1 / 30)) { timeline in
+                    GeometryReader { geo in
+                        let h = geo.size.height
+                        let cycle = timeline.date.timeIntervalSinceReferenceDate
+                            .truncatingRemainder(dividingBy: 1.55) / 1.55
+                        let y = CGFloat(cycle) * (h + 96) - 80
+
+                        LinearGradient(
+                            colors: [.clear, Color.rdGreen.opacity(0.62), Color.rdGreen.opacity(0.22), .clear],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                        .frame(height: 64)
+                        .offset(y: y)
                     }
                 }
 
@@ -152,6 +150,8 @@ struct AnalyzingView: View {
     private var stepsList: some View {
         VStack(alignment: .leading, spacing: 9) {
             ForEach(Array(steps.enumerated()), id: \.offset) { index, label in
+                let isActive = index == currentStep
+                let isReached = animDone || index <= currentStep
                 HStack(spacing: 10) {
                     stepDot(index: index)
                     VStack(alignment: .leading, spacing: 2) {
@@ -167,15 +167,15 @@ struct AnalyzingView: View {
                 }
                 .padding(.horizontal, 12)
                 .frame(height: 54)
-                .background(index <= currentStep ? Color.rdWhite : Color.rdFog.opacity(0.62))
+                .background(isReached ? Color.rdWhite : Color.rdFog.opacity(0.62))
                 .overlay(
                     RoundedRectangle(cornerRadius: 15)
-                        .stroke(index == currentStep ? Color.rdGreen.opacity(0.42) : Color.rdLine.opacity(0.75), lineWidth: 1)
+                        .stroke(isActive ? Color.rdGreen.opacity(0.42) : Color.rdLine.opacity(0.75), lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 15))
-                .shadow(color: index == currentStep ? Color.rdGreen.opacity(0.10) : Color.clear, radius: 12, x: 0, y: 7)
-                .opacity(index <= currentStep ? 1.0 : 0.52)
-                .scaleEffect(index == currentStep ? 1.015 : 1)
+                .shadow(color: isActive ? Color.rdGreen.opacity(0.10) : Color.clear, radius: 12, x: 0, y: 7)
+                .opacity(isReached ? 1.0 : 0.52)
+                .scaleEffect(isActive ? 1.015 : 1)
                 .animation(.spring(response: 0.34, dampingFraction: 0.84), value: currentStep)
             }
         }
@@ -233,6 +233,10 @@ struct AnalyzingView: View {
                 Image(systemName: "checkmark")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
+            } else if animDone && index != currentStep {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
             } else if index == currentStep {
                 Circle()
                     .fill(Color.rdSelected)
@@ -249,15 +253,24 @@ struct AnalyzingView: View {
         currentStep = 0
         animDone = false
         animTask = Task.detached { @MainActor [self] in
-            for i in 1...steps.count {
+            var index = 0
+            var didCompleteMinimumCycle = false
+            while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 700_000_000)
                 if Task.isCancelled { return }
-                self.currentStep = min(i, steps.count - 1)
+                index = (index + 1) % steps.count
+                withAnimation(.spring(response: 0.34, dampingFraction: 0.84)) {
+                    self.currentStep = index
+                }
+                if index == steps.count - 1, !didCompleteMinimumCycle {
+                    didCompleteMinimumCycle = true
+                    self.animDone = true
+                    self.finishIfReady()
+                }
+                if didCompleteMinimumCycle, self.workDone {
+                    return
+                }
             }
-            try? await Task.sleep(nanoseconds: 700_000_000)
-            if Task.isCancelled { return }
-            self.animDone = true
-            self.finishIfReady()
         }
     }
 

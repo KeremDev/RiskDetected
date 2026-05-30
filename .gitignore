@@ -30,6 +30,7 @@ Packages/
 App/GoogleService-Info.plist
 App/GoogleService-Info.plist.local
 QA/tmp/
+backups/
 
 # Supabase local/link cache
 supabase/.temp/

@@ -86,7 +86,7 @@ Kişisel veriler, amaçla sınırlı ve gerekli ölçüde aşağıdaki alıcı g
 - Yetkili kamu kurumları, mahkemeler ve düzenleyici otoriteler.
 - Kullanıcının talimatıyla rapor paylaşılan üçüncü kişiler.
 
-Mevcut teknik sağlayıcılar arasında Supabase ve Google Gemini/Google AI bulunabilir. Sağlayıcı listesi değişirse Gizlilik Politikası ve/veya bu metin güncellenmelidir.
+Mevcut teknik sağlayıcılar arasında Supabase, Google Gemini/Google AI ve Groq gibi üçüncü taraf AI sağlayıcıları bulunabilir. Bu sağlayıcılar fotoğraf/metin içeriğini risk analizi yanıtı üretmek için işleyebilir. Sağlayıcı listesi değişirse Gizlilik Politikası ve/veya bu metin güncellenmelidir.
 
 ## 7. Yurt dışına aktarım
 

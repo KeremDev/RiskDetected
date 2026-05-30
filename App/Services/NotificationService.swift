@@ -267,10 +267,6 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        let kind = notification.request.content.userInfo["kind"] as? String
-        if kind == "analysis_complete" || kind == "report_ready" {
-            return []
-        }
         return [.banner, .sound, .badge]
     }
 

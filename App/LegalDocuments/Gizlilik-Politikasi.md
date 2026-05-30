@@ -63,12 +63,12 @@ Kullanıcı içerikleri açık izin olmadan reklam, kamuya açık tanıtım veya
 
 ## 5. Yapay zeka ve üçüncü taraf altyapılar
 
-RiskDetected analiz üretmek için yapay zeka altyapısı kullanır. Mevcut teknik mimaride fotoğraf/metin analizleri Supabase Edge Functions üzerinden AI sağlayıcısına iletilebilir; analiz sonuçları ve gerekli dosyalar Supabase altyapısında saklanabilir.
+RiskDetected analiz üretmek için yapay zeka altyapısı kullanır. Mevcut teknik mimaride fotoğraf/metin analizleri Supabase Edge Functions üzerinden üçüncü taraf AI sağlayıcılarına iletilebilir; bu sağlayıcılar yüklediğiniz görsel veya metin içeriğini yalnızca risk analizi yanıtını üretmek için işleyebilir. Analiz sonuçları ve gerekli dosyalar Supabase altyapısında saklanabilir.
 
 Kullanılabilecek üçüncü taraflar:
 
 - Supabase: kimlik doğrulama, veri tabanı, dosya saklama, edge function ve teknik altyapı.
-- Google Gemini/Google AI: fotoğraf ve/veya metin üzerinden yapay zeka analizi.
+- Google Gemini/Google AI ve Groq gibi AI sağlayıcıları: fotoğraf ve/veya metin üzerinden yapay zeka analizi.
 - Apple: App Store, uygulama içi satın alma, abonelik, cihaz izinleri ve platform güvenliği.
 - Gerektiğinde hata ayıklama, destek, e-posta veya güvenlik servisleri.
 

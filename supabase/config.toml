@@ -1,0 +1,43 @@
+project_id = "ppcrzemgiztzcgddbins"
+
+[functions.analyze]
+verify_jwt = false
+
+[functions.support-contact]
+verify_jwt = true
+
+[functions.send-welcome-email]
+verify_jwt = true
+
+[functions.generate-excel-report]
+verify_jwt = true
+
+[functions.sync-revenuecat-subscription]
+verify_jwt = true
+
+[functions.send-report-ready-notification]
+verify_jwt = true
+
+[functions.request-account-deletion]
+verify_jwt = true
+
+[functions.process-analysis-jobs]
+verify_jwt = false
+
+[functions.account-deletion-complete]
+verify_jwt = false
+
+[functions.retention-cleanup]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.revenuecat-webhook]
+verify_jwt = false
+
+[functions.gemini-free-qa-run]
+verify_jwt = false
+
+[functions.groq-qa-compare]
+verify_jwt = false

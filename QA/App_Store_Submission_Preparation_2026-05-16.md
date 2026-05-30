@@ -62,8 +62,8 @@ Final archive check: in Xcode Organizer, inspect Privacy Report and embedded ent
 
 | Field | Entry |
 | --- | --- |
-| Name | `RiskDetected İSG Analizi` |
-| Subtitle | `Fotoğrafla Risk Tespiti` |
+| Name | `RiskDetected İş Güvenliği` |
+| Subtitle | `Fotoğrafla Risk Analizi` |
 | Category | Productivity |
 | Secondary category | Business |
 | Content rights | No third-party copyrighted content unless screenshots include user-provided/demo images. |
@@ -71,29 +71,34 @@ Final archive check: in Xcode Organizer, inspect Privacy Report and embedded ent
 
 ### Promotional Text
 
-Saha fotoğrafı veya metniyle iş güvenliği risklerini analiz et, bulguları önceliklendir ve PDF/Excel raporlarını hızlıca hazırla.
+Uygunsuzluk fotoğrafı veya metin ile iş güvenliği risklerini analiz edin, riskleri önceliklendirin ve PDF/Excel raporlarınızı hazırlayıp tek tuşla paylaşın.
 
 ### Description
 
-RiskDetected, sahada iş güvenliği uygunsuzluklarını daha hızlı fark etmeye ve raporlamaya yardımcı olan yapay zeka destekli bir İSG asistanıdır.
+RiskDetected, İSG uzmanları ve saha ekipleri için geliştirilen yapay zeka destekli iş güvenliği asistanıdır.
 
-Fotoğraf veya metin üzerinden analiz başlatabilir, tespit edilen bulguları Fine-Kinney ve 5x5 Matris yaklaşımıyla değerlendirebilir, raporlarınızı PDF veya Excel olarak oluşturabilirsiniz.
+Saha fotoğrafı veya metin ile risk analizi başlatın, uygunsuzlukları önceliklendirin, Fine-Kinney ve 5x5 Matris yöntemleriyle PDF/Excel raporlarınızı hızlıca hazırlayın.
 
-Öne çıkanlar:
+Öne çıkan özellikler:
 
-- Fotoğraf ve metin ile risk analizi
-- Odaklı analiz seçenekleri
-- Fine-Kinney ve 5x5 risk değerlendirme çıktıları
-- PDF ve Excel rapor oluşturma
-- Rapor arşivi, indirme ve paylaşım
-- Profil bilgileriyle hazırlayan, belge no, firma bilgisi ve logo varsayılanları
-- KVKK ve gizlilik odaklı veri yönetimi
+• Fotoğraf ve metin ile İSG risk analizi
+• Saha fotoğraflarında tehlike ve uygunsuzluk tespiti
+• Odaklı analiz ile belirli alanlara yoğunlaşma
+• Fine-Kinney ve 5x5 Matris risk değerlendirme çıktıları
+• PDF ve Excel rapor oluşturma
+• Rapor arşivi, indirme ve paylaşım
+• Firma bilgisi, hazırlayan bilgisi ve logo ile rapor özelleştirme
+• KVKK ve gizlilik odaklı veri yönetimi
 
-RiskDetected, İSG uzmanları ve saha ekipleri için destekleyici bir araçtır. AI analizleri profesyonel değerlendirme yerine geçmez; nihai karar ve saha kontrolü yetkili uzman tarafından yapılmalıdır.
+RiskDetected; İSG uzmanları, OSGB ekipleri, saha sorumluları, işverenler ve operasyon ekipleri için sahadaki güvenlik kontrollerini daha hızlı belgelemeye yardımcı olur.
+
+Uygulama, yapay zeka destekli analizler sunar. AI çıktıları profesyonel değerlendirme yerine geçmez; nihai karar ve saha kontrolü yetkili uzman tarafından yapılmalıdır.
+
+Sahada fotoğraf çekin, riskleri görün, raporunuzu hazırlayın.
 
 ### Keywords
 
-`İSG, iş güvenliği, risk analizi, Fine Kinney, 5x5 matris, saha denetimi, rapor, PDF, Excel, KKD, yapay zeka`
+`isg,saha,denetim,rapor,fine,kinney,5x5,matris,kkd,pdf,excel,osgb,uzman,döf,mevzuat,kontrol,form`
 
 ### Support / Legal URLs
 

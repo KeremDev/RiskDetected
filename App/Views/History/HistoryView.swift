@@ -13,6 +13,8 @@ struct HistoryView: View {
     @State private var analysisResult: AnalysisResultBundle? = nil
     @State private var showResult = false
     @State private var analysisError: String? = nil
+    @State private var isLoadingItems = false
+    @State private var loadErrorMessage: String?
     @State private var openingItemID: UUID? = nil
     @State private var deletingItemID: UUID? = nil
     @State private var itemPendingDelete: HistoryItem?
@@ -44,7 +46,11 @@ struct HistoryView: View {
                     analysisOverview
                     filterSurface
 
-                    if filteredItems.isEmpty {
+                    if isLoadingItems && items.isEmpty {
+                        loadingState
+                    } else if let loadErrorMessage, items.isEmpty {
+                        loadErrorState(loadErrorMessage)
+                    } else if filteredItems.isEmpty {
                         emptyState
                     } else {
                         ForEach(filteredItems) { item in
@@ -409,6 +415,58 @@ struct HistoryView: View {
         }
     }
 
+    private var loadingState: some View {
+        RDCard {
+            HStack(spacing: 12) {
+                ProgressView()
+                    .controlSize(.regular)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Analizler yükleniyor")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text("Son saha taramaların getiriliyor.")
+                        .font(.system(size: 13, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private func loadErrorState(_ message: String) -> some View {
+        RDCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdCriticalText)
+                    .frame(width: 48, height: 48)
+                    .background(Color.rdCriticalBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Analizler yüklenemedi")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(message)
+                        .font(.system(size: 13, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button {
+                    Task { await loadItems() }
+                } label: {
+                    Label("Tekrar dene", systemImage: "arrow.clockwise")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.rdGreenDark)
+                .accessibilityIdentifier("history.reload")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     private var criticalCount: Int {
         items.filter { $0.level == .critical }.count
     }
@@ -423,6 +481,9 @@ struct HistoryView: View {
 
     private func loadItems() async {
         guard app.auth.session != nil else { return }
+        isLoadingItems = true
+        defer { isLoadingItems = false }
+
         do {
             async let rowsTask = AnalysisService.shared.listRecent(limit: 50)
             async let companiesTask: [Company] = app.currentTier.isPaid
@@ -434,9 +495,13 @@ struct HistoryView: View {
             items = rows.map { row in
                 HistoryItem(row: row, photoPath: paths[row.id])
             }
+            loadErrorMessage = nil
         } catch {
-            analysisError = AppErrorMessage.make(error, context: "Analizler yüklenemedi", fallbackTitle: "Analizler yüklenemedi").fullText
-            items = []
+            let message = AppErrorMessage.make(error, context: "Analizler yüklenemedi", fallbackTitle: "Analizler yüklenemedi").fullText
+            loadErrorMessage = message
+            if !items.isEmpty {
+                analysisError = message
+            }
         }
     }
 

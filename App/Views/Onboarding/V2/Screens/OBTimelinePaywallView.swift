@@ -14,6 +14,8 @@ import SwiftUI
 // Standalone for now; codex will wire to flow + IAP after approval.
 
 struct OBTimelinePaywallView: View {
+    var isWorking: Bool = false
+    var noticeMessage: String?
     let onStart: (OBPlan) -> Void
     let onRestore: () -> Void
     let onTerms: () -> Void
@@ -48,7 +50,7 @@ struct OBTimelinePaywallView: View {
                         .obStage(delay: 0.12)
                 }
                 .padding(.horizontal, 18)
-                .padding(.bottom, 138)
+                .padding(.bottom, noticeMessage == nil && !isWorking ? 138 : 182)
             }
 
             bottomBar
@@ -91,12 +93,19 @@ struct OBTimelinePaywallView: View {
     private var bottomBar: some View {
         VStack(spacing: 10) {
             OBPrimaryButton(
-                title: selectedPlan == .yearly ? "₺0,00'ye dene" : "Aboneliği başlat",
+                title: isWorking ? "İşleniyor..." : (selectedPlan == .yearly ? "₺0,00'ye dene" : "Aboneliği başlat"),
                 trailingIcon: "arrow.right",
                 style: .onyx,
                 accessibilityID: "onboarding.timeline_paywall.cta"
             ) {
                 onStart(selectedPlan)
+            }
+            .disabled(isWorking)
+            .opacity(isWorking ? 0.72 : 1)
+
+            if isWorking || noticeMessage != nil {
+                paywallNotice
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
             HStack(spacing: 14) {
@@ -107,6 +116,9 @@ struct OBTimelinePaywallView: View {
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                 }
+                .disabled(isWorking)
+                .opacity(isWorking ? 0.55 : 1)
+                .accessibilityIdentifier("onboarding.timeline_paywall.restore")
 
                 Circle().fill(Color.rdSlate.opacity(0.35)).frame(width: 3, height: 3)
 
@@ -117,6 +129,8 @@ struct OBTimelinePaywallView: View {
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
+                .disabled(isWorking)
+                .accessibilityIdentifier("onboarding.timeline_paywall.terms")
 
                 Circle().fill(Color.rdSlate.opacity(0.35)).frame(width: 3, height: 3)
 
@@ -127,6 +141,8 @@ struct OBTimelinePaywallView: View {
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
+                .disabled(isWorking)
+                .accessibilityIdentifier("onboarding.timeline_paywall.privacy")
             }
         }
         .padding(.horizontal, 18)
@@ -145,6 +161,40 @@ struct OBTimelinePaywallView: View {
             .ignoresSafeArea()
         )
         .animation(.obSpring, value: selectedPlan)
+        .animation(.obSpring, value: isWorking)
+        .animation(.obSpring, value: noticeMessage)
+    }
+
+    @ViewBuilder
+    private var paywallNotice: some View {
+        HStack(spacing: 8) {
+            if isWorking {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(Color.rdBlack)
+            } else {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.rdHigh)
+            }
+
+            Text(isWorking ? "Satın alımlar kontrol ediliyor..." : noticeMessage ?? "")
+                .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+                .lineLimit(2)
+                .minimumScaleFactor(0.86)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(Color.white.opacity(0.92))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .accessibilityIdentifier("onboarding.timeline_paywall.notice")
     }
 
     // MARK: - Plan toggle
@@ -494,6 +544,8 @@ private struct HelmetRidgeShape: Shape {
 
 #Preview {
     OBTimelinePaywallView(
+        isWorking: false,
+        noticeMessage: nil,
         onStart: { _ in },
         onRestore: {},
         onTerms: {},

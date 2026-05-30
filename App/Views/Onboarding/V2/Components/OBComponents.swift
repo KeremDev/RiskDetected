@@ -303,6 +303,8 @@ struct OBPrimaryButton: View {
     @State private var arrowOpacity: Double = 0
 
     var body: some View {
+        let resolvedAccessibilityID = accessibilityID ?? "ob.primary.\(obIdentifierSlug(title))"
+
         Button {
             if enabled { OBHaptic.light(); action() }
         } label: {
@@ -326,7 +328,9 @@ struct OBPrimaryButton: View {
         }
         .buttonStyle(OBPressStyle())
         .disabled(!enabled)
-        .accessibilityIdentifier(accessibilityID ?? "ob.primary.\(obIdentifierSlug(title))")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(resolvedAccessibilityID)
         .onAppear {
             guard enabled else { return }
             animateArrow()

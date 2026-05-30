@@ -15,8 +15,11 @@ import SwiftUI
 //   8 Auth · 9 Trial Invite · 10 Push Permission · 11 Timeline Paywall (dismissible)
 
 struct OnboardingViewV2: View {
+    @Environment(\.openURL) private var openURL
     @StateObject private var state = OnboardingV2State()
     @State private var showSkipConfirmation = false
+    @State private var paywallNoticeMessage: String?
+    @State private var isPaywallWorking = false
     var isAuthenticated: Bool = false
     var onFinish: () -> Void = {}
     var onAuthApple: () -> Void = {}
@@ -24,6 +27,7 @@ struct OnboardingViewV2: View {
     var onAuthEmail: () -> Void = {}
     var onSignInExisting: () -> Void = {}
     var onPurchase: (OBPlan, @escaping () -> Void) -> Void = { _, complete in complete() }
+    var onRestorePurchases: () async throws -> Bool = { false }
 
     var body: some View {
         ZStack {
@@ -147,19 +151,21 @@ struct OnboardingViewV2: View {
             }
         case 11:
             OBTimelinePaywallView(
+                isWorking: isPaywallWorking,
+                noticeMessage: paywallNoticeMessage,
                 onStart: { plan in
+                    guard !isPaywallWorking else { return }
+                    paywallNoticeMessage = nil
                     state.selectedPlan = plan
                     onPurchase(plan) {
                         finishOnboarding()
                     }
                 },
                 onRestore: {
-                    onPurchase(state.selectedPlan) {
-                        finishOnboarding()
-                    }
+                    restorePurchases()
                 },
-                onTerms: {},
-                onPrivacy: {},
+                onTerms: { openURL(RDConfig.Web.termsURL) },
+                onPrivacy: { openURL(RDConfig.Web.privacyPolicyURL) },
                 onDismiss: { finishOnboarding() }
             )
         default:
@@ -182,6 +188,31 @@ struct OnboardingViewV2: View {
             await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
         }
         onFinish()
+    }
+
+    private func restorePurchases() {
+        guard !isPaywallWorking else { return }
+        isPaywallWorking = true
+        paywallNoticeMessage = nil
+
+        Task {
+            do {
+                let hasActiveSubscription = try await onRestorePurchases()
+                await MainActor.run {
+                    isPaywallWorking = false
+                    if hasActiveSubscription {
+                        finishOnboarding()
+                    } else {
+                        paywallNoticeMessage = "Geri yüklenecek aktif abonelik bulunamadı."
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isPaywallWorking = false
+                    paywallNoticeMessage = error.localizedDescription
+                }
+            }
+        }
     }
 
     #if DEBUG

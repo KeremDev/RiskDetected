@@ -54,7 +54,6 @@ type ImagePart = {
 
 type AnalysisAudit = {
   system_prompt_sent?: string;
-  user_prompt?: string | null;
   selected_canvas_ids?: string[];
   resolved_canvas_prompts?: Array<{ id?: string; prompt?: string }>;
   analysis_mode?: string;
@@ -279,7 +278,6 @@ async function callGroq(params: {
   apiKey: string;
   model: string;
   systemPrompt: string;
-  userPrompt: string | null;
   images: ImagePart[];
   isPro: boolean;
 }) {
@@ -288,9 +286,6 @@ async function callGroq(params: {
       type: "text",
       text: [
         groqResponseSchemaInstruction(params.isPro),
-        params.userPrompt
-          ? `Kullanıcının özel analiz talebi: ${params.userPrompt}\nBu talebi yalnızca görsel/metin kanıtları destekliyorsa önceliklendir; kanıt yoksa uydurma.`
-          : null,
       ].filter(Boolean).join("\n\n"),
     },
   ];
@@ -373,7 +368,6 @@ async function runComparison(
     apiKey: input.apiKey,
     model: input.model,
     systemPrompt,
-    userPrompt: audit.user_prompt ?? null,
     images,
     isPro: input.label === "pro",
   });

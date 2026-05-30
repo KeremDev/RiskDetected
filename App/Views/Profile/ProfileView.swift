@@ -29,6 +29,7 @@ struct ProfileView: View {
     @State private var pendingDataAction: ProfileDataAction?
     @State private var dataMessage: String?
     @State private var shareItem: ShareItem?
+    @State private var deviceIntegrity = DeviceIntegrityService.assess()
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
     }
@@ -57,6 +58,9 @@ struct ProfileView: View {
                     if app.currentTier.isPaid { proCard } else { upsellCard }
                     accountList
                     settingsList
+                    if deviceIntegrity.isWarning {
+                        deviceIntegrityWarningCard
+                    }
                     signOutCard
                     versionFootnote
                 }
@@ -887,6 +891,7 @@ struct ProfileView: View {
                     ProfileRow(icon: "gearshape", title: "Tercihler")
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile.row.preferences")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     showDataControls = true
@@ -900,7 +905,12 @@ struct ProfileView: View {
                     showLegalInfo = true
                     UISelectionFeedbackGenerator().selectionChanged()
                 } label: {
-                    ProfileRow(icon: "lock", title: "Güvenlik ve gizlilik")
+                    ProfileRow(
+                        icon: deviceIntegrity.isWarning ? "exclamationmark.shield.fill" : "lock",
+                        title: "Güvenlik ve gizlilik",
+                        detail: deviceIntegrity.profileDetail,
+                        danger: deviceIntegrity.isWarning
+                    )
                 }
                 .buttonStyle(.plain)
                 Divider().background(Color.rdLine).padding(.leading, 60)
@@ -920,6 +930,31 @@ struct ProfileView: View {
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
             .profileCardDepth(colorScheme: colorScheme)
         }
+    }
+
+    private var deviceIntegrityWarningCard: some View {
+        RDCard {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.shield.fill")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdCriticalText)
+                    .frame(width: 40, height: 40)
+                    .background(Color.rdCriticalBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Cihaz güvenliği uyarısı")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(deviceIntegrity.userMessage)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .accessibilityIdentifier("profile.device_integrity.warning")
     }
 
     private var signOutCard: some View {
@@ -1113,13 +1148,17 @@ struct ProfileView: View {
                     dataMessage = "Tüm analizlerin ve ilişkili bulgular/fotoğraflar silindi."
                     await loadStats()
                 case .requestAccountDeletion:
-                    try await AnalysisService.shared.requestAccountDeletion(
+                    let result = try await AnalysisService.shared.requestAccountDeletion(
                         userID: userID,
                         email: app.profile?.email,
                         requestID: requestID,
                         supportID: supportID
                     )
-                    dataMessage = "Hesap silme talebin kaydedildi. İşlem güvenli silme kuyruğunda tamamlanacak."
+                    dataMessage = result.message ?? "Hesabın ve verilerin silme sürecine alındı."
+                    if result.shouldClearLocalSession {
+                        try? await Task.sleep(nanoseconds: 1_200_000_000)
+                        try? await app.auth.signOut()
+                    }
                 }
             } catch {
                 dataMessage = AppErrorMessage.make(
@@ -1159,7 +1198,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .deleteAnalyses:
             return "Tüm analizler silinsin mi?"
         case .requestAccountDeletion:
-            return "Hesap silme talebi oluşturulsun mu?"
+            return "Hesabın ve verilerin silinsin mi?"
         }
     }
 
@@ -1172,7 +1211,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .deleteAnalyses:
             return "Tüm analizler, bulgular, fotoğraf kayıtları ve bu analizlere bağlı raporlar silinir. Bu işlem geri alınamaz."
         case .requestAccountDeletion:
-            return "Talep kaydedilir. Hesap silme işlemi yetkili sunucu akışıyla tamamlanır."
+            return "Hesabın, profilin, analizlerin, raporların ve saklanan dosyaların kalıcı olarak silinir. Aktif App Store aboneliğin varsa iptal ve yönetim işlemleri Apple abonelik ayarlarından yapılır. Bu işlem geri alınamaz."
         }
     }
 
@@ -1181,7 +1220,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .exportData: return "Dışa aktar"
         case .deleteReports: return "Tüm raporları sil"
         case .deleteAnalyses: return "Tüm analizleri sil"
-        case .requestAccountDeletion: return "Talep oluştur"
+        case .requestAccountDeletion: return "Hesabımı ve verilerimi sil"
         }
     }
 
@@ -1190,7 +1229,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .exportData: return "Veri dışa aktarımı oluşturulamadı"
         case .deleteReports: return "Raporlar silinemedi"
         case .deleteAnalyses: return "Analizler silinemedi"
-        case .requestAccountDeletion: return "Hesap silme talebi kaydedilemedi"
+        case .requestAccountDeletion: return "Hesap silme işlemi başlatılamadı"
         }
     }
 
@@ -1504,7 +1543,7 @@ private struct NotificationSettingsSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 16) {
                 RDCard {
                     HStack(alignment: .top, spacing: 10) {
                         Image(systemName: iconName)
@@ -1524,30 +1563,6 @@ private struct NotificationSettingsSheet: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
-                }
-
-                VStack(spacing: 8) {
-                    notificationRow(icon: "checkmark.seal", title: "Analiz tamamlandı", subtitle: "Uzun süren analizlerde sonucu kaçırma.")
-                    notificationRow(icon: "doc.richtext", title: "Rapor hazır", subtitle: "PDF arşivleme ve paylaşım akışlarında haber ver.")
-                    notificationRow(icon: "person.crop.circle.badge.checkmark", title: "Hesap ve güvenlik", subtitle: "Oturum, profil ve önemli hesap durumları.")
-                    progressPreferenceRow(
-                        icon: "chart.line.uptrend.xyaxis",
-                        title: "Haftalık mesleki özet",
-                        subtitle: "Rapor, analiz ve yetkinlik özetini haftalık al.",
-                        preference: .weeklySummary
-                    )
-                    progressPreferenceRow(
-                        icon: "calendar",
-                        title: "Aylık mesleki özet",
-                        subtitle: "Ay sonu MDP, ünvan ve kategori birikimini gör.",
-                        preference: .monthlySummary
-                    )
-                    progressPreferenceRow(
-                        icon: "rosette",
-                        title: "Rozet ve ünvan",
-                        subtitle: "Yeni başarı ve ünvan değişimlerini sakin bildirimlerle gör.",
-                        preference: .milestones
-                    )
                 }
 
                 if let lastError = notificationService.lastError {
@@ -1605,6 +1620,8 @@ private struct NotificationSettingsSheet: View {
                 await notificationService.refreshSettings()
             }
         }
+        .presentationDetents([.height(330), .medium])
+        .presentationDragIndicator(.visible)
     }
 
     private var isEnabled: Bool {
@@ -1621,9 +1638,9 @@ private struct NotificationSettingsSheet: View {
         case .authorized, .provisional, .ephemeral:
             return "Bildirimler açık"
         case .denied:
-            return "Bildirim izni kapalı"
+            return "Bildirimler kapalı"
         case .notDetermined:
-            return "Bildirimleri kur"
+            return "Bildirimler kapalı"
         @unknown default:
             return "Bildirim durumu kontrol edilemedi"
         }
@@ -1632,11 +1649,11 @@ private struct NotificationSettingsSheet: View {
     private var statusMessage: String {
         switch notificationService.authorizationStatus {
         case .authorized, .provisional, .ephemeral:
-            return "Cihaz kaydı Supabase ile eşleştiğinde analiz ve rapor durumları için bildirim alabileceksin."
+            return "Analiz tamamlandığında, rapor hazır olduğunda ve önemli hesap güvenliği durumlarında bildirim alırsın."
         case .denied:
-            return "iOS bildirim izni kapalı. RiskDetected bildirimlerini cihaz ayarlarından tekrar açabilirsin."
+            return "Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini alabilirsin."
         case .notDetermined:
-            return "Önemli analiz, rapor ve hesap durumlarını kaçırmamak için cihaz bildirim iznini aç."
+            return "Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini alabilirsin."
         @unknown default:
             return "Bildirim ayarlarını yenileyip tekrar dene."
         }
@@ -1648,76 +1665,6 @@ private struct NotificationSettingsSheet: View {
 
     private var iconColor: Color {
         isEnabled ? Color.rdGreen : Color.rdSlate
-    }
-
-    private func notificationRow(icon: String, title: String, subtitle: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.rdGreenDark)
-                .frame(width: 38, height: 38)
-                .background(Color.rdGreenSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 11))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
-                Text(subtitle)
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer()
-        }
-        .padding(12)
-        .background(Color.rdWhite)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.rdLine, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func progressPreferenceRow(
-        icon: String,
-        title: String,
-        subtitle: String,
-        preference: NotificationService.ProgressPreference
-    ) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.rdGreenDark)
-                .frame(width: 38, height: 38)
-                .background(Color.rdGreenSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 11))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
-                Text(subtitle)
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer()
-            Toggle(
-                "",
-                isOn: Binding(
-                    get: { notificationService.progressPreferenceEnabled(preference) },
-                    set: { notificationService.setProgressPreference(preference, enabled: $0) }
-                )
-            )
-            .labelsHidden()
-            .tint(Color.rdGreen)
-        }
-        .padding(12)
-        .background(Color.rdWhite)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.rdLine, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     private func openSystemSettings() {
@@ -1765,8 +1712,8 @@ private struct ProfileDataControlsSheet: View {
                     )
                     dataActionButton(
                         icon: "person.crop.circle.badge.xmark",
-                        title: "Hesabımı silme talebi",
-                        subtitle: "Talep kaydı oluşturulur; hesap silme güvenli sunucu sürecinde tamamlanır.",
+                        title: "Hesabımı ve verilerimi sil",
+                        subtitle: "Profil, analizler, raporlar ve dosyalar kalıcı silinir. Abonelik Apple’dan yönetilir.",
                         action: .requestAccountDeletion,
                         danger: true,
                         onTap: onRequestAccountDeletion
@@ -2060,6 +2007,7 @@ private struct PreferenceOptionRow: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .accessibilityLabel(title)
+        .accessibilityIdentifier("profile.preference.\(title)")
         .accessibilityValue(isSelected ? "Seçili" : "Seçili değil")
     }
 }

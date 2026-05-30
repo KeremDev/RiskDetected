@@ -146,8 +146,6 @@ final class AppState: ObservableObject {
     }
 
     func bootstrap() async {
-        try? await Task.sleep(nanoseconds: 800_000_000)
-
         #if DEBUG
         if Self.isUITestResetLaunch {
             await auth.resetLocalSessionForUITests()
@@ -159,15 +157,18 @@ final class AppState: ObservableObject {
         #endif
 
         if auth.isAuthenticated {
-            // Profile observer'ı zaten bağladığımız için fetch otomatik tetiklenir,
-            // yine de kesinlik için bir kez daha refresh edelim.
-            await auth.refreshProfile()
-            await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
-            await sendWelcomeEmailIfPossible()
+            async let initialProfileRefresh: Void = auth.refreshProfile()
+            async let pendingDraftSync = OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+            async let welcomeEmail: Void = sendWelcomeEmailIfPossible()
+
             await subscriptions.identify(userID: auth.session?.user.id)
-            await syncBackendSubscription()
+            _ = await (initialProfileRefresh, pendingDraftSync, welcomeEmail)
+
+            async let backendSubscriptionSync: Void = syncBackendSubscription()
+            async let offeringsLoad: Void = subscriptions.loadOfferings()
+            _ = await (backendSubscriptionSync, offeringsLoad)
+
             await auth.refreshProfile()
-            await subscriptions.loadOfferings()
             flow = .main
             routePendingNotificationIfReady(defaultTab: .home)
             return

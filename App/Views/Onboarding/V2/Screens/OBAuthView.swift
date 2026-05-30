@@ -441,6 +441,7 @@ struct OBAuthView: View {
             .background(Color.white)
             .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color.rdLine, lineWidth: 1))
             .clipShape(RoundedRectangle(cornerRadius: 15))
+            .accessibilityIdentifier("onboarding.auth.email_input")
         }
         .contentShape(Rectangle())
         .onTapGesture {

@@ -164,6 +164,22 @@ serve(async (req) => {
       support_id: supportID,
     });
   }
+  let pushResult: { status?: string; reason?: string } = {};
+  try {
+    pushResult = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    pushResult = {};
+  }
+  if (pushResult.status !== "sent") {
+    return json(200, {
+      ok: false,
+      status: pushResult.status === "skipped" ? "push_skipped" : "push_failed",
+      reason: pushResult.reason ?? "push_not_sent",
+      report_id: report.id,
+      request_id: requestID,
+      support_id: supportID,
+    });
+  }
 
   await supabase
     .from("reports")

@@ -343,6 +343,7 @@ struct InAppPaywallView: View {
                         .font(.system(size: 15, weight: .bold, design: .rounded))
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
+                        .accessibilityIdentifier(selectedPackage == nil ? "in_app_paywall.cta.loading" : "in_app_paywall.cta.ready")
                 }
                 .foregroundStyle(primaryButtonDisabled ? InAppPaywallColor.graphite.opacity(0.62) : Color.white)
                 .frame(maxWidth: .infinity)

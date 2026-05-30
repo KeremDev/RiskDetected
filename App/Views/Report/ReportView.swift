@@ -459,6 +459,7 @@ struct ReportView: View {
                         .foregroundStyle(Color.rdBlack)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .accessibilityIdentifier("report.archive.search")
 
                     if !reportSearch.isEmpty {
                         Button {
@@ -855,13 +856,14 @@ struct ReportView: View {
             companies = [company]
             storedReports = [Self.uiTestReport(company: company)]
             updateFreeRiskAnalysisTrialStateFromCachedReports()
-            analyses = []
+            analyses = [Self.uiTestAnalysis]
             selectedBundle = nil
             selectedID = nil
             reportsLoadError = nil
             canLoadMoreStoredReports = false
             isLoadingMoreStoredReports = false
             isStoredReportsExpanded = true
+            isAnalysisSelectorExpanded = true
             return
         }
         #endif
@@ -941,7 +943,7 @@ struct ReportView: View {
     private static var uiTestCompany: Company {
         Company(
             id: UUID(uuidString: "00000000-0000-0000-0000-00000000c001")!,
-            userID: UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!,
+            userID: Self.uiTestUserID,
             name: "QA Aktif Firma",
             hazardClass: .high,
             logoPath: nil,
@@ -954,6 +956,10 @@ struct ReportView: View {
             createdAt: nil,
             updatedAt: nil
         )
+    }
+
+    private static var uiTestUserID: UUID {
+        UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!
     }
 
     private static func uiTestReport(company: Company) -> ReportRow {
@@ -973,6 +979,26 @@ struct ReportView: View {
             fileSize: 128_000,
             requestID: nil,
             supportID: nil,
+            createdAt: "2026-05-28T00:00:00Z"
+        )
+    }
+
+    private static var uiTestAnalysis: AnalysisRow {
+        AnalysisRow(
+            id: UUID(uuidString: "00000000-0000-0000-0000-00000000a201")!,
+            userID: Self.uiTestUserID,
+            companyID: Self.uiTestCompany.id,
+            title: "UI Test Rapor Kaynağı",
+            kind: "text",
+            canvas: "general",
+            status: "completed",
+            statusMessage: nil,
+            aiSummary: "UI test rapor oluşturma akışı için fixture analiz.",
+            totalScoreFK: 1_920,
+            totalScoreM5: 62,
+            highestBandFK: RiskLevel.critical.rawValue,
+            highestBandM5: RiskLevel.critical.rawValue,
+            findingCount: Finding.mock.count,
             createdAt: "2026-05-28T00:00:00Z"
         )
     }
@@ -1026,7 +1052,12 @@ struct ReportView: View {
             ).fullText
             return
         }
-        guard let userID = app.auth.session?.user.id else {
+        #if DEBUG
+        let fallbackUITestUserID = Self.usesUITestReportFixtures ? Self.uiTestUserID : nil
+        #else
+        let fallbackUITestUserID: UUID? = nil
+        #endif
+        guard let userID = app.auth.session?.user.id ?? fallbackUITestUserID else {
             errorMessage = AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated, context: "Rapor kaydedilemedi").fullText
             return
         }
@@ -1828,6 +1859,7 @@ private struct ReportAnalysisRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(RDPressableButtonStyle())
+        .accessibilityIdentifier("report.analysis.row.\(row.id.uuidString)")
     }
 
     private var level: RiskLevel {
@@ -1945,6 +1977,7 @@ private struct ReportArchiveFilterChip: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title), \(count) rapor")
+        .accessibilityIdentifier("report.archive.filter.\(title)")
     }
 }
 
@@ -2194,6 +2227,8 @@ private struct StoredReportRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .contentShape(Rectangle())
         .reportRowDepth()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("report.archive.row.\(report.id.uuidString)")
         .onTapGesture {
             action()
         }

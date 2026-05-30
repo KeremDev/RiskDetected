@@ -6,8 +6,17 @@ final class SupabaseService {
     static let shared = SupabaseService()
 
     let client: SupabaseClient
+    private let serverTrustPinningDelegate: ServerTrustPinningDelegate
+    private let pinnedSession: URLSession
 
     private init() {
+        serverTrustPinningDelegate = ServerTrustPinningDelegate()
+        pinnedSession = URLSession(
+            configuration: .default,
+            delegate: serverTrustPinningDelegate,
+            delegateQueue: nil
+        )
+
         client = SupabaseClient(
             supabaseURL: RDConfig.supabaseURL,
             supabaseKey: RDConfig.supabasePublishableKey,
@@ -15,7 +24,8 @@ final class SupabaseService {
                 auth: .init(
                     redirectToURL: RDConfig.Auth.redirectURL,
                     emitLocalSessionAsInitialSession: true
-                )
+                ),
+                global: .init(session: pinnedSession)
             )
         )
     }

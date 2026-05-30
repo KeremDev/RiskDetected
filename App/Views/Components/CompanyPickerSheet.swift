@@ -6,7 +6,7 @@ struct CompanyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     static func presentationDetents(for accessTier: SubscriptionTier) -> Set<PresentationDetent> {
-        accessTier.isPaid ? [.height(400), .large] : [.height(370)]
+        accessTier.isPaid ? [.height(360), .large] : [.height(370)]
     }
 
     let title: String
@@ -19,11 +19,15 @@ struct CompanyPickerSheet: View {
 
     @State private var companies: [Company] = []
     @State private var isLoading = false
+    @State private var loadErrorMessage: String?
     @State private var errorMessage: String?
     @State private var editorDraft = CompanyDraft()
     @State private var editorLogoImage: UIImage?
     @State private var isEditorPresented = false
     @State private var pendingArchive: Company?
+    #if DEBUG
+    @State private var fixtureCompanies: [Company] = []
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -94,19 +98,29 @@ struct CompanyPickerSheet: View {
     }
 
     private var paidContent: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            headerCard
+        VStack(alignment: .leading, spacing: 12) {
+            if shouldShowHeader {
+                headerCard
+            }
+
+            if allowNoCompany {
+                noCompanyRow
+            }
 
             if isLoading {
                 loadingCard
+            } else if let loadErrorMessage {
+                if shouldShowBlockingLoadError {
+                    loadErrorCard(loadErrorMessage)
+                } else {
+                    quietRetryButton
+                }
             } else if companies.isEmpty {
-                emptyCard
+                if !allowNoCompany {
+                    emptyCard
+                }
             } else {
                 VStack(spacing: 10) {
-                    if allowNoCompany {
-                        noCompanyRow
-                    }
-
                     ForEach(companies) { company in
                         companyRow(company)
                     }
@@ -115,6 +129,14 @@ struct CompanyPickerSheet: View {
 
             addCompanyButton
         }
+    }
+
+    private var shouldShowHeader: Bool {
+        !allowNoCompany || !companies.isEmpty
+    }
+
+    private var shouldShowBlockingLoadError: Bool {
+        !allowNoCompany
     }
 
     private var lockedContent: some View {
@@ -158,10 +180,10 @@ struct CompanyPickerSheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: 11))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("\(companies.count)/\(companyLimit) firma")
+                Text(companies.isEmpty ? "Firma seçimi" : "\(companies.count)/\(companyLimit) firma")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.rdBlack)
-                Text("Firma adı, logo ve tehlike sınıfı raporlarında kullanılacak.")
+                Text(companies.isEmpty ? "İstersen rapor aşamasında firma ekleyebilirsin." : "Seçili firma bilgileri raporda kullanılacak.")
                     .font(.system(size: 11))
                     .foregroundStyle(Color.rdSlate)
             }
@@ -171,6 +193,21 @@ struct CompanyPickerSheet: View {
         .background(Color.rdWhite)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rdLine, lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var quietRetryButton: some View {
+        Button {
+            Task { await loadCompanies() }
+        } label: {
+            Label("Firmaları yenile", systemImage: "arrow.clockwise")
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundStyle(Color.rdSlate)
+                .frame(maxWidth: .infinity)
+                .frame(height: 38)
+                .background(Color.rdFog.opacity(0.72))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
     }
 
     private var loadingCard: some View {
@@ -191,13 +228,72 @@ struct CompanyPickerSheet: View {
             Text("Henüz firma yok")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color.rdBlack)
-            Text("İlk firmayı buradan ekleyip analiz veya raporla eşleştirebilirsin.")
+            Text(allowNoCompany ? "İstersen firma eklemeden devam edebilir veya ilk firmayı buradan ekleyebilirsin." : "İlk firmayı buradan ekleyip analiz veya raporla eşleştirebilirsin.")
                 .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Color.rdWhite)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func loadErrorCard(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.rdCriticalText)
+                    .frame(width: 34, height: 34)
+                    .background(Color.rdCriticalBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Firmalar yüklenemedi")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(message)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Color.rdSlate)
+                        .lineLimit(2)
+                }
+            }
+
+            HStack(spacing: 8) {
+                Button {
+                    Task { await loadCompanies() }
+                } label: {
+                    Label("Tekrar dene", systemImage: "arrow.clockwise")
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                        .foregroundStyle(Color.rdBlack)
+                        .background(Color.rdFog)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+
+                if allowNoCompany {
+                    Button {
+                        guard allowsSelection else { return }
+                        onSelect(nil)
+                        dismiss()
+                    } label: {
+                        Text("Firma olmadan devam et")
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 38)
+                            .foregroundStyle(Color.white)
+                            .background(Color.rdOnyx)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(14)
+        .background(Color.rdWhite)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rdCritical.opacity(0.26), lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
@@ -209,12 +305,13 @@ struct CompanyPickerSheet: View {
         } label: {
             rowContent(
                 icon: "minus.circle",
-                title: "Firma seçmeden devam et",
-                subtitle: "Rapor aşamasında tekrar seçebilirsin.",
+                title: "Firma olmadan devam et",
+                subtitle: "İstersen rapor aşamasında seçebilirsin.",
                 isSelected: selectedCompanyID == nil
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("company_picker.no_company")
     }
 
     private func companyRow(_ company: Company) -> some View {
@@ -258,6 +355,7 @@ struct CompanyPickerSheet: View {
                     .background(Color.rdWhite)
                     .clipShape(RoundedRectangle(cornerRadius: 13))
             }
+            .accessibilityLabel("\(company.name) işlemleri")
         }
     }
 
@@ -279,15 +377,27 @@ struct CompanyPickerSheet: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 44)
-            .foregroundStyle(.white)
-            .background(Color.rdOnyx)
+            .foregroundStyle(addCompanyForeground)
+            .background(addCompanyBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(allowNoCompany ? Color.rdLine : Color.clear, lineWidth: 1)
+            )
             .clipShape(RoundedRectangle(cornerRadius: 14))
-            .shadow(color: Color.rdOnyx.opacity(0.12), radius: 10, x: 0, y: 5)
+            .shadow(color: Color.rdOnyx.opacity(allowNoCompany ? 0 : 0.12), radius: 10, x: 0, y: 5)
         }
         .buttonStyle(RDPressableButtonStyle())
         .disabled(companies.count >= companyLimit)
         .opacity(companies.count >= companyLimit ? 0.58 : 1)
         .accessibilityIdentifier("company_picker.add")
+    }
+
+    private var addCompanyForeground: Color {
+        allowNoCompany ? Color.rdBlack : .white
+    }
+
+    private var addCompanyBackground: Color {
+        allowNoCompany ? Color.rdWhite : Color.rdOnyx
     }
 
     private func rowContent(icon: String, title: String, subtitle: String, isSelected: Bool) -> some View {
@@ -333,30 +443,45 @@ struct CompanyPickerSheet: View {
         guard accessTier.isPaid else { return }
         #if DEBUG
         if Self.usesUITestCompanyFixtures {
-            companies = Self.uiTestCompanies
+            loadErrorMessage = nil
+            if fixtureCompanies.isEmpty {
+                fixtureCompanies = Self.uiTestCompanies
+            }
+            companies = fixtureCompanies.filter { !$0.isArchived }
             return
         }
         #endif
         isLoading = true
+        loadErrorMessage = nil
         defer { isLoading = false }
         do {
             companies = try await CompanyService.shared.listCompanies()
         } catch {
-            errorMessage = error.localizedDescription
+            companies = []
+            loadErrorMessage = error.localizedDescription
         }
     }
 
     private func save(_ draft: CompanyDraft, logo: UIImage?) async {
         do {
+            #if DEBUG
+            if Self.usesUITestCompanyFixtures {
+                let saved = saveFixtureCompany(draft)
+                await loadCompanies()
+                if allowsSelection {
+                    onSelect(saved)
+                    dismiss()
+                }
+                return
+            }
+            #endif
+
             var saved = try await CompanyService.shared.saveCompany(draft)
             if let logo {
                 let path = try await CompanyService.shared.uploadLogo(logo, companyID: saved.id)
-                let updatedDraft = CompanyDraft(
-                    id: saved.id,
-                    name: saved.name,
-                    hazardClass: saved.hazardClass,
-                    logoPath: path
-                )
+                var updatedDraft = draft
+                updatedDraft.id = saved.id
+                updatedDraft.logoPath = path
                 saved = try await CompanyService.shared.saveCompany(updatedDraft)
             }
             await loadCompanies()
@@ -373,6 +498,17 @@ struct CompanyPickerSheet: View {
         pendingArchive = nil
         Task {
             do {
+                #if DEBUG
+                if Self.usesUITestCompanyFixtures {
+                    archiveFixtureCompany(company)
+                    await loadCompanies()
+                    if selectedCompanyID == company.id {
+                        onSelect(nil)
+                    }
+                    return
+                }
+                #endif
+
                 try await CompanyService.shared.archiveCompany(company)
                 await loadCompanies()
                 if selectedCompanyID == company.id {
@@ -409,6 +545,51 @@ struct CompanyPickerSheet: View {
             )
         ]
     }
+
+    private func saveFixtureCompany(_ draft: CompanyDraft) -> Company {
+        let resolvedID = draft.id ?? UUID(uuidString: "00000000-0000-0000-0000-00000000c010")!
+        let company = Company(
+            id: resolvedID,
+            userID: UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!,
+            name: draft.trimmedName,
+            hazardClass: draft.hazardClass,
+            logoPath: draft.logoPath,
+            address: draft.address.nonEmptyForFixture,
+            contactPerson: draft.contactPerson.nonEmptyForFixture,
+            department: draft.department.nonEmptyForFixture,
+            defaultResponsible: draft.defaultResponsible.nonEmptyForFixture,
+            defaultDueDays: draft.defaultDueDays,
+            isArchived: false,
+            createdAt: nil,
+            updatedAt: nil
+        )
+        if let index = fixtureCompanies.firstIndex(where: { $0.id == resolvedID }) {
+            fixtureCompanies[index] = company
+        } else {
+            fixtureCompanies.insert(company, at: 0)
+        }
+        return company
+    }
+
+    private func archiveFixtureCompany(_ company: Company) {
+        guard let index = fixtureCompanies.firstIndex(where: { $0.id == company.id }) else { return }
+        let archived = Company(
+            id: company.id,
+            userID: company.userID,
+            name: company.name,
+            hazardClass: company.hazardClass,
+            logoPath: company.logoPath,
+            address: company.address,
+            contactPerson: company.contactPerson,
+            department: company.department,
+            defaultResponsible: company.defaultResponsible,
+            defaultDueDays: company.defaultDueDays,
+            isArchived: true,
+            createdAt: company.createdAt,
+            updatedAt: company.updatedAt
+        )
+        fixtureCompanies[index] = archived
+    }
     #endif
 }
 
@@ -426,7 +607,7 @@ private struct CompanyEditorSheet: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 16) {
                     logoSection
-                    field("Firma adı", text: $draft.name, placeholder: "Örn. ABC İnşaat")
+                    field("Firma adı", text: $draft.name, placeholder: "Örn. ABC İnşaat", identifier: "company.editor.name")
                     hazardSection
                     v2DetailsSection
                     defaultsSection
@@ -541,9 +722,9 @@ private struct CompanyEditorSheet: View {
             Text("Firma detayları")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color.rdSlate)
-            field("Adres", text: $draft.address, placeholder: "Şantiye, fabrika veya merkez adresi")
-            field("İlgili kişi", text: $draft.contactPerson, placeholder: "İSG sorumlusu veya firma yetkilisi")
-            field("Departman / ekip", text: $draft.department, placeholder: "Üretim, bakım, maden sahası...")
+            field("Adres", text: $draft.address, placeholder: "Şantiye, fabrika veya merkez adresi", identifier: "company.editor.address")
+            field("İlgili kişi", text: $draft.contactPerson, placeholder: "İSG sorumlusu veya firma yetkilisi", identifier: "company.editor.contact")
+            field("Departman / ekip", text: $draft.department, placeholder: "Üretim, bakım, maden sahası...", identifier: "company.editor.department")
         }
     }
 
@@ -552,8 +733,8 @@ private struct CompanyEditorSheet: View {
             Text("Rapor varsayılanları")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color.rdSlate)
-            field("Varsayılan sorumlu", text: $draft.defaultResponsible, placeholder: "Bakım ekibi, saha şefi...")
-            field("Varsayılan termin günü", text: $draft.defaultDueDaysText, placeholder: "Örn. 30", keyboardType: .numberPad)
+            field("Varsayılan sorumlu", text: $draft.defaultResponsible, placeholder: "Bakım ekibi, saha şefi...", identifier: "company.editor.responsible")
+            field("Varsayılan termin günü", text: $draft.defaultDueDaysText, placeholder: "Örn. 30", keyboardType: .numberPad, identifier: "company.editor.due_days")
             if !draft.defaultDueDaysText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                draft.defaultDueDays == nil || !(1...365).contains(draft.defaultDueDays ?? 0) {
                 Text("Termin günü 1-365 arasında olmalı.")
@@ -567,7 +748,8 @@ private struct CompanyEditorSheet: View {
         _ title: String,
         text: Binding<String>,
         placeholder: String,
-        keyboardType: UIKeyboardType = .default
+        keyboardType: UIKeyboardType = .default,
+        identifier: String? = nil
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
@@ -582,6 +764,7 @@ private struct CompanyEditorSheet: View {
                 .background(Color.rdWhite)
                 .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.rdLine, lineWidth: 1))
                 .clipShape(RoundedRectangle(cornerRadius: 13))
+                .accessibilityIdentifier(identifier ?? "company.editor.\(title)")
         }
     }
 
@@ -595,3 +778,12 @@ private struct CompanyEditorSheet: View {
         }
     }
 }
+
+#if DEBUG
+private extension String {
+    var nonEmptyForFixture: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}
+#endif

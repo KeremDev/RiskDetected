@@ -134,7 +134,6 @@ struct HomeView: View {
             await loadProfessionalProgress()
         }
         .onAppear {
-            applyCachedQuotaUsageIfAvailable()
             closeFreeQuotaEntryPointsIfNeeded()
             handlePendingQuickScanOnAppear()
             Task {
@@ -153,7 +152,6 @@ struct HomeView: View {
         }
         .onChange(of: app.currentTier) { _ in
             normalizeSelectedCanvasesForTier()
-            applyCachedQuotaUsageIfAvailable()
             closeFreeQuotaEntryPointsIfNeeded()
             Task { await loadQuotaUsage() }
         }
@@ -1260,13 +1258,14 @@ struct HomeView: View {
             quotaUsage = nil
             return
         }
-        applyCachedQuotaUsageIfAvailable()
         do {
             let usage = try await AnalysisService.shared.dailyQuotaUsage()
             quotaUsage = usage
             cacheQuotaUsage(usage)
         } catch {
-            if cachedQuotaUsageForCurrentUser() == nil {
+            if let cached = cachedQuotaUsageForCurrentUser() {
+                quotaUsage = cached
+            } else {
                 quotaUsage = nil
             }
         }
@@ -1397,7 +1396,7 @@ struct HomeView: View {
 
     private static var uiTestWeekStart: String {
         var calendar = Calendar(identifier: .iso8601)
-        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        calendar.timeZone = RDConfig.Quota.businessTimeZone
         let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
         let formatter = DateFormatter()
         formatter.calendar = calendar
@@ -1420,13 +1419,6 @@ struct HomeView: View {
         quotaUsage = usage
         cacheQuotaUsage(usage)
         closeFreeQuotaEntryPointsIfNeeded()
-    }
-
-    private func applyCachedQuotaUsageIfAvailable() {
-        guard !app.currentTier.isPaid,
-              let cached = cachedQuotaUsageForCurrentUser()
-        else { return }
-        quotaUsage = cached
     }
 
     private func closeFreeQuotaEntryPointsIfNeeded() {
@@ -1463,7 +1455,7 @@ struct HomeView: View {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        formatter.timeZone = RDConfig.Quota.businessTimeZone
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: Date())
     }

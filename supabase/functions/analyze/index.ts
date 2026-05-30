@@ -7,7 +7,6 @@
  *   canvases     : string[] (all selected; Free supports one, paid plans support multiple)
  *   text_input   : string | null
  *   company_id   : string | null (optional, Plus/Pro owned company)
- *   user_prompt  : string | null (optional, max 100 chars; user focus note)
  *   request_id   : string | null (client trace id)
  *   support_id   : string | null (user-facing support code)
  *   photo_paths  : string[] (Storage paths in "photos" bucket)
@@ -95,6 +94,7 @@ type OnboardingContext = {
 
 const PROMPT_VERSION = "isg-photo-personalized-v2026-05-20";
 const PERSONALIZATION_VERSION = "onboarding-v1";
+const BUSINESS_TIME_ZONE = "Europe/Istanbul";
 
 const PLAN_LIMITS: Record<PlanTier, {
   dailyStandardLimit?: number;
@@ -209,8 +209,7 @@ KALİTE FİLTRESİ — KAÇIN:
 - m5_probability: 1-5, m5_severity: 1-5`;
 
 const CANVAS_FOCUS: Record<string, string> = {
-  general:
-    "Görüntüdeki tüm görünür İSG uygunsuzluklarını tara; düşme, çarpma, sıkışma, elektrik, yangın, kimyasal, düzen-temizlik, KKD, işaretleme, acil çıkış ve çalışma alanı risklerini önceliklendir.",
+  general: "Standart saha taraması: ana tarama prosedürünü uygula.",
   ppe:
     "Baret, gözlük/yüz koruma, eldiven, iş ayakkabısı, reflektif yelek, solunum koruması, kulak koruması, emniyet kemeri ve kullanım/uygunluk eksiklerini değerlendir.",
   machine:
@@ -567,7 +566,7 @@ function normalizeAnalysisMode(
 
 function istanbulDayStartISO(): string {
   const day = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Istanbul",
+    timeZone: BUSINESS_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -577,6 +576,21 @@ function istanbulDayStartISO(): string {
 
 function buildSystemPrompt(): string {
   return CORE_ANALYSIS_PROMPT;
+}
+
+function buildUserTextInputBlock(userText: string): string {
+  return `<kullanici_metin_girdisi>
+METİN ANALİZİ TALİMATI:
+- Aşağıdaki metni saha gözlemi, uygunsuzluk notu veya denetim anlatımı gibi değerlendir.
+- Ana system prompttaki 7 katmanlı taramayı metne uyarla: zemin, KKD, yüksekte çalışma, elektrik, ekipman/kimyasal, acil durum ve eğitim/yetki eksenlerini sırayla sorgula.
+- Yalnızca metinde açıkça belirtilen veya güçlü şekilde ima edilen tehlikeleri bulguya dönüştür.
+- Fotoğraf kanıtı olmadığı için belirsiz noktaları uydurma; gerekiyorsa description içinde "(sahada doğrulanmalı)" tonunu kullan.
+- Metindeki iş, ortam, ekipman, yükseklik, kimyasal, çalışan davranışı, firma/alan veya sektör ipuçlarını risk önceliklendirmede kullan.
+- Kullanıcı metni kısa veya eksikse az ama güvenilir bulgu döndür; listeyi doldurmak için risk üretme.
+
+KULLANICI METNİ:
+${userText}
+</kullanici_metin_girdisi>`;
 }
 
 function buildSubscriptionContext(tier: PlanTier): string {
@@ -765,8 +779,11 @@ function buildAnalysisContext(params: {
   onboardingContext: OnboardingContext;
   companyContext: string | null;
 }): string {
-  const focusLines =
-    params.canvases.map((c) => CANVAS_FOCUS[c]).filter(Boolean).join(" ") ||
+  const focusLines = params.canvases
+    .filter((c) => c !== "general")
+    .map((c) => CANVAS_FOCUS[c])
+    .filter(Boolean)
+    .join(" ") ||
     CANVAS_FOCUS["general"];
 
   return `<analiz_baglami prompt_version="${PROMPT_VERSION}" personalization_version="${PERSONALIZATION_VERSION}">
@@ -806,7 +823,6 @@ async function callGemini(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   pool: "free" | "paid",
   tier: PlanTier,
@@ -819,14 +835,8 @@ async function callGemini(
   for (const img of imageBase64Parts) {
     parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
   }
-  if (userPrompt) {
-    parts.push({
-      text:
-        `Kullanıcının özel analiz talebi: ${userPrompt}\nBu talebi yalnızca görsel/metin kanıtları destekliyorsa önceliklendir; kanıt yoksa uydurma.`,
-    });
-  }
   if (userText) {
-    parts.push({ text: `Kullanıcı saha/metin girdisi: ${userText}` });
+    parts.push({ text: buildUserTextInputBlock(userText) });
   } else if (imageBase64Parts.length === 0) {
     throw new Error("En az bir fotoğraf veya metin girdisi gerekli.");
   }
@@ -888,7 +898,6 @@ async function callGroq(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   tier: PlanTier,
   simulation?: AISimulationConfig,
@@ -910,10 +919,7 @@ async function callGroq(
       text: [
         groqResponseSchemaInstruction(tier),
         analysisContext,
-        userPrompt
-          ? `Kullanıcının özel analiz talebi: ${userPrompt}\nBu talebi yalnızca görsel/metin kanıtları destekliyorsa önceliklendir; kanıt yoksa uydurma.`
-          : null,
-        userText ? `Kullanıcı saha/metin girdisi: ${userText}` : null,
+        userText ? buildUserTextInputBlock(userText) : null,
       ].filter(Boolean).join("\n\n"),
     },
   ];
@@ -1321,7 +1327,6 @@ async function callGeminiWithFallback(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   tier: PlanTier,
   simulation?: AISimulationConfig,
@@ -1345,7 +1350,6 @@ async function callGeminiWithFallback(
         systemPrompt,
         analysisContext,
         userText,
-        userPrompt,
         imageBase64Parts,
         keyConfig.pool,
         tier,
@@ -1393,7 +1397,6 @@ async function callFreeAIWithFallback(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
@@ -1405,7 +1408,6 @@ async function callFreeAIWithFallback(
       systemPrompt,
       analysisContext,
       userText,
-      userPrompt,
       imageBase64Parts,
       "free",
       simulation,
@@ -1442,7 +1444,6 @@ async function callFreeAIWithFallback(
       systemPrompt,
       analysisContext,
       userText,
-      userPrompt,
       imageBase64Parts,
       "free",
       simulation,
@@ -1464,7 +1465,6 @@ async function callPaidAIWithFallback(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   tier: PlanTier,
   simulation?: AISimulationConfig,
@@ -1477,7 +1477,6 @@ async function callPaidAIWithFallback(
       systemPrompt,
       analysisContext,
       userText,
-      userPrompt,
       imageBase64Parts,
       tier,
       simulation,
@@ -1514,7 +1513,6 @@ async function callPaidAIWithFallback(
       systemPrompt,
       analysisContext,
       userText,
-      userPrompt,
       imageBase64Parts,
       tier,
       simulation,
@@ -1537,7 +1535,6 @@ async function callFreePaidTrialAIWithFallback(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  userPrompt: string | null,
   imageBase64Parts: { mimeType: string; data: string }[],
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
@@ -1549,7 +1546,6 @@ async function callFreePaidTrialAIWithFallback(
       systemPrompt,
       analysisContext,
       userText,
-      userPrompt,
       imageBase64Parts,
       "plus",
       simulation,
@@ -1586,7 +1582,6 @@ async function callFreePaidTrialAIWithFallback(
         systemPrompt,
         analysisContext,
         userText,
-        userPrompt,
         imageBase64Parts,
         "plus",
         simulation,
@@ -1628,7 +1623,6 @@ async function callFreePaidTrialAIWithFallback(
         systemPrompt,
         analysisContext,
         userText,
-        userPrompt,
         imageBase64Parts,
         "plus",
         simulation,
@@ -2175,6 +2169,24 @@ async function sendAnalysisCompletePush(params: {
     );
     return;
   }
+  let pushResult: { status?: string } = {};
+  try {
+    pushResult = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    pushResult = {};
+  }
+  if (pushResult.status !== "sent") {
+    console.warn(
+      "Analysis completion push not sent",
+      JSON.stringify({
+        request_id: params.requestID,
+        support_id: params.supportID,
+        analysis_id: params.analysisID,
+        body: safeLogText(responseText),
+      }),
+    );
+    return;
+  }
 
   await params.supabase
     .from("analyses")
@@ -2182,16 +2194,6 @@ async function sendAnalysisCompletePush(params: {
     .eq("id", params.analysisID)
     .eq("user_id", params.userID)
     .is("completion_push_sent_at", null);
-}
-
-function sanitizedUserPrompt(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const cleaned = value
-    .replace(/[\u0000-\u001f\u007f]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 100);
-  return cleaned.length > 0 ? cleaned : null;
 }
 
 // deno-lint-ignore no-explicit-any
@@ -2343,7 +2345,6 @@ serve(async (req: Request) => {
     photo_paths = [],
     photo_base64_parts = [],
   } = body;
-  const userPrompt = sanitizedUserPrompt(body.user_prompt);
   const requestedCompanyID = typeof company_id === "string"
     ? company_id.trim()
     : "";
@@ -3012,8 +3013,6 @@ serve(async (req: Request) => {
     photo_persist_errors: photoPersistErrors,
     gemini_image_part_count: imageBase64Parts.length,
     text_input_present: Boolean(text_input),
-    user_prompt_present: Boolean(userPrompt),
-    user_prompt: userPrompt,
     analysis_mode: analysisMode,
     user_plan: planTier,
     quality_tier: qualityTier,
@@ -3082,7 +3081,6 @@ serve(async (req: Request) => {
         systemPrompt,
         analysisContext,
         text_input ?? null,
-        userPrompt,
         imageBase64Parts,
         aiSimulation,
         { requestID, supportID },
@@ -3095,7 +3093,6 @@ serve(async (req: Request) => {
         systemPrompt,
         analysisContext,
         text_input ?? null,
-        userPrompt,
         imageBase64Parts,
         aiSimulation,
         { requestID, supportID },
@@ -3106,7 +3103,6 @@ serve(async (req: Request) => {
         systemPrompt,
         analysisContext,
         text_input ?? null,
-        userPrompt,
         imageBase64Parts,
         planTier,
         aiSimulation,

@@ -32,6 +32,7 @@ enum RDConfig {
     static let syncRevenueCatSubscriptionFunctionName = "sync-revenuecat-subscription"
     static let supportContactFunctionName = "support-contact"
     static let sendWelcomeEmailFunctionName = "send-welcome-email"
+    static let accountDeletionRequestFunctionName = "request-account-deletion"
 
     /// RevenueCat client-side public SDK config. This key is intentionally public;
     /// subscription truth for backend limits must still be synced server-side.
@@ -54,6 +55,27 @@ enum RDConfig {
 
     enum Auth {
         static let redirectURL = URL(string: "io.supabase.riskdetected://login-callback")!
+    }
+
+    enum Security {
+        static let certificatePinningEnabled = true
+        static let pinnedHosts: Set<String> = [supabaseURL.host ?? ""]
+            .filter { !$0.isEmpty }
+            .reduce(into: Set<String>()) { $0.insert($1) }
+
+        // Supabase currently serves a Google Trust Services chain. Pin the stable
+        // intermediate/root certificates, not the short-lived leaf certificate.
+        static let pinnedCertificateSHA256Hashes: Set<String> = [
+            "HfwWBfutNY2LyET3bRUgP6ycpcGnn9SFf/ryhk++v5Y=", // Google Trust Services WE1
+            "drJ7gKWAJ9w88dpo2sFwEO2TmX0LYD4vrb6FASSTtac="  // GTS Root R4 cross-signed
+        ]
+    }
+
+    enum Quota {
+        static let businessTimeZoneIdentifier = "Europe/Istanbul"
+        static var businessTimeZone: TimeZone {
+            TimeZone(identifier: businessTimeZoneIdentifier) ?? .current
+        }
     }
 
     enum Features {

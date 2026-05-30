@@ -1698,6 +1698,7 @@ struct ReportSettingsSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("report.settings.company_select")
             } else {
                 Button {
                     onPaywall()
@@ -1752,9 +1753,9 @@ struct ReportSettingsSheet: View {
     private var identitySection: some View {
         settingsCardSection(title: "Hazırlayan bilgileri", icon: "person.text.rectangle.fill") {
             VStack(spacing: 10) {
-                labeledField("Hazırlayan", text: $options.preparedBy, placeholder: profile?.displayName ?? "Ad Soyad")
-                labeledField("Unvan", text: $options.preparedTitle, placeholder: profile?.title ?? "İSG Uzmanı")
-                labeledField("Belge no", text: $options.certificateNumber, placeholder: profile?.certificateNumber ?? "Sertifika / belge no")
+                labeledField("Hazırlayan", text: $options.preparedBy, placeholder: profile?.displayName ?? "Ad Soyad", identifier: "report.settings.prepared_by")
+                labeledField("Unvan", text: $options.preparedTitle, placeholder: profile?.title ?? "İSG Uzmanı", identifier: "report.settings.prepared_title")
+                labeledField("Belge no", text: $options.certificateNumber, placeholder: profile?.certificateNumber ?? "Sertifika / belge no", identifier: "report.settings.certificate")
             }
         }
     }
@@ -1802,8 +1803,8 @@ struct ReportSettingsSheet: View {
 
                 if showReportOverrides {
                     VStack(spacing: 10) {
-                        labeledField("Firma adı", text: $options.companyName, placeholder: selectedCompany?.name ?? profile?.companyName ?? "Firma adı")
-                        labeledField("Firma bilgisi", text: $options.companyInfo, placeholder: selectedCompany?.reportInfoText ?? profile?.phone ?? "Telefon veya kısa bilgi")
+                        labeledField("Firma adı", text: $options.companyName, placeholder: selectedCompany?.name ?? profile?.companyName ?? "Firma adı", identifier: "report.settings.company_name")
+                        labeledField("Firma bilgisi", text: $options.companyInfo, placeholder: selectedCompany?.reportInfoText ?? profile?.phone ?? "Telefon veya kısa bilgi", identifier: "report.settings.company_info")
                         companyLogoOverrideCard
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -1958,7 +1959,7 @@ struct ReportSettingsSheet: View {
         .buttonStyle(.plain)
     }
 
-    private func labeledField(_ title: String, text: Binding<String>, placeholder: String) -> some View {
+    private func labeledField(_ title: String, text: Binding<String>, placeholder: String, identifier: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(title)
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
@@ -1975,6 +1976,7 @@ struct ReportSettingsSheet: View {
                         .stroke(Color.rdLine, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                .accessibilityIdentifier(identifier ?? "report.settings.field.\(title)")
         }
     }
 }

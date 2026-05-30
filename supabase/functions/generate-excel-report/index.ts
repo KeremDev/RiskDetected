@@ -13,6 +13,7 @@ import XLSX from "npm:xlsx-js-style@1.2.0";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const BUSINESS_TIME_ZONE = "Europe/Istanbul";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -181,7 +182,7 @@ function monthlyReportLimit(tier: PlanTier): number | null {
 
 function istanbulMonthStartISO(): string {
   const day = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Istanbul",
+    timeZone: BUSINESS_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
   }).format(new Date());
@@ -295,6 +296,24 @@ async function sendReportReadyPush(params: {
     );
     return;
   }
+  let pushResult: { status?: string } = {};
+  try {
+    pushResult = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    pushResult = {};
+  }
+  if (pushResult.status !== "sent") {
+    console.warn(
+      "Report ready push not sent",
+      JSON.stringify({
+        request_id: params.requestID,
+        support_id: params.supportID,
+        report_id: params.reportID,
+        body: safeLogText(responseText),
+      }),
+    );
+    return;
+  }
 
   await params.supabase
     .from("reports")
@@ -327,7 +346,7 @@ function formatDate(raw: unknown): string {
   return new Intl.DateTimeFormat("tr-TR", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "Europe/Istanbul",
+    timeZone: BUSINESS_TIME_ZONE,
   }).format(date);
 }
 
@@ -2326,8 +2345,7 @@ serve(async (req: Request) => {
     if ((trialCount ?? 0) >= 1) {
       return json(429, {
         error: "free_risk_analysis_trial_exhausted",
-        message:
-          "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
+        message: "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
         request_id: requestID,
         support_id: supportID,
       });
@@ -2450,8 +2468,7 @@ serve(async (req: Request) => {
     if (message.includes("free_risk_analysis_trial_exhausted")) {
       return json(429, {
         error: "free_risk_analysis_trial_exhausted",
-        message:
-          "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
+        message: "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
         request_id: requestID,
         support_id: supportID,
       });

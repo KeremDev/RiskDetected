@@ -97,6 +97,28 @@
 
 ## Son Commit
 
+- Hash: `0c03fbd`
+- Mesaj: `Route free analyses through paid Gemini trial`
+- İçerik özeti:
+  - Free standart analiz route'u `free_paid_trial` olarak paid Gemini key pool'a alındı.
+  - Yetki/kota `planTier=free` olarak korunurken prompt/schema kalitesi `qualityTier=plus` oldu.
+  - Free paid trial fallback sırası maliyet kontrollü hale getirildi:
+    - `gemini-2.5-flash`
+    - tekrar `gemini-2.5-flash`
+    - `gemini-3.1-flash-lite`
+  - `gemini-2.5-pro` free paid trial kapsamından çıkarıldı.
+  - `ai_usage_logs` için `quality_tier` ve `ai_execution_route` telemetry migration'ı eklendi.
+  - Hybrid QA route/quality dağılımını raporlayacak şekilde güncellendi.
+  - Yeni QA scripti eklendi: `scripts/qa_free_paid_ai_routing.mjs`
+  - QA raporu eklendi: `QA/FreePaidAIRouting_QA_2026-05-29.md`
+- Remote/QA:
+  - Remote migration uygulandı.
+  - `analyze` Edge Function remote deploy edildi.
+  - `FREE_STANDARD_ANALYSIS_AI_ROUTE=paid_trial` secret doğrulandı.
+  - Worker bug bulundu ve düzeltildi: `analyze` function `--no-verify-jwt` ile deploy edildi; function içi auth kontrolü korunuyor.
+  - Canlı temp free kullanıcı E2E geçti: `PASS=40`, `WARN=1`, `FAIL=0`.
+  - Telemetry: `user_plan=free`, `quality_tier=plus`, `ai_execution_route=free_paid_trial`, `model=gemini-2.5-flash`, `api_key_alias=gemini_paid_primary`.
+
 - Hash: `9a2beea`
 - Mesaj: `Verify report quotas and polish app UI`
 - İçerik özeti:
@@ -105,6 +127,7 @@
 ## Son Commit Geçmişi
 
 ```text
+0c03fbd Route free analyses through paid Gemini trial
 9a2beea Verify report quotas and polish app UI
 53f45ec Fix UI test analysis result fixture
 12a7b11 Polish report flows and card depth

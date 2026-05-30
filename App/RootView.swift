@@ -2,11 +2,12 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var app: AppState
+    @EnvironmentObject private var network: NetworkMonitor
     @State private var appleSignInService = AppleSignInService()
     private let googleSignInService = GoogleSignInService()
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             Color.rdPaper.ignoresSafeArea()
 
             switch app.flow {
@@ -21,7 +22,8 @@ struct RootView: View {
                     onAuthGoogle: { runGoogleSignIn() },
                     onAuthEmail: {},
                     onSignInExisting: {},
-                    onPurchase: { plan, complete in purchaseOnboardingPlan(plan, onComplete: complete) }
+                    onPurchase: { plan, complete in purchaseOnboardingPlan(plan, onComplete: complete) },
+                    onRestorePurchases: { try await restoreOnboardingPurchases() }
                 )
                     .transition(.opacity)
             case .auth:
@@ -38,8 +40,17 @@ struct RootView: View {
                     .accessibilityElement(children: .ignore)
                     .accessibilityIdentifier("root.\(flowIdentifier)")
             }
+
+            if app.flow != .splash && !network.isOnline {
+                OfflineStatusBanner()
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(200)
+            }
         }
         .animation(.easeInOut(duration: 0.32), value: app.flow)
+        .animation(.easeInOut(duration: 0.22), value: network.isOnline)
     }
 
     private var flowIdentifier: String {
@@ -127,6 +138,11 @@ struct RootView: View {
         }
     }
 
+    private func restoreOnboardingPurchases() async throws -> Bool {
+        let restoredState = try await app.restoreSubscriptions()
+        return restoredState.tier.isPaid
+    }
+
     private func onboardingPackage(for plan: OBPlan) -> SubscriptionPlanPackage? {
         app.subscriptionPackages
             .filter { $0.tier == .plus }
@@ -145,6 +161,34 @@ struct RootView: View {
             lower.contains("cancelled") ||
             lower.contains("authentication session error 1") ||
             lower.contains("webauthenticationsession")
+    }
+}
+
+private struct OfflineStatusBanner: View {
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdCriticalText)
+
+            Text("Çevrimdışısın. Bazı veriler son kayıtlı haliyle görünebilir.")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdCritical.opacity(0.22), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: Color.rdOnyx.opacity(0.12), radius: 14, x: 0, y: 8)
+        .accessibilityIdentifier("network.offline_banner")
     }
 }
 
@@ -189,5 +233,7 @@ struct SplashView: View {
 }
 
 #Preview {
-    RootView().environmentObject(AppState())
+    RootView()
+        .environmentObject(AppState())
+        .environmentObject(NetworkMonitor.shared)
 }
