@@ -9,9 +9,9 @@ struct OBTrialInviteView: View {
 
     @State private var funnelSessionID = UUID()
     @State private var didLogView = false
-    // Phone deck swap state — every cycle, back phone slides forward and
-    // current front recedes to back. Creates a continuous shuffle loop.
-    @State private var swapped: Bool = false
+    // Phone deck state — every cycle, the next phone slides forward while
+    // the previous front recedes. Creates a continuous three-screen loop.
+    @State private var frontPhone: DeckPhone = .a
 
     var body: some View {
         ZStack {
@@ -86,8 +86,8 @@ struct OBTrialInviteView: View {
         .multilineTextAlignment(.center)
     }
 
-    // Centered phone mockup container — image asset slot for screenshot.
-    // Drop `TrialPreview` image into Assets.xcassets to fill.
+    // Centered phone mockup container — optional asset slots for screenshots.
+    // Drop `TrialPreviewA`, `TrialPreviewB` and `TrialPreviewC` into Assets.xcassets to fill.
     private var phonePreview: some View {
         ZStack {
             // Soft green glow behind phones
@@ -97,32 +97,51 @@ struct OBTrialInviteView: View {
                 .blur(radius: 50)
                 .offset(y: 160)
 
-            // Phone A — front when !swapped, back when swapped
-            phoneBezel
-                .scaleEffect(isFront(.a) ? 1.0 : 0.92)
-                .opacity(isFront(.a) ? 1.0 : 0.55)
-                .rotationEffect(.degrees(isFront(.a) ? 0 : -8))
-                .offset(x: isFront(.a) ? 0 : -32, y: isFront(.a) ? 0 : 12)
-                .zIndex(isFront(.a) ? 1 : 0)
-
-            // Phone B — front when swapped, back when !swapped
-            phoneBezel
-                .scaleEffect(isFront(.b) ? 1.0 : 0.92)
-                .opacity(isFront(.b) ? 1.0 : 0.55)
-                .rotationEffect(.degrees(isFront(.b) ? 0 : 8))
-                .offset(x: isFront(.b) ? 0 : 32, y: isFront(.b) ? 0 : 12)
-                .zIndex(isFront(.b) ? 1 : 0)
+            ForEach(DeckPhone.allCases) { phone in
+                let placement = deckPlacement(for: phone)
+                phoneBezel(for: phone)
+                    .scaleEffect(placement.scale)
+                    .opacity(placement.opacity)
+                    .rotationEffect(.degrees(placement.rotation))
+                    .offset(x: placement.xOffset, y: placement.yOffset)
+                    .zIndex(placement.zIndex)
+            }
         }
         .frame(maxWidth: .infinity)
         .onAppear { startSwapLoop() }
     }
 
-    private enum DeckPhone { case a, b }
+    private enum DeckPhone: Int, CaseIterable, Identifiable {
+        case a
+        case b
+        case c
 
-    private func isFront(_ phone: DeckPhone) -> Bool {
-        switch phone {
-        case .a: return !swapped
-        case .b: return swapped
+        var id: Int { rawValue }
+
+        var next: DeckPhone {
+            let nextRaw = (rawValue + 1) % Self.allCases.count
+            return Self(rawValue: nextRaw) ?? .a
+        }
+    }
+
+    private struct DeckPlacement {
+        let scale: CGFloat
+        let opacity: Double
+        let rotation: Double
+        let xOffset: CGFloat
+        let yOffset: CGFloat
+        let zIndex: Double
+    }
+
+    private func deckPlacement(for phone: DeckPhone) -> DeckPlacement {
+        let relativeIndex = (phone.rawValue - frontPhone.rawValue + DeckPhone.allCases.count) % DeckPhone.allCases.count
+        switch relativeIndex {
+        case 0:
+            return DeckPlacement(scale: 1.0, opacity: 1.0, rotation: 0, xOffset: 0, yOffset: 0, zIndex: 3)
+        case 1:
+            return DeckPlacement(scale: 0.90, opacity: 0.46, rotation: 8, xOffset: 38, yOffset: 14, zIndex: 1)
+        default:
+            return DeckPlacement(scale: 0.90, opacity: 0.46, rotation: -8, xOffset: -38, yOffset: 14, zIndex: 0)
         }
     }
 
@@ -131,13 +150,13 @@ struct OBTrialInviteView: View {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 2_400_000_000)
                 withAnimation(.spring(response: 0.85, dampingFraction: 0.78)) {
-                    swapped.toggle()
+                    frontPhone = frontPhone.next
                 }
             }
         }
     }
 
-    private var phoneBezel: some View {
+    private func phoneBezel(for phone: DeckPhone) -> some View {
         RoundedRectangle(cornerRadius: 38, style: .continuous)
             .fill(Color(hex: "#16191A"))
             .frame(width: 230, height: 460)
@@ -150,7 +169,7 @@ struct OBTrialInviteView: View {
                 RoundedRectangle(cornerRadius: 30, style: .continuous)
                     .fill(Color(hex: "#0B0D0E"))
                     .overlay(
-                        screenContent
+                        screenContent(for: phone)
                             .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
                     )
                     .padding(10)
@@ -166,13 +185,22 @@ struct OBTrialInviteView: View {
     // Screen mockup — image asset takes priority if available, else
     // shows a branded fallback preview (logo + mini risk card stack).
     @ViewBuilder
-    private var screenContent: some View {
-        if UIImage(named: "TrialPreview") != nil {
-            Image("TrialPreview")
+    private func screenContent(for phone: DeckPhone) -> some View {
+        let assetName = trialPreviewAssetName(for: phone)
+        if UIImage(named: assetName) != nil {
+            Image(assetName)
                 .resizable()
                 .scaledToFill()
         } else {
             fallbackScreenPreview
+        }
+    }
+
+    private func trialPreviewAssetName(for phone: DeckPhone) -> String {
+        switch phone {
+        case .a: return "TrialPreviewA"
+        case .b: return "TrialPreviewB"
+        case .c: return "TrialPreviewC"
         }
     }
 

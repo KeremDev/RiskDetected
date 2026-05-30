@@ -7,9 +7,9 @@ final class LegalAcceptanceService {
     static let shared = LegalAcceptanceService()
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "LegalAcceptance")
 
-    static let kvkkVersion = "kvkk-2026-05-08"
-    static let termsVersion = "terms-2026-05-08"
-    static let aiProcessingVersion = "ai-photo-text-processing-2026-05-08"
+    static let kvkkVersion = "kvkk-2026-05-30"
+    static let termsVersion = "terms-2026-05-30"
+    static let aiProcessingVersion = "ai-photo-text-processing-2026-05-30"
 
     private let supabase = SupabaseService.shared
     private var recordedUsers = Set<UUID>()

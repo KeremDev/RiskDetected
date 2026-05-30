@@ -26,29 +26,31 @@ struct LegalInfoSheet: View {
     }
 
     private var documentTabs: some View {
-        HStack(spacing: 8) {
-            ForEach(LegalDocumentKind.allCases) { kind in
-                let active = selectedDocument == kind
-                Button {
-                    selectedDocument = kind
-                    UISelectionFeedbackGenerator().selectionChanged()
-                } label: {
-                    Text(kind.shortTitle)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                        .foregroundStyle(active ? Color.white : Color.rdCharcoal)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 38)
-                        .background(active ? Color.rdSelected : Color.rdWhite)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(active ? Color.rdGreen.opacity(0.55) : Color.rdLine, lineWidth: active ? 1.4 : 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(LegalDocumentKind.allCases) { kind in
+                    let active = selectedDocument == kind
+                    Button {
+                        selectedDocument = kind
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    } label: {
+                        Text(kind.shortTitle)
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.82)
+                            .foregroundStyle(active ? Color.white : Color.rdCharcoal)
+                            .padding(.horizontal, 14)
+                            .frame(height: 38)
+                            .background(active ? Color.rdSelected : Color.rdWhite)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(active ? Color.rdGreen.opacity(0.55) : Color.rdLine, lineWidth: active ? 1.4 : 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(RDPressableButtonStyle())
+                    .accessibilityLabel("\(kind.title) belgesini göster")
                 }
-                .buttonStyle(RDPressableButtonStyle())
-                .accessibilityLabel("\(kind.title) belgesini göster")
             }
         }
     }
@@ -101,32 +103,40 @@ private struct LegalDocumentReader: View {
 
 private enum LegalDocumentKind: String, CaseIterable, Identifiable {
     case kvkk
+    case consent
     case terms
     case privacy
+    case cookies
 
     var id: String { rawValue }
 
     var shortTitle: String {
         switch self {
         case .kvkk: return "KVKK"
+        case .consent: return "Rıza"
         case .terms: return "Koşullar"
         case .privacy: return "Gizlilik"
+        case .cookies: return "Çerez"
         }
     }
 
     var title: String {
         switch self {
-        case .kvkk: return "KVKK Aydınlatma ve Açık Rıza Metni"
+        case .kvkk: return "KVKK Aydınlatma Metni"
+        case .consent: return "Açık Rıza Beyanı"
         case .terms: return "Kullanım Koşulları"
         case .privacy: return "Gizlilik Politikası"
+        case .cookies: return "Çerez Politikası"
         }
     }
 
     var fileName: String {
         switch self {
         case .kvkk: return "KVKK-Aydinlatma-ve-Acik-Riza-Metni"
+        case .consent: return "Acik-Riza-Beyani"
         case .terms: return "Kullanim-Kosullari"
         case .privacy: return "Gizlilik-Politikasi"
+        case .cookies: return "Cerez-Politikasi"
         }
     }
 

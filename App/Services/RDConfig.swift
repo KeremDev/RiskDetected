@@ -14,6 +14,8 @@ enum RDConfig {
         static let privacyPolicyURL = URL(string: "https://riskdetected.com/gizlilik")!
         static let termsURL = URL(string: "https://riskdetected.com/kullanim-kosullari")!
         static let kvkkURL = URL(string: "https://riskdetected.com/kvkk")!
+        static let explicitConsentURL = URL(string: "https://riskdetected.com/acik-riza")!
+        static let cookiePolicyURL = URL(string: "https://riskdetected.com/cerez-politikasi")!
     }
 
     /// Supabase proje URL'i.

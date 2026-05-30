@@ -1,9 +1,9 @@
-# RiskDetected KVKK Aydınlatma Metni ve Açık Rıza Beyanı
+# RiskDetected KVKK Aydınlatma Metni
 
-Yürürlük tarihi: 8 Mayıs 2026
-Belge sürümü: kvkk-2026-05-08
+Yürürlük tarihi: 30 Mayıs 2026
+Belge sürümü: kvkk-2026-05-30
 
-Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında RiskDetected kullanıcılarını kişisel verilerin işlenmesi hakkında bilgilendirmek ve gerekli hallerde açık rıza almak amacıyla hazırlanmıştır.
+Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında RiskDetected mobil uygulaması ve bağlantılı hizmetlerde kişisel verilerin nasıl işlendiğini açıklar. Açık rızaya dayalı işlemler ayrıca "Açık Rıza Beyanı" içinde sunulur.
 
 Veri sorumlusu ve iletişim bilgileri:
 
@@ -14,158 +14,119 @@ Veri sorumlusu ve iletişim bilgileri:
 - Web sitesi: https://riskdetected.com
 - VERBİS durumu: Değerlendirme aşamasında
 
-## 1. Veri sorumlusu
+## 1. Kapsam
 
-Kişisel verileriniz, RiskDetected hizmetini sunan Riskdetected tarafından veri sorumlusu sıfatıyla işlenir.
+RiskDetected; fotoğraf veya metin üzerinden iş sağlığı ve güvenliği odaklı yapay zeka analizi, risk/bulgu üretimi, raporlama, firma takibi, mesleki ilerleme ve abonelik yönetimi sunar. Uygulama resmi denetim, hukuki uygunluk garantisi veya iş güvenliği uzmanı yerine geçen bir karar mekanizması değildir.
 
 ## 2. İşlenen kişisel veriler
 
-RiskDetected kapsamında aşağıdaki kişisel veri kategorileri işlenebilir:
+RiskDetected kapsamında aşağıdaki veri kategorileri işlenebilir:
 
-- Kimlik ve hesap verileri: kullanıcı ID, üyelik bilgileri, hesap durumu.
-- İletişim verileri: e-posta, telefon, destek mesajları.
-- Müşteri işlem verileri: analiz kayıtları, raporlar, abonelik durumu, kota kullanımı, talep/şikayet kayıtları.
-- İşlem güvenliği verileri: IP adresi, oturum kayıtları, cihaz/uygulama bilgisi, hata kayıtları, işlem zamanı.
-- Görsel ve işitsel kayıt/görsel içerik verileri: yüklenen fotoğraflar, fotoğraftaki kişiler, yüzler, çalışma alanı, ekipman, firma adı, logo, tabela, plaka, mekan ve benzeri görsel bilgiler.
-- Mesleki/iş alanı verileri: kullanıcı tarafından girilen tesis, işyeri, görev, rapor başlığı, saha veya şirket bilgileri.
-- Finansal/abonelik verileri: Apple üzerinden doğrulanan ürün, abonelik, ödeme durumu ve işlem bilgileri.
-- Hukuki işlem verileri: onay kayıtları, sözleşme sürümleri, başvurular, uyuşmazlık ve denetim kayıtları.
+- Hesap ve kimlik verileri: kullanıcı ID, ad-soyad, profil adı, avatar, giriş yöntemi, hesap durumu.
+- İletişim verileri: e-posta, destek mesajları, isteğe bağlı telefon veya firma iletişim bilgileri.
+- Onboarding ve mesleki bağlam verileri: uzmanlık sınıfı, tehlike sınıfı, sektörler, çalışma alanı, analiz sıklığı, kullanım amacı ve benzeri yanıtlar.
+- Analiz verileri: fotoğraflar, metin girdileri, seçilen canvas/analiz odağı, analiz modu, AI çıktıları, bulgular, risk seviyeleri, kök neden, önerilen aksiyon, referans bilgileri, skorlar ve analiz durumu.
+- Görsel içerik verileri: çalışan/ziyaretçi görüntüsü, yüz, iş kıyafeti, KKD, ekipman, makine, tabela, logo, plaka, tesis, fabrika, maden, inşaat alanı veya görselde bulunan diğer bilgiler.
+- Rapor verileri: PDF/XLSX çıktıları, rapor başlığı, rapor türü, risk tablosu, firma bilgisi, firma logosu, hazırlayan bilgisi, belge numarası ve paylaşım/indirme kayıtları.
+- Firma yönetimi verileri: firma adı, tehlike sınıfı, logo, adres, ilgili kişi, departman, varsayılan sorumlu, termin günü, arşiv durumu.
+- Abonelik ve kota verileri: Free/Plus/Pro plan durumu, hak/kota kullanımı, RevenueCat/App Store ürün ve işlem bilgileri, deneme hakkı ve yenileme/iptal olayları. Kart bilgileri RiskDetected tarafından saklanmaz.
+- Mesleki ilerleme verileri: MDP puanı, uygulama içi ünvan, rozet, yetkinlik alanları, bulgu sınıflandırmaları, haftalık takip, aktif gün, başarı mesajları ve ilgili istatistikler.
+- Bildirim verileri: APNs cihaz tokenı, bildirim tercihleri, gönderim durumu, hata kayıtları ve bildirim olayları.
+- Teknik ve işlem güvenliği verileri: IP adresi, cihaz/uygulama bilgisi, oturum kayıtları, destek ID, request ID, hata kodları, performans, model/provider, token sayısı, fallback ve AI kullanım logları.
+- Hukuki işlem verileri: KVKK/sözleşme/onay kayıtları, başvuru, uyuşmazlık, hesap silme ve veri imha kayıtları.
 
-Fotoğraflarda tesadüfen veya kullanıcı tercihiyle özel nitelikli kişisel veriler de yer alabilir. Örneğin sağlık durumuna işaret eden yaralanma, engellilik, kişisel koruyucu donanım eksikliğiyle bağlantılı sağlık riski, din/siyasi görüş/sendika üyeliği gibi dolaylı veri, çocuk görüntüsü veya başka hassas bilgi görünebilir. RiskDetected bu verileri özel olarak talep etmez; ancak kullanıcı tarafından yüklenen görselin içeriği analiz sırasında işlenebilir.
+Fotoğraflar özel nitelikli kişisel veri içerebilir. Örneğin sağlık durumu, yaralanma, engellilik, dini/siyasi/sendikal semboller, çocuk görüntüsü veya benzeri hassas bilgiler görünebilir. RiskDetected bu verileri özellikle talep etmez; ancak kullanıcı tarafından yüklenen içerikte bulunursa analiz ve raporlama amacıyla sınırlı şekilde işlenebilir.
 
-RiskDetected yüz tanıma, benzersiz kişi teşhisi veya biyometrik kimlik doğrulama amacıyla hizmet sunmaz. Fotoğrafta yüz bulunması tek başına biyometrik kimlik doğrulama amacı anlamına gelmez; ancak yüz ve diğer görsel bilgiler kişisel veri niteliğinde olabilir.
+RiskDetected yüz tanıma, biyometrik kimlik doğrulama veya kişiyi benzersiz şekilde teşhis etme amacıyla hizmet sunmaz.
 
-## 3. Kişisel veri işleme amaçları
+## 3. İşleme amaçları
 
 Kişisel veriler şu amaçlarla işlenir:
 
-- Kullanıcı hesabı oluşturmak ve oturum güvenliğini sağlamak.
-- Fotoğraf/metin üzerinden AI destekli risk, tehlike ve önlem analizi üretmek.
-- Analiz sonuçlarını, bulguları ve raporları kullanıcı hesabında göstermek.
-- PDF raporu oluşturmak, saklamak, indirmek ve silmek.
-- Ücretsiz/Pro özellikleri, kota ve abonelik erişimini yönetmek.
-- Kullanıcı destek, itiraz, veri erişim, silme ve hesap kapatma taleplerini karşılamak.
-- Kötüye kullanım, yetkisiz erişim, güvenlik ihlali ve dolandırıcılığı önlemek.
-- Hata giderme, servis sürekliliği, teknik bakım ve ürün iyileştirme yapmak.
-- Hukuki yükümlülükleri yerine getirmek, denetim ve uyuşmazlık süreçlerini yürütmek.
-- Açık rızanız varsa yurt dışındaki AI/bulut altyapıları üzerinden analiz ve saklama süreçlerini yürütmek.
+- Hesap oluşturmak, oturum güvenliğini sağlamak ve kullanıcıyı tanımak.
+- Fotoğraf/metin üzerinden AI destekli risk, tehlike, önlem ve rapor çıktısı üretmek.
+- Analizleri, bulguları, firma bilgilerini, PDF/XLSX raporlarını ve arşivleri kullanıcı hesabına bağlamak.
+- Free/Plus/Pro kota, abonelik, deneme hakkı ve özellik erişimini yönetmek.
+- Profil avatarı, firma logosu, rapor şablonu ve rapor firması gibi isteğe bağlı içerikleri göstermek.
+- Mesleki ilerleme modülünde MDP, ünvan, rozet, yetkinlik haritası, haftalık takip ve başarı mesajlarını hesaplamak.
+- Bildirim tercihlerini yönetmek ve analiz/rapor/hesap/progress bildirimleri göndermek.
+- Hata giderme, güvenlik, kötüye kullanım önleme, servis sürekliliği, maliyet kontrolü ve kalite izleme yapmak.
+- Destek, veri erişimi, veri silme, hesap kapatma ve hukuki talepleri karşılamak.
+- Hukuki yükümlülükleri, denetim ve uyuşmazlık süreçlerini yürütmek.
+
+Kullanıcı içerikleri açık izin olmadan reklamda, kamuya açık tanıtımda veya üçüncü kişilere bağımsız profil çıkarma amacıyla kullanılmaz.
 
 ## 4. Hukuki sebepler
 
 Kişisel veriler KVKK'nın 5. maddesi kapsamında aşağıdaki hukuki sebeplerle işlenebilir:
 
-- Bir sözleşmenin kurulması veya ifası için gerekli olması: üyelik, analiz, rapor ve abonelik hizmetlerinin sunulması.
-- Veri sorumlusunun hukuki yükümlülüğünü yerine getirmesi: mevzuat, denetim, resmi kurum talepleri ve kayıt yükümlülükleri.
-- Bir hakkın tesisi, kullanılması veya korunması: uyuşmazlık, itiraz, destek, ispat ve hukuki savunma süreçleri.
-- İlgili kişinin temel hak ve özgürlüklerine zarar vermemek kaydıyla meşru menfaat: güvenlik, hata giderme, kötüye kullanım önleme, hizmet kalitesi.
-- Açık rıza: fotoğraf/metin içeriğinin AI sağlayıcıları üzerinden işlenmesi, özel nitelikli veri içerebilecek görsellerin analiz edilmesi, yurt dışı aktarım ve zorunlu olmayan ürün geliştirme/iletişim faaliyetleri.
-
-Özel nitelikli kişisel veriler bakımından KVKK'nın 6. maddesi ve ilgili ikincil düzenlemeler dikkate alınır. RiskDetected özel nitelikli veri toplama amacıyla tasarlanmamıştır; ancak kullanıcı tarafından yüklenen fotoğraf özel nitelikli veri içerebileceğinden, bu görsellerin analiz edilmesi için ayrıca açık rıza alınması gerekebilir.
+- Sözleşmenin kurulması veya ifası: üyelik, analiz, rapor, abonelik ve destek hizmetlerinin sunulması.
+- Hukuki yükümlülük: mevzuat, resmi kurum talepleri, muhasebe/abonelik kayıtları ve denetim yükümlülükleri.
+- Bir hakkın tesisi, kullanılması veya korunması: uyuşmazlık, destek, güvenlik, ispat ve savunma süreçleri.
+- Meşru menfaat: güvenlik, hata giderme, kötüye kullanım önleme, servis kalitesi, maliyet ve performans takibi.
+- Açık rıza: özel nitelikli veri içerebilecek görsellerin analizi, yurt dışı aktarımın açık rızaya dayandığı haller, zorunlu olmayan pazarlama iletişimi ve benzeri faaliyetler.
 
 ## 5. Toplama yöntemi
 
-Kişisel veriler:
+Veriler; uygulamaya kayıt/giriş, onboarding, fotoğraf çekme veya galeriden seçme, metin girme, analiz başlatma, canvas/rapor/firma seçimi, rapor oluşturma/indirme, profil fotoğrafı veya firma logosu yükleme, bildirim izni verme, abonelik satın alma, destek talebi ve uygulama içi teknik loglar yoluyla otomatik veya kısmen otomatik olarak elektronik ortamda toplanır.
 
-- Uygulamaya üye olurken veya giriş yaparken,
-- Fotoğraf çekip/yüklerken, metin girerken veya analiz başlatırken,
-- Rapor oluştururken veya indirirken,
-- Uygulama içi işlemler, loglar, hata kayıtları ve güvenlik kayıtları oluşurken,
-- Apple abonelik/satın alma doğrulama süreçlerinde,
-- Destek, başvuru veya iletişim talepleriniz sırasında
+## 6. Aktarım yapılan taraflar
 
-otomatik veya kısmen otomatik yollarla elektronik ortamda toplanır.
+Kişisel veriler amaçla sınırlı ve gerekli ölçüde aşağıdaki alıcı gruplarına aktarılabilir:
 
-## 6. Aktarılan taraflar ve aktarım amaçları
-
-Kişisel veriler, amaçla sınırlı ve gerekli ölçüde aşağıdaki alıcı gruplarına aktarılabilir:
-
-- Bulut, veri tabanı, dosya saklama ve kimlik doğrulama sağlayıcıları.
-- Yapay zeka analiz sağlayıcıları.
-- Apple ve App Store ödeme/abonelik altyapısı.
-- Hukuki, mali, teknik ve güvenlik danışmanları.
+- Supabase: kimlik doğrulama, veri tabanı, dosya saklama, edge functions ve teknik altyapı.
+- Google Gemini/Google AI ve gerektiğinde Groq: AI analiz yanıtı üretimi ve süreklilik/fallback.
+- Apple App Store ve RevenueCat: abonelik, satın alma, deneme, entitlement ve ödeme doğrulama.
+- Apple Push Notification service (APNs): bildirim gönderimi.
+- Google Sign-In ve Apple Sign-In: tercih edilen giriş yöntemi kullanıldığında kimlik doğrulama.
+- Teknik destek, güvenlik, hukuki ve mali danışmanlar.
 - Yetkili kamu kurumları, mahkemeler ve düzenleyici otoriteler.
-- Kullanıcının talimatıyla rapor paylaşılan üçüncü kişiler.
-
-Mevcut teknik sağlayıcılar arasında Supabase, Google Gemini/Google AI ve Groq gibi üçüncü taraf AI sağlayıcıları bulunabilir. Bu sağlayıcılar fotoğraf/metin içeriğini risk analizi yanıtı üretmek için işleyebilir. Sağlayıcı listesi değişirse Gizlilik Politikası ve/veya bu metin güncellenmelidir.
+- Kullanıcının talimatıyla rapor veya analiz paylaşılan üçüncü kişiler.
 
 ## 7. Yurt dışına aktarım
 
-AI analizi, bulut barındırma, dosya saklama, kimlik doğrulama, teknik destek veya hata giderme süreçlerinde kişisel veriler Türkiye dışında bulunan hizmet sağlayıcılarına aktarılabilir veya bu sağlayıcılar tarafından yurt dışında işlenebilir.
+AI sağlayıcıları, bulut altyapısı, dosya saklama, abonelik doğrulama, kimlik doğrulama, bildirim, teknik destek ve hata giderme süreçlerinde kişisel veriler Türkiye dışında bulunan hizmet sağlayıcılarına aktarılabilir veya bu sağlayıcılar tarafından yurt dışında işlenebilir.
 
-Yurt dışına aktarım, KVKK'nın 9. maddesi uyarınca uygunluk kararı, uygun güvenceler, standart sözleşmeler, bağlayıcı şirket kuralları veya kanunda öngörülen diğer aktarım mekanizmaları kapsamında yürütülmelidir. Bu mekanizmaların bulunmadığı hallerde ve kanunen gerekli olduğu ölçüde, açık rızanız alınabilir.
+Yurt dışına aktarım KVKK'nın 9. maddesindeki mekanizmalar, uygun güvenceler, standart sözleşmeler, istisnalar veya gerekli olduğu hallerde açık rıza kapsamında yürütülür. Kullanıcı, açık rızaya dayalı aktarımı dilediği zaman geri çekebilir; bu durumda bazı analiz veya rapor özellikleri teknik olarak sunulamayabilir.
 
 ## 8. Saklama ve imha
 
-RiskDetected saklama politikası:
+Güncel saklama ilkeleri:
 
-- Free kullanıcı analiz fotoğrafları: 30 gün.
-- Pro kullanıcı analiz fotoğrafları: 365 gün.
-- Ham AI yanıtları: 30 gün.
-- Analiz bulguları ve sonuçları: kullanıcı silene, hesap kapatılana veya işleme amacı sona erene kadar.
-- PDF raporları: kullanıcı silene, hesap kapatılana veya işleme amacı sona erene kadar.
-- Onay ve sözleşme kabul kayıtları: hukuki ispat ve denetim için gerekli süre boyunca.
-- Destek, başvuru ve uyuşmazlık kayıtları: yasal zamanaşımı ve ispat süreleri boyunca.
+- Free analiz fotoğrafları: 7 gün.
+- Plus analiz fotoğrafları: 30 gün.
+- Pro analiz fotoğrafları: kullanıcı hesabı aktif olduğu sürece veya kullanıcı silene kadar; teknik/imha süreçleri saklıdır.
+- Ham AI yanıtları ve AI denetim kayıtları: 30 gün.
+- Analiz sonuçları, bulgular, MDP/progress kayıtları ve raporlar: kullanıcı silene, hesap kapatılana veya işleme amacı sona erene kadar.
+- Profil avatarı, firma logosu ve firma kayıtları: kullanıcı silene, arşivleyene veya hesap kapatılana kadar.
+- Bildirim tokenları ve tercihleri: kullanıcı bildirimleri kapatana, çıkış yapana, hesap kapatılana veya token geçersizleşene kadar.
+- Abonelik ve işlem kayıtları: hukuki, mali ve App Store uyuşmazlık süreleri boyunca.
+- Onay/sözleşme kabul kayıtları: ispat ve denetim için gerekli süre boyunca.
+- Destek, başvuru ve hesap silme kayıtları: talebin niteliğine göre yasal zamanaşımı ve ispat süreleri boyunca.
 
-Saklama süresi dolan kişisel veriler silinir, yok edilir veya anonim hale getirilir. Teknik yedekler ve loglar, sistem güvenliği ve iş sürekliliği için makul sürelerle tutulabilir.
+Süre dolduğunda veya kullanıcı silme talebi verdiğinde veriler silinir, yok edilir veya anonim hale getirilir. Teknik yedekler ve güvenlik logları makul sürelerle kalabilir.
 
-## 9. İlgili kişinin KVKK madde 11 kapsamındaki hakları
+## 9. Kullanıcıların üçüncü kişi verileri bakımından sorumluluğu
 
-KVKK'nın 11. maddesi uyarınca:
+Yüklenen fotoğraf, metin, firma bilgisi, logo veya raporlarda çalışan, müşteri, ziyaretçi, işveren, tesis sahibi ya da başka üçüncü kişilere ait kişisel veri, ticari sır veya gizli bilgi bulunabilir. Bu verileri yüklemeden önce gerekli bilgilendirme, izin, açık rıza, işveren/tesis onayı ve mevzuat yükümlülüklerini yerine getirmek kullanıcının sorumluluğundadır.
 
-- Kişisel verilerinizin işlenip işlenmediğini öğrenme,
-- İşlenmişse buna ilişkin bilgi talep etme,
-- İşleme amacını ve amaca uygun kullanılıp kullanılmadığını öğrenme,
-- Yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme,
-- Eksik veya yanlış işlenmişse düzeltilmesini isteme,
-- KVKK'da öngörülen şartlar çerçevesinde silinmesini veya yok edilmesini isteme,
-- Düzeltme/silme/yok etme işlemlerinin verilerin aktarıldığı üçüncü kişilere bildirilmesini isteme,
-- Münhasıran otomatik sistemlerle analiz sonucu aleyhinize bir sonucun ortaya çıkmasına itiraz etme,
-- Kanuna aykırı işleme nedeniyle zarara uğramanız halinde zararın giderilmesini talep etme
+## 10. KVKK madde 11 kapsamındaki haklar
 
-haklarına sahipsiniz.
+KVKK'nın 11. maddesi uyarınca kişisel verilerinizin işlenip işlenmediğini öğrenme, bilgi talep etme, amaca uygun kullanılıp kullanılmadığını öğrenme, aktarıldığı tarafları bilme, düzeltme, silme/yok etme, aktarılan üçüncü kişilere bildirilmesini isteme, otomatik sistemlerle aleyhinize sonuç çıkmasına itiraz etme ve kanuna aykırı işleme nedeniyle zararın giderilmesini talep etme haklarına sahipsiniz.
 
-Başvurularınızı info@riskdetected.com e-posta adresi veya Eskişehir adresi üzerinden iletebilirsiniz. Başvurular mevzuatta öngörülen sürelerde sonuçlandırılır.
+Başvurularınızı info@riskdetected.com adresine veya Eskişehir adresine iletebilirsiniz. Uygulama içinde Profil > Destek ve hesap/veri işlemleri ekranları da kullanılabilir.
 
-## 10. Kullanıcıların üçüncü kişi verileri bakımından sorumluluğu
+## 11. Otomatik işlem ve AI karar desteği
 
-RiskDetected'e yüklediğiniz fotoğraf veya metinlerde üçüncü kişilerin kişisel verileri, çalışan görüntüsü, müşteri/ziyaretçi görüntüsü, firma adı, logo, tesis bilgisi veya ticari sır bulunabilir. Bu verileri yüklemeden önce:
-
-- İlgili kişileri/kurumları bilgilendirmeli,
-- Gerekliyse açık rıza veya izin almalısınız,
-- İşveren, müşteri, tesis sahibi veya sözleşme kurallarına uygun hareket etmelisiniz,
-- Gereksiz kişisel veya gizli bilgileri kadraj dışında bırakmalı ya da maskelemelisiniz.
-
-Bu yükümlülüklerin yerine getirilmemesinden kullanıcı sorumludur.
-
-## 11. Açık rıza beyanı
-
-Aşağıdaki açık rıza beyanı, üyelik/giriş veya analiz başlatma ekranında ayrı ve anlaşılır bir onay mekanizmasıyla kullanıcıya sunulmalıdır. Zorunlu olmayan rızalar hizmetin temel kullanımı için şart koşulmamalıdır; ancak fotoğraf/metin analizi Hizmetin temel fonksiyonu olduğundan, analiz yapılabilmesi için ilgili veri işleme faaliyetine izin verilmesi gerekebilir.
-
-### AI fotoğraf/metin işleme açık rızası
-
-"RiskDetected'e yüklediğim fotoğraf ve/veya metinlerin; fotoğrafta yer alabilecek kişi yüzleri, çalışma alanları, firma adı/logo, ekipman, mekan ve benzeri görsel bilgiler dahil olmak üzere, yapay zeka destekli risk analizi ve rapor üretimi amacıyla işlenmesine açık rıza veriyorum. AI çıktılarının karar destek niteliğinde olduğunu, resmi uzman görüşü veya kesin uygunluk değerlendirmesi olmadığını anlıyorum."
-
-### Özel nitelikli veri içerebilecek görseller için açık rıza
-
-"Yüklediğim fotoğrafın sağlık durumu, yaralanma, engellilik, iş kıyafeti/koruyucu donanım, dini/siyasi/sendikal göstergeler veya benzeri özel nitelikli kişisel veri içerebileceğini biliyorum. Bu tür verilerin yalnızca analiz ve rapor üretimi amacıyla, sınırlı sürelerle işlenmesine açık rıza veriyorum."
-
-### Yurt dışına aktarım açık rızası
-
-"RiskDetected'in AI analizi, bulut altyapısı, dosya saklama, güvenlik ve teknik destek süreçlerinde kişisel verilerimin Türkiye dışında bulunan hizmet sağlayıcılarına aktarılabileceğini ve bu sağlayıcılar tarafından yurt dışında işlenebileceğini anladım. Bu aktarıma açık rıza veriyorum."
-
-### Ticari elektronik ileti açık rızası
-
-"RiskDetected'in ürün duyuruları, kampanyalar ve pazarlama iletişimleri için bana elektronik ileti göndermesine açık rıza veriyorum." 
-
-Bu son rıza ayrı tutulmalı, varsayılan olarak işaretli olmamalı ve kullanıcı dilediğinde geri çekebilmelidir.
+AI analizleri otomatik sistemlerle üretilir; ancak çıktı karar destek niteliğindedir. RiskDetected resmi uygunluk kararı, hukuki güvence, işveren/çalışan hakkında kesin kusur tespiti veya bağlayıcı uzman görüşü vermez. Nihai değerlendirme ve saha uygulaması kullanıcının ve yetkili profesyonellerin sorumluluğundadır.
 
 ## 12. Rızanın geri çekilmesi
 
-Açık rızaya dayalı işlemlerde rızanızı dilediğiniz zaman info@riskdetected.com e-posta adresi, Eskişehir adresi veya uygulama içi ayarlar üzerinden geri çekebilirsiniz. Rızanın geri çekilmesi, geri çekmeden önce yapılan işlemlerin hukuka uygunluğunu etkilemez. Rıza geri çekildiğinde bazı analiz veya rapor özellikleri teknik olarak sunulamayabilir.
+Açık rızaya dayalı işlemlerde rızanızı dilediğiniz zaman info@riskdetected.com üzerinden veya uygulama içi ayarlar/destek kanallarıyla geri çekebilirsiniz. Rızanın geri çekilmesi, geri çekmeden önceki hukuka uygun işlemleri etkilemez.
 
 ## 13. İletişim
 
-KVKK başvuruları ve gizlilik talepleri için:
+KVKK, gizlilik, veri erişimi, silme ve güvenlik talepleri için:
 
 - E-posta/KEP: info@riskdetected.com
 - Adres: Eskişehir

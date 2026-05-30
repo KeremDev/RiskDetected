@@ -1,5 +1,10 @@
 # App Store Privacy Nutrition - Final Entry Draft - 2026-05-16
 
+Update 2026-05-30: Legal docs were refreshed after the Professional Progress,
+profile avatar, company V2, notification, free paid AI routing and risk-analysis
+trial additions. Keep App Store Connect privacy answers aligned with the latest
+in-app legal documents.
+
 Bu dosya RiskDetected için App Store Connect > App Privacy ekranına girilecek veri beyanı taslağıdır. Amaç eksik beyan yüzünden App Review riski almamak; uygulama, Supabase backend, Google Sign-In, RevenueCat ve Google Gemini/AI akışlarıyla tutarlı, muhafazakar ve savunulabilir cevap vermektir.
 
 Resmi Apple referansları:
@@ -53,7 +58,7 @@ App Store Connect'te aşağıdaki veri türlerini "Collected" ve "Linked to the 
 | Identifiers | Device ID | App Functionality | APNs device token ve consent audit için identifierForVendor. IDFA değildir. |
 | Purchases | Purchase History | App Functionality | RevenueCat/App Store abonelik durumu, ürün id, entitlement, yenileme/iptal eventleri. |
 | Usage Data | Product Interaction | App Functionality, Analytics | Analiz sayısı, kota kullanımı, rapor oluşturma/indirme/silme, özellik erişimi. |
-| Usage Data | Other Usage Data | App Functionality, Analytics | AI usage logs, token/latency/error metadata, request/support id, retry/fallback bilgileri. |
+| Usage Data | Other Usage Data | App Functionality, Analytics | AI usage logs, token/latency/error metadata, request/support id, retry/fallback bilgileri, MDP/rozet/yetkinlik/haftalık takip istatistikleri. |
 | Diagnostics | Performance Data | App Functionality, Analytics | AI/report akışlarında süre/latency/performans kayıtları. |
 | Diagnostics | Other Diagnostic Data | App Functionality, Analytics | Hata kodları, HTTP status, support id, servis fallback/retry logları. |
 | Location | Coarse Location | App Functionality | Uygulama konum izni istemez; ancak IP/security logları yaklaşık konum sayılabileceği için muhafazakar şekilde seç. |
@@ -128,7 +133,27 @@ Gerekçe: Uygulama `UserDefaults` ile onboarding tamamlandı bilgisi, tema ve di
    - Supabase
    - GoogleSignIn
    - RevenueCat
+   - Apple Push Notification service
+   - Google Gemini/Google AI ve Groq backend sağlayıcıları
 7. Yeni analytics/crash/ads/location/audio/contacts SDK'sı eklenirse bu dosya ve App Store Connect cevapları güncellenmeli.
+
+## 2026-05-30 Legal Document Checklist
+
+Uygulama içi Yasal Bilgilendirme ekranında şu belgeler görünür olmalı:
+
+- KVKK Aydınlatma Metni
+- Açık Rıza Beyanı
+- Kullanım Koşulları
+- Gizlilik Politikası
+- Çerez Politikası
+
+Web tarafında da aynı içerikler için canlı URL hazırlanmalı. Önerilen URL'ler:
+
+- `https://riskdetected.com/kvkk`
+- `https://riskdetected.com/acik-riza`
+- `https://riskdetected.com/kullanim-kosullari`
+- `https://riskdetected.com/gizlilik`
+- `https://riskdetected.com/cerez-politikasi`
 
 ## Review Notu
 
