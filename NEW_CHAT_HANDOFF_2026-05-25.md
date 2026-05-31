@@ -225,6 +225,20 @@ Bu dosya yeni sohbet penceresine aktarılacak kısa bağlamdır. Detay arşiv do
 - Physical device:
   - Build/install/launch geçti; telefon ekranındaki manuel Plus uçtan uca kullanım ayrıca yapılmalı.
 
+## 2026-05-31 Güncellemesi
+
+- Uygulama içindeki Çerez Politikası görünürlüğü kaldırıldı.
+  - Auth ekranındaki legal kısa link artık `KVKK · Açık rıza · Koşullar · Gizlilik`.
+  - `Yasal Bilgilendirme` sheet'inde artık `Çerez` sekmesi yok.
+  - App bundle içindeki `App/LegalDocuments/Cerez-Politikasi.md` kaldırıldı.
+  - Gizlilik/Kullanım Koşulları metinlerinde çerez atıfları web ortamına ait olacak şekilde sadeleştirildi.
+  - `RDConfig.Web.cookiePolicyURL` kaldırıldı.
+- Web/legal kök arşivi için `Legal/Cerez-Politikasi.md` korunuyor.
+- Doğrulama:
+  - iOS Debug Simulator build geçti.
+- Not:
+  - Worktree'de App Store screenshot/skill/template ve bazı onboarding dosyalarında bu işle ilgisiz değişiklikler görünüyor; çerez politikası commitine dahil edilmemeli.
+
 ## Kısa Notlar
 
 - Yeni iOS özellikleri kullanıcı cihazına ancak yeni TestFlight/App Store build'i ile gelir.

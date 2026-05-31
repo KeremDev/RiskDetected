@@ -509,6 +509,13 @@ Last verified after dark-mode card shadow change:
 - For dark mode, separate cards with surface tone and stroke instead of shadow activity.
 - New cards should continue using `rdCardShadow` / `rdRowShadow`; the design token handles light/dark behavior.
 
+## 2026-05-31 Legal UI Note
+
+- Çerez Politikası artık mobil uygulama içi legal menülerde gösterilmiyor.
+- Web tarafı için kök `Legal/Cerez-Politikasi.md` korunuyor; app bundle kopyası kaldırıldı.
+- Uygulama içinde kalan yasal belgeler: KVKK, Açık Rıza, Kullanım Koşulları, Gizlilik Politikası.
+- Son doğrulama: iOS Debug Simulator build başarılı.
+
 ## Supporting Docs
 
 - `IMPLEMENTATION_PLAN.md`: master backlog/status plan.

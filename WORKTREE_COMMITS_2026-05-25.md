@@ -127,6 +127,7 @@
 ## Son Commit Geçmişi
 
 ```text
+HEAD Remove in-app cookie policy links
 0c03fbd Route free analyses through paid Gemini trial
 9a2beea Verify report quotas and polish app UI
 53f45ec Fix UI test analysis result fixture
@@ -186,3 +187,35 @@ Eğer bu handoff dosyaları commitlenecekse önerilen commit mesajı:
 ```text
 Add handoff context for next chat
 ```
+
+## 2026-05-31 Commit Notu
+
+Commit:
+
+```text
+Remove in-app cookie policy links
+```
+
+Dahil edilecek dosyalar:
+
+- `App/Views/Auth/AuthView.swift`
+- `App/Views/Legal/LegalInfoSheet.swift`
+- `App/Services/RDConfig.swift`
+- `App/LegalDocuments/Gizlilik-Politikasi.md`
+- `App/LegalDocuments/Kullanim-Kosullari.md`
+- `App/LegalDocuments/Cerez-Politikasi.md` deletion
+- `NEW_CHAT_HANDOFF_2026-05-25.md`
+- `TODO_NEXT_2026-05-25.md`
+- `WORKTREE_COMMITS_2026-05-25.md`
+- `PROJECT_HANDOFF.md`
+
+Bu commit dışında bırakılacak görünen değişiklikler:
+
+- `.agents/skills/app-store-screenshots/**`
+- `AppStoreScreenshots/**`
+- `App/Views/Onboarding/V2/**`
+- `QA/App_Store_Submission_Preparation_2026-05-16.md`
+- `skills-lock.json`
+- `App/Views/Components/LegalAcceptanceNotice.swift`
+- `AppScreenshot/`
+- `output/`

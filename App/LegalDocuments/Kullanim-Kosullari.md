@@ -97,7 +97,7 @@ Hizmeti aşağıdaki amaçlarla kullanamazsınız:
 
 ## 11. Veri koruma
 
-Kişisel verilerin işlenmesine ilişkin ayrıntılar Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Beyanı ve Çerez Politikası'nda açıklanır. Bu metinleri uygulama içinden veya web bağlantılarından okuyabilirsiniz.
+Kişisel verilerin işlenmesine ilişkin ayrıntılar Gizlilik Politikası, KVKK Aydınlatma Metni ve Açık Rıza Beyanı'nda açıklanır. Bu metinleri uygulama içinden veya web bağlantılarından okuyabilirsiniz.
 
 ## 12. Hizmet değişiklikleri ve erişim
 

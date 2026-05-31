@@ -2,14 +2,12 @@ import SwiftUI
 
 struct AuthView: View {
     @EnvironmentObject var app: AppState
-    @Environment(\.colorScheme) private var colorScheme
     @State private var phase: AuthPhase = .options
     @State private var email: String = ""
     @State private var code: [String] = Array(repeating: "", count: 6)
     @State private var otpInput: String = ""
     @State private var signingInDemo: DemoAccount?
     @State private var authError: AppErrorMessage?
-    @State private var showLegalInfo = false
     @State private var isSendingEmailCode = false
     @State private var isVerifyingEmailCode = false
     @State private var isSigningInWithApple = false
@@ -72,9 +70,6 @@ struct AuthView: View {
     private var otpCode: String { otpInput }
     private var canSendEmailCode: Bool { normalizedEmail.contains("@") && normalizedEmail.contains(".") && !isSendingEmailCode }
     private var canVerifyEmailCode: Bool { otpCode.count == 6 && !isVerifyingEmailCode }
-    private var preferredModalColorScheme: ColorScheme {
-        app.themePreference.colorScheme ?? colorScheme
-    }
 
     var body: some View {
         GeometryReader { geo in
@@ -158,12 +153,6 @@ struct AuthView: View {
         .ignoresSafeArea()
         .background(Color.rdPaper)
         .accessibilityIdentifier("auth.root")
-        .sheet(isPresented: $showLegalInfo) {
-            LegalInfoSheet(onClose: { showLegalInfo = false })
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-                .preferredColorScheme(preferredModalColorScheme)
-        }
         .onChange(of: phase) { newPhase in
             if newPhase == .email {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
@@ -301,25 +290,12 @@ struct AuthView: View {
     }
 
     private var legalNotice: some View {
-        VStack(spacing: 3) {
-            Text("Üye olarak veya giriş yaparak\nRiskDetected koşullarını kabul etmiş sayılırsın.")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity)
-
-            Button {
-                showLegalInfo = true
-            } label: {
-                Text("KVKK · Açık rıza · Koşullar · Gizlilik · Çerez")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdGreenDark)
-                    .underline()
-            }
-            .buttonStyle(.plain)
-        }
+        LegalAcceptanceNotice(
+            fontSize: 10,
+            textColor: Color.rdSlate,
+            linkColor: Color.rdGreenDark,
+            accessibilityIdentifier: "auth.legal_notice"
+        )
         .padding(.horizontal, 8)
         .padding(.vertical, 2)
     }
@@ -432,6 +408,7 @@ struct AuthView: View {
             }
             .opacity(canSendEmailCode ? 1 : 0.55)
             .disabled(!canSendEmailCode)
+            legalNotice
             authErrorText
             Button("← Diğer giriş yöntemleri") {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .options }

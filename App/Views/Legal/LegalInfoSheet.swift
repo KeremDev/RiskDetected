@@ -106,7 +106,6 @@ private enum LegalDocumentKind: String, CaseIterable, Identifiable {
     case consent
     case terms
     case privacy
-    case cookies
 
     var id: String { rawValue }
 
@@ -116,7 +115,6 @@ private enum LegalDocumentKind: String, CaseIterable, Identifiable {
         case .consent: return "Rıza"
         case .terms: return "Koşullar"
         case .privacy: return "Gizlilik"
-        case .cookies: return "Çerez"
         }
     }
 
@@ -126,7 +124,6 @@ private enum LegalDocumentKind: String, CaseIterable, Identifiable {
         case .consent: return "Açık Rıza Beyanı"
         case .terms: return "Kullanım Koşulları"
         case .privacy: return "Gizlilik Politikası"
-        case .cookies: return "Çerez Politikası"
         }
     }
 
@@ -136,7 +133,6 @@ private enum LegalDocumentKind: String, CaseIterable, Identifiable {
         case .consent: return "Acik-Riza-Beyani"
         case .terms: return "Kullanim-Kosullari"
         case .privacy: return "Gizlilik-Politikasi"
-        case .cookies: return "Cerez-Politikasi"
         }
     }
 

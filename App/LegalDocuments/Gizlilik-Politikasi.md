@@ -122,7 +122,7 @@ RiskDetected çocuklara yönelik değildir. Çocuk görüntüsü veya çocuklara
 
 ## 13. Çerezler
 
-Mobil uygulamanın temel kullanımı web tarayıcı çerezi gerektirmez. Web sitesi, yasal sayfalar, ödeme/abonelik yönlendirmeleri veya destek bağlantıları çerez, yerel depolama veya benzeri teknolojiler kullanabilir. Ayrıntılar Çerez Politikası'nda açıklanır.
+Mobil uygulamanın temel kullanımı web tarayıcı çerezi gerektirmez. Web sitesi, ödeme/abonelik yönlendirmeleri veya destek bağlantıları çerez, yerel depolama veya benzeri teknolojiler kullanabilir. Web ortamındaki çerez kullanımı ayrıca web sitesindeki çerez bilgilendirmesinde açıklanır.
 
 ## 14. Değişiklikler
 
