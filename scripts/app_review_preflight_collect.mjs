@@ -913,7 +913,7 @@ function checkSupabaseLeakedPasswordDecisionEvidence() {
     status === "PASS" ? "PASS" : "HOLD",
     status === "PASS"
       ? "Manual evidence says leaked-password protection is enabled or the known risk is accepted."
-      : "Supabase leaked-password protection still needs enablement or an explicit accepted-risk decision before submission.",
+      : "Manual evidence must record leaked-password protection as enabled or accepted known risk for this submission path.",
     row,
   );
 }
@@ -1877,7 +1877,7 @@ function runSupabaseChecks() {
   addCheck(
     "Supabase advisors known warnings",
     advisors.status === 0 && advisors.stdout.includes("auth_leaked_password_protection: 1") ? "WARN" : "FAIL",
-    "Known remaining warnings should be leaked-password protection plus RLS/permissive-policy performance cleanup.",
+    "Known remaining warnings are accepted leaked-password risk plus profiles permissive-policy performance cleanup; they are not App Review blockers for this submission path.",
     truncate(advisors.stdout || advisors.stderr),
   );
 

@@ -15,11 +15,11 @@ import SwiftUI
 //   8 Auth · 9 Trial Invite · 10 Push Permission · 11 Timeline Paywall (dismissible)
 
 struct OnboardingViewV2: View {
-    @Environment(\.openURL) private var openURL
     @StateObject private var state: OnboardingV2State
     @State private var showSkipConfirmation = false
     @State private var paywallNoticeMessage: String?
     @State private var isPaywallWorking = false
+    @State private var selectedLegalDocument: LegalDocumentKind?
     var isAuthenticated: Bool = false
     var currentTier: SubscriptionTier = .free
     var subscriptionPackages: [SubscriptionPlanPackage] = []
@@ -99,6 +99,14 @@ struct OnboardingViewV2: View {
         .background(state.step == 11 ? Color(hex: "#0B0D0E") : Color.rdPaper)
         .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
+        .sheet(item: $selectedLegalDocument) { kind in
+            LegalInfoSheet(initialDocument: kind) {
+                selectedLegalDocument = nil
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(.light)
+        }
         .onChange(of: isAuthenticated) { authenticated in
             guard authenticated else { return }
             persistCurrentDraft()
@@ -177,7 +185,8 @@ struct OnboardingViewV2: View {
                 onApple: { startAuth(onAuthApple) },
                 onGoogle: { startAuth(onAuthGoogle) },
                 onEmail: { startAuth(onAuthEmail) },
-                onSignIn: { startAuth(onSignInExisting) }
+                onSignIn: { startAuth(onSignInExisting) },
+                onLegalDocument: { selectedLegalDocument = $0 }
             )
         case 9:
             OBTrialInviteView {
@@ -203,8 +212,8 @@ struct OnboardingViewV2: View {
                 onRestore: {
                     restorePurchases()
                 },
-                onTerms: { openURL(RDConfig.Web.termsURL) },
-                onPrivacy: { openURL(RDConfig.Web.privacyPolicyURL) },
+                onTerms: { selectedLegalDocument = .terms },
+                onPrivacy: { selectedLegalDocument = .privacy },
                 onDismiss: { finishOnboarding() }
             )
         default:

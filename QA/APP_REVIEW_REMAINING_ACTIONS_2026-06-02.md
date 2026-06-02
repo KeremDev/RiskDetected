@@ -10,13 +10,15 @@ Latest read-only collector:
 
 - Report: `QA/App_Review_Preflight_Evidence_2026-06-02.md`
 - Command: `node scripts/app_review_preflight_collect.mjs`
-- Result at 2026-06-02 04:52 +03: `34 PASS`, `2 WARN`, `13 HOLD`, `1 SKIP`, `0 FAIL`
+- Result at 2026-06-02 11:31 +03: `37 PASS`, `2 WARN`, `6 HOLD`, `2 FAIL`, `1 SKIP`
 
 Expected non-pass items:
 
 - `HOLD`: App Review contact fields are intentionally empty.
 - `HOLD`: ASC validation reports only the intentionally missing contact fields.
 - `HOLD`: App Privacy publish evidence is still manual/pending; ASC validation reports `privacy.publish_state.unverified`.
+- `FAIL`: Subscription paywall disclosure collector check expects old `legalLink(... RDConfig.Web...)` markers; current legal links now open the in-app legal sheet and should be reconciled in the collector separately.
+- `FAIL`: App Store screenshot local set collector check still probes the old `AppStoreScreenshots/public/screenshots/apple/iphone/tr` path; final approved candidate path is already tracked separately.
 - `PASS`: App Store screenshot task is closed per user confirmation.
 - `HOLD`: China mainland is currently available in ASC while the app discloses AI-assisted analysis; exclude China mainland for first release or record a China-specific compliance decision.
 - `PASS`: Supabase leaked-password item is not being treated as an App Review blocker for this release decision.
@@ -24,7 +26,7 @@ Expected non-pass items:
 - `HOLD`: Manual evidence form still contains TODO/placeholders until final device and ASC checks are recorded.
 - `PASS`: Physical-device smoke is treated as complete per user confirmation, including onboarding TL display, auth, sandbox purchase/restore, and fresh analysis/report generation.
 - `HOLD`: Review Notes draft still contains ASC-only placeholders for the mailbox password and physical-device demo video URL.
-- `WARN`: Supabase advisors still report leaked-password protection plus RLS/permissive-policy performance cleanup.
+- `WARN`: Supabase advisors still report accepted leaked-password risk plus `profiles` permissive-policy performance cleanup; these are not App Review blockers for this submission path.
 - `PASS`: All locally configured Supabase Edge Functions are deployed, ACTIVE, and match local `verify_jwt` settings; `register-report` was deployed at 2026-06-02 00:55 +03.
 - `PASS`: Supabase local and public Auth baselines are restored and verified: Email/Apple/Google enabled, phone disabled, email autoconfirm disabled.
 - `PASS`: Physical-device readiness evidence is recorded: candidate `1.0 (31)` installed on `iPhone Kerem`, display evidence is `1320 x 2868`, and the 2026-06-02 04:30 refresh confirms lock-state/app-info/details through CoreDevice with the tunnel connected; foreground launch still needs an unlocked, awake, interactive iPhone.
@@ -61,9 +63,9 @@ Latest Supabase read-only check:
 - 2026-06-02 04:50 +03: latest full collector re-ran `supabase functions list --project-ref ppcrzemgiztzcgddbins --output json`; all 15 locally configured functions are remote `ACTIVE`; `register-report` is `verify_jwt=true`.
 - 2026-06-02 04:50 +03: latest full collector re-ran public Auth settings; Email/Apple/Google are enabled, phone is disabled, signup is enabled, and `mailer_autoconfirm=false`.
 - 2026-06-02 04:50 +03: latest full collector re-ran `supabase db lint --linked --level warning --fail-on none`; result remains `No schema errors found`.
-- 2026-06-02 04:50 +03: latest full collector re-ran advisors; they remain the known set: `auth_leaked_password_protection: 1`, `auth_rls_initplan: 36`, `multiple_permissive_policies: 2`.
+- 2026-06-02 11:30 +03: latest live advisor re-check shows the current known set: `auth_leaked_password_protection: 1`, `multiple_permissive_policies: 2`. The earlier RLS init-plan performance warning is no longer present in the current advisor summary.
 - 2026-06-02 04:50 +03: latest full collector skips remote Supabase secret enumeration by release decision. Source gating still verifies iOS simulation helpers are DEBUG-only and Edge Function AI simulation requires explicit env flags.
-- 2026-06-02 02:08 +03: leaked-password automation investigation is recorded in `QA/SUPABASE_AUTH_LEAKED_PASSWORD_INVESTIGATION_2026-06-02.md`. A broad Auth config drift was restored and verified; leaked-password protection still needs dashboard enablement or accepted-risk decision. DB query retries should not continue without the correct DB credential/env after a temporary pooler auth failure.
+- 2026-06-02 11:30 +03: leaked-password automation investigation is recorded in `QA/SUPABASE_AUTH_LEAKED_PASSWORD_INVESTIGATION_2026-06-02.md`. A broad Auth config drift was restored and verified; leaked-password protection is accepted as known risk for this submission and remains optional post-release hardening. DB query retries should not continue without the correct DB credential/env after a temporary pooler auth failure.
 
 ## Submission Blockers
 

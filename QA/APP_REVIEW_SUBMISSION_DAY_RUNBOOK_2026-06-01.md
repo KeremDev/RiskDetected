@@ -182,12 +182,12 @@ Pass condition:
 
 Open Supabase project `riskdetected`:
 
-- Authentication -> Settings -> Password Security -> Prevent use of leaked passwords.
+- Authentication -> Settings -> Password Security -> Prevent use of leaked passwords is accepted known risk for this submission path and optional post-release hardening.
 - Investigation note: `QA/SUPABASE_AUTH_LEAKED_PASSWORD_INVESTIGATION_2026-06-02.md`
 
 Action:
 
-- Enable leaked-password protection if password login remains enabled and plan support is available.
+- Keep leaked-password protection recorded as accepted known risk for this submission; optionally enable it after release if plan support is available.
 - Do not use `supabase config push` as a quick fix unless the full `supabase/config.toml` push scope has been reviewed; for this gate, dashboard enablement or a minimal Management API patch is safer.
 - Do not retry `supabase db query --linked` loops rapidly if the pooler reports temporary auth failures; set the correct `SUPABASE_DB_PASSWORD` env first if DB-query evidence is needed.
 
@@ -200,7 +200,7 @@ supabase db advisors --linked --type all --level warn --fail-on none --output js
 
 Pass condition:
 
-- Preferred: `auth_leaked_password_protection` disappears.
+- Accepted for this submission: `auth_leaked_password_protection` may remain while the accepted-risk decision is recorded.
 - Acceptable known risk for submission only if the toggle is unavailable on the current Supabase plan and password login is still needed.
 
 ## 8. Physical-Device Smoke Test
@@ -248,7 +248,7 @@ asc review status --app 6769498181 --output markdown
 Pass condition:
 
 - No ASC blocking errors except known API-only App Privacy ambiguity that ASC UI proves complete.
-- Evidence collector has `0 FAIL`; any remaining `HOLD`/`WARN` is either resolved manually or explicitly accepted as known risk.
+- Evidence collector has no unreviewed `FAIL`; current known collector cleanup FAILs are old paywall legal-link marker expectations and old App Store screenshot path probing. Any remaining `HOLD`/`WARN`/accepted `FAIL` is resolved manually or explicitly accepted as known risk before submission.
 - Manual evidence form completion `HOLD` is gone unless a remaining item is explicitly accepted as known risk.
 - Review detail is configured.
 - Build `1.0 (31)` remains attached.

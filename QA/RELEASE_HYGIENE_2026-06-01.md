@@ -143,8 +143,8 @@ By default this guard inspects only the Git index/staging area. With `--worktree
 - Confirm App Privacy is completed/published.
 - Attach all four `READY_TO_SUBMIT` subscriptions during App Review submission.
 - Exclude China mainland for first release, or record a China-specific compliance decision. Latest ASC availability check shows `CHN available=true` and `availableInNewTerritories=true` while app metadata/legal docs disclose AI-assisted analysis and Google/Groq providers.
-- Enable Supabase leaked-password protection if password login remains enabled.
-- Latest leaked-password automation investigation: `QA/SUPABASE_AUTH_LEAKED_PASSWORD_INVESTIGATION_2026-06-02.md`. Use Dashboard Auth password-security toggle or a reviewed minimal Management API patch; do not use broad `supabase config push` casually for this single setting.
+- Supabase leaked-password protection is accepted known risk for this submission path; treat enablement as optional post-release hardening if password login remains enabled later.
+- Latest leaked-password automation investigation: `QA/SUPABASE_AUTH_LEAKED_PASSWORD_INVESTIGATION_2026-06-02.md`. If hardening later, use Dashboard Auth password-security toggle or a reviewed minimal Management API patch; do not use broad `supabase config push` casually for this single setting.
 - Supabase `register-report` was deployed on 2026-06-02 00:55 +03 after preflight found it was local-only while the app invokes it for PDF report metadata.
 - Re-run Supabase `db lint` through the linked CLI profile; latest 2026-06-02 04:50 +03 collector re-check reported `No schema errors found` without recording a database password.
 - Release simulation source gating passes in the collector. Supabase production secret enumeration is intentionally skipped by release decision and no longer counted as an App Review preflight blocker.

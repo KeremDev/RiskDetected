@@ -18,6 +18,7 @@ struct AuthView: View {
     private let googleSignInService = GoogleSignInService()
     @State private var autoVerifiedCode: String?
     @State private var caretPulse = false
+    @State private var selectedLegalDocument: LegalDocumentKind?
     @StateObject private var keyboard = KeyboardObserver()
     @FocusState private var focusedField: AuthInputField?
 
@@ -177,6 +178,14 @@ struct AuthView: View {
         .onChange(of: focusedField) { field in
             caretPulse = field == .otp
         }
+        .sheet(item: $selectedLegalDocument) { kind in
+            LegalInfoSheet(initialDocument: kind) {
+                selectedLegalDocument = nil
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(.light)
+        }
     }
 
     // Form yüksekliği phase'e göre değişmez, badge pozisyonu için sabit referans
@@ -300,7 +309,8 @@ struct AuthView: View {
             fontSize: 10,
             textColor: Color.rdSlate,
             linkColor: Color.rdGreenDark,
-            accessibilityIdentifier: "auth.legal_notice"
+            accessibilityIdentifier: "auth.legal_notice",
+            onOpenDocument: { selectedLegalDocument = $0 }
         )
         .padding(.horizontal, 8)
         .padding(.vertical, 2)

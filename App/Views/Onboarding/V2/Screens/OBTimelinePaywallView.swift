@@ -7,8 +7,8 @@ import SwiftUI
 // Hooks:
 //   onStart   — start trial / purchase
 //   onRestore — restore purchases
-//   onTerms   — open terms URL
-//   onPrivacy — open privacy URL
+//   onTerms   — show terms in-app
+//   onPrivacy — show privacy in-app
 //   onDismiss — close paywall (× button)
 //
 // Standalone for now; codex will wire to flow + IAP after approval.

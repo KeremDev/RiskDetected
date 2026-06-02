@@ -46,6 +46,11 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Kullanım Şartları").exists)
         XCTAssertTrue(waitFor("Gizlilik Politikası").exists)
 
+        tap("Kullanım Şartları")
+        XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Kullanım Koşulları").exists)
+        tap("Pencereyi kapat")
+
         tap("Aylık")
         XCTAssertTrue(app.staticTexts["₺199,99/ay — istediğin zaman iptal"].waitForExistence(timeout: 3))
 
@@ -162,6 +167,11 @@ final class RiskDetectedUITests: XCTestCase {
         let companyTracking = waitFor("Firma takibi")
         let plusCTA = waitFor("Ücretsiz denemeyi başlat")
         XCTAssertLessThan(companyTracking.frame.maxY, plusCTA.frame.minY)
+
+        tap("Şartlar")
+        XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Kullanım Koşulları").exists)
+        tap("Pencereyi kapat")
 
         tap("Aylık")
         XCTAssertTrue(waitFor("Plus’a abone olun.").exists)

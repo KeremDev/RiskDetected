@@ -41,7 +41,7 @@ Manual evidence form:
 | AI disclosure / China mainland | Partial PASS + Hold/manual | Collector now has a dedicated `AI-assisted analysis disclosure` PASS gate: Review Notes, Kullanım Koşulları, Gizlilik Politikası, and KVKK text disclose AI-assisted analysis, provider context, and professional-review limits. `asc pricing availability territory-availabilities --availability 6769498181 --paginate --output json` still shows `CHN available=true` and `availableInNewTerritories=true`. | Exclude China mainland for first release, or record a China-specific compliance decision before submission. |
 | Supabase Edge Functions | Passed local and remote | `deno check` passes for all Edge Function `index.ts` files. Remote `supabase functions list` confirms all 15 locally configured functions are `ACTIVE` and match local `verify_jwt`; `register-report` was deployed on 2026-06-02 00:55 +03 after the preflight found it was local-only while the app calls it for PDF report metadata. | Re-run after backend edits; keep `register-report` attached/deployed for fresh PDF generation smoke. |
 | Supabase Auth baseline | Passed | A broad Auth config drift was restored at 2026-06-02 01:38 +03. Collector now verifies local `supabase/config.toml` and public `/auth/v1/settings`: Email/Apple/Google enabled, phone disabled, signup enabled, `mailer_autoconfirm=false`, and iOS callback allow-list preserved. | Re-run after any Supabase Auth/dashboard/config change; do not run broad `supabase config push` without reviewing the diff. |
-| Supabase advisors | Warning/manual | Advisors still show `auth_leaked_password_protection: 1`, `auth_rls_initplan: 36`, `multiple_permissive_policies: 2`. Security-definer/search-path warnings are cleared. Supabase CLI exposes no safe minimal read/toggle command for leaked-password protection in the installed version; source scan shows release auth uses Email OTP, Apple, and Google, while password demo sign-in is `#if DEBUG` only. Latest investigation in `QA/SUPABASE_AUTH_LEAKED_PASSWORD_INVESTIGATION_2026-06-02.md` records the Auth config restore and the remaining leaked-password HOLD. | Enable leaked-password protection in Supabase Dashboard if available, or record accepted known risk before submission; treat RLS/permissive policy items as performance cleanup unless new security evidence appears. |
+| Supabase advisors | Warning/accepted | Current advisors show `auth_leaked_password_protection: 1` and `multiple_permissive_policies: 2`. Prior security-definer/search-path and RLS init-plan warnings are cleared. Supabase CLI exposes no safe minimal read/toggle command for leaked-password protection in the installed version; source scan shows release auth uses Email OTP, Apple, and Google, while password demo sign-in is `#if DEBUG` only. Latest investigation in `QA/SUPABASE_AUTH_LEAKED_PASSWORD_INVESTIGATION_2026-06-02.md` records the Auth config restore and accepted-risk decision. | Leaked-password protection is accepted known risk for this submission and optional post-release hardening; treat `profiles` permissive-policy items as performance cleanup unless new security evidence appears. |
 | Supabase production simulation secrets | Skipped by release decision | Collector has a dedicated `Release simulation source gating` PASS gate: iOS test-simulation helpers are DEBUG-only, Edge Function AI simulation requires explicit env flags, and the production runbook documents remote secret cleanup. Remote production secret enumeration is intentionally skipped by release decision. | No App Review blocker counted for this item; keep source gating green. |
 | Supabase db lint | Passed | `supabase db lint --linked --level warning --fail-on none` completed again on 2026-06-02 02:08 +03 through the linked CLI profile and reported `No schema errors found`. | Re-run after backend/schema edits and again on submission day. |
 | Simulator build/UI smoke | Passed | XcodeBuildMCP `build_sim` passed again on 2026-06-02 00:23 +03 on `iPhone 17 Pro` / iOS 26.5 with 0 warnings/errors. Targeted paywall UI tests passed again on 2026-06-02 00:25 +03: `testInAppPaywallClaudePlusAndProRenderWithFreeTier` and `testPaywallYearlyMonthlyToggleForPlusAndPro` (`2 passed`, `0 failed`). Latest build log: `/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-06-01T21-23-12-413Z_pid65279_69032fd2.log`; latest xcresult: `/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-06-01T21-24-28-824Z_pid65279_2d78585a.xcresult`. | Re-run after app code edits. |
@@ -61,7 +61,7 @@ node scripts/app_review_preflight_collect.mjs --output QA/App_Review_Preflight_E
 Latest generated report:
 
 - `QA/App_Review_Preflight_Evidence_2026-06-02.md`
-- Summary: `34 PASS`, `2 WARN`, `13 HOLD`, `1 SKIP`, `0 FAIL`
+- Summary: `37 PASS`, `2 WARN`, `6 HOLD`, `2 FAIL`, `1 SKIP`
 
 Expected non-pass statuses before final manual work:
 
@@ -70,7 +70,7 @@ Expected non-pass statuses before final manual work:
 - `HOLD`: App Privacy publish evidence is still manual/pending; ASC validation reports `privacy.publish_state.unverified`.
 - `HOLD`: App Store screenshot visual approval/upload evidence is still manual/pending; count and dimensions pass, but final approval/upload is not recorded yet.
 - `HOLD`: China mainland is currently available while the app discloses AI-assisted analysis; exclude China mainland for first release or record a China-specific compliance decision.
-- `HOLD`: Supabase leaked-password protection still needs enablement or an explicit accepted-risk decision before submission.
+- `PASS`: Supabase leaked-password protection is accepted known risk for this submission path.
 - `HOLD`: Supabase production secrets could not be listed with the current CLI token state; verify no test simulation secret names are present before submission.
 - `HOLD`: Manual evidence form still has TODO/placeholders until final ASC/device checks are recorded.
 - `HOLD`: Physical-device smoke still has open TODO/PARTIAL/NOT TESTED rows.
@@ -85,7 +85,7 @@ Expected non-pass statuses before final manual work:
 - `PASS`: Release simulation source gating confirms test-simulation helpers are not active by default in production code.
 - `PASS`: App Store screenshot count/dimensions pass against the final 10-file iPhone 6.9 candidate set.
 - `WARN`: RevenueCat binary contains dormant attribution support strings; app source does not call attribution APIs.
-- `WARN`: Supabase advisors still show leaked-password protection plus RLS/permissive-policy performance cleanup.
+- `WARN`: Supabase advisors still show accepted leaked-password risk plus `profiles` permissive-policy performance cleanup.
 
 ## Final Submit Preconditions
 

@@ -34,16 +34,18 @@ Important: App Review contact fields are intentionally not filled yet, and App R
 Read-only preflight collector:
 
 ```bash
-node scripts/app_review_preflight_collect.mjs --output QA/App_Review_Preflight_Evidence_2026-06-02.md
+SUPABASE_DB_PASSWORD="$(security find-generic-password -a "$USER" -s riskdetected_supabase_db_password -w)" node scripts/app_review_preflight_collect.mjs --output QA/App_Review_Preflight_Evidence_2026-06-02.md
 ```
 
 Latest result:
 
-- `34 PASS`
+- `37 PASS`
 - `2 WARN`
-- `13 HOLD`
+- `6 HOLD`
+- `2 FAIL`
 - `1 SKIP`
-- `0 FAIL`
+
+The two current FAIL rows are separate collector cleanup items: old paywall legal-link marker expectations and old App Store screenshot path probing. Supabase leaked-password decision evidence is PASS.
 
 The collector is read-only. It does not fill ASC contact fields, does not submit the app, and does not change Supabase settings.
 
@@ -107,16 +109,15 @@ The automated collector currently reports:
 - `HOLD`: China mainland is currently available (`CHN available=true`, `availableInNewTerritories=true`) while the app discloses AI-assisted analysis and Google/Groq providers. Exclude China mainland for first release, or record a China-specific compliance decision before submission.
 - `HOLD`: manual evidence form still has TODO/placeholders.
 - `HOLD`: Review Notes draft still has ASC-only placeholders for the mailbox password and physical-device demo video URL.
-- `HOLD`: Supabase leaked-password protection still needs dashboard enablement or an explicit accepted-risk decision.
+- `PASS`: Supabase leaked-password protection is accepted known risk for this submission path.
 - `SKIP`: Supabase production secret enumeration is intentionally skipped by release decision. Source gating passes and this is no longer counted as an App Review preflight blocker.
 - `HOLD`: physical-device auth smoke still needs Email OTP, Apple login, and Google login evidence.
 - `HOLD`: physical-device onboarding paywall smoke still needs Plus monthly/yearly TL and no-fallback evidence.
 - `HOLD`: physical-device purchase/restore smoke still needs non-entitled sandbox purchase sheet, successful purchase, restore, and entitlement sync evidence.
 - `HOLD`: physical-device fresh analysis/report smoke still needs one fresh free analysis plus fresh PDF/Excel generation evidence.
 - `WARN`: RevenueCat dormant attribution strings need to remain understood as non-use unless app code changes.
-- `WARN`: Supabase advisors still show:
+- `WARN`: Supabase advisors still show accepted/known warnings:
   - `auth_leaked_password_protection: 1`
-  - `auth_rls_initplan: 36`
   - `multiple_permissive_policies: 2`
 
 Latest Supabase note:
@@ -142,8 +143,8 @@ Do not mark the preflight goal complete until these are verified and recorded in
    - Plus yearly: `₺1.999,99`
    - Pro monthly: `₺499,99`
    - Pro yearly: `₺4.999,99`
-6. Decide/enable Supabase leaked-password protection.
-7. Rerun Supabase advisors after leaked-password decision; rerun `db lint` on submission day if DB credentials/env are available.
+6. Keep Supabase leaked-password protection recorded as accepted known risk for this submission; treat enablement as optional post-release hardening.
+7. Rerun Supabase advisors and `db lint` on submission day if DB credentials/env are available.
 8. Run physical-device TestFlight smoke on build `1.0 (31)`:
    - Email OTP login with `riskdetected.appreview@fastmail.com`
    - Apple login

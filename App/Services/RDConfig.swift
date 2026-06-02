@@ -53,6 +53,7 @@ enum RDConfig {
         static let reports = "reports"
         static let logos   = "logos"
         static let avatars = "avatars"
+        static let legalDocuments = "legal-documents"
     }
 
     enum Auth {

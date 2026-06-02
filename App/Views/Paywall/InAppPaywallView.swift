@@ -53,6 +53,7 @@ struct InAppPaywallView: View {
     @State private var errorMessage: String?
     @State private var funnelSessionID = UUID()
     @State private var didLogView = false
+    @State private var selectedLegalDocument: LegalDocumentKind?
 
     private let variantID = "claude_plus_pro_paywall_v1"
 
@@ -94,6 +95,14 @@ struct InAppPaywallView: View {
             logPaywallViewIfNeeded()
             await app.refreshSubscriptionOfferings()
             alignBillingWithAvailablePackage()
+        }
+        .sheet(item: $selectedLegalDocument) { kind in
+            LegalInfoSheet(initialDocument: kind) {
+                selectedLegalDocument = nil
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(.light)
         }
         .onChange(of: app.subscriptionPackages) { _ in
             alignBillingWithAvailablePackage()
@@ -375,8 +384,8 @@ struct InAppPaywallView: View {
                 .padding(.top, activeScreen == .plus && billing(for: .plus) == .yearly ? 2 : 6)
 
             HStack(spacing: 16) {
-                legalLink("Şartlar", RDConfig.Web.termsURL)
-                legalLink("Gizlilik", RDConfig.Web.privacyPolicyURL)
+                legalLink("Şartlar", document: .terms)
+                legalLink("Gizlilik", document: .privacy)
                 legalLink("İptal hakkı", URL(string: "https://apps.apple.com/account/subscriptions")!)
             }
             .padding(.top, 6)
@@ -387,6 +396,17 @@ struct InAppPaywallView: View {
         .frame(maxWidth: 430)
         .frame(maxWidth: .infinity)
         .background(InAppPaywallColor.paper)
+    }
+
+    private func legalLink(_ title: String, document: LegalDocumentKind) -> some View {
+        Button {
+            selectedLegalDocument = document
+        } label: {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(InAppPaywallColor.graphite)
+        }
+        .buttonStyle(.plain)
     }
 
     private func legalLink(_ title: String, _ url: URL) -> some View {

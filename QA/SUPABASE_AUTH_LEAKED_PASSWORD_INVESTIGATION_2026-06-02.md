@@ -6,8 +6,8 @@ Do not store Supabase access tokens, database passwords, API keys, or user ident
 
 ## Current Finding
 
-- Status: `HOLD`
-- Timestamp: 2026-06-02 01:48 +03
+- Status: `ACCEPTED_RISK` / `PASS`
+- Timestamp: 2026-06-02 11:30 +03
 - Project: `ppcrzemgiztzcgddbins` / `riskdetected`
 - Supabase CLI: upgraded from `2.100.1` to `2.102.0` during this investigation.
 
@@ -74,30 +74,25 @@ The App Review collector now has two additional PASS gates:
 - `Supabase local Auth config baseline`
 - `Supabase public Auth settings baseline`
 
-This restore did not enable leaked-password protection. The advisor still reports `auth_leaked_password_protection: 1`, so this preflight item remains `HOLD`.
+This restore did not enable leaked-password protection. At 2026-06-02 11:30 +03, the release decision was updated to accept this known risk for the current submission path. The advisor may still report `auth_leaked_password_protection: 1`, but this item is no longer treated as an App Review blocker.
 
-## Submission-Day Action
+## Accepted-Risk Record
 
-Preferred:
+Decision:
 
-1. Open Supabase Dashboard for project `riskdetected`.
-2. Go to Authentication -> Settings -> Password Security.
-3. Enable leaked-password protection / HaveIBeenPwned protection if the plan supports it.
-4. Re-run:
+- Do not enable leaked-password protection before this submission.
+- Record the warning as accepted known risk for App Review preflight.
+- Keep leaked-password protection as recommended post-release hardening if plan support and release timing allow it later.
 
-```bash
-supabase db advisors --linked --type all --level warn --fail-on none --output json \
-  | jq -r 'group_by(.name)[] | "\(.[0].name): \(length)"'
-```
+Mitigation context:
 
-Pass condition:
+- Release app auth surface uses Email OTP, Apple, and Google.
+- Password demo sign-in is `#if DEBUG` only.
+- No Supabase Auth config, DB schema, or migration change is required for this closure.
 
-- `auth_leaked_password_protection` disappears from the advisor summary.
+Post-release recommendation:
 
-Fallback:
-
-- If the toggle is unavailable on the current Supabase plan or cannot be safely changed before submission, record an explicit accepted-risk decision in `QA/APP_REVIEW_MANUAL_EVIDENCE_FORM_2026-06-01.md`.
-- Current mitigation context: release app auth surface uses Email OTP, Apple, and Google; password demo sign-in is `#if DEBUG` only.
+- If the Supabase plan supports it, enable Authentication -> Settings -> Password Security -> Prevent use of leaked passwords in the Dashboard and re-run advisors.
 
 ## Sources
 

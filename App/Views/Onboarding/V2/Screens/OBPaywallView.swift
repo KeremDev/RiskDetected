@@ -1,5 +1,7 @@
 import SwiftUI
 
+// PASSIVE_LEGACY_VIEW: kept for visual reference only.
+// The live onboarding flow uses OBTimelinePaywallView at step 11.
 struct OBPaywallView: View {
     @ObservedObject var state: OnboardingV2State
     var packages: [SubscriptionPlanPackage] = []

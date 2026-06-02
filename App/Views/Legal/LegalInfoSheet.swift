@@ -2,13 +2,19 @@ import SwiftUI
 
 struct LegalInfoSheet: View {
     let onClose: () -> Void
-    @State private var selectedDocument: LegalDocumentKind = .kvkk
+    @StateObject private var legalDocuments = LegalDocumentService.shared
+    @State private var selectedDocument: LegalDocumentKind
+
+    init(initialDocument: LegalDocumentKind = .kvkk, onClose: @escaping () -> Void) {
+        self.onClose = onClose
+        _selectedDocument = State(initialValue: initialDocument)
+    }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 14) {
                 documentTabs
-                LegalDocumentReader(document: selectedDocument.document)
+                LegalDocumentReader(document: legalDocuments.document(for: selectedDocument))
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
@@ -22,6 +28,9 @@ struct LegalInfoSheet: View {
                     RDModalCloseButton(action: onClose)
                 }
             }
+        }
+        .task {
+            await legalDocuments.refreshIfNeeded(userID: SupabaseService.shared.currentUserID)
         }
     }
 
@@ -98,74 +107,6 @@ private struct LegalDocumentReader: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
-    }
-}
-
-private enum LegalDocumentKind: String, CaseIterable, Identifiable {
-    case kvkk
-    case consent
-    case terms
-    case privacy
-
-    var id: String { rawValue }
-
-    var shortTitle: String {
-        switch self {
-        case .kvkk: return "KVKK"
-        case .consent: return "Rıza"
-        case .terms: return "Koşullar"
-        case .privacy: return "Gizlilik"
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .kvkk: return "KVKK Aydınlatma Metni"
-        case .consent: return "Açık Rıza Beyanı"
-        case .terms: return "Kullanım Koşulları"
-        case .privacy: return "Gizlilik Politikası"
-        }
-    }
-
-    var fileName: String {
-        switch self {
-        case .kvkk: return "KVKK-Aydinlatma-ve-Acik-Riza-Metni"
-        case .consent: return "Acik-Riza-Beyani"
-        case .terms: return "Kullanim-Kosullari"
-        case .privacy: return "Gizlilik-Politikasi"
-        }
-    }
-
-    var document: LegalDocument {
-        LegalDocument(kind: self)
-    }
-}
-
-private struct LegalDocument {
-    let title: String
-    let fileName: String
-    let text: String
-
-    init(kind: LegalDocumentKind) {
-        title = kind.title
-        fileName = "\(kind.fileName).md"
-        text = Self.loadText(fileName: kind.fileName)
-    }
-
-    private static func loadText(fileName: String) -> String {
-        let nestedURL = Bundle.main.url(
-            forResource: fileName,
-            withExtension: "md",
-            subdirectory: "LegalDocuments"
-        )
-        let flatURL = Bundle.main.url(forResource: fileName, withExtension: "md")
-
-        guard let url = nestedURL ?? flatURL else {
-            return "Belge yüklenemedi. Lütfen daha sonra tekrar deneyin."
-        }
-
-        return (try? String(contentsOf: url, encoding: .utf8))
-            ?? "Belge okunamadı. Lütfen daha sonra tekrar deneyin."
     }
 }
 

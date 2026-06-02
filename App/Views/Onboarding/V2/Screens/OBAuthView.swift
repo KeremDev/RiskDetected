@@ -10,6 +10,7 @@ struct OBAuthView: View {
     let onGoogle: () -> Void
     let onEmail: () -> Void
     let onSignIn: () -> Void
+    var onLegalDocument: (LegalDocumentKind) -> Void = { _ in }
     @State private var emailPhase: EmailPhase = .hidden
     @State private var email = ""
     @State private var otpInput = ""
@@ -671,7 +672,8 @@ struct OBAuthView: View {
             fontSize: 12,
             textColor: Color.rdSlate.opacity(0.85),
             linkColor: Color.rdGraphite,
-            accessibilityIdentifier: "onboarding.auth.legal_notice"
+            accessibilityIdentifier: "onboarding.auth.legal_notice",
+            onOpenDocument: onLegalDocument
         )
     }
 
