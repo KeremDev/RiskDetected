@@ -29,6 +29,7 @@ enum RDConfig {
     static let sendPushNotificationFunctionName = "send-push-notification"
     static let sendReportReadyNotificationFunctionName = "send-report-ready-notification"
     static let generateExcelReportFunctionName = "generate-excel-report"
+    static let registerReportFunctionName = "register-report"
     static let revenueCatWebhookFunctionName = "revenuecat-webhook"
     static let syncRevenueCatSubscriptionFunctionName = "sync-revenuecat-subscription"
     static let supportContactFunctionName = "support-contact"

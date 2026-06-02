@@ -6,7 +6,9 @@ struct AuthView: View {
     @State private var email: String = ""
     @State private var code: [String] = Array(repeating: "", count: 6)
     @State private var otpInput: String = ""
+    #if DEBUG
     @State private var signingInDemo: DemoAccount?
+    #endif
     @State private var authError: AppErrorMessage?
     @State private var isSendingEmailCode = false
     @State private var isVerifyingEmailCode = false
@@ -21,6 +23,7 @@ struct AuthView: View {
 
     enum AuthPhase { case options, email, otp }
     enum AuthInputField { case email, otp }
+    #if DEBUG
     enum DemoAccount: String {
         case pro, plus, free
 
@@ -64,8 +67,11 @@ struct AuthView: View {
             }
         }
     }
+    #endif
 
+    #if DEBUG
     private var isSigningIn: Bool { signingInDemo != nil }
+    #endif
     private var normalizedEmail: String { email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
     private var otpCode: String { otpInput }
     private var canSendEmailCode: Bool { normalizedEmail.contains("@") && normalizedEmail.contains(".") && !isSendingEmailCode }
@@ -496,6 +502,7 @@ struct AuthView: View {
 
     // MARK: - Demo sign-in
 
+    #if DEBUG
     private func demoButton(_ account: DemoAccount) -> some View {
         Button {
             runDemoSignIn(account)
@@ -537,6 +544,7 @@ struct AuthView: View {
             signingInDemo = nil
         }
     }
+    #endif
 
     private func sendEmailCode() {
         guard canSendEmailCode else { return }

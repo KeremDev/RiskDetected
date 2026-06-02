@@ -120,9 +120,13 @@ enum OBPlan: String, Codable, Equatable {
 }
 
 enum OBTrialPriceCopy {
-    static let yearlyPaywallLine = "7 gün ücretsiz, sonra ₺1.999 (₺166,58/ay)"
-    static let monthlyPaywallLine = "₺199,90/ay — istediğin zaman iptal"
-    static let yearlyFineprint = "Yıllık yalnızca ₺1.999 (₺166,58/ay)"
+    static let yearlyPrice = "₺1.999,99"
+    static let yearlyMonthlyEquivalent = "₺166,67/ay"
+    static let monthlyPrice = "₺199,99"
+    static let yearlyPaywallLine = "7 gün ücretsiz, sonra ₺1.999,99 (₺166,67/ay)"
+    static let monthlyPaywallLine = "₺199,99/ay — istediğin zaman iptal"
+    static let yearlyFineprint = "Yıllık yalnızca ₺1.999,99 (₺166,67/ay)"
+    static let monthlyRenewalLine = "₺199,99 otomatik yenilenir. İstediğin zaman iptal edebilirsin."
 }
 
 @MainActor

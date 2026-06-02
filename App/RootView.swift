@@ -18,6 +18,7 @@ struct RootView: View {
                 OnboardingViewV2(
                     isAuthenticated: app.auth.isAuthenticated,
                     currentTier: app.currentTier,
+                    subscriptionPackages: app.subscriptionPackages,
                     onFinish: { app.finishOnboarding() },
                     onAuthApple: { runAppleSignIn() },
                     onAuthGoogle: { runGoogleSignIn() },
@@ -64,8 +65,12 @@ struct RootView: View {
     }
 
     private static var isUITestLaunch: Bool {
+        #if DEBUG
         CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
             || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+        #else
+        false
+        #endif
     }
 
     private func runAppleSignIn() {
@@ -195,7 +200,7 @@ private struct OfflineStatusBanner: View {
     }
 }
 
-private extension SubscriptionPlanPackage {
+extension SubscriptionPlanPackage {
     func matchesOnboardingBilling(_ plan: OBPlan) -> Bool {
         let token = [
             id,

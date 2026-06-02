@@ -22,6 +22,7 @@ struct OnboardingViewV2: View {
     @State private var isPaywallWorking = false
     var isAuthenticated: Bool = false
     var currentTier: SubscriptionTier = .free
+    var subscriptionPackages: [SubscriptionPlanPackage] = []
     var onFinish: () -> Void = {}
     var onAuthApple: () -> Void = {}
     var onAuthGoogle: () -> Void = {}
@@ -34,6 +35,7 @@ struct OnboardingViewV2: View {
         initialStep: Int = 0,
         isAuthenticated: Bool = false,
         currentTier: SubscriptionTier = .free,
+        subscriptionPackages: [SubscriptionPlanPackage] = [],
         onFinish: @escaping () -> Void = {},
         onAuthApple: @escaping () -> Void = {},
         onAuthGoogle: @escaping () -> Void = {},
@@ -45,6 +47,7 @@ struct OnboardingViewV2: View {
         _state = StateObject(wrappedValue: OnboardingV2State(step: initialStep))
         self.isAuthenticated = isAuthenticated
         self.currentTier = currentTier
+        self.subscriptionPackages = subscriptionPackages
         self.onFinish = onFinish
         self.onAuthApple = onAuthApple
         self.onAuthGoogle = onAuthGoogle
@@ -142,7 +145,15 @@ struct OnboardingViewV2: View {
     private var currentScreen: some View {
         switch state.step {
         case 0:
-            OBSplashView { state.next() }
+            OBSplashView(
+                onNext: { state.next() },
+                onSkip: {
+                    OBHaptic.soft()
+                    withAnimation(.obSpring) {
+                        showSkipConfirmation = true
+                    }
+                }
+            )
         case 1:
             OBPainPointView(
                 onNext: { state.next() },
@@ -184,6 +195,7 @@ struct OnboardingViewV2: View {
             }
         case 11:
             OBTimelinePaywallView(
+                packages: subscriptionPackages,
                 isWorking: isPaywallWorking,
                 noticeMessage: paywallNoticeMessage,
                 onStart: { plan in
@@ -255,8 +267,12 @@ struct OnboardingViewV2: View {
     #endif
 
     private static var isUITestLaunch: Bool {
+        #if DEBUG
         CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
             || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+        #else
+        false
+        #endif
     }
 }
 
@@ -320,6 +336,7 @@ private struct OBSkipConfirmationView: View {
             .shadow(color: Color.black.opacity(0.18), radius: 30, x: 0, y: 18)
             .padding(.horizontal, 24)
         }
+        .accessibilityIdentifier("onboarding.skip_confirmation")
     }
 
     private var sadIcon: some View {

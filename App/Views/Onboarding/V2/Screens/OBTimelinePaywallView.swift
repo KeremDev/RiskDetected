@@ -14,6 +14,7 @@ import SwiftUI
 // Standalone for now; codex will wire to flow + IAP after approval.
 
 struct OBTimelinePaywallView: View {
+    var packages: [SubscriptionPlanPackage] = []
     var isWorking: Bool = false
     var noticeMessage: String?
     let onStart: (OBPlan) -> Void
@@ -27,8 +28,8 @@ struct OBTimelinePaywallView: View {
 
     private var priceLine: String {
         switch selectedPlan {
-        case .yearly:  return "7 gün ücretsiz, sonra 1.999 TL (166.58/ay)"
-        case .monthly: return OBTrialPriceCopy.monthlyPaywallLine
+        case .yearly:  return yearlyPaywallLine
+        case .monthly: return monthlyPaywallLine
         }
     }
 
@@ -65,7 +66,7 @@ struct OBTimelinePaywallView: View {
     private var headerSubtitle: String {
         switch selectedPlan {
         case .yearly:
-            return "7 gün ücretsiz, sonra 1.999 TL (166.58/ay)"
+            return yearlyPaywallLine
         case .monthly:
             return "Aylık plan hemen başlar. İstediğin zaman iptal edebilirsin."
         }
@@ -211,7 +212,7 @@ struct OBTimelinePaywallView: View {
             .overlay(Capsule().stroke(Color.rdLine, lineWidth: 1))
             .frame(width: 210)
 
-            Text(selectedPlan == .yearly ? "%20 İndirim" : OBTrialPriceCopy.monthlyPaywallLine)
+            Text(selectedPlan == .yearly ? "%17 İndirim" : monthlyPaywallLine)
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundStyle(selectedPlan == .yearly ? Color.rdGreen : Color.rdSlate)
                 .lineLimit(1)
@@ -314,7 +315,7 @@ struct OBTimelinePaywallView: View {
                 icon: "calendar.badge.checkmark",
                 accent: Color.rdGreen,
                 day: "Her ay",
-                detail: "₺499 otomatik yenilenir. İstediğin zaman iptal edebilirsin.",
+                detail: monthlyRenewalLine,
                 isLast: true
             )
         }
@@ -326,6 +327,59 @@ struct OBTimelinePaywallView: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .rdCardShadow()
+    }
+
+    private var yearlyPrice: String {
+        displayPrice(for: .yearly, fallback: OBTrialPriceCopy.yearlyPrice)
+    }
+
+    private var monthlyPrice: String {
+        displayPrice(for: .monthly, fallback: OBTrialPriceCopy.monthlyPrice)
+    }
+
+    private var yearlyMonthlyEquivalent: String {
+        guard let package = plusPackage(for: .yearly),
+              let monthlyEquivalent = package.monthlyEquivalentPrice,
+              !Self.shouldUseTRYFallback(for: monthlyEquivalent) else {
+            return OBTrialPriceCopy.yearlyMonthlyEquivalent
+        }
+        return monthlyEquivalent.hasSuffix("/ay") ? monthlyEquivalent : "\(monthlyEquivalent)/ay"
+    }
+
+    private var yearlyPaywallLine: String {
+        "7 gün ücretsiz, sonra \(yearlyPrice) (\(yearlyMonthlyEquivalent))"
+    }
+
+    private var monthlyPaywallLine: String {
+        "\(monthlyPrice)/ay — istediğin zaman iptal"
+    }
+
+    private var monthlyRenewalLine: String {
+        "\(monthlyPrice) otomatik yenilenir. İstediğin zaman iptal edebilirsin."
+    }
+
+    private func displayPrice(for plan: OBPlan, fallback: String) -> String {
+        guard let package = plusPackage(for: plan) else { return fallback }
+        return Self.shouldUseTRYFallback(for: package.price) ? fallback : package.price
+    }
+
+    private func plusPackage(for plan: OBPlan) -> SubscriptionPlanPackage? {
+        packages
+            .filter { $0.tier == .plus }
+            .first { $0.matchesOnboardingBilling(plan) }
+    }
+
+    private static func shouldUseTRYFallback(for price: String) -> Bool {
+        let trimmed = price.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return true }
+
+        let locale = Locale.current
+        guard locale.region?.identifier == "TR" else { return false }
+
+        let normalized = trimmed
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
+            .uppercased(with: Locale(identifier: "en_US"))
+        return normalized.contains("$") || normalized.contains("USD")
     }
 
     private func timelineStep(

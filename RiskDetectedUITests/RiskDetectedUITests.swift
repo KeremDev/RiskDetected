@@ -47,17 +47,17 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Gizlilik Politikası").exists)
 
         tap("Aylık")
-        XCTAssertTrue(app.staticTexts["₺199,90/ay — istediğin zaman iptal"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["₺199,99/ay — istediğin zaman iptal"].waitForExistence(timeout: 3))
 
         tap("Yıllık")
-        XCTAssertTrue(app.staticTexts["7 gün ücretsiz, sonra 1.999 TL (166.58/ay)"].waitForExistence(timeout: 3))
+        XCTAssertTrue(waitFor("7 gün ücretsiz, sonra ₺1.999,99 (₺166,67/ay)", timeout: 3).exists)
     }
 
     func testOnboardingAllQuestionScreensAndAuthEmailPanelRender() throws {
         launchApp()
 
         XCTAssertTrue(waitFor("onboarding.splash", timeout: 12).exists)
-        tap("Başlayalım")
+        tap("onboarding.splash.start")
 
         XCTAssertTrue(waitFor("onboarding.pain_point").exists)
         XCTAssertTrue(waitFor("Saatlerce süren rapor yazımı.").exists)
@@ -90,6 +90,34 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("onboarding.auth.google").exists)
         XCTAssertTrue(waitFor("E-posta ile devam et").exists)
         XCTAssertTrue(waitFor("onboarding.auth.sign_in_existing").exists)
+    }
+
+    func testOnboardingSplashClassicDesignRenderAndStart() throws {
+        launchApp()
+
+        XCTAssertTrue(waitFor("onboarding.splash", timeout: 12).exists)
+        XCTAssertTrue(waitFor("Profesyonel İSG Asistanı").exists)
+        XCTAssertTrue(waitFor("Fotoğraf çek; yapay zekâ uygunsuzlukları otomatik tespit etsin ve raporunu anında oluştursun.").exists)
+        XCTAssertTrue(waitFor("onboarding.splash.preview_phone").exists)
+        XCTAssertTrue(waitFor("onboarding.splash.progress").exists)
+        XCTAssertTrue(waitFor("onboarding.splash.chip.detection").exists)
+        XCTAssertTrue(waitFor("onboarding.splash.chip.preparing").exists)
+        XCTAssertTrue(waitFor("onboarding.splash.skip").exists)
+
+        tap("onboarding.splash.start")
+        XCTAssertTrue(waitFor("onboarding.pain_point").exists)
+    }
+
+    func testOnboardingSplashSkipShowsConfirmation() throws {
+        launchApp()
+
+        XCTAssertTrue(waitFor("onboarding.splash", timeout: 12).exists)
+        tap("onboarding.splash.skip")
+
+        XCTAssertTrue(waitFor("onboarding.skip_confirmation").exists)
+        XCTAssertTrue(waitFor("Sana özel sonuçlar veremeyeceğiz").exists)
+        XCTAssertTrue(waitFor("Cevaplamaya devam et").exists)
+        XCTAssertTrue(waitFor("Yine de atla").exists)
     }
 
     func testMainTabsProfileAndDarkModeRenderWithBypass() throws {
@@ -143,9 +171,9 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Limitsiz Özellikler").exists)
         XCTAssertTrue(waitFor("Tüm Plus özellikleri dahil").exists)
         tap("Aylık")
-        XCTAssertTrue(waitFor("Tüm Pro özellikleri aylık ₺499,90 ile.").exists)
+        XCTAssertTrue(waitFor("Tüm Pro özellikleri aylık ₺499,99 ile.").exists)
         tap("Yıllık")
-        XCTAssertTrue(waitFor("Yıllık ₺4.999 ile tüm Pro özellikleri.").exists)
+        XCTAssertTrue(waitFor("Yıllık ₺4.999,99 ile tüm Pro özellikleri.").exists)
         XCTAssertTrue(waitFor("Plus aboneliğini incele").exists)
 
         tap("in_app_paywall.pro.plus_link")
@@ -167,9 +195,9 @@ final class RiskDetectedUITests: XCTestCase {
         tap("in_app_paywall.plus.pro_link")
         XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
         tap("Aylık")
-        XCTAssertTrue(waitFor("Tüm Pro özellikleri aylık ₺499,90 ile.").exists)
+        XCTAssertTrue(waitFor("Tüm Pro özellikleri aylık ₺499,99 ile.").exists)
         tap("Yıllık")
-        XCTAssertTrue(waitFor("Yıllık ₺4.999 ile tüm Pro özellikleri.").exists)
+        XCTAssertTrue(waitFor("Yıllık ₺4.999,99 ile tüm Pro özellikleri.").exists)
     }
 
     func testCompanyPickerV2FieldsRenderWithFixtures() throws {
@@ -385,7 +413,7 @@ final class RiskDetectedUITests: XCTestCase {
     }
 
     private func completeQuestionsToPersonalPlan() {
-        tap("Başlayalım", timeout: 12)
+        tap("onboarding.splash.start", timeout: 12)
 
         tap("Devam")
 
@@ -547,6 +575,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(element.exists, "Element does not exist: \(identifier)")
         element.press(forDuration: 1.0)
     }
+
 }
 
 private final class SupabasePinnedConnectionProbe: NSObject, URLSessionDelegate, @unchecked Sendable {

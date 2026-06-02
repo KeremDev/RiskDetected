@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OBPaywallView: View {
     @ObservedObject var state: OnboardingV2State
+    var packages: [SubscriptionPlanPackage] = []
     let onStartTrial: () -> Void
     let onDismiss: () -> Void
 
@@ -195,7 +196,7 @@ struct OBPaywallView: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                         if isYearly {
-                            Text("%60 TASARRUF")
+                            Text("%17 İNDİRİM")
                                 .font(.system(size: 10, weight: .semibold))
                                 .tracking(0.4)
                                 .foregroundStyle(Color.rdOnyx)
@@ -204,13 +205,13 @@ struct OBPaywallView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
                     }
-                    Text(isYearly ? "İlk 7 gün ücretsiz · sonra ₺199 / ay" : "İlk 7 gün ücretsiz")
+                    Text(isYearly ? "İlk 7 gün ücretsiz · sonra \(displayPrice(for: .yearly))/yıl" : "Hemen başlar · istediğin zaman iptal")
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text(isYearly ? "₺2.388" : "₺499")
+                    Text(displayPrice(for: plan))
                         .font(.system(size: 17, weight: .bold, design: .monospaced))
                         .foregroundStyle(.white)
                     Text(isYearly ? "/yıl" : "/ay")
@@ -228,6 +229,31 @@ struct OBPaywallView: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(OBPressStyle())
+    }
+
+    private func displayPrice(for plan: OBPlan) -> String {
+        let fallback = plan == .yearly ? OBTrialPriceCopy.yearlyPrice : OBTrialPriceCopy.monthlyPrice
+        guard let package = plusPackage(for: plan) else { return fallback }
+        return Self.shouldUseTRYFallback(for: package.price) ? fallback : package.price
+    }
+
+    private func plusPackage(for plan: OBPlan) -> SubscriptionPlanPackage? {
+        packages
+            .filter { $0.tier == .plus }
+            .first { $0.matchesOnboardingBilling(plan) }
+    }
+
+    private static func shouldUseTRYFallback(for price: String) -> Bool {
+        let trimmed = price.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return true }
+
+        let locale = Locale.current
+        guard locale.region?.identifier == "TR" else { return false }
+
+        let normalized = trimmed
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
+            .uppercased(with: Locale(identifier: "en_US"))
+        return normalized.contains("$") || normalized.contains("USD")
     }
 
     private var finePrint: some View {

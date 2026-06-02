@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import os
 import RevenueCat
 
 struct SubscriptionState: Equatable {
@@ -63,6 +64,7 @@ protocol SubscriptionManaging: AnyObject {
 @MainActor
 final class RevenueCatSubscriptionManager: NSObject, ObservableObject, SubscriptionManaging {
     static let shared = RevenueCatSubscriptionManager()
+    private static let logger = Logger(subsystem: "com.riskdetected.app", category: "RevenueCat")
 
     @Published private(set) var state: SubscriptionState = .free
     @Published private(set) var packages: [SubscriptionPlanPackage] = []
@@ -82,6 +84,25 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
     private override init() {
         super.init()
     }
+
+    #if DEBUG
+    private static func writeDiagnostics(_ line: String) {
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let entry = "\(timestamp) \(line)\n"
+        guard let data = entry.data(using: .utf8),
+              let cachesURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+        else { return }
+        let fileURL = cachesURL.appendingPathComponent("revenuecat-diagnostics.log")
+        if FileManager.default.fileExists(atPath: fileURL.path),
+           let handle = try? FileHandle(forWritingTo: fileURL) {
+            defer { try? handle.close() }
+            _ = try? handle.seekToEnd()
+            try? handle.write(contentsOf: data)
+        } else {
+            try? data.write(to: fileURL, options: .atomic)
+        }
+    }
+    #endif
 
     func configure() {
         guard !isConfigured else { return }
@@ -118,8 +139,14 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
         configure()
 
         do {
+            #if DEBUG
+            Self.writeDiagnostics("RD_REVENUECAT_LOAD_OFFERINGS_START")
+            #endif
             let offerings = try await Purchases.shared.offerings()
-            let allPackages = offerings.current?.availablePackages ?? offerings.all.values.flatMap(\.availablePackages)
+            let currentPackages = offerings.current?.availablePackages ?? []
+            let allPackages = currentPackages.isEmpty
+                ? offerings.all.values.flatMap(\.availablePackages)
+                : currentPackages
             var mappedPackages: [SubscriptionPlanPackage] = []
             var rawByID: [String: Package] = [:]
 
@@ -138,6 +165,23 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                         productIdentifier: package.storeProduct.productIdentifier
                     )
                 )
+
+                Self.logger.info(
+                    """
+                    RevenueCat package loaded \
+                    id=\(package.identifier, privacy: .public) \
+                    product=\(package.storeProduct.productIdentifier, privacy: .public) \
+                    tier=\(tier.rawValue, privacy: .public) \
+                    type=\(String(describing: package.packageType), privacy: .public) \
+                    price=\(package.localizedPriceString, privacy: .public) \
+                    monthly=\((package.storeProduct.localizedPricePerMonth ?? "nil"), privacy: .public)
+                    """
+                )
+                #if DEBUG
+                let diagnosticLine = "RD_REVENUECAT_PACKAGE id=\(package.identifier) product=\(package.storeProduct.productIdentifier) tier=\(tier.rawValue) type=\(String(describing: package.packageType)) price=\(package.localizedPriceString) monthly=\(package.storeProduct.localizedPricePerMonth ?? "nil")"
+                print(diagnosticLine)
+                Self.writeDiagnostics(diagnosticLine)
+                #endif
             }
 
             packageByID = rawByID
@@ -147,8 +191,16 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             }
 
             if packages.isEmpty {
+                Self.logger.error("RevenueCat offerings loaded but no app packages were mapped.")
+                #if DEBUG
+                Self.writeDiagnostics("RD_REVENUECAT_NO_MAPPED_PACKAGES")
+                #endif
                 apply(error: SubscriptionManagerError.noPackagesConfigured)
             } else {
+                Self.logger.info("RevenueCat mapped \(self.packages.count, privacy: .public) subscription packages.")
+                #if DEBUG
+                Self.writeDiagnostics("RD_REVENUECAT_MAPPED_COUNT \(self.packages.count)")
+                #endif
                 state = SubscriptionState(
                     tier: state.tier,
                     entitlementID: state.entitlementID,
@@ -158,6 +210,10 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                 )
             }
         } catch {
+            Self.logger.error("RevenueCat offerings load failed: \(error.localizedDescription, privacy: .public)")
+            #if DEBUG
+            Self.writeDiagnostics("RD_REVENUECAT_LOAD_ERROR \(error.localizedDescription)")
+            #endif
             apply(error: error)
         }
     }

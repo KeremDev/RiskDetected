@@ -667,25 +667,12 @@ struct OBAuthView: View {
     }
 
     private var finePrint: some View {
-        Text(makeFinePrint())
-            .font(.system(size: 12))
-            .foregroundStyle(Color.rdSlate.opacity(0.85))
-            .lineSpacing(3)
-    }
-
-    private func makeFinePrint() -> AttributedString {
-        var s = AttributedString("Devam ederek ")
-        var a = AttributedString("Kullanım Şartları'nı")
-        a.foregroundColor = Color.rdGraphite
-        a.underlineStyle = .single
-        s.append(a)
-        s.append(AttributedString(" ve "))
-        var b = AttributedString("Gizlilik Politikası'nı")
-        b.foregroundColor = Color.rdGraphite
-        b.underlineStyle = .single
-        s.append(b)
-        s.append(AttributedString(" kabul etmiş olursun."))
-        return s
+        LegalAcceptanceNotice(
+            fontSize: 12,
+            textColor: Color.rdSlate.opacity(0.85),
+            linkColor: Color.rdGraphite,
+            accessibilityIdentifier: "onboarding.auth.legal_notice"
+        )
     }
 
     private func authButton<Icon: View>(

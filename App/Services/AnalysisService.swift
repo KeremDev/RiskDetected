@@ -451,11 +451,8 @@ final class AnalysisService {
             throw AnalysisError.storageFailed("PDF dosyası rapor arşivine yüklenemedi. Destek kodu: \(supportID)")
         }
 
-        struct UpsertPayload: Encodable {
-            let user_id: String
+        struct RegisterReportPayload: Encodable {
             let analysis_id: String
-            let document_no: String
-            let format: String
             let kind: String
             let method: String
             let title: String
@@ -466,22 +463,13 @@ final class AnalysisService {
             let size_bytes: Int
             let page_count: Int
             let company_id: String?
-            let company_snapshot: CompanySnapshot?
             let request_id: String
             let support_id: String
         }
 
         let fileSize = data.count
-        let payload = UpsertPayload(
-            user_id: userID.uuidString,
+        let payload = RegisterReportPayload(
             analysis_id: bundle.analysis.id.uuidString,
-            document_no: Self.reportDocumentNo(
-                for: bundle.analysis,
-                kind: kind,
-                method: method,
-                requestID: requestID
-            ),
-            format: "pdf",
             kind: kind.rawValue,
             method: Self.databaseReportMethodValue(method),
             title: bundle.analysis.title,
@@ -492,7 +480,6 @@ final class AnalysisService {
             size_bytes: fileSize,
             page_count: Self.estimatedPageCount(for: kind, findingCount: bundle.findings.count),
             company_id: company?.id.uuidString,
-            company_snapshot: company.map(CompanySnapshot.init(company:)),
             request_id: requestID,
             support_id: supportID
         )
@@ -504,19 +491,31 @@ final class AnalysisService {
         }
 
         do {
-            let row: ReportRow = try await supabase.client
-                .from("reports")
-                .insert(payload)
-                .select()
-                .single()
-                .execute()
-                .value
-            await sendReportReadyNotificationIfPossible(
-                reportID: row.id,
-                requestID: requestID,
-                supportID: supportID
+            let row: ReportRow = try await supabase.functions.invoke(
+                RDConfig.registerReportFunctionName,
+                options: FunctionInvokeOptions(body: payload)
             )
             return row
+        } catch let FunctionsError.httpError(_, data) {
+            let payload = Self.functionErrorPayload(from: data)
+            let remoteSupportID = payload.supportID ?? supportID
+            let message = payload.message.isEmpty ? "Rapor arşiv kaydı tamamlanamadı." : payload.message
+            Self.logger.error("Report metadata function failed support=\(remoteSupportID, privacy: .public) request=\(requestID, privacy: .public) message=\(message, privacy: .public)")
+            do {
+                _ = try await supabase.storage
+                    .from(RDConfig.Bucket.reports)
+                    .remove(paths: [storagePath])
+            } catch {
+                Self.logger.error("Report orphan cleanup failed support=\(remoteSupportID, privacy: .public) request=\(requestID, privacy: .public) path=\(storagePath, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+            }
+            let joinedMessage = "\(payload.code ?? "") \(message)"
+            if AppErrorMessage.isFreeRiskAnalysisTrialExhausted(joinedMessage) {
+                throw AnalysisError.databaseFailed("free_risk_analysis_trial_exhausted:1/1\nDestek kodu: \(remoteSupportID)")
+            }
+            if AppErrorMessage.isReportQuotaExceeded(joinedMessage) {
+                throw AnalysisError.databaseFailed("report_quota_exceeded\nDestek kodu: \(remoteSupportID)")
+            }
+            throw AnalysisError.databaseFailed(Self.appendSupportID(remoteSupportID, to: message))
         } catch {
             Self.logger.error("Report metadata save failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
             do {
@@ -1396,7 +1395,7 @@ final class AnalysisService {
         }
 
         if let body = try? JSONDecoder().decode(FunctionErrorBody.self, from: data) {
-            let message = (body.error ?? body.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let message = (body.message ?? body.error ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             if !message.isEmpty {
                 return (message, body.support_id, body.code, body.tier)
             }

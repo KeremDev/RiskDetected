@@ -867,9 +867,9 @@ struct PaywallView: View {
             )
         case .plus:
             return PaywallPlanDisplay(
-                yearlyMonthlyPrice: 166.58,
-                monthlyPrice: 199.90,
-                yearlyPrice: 1_999,
+                yearlyMonthlyPrice: 166.67,
+                monthlyPrice: 199.99,
+                yearlyPrice: 1_999.99,
                 trialDays: 7,
                 features: [
                     "10/gün Analiz",
@@ -883,9 +883,9 @@ struct PaywallView: View {
             )
         case .pro:
             return PaywallPlanDisplay(
-                yearlyMonthlyPrice: 416.58,
-                monthlyPrice: 499.90,
-                yearlyPrice: 4_999,
+                yearlyMonthlyPrice: 416.67,
+                monthlyPrice: 499.99,
+                yearlyPrice: 4_999.99,
                 trialDays: nil,
                 features: [
                     "Plus + ekstra",
@@ -945,10 +945,13 @@ struct PaywallView: View {
     }
 
     private static func shouldUseTRYFallback(for price: String) -> Bool {
+        let trimmed = price.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return true }
+
         let locale = Locale.current
         guard locale.region?.identifier == "TR" else { return false }
 
-        let normalized = price
+        let normalized = trimmed
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
             .uppercased(with: Locale(identifier: "en_US"))
         return normalized.contains("$") || normalized.contains("USD")

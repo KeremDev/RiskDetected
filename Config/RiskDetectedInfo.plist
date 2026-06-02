@@ -45,6 +45,8 @@
 	<string>200539603330-p0o5ddmuqf1m7fobof5omtca28k0mk7b.apps.googleusercontent.com</string>
 	<key>GIDServerClientID</key>
 	<string>200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
