@@ -8,8 +8,10 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-type PlanTier = "free" | "plus" | "pro";
+import {
+  tierFromProductOrEntitlements,
+  type PlanTier,
+} from "../_shared/subscription-tier.ts";
 
 const ACTIVE_STATUSES = new Set([
   "INITIAL_PURCHASE",
@@ -45,22 +47,7 @@ function tierFrom(
   entitlementIDs: string[],
   productID: string | null,
 ): PlanTier {
-  const product = productID?.toLowerCase() ?? "";
-  if (entitlementIDs.includes("pro") || product.includes("pro")) return "pro";
-  if (entitlementIDs.includes("plus") || product.includes("plus")) {
-    return "plus";
-  }
-  return "free";
-}
-
-function tierFromProductFirst(
-  entitlementIDs: string[],
-  productID: string | null,
-): PlanTier {
-  const product = productID?.toLowerCase() ?? "";
-  if (product.includes("plus")) return "plus";
-  if (product.includes("pro")) return "pro";
-  return tierFrom(entitlementIDs, productID);
+  return tierFromProductOrEntitlements(entitlementIDs, productID);
 }
 
 function uuidFrom(value: unknown): string | null {
@@ -116,12 +103,7 @@ function accountPushCopy(eventType: string, tier: PlanTier | null): {
   body: string;
 } | null {
   if (eventType === "INITIAL_PURCHASE" || eventType === "PRODUCT_CHANGE") {
-    const planName = tier === "pro" ? "Pro" : tier === "plus" ? "Plus" : null;
-    if (!planName) return null;
-    return {
-      title: `${planName} plan aktif`,
-      body: `RiskDetected ${planName} üyeliğin hesabına tanımlandı.`,
-    };
+    return null;
   }
   if (eventType === "RENEWAL" || eventType === "UNCANCELLATION") return null;
   if (eventType === "CANCELLATION") {
@@ -292,9 +274,7 @@ serve(async (req) => {
     return json(200, { ok: true, ignored: true });
   }
 
-  const entitlementTier = eventType === "PRODUCT_CHANGE"
-    ? tierFromProductFirst(entitlementIDs, effectiveProductID)
-    : tierFrom(entitlementIDs, effectiveProductID);
+  const entitlementTier = tierFrom(entitlementIDs, effectiveProductID);
   const expiration = parseExpiration(
     event.expiration_at_ms ?? event.expiration_at,
   );

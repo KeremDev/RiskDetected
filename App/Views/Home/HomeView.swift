@@ -91,7 +91,9 @@ struct HomeView: View {
                     RDButton(
                         title: "Taramayı Başlat",
                         style: .detect,
-                        icon: "sparkles"
+                        icon: "sparkles",
+                        backgroundOverride: scanButtonBackground,
+                        shadowOverride: scanButtonShadow
                     ) {
                         startAnalysisFlow()
                     }
@@ -351,6 +353,17 @@ struct HomeView: View {
 
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
+    }
+
+    private var scanButtonBackground: Color {
+        preferredModalColorScheme == .dark ? .rdGreen : .rdOnyx
+    }
+
+    private var scanButtonShadow: Color {
+        if preferredModalColorScheme == .dark {
+            return Color.rdGreen.opacity(0.28)
+        }
+        return Color.rdOnyx.opacity(0.18)
     }
 
     private var annotatePresentationBinding: Binding<Bool> {

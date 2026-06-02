@@ -27,7 +27,7 @@ struct RootView: View {
                     onAuthGoogle: { runGoogleSignIn() },
                     onAuthEmail: {},
                     onSignInExisting: {},
-                    onPurchase: { plan, complete in purchaseOnboardingPlan(plan, onComplete: complete) },
+                    onPurchase: { plan in try await purchaseOnboardingPlan(plan) },
                     onRestorePurchases: { try await restoreOnboardingPurchases() }
                 )
                     .transition(.opacity)
@@ -192,28 +192,18 @@ struct RootView: View {
         }
     }
 
-    private func purchaseOnboardingPlan(_ plan: OBPlan, onComplete: @escaping () -> Void) {
-        Task {
-            do {
-                if app.subscriptionPackages.isEmpty {
-                    await app.refreshSubscriptionOfferings()
-                }
-                guard let package = onboardingPackage(for: plan) else {
-                    app.authError = "Seçilen abonelik paketi şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
-                    return
-                }
-                try await app.purchaseSubscription(packageID: package.id)
-                onComplete()
-            } catch is CancellationError {
-                return
-            } catch {
-                app.authError = AppErrorMessage.make(
-                    error,
-                    context: "Abonelik başlatılamadı",
-                    fallbackTitle: "Abonelik başlatılamadı"
-                ).message
-            }
+    private func purchaseOnboardingPlan(_ plan: OBPlan) async throws {
+        if app.subscriptionPackages.isEmpty {
+            await app.refreshSubscriptionOfferings()
         }
+        guard let package = onboardingPackage(for: plan) else {
+            throw NSError(
+                domain: "RiskDetected.OnboardingPurchase",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "Seçilen abonelik paketi şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."]
+            )
+        }
+        try await app.purchaseSubscription(packageID: package.id)
     }
 
     private func restoreOnboardingPurchases() async throws -> Bool {
@@ -404,29 +394,19 @@ extension SubscriptionPlanPackage {
     func matchesOnboardingBilling(_ plan: OBPlan) -> Bool {
         let token = [
             id,
-            productIdentifier,
-            title,
-            subtitle
+            productIdentifier
         ]
         .joined(separator: " ")
-        .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "tr_TR"))
-        .lowercased(with: Locale(identifier: "tr_TR"))
+        .lowercased(with: Locale(identifier: "en_US"))
 
         switch plan {
         case .yearly:
             return token.contains("annual") ||
                 token.contains("year") ||
-                token.contains("yearly") ||
-                token.contains("yillik") ||
-                token.contains("yıllık") ||
-                token.contains("yılık") ||
-                token.contains("yil")
+                token.contains("yearly")
         case .monthly:
             return token.contains("monthly") ||
-                token.contains("month") ||
-                token.contains("aylik") ||
-                token.contains("aylık") ||
-                token.contains("ay")
+                token.contains("month")
         }
     }
 }

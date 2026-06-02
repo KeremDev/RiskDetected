@@ -6,8 +6,8 @@ struct CompanyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     static func presentationDetents(for accessTier: SubscriptionTier, allowNoCompany: Bool = true) -> Set<PresentationDetent> {
-        guard accessTier.isPaid else { return [.height(370)] }
-        return [.height(allowNoCompany ? 430 : 360)]
+        guard accessTier.isPaid else { return [.height(330)] }
+        return allowNoCompany ? [.height(330), .medium] : [.height(315), .medium]
     }
 
     let title: String
@@ -36,7 +36,7 @@ struct CompanyPickerSheet: View {
                 if accessTier.isPaid {
                     paidContent
                         .padding(20)
-                        .padding(.bottom, 24)
+                        .padding(.bottom, 14)
                 } else {
                     ScrollView(showsIndicators: false) {
                         lockedContent

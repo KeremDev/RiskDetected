@@ -9,8 +9,10 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-type PlanTier = "free" | "plus" | "pro";
+import {
+  tierFromProductIdentifier,
+  type PlanTier,
+} from "../_shared/subscription-tier.ts";
 
 type RevenueCatEntitlement = {
   expires_date?: string | null;
@@ -61,6 +63,25 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
   productID: string | null;
   expiration: string | null;
 } {
+  const activeEntitlements = Object.entries(entitlements)
+    .filter(([, value]) => isActiveEntitlement(value));
+  const productResolved = activeEntitlements
+    .map(([entitlementID, value]) => ({
+      tier: tierFromProductIdentifier(value.product_identifier ?? ""),
+      entitlementID,
+      productID: value.product_identifier ?? null,
+      expiration: value.expires_date ?? null,
+    }))
+    .find((item) => item.tier);
+  if (productResolved?.tier) {
+    return {
+      tier: productResolved.tier,
+      entitlementID: productResolved.tier,
+      productID: productResolved.productID,
+      expiration: productResolved.expiration,
+    };
+  }
+
   const pro = entitlements.pro;
   if (isActiveEntitlement(pro)) {
     return {
@@ -87,13 +108,6 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
     productID: null,
     expiration: null,
   };
-}
-
-function tierFromProductIdentifier(productID: string): PlanTier | null {
-  const product = productID.toLowerCase();
-  if (product.includes("plus")) return "plus";
-  if (product.includes("pro")) return "pro";
-  return null;
 }
 
 function subscriptionTier(
@@ -172,7 +186,7 @@ async function sendAccountSyncPush(params: {
   tier: PlanTier;
   status: string;
 }) {
-  if (params.tier === "free") return;
+  if (params.tier === "free" || params.status === "active") return;
   const planName = params.tier === "pro" ? "Pro" : "Plus";
   const response = await fetch(
     `${params.supabaseUrl}/functions/v1/send-push-notification`,
@@ -315,6 +329,27 @@ serve(async (req) => {
         null,
       revenuecat_tier: resolved.tier,
       skipped_downgrade: true,
+    });
+  }
+
+  if (
+    resolved.tier === "pro" && previousTier === "plus" &&
+    isActivePaidBackendSubscription(previousSubscription)
+  ) {
+    // Authenticated sync is a fallback repair path. Do not silently upgrade a
+    // Plus backend subscription to Pro from a RevenueCat subscriber snapshot;
+    // plan upgrades must arrive through the RevenueCat webhook product-change
+    // event or an explicit Pro purchase flow.
+    return json(200, {
+      ok: true,
+      tier: "plus",
+      status: previousStatus ?? "active",
+      entitlement_id: previousSubscription?.entitlement_id ?? "plus",
+      product_id: previousSubscription?.product_id ?? null,
+      current_period_ends_at: previousSubscription?.current_period_ends_at ??
+        null,
+      revenuecat_tier: resolved.tier,
+      skipped_upgrade: true,
     });
   }
 

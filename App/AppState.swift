@@ -428,11 +428,11 @@ final class AppState: ObservableObject {
     }
 
     private func displayTier(profileTier: SubscriptionTier, subscriptionTier: SubscriptionTier) -> SubscriptionTier {
-        if profileTier.isPaid {
-            return profileTier
-        }
         if subscriptionTier.isPaid {
             return subscriptionTier
+        }
+        if profileTier.isPaid {
+            return profileTier
         }
         return .free
     }

@@ -293,6 +293,8 @@ struct OBPrimaryButton: View {
     let title: String
     var trailingIcon: String? = "arrow.right"
     var enabled: Bool = true
+    var isLoading: Bool = false
+    var loadingTitle: String?
     var style: Style = .onyx
     var accessibilityID: String?
     let action: () -> Void
@@ -304,14 +306,22 @@ struct OBPrimaryButton: View {
 
     var body: some View {
         let resolvedAccessibilityID = accessibilityID ?? "ob.primary.\(obIdentifierSlug(title))"
+        let displayTitle = isLoading ? (loadingTitle ?? title) : title
 
         Button {
-            if enabled { OBHaptic.light(); action() }
+            if enabled && !isLoading { OBHaptic.light(); action() }
         } label: {
             HStack(spacing: 8) {
-                Text(title)
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(textColor)
+                }
+
+                Text(displayTitle)
                     .font(.system(size: 16, weight: .semibold))
-                if let trailingIcon {
+
+                if let trailingIcon, !isLoading {
                     Image(systemName: trailingIcon)
                         .font(.system(size: 15, weight: .semibold))
                         .offset(x: enabled ? arrowOffset : 0)
@@ -327,16 +337,19 @@ struct OBPrimaryButton: View {
             .opacity(enabled ? 1 : 1)
         }
         .buttonStyle(OBPressStyle())
-        .disabled(!enabled)
+        .disabled(!enabled || isLoading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(title)
+        .accessibilityLabel(displayTitle)
         .accessibilityIdentifier(resolvedAccessibilityID)
         .onAppear {
-            guard enabled else { return }
+            guard enabled, !isLoading else { return }
             animateArrow()
         }
         .onChange(of: enabled) { newValue in
-            if newValue { animateArrow() }
+            if newValue, !isLoading { animateArrow() }
+        }
+        .onChange(of: isLoading) { newValue in
+            if !newValue, enabled { animateArrow() }
         }
     }
 

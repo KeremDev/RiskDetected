@@ -50,10 +50,14 @@ struct InAppPaywallView: View {
     @State private var plusBilling: InAppPaywallBilling = .yearly
     @State private var proBilling: InAppPaywallBilling = .yearly
     @State private var isWorking = false
+    @State private var workingMessage: String?
     @State private var errorMessage: String?
     @State private var funnelSessionID = UUID()
     @State private var didLogView = false
     @State private var selectedLegalDocument: LegalDocumentKind?
+    @State private var processingOverlayTitle: String?
+    @State private var processingOverlayMessage = "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+    @State private var processingOverlayToken = UUID()
 
     private let variantID = "claude_plus_pro_paywall_v1"
 
@@ -87,6 +91,15 @@ struct InAppPaywallView: View {
                     .offset(y: 12)
 
                 topBar(topInset: safeTop)
+
+                if let processingOverlayTitle {
+                    PaywallProcessingOverlay(
+                        title: processingOverlayTitle,
+                        message: processingOverlayMessage
+                    )
+                    .transition(.opacity)
+                    .zIndex(40)
+                }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
@@ -287,6 +300,8 @@ struct InAppPaywallView: View {
                         .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 2)
                 }
                 .buttonStyle(.plain)
+                .disabled(isWorking)
+                .opacity(isWorking ? 0.55 : 1)
                 .accessibilityLabel("Paywall ekranını kapat")
 
                 Spacer()
@@ -328,6 +343,12 @@ struct InAppPaywallView: View {
             if let visibleError {
                 NoticeCard(text: visibleError, isError: true)
                     .padding(.bottom, 10)
+            }
+
+            if let workingMessage {
+                NoticeCard(text: workingMessage, isError: false)
+                    .padding(.bottom, 10)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
             if activeScreen == .plus && billing(for: .plus) == .yearly {
@@ -407,6 +428,8 @@ struct InAppPaywallView: View {
                 .foregroundStyle(InAppPaywallColor.graphite)
         }
         .buttonStyle(.plain)
+        .disabled(isWorking)
+        .opacity(isWorking ? 0.55 : 1)
     }
 
     private func legalLink(_ title: String, _ url: URL) -> some View {
@@ -418,10 +441,12 @@ struct InAppPaywallView: View {
                 .foregroundStyle(InAppPaywallColor.graphite)
         }
         .buttonStyle(.plain)
+        .disabled(isWorking)
+        .opacity(isWorking ? 0.55 : 1)
     }
 
     private var primaryButtonTitle: String {
-        if isWorking { return "İşleniyor..." }
+        if isWorking { return "Satın alma hazırlanıyor..." }
         if currentPlanIncludesActiveScreen { return "Planın aktif" }
         if selectedPackage == nil && packageLoadError != nil { return "Tekrar dene" }
         if activeScreen == .plus && billing(for: .plus) == .yearly { return "Ücretsiz denemeyi başlat" }
@@ -468,6 +493,7 @@ struct InAppPaywallView: View {
     }
 
     private func switchTo(_ target: InAppPaywallScreen) {
+        guard !isWorking else { return }
         guard activeScreen != target else { return }
         switch target {
         case .plus:
@@ -549,6 +575,7 @@ struct InAppPaywallView: View {
     }
 
     private func handlePrimaryAction() {
+        guard !isWorking else { return }
         logPaywallEvent(.ctaTap)
         if selectedPackage == nil {
             reloadPackages()
@@ -560,10 +587,13 @@ struct InAppPaywallView: View {
     private func reloadPackages() {
         guard !isWorking else { return }
         isWorking = true
+        stopProcessingOverlay()
+        workingMessage = "App Store abonelik paketleri yükleniyor..."
         errorMessage = nil
         Task {
             await app.refreshSubscriptionOfferings()
             alignBillingWithAvailablePackage()
+            workingMessage = nil
             isWorking = false
         }
     }
@@ -578,6 +608,14 @@ struct InAppPaywallView: View {
         }
 
         isWorking = true
+        startProcessingOverlay(
+            initialTitle: "App Store ödeme ekranı açılıyor...",
+            initialMessage: "Onay penceresi açıldığında işlemi App Store üzerinden tamamlayabilirsin.",
+            delayedTitle: "Satın alma doğrulanıyor",
+            delayedMessage: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor.",
+            delayedWorkingMessage: "Satın alma doğrulanıyor..."
+        )
+        workingMessage = "App Store ödeme ekranı açılıyor..."
         errorMessage = nil
         logPaywallEvent(.purchaseStarted, screen: purchaseScreen, billing: purchaseBilling)
 
@@ -585,6 +623,8 @@ struct InAppPaywallView: View {
             do {
                 try await app.purchaseSubscription(packageID: package.id)
                 await app.refreshPlanState()
+                stopProcessingOverlay()
+                workingMessage = nil
                 isWorking = false
 
                 if app.currentTier.includes(purchaseScreen.tier) {
@@ -592,8 +632,12 @@ struct InAppPaywallView: View {
                     onSubscribe()
                 }
             } catch is CancellationError {
+                stopProcessingOverlay()
+                workingMessage = nil
                 isWorking = false
             } catch {
+                stopProcessingOverlay()
+                workingMessage = nil
                 isWorking = false
                 errorMessage = error.localizedDescription
                 logPaywallEvent(
@@ -609,12 +653,22 @@ struct InAppPaywallView: View {
     private func restore() {
         guard !isWorking else { return }
         isWorking = true
+        startProcessingOverlay(
+            initialTitle: "Satın alımlar kontrol ediliyor...",
+            initialMessage: "App Store hesabındaki abonelik kayıtları kontrol ediliyor.",
+            delayedTitle: "Satın alma doğrulanıyor",
+            delayedMessage: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor.",
+            delayedWorkingMessage: "Satın alma doğrulanıyor..."
+        )
+        workingMessage = "App Store satın alımların kontrol ediliyor..."
         errorMessage = nil
         logPaywallEvent(.restoreTap)
 
         Task {
             do {
                 let restoredState = try await app.restoreSubscriptions()
+                stopProcessingOverlay()
+                workingMessage = nil
                 isWorking = false
                 if restoredState.tier.isPaid {
                     onSubscribe()
@@ -622,10 +676,38 @@ struct InAppPaywallView: View {
                     errorMessage = "Geri yüklenecek aktif abonelik bulunamadı."
                 }
             } catch {
+                stopProcessingOverlay()
+                workingMessage = nil
                 isWorking = false
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    private func startProcessingOverlay(
+        initialTitle: String,
+        initialMessage: String,
+        delayedTitle: String,
+        delayedMessage: String,
+        delayedWorkingMessage: String
+    ) {
+        let token = UUID()
+        processingOverlayToken = token
+        processingOverlayTitle = initialTitle
+        processingOverlayMessage = initialMessage
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            guard isWorking, processingOverlayToken == token, processingOverlayTitle != nil else { return }
+            processingOverlayTitle = delayedTitle
+            processingOverlayMessage = delayedMessage
+            workingMessage = delayedWorkingMessage
+        }
+    }
+
+    private func stopProcessingOverlay() {
+        processingOverlayToken = UUID()
+        processingOverlayTitle = nil
     }
 
     private func alignBillingWithAvailablePackage() {
@@ -1291,6 +1373,53 @@ private struct ProFeatureCard: View {
         .shadow(color: InAppPaywallColor.onyx.opacity(0.04), radius: 2, x: 0, y: 1)
         .padding(.horizontal, 20)
         .accessibilityIdentifier("in_app_paywall.pro.features")
+    }
+}
+
+struct PaywallProcessingOverlay: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.16)
+                .ignoresSafeArea()
+
+            VStack(spacing: 12) {
+                ProgressView()
+                    .controlSize(.regular)
+                    .tint(Color.rdGreen)
+
+                VStack(spacing: 5) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .multilineTextAlignment(.center)
+
+                    Text(message)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 18)
+            .frame(maxWidth: 300)
+            .background(.ultraThinMaterial)
+            .background(Color.white.opacity(0.88))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(Color.white.opacity(0.72), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.14), radius: 24, x: 0, y: 12)
+            .padding(.horizontal, 28)
+        }
+        .allowsHitTesting(true)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("paywall.processing_overlay")
     }
 }
 

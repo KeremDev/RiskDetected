@@ -327,10 +327,18 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
     }
 
     private static func tier(fromProductIdentifier productIdentifier: String) -> SubscriptionTier? {
-        let token = productIdentifier.lowercased()
-        if token.contains("plus") { return .plus }
-        if token.contains("pro") { return .pro }
-        return nil
+        let token = productIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch token {
+        case "riskdetected_plus_monthly", "riskdetected_plus_yearly":
+            return .plus
+        case "riskdetected_pro_monthly", "riskdetected_pro_yearly":
+            return .pro
+        default:
+            let parts = Set(token.split { !$0.isLetter && !$0.isNumber }.map(String.init))
+            if parts.contains("plus") { return .plus }
+            if parts.contains("pro") { return .pro }
+            return nil
+        }
     }
 
     private func apply(error: Error) {
@@ -344,14 +352,8 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
     }
 
     private static func tier(for package: Package) -> SubscriptionTier? {
-        let token = [
-            package.identifier,
-            package.storeProduct.productIdentifier,
-            package.storeProduct.localizedTitle,
-        ].joined(separator: " ").lowercased()
-        if token.contains("pro") { return .pro }
-        if token.contains("plus") { return .plus }
-        return nil
+        tier(fromProductIdentifier: package.storeProduct.productIdentifier)
+            ?? tier(fromProductIdentifier: package.identifier)
     }
 
     private static func subtitle(for package: Package) -> String {

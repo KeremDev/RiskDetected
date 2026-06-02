@@ -25,6 +25,9 @@ struct OBTimelinePaywallView: View {
 
     @State private var selectedPlan: OBPlan = .yearly
     @State private var timelineFlow: Bool = false
+    @State private var processingOverlayTitle: String?
+    @State private var processingOverlayMessage = "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+    @State private var processingOverlayToken = UUID()
 
     private var priceLine: String {
         switch selectedPlan {
@@ -57,6 +60,30 @@ struct OBTimelinePaywallView: View {
             bottomBar
                 .frame(maxHeight: .infinity, alignment: .bottom)
 
+            dismissButton
+                .padding(.top, 58)
+                .padding(.trailing, 18)
+
+            if let processingOverlayTitle {
+                PaywallProcessingOverlay(
+                    title: processingOverlayTitle,
+                    message: processingOverlayMessage
+                )
+                .transition(.opacity)
+                .zIndex(40)
+            }
+        }
+        .onAppear {
+            if isWorking {
+                startProcessingOverlay()
+            }
+        }
+        .onChange(of: isWorking) { newValue in
+            if newValue {
+                startProcessingOverlay()
+            } else {
+                stopProcessingOverlay()
+            }
         }
         .accessibilityIdentifier("onboarding.timeline_paywall")
     }
@@ -94,8 +121,10 @@ struct OBTimelinePaywallView: View {
     private var bottomBar: some View {
         VStack(spacing: 10) {
             OBPrimaryButton(
-                title: isWorking ? "İşleniyor..." : (selectedPlan == .yearly ? "₺0,00'ye dene" : "Aboneliği başlat"),
+                title: selectedPlan == .yearly ? "₺0,00'ye dene" : "Aboneliği başlat",
                 trailingIcon: "arrow.right",
+                isLoading: isWorking,
+                loadingTitle: "Satın alma hazırlanıyor...",
                 style: .onyx,
                 accessibilityID: "onboarding.timeline_paywall.cta"
             ) {
@@ -103,6 +132,23 @@ struct OBTimelinePaywallView: View {
             }
             .disabled(isWorking)
             .opacity(isWorking ? 0.72 : 1)
+
+            Button {
+                OBHaptic.soft()
+                onDismiss()
+            } label: {
+                Text("Şimdilik ücretsiz devam et")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .underline(true, color: Color.rdSlate.opacity(0.75))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.86)
+            }
+            .buttonStyle(.plain)
+            .disabled(isWorking)
+            .opacity(isWorking ? 0.45 : 1)
+            .accessibilityLabel("Şimdilik ücretsiz devam et")
+            .accessibilityIdentifier("onboarding.timeline_paywall.continue_free")
 
             if isWorking || noticeMessage != nil {
                 paywallNotice
@@ -166,6 +212,30 @@ struct OBTimelinePaywallView: View {
         .animation(.obSpring, value: noticeMessage)
     }
 
+    private var dismissButton: some View {
+        Button {
+            OBHaptic.soft()
+            onDismiss()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .frame(width: 38, height: 38)
+                .background(Color.white.opacity(0.94))
+                .clipShape(Circle())
+                .overlay(
+                    Circle()
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+                .shadow(color: Color.rdBlack.opacity(0.10), radius: 12, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .disabled(isWorking)
+        .opacity(isWorking ? 0.45 : 1)
+        .accessibilityLabel("Şimdilik ücretsiz devam et")
+        .accessibilityIdentifier("onboarding.timeline_paywall.dismiss")
+    }
+
     @ViewBuilder
     private var paywallNotice: some View {
         HStack(spacing: 8) {
@@ -179,7 +249,7 @@ struct OBTimelinePaywallView: View {
                     .foregroundStyle(Color.rdHigh)
             }
 
-            Text(isWorking ? "Satın alımlar kontrol ediliyor..." : noticeMessage ?? "")
+            Text(isWorking ? "App Store satın alma ekranı hazırlanıyor..." : noticeMessage ?? "")
                 .font(.system(size: 11.5, weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .lineLimit(2)
@@ -196,6 +266,25 @@ struct OBTimelinePaywallView: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .accessibilityIdentifier("onboarding.timeline_paywall.notice")
+    }
+
+    private func startProcessingOverlay() {
+        let token = UUID()
+        processingOverlayToken = token
+        processingOverlayTitle = "App Store ödeme ekranı açılıyor..."
+        processingOverlayMessage = "Onay penceresi açıldığında işlemi App Store üzerinden tamamlayabilirsin."
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            guard isWorking, processingOverlayToken == token, processingOverlayTitle != nil else { return }
+            processingOverlayTitle = "Satın alma doğrulanıyor"
+            processingOverlayMessage = "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+        }
+    }
+
+    private func stopProcessingOverlay() {
+        processingOverlayToken = UUID()
+        processingOverlayTitle = nil
     }
 
     // MARK: - Plan toggle

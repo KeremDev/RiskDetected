@@ -28,7 +28,7 @@ struct OnboardingViewV2: View {
     var onAuthGoogle: () -> Void = {}
     var onAuthEmail: () -> Void = {}
     var onSignInExisting: () -> Void = {}
-    var onPurchase: (OBPlan, @escaping () -> Void) -> Void = { _, complete in complete() }
+    var onPurchase: (OBPlan) async throws -> Void = { _ in }
     var onRestorePurchases: () async throws -> Bool = { false }
 
     init(
@@ -41,7 +41,7 @@ struct OnboardingViewV2: View {
         onAuthGoogle: @escaping () -> Void = {},
         onAuthEmail: @escaping () -> Void = {},
         onSignInExisting: @escaping () -> Void = {},
-        onPurchase: @escaping (OBPlan, @escaping () -> Void) -> Void = { _, complete in complete() },
+        onPurchase: @escaping (OBPlan) async throws -> Void = { _ in },
         onRestorePurchases: @escaping () async throws -> Bool = { false }
     ) {
         _state = StateObject(wrappedValue: OnboardingV2State(step: initialStep))
@@ -202,12 +202,7 @@ struct OnboardingViewV2: View {
                 isWorking: isPaywallWorking,
                 noticeMessage: paywallNoticeMessage,
                 onStart: { plan in
-                    guard !isPaywallWorking else { return }
-                    paywallNoticeMessage = nil
-                    state.selectedPlan = plan
-                    onPurchase(plan) {
-                        finishOnboarding()
-                    }
+                    startPurchase(plan)
                 },
                 onRestore: {
                     restorePurchases()
@@ -258,6 +253,37 @@ struct OnboardingViewV2: View {
                 await MainActor.run {
                     isPaywallWorking = false
                     paywallNoticeMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func startPurchase(_ plan: OBPlan) {
+        guard !isPaywallWorking else { return }
+        isPaywallWorking = true
+        paywallNoticeMessage = nil
+        state.selectedPlan = plan
+
+        Task {
+            do {
+                try await onPurchase(plan)
+                await MainActor.run {
+                    isPaywallWorking = false
+                    finishOnboarding()
+                }
+            } catch is CancellationError {
+                await MainActor.run {
+                    isPaywallWorking = false
+                    paywallNoticeMessage = nil
+                }
+            } catch {
+                await MainActor.run {
+                    isPaywallWorking = false
+                    paywallNoticeMessage = AppErrorMessage.make(
+                        error,
+                        context: "Abonelik başlatılamadı",
+                        fallbackTitle: "Abonelik başlatılamadı"
+                    ).message
                 }
             }
         }
