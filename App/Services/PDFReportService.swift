@@ -757,15 +757,16 @@ final class PDFReportService: @unchecked Sendable {
         drawText("#", in: CGRect(x: x, y: y, width: 28, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
         drawText("RİSK / KANIT", in: CGRect(x: x + 36, y: y, width: 300, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
         drawText("SKOR", in: CGRect(x: x + 372, y: y, width: 70, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
-        drawText("ÖNERİLEN ÖNLEM", in: CGRect(x: x + 462, y: y, width: 290, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
+        drawText("ÖNLEM / KONTROL TEDBİRLERİ", in: CGRect(x: x + 462, y: y, width: 290, height: 18), font: .systemFont(ofSize: 8.2, weight: .bold), color: .rdPDFSlate)
         UIColor.rdPDFLine.setFill()
         UIBezierPath(rect: CGRect(x: 42, y: y + 22, width: 758, height: 1)).fill()
     }
 
     private func actionTextWithRootCause(for finding: Finding) -> String {
         let rootCause = finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !rootCause.isEmpty else { return finding.action }
-        return "\(finding.action)\n\nKök neden: \(rootCause)"
+        let measuresText = finding.controlMeasuresText
+        guard !rootCause.isEmpty else { return measuresText }
+        return "\(measuresText)\n\nKök neden: \(rootCause)"
     }
 
     private func standardFindingRowHeight(for finding: Finding) -> CGFloat {

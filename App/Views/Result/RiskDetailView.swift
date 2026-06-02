@@ -36,9 +36,7 @@ struct RiskDetailView: View {
                     comparisonCard
 
                     section("Tehlike açıklaması", body: finding.description)
-                    section("Önerilen önlem", body: finding.action,
-                            accent: Color.rdGreenSoft, accentText: Color.rdGreenDark,
-                            icon: "shield.lefthalf.filled")
+                    controlMeasuresSection
                     rootCauseSection
                     referenceSection
 
@@ -270,6 +268,33 @@ struct RiskDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(RDPressableButtonStyle())
+    }
+
+    private var controlMeasuresSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Önlem / Kontrol tedbirleri".uppercased())
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .tracking(0.6)
+                .foregroundStyle(Color.rdSlate)
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(finding.controlMeasures.indices, id: \.self) { index in
+                    let measure = finding.controlMeasures[index]
+                    (
+                        Text("\(measure.displayTitle): ")
+                            .font(.system(size: 14, weight: .bold, design: .rounded)) +
+                        Text(measure.text)
+                            .font(.system(size: 14, design: .rounded))
+                    )
+                    .foregroundStyle(Color.rdGraphite)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.rdGreenSoft)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
     }
 
     // MARK: - Section

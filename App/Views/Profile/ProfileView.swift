@@ -1572,7 +1572,10 @@ private struct NotificationSettingsSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Spacer(minLength: 0)
+                if isEnabled {
+                    notificationTypesCard
+                    progressPreferencesCard
+                }
 
                 if notificationService.authorizationStatus == .denied {
                     RDButton(
@@ -1620,8 +1623,66 @@ private struct NotificationSettingsSheet: View {
                 await notificationService.refreshSettings()
             }
         }
-        .presentationDetents([.height(330), .medium])
+        .presentationDetents([.height(sheetHeight), .medium, .large])
         .presentationDragIndicator(.visible)
+    }
+
+    private var sheetHeight: CGFloat {
+        if isEnabled {
+            return notificationService.lastError == nil ? 540 : 580
+        }
+        if notificationService.lastError != nil {
+            return 330
+        }
+        return notificationService.authorizationStatus == .denied ? 300 : 285
+    }
+
+    private var notificationTypesCard: some View {
+        RDCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Aktif bildirimler")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+
+                NotificationInfoRow(icon: "sparkles", title: "Analiz tamamlandı")
+                NotificationInfoRow(icon: "doc.text.fill", title: "Rapor hazır")
+                NotificationInfoRow(icon: "shield.checkered", title: "Hesap güvenliği")
+            }
+        }
+    }
+
+    private var progressPreferencesCard: some View {
+        RDCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Mesleki ilerleme")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+
+                NotificationPreferenceToggle(
+                    title: "Haftalık özet",
+                    icon: "calendar",
+                    isOn: notificationService.progressPreferenceEnabled(.weeklySummary)
+                ) { isOn in
+                    notificationService.setProgressPreference(.weeklySummary, enabled: isOn)
+                }
+
+                NotificationPreferenceToggle(
+                    title: "Aylık özet",
+                    icon: "calendar.badge.clock",
+                    isOn: notificationService.progressPreferenceEnabled(.monthlySummary)
+                ) { isOn in
+                    notificationService.setProgressPreference(.monthlySummary, enabled: isOn)
+                }
+
+                NotificationPreferenceToggle(
+                    title: "Rozet ve unvan",
+                    icon: "medal.fill",
+                    isOn: notificationService.progressPreferenceEnabled(.milestones)
+                ) { isOn in
+                    notificationService.setProgressPreference(.milestones, enabled: isOn)
+                }
+            }
+        }
     }
 
     private var isEnabled: Bool {
@@ -1670,6 +1731,61 @@ private struct NotificationSettingsSheet: View {
     private func openSystemSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
+    }
+}
+
+private struct NotificationInfoRow: View {
+    let icon: String
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdGreen)
+                .frame(width: 24, height: 24)
+                .background(Color.rdGreen.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            Text(title)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+
+            Spacer(minLength: 0)
+
+            Text("Açık")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreen)
+        }
+    }
+}
+
+private struct NotificationPreferenceToggle: View {
+    let title: String
+    let icon: String
+    let isOn: Bool
+    let onChange: (Bool) -> Void
+
+    var body: some View {
+        Toggle(isOn: Binding(
+            get: { isOn },
+            set: onChange
+        )) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .frame(width: 24, height: 24)
+                    .background(Color.rdSlate.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+            }
+        }
+        .toggleStyle(.switch)
+        .tint(Color.rdGreen)
     }
 }
 

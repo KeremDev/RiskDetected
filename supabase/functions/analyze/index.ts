@@ -96,7 +96,7 @@ type OnboardingContext = {
   auditFrequency: string | null;
 };
 
-const PROMPT_VERSION = "isg-photo-personalized-v2026-05-20";
+const PROMPT_VERSION = "isg-photo-personalized-v2026-06-02-twelve-layer-two-measures";
 const PERSONALIZATION_VERSION = "onboarding-v1";
 const BUSINESS_TIME_ZONE = "Europe/Istanbul";
 
@@ -110,14 +110,14 @@ const PLAN_LIMITS: Record<PlanTier, {
   plus: {
     dailyStandardLimit: 10,
     dailyDetailedLimit: 2,
-    minHazards: 11,
-    maxHazards: 14,
+    minHazards: 12,
+    maxHazards: 16,
   },
   pro: {
     dailyStandardLimit: 40,
     dailyDetailedLimit: 10,
-    minHazards: 11,
-    maxHazards: 14,
+    minHazards: 12,
+    maxHazards: 16,
   },
 };
 
@@ -139,14 +139,19 @@ const CORE_ANALYSIS_PROMPT =
 
 GÖREV: Sana verilen görsel veya metin girdisinden, sahada fiziksel olarak bulunan bir denetçinin yakalayacağı tüm İSG tehlikelerini sistematik olarak tespit et ve raporla.
 
-TARAMA PROSEDÜRÜ — Her görseli SIRAYLA şu 7 katmanda tara:
-1. ZEMİN VE SAHA DÜZENİ: ıslaklık, çamur, su birikintisi, boşluk, kot farkı, dağınık malzeme, kablo, hortum, kayma/takılma zeminleri.
-2. ÇALIŞAN(LAR) VE KKD: baret, gözlük, eldiven, ayakkabı, yelek, emniyet kemeri, maske; duruş ve manuel taşıma ergonomisi.
-3. YÜKSEKTE ÇALIŞMA: kenar koruması, korkuluk, iskele bütünlüğü, merdiven açısı, platform, yaşam hattı, ankraj, açık kenar, boşluk, düşen cisim tehlikesi.
-4. ELEKTRİK VE ENERJİ: kablo, pano, fiş, jeneratör, su+elektrik teması, topraklama, geçici tesisat.
-5. MAKİNE, EKİPMAN VE KİMYASAL: hareketli parça, koruma, kaldırma ekipmanı, varil/şişe, etiketleme, depolama, yangın yükü.
-6. ÇEVRE VE ACİL DURUM: işaretleme, acil çıkış, yangın söndürücü, ilk yardım görünürlüğü, trafik, üst yapı, hava koşulu.
-7. EĞİTİM VE YETKİNLİK: Görsel/metin kanıtı destekliyorsa işe özgü eğitim, talimat, yetkilendirme ve mesleki yeterlilik belgesi ihtiyacını "sahada doğrulanmalı" tonuyla sorgula.
+TARAMA PROSEDÜRÜ — Her görseli SIRAYLA şu 12 katmanda tara:
+1. ZEMİN, SAHA DÜZENİ VE DÜZEN-TERTİP: ıslaklık, çamur, su birikintisi, boşluk, kot farkı, dağınık malzeme, kablo/hortum geçişi, kapalı/tıkalı geçiş yolu, kayma/takılma zeminleri.
+2. ÇALIŞAN(LAR) VE KKD: baret, gözlük, eldiven, ayakkabı, yüksek görünürlük yeleği, emniyet kemeri, maske/solunum koruması, kulak koruyucu; KKD'nin mevcudiyeti, uygunluğu ve doğru kullanımı.
+3. YÜKSEKTE ÇALIŞMA: kenar koruması, korkuluk, iskele bütünlüğü, merdiven açısı/sabitliği, platform/MEWP, yaşam hattı, ankraj, açık kenar, döşeme boşluğu, düşen cisim tehlikesi.
+4. ELEKTRİK VE ENERJİ: açık pano, hasarlı/ek yapılmış kablo, fiş, jeneratör, su+elektrik teması, topraklama, geçici tesisat, enerji kesme-kilitleme (LOTO/EKED) izleri.
+5. MAKİNE, EKİPMAN VE İŞ EKİPMANI: hareketli/dönen parça koruyucusu (muhafaza), acil durdurma, sıkışma/ezilme noktası, el aletinin durumu, periyodik kontrol etiketi.
+6. KALDIRMA, TAŞIMA VE İSTİFLEME: vinç/forklift operasyonu, sapan/halat durumu, yük altında çalışan, raf ve istif stabilitesi, devrilme riski.
+7. KİMYASAL VE TEHLİKELİ MADDE: etiketleme/GBF, uygun depolama, dökülme, yetersiz havalandırma, parlayıcı/patlayıcı madde, uyumsuz maddelerin bir arada bulunması.
+8. YANGIN VE PATLAMA: yangın söndürücü erişimi, tıkalı kaçış yolu, tutuşturucu kaynak, sıcak iş (kaynak/kesme), depolanan yanıcı malzeme/yangın yükü.
+9. FİZİKSEL ORTAM ETKENLERİ: aşırı gürültü kaynağı, titreşimli ekipman, toz/duman bulutu, yetersiz aydınlatma, termal konfor (aşırı sıcak/soğuk), yetersiz havalandırma.
+10. ERGONOMİ VE ELLE TAŞIMA: ağır manuel kaldırma, hatalı duruş, tekrarlı hareket, uygunsuz çalışma yüksekliği, taşıma yardımcısı yokluğu.
+11. KAZI, KAPALI ALAN VE ÖZEL İŞLER (saha tipine göre): şev/iksa eksikliği, çökme riski, kapalı alan girişi, malzeme deposu/istif kenarı, su-çamur birikintisi.
+12. ÇEVRE, ACİL DURUM, İŞARETLEME VE YETKİNLİK: atık/dökülme yönetimi, acil çıkış ve toplanma alanı, ilk yardım donanımı görünürlüğü, trafik/üst yapı/hava koşulu, uyarı tabelası/işaretleme; görsel/metin kanıtı destekliyorsa işe özgü eğitim, talimat, yetkilendirme ve mesleki yeterlilik belgesi ihtiyacını "sahada doğrulanmalı" tonuyla sorgula.
 
 Her katmanı gözden geçir; bir katmanda risk yoksa atla, ama tarama atlama.
 
@@ -181,19 +186,27 @@ CONFIDENCE:
 Confidence < 0.50 ise description sonuna "(sahada doğrulanmalı)" ekle.
 
 KALİTE FİLTRESİ — KAÇIN:
-- Genel ifade ("güvenlik önlemleri alınmalı") yerine somut teknik aksiyon yaz.
+- Genel ifade ("güvenlik önlemleri alınmalı") yerine somut önlem / kontrol tedbiri yaz.
 - Görselde olmayan riski uydurma.
 - Aynı kök nedenli riskleri tek bulguda topla.
 - Hassas ölçü uydurma; "yaklaşık 3m" veya "1 kat yüksekliğinde" yaz.
 - "Eğitim verilmeli" jenerik aksiyonundan kaçın; hangi iş/ekipman/risk için ne doğrulanacağını söyle.
 - Kullanıcı profili veya firma bağlamı görsel kanıtı filtrelemez; profili yalnızca ton, öncelik ve açıklama derinliği için kullan.
 
+ÖNLEM ÜRETİM KURALI:
+Her bulgu için tam 2 önlem ver:
+1. Düzeltici önlem: Sahadaki mevcut tehlikeyi doğrudan gidermeye yönelik somut, anlık aksiyon. Mümkünse riski kaynağında ortadan kaldıran/azaltan teknik müdahale (korkuluk kurulumu, kaynak izolasyonu, ekipman değişimi vb.).
+2. Önleyici kontrol: Aynı riskin tekrarını engelleyecek kalıcı/sistemsel kontrol. Prosedür, izin sistemi (EKED/LOTO), periyodik kontrol, gözetim, işaretleme veya hedeflenmiş eğitim doğrulaması.
+- İki önlem birbirinin tekrarı OLMAMALI; düzeltici önlem "yap", önleyici kontrol "tekrar olmasın" sorusunu yanıtlar.
+- KKD'yi yalnızca üst sıra kontroller yetersiz kaldığında ve ikincil olarak öner.
+
 ÖRNEK BULGU (kopyalama, sadece kalite referansı):
 {
   "title": "Açık kenar — düşmeyi önleyici korkuluk eksikliği",
   "category": "Yüksekte Çalışma",
   "description": "Üst katın doğu kenarında korkuluk yok; çalışan kenara yakın malzeme taşıyor. Yaklaşık 4m yükseklikten ölümcül düşme potansiyeli.",
-  "recommended_action": "Tüm açık kenarlara TS EN 13374 uyumlu korkuluk kur; korkuluk takılana kadar bölgeye giriş kısıtlansın.",
+  "corrective_action": "Açık kenara TS EN 13374 uyumlu korkuluk kur; kurulana kadar bölgeye erişimi durdur.",
+  "preventive_control": "Kenar koruma kontrolünü günlük saha başlangıç formuna ekle ve sorumlu kişiyi belirle.",
   "confidence": 0.92,
   "fk_probability": 6,
   "fk_frequency": 6,
@@ -204,8 +217,9 @@ KALİTE FİLTRESİ — KAÇIN:
 
 ÇIKTI KURALLARI:
 - Yalnızca JSON döndür; önünde/arkasında açıklama yazma.
-- Tüm metin Türkçe.
-- description max 200 karakter; recommended_action max 180 karakter.
+- Tüm metin DEĞERLERİ Türkçe; JSON anahtarları (key) İngilizce ve şemadaki haliyle aynen korunur.
+- description max 200 karakter; corrective_action max 180 karakter; preventive_control max 180 karakter.
+- Her bulguda corrective_action ve preventive_control alanları zorunludur ve boş bırakılamaz.
 - Skorları HESAPLAMA, ham girdileri ver — sistem hesaplar.
 - Fine-Kinney ihtimal: 0.2 / 0.5 / 1 / 3 / 6 / 10
 - Fine-Kinney frekans:  0.5 / 1 / 2 / 3 / 6 / 10
@@ -296,6 +310,55 @@ function referenceModeForTier(tier: PlanTier): ReferenceMode {
   return "none";
 }
 
+function safeText(value: unknown, fallback = ""): string {
+  if (value === null || value === undefined) return fallback;
+  return String(value).trim();
+}
+
+function normalizeRecommendedMeasures(
+  hazard: Record<string, unknown>,
+): Array<{ kind: string; title: string; text: string }> {
+  const correctiveAction = safeText(hazard.corrective_action);
+  const preventiveControl = safeText(hazard.preventive_control);
+  const rawMeasures = Array.isArray(hazard.recommended_measures)
+    ? hazard.recommended_measures
+    : [];
+  const normalized = rawMeasures
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const rawKind = safeText(record.kind).toLowerCase();
+      const kind = rawKind === "preventive" ? "preventive" : "corrective";
+      const title = kind === "preventive" ? "Önleyici Kontrol" : "Düzeltici Önlem";
+      const text = safeText(record.text);
+      return text ? { kind, title, text } : null;
+    })
+    .filter((item): item is { kind: string; title: string; text: string } =>
+      item !== null
+    );
+
+  const corrective = correctiveAction
+    ? { kind: "corrective", title: "Düzeltici Önlem", text: correctiveAction }
+    : normalized.find((measure) => measure.kind === "corrective");
+  const preventive = preventiveControl
+    ? { kind: "preventive", title: "Önleyici Kontrol", text: preventiveControl }
+    : normalized.find((measure) => measure.kind === "preventive");
+  const fallback = safeText(hazard.recommended_action);
+
+  return [
+    corrective ?? {
+      kind: "corrective",
+      title: "Düzeltici Önlem",
+      text: fallback || "Uygunsuzluğu sahada güvenli hale getirecek düzeltici kontrolü uygula.",
+    },
+    preventive ?? {
+      kind: "preventive",
+      title: "Önleyici Kontrol",
+      text: "Tekrarı önlemek için kontrol sorumlusu, periyodik kontrol ve saha doğrulama kaydı tanımla.",
+    },
+  ];
+}
+
 function responseSchema(tier: PlanTier) {
   const includesPaidFields = tier !== "free";
   const hazardProperties: Record<string, unknown> = {
@@ -303,7 +366,8 @@ function responseSchema(tier: PlanTier) {
     category: { type: "STRING" },
     observed_evidence: { type: "STRING" },
     description: { type: "STRING" },
-    recommended_action: { type: "STRING" },
+    corrective_action: { type: "STRING" },
+    preventive_control: { type: "STRING" },
     confidence: { type: "NUMBER" },
     fk_probability: { type: "NUMBER" },
     fk_frequency: { type: "NUMBER" },
@@ -320,7 +384,8 @@ function responseSchema(tier: PlanTier) {
     "category",
     "observed_evidence",
     "description",
-    "recommended_action",
+    "corrective_action",
+    "preventive_control",
     "confidence",
     "fk_probability",
     "fk_frequency",
@@ -368,7 +433,8 @@ function groqResponseSchemaInstruction(tier: PlanTier): string {
       "category": "risk kategorisi",
       "observed_evidence": "görüntü/metinde görülen kanıt",
       "description": "riskin kısa açıklaması",
-      "recommended_action": "kısa uygulanabilir önlem",
+      "corrective_action": "mevcut uygunsuzluğu sahada düzelten kısa uygulanabilir önlem",
+      "preventive_control": "tekrarını önleyen kısa kontrol/prosedür/izleme tedbiri",
       "confidence": 0.0,
       "fk_probability": 1,
       "fk_frequency": 1,
@@ -586,7 +652,7 @@ function buildUserTextInputBlock(userText: string): string {
   return `<kullanici_metin_girdisi>
 METİN ANALİZİ TALİMATI:
 - Aşağıdaki metni saha gözlemi, uygunsuzluk notu veya denetim anlatımı gibi değerlendir.
-- Ana system prompttaki 7 katmanlı taramayı metne uyarla: zemin, KKD, yüksekte çalışma, elektrik, ekipman/kimyasal, acil durum ve eğitim/yetki eksenlerini sırayla sorgula.
+- Ana system prompttaki 12 katmanlı taramayı metne uyarla: zemin/düzen, KKD, yüksekte çalışma, elektrik/enerji, makine/ekipman, kaldırma/istif, kimyasal, yangın/patlama, fiziksel ortam, ergonomi, özel işler, acil durum/işaretleme/yetkinlik eksenlerini sırayla sorgula.
 - Yalnızca metinde açıkça belirtilen veya güçlü şekilde ima edilen tehlikeleri bulguya dönüştür.
 - Fotoğraf kanıtı olmadığı için belirsiz noktaları uydurma; gerekiyorsa description içinde "(sahada doğrulanmalı)" tonunu kullan.
 - Metindeki iş, ortam, ekipman, yükseklik, kimyasal, çalışan davranışı, firma/alan veya sektör ipuçlarını risk önceliklendirmede kullan.
@@ -604,14 +670,14 @@ function buildSubscriptionContext(tier: PlanTier): string {
     ? `${minHazards} ile ${maxHazards} arasında tehlike döndür; önem sırasına göre sırala.`
     : maxHazards
     ? `En fazla ${maxHazards} tehlike döndür; önem sırasına göre sırala.`
-    : "6 ile 9 arasında bulgu döndür. Daha azı eksik, daha fazlası odak dağıtır.";
+    : "10 ile 13 arasında bulgu döndür. Daha azı eksik, daha fazlası odak dağıtır.";
 
   if (tier === "free") {
     return `<abonelik_seviyesi tier="free">
 ÇIKTI KAPSAMI:
 - ${hazardCountRule}
 - references ve root_cause alanı üretme; ayrı mevzuat/referans alanı Free'de kapalı.
-- recommended_action alanında kullanıcıya uygulanabilir değer sağlayan standart veya mevzuat adı geçebilir.
+- corrective_action veya preventive_control alanlarında kullanıcıya uygulanabilir değer sağlayan standart veya mevzuat adı geçebilir.
 - RG tarihi, uzun mevzuat dökümü, madde listesi veya ayrı referans açıklaması verme.
 </abonelik_seviyesi>`;
   }
@@ -3310,6 +3376,7 @@ serve(async (req: Request) => {
   // user_id REQUIRED, set et.
   // deno-lint-ignore no-explicit-any
   const findingRows = hazards.map((h: any, i: number) => {
+    const recommendedMeasures = normalizeRecommendedMeasures(h);
     const fkP = clampFK(h.fk_probability, FK_PROBABILITY_VALUES);
     const fkF = clampFK(h.fk_frequency, FK_FREQUENCY_VALUES);
     const fkS = clampFK(h.fk_severity, FK_SEVERITY_VALUES);
@@ -3330,7 +3397,8 @@ serve(async (req: Request) => {
       title: h.title,
       category: h.category ?? "",
       description: `${h.observed_evidence}\n\n${h.description}`.trim(),
-      recommended_action: h.recommended_action,
+      recommended_action: recommendedMeasures[0]?.text ?? "",
+      recommended_measures: recommendedMeasures,
       references_text: qualityTier !== "free" ? h.references ?? "" : "",
       root_cause_text: qualityTier !== "free" ? h.root_cause ?? "" : "",
       confidence: Math.max(0, Math.min(1, h.confidence)),

@@ -99,6 +99,36 @@ enum RiskBands {
 
 // MARK: - Finding
 
+struct FindingMeasure: Codable, Hashable, Identifiable {
+    enum Kind: String, Codable {
+        case corrective
+        case preventive
+        case unknown
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let rawValue = try container.decode(String.self)
+            self = Kind(rawValue: rawValue) ?? .unknown
+        }
+    }
+
+    let kind: Kind
+    let title: String
+    let text: String
+
+    var id: String { "\(kind.rawValue)-\(title)-\(text)" }
+
+    var displayTitle: String {
+        switch kind {
+        case .corrective: return "Düzeltici Önlem"
+        case .preventive: return "Önleyici Kontrol"
+        case .unknown:
+            let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? "Kontrol Tedbiri" : trimmed
+        }
+    }
+}
+
 struct Finding: Identifiable, Hashable {
     let id: Int
     let title: String
@@ -106,16 +136,67 @@ struct Finding: Identifiable, Hashable {
     let confidence: Double // 0..1
     let description: String
     let action: String
+    let measures: [FindingMeasure]
     let references: String
     let rootCause: String
     let fk: FineKinneyParams
     let m5: FiveByFiveParams
+
+    init(
+        id: Int,
+        title: String,
+        category: String,
+        confidence: Double,
+        description: String,
+        action: String,
+        measures: [FindingMeasure] = [],
+        references: String,
+        rootCause: String,
+        fk: FineKinneyParams,
+        m5: FiveByFiveParams
+    ) {
+        self.id = id
+        self.title = title
+        self.category = category
+        self.confidence = confidence
+        self.description = description
+        self.action = action
+        self.measures = measures
+        self.references = references
+        self.rootCause = rootCause
+        self.fk = fk
+        self.m5 = m5
+    }
 
     var fkScore: Double { fk.score }
     var m5Score: Int { m5.score }
 
     var fkBand: RiskBand { RiskBands.fineKinney(fkScore) }
     var m5Band: RiskBand { RiskBands.matrix5x5(m5Score) }
+
+    var controlMeasures: [FindingMeasure] {
+        let validMeasures = measures.filter {
+            !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        if !validMeasures.isEmpty { return validMeasures }
+        let fallback = action.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !fallback.isEmpty else { return [] }
+        return [
+            FindingMeasure(
+                kind: .corrective,
+                title: "Düzeltici Önlem",
+                text: fallback
+            )
+        ]
+    }
+
+    var controlMeasuresText: String {
+        controlMeasures
+            .map { measure in
+                "\(measure.displayTitle): \(measure.text)"
+            }
+            .joined(separator: "\n")
+    }
 
     func score(for method: RiskMethod) -> Double {
         switch method {

@@ -55,6 +55,7 @@ type FindingRow = Record<string, unknown> & {
   category?: string | null;
   description?: string | null;
   recommended_action?: string | null;
+  recommended_measures?: unknown;
   references_text?: string | null;
   root_cause_text?: string | null;
   confidence?: number | null;
@@ -330,8 +331,39 @@ function safeText(value: unknown, fallback = ""): string {
 
 function actionWithRootCause(finding: FindingRow): string {
   const rootCause = safeText(finding.root_cause_text).trim();
-  const action = safeText(finding.recommended_action);
-  return rootCause ? `${action}\n\nKök neden: ${rootCause}` : action;
+  const measures = controlMeasuresText(finding);
+  return rootCause ? `${measures}\n\nKök neden: ${rootCause}` : measures;
+}
+
+function controlMeasuresText(finding: FindingRow): string {
+  const rawMeasures = Array.isArray(finding.recommended_measures)
+    ? finding.recommended_measures
+    : [];
+  const measures = rawMeasures
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const kind = safeText(record.kind);
+      const title = controlMeasureTitle(kind, record.title);
+      const text = safeText(record.text).trim();
+      return text ? { title, text } : null;
+    })
+    .filter((item): item is { title: string; text: string } => item !== null);
+
+  if (measures.length === 0) {
+    const fallback = safeText(finding.recommended_action).trim();
+    return fallback ? `Düzeltici Önlem: ${fallback}` : "";
+  }
+
+  return measures
+    .map((measure) => `${measure.title}: ${measure.text}`)
+    .join("\n");
+}
+
+function controlMeasureTitle(kind: string, title: unknown): string {
+  if (kind === "preventive") return "Önleyici Kontrol";
+  if (kind === "corrective") return "Düzeltici Önlem";
+  return safeText(title, "Kontrol Tedbiri");
 }
 
 function safeNumber(value: unknown, fallback = 0): number {
@@ -2012,7 +2044,7 @@ function makeWorkbook(
     "Kategori",
     "Açıklama",
     ...metricHeaders,
-    "Önerilen Önlem",
+    "Önlem / Kontrol Tedbirleri",
     "Kök Neden",
     "Referans / İzleme",
     "Termin",
@@ -2027,7 +2059,7 @@ function makeWorkbook(
       safeText(finding.category),
       safeText(finding.description),
       ...metricValues(finding),
-      safeText(finding.recommended_action),
+      controlMeasuresText(finding),
       safeText(finding.root_cause_text),
       safeText(finding.references_text),
       suggestedTerm(methodBand(finding, method)),
@@ -2037,15 +2069,15 @@ function makeWorkbook(
   ];
   const riskSheet = appendSheet(workbook, "Risk Analiz Tablosu", riskRows);
   const riskColumnWidths = method === "matrix_5x5"
-    ? [6, 26, 18, 56, 11, 11, 12, 16, 56, 34, 36, 16, 14, 32]
-    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 56, 34, 36, 16, 14, 32];
+    ? [6, 26, 18, 56, 11, 11, 12, 16, 64, 34, 36, 16, 14, 32]
+    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 64, 34, 36, 16, 14, 32];
   const riskLastCol = XLSX.utils.encode_col(riskHeaders.length - 1);
   const riskLevelCol = XLSX.utils.encode_col(4 + metricHeaders.length - 1);
   const metricFirstCol = "E";
   const metricLastCol = XLSX.utils.encode_col(4 + metricHeaders.length - 2);
   const statusCol = XLSX.utils.encode_col(riskHeaders.length - 2);
   setCols(riskSheet, riskColumnWidths);
-  setRows(riskSheet, [34, ...findings.map(() => 92)]);
+  setRows(riskSheet, [38, ...findings.map(() => 118)]);
   riskSheet["!autofilter"] = {
     ref: `A1:${riskLastCol}${Math.max(1, riskRows.length)}`,
   };
@@ -2119,7 +2151,7 @@ function makeWorkbook(
     24,
     8,
     28,
-    ...findings.map(() => 48),
+    ...findings.map(() => 68),
   ]);
   addMerges(distribution, ["A1:F1", "A8:F8"]);
   setStyle(distribution, "A1:F1", styles.title);

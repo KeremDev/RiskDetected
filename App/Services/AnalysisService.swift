@@ -1547,6 +1547,7 @@ final class AnalysisService {
                 category: finding.category,
                 description: finding.description,
                 recommendedAction: finding.action,
+                recommendedMeasures: finding.controlMeasures,
                 referencesText: finding.references,
                 rootCauseText: finding.rootCause,
                 confidence: finding.confidence,
@@ -1798,6 +1799,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
     let category: String?
     let description: String?
     let recommendedAction: String?
+    let recommendedMeasures: [FindingMeasure]?
     let referencesText: String?
     let rootCauseText: String?
     let confidence: Double
@@ -1819,6 +1821,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
         case category
         case description
         case recommendedAction  = "recommended_action"
+        case recommendedMeasures = "recommended_measures"
         case referencesText     = "references_text"
         case rootCauseText      = "root_cause_text"
         case confidence
@@ -1842,6 +1845,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
             confidence: confidence,
             description: description ?? "",
             action: recommendedAction ?? "",
+            measures: recommendedMeasures ?? [],
             references: referencesText ?? "",
             rootCause: rootCauseText ?? "",
             fk: FineKinneyParams(

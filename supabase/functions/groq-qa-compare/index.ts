@@ -137,6 +137,55 @@ function clampFK(value: unknown, allowed: number[]): number {
   );
 }
 
+function safeText(value: unknown, fallback = ""): string {
+  if (value === null || value === undefined) return fallback;
+  return String(value).trim();
+}
+
+function normalizeRecommendedMeasures(
+  hazard: Record<string, unknown>,
+): Array<{ kind: string; title: string; text: string }> {
+  const correctiveAction = safeText(hazard.corrective_action);
+  const preventiveControl = safeText(hazard.preventive_control);
+  const rawMeasures = Array.isArray(hazard.recommended_measures)
+    ? hazard.recommended_measures
+    : [];
+  const normalized = rawMeasures
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const rawKind = safeText(record.kind).toLowerCase();
+      const kind = rawKind === "preventive" ? "preventive" : "corrective";
+      const title = kind === "preventive" ? "Önleyici Kontrol" : "Düzeltici Önlem";
+      const text = safeText(record.text);
+      return text ? { kind, title, text } : null;
+    })
+    .filter((item): item is { kind: string; title: string; text: string } =>
+      item !== null
+    );
+
+  const corrective = correctiveAction
+    ? { kind: "corrective", title: "Düzeltici Önlem", text: correctiveAction }
+    : normalized.find((measure) => measure.kind === "corrective");
+  const preventive = preventiveControl
+    ? { kind: "preventive", title: "Önleyici Kontrol", text: preventiveControl }
+    : normalized.find((measure) => measure.kind === "preventive");
+  const fallback = safeText(hazard.recommended_action);
+
+  return [
+    corrective ?? {
+      kind: "corrective",
+      title: "Düzeltici Önlem",
+      text: fallback || "Uygunsuzluğu sahada güvenli hale getirecek düzeltici kontrolü uygula.",
+    },
+    preventive ?? {
+      kind: "preventive",
+      title: "Önleyici Kontrol",
+      text: "Tekrarı önlemek için kontrol sorumlusu, periyodik kontrol ve saha doğrulama kaydı tanımla.",
+    },
+  ];
+}
+
 function fkBand(score: number): "low" | "medium" | "high" | "critical" {
   if (score < 70) return "low";
   if (score < 200) return "medium";
@@ -163,7 +212,8 @@ function groqResponseSchemaInstruction(isPro: boolean): string {
       "category": "risk kategorisi",
       "observed_evidence": "görüntü/metinde görülen kanıt",
       "description": "riskin kısa açıklaması",
-      "recommended_action": "kısa uygulanabilir önlem",
+      "corrective_action": "mevcut uygunsuzluğu sahada düzelten kısa uygulanabilir önlem",
+      "preventive_control": "tekrarını önleyen kısa kontrol/prosedür/izleme tedbiri",
       "confidence": 0.0,
       "fk_probability": 1,
       "fk_frequency": 1,
@@ -184,6 +234,7 @@ function normalizedFindings(rawHazards: unknown) {
 
   const findings = hazards.map((item, index) => {
     const h = item as Record<string, unknown>;
+    const recommendedMeasures = normalizeRecommendedMeasures(h);
     const fkP = clampFK(h.fk_probability, FK_PROBABILITY_VALUES);
     const fkF = clampFK(h.fk_frequency, FK_FREQUENCY_VALUES);
     const fkS = clampFK(h.fk_severity, FK_SEVERITY_VALUES);
@@ -202,7 +253,8 @@ function normalizedFindings(rawHazards: unknown) {
       category: String(h.category ?? ""),
       observed_evidence: String(h.observed_evidence ?? ""),
       description: String(h.description ?? ""),
-      recommended_action: String(h.recommended_action ?? ""),
+      recommended_action: recommendedMeasures[0]?.text ?? "",
+      recommended_measures: recommendedMeasures,
       references: typeof h.references === "string" ? h.references : "",
       confidence: Number(h.confidence ?? 0),
       fk_probability: fkP,

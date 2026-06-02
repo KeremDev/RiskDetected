@@ -6,7 +6,7 @@ struct CompanyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     static func presentationDetents(for accessTier: SubscriptionTier) -> Set<PresentationDetent> {
-        accessTier.isPaid ? [.height(360), .large] : [.height(370)]
+        accessTier.isPaid ? [.height(470), .large] : [.height(370)]
     }
 
     let title: String
@@ -31,16 +31,18 @@ struct CompanyPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 14) {
-                    if accessTier.isPaid {
-                        paidContent
-                    } else {
+            Group {
+                if accessTier.isPaid {
+                    paidContent
+                        .padding(20)
+                        .padding(.bottom, 24)
+                } else {
+                    ScrollView(showsIndicators: false) {
                         lockedContent
+                            .padding(20)
+                            .padding(.bottom, 24)
                     }
                 }
-                .padding(20)
-                .padding(.bottom, 24)
             }
             .background(Color.rdPaper)
             .navigationTitle(title)
@@ -99,10 +101,6 @@ struct CompanyPickerSheet: View {
 
     private var paidContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if shouldShowHeader {
-                headerCard
-            }
-
             if allowNoCompany {
                 noCompanyRow
             }
@@ -120,11 +118,7 @@ struct CompanyPickerSheet: View {
                     emptyCard
                 }
             } else {
-                VStack(spacing: 10) {
-                    ForEach(companies) { company in
-                        companyRow(company)
-                    }
-                }
+                companyList
             }
 
             addCompanyButton
@@ -168,31 +162,6 @@ struct CompanyPickerSheet: View {
         .background(Color.rdWhite)
         .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.rdLine, lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: 18))
-    }
-
-    private var headerCard: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "building.2.fill")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.rdGreenDark)
-                .frame(width: 38, height: 38)
-                .background(Color.rdGreenSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 11))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(companies.isEmpty ? "Firma seçimi" : "\(companies.count)/\(companyLimit) firma")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.rdBlack)
-                Text(companies.isEmpty ? "İstersen rapor aşamasında firma ekleyebilirsin." : "Seçili firma bilgileri raporda kullanılacak.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.rdSlate)
-            }
-            Spacer()
-        }
-        .padding(12)
-        .background(Color.rdWhite)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rdLine, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private var quietRetryButton: some View {
@@ -314,6 +283,17 @@ struct CompanyPickerSheet: View {
         .accessibilityIdentifier("company_picker.no_company")
     }
 
+    private var companyList: some View {
+        ScrollView(showsIndicators: companies.count > visibleCompanyLimit) {
+            LazyVStack(spacing: 10) {
+                ForEach(companies) { company in
+                    companyRow(company)
+                }
+            }
+        }
+        .frame(maxHeight: companyListMaxHeight)
+    }
+
     private func companyRow(_ company: Company) -> some View {
         HStack(spacing: 8) {
             Button {
@@ -385,11 +365,23 @@ struct CompanyPickerSheet: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .shadow(color: Color.rdOnyx.opacity(allowNoCompany ? 0 : 0.12), radius: 10, x: 0, y: 5)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("company_picker.add")
         }
         .buttonStyle(RDPressableButtonStyle())
         .disabled(companies.count >= companyLimit)
         .opacity(companies.count >= companyLimit ? 0.58 : 1)
+        .accessibilityLabel(addCompanyAccessibilityLabel)
         .accessibilityIdentifier("company_picker.add")
+    }
+
+    private var addCompanyAccessibilityLabel: String {
+        #if DEBUG
+        if Self.usesUITestCompanyFixtures {
+            return "company_picker.add"
+        }
+        #endif
+        return companies.count >= companyLimit ? "Firma limiti doldu" : "Yeni firma ekle"
     }
 
     private var addCompanyForeground: Color {
@@ -437,6 +429,17 @@ struct CompanyPickerSheet: View {
         case .plus: return 5
         case .pro: return 25
         }
+    }
+
+    private var visibleCompanyLimit: Int {
+        4
+    }
+
+    private var companyListMaxHeight: CGFloat {
+        let visibleRows = min(companies.count, visibleCompanyLimit)
+        let rowHeight: CGFloat = 66
+        let rowSpacing: CGFloat = 10
+        return CGFloat(visibleRows) * rowHeight + CGFloat(max(visibleRows - 1, 0)) * rowSpacing
     }
 
     private func loadCompanies() async {

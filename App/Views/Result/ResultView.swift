@@ -574,7 +574,7 @@ struct ResultView: View {
             ("Ek kritik bulgu", .critical, "Detaylı açıklama Pro ile açılır."),
             ("Tolerans dışı durum", .high, "Fine-Kinney ve 5×5 hesabı kilitli."),
             ("Önemli risk alanı", .high, "Kanıt ve aksiyon planı Pro'da görünür."),
-            ("Gizli uygunsuzluk", .medium, "Önerilen önlem Plus ile görünür."),
+            ("Gizli uygunsuzluk", .medium, "Önlem / kontrol tedbirleri Plus ile görünür."),
             ("Olası risk", .low, "Ek bulgu detayları Plus ile görünür."),
             ("Önemli risk", .high, "PDF/Excel risk tablosuna eklenir."),
             ("Ek saha riski", .medium, "Standart referansları Plus'ta açılır."),
@@ -2183,16 +2183,25 @@ struct FindingCard: View {
     }
 
     private var actionBlock: some View {
-        HStack(alignment: .top, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             Image(systemName: "shield.lefthalf.filled")
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
-                .padding(.top, 2)
-            (
-                Text("Önlem · ").font(.system(size: 12, weight: .bold, design: .rounded)) +
-                Text(finding.action).font(.system(size: 12, design: .rounded))
-            )
-            .foregroundStyle(Color.rdGraphite)
+            Text("Önlem / Kontrol tedbirleri")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreenDark)
+
+            ForEach(finding.controlMeasures.indices, id: \.self) { index in
+                let measure = finding.controlMeasures[index]
+                (
+                    Text("\(measure.displayTitle): ")
+                        .font(.system(size: 12, weight: .bold, design: .rounded)) +
+                    Text(measure.text)
+                        .font(.system(size: 12, design: .rounded))
+                )
+                .foregroundStyle(Color.rdGraphite)
+                .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
