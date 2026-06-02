@@ -17,8 +17,8 @@ Official references checked:
 | --- | --- |
 | Bundle ID | `com.riskdetected.app` |
 | Display name | `RiskDetected` |
-| Version | `0.1.0` |
-| Build | `2` |
+| Version | `1.0` |
+| Build | `28` |
 | Deployment target | iOS 16.0 |
 | Category | Productivity |
 | Device family | iPhone-only |
@@ -96,6 +96,12 @@ Uygulama, yapay zeka destekli analizler sunar. AI çıktıları profesyonel değ
 
 Sahada fotoğraf çekin, riskleri görün, raporunuzu hazırlayın.
 
+Bazı gelişmiş özellikler uygulama içi abonelik gerektirebilir. Abonelikler App Store üzerinden yönetilir.
+
+Kullanım Koşulları: https://riskdetected.com/kullanim-kosullari
+Gizlilik Politikası: https://riskdetected.com/gizlilik
+Apple Standart Lisans Sözleşmesi (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
 ### Keywords
 
 `isg,saha,denetim,rapor,fine,kinney,5x5,matris,kkd,pdf,excel,osgb,uzman,döf,mevzuat,kontrol,form`
@@ -114,14 +120,61 @@ Important: public website legal pages are live and ready for App Store Connect e
 
 ### Review Notes
 
-Use this in App Review notes:
+Use the full copy-ready notes template in `QA/App_Review_Webmail_OTP_Access_2026-06-01.md`.
+
+App Review Information fields:
+
+| Field | Value |
+| --- | --- |
+| Sign-in required | Checked |
+| User name | `riskdetected.appreview@fastmail.com` |
+| Password | `Email OTP login. See Notes for OTP mailbox access.` |
+
+Do not store the real mailbox password in the repo. Paste it only into App Store Connect Notes after the review mailbox is created.
+
+Summary for the Notes field:
 
 RiskDetected is a Turkish occupational safety assistant. The app lets users upload or capture field photos, enter text, run AI-assisted risk analysis, and generate PDF/Excel reports. AI output is advisory and the app includes legal/privacy notices in the profile/legal center.
 
-Test account:
+Reviewer login path:
 
-- Email: `<provide review test email>`
-- OTP: `<explain OTP mailbox access or provide a pre-authenticated TestFlight account path>`
+1. Open the app.
+2. Choose email login and enter `riskdetected.appreview@fastmail.com`.
+3. Open `https://app.fastmail.com`.
+4. Sign in with the mailbox credentials provided in App Store Connect Notes.
+5. Enter the latest OTP email/code in the app.
+6. If the code expires, request a new code and use the newest email.
+
+OTP / mailbox:
+
+- Email: `riskdetected.appreview@fastmail.com`
+- Webmail URL: `https://app.fastmail.com`
+- Webmail username: `riskdetected.appreview@fastmail.com`
+- Webmail password: `<PASTE_ONLY_IN_APP_STORE_CONNECT_NOTES>`
+- OTP validity: `3600` seconds / 1 hour in Supabase Auth > Providers > Email > Email OTP Expiration.
+- Mailbox must stay active for at least 2 weeks after submission.
+
+Physical-device demo video:
+
+- URL: `<PHYSICAL_DEVICE_DEMO_VIDEO_URL>`
+
+External services:
+
+- Supabase Auth, database, storage and Edge Functions.
+- RevenueCat and App Store in-app purchase for subscription entitlement/purchases.
+- Google Gemini/Google AI with possible Groq-compatible fallback for AI analysis.
+- Apple/Google sign-in when selected by the user.
+- APNs for account/report notifications.
+
+Regional differences:
+
+- Turkish-first first release. No region-specific test account behavior is required for App Review. Before submission, confirm the China mainland availability decision in App Store Connect: either China mainland is excluded for the first release, or a China-specific compliance decision is recorded because the app uses AI-assisted analysis and Google/Groq providers.
+
+Regulated industry documentation:
+
+- RiskDetected is an occupational safety documentation and risk-analysis assistant, not a medical, financial, gambling, insurance, or legal advisory app.
+- No regulated-industry license is required for App Review.
+- AI outputs are advisory and the final professional field assessment remains the user's responsibility.
 
 Purchases:
 
@@ -133,6 +186,7 @@ Notes:
 - Camera/photo access is used only for analysis image capture/selection.
 - No advertising tracking or IDFA use.
 - If push is enabled, notifications are account/report events only.
+- RiskDetected is an occupational safety documentation assistant; AI outputs do not replace final professional field assessment.
 
 ## 3. Screenshot / App Preview Plan
 
@@ -243,7 +297,8 @@ Important nuance: workplace photos can theoretically contain injuries or sensiti
    - `https://riskdetected.com/kvkk`
 2. Archive / Organizer signing check:
    - Done: local control archive created at `/tmp/RiskDetectedCheck.xcarchive`.
-   - Done: bundle id is `com.riskdetected.app`, version `0.1.0`, build `2`.
+   - Superseded historical check: early local archive was `0.1.0 (2)`.
+   - Current App Review candidate: bundle id is `com.riskdetected.app`, version `1.0`, build `31`.
    - Done: `TARGETED_DEVICE_FAMILY = 1` and the control archive app `UIDeviceFamily` is iPhone-only.
    - Done: app root `PrivacyInfo.xcprivacy` is included in the new control archive.
    - Done: GoogleSignIn and RevenueCat privacy manifests are included in the archive bundles.
@@ -262,16 +317,18 @@ Important nuance: workplace photos can theoretically contain injuries or sensiti
    - active offering includes the expected packages.
    - TestFlight purchase, restore, expiration and downgrade checks are complete.
 5. Done: TestFlight paywall USD display was handled in-app; when StoreKit/RevenueCat returns USD in a Turkish context, the paywall falls back to the configured TL display prices while purchases still use the real App Store package.
-6. Enter/confirm the App Store privacy nutrition form in App Store Connect from the prepared draft.
-7. APNs production secrets/device test should be done if notifications remain enabled for release.
-8. Create final App Store screenshots from clean demo data.
-9. Provide App Review test account and OTP access plan.
-10. Optional: prepare a 15-30 second App Preview video.
+6. Done: App Store Connect Description includes the subscription note plus Terms, Privacy Policy and Apple Standard EULA footer from this document. Confirmed by owner on 2026-05-31.
+7. Enter/confirm the App Store privacy nutrition form in App Store Connect from the prepared draft.
+8. APNs production secrets/device test should be done if notifications remain enabled for release.
+9. Create final App Store screenshots from clean demo data.
+10. App Review email OTP access plan is documented in `QA/App_Review_Webmail_OTP_Access_2026-06-01.md`; use `riskdetected.appreview@fastmail.com`, paste the real Fastmail password only into App Store Connect Notes, and run the physical-device OTP smoke test.
+11. Optional: prepare a 15-30 second App Preview video.
 
 ## 7. Local Verification Completed
 
 - Entitlements inspected.
 - Info.plist inspected.
+- Export compliance key added: `ITSAppUsesNonExemptEncryption = NO` in `Config/RiskDetectedInfo.plist`.
 - App icon set inspected; required iOS marketing 1024 icon exists.
 - Privacy manifest inspected.
 - Xcode target changed to iPhone-only for first release.

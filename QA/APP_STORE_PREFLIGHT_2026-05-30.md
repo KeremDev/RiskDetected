@@ -44,17 +44,18 @@ asc auth doctor
 asc metadata pull --app "<APP_ID>" --version "<VERSION>" --dir ./metadata
 ```
 
-### [2.1] Review notes still need final production values
+### [2.1] Review notes need external production values
 
 - Severity: Warning / common Information Needed risk
-- Evidence: `QA/App_Store_Submission_Preparation_2026-05-16.md` has a review notes draft, but it still contains placeholders such as review test email/OTP instructions and does not include a real physical-device screen recording URL.
-- Required before submission:
+- Evidence: The email OTP review path is now documented in `QA/App_Review_Webmail_OTP_Access_2026-06-01.md` and referenced from `QA/App_Store_Submission_Preparation_2026-05-16.md`, but the real mailbox password and physical-device demo video URL must be pasted directly into App Store Connect Notes before submission.
+- Required before submission in App Store Connect:
+  - `Sign-in required` checked.
+  - User name `riskdetected.appreview@fastmail.com`.
+  - Password text `Email OTP login. See Notes for OTP mailbox access.`
+  - Webmail URL `https://app.fastmail.com` and real mailbox password in Notes only, not committed to the repo.
   - Physical-device screen recording URL.
-  - Demo account credentials or clear OTP review path.
-  - External services list.
-  - Regional differences statement.
-  - Regulated-industry disclaimer/documentation statement.
-- Fix: Fill the six-section review notes template from the skill before submitting.
+  - Supabase email OTP expiration confirmed as `3600` seconds / 1 hour.
+- Fix: Verify the Fastmail review mailbox, verify TestFlight OTP login on a physical iPhone, then replace the password and demo video placeholders in App Store Connect Notes.
 
 ### [China Storefront / AI] Decide China mainland availability before metadata final
 
@@ -179,13 +180,16 @@ Current build settings checked:
 
 Before submission:
 
+- Run the full App Review preflight gate captured in `IMPLEMENTATION_PLAN.md` before tapping `Add for Review`.
+- Include repo hygiene, archive/binary, App Store Connect metadata, IAP/RevenueCat, Supabase backend, legal/privacy, physical-device TestFlight smoke and final review notes checks.
 - Pull ASC metadata with `asc` and re-run metadata checks.
-- Fill all review notes placeholders.
+- Fill only the App Store Connect review notes placeholders from `QA/App_Review_Webmail_OTP_Access_2026-06-01.md`; do not commit the real mailbox password.
 - Add physical-device demo video URL.
-- Confirm demo account remains active for at least 2 weeks.
+- Confirm `riskdetected.appreview@fastmail.com` mailbox remains active for at least 2 weeks.
+- Confirm Supabase email OTP expiration is `3600` seconds / 1 hour.
 - Confirm ASC privacy nutrition matches `QA/App_Store_Privacy_Nutrition_2026-05-16.md`.
 - Confirm privacy policy URL field is `https://riskdetected.com/gizlilik`.
-- Confirm description or EULA field includes Terms URL `https://riskdetected.com/kullanim-kosullari`.
+- Done: App Store Connect Description includes subscription note plus Terms URL `https://riskdetected.com/kullanim-kosullari`, Privacy URL `https://riskdetected.com/gizlilik`, and Apple Standard EULA URL. Confirmed by owner on 2026-05-31.
 - Confirm support URL exposes contact path.
 - Confirm IAP/subscription products are attached to the app version and visible to reviewers.
 - Confirm final archive privacy report includes app manifest plus third-party SDK manifests.

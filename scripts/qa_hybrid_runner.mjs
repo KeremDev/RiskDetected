@@ -9,7 +9,9 @@ const PROJECT_NAME = "riskdetected";
 const REQUIRED_EDGE_FUNCTIONS = [
   "analyze",
   "process-analysis-jobs",
+  "support-contact",
   "generate-excel-report",
+  "register-report",
   "send-push-notification",
   "send-report-ready-notification",
   "send-welcome-email",
