@@ -1,5 +1,33 @@
 project_id = "ppcrzemgiztzcgddbins"
 
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["io.supabase.riskdetected://login-callback"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = false
+max_frequency = "1m0s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.external.apple]
+enabled = true
+client_id = "com.riskdetected.app.service,com.riskdetected.app"
+
+[auth.external.google]
+enabled = true
+client_id = "200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com"
+
 [functions.analyze]
 verify_jwt = false
 
@@ -10,6 +38,9 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.generate-excel-report]
+verify_jwt = true
+
+[functions.register-report]
 verify_jwt = true
 
 [functions.sync-revenuecat-subscription]

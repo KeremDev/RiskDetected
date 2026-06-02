@@ -58,6 +58,10 @@ const MODEL_GROQ_FREE_DEFAULT = "meta-llama/llama-4-scout-17b-16e-instruct";
 const MODEL_GROQ_PLUS_PRO_DEFAULT = MODEL_GROQ_FREE_DEFAULT;
 const GROQ_MAX_BASE64_IMAGES = 5;
 const GROQ_MAX_BASE64_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_ANALYSIS_IMAGE_PARTS = 5;
+const MAX_INLINE_PHOTO_BASE64_BYTES = 2_100_000;
+const MAX_INLINE_PHOTO_DECODED_BYTES = 1_500_000;
+const MAX_INLINE_PHOTO_TOTAL_BASE64_BYTES = 4_500_000;
 
 type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
@@ -890,6 +894,91 @@ function decodedBase64ByteLength(base64: string): number {
     ? 1
     : 0;
   return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding);
+}
+
+function isValidStandardBase64(value: string): boolean {
+  const normalized = value.replace(/\s/g, "");
+  return normalized.length > 0 &&
+    normalized.length % 4 !== 1 &&
+    /^[A-Za-z0-9+/]*={0,2}$/.test(normalized);
+}
+
+function validateInlinePhotoInput(
+  inlinePhotoParts: unknown,
+  requestedPhotoPaths: string[],
+): { ok: true } | { ok: false; code: string; message: string } {
+  const parts = Array.isArray(inlinePhotoParts) ? inlinePhotoParts : [];
+  const totalImageParts = requestedPhotoPaths.length + parts.length;
+  if (totalImageParts > MAX_ANALYSIS_IMAGE_PARTS) {
+    return {
+      ok: false,
+      code: "too_many_photos",
+      message:
+        `Analiz için en fazla ${MAX_ANALYSIS_IMAGE_PARTS} fotoğraf gönderebilirsin.`,
+    };
+  }
+
+  let totalEncodedBytes = 0;
+  for (const part of parts) {
+    const source = part as {
+      data?: unknown;
+      mime_type?: unknown;
+      mimeType?: unknown;
+    };
+    const data = typeof source?.data === "string"
+      ? source.data.replace(/\s/g, "")
+      : "";
+    if (!isValidStandardBase64(data)) {
+      return {
+        ok: false,
+        code: "invalid_photo_payload",
+        message: "Fotoğraf verisi geçersiz.",
+      };
+    }
+
+    const rawMime = String(source.mime_type ?? source.mimeType ?? "")
+      .toLowerCase();
+    if (
+      rawMime.length > 0 &&
+      !rawMime.includes("jpeg") &&
+      !rawMime.includes("jpg") &&
+      !rawMime.includes("png")
+    ) {
+      return {
+        ok: false,
+        code: "unsupported_photo_type",
+        message: "Fotoğraf formatı JPEG veya PNG olmalı.",
+      };
+    }
+
+    if (data.length > MAX_INLINE_PHOTO_BASE64_BYTES) {
+      return {
+        ok: false,
+        code: "photo_too_large",
+        message: "Fotoğraf dosyası analiz için çok büyük.",
+      };
+    }
+
+    const decodedBytes = decodedBase64ByteLength(data);
+    if (decodedBytes > MAX_INLINE_PHOTO_DECODED_BYTES) {
+      return {
+        ok: false,
+        code: "photo_too_large",
+        message: "Fotoğraf dosyası analiz için çok büyük.",
+      };
+    }
+
+    totalEncodedBytes += data.length;
+    if (totalEncodedBytes > MAX_INLINE_PHOTO_TOTAL_BASE64_BYTES) {
+      return {
+        ok: false,
+        code: "photo_package_too_large",
+        message: "Fotoğraf paketi çok büyük.",
+      };
+    }
+  }
+
+  return { ok: true };
 }
 
 async function callGroq(
@@ -2361,6 +2450,17 @@ serve(async (req: Request) => {
       .map((path) => typeof path === "string" ? path.trim() : "")
       .filter((path) => path.length > 0)
     : [];
+  const inlinePhotoValidation = validateInlinePhotoInput(
+    photo_base64_parts,
+    requestedPhotoPaths,
+  );
+  if (!inlinePhotoValidation.ok) {
+    return errorResponse(400, inlinePhotoValidation.message, {
+      code: inlinePhotoValidation.code,
+      requestID,
+      supportID,
+    });
+  }
 
   console.log(
     "Analyze request started",
@@ -2420,56 +2520,6 @@ serve(async (req: Request) => {
       .update(patch)
       .eq("id", analysisID)
       .eq("user_id", user.id);
-
-  if (!isWorkerInvocation) {
-    try {
-      const { queuedPhotoPaths } = await enqueueAnalysisJob({
-        supabase,
-        supabaseUrl,
-        serviceRoleKey,
-        body,
-        userID: user.id,
-        analysisID,
-        requestID,
-        supportID,
-      });
-      triggerAnalysisWorker({
-        supabaseUrl,
-        serviceRoleKey,
-        requestID,
-        supportID,
-      });
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          status: "queued",
-          analysis_id: analysisID,
-          queued_photo_count: queuedPhotoPaths.length,
-          request_id: requestID,
-          support_id: supportID,
-        }),
-        {
-          status: 202,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    } catch (error) {
-      console.error(
-        "Analyze enqueue failed",
-        JSON.stringify({
-          request_id: requestID,
-          support_id: supportID,
-          analysis_id: analysisID,
-          error: safeLogError(error),
-        }),
-      );
-      return errorResponse(500, "Analiz kuyruğa alınamadı.", {
-        code: "analysis_enqueue_failed",
-        requestID,
-        supportID,
-      });
-    }
-  }
 
   const requestedCanvases = [
     ...new Set(
@@ -2543,8 +2593,9 @@ serve(async (req: Request) => {
   }
 
   if (
-    geminiKeys.length === 0 ||
-    geminiKeys.some((item) => item.pool !== expectedGeminiPool)
+    isWorkerInvocation &&
+    (geminiKeys.length === 0 ||
+      geminiKeys.some((item) => item.pool !== expectedGeminiPool))
   ) {
     console.error(
       "Gemini key pool misconfigured",
@@ -2755,6 +2806,57 @@ serve(async (req: Request) => {
         feature: quotaReservation?.feature,
       },
     );
+  }
+
+  if (!isWorkerInvocation) {
+    try {
+      const { queuedPhotoPaths } = await enqueueAnalysisJob({
+        supabase,
+        supabaseUrl,
+        serviceRoleKey,
+        body,
+        userID: user.id,
+        analysisID,
+        requestID,
+        supportID,
+      });
+      triggerAnalysisWorker({
+        supabaseUrl,
+        serviceRoleKey,
+        requestID,
+        supportID,
+      });
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          status: "queued",
+          analysis_id: analysisID,
+          queued_photo_count: queuedPhotoPaths.length,
+          request_id: requestID,
+          support_id: supportID,
+        }),
+        {
+          status: 202,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    } catch (error) {
+      await releaseAnalysisQuota(supabase, analysisID, user.id);
+      console.error(
+        "Analyze enqueue failed",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogError(error),
+        }),
+      );
+      return errorResponse(500, "Analiz kuyruğa alınamadı.", {
+        code: "analysis_enqueue_failed",
+        requestID,
+        supportID,
+      });
+    }
   }
 
   // Status → analyzing

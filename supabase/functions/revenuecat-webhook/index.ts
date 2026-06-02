@@ -16,6 +16,7 @@ const ACTIVE_STATUSES = new Set([
   "RENEWAL",
   "UNCANCELLATION",
   "PRODUCT_CHANGE",
+  "REFUND_REVERSED",
   "SUBSCRIPTION_EXTENDED",
   "TEMPORARY_ENTITLEMENT_GRANT",
   "NON_RENEWING_PURCHASE",
@@ -303,7 +304,7 @@ serve(async (req) => {
     event.expiration_at_ms ?? event.expiration_at,
   );
   let nextTier: PlanTier | null = null;
-  let nextStatus = "inactive";
+  let nextStatus: string | null = null;
 
   if (eventType === "EXPIRATION") {
     nextTier = "free";
@@ -319,6 +320,20 @@ serve(async (req) => {
   } else if (PASSIVE_STATUSES.has(eventType)) {
     nextTier = null;
     nextStatus = eventType.toLowerCase();
+  }
+
+  if (!nextStatus) {
+    await supabase
+      .from("subscription_events")
+      .update({ processed_at: new Date().toISOString() })
+      .eq("event_id", eventID);
+
+    return json(200, {
+      ok: true,
+      ignored: true,
+      reason: "non_subscription_state_event",
+      event_type: eventType,
+    });
   }
 
   if (nextTier) {

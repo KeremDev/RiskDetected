@@ -37,6 +37,7 @@ type SyncRequestBody = {
 };
 
 const PUBLIC_REVENUECAT_API_KEY = "appl_mckFFxUrvtNqzjShezjMIrFmItA";
+const ACTIVE_BACKEND_STATUSES = new Set(["active", "trialing", "grace_period"]);
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -135,6 +136,27 @@ function subscriptionTier(
 
 function normalizeTier(value: unknown): PlanTier | null {
   return value === "free" || value === "plus" || value === "pro" ? value : null;
+}
+
+function isFutureExpiration(value: unknown): boolean {
+  if (typeof value !== "string" || !value.trim()) return false;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) && parsed > Date.now();
+}
+
+function isActivePaidBackendSubscription(
+  subscription: {
+    tier?: string | null;
+    status?: string | null;
+    current_period_ends_at?: string | null;
+  } | null,
+): boolean {
+  const tier = normalizeTier(subscription?.tier);
+  if (tier !== "plus" && tier !== "pro") return false;
+  if (!ACTIVE_BACKEND_STATUSES.has(String(subscription?.status ?? ""))) {
+    return false;
+  }
+  return isFutureExpiration(subscription?.current_period_ends_at);
 }
 
 function safeLogText(value: unknown, maxLength = 180): string {
@@ -274,7 +296,11 @@ serve(async (req) => {
     ? previousSubscription.status
     : null;
 
-  if (resolved.tier === "free") {
+  if (
+    resolved.tier === "free" && isActivePaidBackendSubscription(
+      previousSubscription,
+    )
+  ) {
     // Webhooks are the source of truth for cancellations/downgrades. This
     // authenticated fallback exists to repair missing paid access when the SDK
     // sees an active entitlement; it must not downgrade an existing backend
@@ -285,10 +311,42 @@ serve(async (req) => {
       status: previousStatus ?? "inactive",
       entitlement_id: previousSubscription?.entitlement_id ?? null,
       product_id: previousSubscription?.product_id ?? null,
-      current_period_ends_at:
-        previousSubscription?.current_period_ends_at ?? null,
+      current_period_ends_at: previousSubscription?.current_period_ends_at ??
+        null,
       revenuecat_tier: resolved.tier,
       skipped_downgrade: true,
+    });
+  }
+
+  if (resolved.tier === "free") {
+    await supabase.from("user_subscriptions").upsert({
+      user_id: user.id,
+      tier: "free",
+      source: "revenuecat_sync",
+      status: "inactive",
+      revenuecat_app_user_id: user.id,
+      product_id: null,
+      entitlement_id: null,
+      entitlement_ids: [],
+      current_period_ends_at: null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+
+    await supabase
+      .from("profiles")
+      .update({ tier: "free" })
+      .eq("id", user.id);
+
+    return json(200, {
+      ok: true,
+      tier: "free",
+      status: "inactive",
+      entitlement_id: null,
+      product_id: null,
+      current_period_ends_at: null,
+      revenuecat_tier: resolved.tier,
+      healed_stale_subscription: previousTier === "plus" ||
+        previousTier === "pro",
     });
   }
 
