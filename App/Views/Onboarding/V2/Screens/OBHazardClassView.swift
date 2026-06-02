@@ -6,9 +6,9 @@ struct OBHazardClassView: View {
     let onNext: () -> Void
 
     private let items: [(cls: OBHazardClass, icon: String, sub: String)] = [
-        (.critical, "exclamationmark.triangle.fill", "Petrokimya, maden, inşaat"),
-        (.high, "exclamationmark.circle.fill", "İmalat, gıda, sağlık"),
-        (.low, "info.circle.fill", "Ofis, perakende, hizmet"),
+        (.critical, "exclamationmark.triangle.fill", "Petrokimya, maden, inşaat, fabrika vb."),
+        (.high, "exclamationmark.circle.fill", "İmalat, gıda, sağlık vb."),
+        (.low, "info.circle.fill", "Ofis, perakende, hizmet vb."),
     ]
 
     var body: some View {

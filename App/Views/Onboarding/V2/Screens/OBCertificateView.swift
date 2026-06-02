@@ -8,7 +8,7 @@ struct OBCertificateView: View {
     private let helmetItems: [(cert: OBCertificate, title: String, sub: String, hatColor: Color, brimColor: Color)] = [
         (.A, "A Sınıfı İSG Uzmanı", "Çok tehlikeli sınıfta yetkili.",
          Color(hex: "#FFB300"), Color(hex: "#D9A012")),
-        (.B, "B Sınıfı İSG Uzmanı", "Tehlikeli ve az tehlikeli sınıflarda yetkili.",
+        (.B, "B Sınıfı İSG Uzmanı", "Tehlikeli sınıflarda yetkili.",
          Color(hex: "#4F86E0"), Color(hex: "#2A5A99")),
         (.C, "C Sınıfı İSG Uzmanı", "Az tehlikeli sınıfta yetkili.",
          Color(hex: "#00B82E"), Color(hex: "#008F24")),

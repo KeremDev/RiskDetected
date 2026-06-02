@@ -2,7 +2,6 @@ import SwiftUI
 
 struct OBPainPointView: View {
     let onNext: () -> Void
-    let onSkip: () -> Void
 
     @State private var checked: [Bool] = [false, false, false]
     @State private var shimmer: CGFloat = -1.0
@@ -74,16 +73,6 @@ struct OBPainPointView: View {
             OBFooter {
                 OBPrimaryButton(title: "Devam", accessibilityID: "onboarding.pain.continue") { onNext() }
                     .obStage(delay: 0.78)
-                Button {
-                    OBHaptic.soft(); onSkip()
-                } label: {
-                    Text("Atla")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Color.rdSlate.opacity(0.6))
-                        .padding(.vertical, 6)
-                }
-                .obStage(delay: 0.88)
-                .accessibilityIdentifier("onboarding.pain.skip")
             }
         }
         .background(Color.rdPaper)
@@ -187,5 +176,5 @@ struct OBPainPointView: View {
 }
 
 #Preview {
-    OBPainPointView(onNext: {}, onSkip: {})
+    OBPainPointView(onNext: {})
 }

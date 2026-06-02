@@ -103,7 +103,7 @@ enum OBFrequency: String, CaseIterable, Identifiable {
         case .one: return "Bir işyerine derin denetim"
         case .twoToFive: return "Birden çok OSGB sözleşmesi"
         case .sixToFifteen: return "Sürekli saha rotasyonu"
-        case .fifteenPlus: return "Ekipli OSGB / endüstri grubu"
+        case .fifteenPlus: return "Yoğun OSGB / endüstri grubu"
         }
     }
 }

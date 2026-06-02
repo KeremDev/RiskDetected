@@ -331,7 +331,7 @@ private struct OBSplashBottomSheet: View {
                 .minimumScaleFactor(0.85)
                 .padding(.top, 16)
 
-            Text("Fotoğraf çek; yapay zekâ uygunsuzlukları otomatik tespit etsin ve raporunu anında oluştursun.")
+            Text("Fotoğraf çek; yapay zekâ tehlikeleri otomatik tespit etsin, raporun anında oluşsun ve tek tıklama ile paylaş.")
                 .font(.system(size: 14.5, weight: .regular, design: .rounded))
                 .foregroundStyle(OBSplashColor.slate)
                 .multilineTextAlignment(.center)

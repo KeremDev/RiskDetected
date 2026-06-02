@@ -156,13 +156,7 @@ struct OnboardingViewV2: View {
             )
         case 1:
             OBPainPointView(
-                onNext: { state.next() },
-                onSkip: {
-                    OBHaptic.soft()
-                    withAnimation(.obSpring) {
-                        showSkipConfirmation = true
-                    }
-                }
+                onNext: { state.next() }
             )
         case 2:
             OBCertificateView(state: state, onBack: { state.back() }, onNext: { state.next() })
