@@ -410,7 +410,7 @@ function profileWithCompany(
   return {
     ...(profile ?? {}),
     company_name: company.name,
-    company_logo_url: company.logo_path ?? null,
+    company_logo_url: company.logo_path ?? profile?.company_logo_url ?? null,
     phone: hazardClassLabel(company.hazard_class),
   };
 }

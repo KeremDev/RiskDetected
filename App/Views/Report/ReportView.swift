@@ -21,7 +21,7 @@ struct ReportView: View {
     @State private var showPaywall = false
     @State private var reportOptions = PDFReportOptions()
     @State private var selectedReportCompany: Company?
-    @State private var reportCompanyLogo: UIImage?
+    @State private var profileReportLogo: UIImage?
     @State private var shareItem: ShareItem?
     @State private var showSourceReportSheet = false
     @State private var visibleReportCount = 5
@@ -140,7 +140,7 @@ struct ReportView: View {
                     pdfGeneration: pdfGeneration,
                     reportOptions: $reportOptions,
                     selectedCompany: $selectedReportCompany,
-                    companyLogo: $reportCompanyLogo,
+                    companyLogo: $profileReportLogo,
                     onGenerateCustom: { options, logo in
                         generateSelectedReport(options: options, companyLogo: logo)
                     },
@@ -1097,9 +1097,10 @@ struct ReportView: View {
                 }
                 let reportImage = try await loadReportImage(for: selectedBundle)
                 pdfGeneration.advance(to: 0.23)
-                let companyStoredLogo = try await loadCompanyLogo(for: company)
-                let profileLogo = try await loadProfileLogoIfNeeded()
-                let resolvedLogo = companyLogo ?? companyStoredLogo ?? profileLogo
+                let resolvedLogo = await resolveReportLogo(
+                    company: company,
+                    fallbackLogo: companyLogo
+                )
                 let input = PDFReportService.ReportInput(
                     bundle: selectedBundle,
                     findings: sortedFindings(selectedBundle.findings.map(\.asFinding), method: resolvedOptions.method),
@@ -1394,18 +1395,42 @@ struct ReportView: View {
 
     @discardableResult
     private func loadProfileLogoIfNeeded() async throws -> UIImage? {
-        if let reportCompanyLogo { return reportCompanyLogo }
+        if let profileReportLogo { return profileReportLogo }
         guard let path = app.profile?.companyLogoURL, !path.isEmpty else { return nil }
         let image = try await app.auth.profileLogoImage(path: path)
         await MainActor.run {
-            reportCompanyLogo = image
+            profileReportLogo = image
         }
         return image
     }
 
-    private func loadCompanyLogo(for company: Company?) async throws -> UIImage? {
+    private func resolveReportLogo(company: Company?, fallbackLogo: UIImage?) async -> UIImage? {
+        if let companyLogo = await loadCompanyLogoIfAvailable(for: company) {
+            return companyLogo
+        }
+        if let fallbackLogo {
+            return fallbackLogo
+        }
+        return await loadProfileLogoIfAvailable()
+    }
+
+    private func loadCompanyLogoIfAvailable(for company: Company?) async -> UIImage? {
         guard let path = company?.logoPath, !path.isEmpty else { return nil }
-        return try await CompanyService.shared.logoImage(path: path)
+        do {
+            return try await CompanyService.shared.logoImage(path: path)
+        } catch {
+            Self.logger.warning("Company logo unavailable for report fallback: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    private func loadProfileLogoIfAvailable() async -> UIImage? {
+        do {
+            return try await loadProfileLogoIfNeeded()
+        } catch {
+            Self.logger.warning("Profile logo unavailable for report fallback: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     private func sortedFindings(_ findings: [Finding], method: RiskMethod) -> [Finding] {
