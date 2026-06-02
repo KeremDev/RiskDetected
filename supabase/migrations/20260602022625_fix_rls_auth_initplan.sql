@@ -19,7 +19,7 @@ alter policy analyses_delete_own
 
 alter policy analyses_insert_own
   on public.analyses
-  with check ((select auth.uid()) = user_id and status = 'pending');
+  with check ((select auth.uid()) = user_id and status = 'pending'::analysis_status);
 
 alter policy analyses_select_own
   on public.analyses
