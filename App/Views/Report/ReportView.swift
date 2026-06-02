@@ -242,10 +242,10 @@ struct ReportView: View {
                         .foregroundStyle(Color.rdWhite.opacity(0.72))
                 }
                 .frame(width: 58, height: 54)
-                .background(Color.rdBlack)
+                .background(overviewMetricBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.rdBlack, lineWidth: 1)
+                        .stroke(overviewMetricBorder, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
@@ -261,18 +261,14 @@ struct ReportView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(
-                colors: [
-                    Color(hex: "#F7FBFF"),
-                    Color(hex: "#F2F7FA"),
-                    Color(hex: "#EEF8F2")
-                ],
+                colors: overviewCardGradientColors,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.rdBlack, lineWidth: 1.4)
+                .stroke(overviewCardBorder, lineWidth: 1.4)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .reportCardDepth(colorScheme: colorScheme, accent: Color.rdGreen, radius: 5, x: 6, y: 8)
@@ -302,13 +298,31 @@ struct ReportView: View {
         }
         .padding(9)
         .frame(maxWidth: .infinity)
-        .background(Color.rdBlack)
+        .background(overviewMetricBackground)
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.rdBlack, lineWidth: 1)
+                .stroke(overviewMetricBorder, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
+    }
+
+    private var overviewCardGradientColors: [Color] {
+        colorScheme == .dark
+            ? [Color(hex: "#151A18"), Color(hex: "#111615"), Color(hex: "#0F1D14")]
+            : [Color(hex: "#F7FBFF"), Color(hex: "#F2F7FA"), Color(hex: "#EEF8F2")]
+    }
+
+    private var overviewCardBorder: Color {
+        colorScheme == .dark ? Color.white.opacity(0.10) : Color.rdOnyx
+    }
+
+    private var overviewMetricBackground: Color {
+        colorScheme == .dark ? Color(hex: "#0B120F") : Color.rdOnyx
+    }
+
+    private var overviewMetricBorder: Color {
+        colorScheme == .dark ? Color.rdGreen.opacity(0.20) : Color.rdOnyx
     }
 
     private var reportValuePanel: some View {

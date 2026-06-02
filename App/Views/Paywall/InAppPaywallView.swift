@@ -162,7 +162,7 @@ struct InAppPaywallView: View {
         VStack(alignment: .leading, spacing: 0) {
             ProductBadge(screen: .pro)
                 .padding(.horizontal, 20)
-                .padding(.top, 14)
+                .padding(.top, 30)
                 .padding(.bottom, 4)
 
             VStack(alignment: .leading, spacing: 6) {
@@ -659,10 +659,13 @@ struct InAppPaywallView: View {
     }
 
     private static func shouldUseTRYFallback(for price: String) -> Bool {
+        let trimmed = price.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return true }
+
         let locale = Locale.current
         guard locale.region?.identifier == "TR" else { return false }
 
-        let normalized = price
+        let normalized = trimmed
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
             .uppercased(with: Locale(identifier: "en_US"))
         return normalized.contains("$") || normalized.contains("USD")
@@ -707,9 +710,9 @@ private struct InAppPaywallPlanDisplay {
         case .free:
             return InAppPaywallPlanDisplay(monthlyPrice: 0, yearlyPrice: 0)
         case .plus:
-            return InAppPaywallPlanDisplay(monthlyPrice: 199.90, yearlyPrice: 1_999)
+            return InAppPaywallPlanDisplay(monthlyPrice: 199.99, yearlyPrice: 1_999.99)
         case .pro:
-            return InAppPaywallPlanDisplay(monthlyPrice: 499.90, yearlyPrice: 4_999)
+            return InAppPaywallPlanDisplay(monthlyPrice: 499.99, yearlyPrice: 4_999.99)
         }
     }
 }

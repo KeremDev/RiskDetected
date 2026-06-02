@@ -91,10 +91,7 @@ struct HomeView: View {
                     RDButton(
                         title: "Taramayı Başlat",
                         style: .detect,
-                        icon: "sparkles",
-                        backgroundOverride: .rdOnyx,
-                        foregroundOverride: .white,
-                        shadowOverride: .clear
+                        icon: "sparkles"
                     ) {
                         startAnalysisFlow()
                     }
