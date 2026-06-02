@@ -123,12 +123,7 @@ function accountPushCopy(eventType: string, tier: PlanTier | null): {
       body: `RiskDetected ${planName} üyeliğin hesabına tanımlandı.`,
     };
   }
-  if (eventType === "RENEWAL" || eventType === "UNCANCELLATION") {
-    return {
-      title: "Üyeliğin aktif",
-      body: "RiskDetected üyeliğin sorunsuz şekilde devam ediyor.",
-    };
-  }
+  if (eventType === "RENEWAL" || eventType === "UNCANCELLATION") return null;
   if (eventType === "CANCELLATION") {
     return {
       title: "Üyelik iptali alındı",
