@@ -143,7 +143,7 @@ struct ProfileView: View {
                     }
                 }
             )
-            .presentationDetents(CompanyPickerSheet.presentationDetents(for: app.currentTier))
+            .presentationDetents(CompanyPickerSheet.presentationDetents(for: app.currentTier, allowNoCompany: false))
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }

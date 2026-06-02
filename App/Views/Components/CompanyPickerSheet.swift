@@ -5,8 +5,9 @@ import UIKit
 struct CompanyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    static func presentationDetents(for accessTier: SubscriptionTier) -> Set<PresentationDetent> {
-        accessTier.isPaid ? [.height(470), .large] : [.height(370)]
+    static func presentationDetents(for accessTier: SubscriptionTier, allowNoCompany: Bool = true) -> Set<PresentationDetent> {
+        guard accessTier.isPaid else { return [.height(370)] }
+        return [.height(allowNoCompany ? 430 : 360)]
     }
 
     let title: String
@@ -123,10 +124,6 @@ struct CompanyPickerSheet: View {
 
             addCompanyButton
         }
-    }
-
-    private var shouldShowHeader: Bool {
-        !allowNoCompany || !companies.isEmpty
     }
 
     private var shouldShowBlockingLoadError: Bool {
@@ -432,7 +429,7 @@ struct CompanyPickerSheet: View {
     }
 
     private var visibleCompanyLimit: Int {
-        4
+        3
     }
 
     private var companyListMaxHeight: CGFloat {
