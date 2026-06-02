@@ -27,6 +27,8 @@ Packages/
 
 # Sensitive
 *.env
+*.p8
+AuthKey_*.p8
 App/GoogleService-Info.plist
 App/GoogleService-Info.plist.local
 QA/tmp/
@@ -44,3 +46,9 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+# Generated QA artifacts
+output/paywall-device-matrix/
+output/paywall-screenshots/
+output/app-review-physical-smoke/
+output/imagegen/
