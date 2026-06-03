@@ -51,7 +51,19 @@ final class AuthService: ObservableObject {
         let response = try await verifyEmailOTPWithSupportedTypes(email: email, token: token)
         if let verifiedSession = response.session {
             await finishSignIn(with: verifiedSession)
+            return
         }
+
+        if let currentSession = await currentValidSessionAfterShortWait() {
+            await finishSignIn(with: currentSession)
+            return
+        }
+
+        throw NSError(
+            domain: "RiskDetected.AuthService",
+            code: -2,
+            userInfo: [NSLocalizedDescriptionKey: "Doğrulama tamamlandı ama oturum oluşturulamadı. Lütfen yeni kod gönderip tekrar deneyin."]
+        )
     }
 
     /// Apple ID ile giriş — UI tarafında ASAuthorizationAppleIDCredential alındıktan sonra
@@ -402,6 +414,21 @@ final class AuthService: ObservableObject {
     private static func validSession(_ session: Session?) -> Session? {
         guard let session, !session.isExpired else { return nil }
         return session
+    }
+
+    private func currentValidSessionAfterShortWait() async -> Session? {
+        if let session = Self.validSession(supabase.client.auth.currentSession) {
+            return session
+        }
+
+        for delay in [150_000_000, 350_000_000] {
+            try? await Task.sleep(nanoseconds: UInt64(delay))
+            if let session = Self.validSession(supabase.client.auth.currentSession) {
+                return session
+            }
+        }
+
+        return nil
     }
 
     private func deepLinkURL() -> URL {

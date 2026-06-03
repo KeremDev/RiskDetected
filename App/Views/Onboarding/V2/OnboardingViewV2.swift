@@ -21,6 +21,7 @@ struct OnboardingViewV2: View {
     @State private var isPaywallWorking = false
     @State private var selectedLegalDocument: LegalDocumentKind?
     var isAuthenticated: Bool = false
+    var hasCompletedOnboarding: Bool = false
     var currentTier: SubscriptionTier = .free
     var subscriptionPackages: [SubscriptionPlanPackage] = []
     var onFinish: () -> Void = {}
@@ -34,6 +35,7 @@ struct OnboardingViewV2: View {
     init(
         initialStep: Int = 0,
         isAuthenticated: Bool = false,
+        hasCompletedOnboarding: Bool = false,
         currentTier: SubscriptionTier = .free,
         subscriptionPackages: [SubscriptionPlanPackage] = [],
         onFinish: @escaping () -> Void = {},
@@ -46,6 +48,7 @@ struct OnboardingViewV2: View {
     ) {
         _state = StateObject(wrappedValue: OnboardingV2State(step: initialStep))
         self.isAuthenticated = isAuthenticated
+        self.hasCompletedOnboarding = hasCompletedOnboarding
         self.currentTier = currentTier
         self.subscriptionPackages = subscriptionPackages
         self.onFinish = onFinish
@@ -109,18 +112,10 @@ struct OnboardingViewV2: View {
         }
         .onChange(of: isAuthenticated) { authenticated in
             guard authenticated else { return }
-            persistCurrentDraft()
-            PaywallEventService.shared.flushPendingIfPossible()
-            Task {
-                await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
-                await MainActor.run {
-                    PaywallEventService.shared.flushPendingIfPossible()
-                }
-            }
-            guard state.step == 8 else { return }
-            withAnimation(.obSpring) {
-                state.goTo(9)
-            }
+            handleAuthenticationCompleted()
+        }
+        .onAppear {
+            handleAuthenticationCompleted()
         }
         .onChange(of: currentTier) { tier in
             guard isAuthenticated, tier.isPaid, state.step >= 9 else { return }
@@ -128,6 +123,9 @@ struct OnboardingViewV2: View {
         }
         .onChange(of: state.step) { step in
             persistCurrentDraft()
+            if step == 8 {
+                handleAuthenticationCompleted()
+            }
             if isAuthenticated, currentTier.isPaid, step >= 9 {
                 finishOnboarding()
                 return
@@ -182,10 +180,11 @@ struct OnboardingViewV2: View {
             OBAuthView(
                 state: state,
                 onBack: { state.back() },
-                onApple: { startAuth(onAuthApple) },
-                onGoogle: { startAuth(onAuthGoogle) },
+                onApple: { persistCurrentDraft() },
+                onGoogle: { persistCurrentDraft() },
                 onEmail: { startAuth(onAuthEmail) },
                 onSignIn: { startAuth(onSignInExisting) },
+                onAuthenticated: { handleAuthenticationCompleted(authConfirmed: true) },
                 onLegalDocument: { selectedLegalDocument = $0 }
             )
         case 9:
@@ -223,6 +222,21 @@ struct OnboardingViewV2: View {
     private func startAuth(_ action: () -> Void) {
         persistCurrentDraft()
         action()
+    }
+
+    private func handleAuthenticationCompleted(authConfirmed: Bool = false) {
+        guard (authConfirmed || isAuthenticated), !hasCompletedOnboarding, state.step == 8 else { return }
+        persistCurrentDraft()
+        PaywallEventService.shared.flushPendingIfPossible()
+        Task {
+            await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+            await MainActor.run {
+                PaywallEventService.shared.flushPendingIfPossible()
+            }
+        }
+        withAnimation(.obSpring) {
+            state.goTo(9)
+        }
     }
 
     private func finishOnboarding() {

@@ -19,7 +19,8 @@ struct RootView: View {
                     .transition(.opacity)
             case .onboarding:
                 OnboardingViewV2(
-                    isAuthenticated: app.auth.isAuthenticated,
+                    isAuthenticated: app.isAuthenticated,
+                    hasCompletedOnboarding: app.hasSeenOnboarding,
                     currentTier: app.currentTier,
                     subscriptionPackages: app.subscriptionPackages,
                     onFinish: { app.finishOnboarding() },

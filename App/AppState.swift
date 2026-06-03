@@ -73,6 +73,7 @@ final class AppState: ObservableObject {
     var quickScanSource: QuickScanSource = .chooser
     @Published var hasSeenOnboarding: Bool
     @Published var authError: String?
+    @Published private(set) var isAuthenticated: Bool
     @Published private(set) var subscriptionState: SubscriptionState = .free
     @Published private(set) var subscriptionPackages: [SubscriptionPlanPackage] = []
     @Published var isDarkModeEnabled: Bool {
@@ -120,6 +121,7 @@ final class AppState: ObservableObject {
             .flatMap(RDLanguagePreference.init(rawValue:))
         self.languagePreference = Self.normalizedLanguagePreference(storedLanguage)
         self.profile = resolved.profile
+        self.isAuthenticated = resolved.isAuthenticated
         applyTier(displayTier(profileTier: resolved.profile?.tier ?? .free, subscriptionTier: resolvedSubscriptions.state.tier))
         self.authError = resolved.lastError
         resolvedSubscriptions.configure()
@@ -335,6 +337,7 @@ final class AppState: ObservableObject {
                 #if DEBUG
                 guard !Self.isUITestMainLaunch else { return }
                 #endif
+                self.isAuthenticated = session != nil
                 if let session {
                     Task {
                         await LegalAcceptanceService.shared

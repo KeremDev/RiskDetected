@@ -10,6 +10,7 @@ struct OBAuthView: View {
     let onGoogle: () -> Void
     let onEmail: () -> Void
     let onSignIn: () -> Void
+    let onAuthenticated: () -> Void
     var onLegalDocument: (LegalDocumentKind) -> Void = { _ in }
     @State private var emailPhase: EmailPhase = .hidden
     @State private var email = ""
@@ -18,8 +19,12 @@ struct OBAuthView: View {
     @State private var code = Array(repeating: "", count: 6)
     @State private var isSendingEmailCode = false
     @State private var isVerifyingEmailCode = false
+    @State private var isSigningInWithApple = false
+    @State private var isSigningInWithGoogle = false
+    @State private var appleSignInService = AppleSignInService()
     @State private var authErrorMessage: String?
     @State private var focusRequest = 0
+    private let googleSignInService = GoogleSignInService()
 
     private enum EmailPhase {
         case hidden
@@ -148,19 +153,36 @@ struct OBAuthView: View {
 
                     VStack(spacing: 10) {
                         authButton(
-                            title: "Apple ile devam et",
-                            icon: { Image(systemName: "apple.logo").font(.system(size: 18, weight: .medium)) },
+                            title: isSigningInWithApple ? "Apple ile bağlanıyor..." : "Apple ile devam et",
+                            icon: { Image(systemName: isSigningInWithApple ? "hourglass" : "apple.logo").font(.system(size: 18, weight: .medium)) },
                             bg: .black, fg: .white, bordered: false
-                        ) { OBHaptic.light(); onApple() }
+                        ) {
+                            OBHaptic.light()
+                            onApple()
+                            runAppleSignIn()
+                        }
+                        .disabled(isSigningInWithApple)
+                        .opacity(isSigningInWithApple ? 0.75 : 1)
                         .accessibilityIdentifier("onboarding.auth.apple")
                         .obStage(delay: 0.36)
 
                         Button {
-                            OBHaptic.light(); onGoogle()
+                            OBHaptic.light()
+                            onGoogle()
+                            runGoogleSignIn()
                         } label: {
                             HStack(spacing: 10) {
-                                googleG
-                                googleTextColored
+                                if isSigningInWithGoogle {
+                                    Image(systemName: "hourglass")
+                                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                        .foregroundStyle(Color.rdOnyx)
+                                    Text("Google ile bağlanıyor...")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundStyle(Color.rdOnyx)
+                                } else {
+                                    googleG
+                                    googleTextColored
+                                }
                             }
                             .frame(maxWidth: .infinity).frame(height: 56)
                             .background(Color.white)
@@ -169,6 +191,8 @@ struct OBAuthView: View {
                             .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
                         }
                         .buttonStyle(OBPressStyle())
+                        .disabled(isSigningInWithGoogle)
+                        .opacity(isSigningInWithGoogle ? 0.75 : 1)
                         .accessibilityIdentifier("onboarding.auth.google")
                         .obStage(delay: 0.44)
 
@@ -201,6 +225,16 @@ struct OBAuthView: View {
                         }
                     }
                     .padding(.top, 14)
+
+                    if let authErrorMessage {
+                        onboardingAuthError(authErrorMessage)
+                            .padding(.top, 10)
+                            .obStage(delay: 0.56)
+                    } else if let authError = app.authError, !authError.isEmpty {
+                        onboardingAuthError(authError)
+                            .padding(.top, 10)
+                            .obStage(delay: 0.56)
+                    }
 
                     Button {
                         OBHaptic.light()
@@ -524,10 +558,65 @@ struct OBAuthView: View {
             do {
                 try await app.auth.verifyEmailOTP(email: normalizedEmail, token: otpInput)
                 await app.auth.refreshProfile()
+                authErrorMessage = nil
+                onAuthenticated()
             } catch {
                 setAuthError(error, context: "Kod doğrulanamadı", fallbackTitle: "Kod doğrulanamadı", operation: "onboarding_verify_email_otp")
             }
             isVerifyingEmailCode = false
+        }
+    }
+
+    private func runAppleSignIn() {
+        guard !isSigningInWithApple else { return }
+        isSigningInWithApple = true
+        authErrorMessage = nil
+        app.authError = nil
+        Task {
+            do {
+                let result = try await appleSignInService.signIn()
+                try await app.auth.signInWithApple(
+                    idToken: result.idToken,
+                    nonce: result.nonce,
+                    email: result.email,
+                    fullName: result.fullName
+                )
+                await app.auth.refreshProfile()
+                authErrorMessage = nil
+                onAuthenticated()
+            } catch {
+                if !isUserCancelledAuth(error) {
+                    setAuthError(error, context: "Apple ile giriş yapılamadı", fallbackTitle: "Apple ile giriş yapılamadı", operation: "onboarding_apple_sign_in")
+                }
+            }
+            isSigningInWithApple = false
+        }
+    }
+
+    private func runGoogleSignIn() {
+        guard !isSigningInWithGoogle else { return }
+        isSigningInWithGoogle = true
+        authErrorMessage = nil
+        app.authError = nil
+        Task {
+            do {
+                let result = try await googleSignInService.signIn()
+                try await app.auth.signInWithGoogle(
+                    idToken: result.idToken,
+                    accessToken: result.accessToken,
+                    nonce: result.nonce,
+                    emailFallback: result.email,
+                    fullNameFallback: result.fullName
+                )
+                await app.auth.refreshProfile()
+                authErrorMessage = nil
+                onAuthenticated()
+            } catch {
+                if !isUserCancelledAuth(error) {
+                    setAuthError(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı", operation: "onboarding_google_sign_in")
+                }
+            }
+            isSigningInWithGoogle = false
         }
     }
 
@@ -539,6 +628,18 @@ struct OBAuthView: View {
         )
         AuthService.logAuthError(message, operation: operation, email: normalizedEmail)
         authErrorMessage = message.message
+    }
+
+    private func isUserCancelledAuth(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        return nsError.code == 1 && nsError.domain.contains("WebAuthenticationSession") ||
+            lower.contains("cancel") ||
+            lower.contains("vazgeç") ||
+            lower.contains("canceled") ||
+            lower.contains("cancelled") ||
+            lower.contains("authentication session error 1") ||
+            lower.contains("webauthenticationsession")
     }
 
     private func focusEmailField() {
@@ -699,6 +800,31 @@ struct OBAuthView: View {
             .shadow(color: .black.opacity(bordered ? 0.05 : 0), radius: 8, y: 3)
         }
         .buttonStyle(OBPressStyle())
+    }
+
+    private func onboardingAuthError(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdCritical)
+                .padding(.top, 1)
+
+            Text(message)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.rdCriticalText)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.rdCriticalBg.opacity(0.70))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.rdCritical.opacity(0.22), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .accessibilityIdentifier("onboarding.auth.global_error")
     }
 
     private var googleG: some View {
@@ -994,7 +1120,8 @@ private final class OBKeyboardObserver: ObservableObject {
         onApple: {},
         onGoogle: {},
         onEmail: {},
-        onSignIn: {}
+        onSignIn: {},
+        onAuthenticated: {}
     )
     .environmentObject(AppState())
 }
