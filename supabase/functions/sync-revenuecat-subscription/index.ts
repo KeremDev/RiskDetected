@@ -10,13 +10,19 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  tierFromProductIdentifier,
+  isExplicitPaidUpgradeSync,
   type PlanTier,
+  tierFromProductIdentifier,
 } from "../_shared/subscription-tier.ts";
+import {
+  isIdentifiedRevenueCatOwnerMismatch,
+  normalizeRevenueCatAppUserID,
+} from "../_shared/revenuecat-owner-guard.ts";
 
 type RevenueCatEntitlement = {
   expires_date?: string | null;
   product_identifier?: string | null;
+  purchase_date?: string | null;
 };
 
 type RevenueCatSubscription = {
@@ -62,6 +68,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
   entitlementID: string | null;
   productID: string | null;
   expiration: string | null;
+  purchaseDate: string | null;
 } {
   const activeEntitlements = Object.entries(entitlements)
     .filter(([, value]) => isActiveEntitlement(value));
@@ -71,6 +78,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       entitlementID,
       productID: value.product_identifier ?? null,
       expiration: value.expires_date ?? null,
+      purchaseDate: value.purchase_date ?? null,
     }))
     .find((item) => item.tier);
   if (productResolved?.tier) {
@@ -79,6 +87,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       entitlementID: productResolved.tier,
       productID: productResolved.productID,
       expiration: productResolved.expiration,
+      purchaseDate: productResolved.purchaseDate,
     };
   }
 
@@ -89,6 +98,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       entitlementID: "pro",
       productID: pro?.product_identifier ?? null,
       expiration: pro?.expires_date ?? null,
+      purchaseDate: pro?.purchase_date ?? null,
     };
   }
 
@@ -99,6 +109,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       entitlementID: "plus",
       productID: plus?.product_identifier ?? null,
       expiration: plus?.expires_date ?? null,
+      purchaseDate: plus?.purchase_date ?? null,
     };
   }
 
@@ -107,6 +118,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
     entitlementID: null,
     productID: null,
     expiration: null,
+    purchaseDate: null,
   };
 }
 
@@ -117,12 +129,14 @@ function subscriptionTier(
   entitlementID: string | null;
   productID: string | null;
   expiration: string | null;
+  purchaseDate: string | null;
 } | null {
   const active = Object.entries(subscriptions)
     .map(([productID, value]) => ({
       productID,
       tier: tierFromProductIdentifier(productID),
       expiration: value.expires_date ?? null,
+      purchaseDate: value.purchase_date ?? null,
       purchaseTime: Date.parse(value.purchase_date ?? ""),
     }))
     .filter((item) =>
@@ -145,6 +159,7 @@ function subscriptionTier(
     entitlementID: current.tier,
     productID: current.productID,
     expiration: current.expiration,
+    purchaseDate: current.purchaseDate,
   };
 }
 
@@ -173,55 +188,77 @@ function isActivePaidBackendSubscription(
   return isFutureExpiration(subscription?.current_period_ends_at);
 }
 
-function safeLogText(value: unknown, maxLength = 180): string {
-  return String(value)
-    .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
-    .slice(0, maxLength);
+function purchasePredatesAccount(
+  purchaseDate: string | null,
+  accountCreatedAt: string | null | undefined,
+): boolean {
+  if (!purchaseDate || !accountCreatedAt) return false;
+  const purchaseTime = Date.parse(purchaseDate);
+  const accountTime = Date.parse(accountCreatedAt);
+  if (!Number.isFinite(purchaseTime) || !Number.isFinite(accountTime)) {
+    return false;
+  }
+  return purchaseTime < accountTime - 10 * 60 * 1000;
 }
 
-async function sendAccountSyncPush(params: {
-  supabaseUrl: string;
-  serviceRoleKey: string;
-  userID: string;
-  tier: PlanTier;
-  status: string;
-}) {
-  if (params.tier === "free" || params.status === "active") return;
-  const planName = params.tier === "pro" ? "Pro" : "Plus";
-  const response = await fetch(
-    `${params.supabaseUrl}/functions/v1/send-push-notification`,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${params.serviceRoleKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        user_id: params.userID,
-        kind: "account_updates",
-        title: `${planName} plan aktif`,
-        body: `RiskDetected ${planName} üyeliğin hesabına tanımlandı.`,
-        data: {
-          destination: "profile",
-          source: "revenuecat_sync",
-          tier: params.tier,
-          status: params.status,
-        },
-      }),
-    },
-  );
+async function activeOwnerForResolvedSubscription(
+  supabase: ReturnType<typeof createClient<any>>,
+  currentUserID: string,
+  resolved: {
+    productID: string | null;
+    expiration: string | null;
+  },
+): Promise<string | null> {
+  if (!resolved.productID || !resolved.expiration) return null;
 
-  if (!response.ok) {
-    console.warn(
-      "Account sync push failed",
-      JSON.stringify({
-        user_id: params.userID,
-        tier: params.tier,
-        status: response.status,
-        body: safeLogText(await response.text()),
-      }),
-    );
+  const { data } = await supabase
+    .from("user_subscriptions")
+    .select("user_id,tier,status,current_period_ends_at")
+    .eq("product_id", resolved.productID)
+    .neq("user_id", currentUserID)
+    .in("tier", ["plus", "pro"])
+    .in("status", ["active", "trialing", "grace_period"])
+    .limit(10);
+
+  const resolvedExpiration = Date.parse(resolved.expiration);
+  if (!Number.isFinite(resolvedExpiration)) return null;
+
+  for (const row of data ?? []) {
+    if (!isFutureExpiration(row.current_period_ends_at)) continue;
+    const rowExpiration = Date.parse(String(row.current_period_ends_at ?? ""));
+    if (
+      Number.isFinite(rowExpiration) &&
+      Math.abs(rowExpiration - resolvedExpiration) <= 60_000
+    ) {
+      return String(row.user_id);
+    }
   }
+
+  return null;
+}
+
+async function writeFreeSubscriptionState(
+  supabase: ReturnType<typeof createClient<any>>,
+  userID: string,
+  source: string,
+) {
+  await supabase.from("user_subscriptions").upsert({
+    user_id: userID,
+    tier: "free",
+    source,
+    status: "inactive",
+    revenuecat_app_user_id: userID,
+    product_id: null,
+    entitlement_id: null,
+    entitlement_ids: [],
+    current_period_ends_at: null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+
+  await supabase
+    .from("profiles")
+    .update({ tier: "free" })
+    .eq("id", userID);
 }
 
 serve(async (req) => {
@@ -279,21 +316,9 @@ serve(async (req) => {
 
   const payload = await revenueCatResponse
     .json() as RevenueCatSubscriberResponse;
-  const originalAppUserID =
-    typeof payload.subscriber?.original_app_user_id === "string"
-      ? payload.subscriber.original_app_user_id.trim().toLowerCase()
-      : null;
-  if (
-    originalAppUserID &&
-    originalAppUserID !== user.id.toLowerCase() &&
-    !originalAppUserID.startsWith("$rcanonymousid:")
-  ) {
-    return json(409, {
-      error: "revenuecat_owner_mismatch",
-      tier: expectedTier ?? "free",
-      original_app_user_id: originalAppUserID,
-    });
-  }
+  const originalAppUserID = normalizeRevenueCatAppUserID(
+    payload.subscriber?.original_app_user_id,
+  );
 
   const entitlements = payload.subscriber?.entitlements ?? {};
   const subscriptions = payload.subscriber?.subscriptions ?? {};
@@ -311,30 +336,74 @@ serve(async (req) => {
     : null;
 
   if (
-    resolved.tier === "free" && isActivePaidBackendSubscription(
-      previousSubscription,
-    )
+    resolved.tier !== "free" &&
+    isIdentifiedRevenueCatOwnerMismatch(originalAppUserID, user.id)
   ) {
-    // Webhooks are the source of truth for cancellations/downgrades. This
-    // authenticated fallback exists to repair missing paid access when the SDK
-    // sees an active entitlement; it must not downgrade an existing backend
-    // subscription just because RevenueCat briefly returns no active entitlement.
-    return json(200, {
-      ok: true,
-      tier: previousTier ?? "free",
-      status: previousStatus ?? "inactive",
-      entitlement_id: previousSubscription?.entitlement_id ?? null,
-      product_id: previousSubscription?.product_id ?? null,
-      current_period_ends_at: previousSubscription?.current_period_ends_at ??
-        null,
-      revenuecat_tier: resolved.tier,
-      skipped_downgrade: true,
+    await writeFreeSubscriptionState(
+      supabase,
+      user.id,
+      "revenuecat_sync_conflict",
+    );
+
+    return json(409, {
+      error: "revenuecat_owner_mismatch",
+      tier: expectedTier ?? "free",
+      resolved_tier: resolved.tier,
+      original_app_user_id: originalAppUserID,
+      product_id: resolved.productID,
+      entitlement_id: resolved.entitlementID,
     });
   }
 
   if (
+    resolved.tier !== "free" &&
+    purchasePredatesAccount(resolved.purchaseDate, user.created_at)
+  ) {
+    await writeFreeSubscriptionState(
+      supabase,
+      user.id,
+      "revenuecat_sync_conflict",
+    );
+
+    return json(409, {
+      error: "revenuecat_purchase_predates_account",
+      tier: "free",
+      resolved_tier: resolved.tier,
+      product_id: resolved.productID,
+      entitlement_id: resolved.entitlementID,
+      purchase_date: resolved.purchaseDate,
+      account_created_at: user.created_at,
+    });
+  }
+
+  if (resolved.tier !== "free") {
+    const existingOwnerID = await activeOwnerForResolvedSubscription(
+      supabase,
+      user.id,
+      resolved,
+    );
+    if (existingOwnerID) {
+      await writeFreeSubscriptionState(
+        supabase,
+        user.id,
+        "revenuecat_sync_conflict",
+      );
+
+      return json(409, {
+        error: "revenuecat_owner_mismatch",
+        tier: "free",
+        resolved_tier: resolved.tier,
+        subscription_owner_user_id: existingOwnerID,
+        product_id: resolved.productID,
+        entitlement_id: resolved.entitlementID,
+      });
+    }
+  }
+
+  if (
     resolved.tier === "pro" && previousTier === "plus" &&
-    isActivePaidBackendSubscription(previousSubscription)
+    isActivePaidBackendSubscription(previousSubscription) &&
+    !isExplicitPaidUpgradeSync(previousTier, resolved.tier, expectedTier)
   ) {
     // Authenticated sync is a fallback repair path. Do not silently upgrade a
     // Plus backend subscription to Pro from a RevenueCat subscriber snapshot;
@@ -354,23 +423,7 @@ serve(async (req) => {
   }
 
   if (resolved.tier === "free") {
-    await supabase.from("user_subscriptions").upsert({
-      user_id: user.id,
-      tier: "free",
-      source: "revenuecat_sync",
-      status: "inactive",
-      revenuecat_app_user_id: user.id,
-      product_id: null,
-      entitlement_id: null,
-      entitlement_ids: [],
-      current_period_ends_at: null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id" });
-
-    await supabase
-      .from("profiles")
-      .update({ tier: "free" })
-      .eq("id", user.id);
+    await writeFreeSubscriptionState(supabase, user.id, "revenuecat_sync");
 
     return json(200, {
       ok: true,
@@ -435,16 +488,6 @@ serve(async (req) => {
     .from("profiles")
     .update({ tier: resolved.tier })
     .eq("id", user.id);
-
-  if (previousTier !== resolved.tier || previousStatus !== status) {
-    await sendAccountSyncPush({
-      supabaseUrl,
-      serviceRoleKey,
-      userID: user.id,
-      tier: resolved.tier,
-      status,
-    });
-  }
 
   return json(200, {
     ok: true,

@@ -9,9 +9,16 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  tierFromProductOrEntitlements,
   type PlanTier,
+  tierFromProductIdentifier,
+  tierFromProductOrEntitlements,
 } from "../_shared/subscription-tier.ts";
+import {
+  resolveRevenueCatEventUserID,
+  revenueCatTransferIDs,
+} from "../_shared/revenuecat-event.ts";
+
+type SupabaseAdminClient = ReturnType<typeof createClient<any>>;
 
 const ACTIVE_STATUSES = new Set([
   "INITIAL_PURCHASE",
@@ -28,6 +35,37 @@ const PASSIVE_STATUSES = new Set([
   "BILLING_ISSUE",
   "SUBSCRIPTION_PAUSED",
 ]);
+
+const PUBLIC_REVENUECAT_API_KEY = "appl_mckFFxUrvtNqzjShezjMIrFmItA";
+
+type RevenueCatEntitlement = {
+  expires_date?: string | null;
+  product_identifier?: string | null;
+  purchase_date?: string | null;
+};
+
+type RevenueCatSubscription = {
+  expires_date?: string | null;
+  product_identifier?: string | null;
+  purchase_date?: string | null;
+};
+
+type RevenueCatSubscriberResponse = {
+  subscriber?: {
+    entitlements?: Record<string, RevenueCatEntitlement>;
+    subscriptions?: Record<string, RevenueCatSubscription>;
+  };
+};
+
+type ResolvedSubscriberState = {
+  tier: PlanTier;
+  status: "active" | "inactive";
+  entitlementID: string | null;
+  entitlementIDs: string[];
+  productID: string | null;
+  expiration: string | null;
+  purchaseDate: string | null;
+};
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -50,30 +88,6 @@ function tierFrom(
   return tierFromProductOrEntitlements(entitlementIDs, productID);
 }
 
-function uuidFrom(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const clean = value.trim().toLowerCase();
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
-      clean,
-    )
-    ? clean
-    : null;
-}
-
-function resolveUserID(event: Record<string, unknown>): string | null {
-  const candidates: unknown[] = [
-    event.app_user_id,
-    event.original_app_user_id,
-    event.transferred_to,
-  ];
-  if (Array.isArray(event.aliases)) candidates.push(...event.aliases);
-  for (const candidate of candidates) {
-    const id = uuidFrom(candidate);
-    if (id) return id;
-  }
-  return null;
-}
-
 function parseExpiration(value: unknown): string | null {
   if (typeof value === "number" && Number.isFinite(value)) {
     const ms = value > 10_000_000_000 ? value : value * 1000;
@@ -86,10 +100,197 @@ function parseExpiration(value: unknown): string | null {
   return null;
 }
 
+function parsePurchaseDate(event: Record<string, unknown>): string | null {
+  return parseExpiration(
+    event.purchased_at_ms ?? event.purchased_at ??
+      event.purchase_date_ms ?? event.purchase_date,
+  );
+}
+
 function isFutureExpiration(value: string | null): boolean {
   if (!value) return false;
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) && parsed > Date.now();
+}
+
+function isActiveEntitlement(
+  entitlement: RevenueCatEntitlement | undefined,
+): boolean {
+  if (!entitlement) return false;
+  if (!entitlement.expires_date) return true;
+  const expiresAt = Date.parse(entitlement.expires_date);
+  return Number.isFinite(expiresAt) && expiresAt > Date.now();
+}
+
+function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
+  tier: PlanTier;
+  entitlementID: string | null;
+  productID: string | null;
+  expiration: string | null;
+  purchaseDate: string | null;
+} {
+  const activeEntitlements = Object.entries(entitlements)
+    .filter(([, value]) => isActiveEntitlement(value));
+  const productResolved = activeEntitlements
+    .map(([entitlementID, value]) => ({
+      tier: tierFromProductIdentifier(value.product_identifier ?? ""),
+      entitlementID,
+      productID: value.product_identifier ?? null,
+      expiration: value.expires_date ?? null,
+      purchaseDate: value.purchase_date ?? null,
+    }))
+    .find((item) => item.tier);
+  if (productResolved?.tier) {
+    return {
+      tier: productResolved.tier,
+      entitlementID: productResolved.tier,
+      productID: productResolved.productID,
+      expiration: productResolved.expiration,
+      purchaseDate: productResolved.purchaseDate,
+    };
+  }
+
+  const pro = entitlements.pro;
+  if (isActiveEntitlement(pro)) {
+    return {
+      tier: "pro",
+      entitlementID: "pro",
+      productID: pro?.product_identifier ?? null,
+      expiration: pro?.expires_date ?? null,
+      purchaseDate: pro?.purchase_date ?? null,
+    };
+  }
+
+  const plus = entitlements.plus;
+  if (isActiveEntitlement(plus)) {
+    return {
+      tier: "plus",
+      entitlementID: "plus",
+      productID: plus?.product_identifier ?? null,
+      expiration: plus?.expires_date ?? null,
+      purchaseDate: plus?.purchase_date ?? null,
+    };
+  }
+
+  return {
+    tier: "free",
+    entitlementID: null,
+    productID: null,
+    expiration: null,
+    purchaseDate: null,
+  };
+}
+
+function subscriptionTier(
+  subscriptions: Record<string, RevenueCatSubscription>,
+): {
+  tier: PlanTier;
+  entitlementID: string | null;
+  productID: string | null;
+  expiration: string | null;
+  purchaseDate: string | null;
+} | null {
+  const active = Object.entries(subscriptions)
+    .map(([productID, value]) => ({
+      productID,
+      tier: tierFromProductIdentifier(productID),
+      expiration: value.expires_date ?? null,
+      purchaseDate: value.purchase_date ?? null,
+      purchaseTime: Date.parse(value.purchase_date ?? ""),
+    }))
+    .filter((item) =>
+      item.tier && isActiveEntitlement({ expires_date: item.expiration })
+    )
+    .sort((a, b) => {
+      const aTime = Number.isFinite(a.purchaseTime) ? a.purchaseTime : 0;
+      const bTime = Number.isFinite(b.purchaseTime) ? b.purchaseTime : 0;
+      if (aTime === bTime) {
+        return (b.tier === "pro" ? 1 : 0) - (a.tier === "pro" ? 1 : 0);
+      }
+      return bTime - aTime;
+    });
+
+  const current = active[0];
+  if (!current?.tier) return null;
+
+  return {
+    tier: current.tier,
+    entitlementID: current.tier,
+    productID: current.productID,
+    expiration: current.expiration,
+    purchaseDate: current.purchaseDate,
+  };
+}
+
+function resolvedStateFromSubscriber(
+  payload: RevenueCatSubscriberResponse,
+): ResolvedSubscriberState {
+  const entitlements = payload.subscriber?.entitlements ?? {};
+  const subscriptions = payload.subscriber?.subscriptions ?? {};
+  const resolved = subscriptionTier(subscriptions) ??
+    entitlementTier(entitlements);
+  const entitlementIDs = Object.entries(entitlements)
+    .filter(([, value]) => isActiveEntitlement(value))
+    .map(([key]) => key);
+
+  return {
+    tier: resolved.tier,
+    status: resolved.tier === "free" ? "inactive" : "active",
+    entitlementID: resolved.entitlementID,
+    entitlementIDs,
+    productID: resolved.productID,
+    expiration: resolved.expiration,
+    purchaseDate: resolved.purchaseDate,
+  };
+}
+
+function freeSubscriberState(): ResolvedSubscriberState {
+  return {
+    tier: "free",
+    status: "inactive",
+    entitlementID: null,
+    entitlementIDs: [],
+    productID: null,
+    expiration: null,
+    purchaseDate: null,
+  };
+}
+
+function purchasePredatesAccount(
+  purchaseDate: string | null,
+  accountCreatedAt: string | null | undefined,
+): boolean {
+  if (!purchaseDate || !accountCreatedAt) return false;
+  const purchaseTime = Date.parse(purchaseDate);
+  const accountTime = Date.parse(accountCreatedAt);
+  if (!Number.isFinite(purchaseTime) || !Number.isFinite(accountTime)) {
+    return false;
+  }
+  return purchaseTime < accountTime - 10 * 60 * 1000;
+}
+
+async function fetchRevenueCatSubscriberState(
+  appUserID: string,
+  apiKey: string,
+): Promise<ResolvedSubscriberState> {
+  const response = await fetch(
+    `https://api.revenuecat.com/v1/subscribers/${
+      encodeURIComponent(appUserID)
+    }`,
+    {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: "application/json",
+      },
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`revenuecat_lookup_failed:${response.status}`);
+  }
+
+  return resolvedStateFromSubscriber(
+    await response.json() as RevenueCatSubscriberResponse,
+  );
 }
 
 function safeLogText(value: unknown, maxLength = 180): string {
@@ -181,6 +382,228 @@ async function sendAccountUpdatePush(params: {
   }
 }
 
+async function existingProfileID(
+  supabase: SupabaseAdminClient,
+  candidates: string[],
+): Promise<string | null> {
+  for (const candidate of candidates) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", candidate)
+      .maybeSingle();
+    if (profile?.id) return candidate;
+  }
+  return null;
+}
+
+async function writeSubscriptionState(params: {
+  supabase: SupabaseAdminClient;
+  userID: string;
+  revenueCatAppUserID: string | null;
+  source: string;
+  eventID: string;
+  environment: string | null;
+  state: ResolvedSubscriberState;
+}) {
+  await params.supabase.from("user_subscriptions").upsert({
+    user_id: params.userID,
+    tier: params.state.tier,
+    source: params.source,
+    status: params.state.status,
+    revenuecat_app_user_id: params.revenueCatAppUserID,
+    product_id: params.state.productID,
+    entitlement_id: params.state.entitlementID,
+    entitlement_ids: params.state.entitlementIDs,
+    environment: params.environment,
+    current_period_ends_at: params.state.expiration,
+    last_event_id: params.eventID,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+
+  await params.supabase
+    .from("profiles")
+    .update({ tier: params.state.tier })
+    .eq("id", params.userID);
+}
+
+async function deactivateTransferredFromUser(params: {
+  supabase: SupabaseAdminClient;
+  userID: string;
+  eventID: string;
+  environment: string | null;
+}) {
+  const { data: profile } = await params.supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", params.userID)
+    .maybeSingle();
+  if (!profile) return false;
+
+  await params.supabase.from("user_subscriptions").upsert({
+    user_id: params.userID,
+    tier: "free",
+    source: "revenuecat_transfer",
+    status: "inactive",
+    revenuecat_app_user_id: params.userID,
+    product_id: null,
+    entitlement_id: null,
+    entitlement_ids: [],
+    environment: params.environment,
+    current_period_ends_at: null,
+    last_event_id: params.eventID,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+
+  await params.supabase
+    .from("profiles")
+    .update({ tier: "free" })
+    .eq("id", params.userID);
+
+  return true;
+}
+
+async function activeTransferredFromOwner(
+  supabase: SupabaseAdminClient,
+  candidates: string[],
+): Promise<string | null> {
+  if (candidates.length === 0) return null;
+  const { data } = await supabase
+    .from("user_subscriptions")
+    .select("user_id,tier,status,current_period_ends_at")
+    .in("user_id", candidates)
+    .in("tier", ["plus", "pro"])
+    .in("status", ["active", "trialing", "grace_period"])
+    .limit(1);
+  const row = (data ?? []).find((item) =>
+    isFutureExpiration(item.current_period_ends_at)
+  );
+  return row?.user_id ? String(row.user_id) : null;
+}
+
+async function profileCreatedAt(
+  supabase: SupabaseAdminClient,
+  userID: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("created_at")
+    .eq("id", userID)
+    .maybeSingle();
+  return typeof data?.created_at === "string" ? data.created_at : null;
+}
+
+async function processTransferEvent(params: {
+  supabase: SupabaseAdminClient;
+  event: Record<string, unknown>;
+  eventID: string;
+  environment: string | null;
+  revenueCatAPIKey: string;
+}): Promise<Record<string, unknown>> {
+  const { transferredFrom, transferredTo } = revenueCatTransferIDs(
+    params.event,
+  );
+  const targetUserID = await existingProfileID(params.supabase, transferredTo);
+
+  if (!targetUserID) {
+    await params.supabase
+      .from("subscription_events")
+      .update({ processed_at: new Date().toISOString() })
+      .eq("event_id", params.eventID);
+    return {
+      ok: true,
+      ignored: true,
+      reason: "transfer_target_profile_not_found",
+      transferred_from: transferredFrom,
+      transferred_to: transferredTo,
+    };
+  }
+
+  const targetState = await fetchRevenueCatSubscriberState(
+    targetUserID,
+    params.revenueCatAPIKey,
+  );
+
+  const lockedOwnerID = targetState.tier === "free"
+    ? null
+    : await activeTransferredFromOwner(params.supabase, transferredFrom);
+  const targetCreatedAt = await profileCreatedAt(params.supabase, targetUserID);
+  if (
+    targetState.tier !== "free" &&
+    (lockedOwnerID ||
+      purchasePredatesAccount(targetState.purchaseDate, targetCreatedAt))
+  ) {
+    await writeSubscriptionState({
+      supabase: params.supabase,
+      userID: targetUserID,
+      revenueCatAppUserID: targetUserID,
+      source: "revenuecat_transfer_conflict",
+      eventID: params.eventID,
+      environment: params.environment,
+      state: freeSubscriberState(),
+    });
+
+    await params.supabase
+      .from("subscription_events")
+      .update({
+        user_id: targetUserID,
+        processed_at: new Date().toISOString(),
+      })
+      .eq("event_id", params.eventID);
+
+    return {
+      ok: true,
+      transfer_conflict: true,
+      user_id: targetUserID,
+      locked_owner_user_id: lockedOwnerID,
+      purchase_date: targetState.purchaseDate,
+      account_created_at: targetCreatedAt,
+      transferred_from: transferredFrom,
+      transferred_to: transferredTo,
+    };
+  }
+
+  await writeSubscriptionState({
+    supabase: params.supabase,
+    userID: targetUserID,
+    revenueCatAppUserID: targetUserID,
+    source: "revenuecat_transfer",
+    eventID: params.eventID,
+    environment: params.environment,
+    state: targetState,
+  });
+
+  const deactivatedFrom: string[] = [];
+  for (const sourceUserID of transferredFrom) {
+    if (sourceUserID === targetUserID) continue;
+    const didDeactivate = await deactivateTransferredFromUser({
+      supabase: params.supabase,
+      userID: sourceUserID,
+      eventID: params.eventID,
+      environment: params.environment,
+    });
+    if (didDeactivate) deactivatedFrom.push(sourceUserID);
+  }
+
+  await params.supabase
+    .from("subscription_events")
+    .update({
+      user_id: targetUserID,
+      processed_at: new Date().toISOString(),
+    })
+    .eq("event_id", params.eventID);
+
+  return {
+    ok: true,
+    transfer: true,
+    user_id: targetUserID,
+    tier: targetState.tier,
+    status: targetState.status,
+    product_id: targetState.productID,
+    deactivated_from: deactivatedFrom,
+  };
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return json(405, { error: "Method not allowed" });
@@ -188,11 +611,17 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const revenueCatAPIKey = Deno.env.get("REVENUECAT_REST_API_KEY") ??
+    Deno.env.get("REVENUECAT_PUBLIC_API_KEY") ??
+    PUBLIC_REVENUECAT_API_KEY;
   const expectedAuthorization = Deno.env.get(
     "REVENUECAT_WEBHOOK_AUTHORIZATION",
   );
 
-  if (!supabaseUrl || !serviceRoleKey || !expectedAuthorization) {
+  if (
+    !supabaseUrl || !serviceRoleKey || !expectedAuthorization ||
+    !revenueCatAPIKey
+  ) {
     return json(500, { error: "RevenueCat webhook is not configured" });
   }
 
@@ -221,7 +650,7 @@ serve(async (req) => {
   const appUserID = typeof event.app_user_id === "string"
     ? event.app_user_id
     : null;
-  const userID = resolveUserID(event);
+  const userID = resolveRevenueCatEventUserID(event);
   const environment = typeof event.environment === "string"
     ? event.environment
     : null;
@@ -242,27 +671,50 @@ serve(async (req) => {
 
   const { data: existing } = await supabase
     .from("subscription_events")
-    .select("event_id")
+    .select("event_id,processed_at")
     .eq("event_id", eventID)
     .maybeSingle();
 
-  if (existing) {
+  if (existing?.processed_at) {
     return json(200, { ok: true, duplicate: true });
   }
 
-  const { error: insertError } = await supabase.from("subscription_events")
-    .insert({
-      event_id: eventID,
-      user_id: eventUserID,
-      app_user_id: appUserID,
-      event_type: eventType,
-      product_id: productID,
-      entitlement_ids: entitlementIDs,
-      environment,
-      raw_event: event,
-    });
-  if (insertError) {
-    return json(500, { error: "Failed to record subscription event" });
+  if (!existing) {
+    const { error: insertError } = await supabase.from("subscription_events")
+      .insert({
+        event_id: eventID,
+        user_id: eventUserID,
+        app_user_id: appUserID,
+        event_type: eventType,
+        product_id: productID,
+        entitlement_ids: entitlementIDs,
+        environment,
+        raw_event: event,
+      });
+    if (insertError) {
+      return json(500, { error: "Failed to record subscription event" });
+    }
+  }
+
+  if (eventType === "TRANSFER") {
+    try {
+      return json(
+        200,
+        await processTransferEvent({
+          supabase,
+          event,
+          eventID,
+          environment,
+          revenueCatAPIKey,
+        }),
+      );
+    } catch (error) {
+      return json(502, {
+        error: "transfer_processing_failed",
+        event_id: eventID,
+        detail: safeLogText(error instanceof Error ? error.message : error),
+      });
+    }
   }
 
   if (!eventUserID || eventType === "TEST") {
@@ -309,6 +761,41 @@ serve(async (req) => {
       reason: "non_subscription_state_event",
       event_type: eventType,
     });
+  }
+
+  const purchaseDate = parsePurchaseDate(event);
+  if (
+    nextTier && nextTier !== "free" && ACTIVE_STATUSES.has(eventType)
+  ) {
+    const accountCreatedAt = await profileCreatedAt(supabase, eventUserID);
+    if (purchasePredatesAccount(purchaseDate, accountCreatedAt)) {
+      await writeSubscriptionState({
+        supabase,
+        userID: eventUserID,
+        revenueCatAppUserID: appUserID,
+        source: "revenuecat_event_conflict",
+        eventID,
+        environment,
+        state: freeSubscriberState(),
+      });
+
+      await supabase
+        .from("subscription_events")
+        .update({
+          processed_at: new Date().toISOString(),
+        })
+        .eq("event_id", eventID);
+
+      return json(200, {
+        ok: true,
+        event_conflict: true,
+        reason: "purchase_predates_account",
+        user_id: eventUserID,
+        purchase_date: purchaseDate,
+        account_created_at: accountCreatedAt,
+        event_type: eventType,
+      });
+    }
   }
 
   if (nextTier) {

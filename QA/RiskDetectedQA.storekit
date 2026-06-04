@@ -1,0 +1,149 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "8EE9028E",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "riskdetected_subscription_group",
+      "localizations" : [
+        {
+          "description" : "RiskDetected Plus and Pro subscription plans",
+          "displayName" : "RiskDetected Subscription",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "RiskDetected Plus ve Pro abonelik planları",
+          "displayName" : "RiskDetected Abonelik",
+          "locale" : "tr_TR"
+        }
+      ],
+      "name" : "RiskDetected Subscription",
+      "subscriptions" : [
+        {
+          "displayPrice" : "199.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "plus_monthly_qa",
+          "localizations" : [
+            {
+              "description" : "Monthly access to RiskDetected Plus features.",
+              "displayName" : "RiskDetected Plus Monthly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "RiskDetected Plus özelliklerine aylık erişim.",
+              "displayName" : "RiskDetected Plus Aylık",
+              "locale" : "tr_TR"
+            }
+          ],
+          "productID" : "riskdetected_plus_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "RiskDetected Plus Monthly",
+          "subscriptionGroupID" : "riskdetected_subscription_group",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "displayPrice" : "1999.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "plus_yearly_qa",
+          "localizations" : [
+            {
+              "description" : "Yearly access to RiskDetected Plus features.",
+              "displayName" : "RiskDetected Plus Yearly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "RiskDetected Plus özelliklerine yıllık erişim.",
+              "displayName" : "RiskDetected Plus Yıllık",
+              "locale" : "tr_TR"
+            }
+          ],
+          "productID" : "riskdetected_plus_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "RiskDetected Plus Yearly",
+          "subscriptionGroupID" : "riskdetected_subscription_group",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "displayPrice" : "499.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "pro_monthly_qa",
+          "localizations" : [
+            {
+              "description" : "Monthly access to RiskDetected Pro features.",
+              "displayName" : "RiskDetected Pro Monthly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "RiskDetected Pro özelliklerine aylık erişim.",
+              "displayName" : "RiskDetected Pro Aylık",
+              "locale" : "tr_TR"
+            }
+          ],
+          "productID" : "riskdetected_pro_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "RiskDetected Pro Monthly",
+          "subscriptionGroupID" : "riskdetected_subscription_group",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "displayPrice" : "4999.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "pro_yearly_qa",
+          "localizations" : [
+            {
+              "description" : "Yearly access to RiskDetected Pro features.",
+              "displayName" : "RiskDetected Pro Yearly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "RiskDetected Pro özelliklerine yıllık erişim.",
+              "displayName" : "RiskDetected Pro Yıllık",
+              "locale" : "tr_TR"
+            }
+          ],
+          "productID" : "riskdetected_pro_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "RiskDetected Pro Yearly",
+          "subscriptionGroupID" : "riskdetected_subscription_group",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 5,
+    "minor" : 0
+  }
+}

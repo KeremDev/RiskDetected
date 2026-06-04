@@ -32,3 +32,12 @@ export function tierFromProductOrEntitlements(
   if (entitlementIDs.includes("plus")) return "plus";
   return "free";
 }
+
+export function isExplicitPaidUpgradeSync(
+  previousTier: PlanTier | null,
+  resolvedTier: PlanTier,
+  expectedTier: PlanTier | null,
+): boolean {
+  return previousTier === "plus" && resolvedTier === "pro" &&
+    expectedTier === "pro";
+}

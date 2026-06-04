@@ -46,6 +46,18 @@ struct ReportView: View {
     private var freeRiskAnalysisTrialRemaining: Int {
         app.currentTier == .free && !freeRiskAnalysisTrialUsed ? 1 : 0
     }
+    private var reportCardFill: Color {
+        colorScheme == .dark ? Color(hex: "#151A18") : Color.rdWhite
+    }
+    private var reportCardBorder: Color {
+        colorScheme == .dark ? Color.white.opacity(0.10) : Color.rdLine
+    }
+    private var reportInsetFill: Color {
+        colorScheme == .dark ? Color(hex: "#202526") : Color.rdFog
+    }
+    private var reportMetaText: Color {
+        colorScheme == .dark ? Color.white.opacity(0.74) : Color.rdSlate
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -236,10 +248,10 @@ struct ReportView: View {
                 VStack(spacing: 2) {
                     Text("\(storedReports.count)")
                         .rdMono(size: 22, weight: .bold)
-                        .foregroundStyle(Color.rdWhite)
+                        .foregroundStyle(overviewMetricPrimaryText)
                     Text("dosya")
                         .rdMono(size: 10, weight: .bold)
-                        .foregroundStyle(Color.rdWhite.opacity(0.72))
+                        .foregroundStyle(overviewMetricSecondaryText)
                 }
                 .frame(width: 58, height: 54)
                 .background(overviewMetricBackground)
@@ -278,19 +290,19 @@ struct ReportView: View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdWhite)
+                .foregroundStyle(overviewMetricIconText)
                 .frame(width: 26, height: 26)
-                .background(Color.rdWhite.opacity(0.14))
+                .background(overviewMetricIconBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)
                     .rdMono(size: 14, weight: .bold)
-                    .foregroundStyle(Color.rdWhite)
+                    .foregroundStyle(overviewMetricPrimaryText)
                     .lineLimit(1)
                 Text(title)
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdWhite.opacity(0.70))
+                    .foregroundStyle(overviewMetricSecondaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.76)
             }
@@ -318,11 +330,27 @@ struct ReportView: View {
     }
 
     private var overviewMetricBackground: Color {
-        colorScheme == .dark ? Color(hex: "#0B120F") : Color.rdOnyx
+        colorScheme == .dark ? Color(hex: "#17231B") : Color.rdOnyx
     }
 
     private var overviewMetricBorder: Color {
-        colorScheme == .dark ? Color.rdGreen.opacity(0.20) : Color.rdOnyx
+        colorScheme == .dark ? Color.rdGreen.opacity(0.34) : Color.rdOnyx
+    }
+
+    private var overviewMetricPrimaryText: Color {
+        colorScheme == .dark ? Color.white.opacity(0.96) : Color.rdWhite
+    }
+
+    private var overviewMetricSecondaryText: Color {
+        colorScheme == .dark ? Color.white.opacity(0.72) : Color.rdWhite.opacity(0.70)
+    }
+
+    private var overviewMetricIconText: Color {
+        colorScheme == .dark ? Color.rdGreen : Color.rdWhite
+    }
+
+    private var overviewMetricIconBackground: Color {
+        colorScheme == .dark ? Color.rdGreen.opacity(0.16) : Color.rdWhite.opacity(0.14)
     }
 
     private var reportValuePanel: some View {
@@ -363,10 +391,10 @@ struct ReportView: View {
                 }
             }
             .padding(14)
-            .background(Color.rdWhite)
+            .background(reportCardFill)
             .overlay(
                 RoundedRectangle(cornerRadius: 18)
-                    .stroke(app.planCapabilities.canUseDetailedRiskTable ? Color.rdGreen.opacity(0.26) : Color.rdLine, lineWidth: 1)
+                    .stroke(app.planCapabilities.canUseDetailedRiskTable ? Color.rdGreen.opacity(0.32) : reportCardBorder, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 18))
             .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
@@ -450,10 +478,10 @@ struct ReportView: View {
             }
         }
         .padding(12)
-        .background(Color.rdWhite)
+        .background(reportCardFill)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.rdLine, lineWidth: 1)
+                .stroke(reportCardBorder, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
@@ -489,10 +517,10 @@ struct ReportView: View {
                 }
                 .padding(.horizontal, 12)
                 .frame(height: 40)
-                .background(Color.rdCloud)
+                .background(reportInsetFill)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.rdLine, lineWidth: 1)
+                        .stroke(reportCardBorder, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
@@ -505,10 +533,10 @@ struct ReportView: View {
                             .font(.system(size: 15, weight: .bold, design: .rounded))
                             .foregroundStyle(selectedCompanyFilter == nil ? Color.rdBlack : Color.rdGreenDark)
                             .frame(width: 40, height: 40)
-                            .background(selectedCompanyFilter == nil ? Color.rdCloud : Color.rdGreenSoft)
+                            .background(selectedCompanyFilter == nil ? reportInsetFill : Color.rdGreenSoft)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(selectedCompanyFilter == nil ? Color.rdLine : Color.rdGreen.opacity(0.32), lineWidth: 1)
+                                    .stroke(selectedCompanyFilter == nil ? reportCardBorder : Color.rdGreen.opacity(0.32), lineWidth: 1)
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
@@ -550,10 +578,10 @@ struct ReportView: View {
             }
         }
         .padding(12)
-        .background(Color.rdFog.opacity(0.72))
+        .background(colorScheme == .dark ? Color(hex: "#111615") : Color.rdFog.opacity(0.72))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.rdLine, lineWidth: 1)
+                .stroke(reportCardBorder, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .reportCardDepth(colorScheme: colorScheme, radius: 3.5, x: 4, y: 5)
@@ -593,10 +621,10 @@ struct ReportView: View {
             }
         }
         .padding(12)
-        .background(Color.rdWhite)
+        .background(reportCardFill)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.rdLine, lineWidth: 1)
+                .stroke(reportCardBorder, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
@@ -630,17 +658,17 @@ struct ReportView: View {
 
                 Text(meta)
                     .rdMono(size: 11, weight: .semibold)
-                    .foregroundStyle(Color.rdSlate)
+                    .foregroundStyle(reportMetaText)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
-                    .background(Color.rdFog)
+                    .background(reportInsetFill)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Image(systemName: "chevron.down")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
+                    .foregroundStyle(reportMetaText)
                     .frame(width: 28, height: 28)
-                    .background(Color.rdWhite)
+                    .background(reportInsetFill)
                     .clipShape(RoundedRectangle(cornerRadius: 9))
                     .rotationEffect(.degrees(isExpanded.wrappedValue ? 0 : -90))
             }
@@ -958,7 +986,7 @@ struct ReportView: View {
         Company(
             id: UUID(uuidString: "00000000-0000-0000-0000-00000000c001")!,
             userID: Self.uiTestUserID,
-            name: "QA Aktif Firma",
+            name: "Test Aktif Firma",
             hazardClass: .high,
             logoPath: nil,
             address: "Test Mah. Güvenlik Cad. No: 10",
@@ -986,9 +1014,9 @@ struct ReportView: View {
             format: "pdf",
             kind: "standard",
             method: "fine_kinney",
-            title: "QA Firma Raporu",
-            storagePath: "ui-test/reports/qa-firma-raporu.pdf",
-            fileName: "qa-firma-raporu.pdf",
+            title: "Test Firma Raporu",
+            storagePath: "ui-test/reports/test-firma-raporu.pdf",
+            fileName: "test-firma-raporu.pdf",
             mimeType: "application/pdf",
             fileSize: 128_000,
             requestID: nil,

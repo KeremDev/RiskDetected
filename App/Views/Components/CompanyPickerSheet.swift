@@ -531,7 +531,7 @@ struct CompanyPickerSheet: View {
             Company(
                 id: UUID(uuidString: "00000000-0000-0000-0000-00000000c001")!,
                 userID: UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!,
-                name: "QA Aktif Firma",
+                name: "Test Aktif Firma",
                 hazardClass: .high,
                 logoPath: nil,
                 address: "Test Mah. Güvenlik Cad. No: 10",

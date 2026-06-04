@@ -4,11 +4,8 @@ struct AuthView: View {
     @EnvironmentObject var app: AppState
     @State private var phase: AuthPhase = .options
     @State private var email: String = ""
-    @State private var code: [String] = Array(repeating: "", count: 6)
+    @State private var code: [String] = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
     @State private var otpInput: String = ""
-    #if DEBUG
-    @State private var signingInDemo: DemoAccount?
-    #endif
     @State private var authError: AppErrorMessage?
     @State private var isSendingEmailCode = false
     @State private var isVerifyingEmailCode = false
@@ -24,59 +21,11 @@ struct AuthView: View {
 
     enum AuthPhase { case options, email, otp }
     enum AuthInputField { case email, otp }
-    #if DEBUG
-    enum DemoAccount: String {
-        case pro, plus, free
 
-        var title: String {
-            switch self {
-            case .pro: return "Pro demo"
-            case .plus: return "Plus demo"
-            case .free: return "Free demo"
-            }
-        }
-
-        var email: String {
-            switch self {
-            case .pro: return "demo@riskdetected.app"
-            case .plus: return "plus@riskdetected.app"
-            case .free: return "free@riskdetected.app"
-            }
-        }
-
-        var password: String {
-            switch self {
-            case .pro: return "demo123456"
-            case .plus: return "plus123456"
-            case .free: return "free123456"
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .pro: return "star.fill"
-            case .plus: return "crown.fill"
-            case .free: return "person.crop.circle"
-            }
-        }
-
-        var tint: Color {
-            switch self {
-            case .pro: return Color.rdGreen
-            case .plus: return Color.rdPlanPlus
-            case .free: return Color.rdBlack
-            }
-        }
-    }
-    #endif
-
-    #if DEBUG
-    private var isSigningIn: Bool { signingInDemo != nil }
-    #endif
     private var normalizedEmail: String { email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
     private var otpCode: String { otpInput }
     private var canSendEmailCode: Bool { normalizedEmail.contains("@") && normalizedEmail.contains(".") && !isSendingEmailCode }
-    private var canVerifyEmailCode: Bool { otpCode.count == 6 && !isVerifyingEmailCode }
+    private var canVerifyEmailCode: Bool { otpCode.count == RDConfig.Auth.emailOTPLength && !isVerifyingEmailCode }
 
     var body: some View {
         GeometryReader { geo in
@@ -244,15 +193,6 @@ struct AuthView: View {
             .accessibilityIdentifier("auth.google")
 
             legalNotice
-
-            #if DEBUG
-            HStack(spacing: 8) {
-                demoButton(.pro)
-                demoButton(.plus)
-                demoButton(.free)
-            }
-            .opacity(isSigningIn ? 0.6 : 1)
-            #endif
 
             if let err = authError {
                 Text(err.message)
@@ -468,7 +408,7 @@ struct AuthView: View {
                     }
 
                 HStack(spacing: 10) {
-                    ForEach(0..<6, id: \.self) { i in
+                    ForEach(0..<RDConfig.Auth.emailOTPLength, id: \.self) { i in
                         otpDigitBox(index: i)
                     }
                 }
@@ -510,52 +450,6 @@ struct AuthView: View {
         }
     }
 
-    // MARK: - Demo sign-in
-
-    #if DEBUG
-    private func demoButton(_ account: DemoAccount) -> some View {
-        Button {
-            runDemoSignIn(account)
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: signingInDemo == account ? "hourglass" : account.icon)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                Text(signingInDemo == account ? "Giriş..." : account.title)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 42)
-            .foregroundStyle(account.tint)
-            .background(Color.rdWhite)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(account.tint.opacity(account == .free ? 0.18 : 0.45), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(RDPressableButtonStyle())
-        .disabled(isSigningIn)
-    }
-
-    private func runDemoSignIn(_ account: DemoAccount) {
-        guard !isSigningIn else { return }
-        signingInDemo = account
-        authError = nil
-        Task {
-            do {
-                try await app.auth.signInWithPassword(
-                    email: account.email,
-                    password: account.password
-                )
-            } catch {
-                setAuthError(error, context: "Giriş yapılamadı", fallbackTitle: "Giriş yapılamadı", operation: "demo_sign_in", email: account.email)
-            }
-            signingInDemo = nil
-        }
-    }
-    #endif
-
     private func sendEmailCode() {
         guard canSendEmailCode else { return }
         requestEmailCode(transitionToOTP: true)
@@ -574,7 +468,7 @@ struct AuthView: View {
                 try await app.auth.sendEmailOTP(email: normalizedEmail)
                 autoVerifiedCode = nil
                 otpInput = ""
-                code = Array(repeating: "", count: 6)
+                code = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
                 if transitionToOTP {
                     withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
                 }
@@ -674,22 +568,22 @@ struct AuthView: View {
     }
 
     private func syncOTPInput(_ newValue: String) {
-        let sanitized = String(newValue.filter(\.isNumber).prefix(6))
+        let sanitized = String(newValue.filter(\.isNumber).prefix(RDConfig.Auth.emailOTPLength))
         if sanitized != otpInput {
             otpInput = sanitized
             return
         }
 
-        var nextCode = Array(repeating: "", count: 6)
+        var nextCode = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
         for (index, digit) in sanitized.enumerated() where index < nextCode.count {
             nextCode[index] = String(digit)
         }
         code = nextCode
         authError = nil
 
-        if sanitized.count < 6 {
+        if sanitized.count < RDConfig.Auth.emailOTPLength {
             autoVerifiedCode = nil
-        } else if sanitized.count == 6, autoVerifiedCode != sanitized, !isVerifyingEmailCode {
+        } else if sanitized.count == RDConfig.Auth.emailOTPLength, autoVerifiedCode != sanitized, !isVerifyingEmailCode {
             autoVerifiedCode = sanitized
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                 verifyEmailCode()
@@ -698,8 +592,8 @@ struct AuthView: View {
     }
 
     private func otpDigitBox(index: Int) -> some View {
-        let activeIndex = min(otpInput.count, 5)
-        let isActive = focusedField == .otp && otpInput.count < 6 && index == activeIndex
+        let activeIndex = min(otpInput.count, RDConfig.Auth.emailOTPLength - 1)
+        let isActive = focusedField == .otp && otpInput.count < RDConfig.Auth.emailOTPLength && index == activeIndex
         let hasValue = !code[index].isEmpty
 
         return ZStack {

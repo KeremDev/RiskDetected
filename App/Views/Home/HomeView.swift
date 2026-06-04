@@ -777,27 +777,27 @@ struct HomeView: View {
         VStack(spacing: 10) {
             ZStack {
                 Circle()
-                    .fill(Color.rdCritical.opacity(0.10))
+                    .fill(lockedPhotoIconBackground)
                     .frame(width: 68, height: 68)
-                    .shadow(color: Color.rdCritical.opacity(0.18), radius: 16, x: 0, y: 8)
+                    .shadow(color: lockedPhotoIconShadow, radius: 16, x: 0, y: 8)
 
                 Circle()
-                    .stroke(Color.rdCritical, lineWidth: 5)
+                    .stroke(lockedPhotoCriticalColor, lineWidth: 5)
                     .frame(width: 52, height: 52)
 
                 Image(systemName: icon)
                     .font(.system(size: 19, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdCritical)
+                    .foregroundStyle(lockedPhotoCriticalColor)
             }
 
             Text(title)
                 .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdBlack)
+                .foregroundStyle(lockedPhotoTitleColor)
 
             Text(subtitle)
                 .font(.system(size: 13, design: .rounded))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(Color.rdSlate)
+                .foregroundStyle(lockedPhotoSubtitleColor)
                 .frame(maxWidth: 290)
 
             HStack(spacing: 5) {
@@ -806,7 +806,7 @@ struct HomeView: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
             }
-            .foregroundStyle(Color.rdCritical)
+            .foregroundStyle(lockedPhotoActionColor)
             .padding(.top, 4)
         }
         .frame(maxWidth: .infinity)
@@ -815,7 +815,7 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: 14)
                 .fill(
                     LinearGradient(
-                        colors: [Color.rdWhite, Color.rdCriticalBg.opacity(0.68)],
+                        colors: lockedPhotoBackgroundColors,
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -825,10 +825,10 @@ struct HomeView: View {
                         .strokeBorder(
                             style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
                         )
-                        .foregroundStyle(Color.rdCritical.opacity(0.38))
+                        .foregroundStyle(lockedPhotoBorderColor)
                 )
         )
-        .shadow(color: Color.rdCritical.opacity(0.08), radius: 14, x: 0, y: 6)
+        .shadow(color: lockedPhotoCardShadow, radius: 14, x: 0, y: 6)
     }
 
     private var recentSection: some View {

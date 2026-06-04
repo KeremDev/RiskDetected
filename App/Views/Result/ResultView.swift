@@ -980,10 +980,10 @@ struct ResultView: View {
         )
         #if DEBUG
         if Self.usesUITestLongReportFields {
-            options.preparedBy = "QA Çok Uzun Uzman Adı Soyadı Denetim ve Risk Yönetimi Sorumlusu"
+            options.preparedBy = "Test Çok Uzun Uzman Adı Soyadı Denetim ve Risk Yönetimi Sorumlusu"
             options.preparedTitle = "A Sınıfı İş Güvenliği Uzmanı ve Çok Tehlikeli Saha Denetim Koordinatörü"
-            options.certificateNumber = "QA-BELGE-2026-ÇOK-UZUN-0000000001"
-            options.companyName = "QA Çok Uzun Firma Adı Sanayi ve Ticaret Anonim Şirketi Kuzey Marmara Bölge Müdürlüğü"
+            options.certificateNumber = "TEST-BELGE-2026-ÇOK-UZUN-0000000001"
+            options.companyName = "Test Çok Uzun Firma Adı Sanayi ve Ticaret Anonim Şirketi Kuzey Marmara Bölge Müdürlüğü"
             options.companyInfo = "Çok Tehlikeli · Bakım ve Üretim Sahası · Uzun şirket bilgisi satır kırılım kontrolü"
         }
         #endif
@@ -1060,7 +1060,7 @@ struct ResultView: View {
                 .font: UIFont.systemFont(ofSize: 34, weight: .black),
                 .foregroundColor: UIColor(red: 0.02, green: 0.03, blue: 0.03, alpha: 1)
             ]
-            NSString(string: "QA").draw(in: CGRect(x: 46, y: 18, width: 90, height: 44), withAttributes: attrs)
+            NSString(string: "RD").draw(in: CGRect(x: 46, y: 18, width: 90, height: 44), withAttributes: attrs)
             UIColor.white.withAlphaComponent(0.72).setStroke()
             let path = UIBezierPath(roundedRect: CGRect(x: 8, y: 8, width: size.width - 16, height: size.height - 16), cornerRadius: 14)
             path.lineWidth = 4

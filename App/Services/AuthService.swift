@@ -31,7 +31,7 @@ final class AuthService: ObservableObject {
 
     var isAuthenticated: Bool { session != nil }
 
-    /// E-posta + şifre ile giriş (demo / dev).
+    /// E-posta + şifre ile giriş.
     /// signIn'in döndürdüğü Session'dan user ID'yi alıyor — currentSession race condition yok.
     func signInWithPassword(email: String, password: String) async throws {
         lastError = nil
@@ -124,6 +124,19 @@ final class AuthService: ObservableObject {
     #if DEBUG
     func resetLocalSessionForUITests() async {
         await clearStaleLocalSession(reason: "ui_test_reset")
+    }
+    #endif
+
+    #if INTERNAL_TEST_RESET_TOOLS
+    func resetLocalSessionForInternalTestReset() async {
+        do {
+            try await supabase.auth.signOut()
+        } catch {
+            try? await supabase.auth.signOut(scope: .local)
+        }
+        session = nil
+        profile = nil
+        lastError = nil
     }
     #endif
 

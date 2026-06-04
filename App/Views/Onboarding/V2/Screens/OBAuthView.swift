@@ -16,7 +16,7 @@ struct OBAuthView: View {
     @State private var email = ""
     @State private var otpInput = ""
     @State private var autoVerifiedCode: String?
-    @State private var code = Array(repeating: "", count: 6)
+    @State private var code = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
     @State private var isSendingEmailCode = false
     @State private var isVerifyingEmailCode = false
     @State private var isSigningInWithApple = false
@@ -41,7 +41,7 @@ struct OBAuthView: View {
     }
 
     private var canVerifyEmailCode: Bool {
-        otpInput.count == 6 && !isVerifyingEmailCode
+        otpInput.count == RDConfig.Auth.emailOTPLength && !isVerifyingEmailCode
     }
 
     var body: some View {
@@ -490,7 +490,7 @@ struct OBAuthView: View {
     private var otpInputRow: some View {
         ZStack {
             HStack(spacing: 7) {
-                ForEach(0..<6, id: \.self) { index in
+                ForEach(0..<RDConfig.Auth.emailOTPLength, id: \.self) { index in
                     otpDigitBox(index: index)
                 }
             }
@@ -503,7 +503,7 @@ struct OBAuthView: View {
                 textContentType: .oneTimeCode,
                 isFirstResponder: emailPhase == .otp,
                 focusRequest: focusRequest,
-                maxLength: 6,
+                maxLength: RDConfig.Auth.emailOTPLength,
                 onChange: { value in
                     syncOTPInput(value)
                 },
@@ -535,7 +535,7 @@ struct OBAuthView: View {
                 try await app.auth.sendEmailOTP(email: normalizedEmail)
                 autoVerifiedCode = nil
                 otpInput = ""
-                code = Array(repeating: "", count: 6)
+                code = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
                 withAnimation(.obSpring) { emailPhase = .otp }
                 focusOTPField()
             } catch {
@@ -673,22 +673,22 @@ struct OBAuthView: View {
     }
 
     private func syncOTPInput(_ value: String) {
-        let sanitized = String(value.filter(\.isNumber).prefix(6))
+        let sanitized = String(value.filter(\.isNumber).prefix(RDConfig.Auth.emailOTPLength))
         if sanitized != otpInput {
             otpInput = sanitized
             return
         }
 
-        var nextCode = Array(repeating: "", count: 6)
+        var nextCode = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
         for (index, digit) in sanitized.enumerated() where index < nextCode.count {
             nextCode[index] = String(digit)
         }
         code = nextCode
         authErrorMessage = nil
 
-        if sanitized.count < 6 {
+        if sanitized.count < RDConfig.Auth.emailOTPLength {
             autoVerifiedCode = nil
-        } else if sanitized.count == 6, autoVerifiedCode != sanitized, !isVerifyingEmailCode {
+        } else if sanitized.count == RDConfig.Auth.emailOTPLength, autoVerifiedCode != sanitized, !isVerifyingEmailCode {
             autoVerifiedCode = sanitized
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                 guard otpInput == sanitized else { return }
@@ -698,8 +698,8 @@ struct OBAuthView: View {
     }
 
     private func otpDigitBox(index: Int) -> some View {
-        let activeIndex = min(otpInput.count, 5)
-        let isActive = emailPhase == .otp && otpInput.count < 6 && index == activeIndex
+        let activeIndex = min(otpInput.count, RDConfig.Auth.emailOTPLength - 1)
+        let isActive = emailPhase == .otp && otpInput.count < RDConfig.Auth.emailOTPLength && index == activeIndex
         let hasValue = !code[index].isEmpty
 
         return ZStack {

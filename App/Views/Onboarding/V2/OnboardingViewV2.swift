@@ -188,9 +188,20 @@ struct OnboardingViewV2: View {
                 onLegalDocument: { selectedLegalDocument = $0 }
             )
         case 9:
-            OBTrialInviteView {
-                state.goTo(10)
-            }
+            OBTrialInviteView(
+                onContinue: {
+                    state.goTo(10)
+                },
+                onPrivacy: {
+                    selectedLegalDocument = .privacy
+                },
+                onTerms: {
+                    selectedLegalDocument = .terms
+                },
+                onRestore: {
+                    restorePurchases()
+                }
+            )
         case 10:
             OBNotificationPermissionView {
                 state.goTo(11)
@@ -266,7 +277,11 @@ struct OnboardingViewV2: View {
             } catch {
                 await MainActor.run {
                     isPaywallWorking = false
-                    paywallNoticeMessage = error.localizedDescription
+                    paywallNoticeMessage = AppErrorMessage.makePurchase(
+                        error,
+                        context: "Satın alma doğrulanamadı",
+                        fallbackTitle: "Satın alma doğrulanamadı"
+                    ).message
                 }
             }
         }
@@ -293,10 +308,10 @@ struct OnboardingViewV2: View {
             } catch {
                 await MainActor.run {
                     isPaywallWorking = false
-                    paywallNoticeMessage = AppErrorMessage.make(
+                    paywallNoticeMessage = AppErrorMessage.makePurchase(
                         error,
-                        context: "Abonelik başlatılamadı",
-                        fallbackTitle: "Abonelik başlatılamadı"
+                        context: "Satın alma doğrulanamadı",
+                        fallbackTitle: "Satın alma doğrulanamadı"
                     ).message
                 }
             }

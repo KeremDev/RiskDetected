@@ -23,6 +23,7 @@ final class SupabaseService {
             options: SupabaseClientOptions(
                 auth: .init(
                     redirectToURL: RDConfig.Auth.redirectURL,
+                    flowType: .implicit,
                     emitLocalSessionAsInitialSession: true
                 ),
                 global: .init(session: pinnedSession)

@@ -7,6 +7,26 @@ import Foundation
 /// repo'da bulunması güvenlik açığı oluşturmaz (RLS tüm istekleri kullanıcı bazlı
 /// kısıtlar). Service-role key burada YER ALMAZ — sadece Edge Function üzerinde.
 enum RDConfig {
+    private static func configuredString(
+        bundleKey: String,
+        environmentKey: String,
+        defaultValue: String
+    ) -> String {
+        if let environmentValue = ProcessInfo.processInfo.environment[environmentKey],
+           !environmentValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return environmentValue
+        }
+
+        if let bundleValue = Bundle.main.object(forInfoDictionaryKey: bundleKey) as? String {
+            let trimmed = bundleValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty, !trimmed.contains("$(") {
+                return trimmed
+            }
+        }
+
+        return defaultValue
+    }
+
     /// Public web presence and legal page URLs.
     enum Web {
         static let websiteURL = URL(string: "https://riskdetected.com")!
@@ -17,12 +37,28 @@ enum RDConfig {
         static let explicitConsentURL = URL(string: "https://riskdetected.com/acik-riza")!
     }
 
+    private static let productionSupabaseURLString = "https://ppcrzemgiztzcgddbins.supabase.co"
+    private static let defaultSupabaseURLString = productionSupabaseURLString
+    private static let defaultSupabasePublishableKey = "sb_publishable_cUQq5Lv-zDF1hXqwnmAj1A_LTdk9FJt"
+    private static let defaultRevenueCatAPIKey = "appl_mckFFxUrvtNqzjShezjMIrFmItA"
+    private static let defaultRevenueCatOfferingIdentifier = "default"
+
     /// Supabase proje URL'i.
-    static let supabaseURL = URL(string: "https://ppcrzemgiztzcgddbins.supabase.co")!
+    static let supabaseURL = URL(
+        string: configuredString(
+            bundleKey: "RDSupabaseURL",
+            environmentKey: "RISKDETECTED_SUPABASE_URL",
+            defaultValue: defaultSupabaseURLString
+        )
+    )!
 
     /// Supabase publishable key (modern format — JWT tabanlı anon key'in yerini alır).
     static let supabasePublishableKey =
-        "sb_publishable_cUQq5Lv-zDF1hXqwnmAj1A_LTdk9FJt"
+        configuredString(
+            bundleKey: "RDSupabasePublishableKey",
+            environmentKey: "RISKDETECTED_SUPABASE_PUBLISHABLE_KEY",
+            defaultValue: defaultSupabasePublishableKey
+        )
 
     /// Edge Function endpoint adı.
     static let analyzeFunctionName = "analyze"
@@ -39,10 +75,16 @@ enum RDConfig {
     /// RevenueCat client-side public SDK config. This key is intentionally public;
     /// subscription truth for backend limits must still be synced server-side.
     enum Subscription {
-        // Debug builds use the same App Store RevenueCat project as TestFlight.
-        // The previous Test Store key had no products in its offering, which left
-        // the paywall waiting forever for packages in simulator/debug builds.
-        static let revenueCatAPIKey = "appl_mckFFxUrvtNqzjShezjMIrFmItA"
+        static let revenueCatAPIKey = RDConfig.configuredString(
+            bundleKey: "RDRevenueCatAPIKey",
+            environmentKey: "RISKDETECTED_REVENUECAT_API_KEY",
+            defaultValue: defaultRevenueCatAPIKey
+        )
+        static let offeringIdentifier = RDConfig.configuredString(
+            bundleKey: "RDRevenueCatOfferingIdentifier",
+            environmentKey: "RISKDETECTED_REVENUECAT_OFFERING_IDENTIFIER",
+            defaultValue: defaultRevenueCatOfferingIdentifier
+        )
         static let plusEntitlementID = "plus"
         static let proEntitlementID = "pro"
     }
@@ -58,6 +100,7 @@ enum RDConfig {
 
     enum Auth {
         static let redirectURL = URL(string: "io.supabase.riskdetected://login-callback")!
+        static let emailOTPLength = 6
     }
 
     enum Security {

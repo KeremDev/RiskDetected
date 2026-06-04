@@ -22,8 +22,172 @@ struct AppErrorMessage: Equatable {
     let category: Category
     let supportID: String
 
+    static let existingAppStoreSubscriptionMessage = "Bu App Store hesabında aktif bir RiskDetected aboneliği görünüyor. Abonelik başka bir RiskDetected hesabına bağlıysa ücretli plan bu kullanıcıya otomatik açılmaz."
+
+    static let subscriptionReceiptConflictMessage = "Bu App Store aboneliği başka bir RiskDetected hesabına bağlı. Lütfen aboneliği satın aldığın hesapla giriş yap veya destekle iletişime geç."
+
+    static func subscriptionActiveHigherTierMessage(_ tier: SubscriptionTier) -> String {
+        "Bu App Store hesabında zaten \(tier.title) plan aktif görünüyor. Bu planı bu kullanıcıya bağlamak için Geri yükle seçeneğini kullanabilir veya App Store aboneliğini yönetebilirsin."
+    }
+
+    static func subscriptionActiveHigherTierMessage(current: SubscriptionTier, selected: SubscriptionTier) -> String {
+        "\(current.title) aboneliğin aktif görünüyor. \(selected.title) planına geçiş ya da downgrade işlemi App Store abonelik yönetimi üzerinden yapılmalı; uygulama bunu \(selected.title) satın alma başarısı olarak işaretlemedi."
+    }
+
     var fullText: String {
         "\(message)\n\nNe yapabilirsin: \(action)\n\nDestek kodu: \(supportID)"
+    }
+
+    static func makePurchase(
+        _ error: Error,
+        context: String? = "Abonelik başlatılamadı",
+        fallbackTitle: String = "Abonelik başlatılamadı"
+    ) -> AppErrorMessage {
+        makePurchase(
+            classification: PurchaseErrorClassifier.classify(error),
+            context: context,
+            fallbackTitle: fallbackTitle
+        )
+    }
+
+    static func makePurchase(
+        rawMessage: String,
+        context: String? = "Abonelik başlatılamadı",
+        fallbackTitle: String = "Abonelik başlatılamadı"
+    ) -> AppErrorMessage {
+        makePurchase(
+            classification: PurchaseErrorClassifier.classify(rawMessage: rawMessage),
+            context: context,
+            fallbackTitle: fallbackTitle
+        )
+    }
+
+    static func makePurchase(
+        classification: PurchaseErrorClassification,
+        context: String? = "Abonelik başlatılamadı",
+        fallbackTitle: String = "Abonelik başlatılamadı"
+    ) -> AppErrorMessage {
+        let raw = classification.rawMessage
+        let supportID = Self.existingSupportID(in: raw) ?? Self.newSupportID()
+
+        switch classification.kind {
+        case .cancelled:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: "",
+                action: "",
+                category: .unknown,
+                supportID: supportID
+            )
+
+        case .network:
+            return AppErrorMessage(
+                title: "Bağlantı sorunu",
+                message: "İnternet bağlantısı veya abonelik servisi erişimi kesildiği için işlem tamamlanamadı.",
+                action: "Bağlantını kontrol edip tekrar dene.",
+                category: .networkUnavailable,
+                supportID: supportID
+            )
+
+        case .existingSubscription:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: existingAppStoreSubscriptionMessage,
+                action: "Aboneliği satın aldığın RiskDetected hesabıyla giriş yapıp Geri yükle seçeneğini kullan veya destekle iletişime geç.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+
+        case .receiptConflict:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: subscriptionReceiptConflictMessage,
+                action: "Doğru RiskDetected hesabıyla giriş yapıp Geri yükle seçeneğini kullan. Emin değilsen destek koduyla bize ulaş.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+
+        case .backendVerification:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: raw.isEmpty ? "App Store aboneliği doğrulandı ancak uygulama planı güvenli şekilde eşleştirilemedi." : raw,
+                action: "Birkaç saniye sonra tekrar dene veya Geri yükle seçeneğiyle aboneliği doğrula.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+
+        case .packageUnavailable:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: "Seçilen abonelik paketi şu an hazırlanamadı.",
+                action: "Kısa süre sonra tekrar dene. Sorun devam ederse Geri yükle veya destek ile iletişime geç.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+
+        case .storeUnavailable:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: "App Store abonelik servisi şu anda satın alma işlemini tamamlayamadı.",
+                action: "Kısa süre sonra tekrar dene. App Store ödeme penceresi açılmıyorsa abonelik durumunu kontrol et.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+
+        case .productUnavailable:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: "Seçilen abonelik ürünü App Store tarafından satın almaya uygun görünmüyor.",
+                action: "Biraz sonra tekrar dene. Sorun devam ederse ürün yapılandırması kontrol edilmelidir.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+
+        case .purchaseNotAllowed:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: "Bu cihaz veya App Store hesabı şu anda uygulama içi satın almaya izin vermiyor.",
+                action: "App Store hesap, ödeme ve ekran süresi ayarlarını kontrol edip tekrar dene.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+
+        case .configuration:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: "Abonelik doğrulaması için gerekli App Store veya RevenueCat yapılandırması tamamlanamadı.",
+                action: "Uygulamayı kapatıp açarak tekrar dene. Devam ederse destek koduyla bildir.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+
+        case .operationInProgress:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: "Bu abonelik için başka bir satın alma işlemi hâlâ devam ediyor.",
+                action: "App Store penceresinin tamamlanmasını bekle veya birkaç saniye sonra tekrar dene.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+
+        case .paymentPending:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: "Satın alma App Store tarafında beklemede görünüyor.",
+                action: "Ödeme onayı tamamlandığında aboneliğin otomatik güncellenir. Gerekirse Geri yükle seçeneğini kullan.",
+                category: .validationFailed,
+                supportID: supportID
+            )
+
+        case .unknown:
+            return AppErrorMessage(
+                title: context ?? fallbackTitle,
+                message: raw.isEmpty ? "Satın alma işlemi tamamlanamadı." : raw,
+                action: "Tekrar dene. Sorun devam ederse destek koduyla birlikte bize ulaş.",
+                category: .unknown,
+                supportID: supportID
+            )
+        }
     }
 
     static func make(

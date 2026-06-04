@@ -6,6 +6,9 @@ import SwiftUI
 struct OBTrialInviteView: View {
     @EnvironmentObject private var app: AppState
     let onContinue: () -> Void
+    var onPrivacy: () -> Void = {}
+    var onTerms: () -> Void = {}
+    var onRestore: () -> Void = {}
 
     @State private var funnelSessionID = UUID()
     @State private var didLogView = false
@@ -266,17 +269,23 @@ struct OBTrialInviteView: View {
 
     private var footerLinks: some View {
         HStack(spacing: 16) {
-            footerLink("Gizlilik Politikası")
-            footerLink("Geri Yükle")
-            footerLink("Şartlar")
+            footerLink("Gizlilik Politikası", action: onPrivacy)
+                .accessibilityIdentifier("onboarding.trial_invite.privacy")
+            footerLink("Geri Yükle", action: onRestore)
+                .accessibilityIdentifier("onboarding.trial_invite.restore")
+            footerLink("Şartlar", action: onTerms)
+                .accessibilityIdentifier("onboarding.trial_invite.terms")
         }
         .font(.system(size: 11, weight: .medium))
     }
 
-    private func footerLink(_ text: String) -> some View {
-        Text(text)
-            .foregroundStyle(Color.rdSlate)
-            .underline()
+    private func footerLink(_ text: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(text)
+                .foregroundStyle(Color.rdSlate)
+                .underline()
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Telemetry

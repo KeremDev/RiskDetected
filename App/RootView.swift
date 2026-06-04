@@ -201,10 +201,10 @@ struct RootView: View {
             throw NSError(
                 domain: "RiskDetected.OnboardingPurchase",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Seçilen abonelik paketi şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."]
+                userInfo: [NSLocalizedDescriptionKey: "Seçilen abonelik paketi şu an hazırlanamadı. Lütfen birazdan tekrar dene."]
             )
         }
-        try await app.purchaseSubscription(packageID: package.id)
+        try await app.purchaseSubscription(packageID: package.id, expectedTier: .plus)
     }
 
     private func restoreOnboardingPurchases() async throws -> Bool {

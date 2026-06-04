@@ -15,6 +15,17 @@ final class RiskDetectedUITests: XCTestCase {
         app = nil
     }
 
+    func testFreeTierPlusPurchaseCTAStarts() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
+
+        tap("Yükselt", timeout: 20)
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.cta.ready", timeout: 10).exists)
+
+        tap("in_app_paywall.cta", timeout: 10)
+        RunLoop.current.run(until: Date().addingTimeInterval(3))
+    }
+
     func testOnboardingPersonalPlanReachesAuth() throws {
         launchApp()
 
@@ -218,7 +229,7 @@ final class RiskDetectedUITests: XCTestCase {
         tapScrolling("Firmalarım")
 
         XCTAssertTrue(waitFor("Firmalarım").exists)
-        XCTAssertTrue(waitFor("QA Aktif Firma").exists)
+        XCTAssertTrue(waitFor("Test Aktif Firma").exists)
         XCTAssertTrue(waitFor("Çok Tehlikeli · Bakım Ekibi").exists)
 
         tap("company_picker.add")
@@ -242,24 +253,24 @@ final class RiskDetectedUITests: XCTestCase {
 
         tap("company_picker.add")
         XCTAssertTrue(waitFor("Yeni firma").exists)
-        typeInto("company.editor.name", text: "QA V2 Firma")
+        typeInto("company.editor.name", text: "Test V2 Firma")
         tapScrolling("Az Tehlikeli")
         tapScrolling("Firmayı kaydet")
 
-        XCTAssertTrue(waitFor("QA V2 Firma", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Test V2 Firma", timeout: 8).exists)
         XCTAssertTrue(waitFor("Az Tehlikeli").exists)
 
-        tap("QA V2 Firma işlemleri")
+        tap("Test V2 Firma işlemleri")
         tap("Düzenle")
-        clearAndType("company.editor.name", text: "QA V2 Firma Güncel")
+        clearAndType("company.editor.name", text: "Test V2 Firma Güncel")
         tapScrolling("Firmayı kaydet")
 
-        XCTAssertTrue(waitFor("QA V2 Firma Güncel", timeout: 8).exists)
-        tap("QA V2 Firma Güncel işlemleri")
+        XCTAssertTrue(waitFor("Test V2 Firma Güncel", timeout: 8).exists)
+        tap("Test V2 Firma Güncel işlemleri")
         tap("Arşivle")
         tap("Arşivle")
-        XCTAssertFalse(exists("QA V2 Firma Güncel", timeout: 3))
-        XCTAssertTrue(waitFor("QA Aktif Firma").exists)
+        XCTAssertFalse(exists("Test V2 Firma Güncel", timeout: 3))
+        XCTAssertTrue(waitFor("Test Aktif Firma").exists)
     }
 
     func testCompanyFilterSheetsRenderWithFixtures() throws {
@@ -269,13 +280,13 @@ final class RiskDetectedUITests: XCTestCase {
         tapTab(.analyses)
         tap("analysis.company_filter")
         XCTAssertTrue(waitFor("Analiz firma filtresi").exists)
-        XCTAssertTrue(waitFor("QA Aktif Firma").exists)
+        XCTAssertTrue(waitFor("Test Aktif Firma").exists)
         tap("Pencereyi kapat")
 
         tapTab(.reports)
         tap("report.company_filter")
         XCTAssertTrue(waitFor("Rapor firma filtresi").exists)
-        XCTAssertTrue(waitFor("QA Aktif Firma").exists)
+        XCTAssertTrue(waitFor("Test Aktif Firma").exists)
     }
 
     func testReportArchiveSearchFilterAndDeleteWithFixtures() throws {
@@ -284,17 +295,17 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
         tapTab(.reports)
         XCTAssertTrue(waitFor("report.root").exists)
-        XCTAssertTrue(waitFor("QA Firma Raporu", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Test Firma Raporu", timeout: 8).exists)
 
-        typeInto("report.archive.search", text: "QA Firma")
-        XCTAssertTrue(waitFor("QA Firma Raporu").exists)
+        typeInto("report.archive.search", text: "Test Firma")
+        XCTAssertTrue(waitFor("Test Firma Raporu").exists)
         tap("report.archive.filter.Standart")
-        XCTAssertTrue(waitFor("QA Firma Raporu").exists)
+        XCTAssertTrue(waitFor("Test Firma Raporu").exists)
 
         longPress("report.archive.row.00000000-0000-0000-0000-00000000A101")
         tap("Raporu sil")
         tap("Raporu sil")
-        XCTAssertFalse(exists("QA Firma Raporu", timeout: 3))
+        XCTAssertFalse(exists("Test Firma Raporu", timeout: 3))
     }
 
     func testReportCreationFromArchiveAnalysisWithFixtures() throws {

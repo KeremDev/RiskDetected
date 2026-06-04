@@ -62,7 +62,12 @@ struct InAppPaywallView: View {
     private let variantID = "claude_plus_pro_paywall_v1"
 
     private var activeScreen: InAppPaywallScreen {
-        screenOverride ?? (app.currentTier == .free ? .plus : .pro)
+        #if DEBUG
+        if Self.isUITestForceProPaywall {
+            return .pro
+        }
+        #endif
+        return screenOverride ?? (app.currentTier == .free ? .plus : .pro)
     }
 
     var body: some View {
@@ -621,15 +626,26 @@ struct InAppPaywallView: View {
 
         Task {
             do {
-                try await app.purchaseSubscription(packageID: package.id)
+                let purchasedState = try await app.purchaseSubscription(
+                    packageID: package.id,
+                    expectedTier: purchaseScreen.tier
+                )
                 await app.refreshPlanState()
                 stopProcessingOverlay()
                 workingMessage = nil
                 isWorking = false
 
-                if app.currentTier.includes(purchaseScreen.tier) {
+                if purchasedState.tier == purchaseScreen.tier {
                     logPaywallEvent(.purchaseSucceeded, screen: purchaseScreen, billing: purchaseBilling)
                     onSubscribe()
+                } else {
+                    errorMessage = "Abonelik doğrulanamadı. Seçilen plan \(purchaseScreen.tier.title), doğrulanan plan \(purchasedState.tier.title)."
+                    logPaywallEvent(
+                        .purchaseFailed,
+                        screen: purchaseScreen,
+                        billing: purchaseBilling,
+                        purchaseError: errorMessage
+                    )
                 }
             } catch is CancellationError {
                 stopProcessingOverlay()
@@ -639,12 +655,16 @@ struct InAppPaywallView: View {
                 stopProcessingOverlay()
                 workingMessage = nil
                 isWorking = false
-                errorMessage = error.localizedDescription
+                errorMessage = AppErrorMessage.makePurchase(
+                    error,
+                    context: "Satın alma doğrulanamadı",
+                    fallbackTitle: "Satın alma doğrulanamadı"
+                ).message
                 logPaywallEvent(
                     .purchaseFailed,
                     screen: purchaseScreen,
                     billing: purchaseBilling,
-                    purchaseError: error.localizedDescription
+                    purchaseError: errorMessage
                 )
             }
         }
@@ -679,7 +699,11 @@ struct InAppPaywallView: View {
                 stopProcessingOverlay()
                 workingMessage = nil
                 isWorking = false
-                errorMessage = error.localizedDescription
+                errorMessage = AppErrorMessage.makePurchase(
+                    error,
+                    context: "Satın alma doğrulanamadı",
+                    fallbackTitle: "Satın alma doğrulanamadı"
+                ).message
             }
         }
     }
@@ -782,6 +806,13 @@ struct InAppPaywallView: View {
         formatter.minimumFractionDigits = value.rounded() == value ? 0 : 2
         return formatter.string(from: NSNumber(value: value)) ?? "₺\(value)"
     }
+
+    #if DEBUG
+    private static var isUITestForceProPaywall: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_FORCE_PRO_PAYWALL")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_FORCE_PRO_PAYWALL"] == "1"
+    }
+    #endif
 }
 
 private struct InAppPaywallColor {

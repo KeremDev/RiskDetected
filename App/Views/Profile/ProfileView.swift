@@ -7,6 +7,7 @@ import UserNotifications
 struct ProfileView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.openURL) private var openURL
     @StateObject private var notifications = NotificationService.shared
     @State private var showPaywall = false
     @State private var showProfileEditor = false
@@ -18,6 +19,13 @@ struct ProfileView: View {
     @State private var showSupport = false
     @State private var showProfessionalTitlesFromHeader = false
     @State private var profileBadgesSheet: ProfileBadgesSheetItem?
+    @State private var isRestoringPurchases = false
+    @State private var restoreMessage: String?
+    #if INTERNAL_TEST_RESET_TOOLS
+    @State private var showInternalTestResetConfirmation = false
+    @State private var isResettingInternalTestState = false
+    @State private var internalTestResetMessage: String?
+    #endif
     @State private var stats: ProfileStats? = nil
     @State private var professionalProgressSummary: ProfessionalProgressSummary? = nil
     @State private var onboardingSummary: ProfileOnboardingSummary? = nil
@@ -41,6 +49,23 @@ struct ProfileView: View {
     }
     private var profileLine: Color {
         colorScheme == .dark ? Color.white.opacity(0.08) : Color.rdLine
+    }
+    private var profileUpsellGradientColors: [Color] {
+        colorScheme == .dark
+            ? [Color(hex: "#0D1110"), Color(hex: "#121817"), Color(hex: "#1A1509")]
+            : [Color(hex: "#F8FAF9"), Color(hex: "#EEF2F1"), Color(hex: "#F6F0DF")]
+    }
+    private var profileUpsellTitleColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.96) : Color.rdBlack
+    }
+    private var profileUpsellTextColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.70) : Color.rdSlate
+    }
+    private var profileUpsellArrowColor: Color {
+        colorScheme == .dark ? Color.rdPlanPlus : Color.rdPlanPlusDark
+    }
+    private var profileUpsellBorderColor: Color {
+        colorScheme == .dark ? Color.rdPlanPlus.opacity(0.22) : Color.rdLine.opacity(0.95)
     }
 
     var body: some View {
@@ -236,6 +261,36 @@ struct ProfileView: View {
         } message: {
             Text(dataMessage ?? "")
         }
+        .alert("Satın alımları geri yükle", isPresented: Binding(
+            get: { restoreMessage != nil },
+            set: { if !$0 { restoreMessage = nil } }
+        )) {
+            Button("Tamam") { restoreMessage = nil }
+        } message: {
+            Text(restoreMessage ?? "")
+        }
+        #if INTERNAL_TEST_RESET_TOOLS
+        .confirmationDialog(
+            "Test state temizlensin mi?",
+            isPresented: $showInternalTestResetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Temiz test başlangıcı", role: .destructive) {
+                resetInternalTestState()
+            }
+            Button("Vazgeç", role: .cancel) {}
+        } message: {
+            Text("Bu işlem cihazdaki RiskDetected oturumunu ve yerel satın alma önbelleğini temizler. Apple Sandbox satın alma geçmişini temizlemez.")
+        }
+        .alert("Test araçları", isPresented: Binding(
+            get: { internalTestResetMessage != nil },
+            set: { if !$0 { internalTestResetMessage = nil } }
+        )) {
+            Button("Tamam") { internalTestResetMessage = nil }
+        } message: {
+            Text(internalTestResetMessage ?? "")
+        }
+        #endif
     }
 
     // MARK: - Header
@@ -726,15 +781,15 @@ struct ProfileView: View {
         } label: {
             ZStack(alignment: .topTrailing) {
                 Circle()
-                    .fill(Color.rdPlanPlus.opacity(0.16))
+                    .fill(Color.rdPlanPlus.opacity(colorScheme == .dark ? 0.10 : 0.16))
                     .frame(width: 96, height: 96)
-                    .blur(radius: 16)
+                    .blur(radius: colorScheme == .dark ? 22 : 16)
                     .offset(x: 42, y: -58)
 
                 Circle()
-                    .fill(Color.rdGreen.opacity(0.10))
+                    .fill(Color.rdGreen.opacity(colorScheme == .dark ? 0.08 : 0.10))
                     .frame(width: 86, height: 86)
-                    .blur(radius: 18)
+                    .blur(radius: colorScheme == .dark ? 22 : 18)
                     .offset(x: -214, y: 78)
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -744,12 +799,12 @@ struct ProfileView: View {
                         Spacer()
                         Image(systemName: "arrow.up.right.circle.fill")
                             .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.rdPlanPlusDark)
+                            .foregroundStyle(profileUpsellArrowColor)
                     }
 
                     Text("Plus veya Pro'ya yükselt")
                         .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
+                        .foregroundStyle(profileUpsellTitleColor)
 
                     VStack(alignment: .leading, spacing: 7) {
                         upsellBenefit("Daha fazla günlük analiz")
@@ -764,18 +819,14 @@ struct ProfileView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 LinearGradient(
-                    colors: [
-                        Color(hex: "#F8FAF9"),
-                        Color(hex: "#EEF2F1"),
-                        Color(hex: "#F6F0DF")
-                    ],
+                    colors: profileUpsellGradientColors,
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .stroke(Color.rdLine.opacity(0.95), lineWidth: 1)
+                    .stroke(profileUpsellBorderColor, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
             .profileCardDepth(colorScheme: colorScheme, accent: Color.rdPlanPlus)
@@ -794,7 +845,7 @@ struct ProfileView: View {
 
             Text(text)
                 .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
+                .foregroundStyle(profileUpsellTextColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
         }
@@ -894,6 +945,34 @@ struct ProfileView: View {
                 .accessibilityIdentifier("profile.row.preferences")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
+                    restorePurchasesFromProfile()
+                } label: {
+                    ProfileRow(
+                        icon: "arrow.clockwise.circle",
+                        title: "Satın alımları geri yükle",
+                        detail: isRestoringPurchases ? "Bekle" : app.currentTier.title
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isRestoringPurchases)
+                .accessibilityIdentifier("profile.row.restore_purchases")
+                if app.currentTier.isPaid {
+                    Divider().background(Color.rdLine).padding(.leading, 60)
+                    Button {
+                        openURL(subscriptionManagementURL)
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    } label: {
+                        ProfileRow(
+                            icon: "creditcard",
+                            title: "App Store aboneliğini yönet",
+                            detail: "Apple"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("profile.row.manage_app_store_subscription")
+                }
+                Divider().background(Color.rdLine).padding(.leading, 60)
+                Button {
                     showDataControls = true
                 } label: {
                     ProfileRow(icon: "externaldrive.badge.checkmark", title: "Verilerim")
@@ -929,7 +1008,114 @@ struct ProfileView: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
             .profileCardDepth(colorScheme: colorScheme)
+            #if INTERNAL_TEST_RESET_TOOLS
+            internalTestToolsList
+            #endif
         }
+    }
+
+    private var subscriptionManagementURL: URL {
+        app.subscriptionState.managementURL
+            ?? URL(string: "https://apps.apple.com/account/subscriptions")!
+    }
+
+    #if INTERNAL_TEST_RESET_TOOLS
+    private var internalTestToolsList: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionHeader("Test araçları")
+            VStack(spacing: 0) {
+                Button {
+                    UISelectionFeedbackGenerator().selectionChanged()
+                    showInternalTestResetConfirmation = true
+                } label: {
+                    ProfileRow(
+                        icon: "arrow.counterclockwise.circle",
+                        title: "Temiz test başlangıcı",
+                        detail: isResettingInternalTestState ? "Bekle" : "Hazır"
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isResettingInternalTestState)
+                .accessibilityIdentifier("profile.row.clean_internal_test_start")
+
+                Divider().background(Color.rdLine).padding(.leading, 60)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Apple Sandbox geçmişi uygulama içinden silinmez.")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(profileUpsellTitleColor)
+                    Text("Temiz first-purchase için Settings > Developer > Sandbox Account bölümünde hesabı doğrula, gerekirse Clear Purchase History yap, hesaptan çık/gir ve uygulamayı yeniden aç.")
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(profileUpsellTextColor)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
+            }
+            .background(profileCardFill)
+            .overlay(
+                RoundedRectangle(cornerRadius: RDRadius.lg)
+                    .stroke(profileLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+            .profileCardDepth(colorScheme: colorScheme)
+        }
+    }
+    #endif
+
+    private func restorePurchasesFromProfile() {
+        guard !isRestoringPurchases else { return }
+        UISelectionFeedbackGenerator().selectionChanged()
+        isRestoringPurchases = true
+        logProfileRestoreTap()
+
+        Task {
+            do {
+                let restoredState = try await app.restoreSubscriptions()
+                await loadStats()
+                restoreMessage = restoredState.tier.isPaid
+                    ? "\(restoredState.tier.title) aboneliğin doğrulandı."
+                    : "Geri yüklenecek aktif abonelik bulunamadı."
+            } catch {
+                restoreMessage = error.localizedDescription
+            }
+            isRestoringPurchases = false
+        }
+    }
+
+    #if INTERNAL_TEST_RESET_TOOLS
+    private func resetInternalTestState() {
+        guard !isResettingInternalTestState else { return }
+        isResettingInternalTestState = true
+
+        Task {
+            let message = await app.resetForCleanInternalTestStart()
+            internalTestResetMessage = "\(message)\n\nApple Sandbox satın alma geçmişi için cihaz Settings veya App Store Connect tarafındaki Clear Purchase History adımını ayrıca yapman gerekir."
+            isResettingInternalTestState = false
+        }
+    }
+    #endif
+
+    private func logProfileRestoreTap() {
+        PaywallEventService.shared.record(
+            .restoreTap,
+            funnelSessionID: UUID(),
+            source: .inApp,
+            variantID: "profile_subscription_restore_v1",
+            segmentKey: nil,
+            selectedTier: app.currentTier,
+            billing: nil,
+            productIdentifier: nil,
+            metadata: PaywallEventMetadata(
+                layout: "profile_restore",
+                currentTier: app.currentTier.rawValue,
+                selectedPackageID: nil,
+                noticePresent: false,
+                errorMessage: nil,
+                contextHeadline: "profile",
+                purchaseError: nil
+            )
+        )
     }
 
     private var deviceIntegrityWarningCard: some View {
