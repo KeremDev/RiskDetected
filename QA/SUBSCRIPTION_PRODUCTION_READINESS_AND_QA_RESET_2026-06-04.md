@@ -29,6 +29,27 @@ Internal TestFlight convenience:
 - This tool clears local app/session/subscription cache so repeated real-device sandbox tests are less polluted by old app state.
 - It does not clear Apple Sandbox purchase history or active Apple subscription state. That still requires Apple Developer settings, App Store Connect, or a new sandbox tester.
 
+## Current Todo Status - 2026-06-05
+
+User-reported completed items from the latest TestFlight readiness list:
+
+- [x] New Internal TestFlight build produced/uploaded/installed for the single visible `RiskDetected` app lane.
+- [x] Subscription smoke test completed for the current TestFlight flow.
+- [x] Apple Sandbox operational blocker handled enough to continue testing.
+- [x] RevenueCat/Supabase subscription evidence captured for the completed purchase/upgrade flow.
+
+Remaining active items:
+
+- [x] Re-verify the `analyze` backend function so the app no longer returns `Requested function was not found` in the production App Review/Internal TestFlight lane.
+  - 2026-06-05: Production `analyze` is `ACTIVE`, `verify_jwt=false`, version `97`; `process-analysis-jobs` is `ACTIVE`, `verify_jwt=false`, version `9`.
+  - No production deploy was needed. The earlier function-not-found evidence came from the legacy QA Supabase lane, where `analyze` and `process-analysis-jobs` are missing.
+  - Manual current TestFlight smoke passed: a normal Free analysis completed and opened successfully.
+  - Evidence: `QA/ANALYZE_EDGE_FUNCTION_READINESS_2026-06-05.md`.
+- [ ] Prepare App Review cleanup by switching `RiskDetected` archive configuration from `InternalTestFlight` back to `Release`.
+- [ ] Run Release binary/config scan and confirm internal reset tools are absent.
+- [ ] Complete App Store Connect manual submission items: contact fields, App Privacy publish/verify, review notes, demo video URL, subscription attachment, and China mainland availability decision.
+- [ ] Run final production smoke tests before App Review submission.
+
 ## D1-D12 Findings
 
 | Scenario | Result | Learning |

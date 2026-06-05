@@ -1821,7 +1821,8 @@ function runSupabaseChecks() {
     truncate(deno.stdout || deno.stderr),
   );
 
-  const remoteFunctions = run("supabase-functions-list", "supabase", [
+  let functionListSource = "Supabase CLI";
+  let remoteFunctions = run("supabase-functions-list", "supabase", [
     "functions",
     "list",
     "--project-ref",
@@ -1829,8 +1830,23 @@ function runSupabaseChecks() {
     "--output",
     "json",
   ]);
+  if (remoteFunctions.status !== 0) {
+    const fallbackFunctions = run(
+      "supabase-functions-list-management-api",
+      "node",
+      ["scripts/analyze_readiness_check.mjs", "--functions-json"],
+      {
+        displayCommand:
+          "node scripts/analyze_readiness_check.mjs --functions-json",
+      },
+    );
+    if (fallbackFunctions.status === 0) {
+      remoteFunctions = fallbackFunctions;
+      functionListSource = "Supabase Management API fallback";
+    }
+  }
   const functionIssues = [];
-  const functionEvidence = [];
+  const functionEvidence = [`source: ${functionListSource}`];
   if (remoteFunctions.status !== 0) {
     functionIssues.push(truncate(remoteFunctions.stdout || remoteFunctions.stderr));
   } else if (!existsSync(SUPABASE_CONFIG_FILE)) {
