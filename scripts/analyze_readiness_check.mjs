@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 
 const ROOT = process.cwd();
 const PROJECT_REF = "ppcrzemgiztzcgddbins";
@@ -287,30 +287,29 @@ async function checkGatewaySmoke() {
 }
 
 function checkXcodeBuildSettings() {
-  for (const configuration of ["InternalTestFlight", "Release"]) {
-    runCommand(
-      `Xcode build settings ${configuration}`,
-      "xcodebuild",
-      [
-        "-project",
-        "RiskDetected.xcodeproj",
-        "-scheme",
-        "RiskDetected",
-        "-configuration",
-        configuration,
-        "-showBuildSettings",
-      ],
-      (stdout) => {
-        const expectedURL = `RISKDETECTED_SUPABASE_URL = ${SUPABASE_URL}`;
-        const expectedKey = `RISKDETECTED_SUPABASE_PUBLISHABLE_KEY = ${PUBLISHABLE_KEY}`;
-        if (!stdout.includes(expectedURL)) return `missing ${expectedURL}`;
-        if (!stdout.includes(expectedKey)) return "missing production publishable key marker";
-        if (stdout.includes(FORMER_TEST_PROJECT_REF)) return "Former test Supabase ref appears in production lane build settings";
-        return true;
-      },
-      { passDetail: `production Supabase URL/key for ${configuration}`, timeoutMs: 180000 },
-    );
-  }
+  const configuration = "Release";
+  runCommand(
+    `Xcode build settings ${configuration}`,
+    "xcodebuild",
+    [
+      "-project",
+      "RiskDetected.xcodeproj",
+      "-scheme",
+      "RiskDetected",
+      "-configuration",
+      configuration,
+      "-showBuildSettings",
+    ],
+    (stdout) => {
+      const expectedURL = `RISKDETECTED_SUPABASE_URL = ${SUPABASE_URL}`;
+      const expectedKey = `RISKDETECTED_SUPABASE_PUBLISHABLE_KEY = ${PUBLISHABLE_KEY}`;
+      if (!stdout.includes(expectedURL)) return `missing ${expectedURL}`;
+      if (!stdout.includes(expectedKey)) return "missing production publishable key marker";
+      if (stdout.includes(FORMER_TEST_PROJECT_REF)) return "Former test Supabase ref appears in production lane build settings";
+      return true;
+    },
+    { passDetail: "production Supabase URL/key for Release", timeoutMs: 180000 },
+  );
 }
 
 function checkMainScheme() {
@@ -321,6 +320,7 @@ function checkMainScheme() {
   }
   const scheme = readFileSync(schemePath, "utf8");
   const forbiddenMarkers = [
+    ["Internal", "Test", "Flight"].join(""),
     ["RiskDetected", "Q", "A", ".storekit"].join(""),
     "StoreKitConfigurationFileReference",
     ["RD", "Q" + "A", "AUTO", "LOGIN"].join("_"),
@@ -331,6 +331,49 @@ function checkMainScheme() {
     forbiddenMarkers.length === 0 ? "PASS" : "FAIL",
     "Main scheme has no retired test runtime override",
     forbiddenMarkers.length === 0 ? "no StoreKit/env override markers" : `found: ${forbiddenMarkers.join(",")}`,
+  );
+}
+
+function checkRetiredActiveMarkers() {
+  const result = spawnSync("git", ["ls-files", "-z"], {
+    cwd: ROOT,
+    encoding: "buffer",
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    addCheck("FAIL", "Retired lane active marker scan", "Could not list tracked files.");
+    return;
+  }
+
+  const ignoredPrefixes = ["docs/archive/", "backups/", "output/"];
+  const files = result.stdout.toString("utf8").split("\0").filter(Boolean)
+    .filter((file) => !ignoredPrefixes.some((prefix) => file.startsWith(prefix)));
+  const markers = [
+    ["Internal", "Test", "Flight"].join(""),
+    FORMER_TEST_PROJECT_REF,
+    ["riskdetected", "-", "qa"].join(""),
+    ["riskdetected", "_", "qa"].join(""),
+    ["RISKDETECTED", "Q", "A"].join("_"),
+    ["RiskDetected", " ", "Q", "A"].join(""),
+    ["RiskDetected", "Q", "A", ".storekit"].join(""),
+    ["INTERNAL", "TEST", "RESET", "TOOLS"].join("_"),
+  ];
+  const hits = [];
+  for (const file of files) {
+    if (!existsSync(file)) continue;
+    if (!statSync(file).isFile()) continue;
+    const body = readFileSync(file, "utf8");
+    for (const marker of markers) {
+      if (body.includes(marker)) {
+        hits.push(`${file}: ${marker}`);
+      }
+    }
+  }
+
+  addCheck(
+    hits.length === 0 ? "PASS" : "FAIL",
+    "Retired lane active marker scan",
+    hits.length === 0 ? "no retired QA/TestFlight markers in active tracked files" : hits.slice(0, 12).join("; "),
   );
 }
 
@@ -413,6 +456,7 @@ async function main() {
   checkDeno();
   checkXcodeBuildSettings();
   checkMainScheme();
+  checkRetiredActiveMarkers();
   await checkManagementFunctions(token);
   await checkRemoteAnalyzeBody(token);
   await checkSecrets(token);
