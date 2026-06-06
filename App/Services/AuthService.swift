@@ -11,14 +11,20 @@ final class AuthService: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var lastError: String?
 
+    private static let installMarkerKey = "rd.install.marker.v1"
     private let supabase = SupabaseService.shared
     private var stateTask: Task<Void, Never>?
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AuthService")
 
     init() {
-        // İlk başta cache'lenmiş session'ı oku
-        session = Self.validSession(supabase.client.auth.currentSession)
-        startObservingAuthChanges()
+        let isFreshInstall = Self.markInstallAndDetectFreshInstall()
+        // İlk başta cache'lenmiş session'ı oku. iOS Keychain uygulama silinse bile
+        // kalabildiği için fresh install'da eski Supabase session'ını kabul etmiyoruz.
+        session = isFreshInstall ? nil : Self.validSession(supabase.client.auth.currentSession)
+        startObservingAuthChanges(discardInitialLocalSession: isFreshInstall)
+        if isFreshInstall {
+            Task { await clearStaleLocalSession(reason: "fresh_install") }
+        }
         // Cache'den session geldiyse profili hemen tazele
         if let session {
             Task { await ensureProfile(for: session.user) }
@@ -392,11 +398,20 @@ final class AuthService: ObservableObject {
         }
     }
 
-    private func startObservingAuthChanges() {
+    private func startObservingAuthChanges(discardInitialLocalSession: Bool = false) {
         stateTask = Task { [weak self] in
             guard let self else { return }
+            var shouldDiscardInitialLocalSession = discardInitialLocalSession
             for await change in supabase.auth.authStateChanges {
                 let newSession = Self.validSession(change.session)
+
+                if shouldDiscardInitialLocalSession {
+                    shouldDiscardInitialLocalSession = false
+                    if newSession != nil {
+                        await self.clearStaleLocalSession(reason: "fresh_install_initial_auth_event")
+                        continue
+                    }
+                }
 
                 await MainActor.run {
                     self.session = newSession
@@ -409,6 +424,15 @@ final class AuthService: ObservableObject {
                 }
             }
         }
+    }
+
+    private static func markInstallAndDetectFreshInstall() -> Bool {
+        let defaults = UserDefaults.standard
+        if defaults.string(forKey: installMarkerKey)?.isEmpty == false {
+            return false
+        }
+        defaults.set(UUID().uuidString, forKey: installMarkerKey)
+        return true
     }
 
     private static func validSession(_ session: Session?) -> Session? {

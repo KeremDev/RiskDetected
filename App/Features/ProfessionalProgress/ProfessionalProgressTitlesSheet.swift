@@ -7,10 +7,14 @@ struct ProfessionalProgressTitlesSheet: View {
     @State private var showRankGuide = false
 
     private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8)
     ]
+
+    private let rankIconCircleSize: CGFloat = 50
+    private let rankIconOuterRingSize: CGFloat = 58
+    private let rankIconFrameSize: CGFloat = 62
 
     var body: some View {
         VStack(spacing: 0) {
@@ -47,22 +51,25 @@ struct ProfessionalProgressTitlesSheet: View {
             RDModalCloseButton {
                 dismiss()
             }
-            .frame(width: 42, height: 42)
+            .scaleEffect(0.86)
+            .frame(width: 34, height: 34)
 
             Spacer()
 
             Text("Mesleki Ünvanlar")
-                .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
 
             Spacer()
 
             Color.clear
-                .frame(width: 42, height: 42)
+                .frame(width: 34, height: 34)
         }
         .padding(.horizontal, 18)
-        .padding(.top, 8)
-        .padding(.bottom, 10)
+        .padding(.top, 24)
+        .padding(.bottom, 8)
         .background(Color.rdWhite)
         .overlay(alignment: .bottom) {
             Rectangle()
@@ -124,7 +131,7 @@ struct ProfessionalProgressTitlesSheet: View {
                     rankTile(professionalTitle)
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
         }
         .padding(.vertical, 12)
     }
@@ -146,15 +153,15 @@ struct ProfessionalProgressTitlesSheet: View {
 
                 if current {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdPlanPlus)
-                        .background(Circle().fill(Color.rdWhite).frame(width: 20, height: 20))
-                        .offset(x: 3, y: -2)
+                        .background(Circle().fill(Color.rdWhite).frame(width: 18, height: 18))
+                        .offset(x: 2, y: -2)
                 } else if !earned {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: RDFontScale.size(9), weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(8), weight: .black, design: .rounded))
                         .foregroundStyle(Color.rdWhite)
-                        .frame(width: 20, height: 20)
+                        .frame(width: 18, height: 18)
                         .background(Color.rdSlate.opacity(0.80))
                         .clipShape(Circle())
                         .overlay(Circle().stroke(Color.rdWhite, lineWidth: 2))
@@ -183,30 +190,30 @@ struct ProfessionalProgressTitlesSheet: View {
         ZStack {
             Circle()
                 .fill(earned ? style.background : lockedIconBackground)
-                .frame(width: 58, height: 58)
+                .frame(width: rankIconCircleSize, height: rankIconCircleSize)
                 .shadow(color: earned ? style.shadow : Color.rdSlate.opacity(0.12), radius: earned ? 12 : 7, x: 0, y: 5)
 
             Circle()
                 .stroke(earned ? Color.rdWhite : Color.rdLine, lineWidth: 4)
-                .frame(width: 58, height: 58)
+                .frame(width: rankIconCircleSize, height: rankIconCircleSize)
 
             Circle()
                 .stroke(current ? Color.rdPlanPlus.opacity(0.95) : Color.clear, lineWidth: 3)
-                .frame(width: 66, height: 66)
+                .frame(width: rankIconOuterRingSize, height: rankIconOuterRingSize)
 
             Image(systemName: style.symbol)
-                .font(.system(size: RDFontScale.size(23), weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(19), weight: .black, design: .rounded))
                 .foregroundStyle(earned ? style.foreground : Color.rdSlate.opacity(0.45))
                 .symbolRenderingMode(.hierarchical)
 
             if earned {
                 Image(systemName: "sparkle")
-                    .font(.system(size: RDFontScale.size(8), weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(7), weight: .black, design: .rounded))
                     .foregroundStyle(Color.white.opacity(0.85))
-                    .offset(x: 17, y: -17)
+                    .offset(x: 14, y: -14)
             }
         }
-        .frame(width: 70, height: 70)
+        .frame(width: rankIconFrameSize, height: rankIconFrameSize)
     }
 
     private var lockedIconBackground: LinearGradient {

@@ -354,53 +354,9 @@ struct ReportView: View {
     }
 
     private var reportValuePanel: some View {
-        Button {
-            if !app.planCapabilities.canUseDetailedRiskTable { showPaywall = true }
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: app.planCapabilities.canUseDetailedRiskTable ? app.currentTier.badgeIcon : SubscriptionTier.plus.badgeIcon)
-                    .font(.system(size: RDFontScale.size(17), weight: .heavy, design: .rounded))
-                    .foregroundStyle(app.planCapabilities.canUseDetailedRiskTable ? app.currentTier.accentTextColor : Color.white)
-                    .frame(width: 42, height: 42)
-                    .background(app.planCapabilities.canUseDetailedRiskTable ? app.currentTier.accentSoftColor : SubscriptionTier.plus.accentColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 13))
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(app.planCapabilities.canUseDetailedRiskTable ? "\(app.currentTier.title) rapor paketi aktif" : "Plus ile detaylı risk çıktısı")
-                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                    Text("Fine-Kinney ve 5×5 matris, logo, firma bilgisi ve özelleştirilmiş PDF/Excel ayarları.")
-                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                        .lineLimit(2)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                if app.planCapabilities.canUseDetailedRiskTable {
-                    Text("AKTİF")
-                        .rdMono(size: 10, weight: .bold)
-                        .foregroundStyle(Color.rdGreen)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
-                        .background(Color.rdGreenSoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                }
-            }
-            .padding(14)
-            .background(reportCardFill)
-            .overlay(
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(app.planCapabilities.canUseDetailedRiskTable ? Color.rdGreen.opacity(0.32) : reportCardBorder, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .reportCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
+        RDPlanUpsellCard {
+            showPaywall = true
         }
-        .buttonStyle(RDPressableButtonStyle())
-        .disabled(app.planCapabilities.canUseDetailedRiskTable)
     }
 
     private var storedReportsSection: some View {
@@ -433,7 +389,7 @@ struct ReportView: View {
                     )
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 } else {
-                    VStack(spacing: 9) {
+                    VStack(spacing: 7) {
                         reportArchiveControls
 
                         if filteredStoredReports.isEmpty {
@@ -2189,85 +2145,75 @@ private struct StoredReportRow: View {
     }
 
     private var rowContent: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 9) {
             ZStack {
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 11)
                     .fill(isExcel ? Color(hex: "#EAF1FF") : isRiskAnalysis ? Color.rdGreenSoft : Color.rdFog)
                 Image(systemName: iconName)
-                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(isExcel ? Color(hex: "#2563EB") : isRiskAnalysis ? Color.rdGreen : Color.rdCharcoal)
             }
-            .frame(width: 46, height: 46)
+            .frame(width: 36, height: 36)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(reportTitle)
-                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13.5), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     if let titleDateText {
                         Text(titleDateText)
-                            .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(10.5), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .lineLimit(1)
                             .layoutPriority(-1)
                     }
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(
-                    LinearGradient(
-                        colors: [Color.rdFog, Color.rdWhite],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 11))
 
-                HStack(spacing: 7) {
+                HStack(spacing: 5) {
                     Text(kindLabel)
-                        .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
                         .foregroundStyle(kindStyle.text)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
                         .background(kindStyle.background)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
                         .fixedSize(horizontal: true, vertical: false)
 
                     Text(methodLabel)
-                        .rdMono(size: 10, weight: .bold)
+                        .rdMono(size: 9.5, weight: .bold)
                         .foregroundStyle(Color.rdCharcoal)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
                         .background(Color.rdFog)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
                         .fixedSize(horizontal: true, vertical: false)
 
                     Text(statusLabel)
-                        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(9.5), weight: .bold, design: .rounded))
                         .foregroundStyle(statusStyle.text)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
                         .background(statusStyle.background)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
                         .fixedSize(horizontal: true, vertical: false)
 
                     if let companyLabel {
                         Text(companyLabel)
-                            .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(9.5), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdGreenDark)
                             .lineLimit(1)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 5)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
                             .background(Color.rdGreenSoft)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .clipShape(RoundedRectangle(cornerRadius: 7))
                     }
                 }
 
                 Text(dateText)
-                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10.5), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
             }
@@ -2278,20 +2224,21 @@ private struct StoredReportRow: View {
                     .controlSize(.small)
             } else {
                 Image(systemName: "arrow.down.to.line")
-                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
-                    .frame(width: 38, height: 38)
+                    .frame(width: 32, height: 32)
                     .background(Color.rdFog)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
-        .padding(12)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
         .background(Color.rdWhite)
         .overlay(
-            RoundedRectangle(cornerRadius: 18)
+            RoundedRectangle(cornerRadius: 14)
                 .stroke(isRiskAnalysis ? Color.rdGreen.opacity(0.24) : Color.rdLine, lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
         .contentShape(Rectangle())
         .reportRowDepth()
         .accessibilityElement(children: .contain)

@@ -52,6 +52,16 @@ struct AccountDeletionRequestResult: Decodable, Equatable {
     }
 }
 
+private extension DateFormatter {
+    static let rdExportFileStamp: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.timeZone = TimeZone(identifier: "Europe/Istanbul")
+        formatter.dateFormat = "yyyyMMdd_HHmm"
+        return formatter
+    }()
+}
+
 /// Analiz akışını orkestre eder:
 /// 1. `analyses` kaydı oluştur (status: pending)
 /// 2. Edge Function `analyze`'i çağır — Gemini bulguları üretir, DB'ye yazılır
@@ -60,7 +70,7 @@ struct AccountDeletionRequestResult: Decodable, Equatable {
 final class AnalysisService {
     static let shared = AnalysisService()
     static let freeDailyLimit = 1
-    nonisolated static let maxTextInputCharacters = 100
+    nonisolated static let maxTextInputCharacters = 200
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AnalysisService")
     private let supabase = SupabaseService.shared
 
@@ -746,8 +756,18 @@ final class AnalysisService {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             let data = try encoder.encode(payload)
-            let url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("RiskDetected_Verilerim_\(String(userID.uuidString.prefix(8))).json")
+            let documentsURL = try FileManager.default.url(
+                for: .documentDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: true
+            )
+            let exportDirectory = documentsURL.appendingPathComponent("RiskDetected", isDirectory: true)
+            try FileManager.default.createDirectory(at: exportDirectory, withIntermediateDirectories: true)
+
+            let timestamp = DateFormatter.rdExportFileStamp.string(from: Date())
+            let url = exportDirectory
+                .appendingPathComponent("RiskDetected_Verilerim_\(String(userID.uuidString.prefix(8)))_\(timestamp).json")
             try data.write(to: url, options: .atomic)
             return url
         } catch let error as AnalysisError {
@@ -923,7 +943,7 @@ final class AnalysisService {
             table: "usage_events",
             filters: {
                 $0.eq("user_id", value: userID.uuidString)
-                    .eq("feature", value: "analysis_standard")
+                    .in("feature", values: ["analysis_standard", "analysis_detailed"])
                     .in("event_type", values: ["reserved", "completed"])
                     .gte("created_at", value: dayStart)
             }

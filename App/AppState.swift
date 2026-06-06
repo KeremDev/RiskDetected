@@ -85,6 +85,7 @@ final class AppState: ObservableObject {
     @Published var planCapabilities: PlanCapabilities = .forTier(.free)
     @Published var profile: UserProfile?
     @Published var activeTab: RDTab = .home
+    @Published var profilePreferencesRequestID = UUID()
     @Published var quickScanRequestID = UUID()
     var quickScanSource: QuickScanSource = .chooser
     @Published var hasSeenOnboarding: Bool

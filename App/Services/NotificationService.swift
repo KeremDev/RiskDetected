@@ -17,6 +17,14 @@ final class NotificationService: NSObject, ObservableObject {
     @Published var pendingAnalysisHistoryID: UUID?
     @Published var pendingDestinationTab: RDTab?
 
+    var systemAuthorizationGranted: Bool {
+        authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral
+    }
+
+    var notificationsEnabled: Bool {
+        systemAuthorizationGranted && (notificationPreferences?.enabled ?? true)
+    }
+
     enum ProgressPreference {
         case weeklySummary
         case monthlySummary
@@ -125,12 +133,60 @@ final class NotificationService: NSObject, ObservableObject {
     }
 
     func disableNotifications() {
+        lastError = nil
         Task {
             do {
                 try await setPreference(enabled: false)
+                await refreshSettings()
             } catch {
                 Self.logger.error("Notification preference disable failed error=\(error.localizedDescription, privacy: .public)")
                 lastError = "Bildirim tercihi kaydedilemedi."
+            }
+        }
+    }
+
+    func enableNotifications() {
+        guard !isRegistering else { return }
+        isRegistering = true
+        lastError = nil
+
+        Task {
+            do {
+                let settings = await UNUserNotificationCenter.current().notificationSettings()
+                authorizationStatus = settings.authorizationStatus
+
+                switch settings.authorizationStatus {
+                case .notDetermined:
+                    let granted = try await UNUserNotificationCenter.current().requestAuthorization(
+                        options: [.alert, .badge, .sound]
+                    )
+                    guard granted else {
+                        try await setPreference(enabled: false)
+                        await refreshSettings()
+                        isRegistering = false
+                        return
+                    }
+                case .authorized, .provisional, .ephemeral:
+                    break
+                case .denied:
+                    await refreshSettings()
+                    isRegistering = false
+                    return
+                @unknown default:
+                    await refreshSettings()
+                    isRegistering = false
+                    return
+                }
+
+                try await setPreference(enabled: true)
+                await refreshSettings()
+                UIApplication.shared.registerForRemoteNotifications()
+                isRegistering = false
+            } catch {
+                Self.logger.error("Notification preference enable failed error=\(error.localizedDescription, privacy: .public)")
+                lastError = "Bildirim tercihi açılmadı. Lütfen tekrar dene."
+                await refreshSettings()
+                isRegistering = false
             }
         }
     }
@@ -406,11 +462,13 @@ private struct ProgressPreferencePayload: Encodable {
 }
 
 private struct NotificationPreferencesRow: Decodable {
+    let enabled: Bool
     let progressWeeklySummary: Bool
     let progressMonthlySummary: Bool
     let progressMilestones: Bool
 
     enum CodingKeys: String, CodingKey {
+        case enabled
         case progressWeeklySummary = "progress_weekly_summary"
         case progressMonthlySummary = "progress_monthly_summary"
         case progressMilestones = "progress_milestones"

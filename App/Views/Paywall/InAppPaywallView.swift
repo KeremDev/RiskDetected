@@ -81,7 +81,7 @@ struct InAppPaywallView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 0) {
                         PaywallHero()
-                            .frame(height: 112 + safeTop)
+                            .frame(height: 88 + safeTop)
                             .padding(.top, -safeTop)
 
                         screenBody
@@ -142,12 +142,12 @@ struct InAppPaywallView: View {
         VStack(alignment: .leading, spacing: 0) {
             ProductBadge(screen: .plus)
                 .padding(.horizontal, 20)
-                .padding(.top, 29)
-                .padding(.bottom, 2)
+                .padding(.top, 46)
+                .padding(.bottom, 8)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(plusBilling == .yearly ? "İlk haftanız bizden." : "Plus’a abone olun.")
-                    .font(.system(size: RDFontScale.size(25), weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(23.5), weight: .black, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
@@ -161,7 +161,7 @@ struct InAppPaywallView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 2)
-            .padding(.bottom, 6)
+            .padding(.bottom, 10)
 
             billingToggle(for: .plus)
 
@@ -173,7 +173,7 @@ struct InAppPaywallView: View {
 
             if plusBilling == .yearly {
                 PlusTimeline(annualPrice: annualPriceText(for: .plus))
-                    .padding(.top, 2)
+                    .padding(.top, 0)
             } else {
                 Color.clear.frame(height: 48)
             }
@@ -181,7 +181,7 @@ struct InAppPaywallView: View {
             PlusComparison(onPro: {
                 switchTo(.pro)
             })
-            .padding(.top, 6)
+            .padding(.top, 10)
         }
     }
 
@@ -315,14 +315,13 @@ struct InAppPaywallView: View {
                     Text(isWorking ? "Bekle" : "Geri yükle")
                         .font(.system(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.onyx)
-                        .padding(.horizontal, 11)
+                        .padding(.horizontal, 4)
                         .frame(height: 34)
-                        .background(Color.white.opacity(0.94))
-                        .clipShape(Capsule())
-                        .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 2)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(isWorking)
+                .opacity(isWorking ? 0.55 : 1)
                 .accessibilityLabel("Satın alımları geri yükle")
             }
             .frame(maxWidth: 430)
@@ -340,7 +339,7 @@ struct InAppPaywallView: View {
             screen: screen
         )
         .padding(.horizontal, 20)
-        .padding(.bottom, 4)
+        .padding(.bottom, 2)
     }
 
     private func ctaTray(bottomInset: CGFloat) -> some View {
@@ -1002,9 +1001,9 @@ private struct InAppBillingToggle: View {
                 option(.monthly)
                 option(.yearly)
             }
-            .padding(4)
+            .padding(3)
             .background(InAppPaywallColor.fog)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
         .frame(maxWidth: .infinity)
         .accessibilityIdentifier("in_app_paywall.billing_toggle")
@@ -1033,10 +1032,10 @@ private struct InAppBillingToggle: View {
                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
             }
-            .frame(width: option == .yearly ? 104 : 86, height: 34)
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .frame(width: option == .yearly ? 104 : 86, height: 30)
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .background(value == option ? Color.white : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .shadow(
                 color: value == option ? InAppPaywallColor.onyx.opacity(0.08) : .clear,
                 radius: 3,
@@ -1078,17 +1077,17 @@ private struct PlusTimeline: View {
             .frame(width: 2)
             .clipShape(Capsule())
             .padding(.leading, 15)
-            .padding(.vertical, 18)
+            .padding(.vertical, 13)
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 7) {
                 TimelineRow(icon: "lock.open.fill", label: "Bugün", detail: "Tüm Plus özelliklerinin kilidini açın.", tone: .green)
                 TimelineRow(icon: "bell.fill", label: "5. gün", detail: "Denemenizin bittiğine dair hatırlatma alın.", tone: .green)
                 TimelineRow(icon: "crown.fill", label: "7. gün", detail: "Yıllık \(annualPrice) ödeme alınır.", tone: .gold)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 9)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white)
         .overlay(
@@ -1117,9 +1116,9 @@ private struct TimelineRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(13), weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                 .foregroundStyle(iconForeground)
-                .frame(width: 30, height: 30)
+                .frame(width: 27, height: 27)
                 .background(iconBackground)
                 .clipShape(Circle())
                 .shadow(color: shadowColor, radius: 8, x: 0, y: 3)
@@ -1127,10 +1126,10 @@ private struct TimelineRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
-                    .font(.system(size: RDFontScale.size(12.8), weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                 Text(detail)
-                    .font(.system(size: RDFontScale.size(12), weight: .regular, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.2), weight: .regular, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.slate)
                     .lineSpacing(1.5)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1181,16 +1180,16 @@ private struct PlusComparison: View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
                 Text("Neler dahil?")
-                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .accessibilityIdentifier("in_app_paywall.plus.included_title")
                 Image(systemName: "chevron.down")
-                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.slate)
                     .padding(.top, 1)
             }
             .frame(maxWidth: .infinity)
-            .padding(.bottom, 2)
+            .padding(.bottom, 0)
 
             ZStack(alignment: .trailing) {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -1218,10 +1217,10 @@ private struct PlusComparison: View {
                         .foregroundStyle(InAppPaywallColor.green)
 
                     Text("Limitsiz özellikler için ")
-                        .font(.system(size: RDFontScale.size(12.5), weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundColor(InAppPaywallColor.onyx)
                     + Text("PRO’yu incele")
-                        .font(.system(size: RDFontScale.size(12.5), weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .underline()
                         .foregroundColor(InAppPaywallColor.onyx)
 
@@ -1230,11 +1229,11 @@ private struct PlusComparison: View {
                         .foregroundStyle(InAppPaywallColor.slate)
                 }
                 .padding(.horizontal, 10)
-                .frame(height: 30)
+                .frame(height: 28)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("in_app_paywall.plus.pro_link")
-            .padding(.top, 6)
+            .padding(.top, 2)
         }
     }
 
@@ -1268,14 +1267,14 @@ private struct PlusComparison: View {
             }
             .frame(width: 64)
         }
-        .frame(height: 42)
+        .frame(height: 36)
     }
 
     private func comparisonRow(_ feature: PlusComparisonFeature) -> some View {
         HStack(spacing: 8) {
             HStack(spacing: 6) {
                 Text(feature.label)
-                    .font(.system(size: RDFontScale.size(12.8), weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12.2), weight: .medium, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.graphite)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
@@ -1285,7 +1284,7 @@ private struct PlusComparison: View {
                         .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                         .foregroundStyle(Color.white)
                         .padding(.horizontal, 5)
-                        .frame(height: 12)
+                        .frame(height: 11)
                         .background(InAppPaywallColor.onyx)
                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
@@ -1298,7 +1297,7 @@ private struct PlusComparison: View {
             ComparisonCell(value: feature.plus, isPlus: true)
                 .frame(width: 64)
         }
-        .frame(height: 34)
+        .frame(height: 30)
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(InAppPaywallColor.line)

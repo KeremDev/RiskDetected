@@ -42,7 +42,7 @@ struct HistoryView: View {
             .zIndex(100)
 
             ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 12) {
+                LazyVStack(spacing: 9) {
                     analysisOverview
                     filterSurface
 
@@ -604,54 +604,42 @@ private struct HistoryRow: View {
     }
 
     private var rowContent: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 9) {
             ZStack(alignment: .bottomTrailing) {
-                AnalysisThumbnail(path: item.photoPath, isTextAnalysis: item.isTextAnalysis, cornerRadius: 14)
-                    .frame(width: 58, height: 58)
+                AnalysisThumbnail(path: item.photoPath, isTextAnalysis: item.isTextAnalysis, cornerRadius: 11)
+                    .frame(width: 46, height: 46)
 
                 Image(systemName: item.isTextAnalysis ? "text.alignleft" : "camera.fill")
-                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(8.5), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
-                    .frame(width: 20, height: 20)
+                    .frame(width: 17, height: 17)
                     .background(Color.rdWhite)
                     .clipShape(Circle())
-                    .shadow(color: Color.rdOnyx.opacity(0.12), radius: 6, x: 0, y: 3)
-                    .offset(x: 4, y: 4)
+                    .shadow(color: Color.rdOnyx.opacity(0.10), radius: 4, x: 0, y: 2)
+                    .offset(x: 3, y: 3)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    HStack(alignment: .firstTextBaseline, spacing: 5) {
-                        Text(cleanTitle)
-                            .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(cleanTitle)
+                        .font(.system(size: RDFontScale.size(13.5), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text(item.level.label)
-                        .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
                         .foregroundStyle(item.level.textColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
                         .background(item.level.bgColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
                         .fixedSize(horizontal: true, vertical: false)
                 }
-                .padding(.horizontal, 9)
-                .padding(.vertical, 6)
-                .background(
-                    LinearGradient(
-                        colors: [Color.rdFog, Color.rdWhite],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 11))
 
-                HStack(spacing: 7) {
+                HStack(spacing: 5) {
                     Image(systemName: "calendar")
-                        .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(9.8), weight: .semibold, design: .rounded))
                     Text(item.date)
                         .lineLimit(1)
                         .layoutPriority(3)
@@ -662,37 +650,39 @@ private struct HistoryRow: View {
                         .layoutPriority(1)
                     Text("·")
                     Text("\(item.count) bulgu")
-                        .rdMono(size: 12, weight: .semibold)
+                        .rdMono(size: 10.5, weight: .semibold)
                         .fixedSize(horizontal: true, vertical: false)
                         .layoutPriority(2)
                 }
-                .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                .font(.system(size: RDFontScale.size(10.8), weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
 
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(item.status.textColor)
-                        .frame(width: 6, height: 6)
-                    Text(item.status.rawValue)
-                        .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
-                        .foregroundStyle(item.status.textColor)
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                HStack(spacing: 5) {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(item.status.textColor)
+                            .frame(width: 5, height: 5)
+                        Text(item.status.rawValue)
+                            .font(.system(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
+                            .foregroundStyle(item.status.textColor)
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
                         .background(item.status.bgColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
 
                     if !companyName.isEmpty {
                         Text(companyName)
-                            .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdGreenDark)
                             .lineLimit(1)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
                             .background(Color.rdGreenSoft)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .clipShape(RoundedRectangle(cornerRadius: 7))
                     }
                 }
+            }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if isLoading || isDeleting {
@@ -700,17 +690,19 @@ private struct HistoryRow: View {
                     .controlSize(.small)
             } else {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
+                    .frame(width: 24, height: 24)
             }
         }
-        .padding(10)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
         .background(Color.rdWhite)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 14)
                 .stroke(item.level == .critical ? Color.rdCritical.opacity(0.22) : Color.rdLine, lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
         .contentShape(Rectangle())
         .historyRowDepth()
         .onTapGesture {

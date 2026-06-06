@@ -123,6 +123,7 @@ struct RDHeaderAccountCTA: View {
                             closeMenu()
                             onUpgrade()
                         },
+                        onSettings: openProfilePreferences,
                         onSignOut: {
                             closeMenu()
                             app.signOut()
@@ -146,6 +147,14 @@ struct RDHeaderAccountCTA: View {
     private func select(_ tab: RDTab) {
         closeMenu()
         app.activeTab = tab
+    }
+
+    private func openProfilePreferences() {
+        closeMenu()
+        app.activeTab = .profile
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            app.profilePreferencesRequestID = UUID()
+        }
     }
 
     private func closeMenu() {
@@ -176,6 +185,7 @@ private struct RDHeaderProfileMenu: View {
     let onAnalyses: () -> Void
     let onReports: () -> Void
     let onUpgrade: () -> Void
+    let onSettings: () -> Void
     let onSignOut: () -> Void
     let onToggleTheme: () -> Void
 
@@ -208,6 +218,13 @@ private struct RDHeaderProfileMenu: View {
                     action: onSignOut
                 )
                 iconButton(
+                    icon: "gearshape.fill",
+                    tint: .rdCharcoal,
+                    background: .rdFog,
+                    label: "Ayarlar",
+                    action: onSettings
+                )
+                iconButton(
                     icon: isDarkMode ? "sun.max.fill" : "moon.fill",
                     tint: .rdGreen,
                     background: .rdGreenSoft,
@@ -218,7 +235,7 @@ private struct RDHeaderProfileMenu: View {
             .padding(.top, 2)
         }
         .padding(8)
-        .frame(width: 190)
+        .frame(width: 174)
         .background(Color.rdWhite)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
@@ -233,7 +250,7 @@ private struct RDHeaderProfileMenu: View {
             HStack(spacing: 10) {
                 Image(systemName: icon)
                     .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
-                    .frame(width: 28, height: 28)
+                    .frame(width: 27, height: 27)
                     .foregroundStyle(tint)
                     .background(tint.opacity(0.10))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -243,7 +260,7 @@ private struct RDHeaderProfileMenu: View {
                     .foregroundStyle(Color.rdBlack)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 7)
             .padding(.vertical, 8)
             .contentShape(Rectangle())
         }
@@ -254,7 +271,7 @@ private struct RDHeaderProfileMenu: View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
-                .frame(width: 28, height: 28)
+                .frame(width: 27, height: 27)
                 .foregroundStyle(tint)
                 .background(tint.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -264,7 +281,7 @@ private struct RDHeaderProfileMenu: View {
                 .foregroundStyle(Color.rdBlack)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 7)
         .padding(.vertical, 8)
         .accessibilityLabel(title)
     }
@@ -281,7 +298,7 @@ private struct RDHeaderProfileMenu: View {
                 .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(maxWidth: .infinity)
-                .frame(height: 38)
+                .frame(height: 36)
                 .background(background)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }

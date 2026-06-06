@@ -31,7 +31,7 @@ struct ProfileView: View {
     @State private var dataActionInProgress: ProfileDataAction?
     @State private var pendingDataAction: ProfileDataAction?
     @State private var dataMessage: String?
-    @State private var shareItem: ShareItem?
+    @State private var exportedDataFile: ShareItem?
     @State private var deviceIntegrity = DeviceIntegrityService.assess()
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
@@ -44,23 +44,6 @@ struct ProfileView: View {
     }
     private var profileLine: Color {
         colorScheme == .dark ? Color.white.opacity(0.08) : Color.rdLine
-    }
-    private var profileUpsellGradientColors: [Color] {
-        colorScheme == .dark
-            ? [Color(hex: "#0D1110"), Color(hex: "#121817"), Color(hex: "#1A1509")]
-            : [Color(hex: "#F8FAF9"), Color(hex: "#EEF2F1"), Color(hex: "#F6F0DF")]
-    }
-    private var profileUpsellTitleColor: Color {
-        colorScheme == .dark ? Color.white.opacity(0.96) : Color.rdBlack
-    }
-    private var profileUpsellTextColor: Color {
-        colorScheme == .dark ? Color.white.opacity(0.70) : Color.rdSlate
-    }
-    private var profileUpsellArrowColor: Color {
-        colorScheme == .dark ? Color.rdPlanPlus : Color.rdPlanPlusDark
-    }
-    private var profileUpsellBorderColor: Color {
-        colorScheme == .dark ? Color.rdPlanPlus.opacity(0.22) : Color.rdLine.opacity(0.95)
     }
 
     var body: some View {
@@ -82,7 +65,6 @@ struct ProfileView: View {
                         deviceIntegrityWarningCard
                     }
                     signOutCard
-                    versionFootnote
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 0)
@@ -107,6 +89,10 @@ struct ProfileView: View {
                 await loadProfileAvatarImage()
             }
         }
+        .onChange(of: app.profilePreferencesRequestID) { _ in
+            guard app.activeTab == .profile else { return }
+            showPreferences = true
+        }
         .onChange(of: selectedProfileAvatarItem) { newItem in
             guard let newItem else { return }
             Task { await handleProfileAvatarSelection(newItem) }
@@ -126,6 +112,7 @@ struct ProfileView: View {
             ProfileDataControlsSheet(
                 stats: stats,
                 actionInProgress: dataActionInProgress,
+                exportedFile: $exportedDataFile,
                 onExport: { runDataAction(.exportData) },
                 onDeleteReports: { pendingDataAction = .deleteReports },
                 onDeleteAnalyses: { pendingDataAction = .deleteAnalyses },
@@ -215,10 +202,6 @@ struct ProfileView: View {
             ProfessionalProgressBadgesView(summary: item.summary)
                 .presentationDetents([.height(360)])
                 .presentationDragIndicator(.visible)
-                .preferredColorScheme(preferredModalColorScheme)
-        }
-        .sheet(item: $shareItem) { item in
-            ShareSheet(items: [item.url])
                 .preferredColorScheme(preferredModalColorScheme)
         }
         .alert("Profil fotoğrafı güncellenemedi", isPresented: Binding(
@@ -749,78 +732,8 @@ struct ProfileView: View {
     }
 
     private var upsellCard: some View {
-        Button {
+        RDPlanUpsellCard {
             showPaywall = true
-        } label: {
-            ZStack(alignment: .topTrailing) {
-                Circle()
-                    .fill(Color.rdPlanPlus.opacity(colorScheme == .dark ? 0.10 : 0.16))
-                    .frame(width: 96, height: 96)
-                    .blur(radius: colorScheme == .dark ? 22 : 16)
-                    .offset(x: 42, y: -58)
-
-                Circle()
-                    .fill(Color.rdGreen.opacity(colorScheme == .dark ? 0.08 : 0.10))
-                    .frame(width: 86, height: 86)
-                    .blur(radius: colorScheme == .dark ? 22 : 18)
-                    .offset(x: -214, y: 78)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 7) {
-                        RDTierBadge(tier: .plus)
-                        RDTierBadge(tier: .pro)
-                        Spacer()
-                        Image(systemName: "arrow.up.right.circle.fill")
-                            .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
-                            .foregroundStyle(profileUpsellArrowColor)
-                    }
-
-                    Text("Plus veya Pro'ya yükselt")
-                        .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
-                        .foregroundStyle(profileUpsellTitleColor)
-
-                    VStack(alignment: .leading, spacing: 7) {
-                        upsellBenefit("Daha fazla günlük analiz")
-                        upsellBenefit("Detaylı risk raporları")
-                        upsellBenefit("Fine-Kinney + 5x5 matris")
-                        upsellBenefit("PDF ve Excel dışa aktarım")
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                LinearGradient(
-                    colors: profileUpsellGradientColors,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .stroke(profileUpsellBorderColor, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-            .profileCardDepth(colorScheme: colorScheme, accent: Color.rdPlanPlus)
-        }
-        .buttonStyle(RDPressableButtonStyle())
-    }
-
-    private func upsellBenefit(_ text: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "checkmark")
-                .font(.system(size: RDFontScale.size(9), weight: .black, design: .rounded))
-                .foregroundStyle(Color.rdOnyx)
-                .frame(width: 18, height: 18)
-                .background(Color.rdPlanPlus)
-                .clipShape(Circle())
-
-            Text(text)
-                .font(.system(size: RDFontScale.size(12.5), weight: .semibold, design: .rounded))
-                .foregroundStyle(profileUpsellTextColor)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
         }
     }
 
@@ -1081,14 +994,6 @@ struct ProfileView: View {
             .padding(.leading, 4)
     }
 
-    private var versionFootnote: some View {
-        Text("v1.4.0 · build 2841")
-            .rdMono(size: 11)
-            .foregroundStyle(Color.rdSlate)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 6)
-    }
-
     private var subscriptionPeriodLabel: String {
         switch app.profile?.subscriptionPeriod {
         case "monthly": return "Aylık plan"
@@ -1211,6 +1116,9 @@ struct ProfileView: View {
     private func runDataAction(_ action: ProfileDataAction) {
         guard dataActionInProgress == nil else { return }
         pendingDataAction = nil
+        if action == .exportData {
+            exportedDataFile = nil
+        }
 
         guard let userID = app.auth.session?.user.id else {
             dataMessage = AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated, context: "Veri işlemi yapılamadı").fullText
@@ -1231,7 +1139,7 @@ struct ProfileView: View {
                         requestID: requestID,
                         supportID: supportID
                     )
-                    shareItem = ShareItem(url: url)
+                    exportedDataFile = ShareItem(url: url)
                 case .deleteReports:
                     try await AnalysisService.shared.deleteAllReports(
                         requestID: requestID,
@@ -1698,10 +1606,10 @@ private struct NotificationSettingsSheet: View {
                     RDButton(
                         title: notificationService.isRegistering ? "Bildirimler kuruluyor..." : "Bildirimleri aç",
                         style: .detect,
-                        icon: notificationService.isRegistering ? "hourglass" : "bell.badge.fill",
+                        icon: notificationService.isRegistering ? "hourglass" : "bell.badge",
                         height: 48
                     ) {
-                        notificationService.requestPermissionAndRegister()
+                        notificationService.enableNotifications()
                     }
                     .disabled(notificationService.isRegistering)
                     .opacity(notificationService.isRegistering ? 0.72 : 1)
@@ -1785,19 +1693,17 @@ private struct NotificationSettingsSheet: View {
     }
 
     private var isEnabled: Bool {
-        switch notificationService.authorizationStatus {
-        case .authorized, .provisional, .ephemeral:
-            return true
-        default:
-            return false
-        }
+        notificationService.notificationsEnabled
     }
 
     private var statusTitle: String {
-        switch notificationService.authorizationStatus {
-        case .authorized, .provisional, .ephemeral:
+        if notificationService.notificationsEnabled {
             return "Bildirimler açık"
+        }
+        switch notificationService.authorizationStatus {
         case .denied:
+            return "Bildirimler kapalı"
+        case .authorized, .provisional, .ephemeral:
             return "Bildirimler kapalı"
         case .notDetermined:
             return "Bildirimler kapalı"
@@ -1807,9 +1713,12 @@ private struct NotificationSettingsSheet: View {
     }
 
     private var statusMessage: String {
+        if notificationService.notificationsEnabled {
+            return "Analiz tamamlandığında, rapor hazır olduğunda ve önemli hesap güvenliği durumlarında bildirim alırsın."
+        }
         switch notificationService.authorizationStatus {
         case .authorized, .provisional, .ephemeral:
-            return "Analiz tamamlandığında, rapor hazır olduğunda ve önemli hesap güvenliği durumlarında bildirim alırsın."
+            return "Bildirimler uygulama içinde kapalı. Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini tekrar alırsın."
         case .denied:
             return "Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini alabilirsin."
         case .notDetermined:
@@ -1891,6 +1800,7 @@ private struct NotificationPreferenceToggle: View {
 private struct ProfileDataControlsSheet: View {
     let stats: ProfileStats?
     let actionInProgress: ProfileDataAction?
+    @Binding var exportedFile: ShareItem?
     let onExport: () -> Void
     let onDeleteReports: () -> Void
     let onDeleteAnalyses: () -> Void
@@ -1904,11 +1814,16 @@ private struct ProfileDataControlsSheet: View {
                     summaryCard
                     dataActionButton(
                         icon: "square.and.arrow.up",
-                        title: "Verilerimi dışa aktar",
-                        subtitle: "Analiz, bulgu, rapor ve profil özetini JSON dosyası olarak al.",
+                        title: actionInProgress == .exportData ? "Verilerin hazırlanıyor..." : "Verilerimi dışa aktar",
+                        subtitle: actionInProgress == .exportData
+                            ? "JSON dosyası oluşturuluyor ve telefona kaydediliyor."
+                            : "Analiz, bulgu, rapor ve profil özetini JSON dosyası olarak al.",
                         action: .exportData,
                         onTap: onExport
                     )
+                    if let exportedFile {
+                        exportedFileCard(exportedFile)
+                    }
                     dataActionButton(
                         icon: "doc.badge.minus",
                         title: "Tüm raporlarımı sil",
@@ -1952,6 +1867,9 @@ private struct ProfileDataControlsSheet: View {
                     RDModalCloseButton(action: onClose)
                 }
             }
+        }
+        .sheet(item: $exportedFile) { item in
+            DocumentPreview(url: item.url)
         }
     }
 
@@ -2029,6 +1947,46 @@ private struct ProfileDataControlsSheet: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .disabled(actionInProgress != nil)
+    }
+
+    private func exportedFileCard(_ item: ShareItem) -> some View {
+        Button {
+            exportedFile = item
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreen)
+                    .frame(width: 42, height: 42)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Telefona kaydedildi")
+                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(item.url.lastPathComponent)
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+            }
+            .padding(14)
+            .background(Color.rdGreenSoft.opacity(0.45))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.rdGreen.opacity(0.28), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel("Dışa aktarılan dosyayı aç")
     }
 }
 
@@ -2240,7 +2198,7 @@ private struct ProfileBadgesSheetItem: Identifiable {
     let summary: ProfessionalProgressSummary
 }
 
-private extension View {
+extension View {
     func profileCardDepth(colorScheme: ColorScheme, accent: Color = Color.rdBlack) -> some View {
         rdCardShadow(colorScheme: colorScheme, accent: accent)
     }

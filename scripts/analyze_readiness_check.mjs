@@ -154,7 +154,7 @@ async function checkRemoteAnalyzeBody(token) {
   const body = await managementFetchBytes(`/v1/projects/${PROJECT_REF}/functions/analyze/body`, token);
   const text = body.toString("utf8");
   const markers = [
-    "isg-photo-personalized-v2026-06-02-twelve-layer-two-measures",
+    "isg-photo-text-report-language-v2026-06-06-twelve-layer-two-measures",
     "reserve_analysis_quota",
     "enqueue_analysis_job_message",
     "GEMINI_API_KEY_PAID",

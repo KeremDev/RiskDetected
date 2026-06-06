@@ -167,17 +167,17 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             if !isConfigured {
                 configureIfNeeded(appUserID: appUserID)
                 let customerInfo = try await Purchases.shared.customerInfo()
-                apply(customerInfo)
+                try applyVerified(customerInfo)
                 return
             }
             if currentAppUserID == appUserID {
                 let customerInfo = try await Purchases.shared.customerInfo()
-                apply(customerInfo)
+                try applyVerified(customerInfo)
                 return
             }
             let result = try await Purchases.shared.logIn(appUserID)
             currentAppUserID = appUserID
-            apply(result.customerInfo)
+            try applyVerified(result.customerInfo)
         } catch {
             apply(error: error)
         }
@@ -389,7 +389,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
 
         do {
             let customerInfo = try await freshCustomerInfo(reason: "refresh")
-            apply(customerInfo)
+            try applyVerified(customerInfo)
         } catch {
             apply(error: error)
         }
@@ -437,6 +437,20 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
     @discardableResult
     private func apply(_ customerInfo: CustomerInfo, preferredProductIdentifier: String? = nil) -> SubscriptionState {
         let nextState = Self.state(from: customerInfo, preferredProductIdentifier: preferredProductIdentifier)
+        state = nextState
+        return nextState
+    }
+
+    @discardableResult
+    private func applyVerified(
+        _ customerInfo: CustomerInfo,
+        preferredProductIdentifier: String? = nil
+    ) throws -> SubscriptionState {
+        let nextState = Self.state(
+            from: customerInfo,
+            preferredProductIdentifier: preferredProductIdentifier
+        )
+        try validateReceiptOwner(customerInfo, resolvedState: nextState)
         state = nextState
         return nextState
     }

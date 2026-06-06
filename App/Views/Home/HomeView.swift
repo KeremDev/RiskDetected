@@ -8,6 +8,7 @@ import SwiftUI
 struct AnalysisJob: Identifiable {
     let id = UUID()
     let previewImage: UIImage?
+    let presentationMode: AnalysisWaitingPresentationMode
     let work: (@escaping @MainActor (AnalysisProgressUpdate) -> Void) async throws -> AnalysisResultBundle
 }
 
@@ -26,8 +27,6 @@ struct HomeView: View {
     @State private var text: String = ""
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
     @State private var showCanvasSheet = false
-    @State private var showCompanyPicker = false
-    @State private var selectedCompany: Company?
     @State private var showAnnotate = false
     @State private var pendingAnnotateRequestID: UUID?
     @State private var showResult = false
@@ -205,28 +204,6 @@ struct HomeView: View {
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .sheet(isPresented: $showCompanyPicker) {
-            CompanyPickerSheet(
-                title: "Analiz firması",
-                accessTier: app.currentTier,
-                selectedCompanyID: selectedCompany?.id,
-                allowNoCompany: true,
-                onSelect: { company in
-                    selectedCompany = company
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        runAnalysis()
-                    }
-                },
-                onPaywall: {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        showPlainPaywall()
-                    }
-                }
-            )
-            .presentationDetents(CompanyPickerSheet.presentationDetents(for: app.currentTier))
-            .presentationDragIndicator(.visible)
-            .preferredColorScheme(preferredModalColorScheme)
-        }
         .fullScreenCover(isPresented: $showCameraPicker) {
             CameraPicker { image in
                 showCameraPicker = false
@@ -275,6 +252,7 @@ struct HomeView: View {
                 ),
                 asyncWork: job.work,
                 previewImage: job.previewImage,
+                presentationMode: job.presentationMode,
                 onComplete: { result in
                     analysisResult = result
                     if !app.currentTier.isPaid {
@@ -312,8 +290,7 @@ struct HomeView: View {
                 localPreviewImage: selectedImage,
                 onClose: {
                     showResult = false
-                    selectedImage = nil
-                    selectedCompany = nil
+                    resetAnalysisDraft()
                     analysisResult = nil
                     Task {
                         await loadRecentItems()
@@ -1025,6 +1002,11 @@ struct HomeView: View {
         showCanvasSheet = true
     }
 
+    private func resetAnalysisDraft() {
+        text = ""
+        selectedImage = nil
+    }
+
     private func handleQuickScanRequest() {
         mode = .photo
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
@@ -1075,12 +1057,7 @@ struct HomeView: View {
 
     /// Canvas seçimi onaylandıktan sonra çağrılır.
     private func continueAfterCanvasSelection() {
-        if app.currentTier.isPaid {
-            showCompanyPicker = true
-        } else {
-            selectedCompany = nil
-            runAnalysis()
-        }
+        runAnalysis()
     }
 
     /// Canvas + opsiyonel firma seçimi tamamlandıktan sonra çağrılır.
@@ -1096,14 +1073,13 @@ struct HomeView: View {
         let canvases = selectedCanvasesForCurrentTier()
         let capturedImage = selectedImage
         let capturedText = text
-        let capturedCompanyID = selectedCompany?.id
 
         switch mode {
         case .photo:
             guard let img = capturedImage else {
                 return
             }
-            pendingJob = AnalysisJob(previewImage: img) {
+            pendingJob = AnalysisJob(previewImage: img, presentationMode: .photo) {
                 progress in
                 if app.currentTier.isPaid {
                     await app.refreshPlanState()
@@ -1112,7 +1088,7 @@ struct HomeView: View {
                     userID: userID,
                     images: [img],
                     canvases: canvases,
-                    companyID: capturedCompanyID,
+                    companyID: nil,
                     onProgress: progress
                 )
             }
@@ -1121,7 +1097,7 @@ struct HomeView: View {
             guard !trimmed.isEmpty else {
                 return
             }
-            pendingJob = AnalysisJob(previewImage: nil) {
+            pendingJob = AnalysisJob(previewImage: nil, presentationMode: .text) {
                 progress in
                 if app.currentTier.isPaid {
                     await app.refreshPlanState()
@@ -1130,7 +1106,7 @@ struct HomeView: View {
                     userID: userID,
                     text: trimmed,
                     canvases: canvases,
-                    companyID: capturedCompanyID,
+                    companyID: nil,
                     onProgress: progress
                 )
             }

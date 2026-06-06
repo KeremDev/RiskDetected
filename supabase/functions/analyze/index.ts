@@ -36,6 +36,9 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  sanitizeTextAnalysisHazardForReportLanguage,
+} from "../_shared/text-report-language.ts";
 
 declare const EdgeRuntime: {
   waitUntil: (promise: Promise<unknown>) => void;
@@ -96,7 +99,8 @@ type OnboardingContext = {
   auditFrequency: string | null;
 };
 
-const PROMPT_VERSION = "isg-photo-personalized-v2026-06-02-twelve-layer-two-measures";
+const PROMPT_VERSION =
+  "isg-photo-text-report-language-v2026-06-06-twelve-layer-two-measures";
 const PERSONALIZATION_VERSION = "onboarding-v1";
 const BUSINESS_TIME_ZONE = "Europe/Istanbul";
 
@@ -192,6 +196,8 @@ KALİTE FİLTRESİ — KAÇIN:
 - Hassas ölçü uydurma; "yaklaşık 3m" veya "1 kat yüksekliğinde" yaz.
 - "Eğitim verilmeli" jenerik aksiyonundan kaçın; hangi iş/ekipman/risk için ne doğrulanacağını söyle.
 - Kullanıcı profili veya firma bağlamı görsel kanıtı filtrelemez; profili yalnızca ton, öncelik ve açıklama derinliği için kullan.
+- Metin analizinde kullanıcı girdisini rapora alıntı olarak taşıma. "Metinde...", "Kullanıcı...", "ifadesi geçmektedir", "belirtmiştir", tırnak içinde ham metin veya birinci/ikinci şahıs dili kullanma.
+- Metin analizinde tüm bulgu metinlerini işverenle paylaşılabilir, nesnel saha denetimi diliyle yaz; kullanıcı notunu yalnız tehlike arama bağlamı olarak kullan.
 
 ÖNLEM ÜRETİM KURALI:
 Her bulgu için tam 2 önlem ver:
@@ -220,6 +226,7 @@ Her bulgu için tam 2 önlem ver:
 - Tüm metin DEĞERLERİ Türkçe; JSON anahtarları (key) İngilizce ve şemadaki haliyle aynen korunur.
 - description max 200 karakter; corrective_action max 180 karakter; preventive_control max 180 karakter.
 - Her bulguda corrective_action ve preventive_control alanları zorunludur ve boş bırakılamaz.
+- Text mode'da observed_evidence, description, corrective_action, preventive_control ve root_cause kullanıcı cümlesini veya kullanıcıya atıf yapan dili içermemeli; profesyonel saha bulgusu olarak yeniden yazılmalı.
 - Skorları HESAPLAMA, ham girdileri ver — sistem hesaplar.
 - Fine-Kinney ihtimal: 0.2 / 0.5 / 1 / 3 / 6 / 10
 - Fine-Kinney frekans:  0.5 / 1 / 2 / 3 / 6 / 10
@@ -329,7 +336,9 @@ function normalizeRecommendedMeasures(
       const record = item as Record<string, unknown>;
       const rawKind = safeText(record.kind).toLowerCase();
       const kind = rawKind === "preventive" ? "preventive" : "corrective";
-      const title = kind === "preventive" ? "Önleyici Kontrol" : "Düzeltici Önlem";
+      const title = kind === "preventive"
+        ? "Önleyici Kontrol"
+        : "Düzeltici Önlem";
       const text = safeText(record.text);
       return text ? { kind, title, text } : null;
     })
@@ -349,12 +358,14 @@ function normalizeRecommendedMeasures(
     corrective ?? {
       kind: "corrective",
       title: "Düzeltici Önlem",
-      text: fallback || "Uygunsuzluğu sahada güvenli hale getirecek düzeltici kontrolü uygula.",
+      text: fallback ||
+        "Uygunsuzluğu sahada güvenli hale getirecek düzeltici kontrolü uygula.",
     },
     preventive ?? {
       kind: "preventive",
       title: "Önleyici Kontrol",
-      text: "Tekrarı önlemek için kontrol sorumlusu, periyodik kontrol ve saha doğrulama kaydı tanımla.",
+      text:
+        "Tekrarı önlemek için kontrol sorumlusu, periyodik kontrol ve saha doğrulama kaydı tanımla.",
     },
   ];
 }
@@ -431,7 +442,7 @@ function groqResponseSchemaInstruction(tier: PlanTier): string {
     {
       "title": "kısa tehlike başlığı",
       "category": "risk kategorisi",
-      "observed_evidence": "görüntü/metinde görülen kanıt",
+      "observed_evidence": "rapora uygun nesnel saha kanıtı; metin modunda kullanıcı notunu alıntılama",
       "description": "riskin kısa açıklaması",
       "corrective_action": "mevcut uygunsuzluğu sahada düzelten kısa uygulanabilir önlem",
       "preventive_control": "tekrarını önleyen kısa kontrol/prosedür/izleme tedbiri",
@@ -651,12 +662,14 @@ function buildSystemPrompt(): string {
 function buildUserTextInputBlock(userText: string): string {
   return `<kullanici_metin_girdisi>
 METİN ANALİZİ TALİMATI:
-- Aşağıdaki metni saha gözlemi, uygunsuzluk notu veya denetim anlatımı gibi değerlendir.
+- Aşağıdaki metni rapora geçirilecek beyan değil; saha bağlamı, denetim yönlendirmesi ve tehlike arama ipucu olarak değerlendir.
 - Ana system prompttaki 12 katmanlı taramayı metne uyarla: zemin/düzen, KKD, yüksekte çalışma, elektrik/enerji, makine/ekipman, kaldırma/istif, kimyasal, yangın/patlama, fiziksel ortam, ergonomi, özel işler, acil durum/işaretleme/yetkinlik eksenlerini sırayla sorgula.
 - Yalnızca metinde açıkça belirtilen veya güçlü şekilde ima edilen tehlikeleri bulguya dönüştür.
 - Fotoğraf kanıtı olmadığı için belirsiz noktaları uydurma; gerekiyorsa description içinde "(sahada doğrulanmalı)" tonunu kullan.
 - Metindeki iş, ortam, ekipman, yükseklik, kimyasal, çalışan davranışı, firma/alan veya sektör ipuçlarını risk önceliklendirmede kullan.
 - Kullanıcı metni kısa veya eksikse az ama güvenilir bulgu döndür; listeyi doldurmak için risk üretme.
+- Kullanıcı metnini hiçbir alanda aynen alıntılama; tırnak içinde yazma; "metinde", "kullanıcı", "ifadesi", "belirtmiştir", "yazmış", "demiş" gibi kaynak atfı yapan kelimeleri kullanma.
+- observed_evidence ve description alanlarını işverenle paylaşılabilir saha denetimi diliyle yaz. Örnek: "Makine koruyucularının yeterliliği sahada doğrulanmalıdır."
 
 KULLANICI METNİ:
 ${userText}
@@ -3366,8 +3379,22 @@ serve(async (req: Request) => {
   const rawHazards = Array.isArray(geminiResult.hazards)
     ? geminiResult.hazards
     : [];
+  const isTextOnlyAnalysis = imageBase64Parts.length === 0 &&
+    Boolean(text_input);
+  const reportLanguageSafeHazards = isTextOnlyAnalysis
+    ? rawHazards.map((hazard: unknown) =>
+      sanitizeTextAnalysisHazardForReportLanguage(
+        hazard && typeof hazard === "object"
+          ? hazard as Record<string, unknown>
+          : {},
+        text_input ?? "",
+      )
+    )
+    : rawHazards;
   const maxHazards = PLAN_LIMITS[qualityTier].maxHazards;
-  const hazards = maxHazards ? rawHazards.slice(0, maxHazards) : rawHazards;
+  const hazards = maxHazards
+    ? reportLanguageSafeHazards.slice(0, maxHazards)
+    : reportLanguageSafeHazards;
   let totalScoreFK = 0, totalScoreM5 = 0;
   let highestBandFK: "low" | "medium" | "high" | "critical" = "low";
   let highestBandM5: "low" | "medium" | "high" | "critical" = "low";
