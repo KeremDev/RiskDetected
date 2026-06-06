@@ -10,20 +10,13 @@ Allowed services:
   riskdetected_supabase_access_token
   riskdetected_supabase_db_password
   riskdetected_revenuecat_rest_api_key
-  riskdetected_qa_supabase_db_password
-  riskdetected_qa_supabase_url
-  riskdetected_qa_supabase_publishable_key
-  riskdetected_qa_revenuecat_api_key
-  riskdetected_qa_app_store_revenuecat_api_key
-  riskdetected_qa_storekit_revenuecat_api_key
-  riskdetected_qa_revenuecat_webhook_authorization
 USAGE
   exit 1
 fi
 
 service="$1"
 case "$service" in
-  riskdetected_supabase_access_token|riskdetected_supabase_db_password|riskdetected_revenuecat_rest_api_key|riskdetected_qa_supabase_db_password|riskdetected_qa_supabase_url|riskdetected_qa_supabase_publishable_key|riskdetected_qa_revenuecat_api_key|riskdetected_qa_app_store_revenuecat_api_key|riskdetected_qa_storekit_revenuecat_api_key|riskdetected_qa_revenuecat_webhook_authorization)
+  riskdetected_supabase_access_token|riskdetected_supabase_db_password|riskdetected_revenuecat_rest_api_key)
     ;;
   *)
     echo "Unsupported service: $service" >&2

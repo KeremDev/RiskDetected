@@ -127,19 +127,6 @@ final class AuthService: ObservableObject {
     }
     #endif
 
-    #if INTERNAL_TEST_RESET_TOOLS
-    func resetLocalSessionForInternalTestReset() async {
-        do {
-            try await supabase.auth.signOut()
-        } catch {
-            try? await supabase.auth.signOut(scope: .local)
-        }
-        session = nil
-        profile = nil
-        lastError = nil
-    }
-    #endif
-
     /// Aktif kullanıcının profilini yeniler (currentUserID üzerinden — observer fallback).
     func refreshProfile() async {
         guard let userID = supabase.currentUserID else {

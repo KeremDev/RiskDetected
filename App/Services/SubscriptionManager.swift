@@ -73,9 +73,6 @@ protocol SubscriptionManaging: AnyObject {
     func refreshCustomerInfo() async
     @discardableResult
     func restorePurchases() async throws -> SubscriptionState
-    #if INTERNAL_TEST_RESET_TOOLS
-    func resetForCleanTestStart() async
-    #endif
 }
 
 @MainActor
@@ -157,38 +154,6 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
         Purchases.shared.delegate = self
         isConfigured = true
     }
-
-    #if INTERNAL_TEST_RESET_TOOLS
-    func resetForCleanTestStart() async {
-        configure()
-        Purchases.shared.invalidateCustomerInfoCache()
-        #if DEBUG
-        Self.writeDiagnostics("RD_REVENUECAT_INTERNAL_RESET_START")
-        #endif
-
-        if currentAppUserID != nil {
-            do {
-                let customerInfo = try await Purchases.shared.logOut()
-                #if DEBUG
-                Self.writeDiagnostics("RD_REVENUECAT_INTERNAL_RESET_LOGOUT \(Self.diagnosticSummary(for: customerInfo))")
-                #endif
-            } catch {
-                #if DEBUG
-                Self.writeDiagnostics("RD_REVENUECAT_INTERNAL_RESET_LOGOUT_ERROR \(error.localizedDescription)")
-                #endif
-            }
-        }
-
-        Purchases.shared.invalidateCustomerInfoCache()
-        currentAppUserID = nil
-        packageByID = [:]
-        packages = []
-        state = .free
-        #if DEBUG
-        Self.clearDiagnostics()
-        #endif
-    }
-    #endif
 
     func identify(userID: UUID?) async {
         guard let userID else {
@@ -444,15 +409,9 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
         #if DEBUG
         Self.writeDiagnostics("RD_REVENUECAT_RESTORE_START")
         #endif
-        do {
-            let syncedCustomerInfo = try await Purchases.shared.syncPurchases()
-            #if DEBUG
-            Self.writeDiagnostics("RD_REVENUECAT_SYNC_PURCHASES_RESULT \(Self.diagnosticSummary(for: syncedCustomerInfo))")
-            #endif
-        } catch {
-            #if DEBUG
-            Self.writeDiagnostics("RD_REVENUECAT_SYNC_PURCHASES_ERROR \(error.localizedDescription)")
-            #endif
+        if let preRestoreCustomerInfo = try? await freshCustomerInfo(reason: "restore_precheck") {
+            let preRestoreState = Self.state(from: preRestoreCustomerInfo)
+            try validateReceiptOwner(preRestoreCustomerInfo, resolvedState: preRestoreState)
         }
         let customerInfo = try await Purchases.shared.restorePurchases()
         Purchases.shared.invalidateCustomerInfoCache()
@@ -633,7 +592,13 @@ extension RevenueCatSubscriptionManager: PurchasesDelegate {
                 RevenueCatSubscriptionManager.shared.state = .free
                 return
             }
-            RevenueCatSubscriptionManager.shared.apply(customerInfo)
+            let updatedState = RevenueCatSubscriptionManager.state(from: customerInfo)
+            do {
+                try RevenueCatSubscriptionManager.shared.validateReceiptOwner(customerInfo, resolvedState: updatedState)
+                RevenueCatSubscriptionManager.shared.apply(customerInfo)
+            } catch {
+                RevenueCatSubscriptionManager.shared.apply(error: error)
+            }
         }
     }
 }

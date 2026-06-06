@@ -31,7 +31,6 @@ Packages/
 AuthKey_*.p8
 App/GoogleService-Info.plist
 App/GoogleService-Info.plist.local
-QA/tmp/
 backups/
 
 # Supabase local/link cache
@@ -47,8 +46,9 @@ out/
 next-env.d.ts
 .env*.local
 
-# Generated QA artifacts
+# Generated review artifacts
 output/paywall-device-matrix/
 output/paywall-screenshots/
+output/app-review-preflight/
 output/app-review-physical-smoke/
 output/imagegen/

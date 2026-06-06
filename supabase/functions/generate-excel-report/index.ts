@@ -577,12 +577,29 @@ function logoPathFromProfile(value: unknown): string {
   }
 }
 
+function isOwnedLogoPath(path: string, userID: string): boolean {
+  const normalizedPath = path.replace(/^\/+/, "").toLowerCase();
+  const ownerPrefix = `${userID.toLowerCase()}/`;
+  if (!normalizedPath.startsWith(ownerPrefix)) return false;
+  return normalizedPath === `${ownerPrefix}profile-logo.jpg` ||
+    /^([0-9a-f-]+)\/companies\/([0-9a-f-]+)\/logo\.jpg$/i.test(
+      normalizedPath,
+    );
+}
+
 async function loadCompanyLogo(
   supabase: any,
   profile: ProfileRow | null,
+  userID: string,
 ): Promise<{ bytes: Uint8Array; extension: "jpg" | "png" } | null> {
   const path = logoPathFromProfile(profile?.company_logo_url);
   if (!path) return null;
+  if (!isOwnedLogoPath(path, userID)) {
+    console.warn(
+      "Company logo skipped because path is outside current user prefix",
+    );
+    return null;
+  }
 
   const { data, error } = await supabase.storage.from("logos").download(path);
   if (error || !data) {
@@ -2427,7 +2444,7 @@ serve(async (req: Request) => {
     supportID,
     documentNo,
   );
-  const logo = await loadCompanyLogo(supabase, effectiveProfile);
+  const logo = await loadCompanyLogo(supabase, effectiveProfile, user.id);
   const rawBytes = workbookBuffer(workbook);
   const bytes = logo ? await embedCompanyLogo(rawBytes, logo) : rawBytes;
   const fileName = `${

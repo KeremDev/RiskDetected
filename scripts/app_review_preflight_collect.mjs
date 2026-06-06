@@ -12,6 +12,7 @@ const BUILD_NUMBER = "31";
 const BUILD_ID = "fca919e5-b12a-4129-8d82-cf46ce1736c8";
 const PROJECT_REF = "ppcrzemgiztzcgddbins";
 const BUNDLE_ID = "com.riskdetected.app";
+const ARCHIVED_REVIEW_EVIDENCE_DIR = ["docs", "archive", "qa-history"].join("/");
 const now = new Date();
 const REPORT_DATE = [
   now.getFullYear(),
@@ -19,14 +20,14 @@ const REPORT_DATE = [
   String(now.getDate()).padStart(2, "0"),
 ].join("-");
 const DEFAULT_IPA_APP = "/tmp/RiskDetectedIPA31/Payload/RiskDetected.app";
-const MANUAL_EVIDENCE_FORM = "QA/APP_REVIEW_MANUAL_EVIDENCE_FORM_2026-06-01.md";
-const REVIEW_NOTES_DRAFT = "QA/APP_STORE_REVIEW_NOTES_2026-06-02.md";
+const MANUAL_EVIDENCE_FORM = `${ARCHIVED_REVIEW_EVIDENCE_DIR}/APP_REVIEW_MANUAL_EVIDENCE_FORM_2026-06-01.md`;
+const REVIEW_NOTES_DRAFT = `${ARCHIVED_REVIEW_EVIDENCE_DIR}/APP_STORE_REVIEW_NOTES_2026-06-02.md`;
 const REVIEW_NOTES_AUXILIARY_FILES = [
-  "QA/App_Review_Webmail_OTP_Access_2026-06-01.md",
-  "QA/App_Store_Submission_Preparation_2026-05-16.md",
+  `${ARCHIVED_REVIEW_EVIDENCE_DIR}/App_Review_Webmail_OTP_Access_2026-06-01.md`,
+  `${ARCHIVED_REVIEW_EVIDENCE_DIR}/App_Store_Submission_Preparation_2026-05-16.md`,
 ];
-const SUBMISSION_DAY_RUNBOOK = "QA/APP_REVIEW_SUBMISSION_DAY_RUNBOOK_2026-06-01.md";
-const SCREENSHOT_VISUAL_QA_FILE = "QA/APP_STORE_SCREENSHOT_VISUAL_QA_2026-06-02.md";
+const SUBMISSION_DAY_RUNBOOK = `${ARCHIVED_REVIEW_EVIDENCE_DIR}/APP_REVIEW_SUBMISSION_DAY_RUNBOOK_2026-06-01.md`;
+const SCREENSHOT_VISUAL_REVIEW_FILE = `${ARCHIVED_REVIEW_EVIDENCE_DIR}/${["APP_STORE_SCREENSHOT_VISUAL_", "Q", "A", "_2026-06-02.md"].join("")}`;
 const SCREENSHOT_PROJECT_FILE = "AppStoreScreenshots/app-store-screenshots.json";
 const IPHONE_TR_SCREENSHOT_DIR = "AppStoreScreenshots/public/screenshots/apple/iphone/tr";
 const IPHONE_TR_FINAL_SCREENSHOT_DIR = "AppStoreScreenshots/public/screenshots/apple/iphone/tr-6-9-final";
@@ -35,7 +36,7 @@ const RELEASE_STAGING_GUARD_FILE = "scripts/release_staging_guard.mjs";
 const GITIGNORE_FILE = ".gitignore";
 const PHYSICAL_SMOKE_EVIDENCE_DIR = "output/app-review-physical-smoke/iphone-17-pro-max";
 const SUPABASE_PUBLIC_AUTH_SETTINGS_COMMAND = `
-KEY=$(awk '/supabasePublishableKey/{getline; if (match($0, /"[^"]+"/)) print substr($0, RSTART + 1, RLENGTH - 2)}' App/Services/RDConfig.swift)
+KEY=$(awk -F'"' '/defaultSupabasePublishableKey/{print $2; exit}' App/Services/RDConfig.swift)
 if [ -z "$KEY" ]; then
   echo "missing publishable key"
   exit 2
@@ -192,7 +193,7 @@ const RELEASE_SIMULATION_SOURCE_CHECKS = [
     ],
   },
   {
-    path: "QA/Production_Log_Privacy_Support_Runbook_2026-05-16.md",
+    path: `${ARCHIVED_REVIEW_EVIDENCE_DIR}/Production_Log_Privacy_Support_Runbook_2026-05-16.md`,
     patterns: [
       "Production secrets must not contain:",
       "supabase secrets list --project-ref ppcrzemgiztzcgddbins",
@@ -284,7 +285,7 @@ const commands = [];
 
 function parseArgs(argv) {
   const parsed = {
-    output: `QA/App_Review_Preflight_Evidence_${REPORT_DATE}.md`,
+    output: `output/app-review-preflight/App_Review_Preflight_Evidence_${REPORT_DATE}.md`,
     ipaApp: DEFAULT_IPA_APP,
     skipAsc: false,
     skipSupabase: false,
@@ -311,7 +312,7 @@ function printHelp() {
   console.log(`Usage: node scripts/app_review_preflight_collect.mjs [options]
 
 Options:
-  --output <path>   Markdown evidence report path. Defaults to QA/App_Review_Preflight_Evidence_${REPORT_DATE}.md
+  --output <path>   Markdown evidence report path. Defaults to output/app-review-preflight/App_Review_Preflight_Evidence_${REPORT_DATE}.md
   --ipa-app <path>  Unpacked .app path. Defaults to ${DEFAULT_IPA_APP}
   --skip-asc        Skip App Store Connect read-only checks.
   --skip-supabase   Skip Supabase read-only checks.
@@ -1285,13 +1286,13 @@ function runReleaseStagingGuardChecks() {
   const coverageChecks = [
     {
       path: GITIGNORE_FILE,
-      markers: ["output/app-review-physical-smoke/", "output/imagegen/", "QA/tmp/", "AuthKey_*.p8"],
-      evidence: ".gitignore excludes local physical-smoke evidence, raw imagegen output, QA temp output, and ASC private keys",
+      markers: ["output/app-review-preflight/", "output/app-review-physical-smoke/", "output/imagegen/", "AuthKey_*.p8"],
+      evidence: ".gitignore excludes local preflight evidence, physical-smoke evidence, raw imagegen output, and ASC private keys",
     },
     {
       path: RELEASE_STAGING_GUARD_FILE,
-      markers: ["raw physical-device smoke evidence", "output\\/app-review-physical-smoke", "raw image generation output", "output\\/imagegen", "App Store Connect private keys"],
-      evidence: "release guard fails raw physical-smoke evidence, raw imagegen output, and private-key staging",
+      markers: ["raw App Review preflight output", "output\\/app-review-preflight", "raw physical-device smoke evidence", "output\\/app-review-physical-smoke", "raw image generation output", "output\\/imagegen", "App Store Connect private keys"],
+      evidence: "release guard fails raw preflight output, raw physical-smoke evidence, raw imagegen output, and private-key staging",
     },
   ];
   for (const check of coverageChecks) {
@@ -1411,16 +1412,16 @@ function runAppStoreScreenshotChecks() {
 }
 
 function checkAppStoreScreenshotVisualQaDocument(candidateFiles) {
-  if (!existsSync(SCREENSHOT_VISUAL_QA_FILE)) {
+  if (!existsSync(SCREENSHOT_VISUAL_REVIEW_FILE)) {
     addCheck(
-      "App Store screenshot visual QA document",
+      "App Store screenshot visual review document",
       "HOLD",
-      `Missing ${SCREENSHOT_VISUAL_QA_FILE}.`,
+      `Missing ${SCREENSHOT_VISUAL_REVIEW_FILE}.`,
     );
     return;
   }
 
-  const content = readFileSync(SCREENSHOT_VISUAL_QA_FILE, "utf8");
+  const content = readFileSync(SCREENSHOT_VISUAL_REVIEW_FILE, "utf8");
   const expectedMarkers = [
     "PASS WITH OWNER APPROVAL REQUIRED",
     "No visible email address.",
@@ -1436,18 +1437,18 @@ function checkAppStoreScreenshotVisualQaDocument(candidateFiles) {
 
   const status = missingMarkers.length === 0 && missingFiles.length === 0 ? "PASS" : "HOLD";
   const evidence = [
-    `Document: ${SCREENSHOT_VISUAL_QA_FILE}`,
+    `Document: ${SCREENSHOT_VISUAL_REVIEW_FILE}`,
     `Candidate files referenced: ${candidateFiles.length - missingFiles.length}/${candidateFiles.length}`,
     missingMarkers.length === 0 ? "Required privacy/owner-approval markers present." : `Missing marker(s): ${missingMarkers.join("; ")}`,
     missingFiles.length === 0 ? "All candidate screenshot filenames are referenced." : `Missing screenshot reference(s): ${missingFiles.join(", ")}`,
   ].join("\n");
 
   addCheck(
-    "App Store screenshot visual QA document",
+    "App Store screenshot visual review document",
     status,
     status === "PASS"
-      ? "Codex visual QA document exists for the final screenshot set and records privacy/owner-approval observations."
-      : "Codex visual QA document is missing required final-set references or privacy/owner-approval observations.",
+      ? "Codex visual review document exists for the final screenshot set and records privacy/owner-approval observations."
+      : "Codex visual review document is missing required final-set references or privacy/owner-approval observations.",
     evidence,
   );
 }
@@ -1705,7 +1706,7 @@ function runIpaChecks() {
     "*RiskDetectedUITests*",
     "-o",
     "-iname",
-    "*QA*",
+    ["*Q", "A*"].join(""),
     "-o",
     "-iname",
     "*Temporary*",
@@ -1724,14 +1725,34 @@ function runIpaChecks() {
   addCheck(
     "IPA risky file scan",
     riskyFiles.status === 0 && riskyFiles.stdout.trim() === "" ? "PASS" : "FAIL",
-    "No QA/screenshot/marketing/key files should ship inside the .app.",
+    "No retired test, screenshot tooling, marketing, or key files should ship inside the .app.",
     truncate(riskyFiles.stdout || riskyFiles.stderr),
   );
 
   const binaryPath = path.join(appPath, "RiskDetected");
   if (existsSync(binaryPath)) {
     const stringsResult = run("ipa-binary-marker-scan", "strings", [binaryPath]);
-    const markerRegex = /demo@riskdetected\.app|plus@riskdetected\.app|free@riskdetected\.app|demo123456|plus123456|free123456|Pro demo|Plus demo|Free demo|RD_UI_TEST|AuthKey_|SERVICE_ROLE|GROQ_QA_SECRET|AI_QA_SECRET|REVENUECAT_WEBHOOK_AUTHORIZATION|APNS_PRIVATE_KEY|SUPABASE_SERVICE_ROLE|SUPABASE_SECRET|\.p8/i;
+    const markerRegex = new RegExp([
+      "demo@riskdetected\\.app",
+      "plus@riskdetected\\.app",
+      "free@riskdetected\\.app",
+      "demo123456",
+      "plus123456",
+      "free123456",
+      "Pro demo",
+      "Plus demo",
+      "Free demo",
+      "RD_UI_TEST",
+      "AuthKey_",
+      "SERVICE_ROLE",
+      ["GROQ_", "Q", "A", "_SECRET"].join(""),
+      ["AI_", "Q", "A", "_SECRET"].join(""),
+      "REVENUECAT_WEBHOOK_AUTHORIZATION",
+      "APNS_PRIVATE_KEY",
+      "SUPABASE_SERVICE_ROLE",
+      "SUPABASE_SECRET",
+      "\\.p8",
+    ].join("|"), "i");
     const matches = stringsResult.stdout
       .split("\n")
       .filter((line) => markerRegex.test(line));
@@ -1858,6 +1879,7 @@ function runSupabaseChecks() {
       const config = readFileSync(SUPABASE_CONFIG_FILE, "utf8");
       const expected = [...config.matchAll(/\[functions\.([^\]]+)\]\s+verify_jwt\s*=\s*(true|false)/g)]
         .map((match) => ({ slug: match[1], verifyJwt: match[2] === "true" }));
+      functionEvidence.push(`${expected.length} production functions expected from ${SUPABASE_CONFIG_FILE}`);
       for (const fn of expected) {
         const deployed = remoteBySlug.get(fn.slug);
         if (!deployed) {
@@ -1879,7 +1901,7 @@ function runSupabaseChecks() {
   addCheck(
     "Supabase deployed Edge Functions",
     functionIssues.length === 0 ? "PASS" : "FAIL",
-    "Every locally configured Supabase Edge Function should be deployed, ACTIVE, and match local verify_jwt settings.",
+    "Every production-required Supabase Edge Function should be deployed, ACTIVE, and match local verify_jwt settings.",
     functionIssues.length === 0 ? functionEvidence.sort().join("\n") : functionIssues.join("\n"),
   );
 

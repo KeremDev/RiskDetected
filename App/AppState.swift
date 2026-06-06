@@ -239,45 +239,6 @@ final class AppState: ObservableObject {
         }
     }
 
-    #if INTERNAL_TEST_RESET_TOOLS
-    @discardableResult
-    func resetForCleanInternalTestStart() async -> String {
-        await auth.resetLocalSessionForInternalTestReset()
-        await subscriptions.resetForCleanTestStart()
-        Self.clearInternalTestLocalState()
-
-        hasSeenOnboarding = false
-        profile = nil
-        authError = nil
-        isAuthenticated = false
-        subscriptionState = .free
-        backendSubscriptionState = .free
-        subscriptionPackages = []
-        activeTab = .home
-        quickScanRequestID = UUID()
-        applyTier(.free)
-        flow = .onboarding
-
-        return "Temiz test başlangıcı hazır. Uygulamayı normal kayıt akışından yeniden başlatabilirsin."
-    }
-
-    private static func clearInternalTestLocalState() {
-        let defaults = UserDefaults.standard
-        [
-            onboardingCompletedKey,
-            "rd.onboarding.v2.pendingAnswers",
-            "rd.paywall.pendingEvents",
-            "rd.paywall.funnelSessionID"
-        ].forEach { defaults.removeObject(forKey: $0) }
-
-        for key in defaults.dictionaryRepresentation().keys {
-            if key.hasPrefix("rd.home.freeQuota.") {
-                defaults.removeObject(forKey: key)
-            }
-        }
-    }
-    #endif
-
     func refreshSubscriptionOfferings() async {
         guard let userID = auth.session?.user.id else {
             subscriptionPackages = []

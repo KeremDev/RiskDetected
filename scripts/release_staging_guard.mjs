@@ -22,11 +22,6 @@ const forbiddenRules = [
     reason: "Do not commit App Store Connect private keys.",
   },
   {
-    name: "temporary QA output",
-    pattern: /^QA\/tmp\//,
-    reason: "Do not commit temporary QA scratch output.",
-  },
-  {
     name: "raw paywall device matrix",
     pattern: /^output\/paywall-device-matrix\//,
     reason: "Keep raw paywall matrix screenshots out of release commits unless explicitly archiving.",
@@ -40,6 +35,11 @@ const forbiddenRules = [
     name: "raw physical-device smoke evidence",
     pattern: /^output\/app-review-physical-smoke\//,
     reason: "Keep physical-device smoke logs and local launch artifacts out of release commits.",
+  },
+  {
+    name: "raw App Review preflight output",
+    pattern: /^output\/app-review-preflight\//,
+    reason: "Keep generated App Review preflight evidence out of release commits unless explicitly archiving.",
   },
   {
     name: "raw image generation output",
@@ -62,7 +62,7 @@ const warningRules = [
   {
     name: "raw screenshots",
     pattern: /\.(xcresult|mov|mp4|heic)$/i,
-    reason: "Large/raw QA evidence should usually stay out of release commits.",
+    reason: "Large/raw review evidence should usually stay out of release commits.",
   },
   {
     name: "marketing tooling",

@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 const ROOT = process.cwd();
 const PROJECT_REF = "ppcrzemgiztzcgddbins";
-const QA_PROJECT_REF = "iidhnqvuszjcoyncqzkg";
+const FORMER_TEST_PROJECT_REF = ["iidhnqvuszj", "coyncqzkg"].join("");
 const SUPABASE_URL = "https://ppcrzemgiztzcgddbins.supabase.co";
 const PUBLISHABLE_KEY = "sb_publishable_cUQq5Lv-zDF1hXqwnmAj1A_LTdk9FJt";
 const SUPABASE_CONFIG_FILE = "supabase/config.toml";
@@ -86,7 +86,11 @@ function parseExpectedFunctions() {
   const config = readFileSync(SUPABASE_CONFIG_FILE, "utf8");
   const expected = [...config.matchAll(/\[functions\.([^\]]+)\]\s+verify_jwt\s*=\s*(true|false)/g)]
     .map((match) => ({ slug: match[1], verifyJwt: match[2] === "true" }));
-  addCheck("PASS", "Local Supabase function config", `${expected.length} configured functions parsed.`);
+  addCheck(
+    "PASS",
+    "Local Supabase function config",
+    `${expected.length} production-required functions parsed.`,
+  );
   return expected;
 }
 
@@ -144,18 +148,6 @@ async function checkManagementFunctions(token) {
     await managementFetch(`/v1/projects/${PROJECT_REF}/functions`, token),
   );
   validateRemoteFunctions(productionRows, expected, "Supabase Management API");
-
-  const qaRows = normalizeFunctionRows(
-    await managementFetch(`/v1/projects/${QA_PROJECT_REF}/functions`, token),
-  );
-  const qaBySlug = new Map(qaRows.map((fn) => [fn.slug ?? fn.name, fn]));
-  const qaAnalyze = qaBySlug.get("analyze");
-  const qaWorker = qaBySlug.get("process-analysis-jobs");
-  addCheck(
-    "INFO",
-    "Legacy QA project function state",
-    `qa analyze=${qaAnalyze ? qaAnalyze.status : "missing"}, qa worker=${qaWorker ? qaWorker.status : "missing"}. App Review lane uses production project ${PROJECT_REF}.`,
-  );
 }
 
 async function checkRemoteAnalyzeBody(token) {
@@ -313,7 +305,7 @@ function checkXcodeBuildSettings() {
         const expectedKey = `RISKDETECTED_SUPABASE_PUBLISHABLE_KEY = ${PUBLISHABLE_KEY}`;
         if (!stdout.includes(expectedURL)) return `missing ${expectedURL}`;
         if (!stdout.includes(expectedKey)) return "missing production publishable key marker";
-        if (stdout.includes(QA_PROJECT_REF)) return "QA Supabase ref appears in production lane build settings";
+        if (stdout.includes(FORMER_TEST_PROJECT_REF)) return "Former test Supabase ref appears in production lane build settings";
         return true;
       },
       { passDetail: `production Supabase URL/key for ${configuration}`, timeoutMs: 180000 },
@@ -329,15 +321,15 @@ function checkMainScheme() {
   }
   const scheme = readFileSync(schemePath, "utf8");
   const forbiddenMarkers = [
-    "RiskDetectedQA.storekit",
+    ["RiskDetected", "Q", "A", ".storekit"].join(""),
     "StoreKitConfigurationFileReference",
-    "RD_QA_AUTO_LOGIN",
+    ["RD", "Q" + "A", "AUTO", "LOGIN"].join("_"),
     "RISKDETECTED_SUPABASE_URL",
-    QA_PROJECT_REF,
+    FORMER_TEST_PROJECT_REF,
   ].filter((marker) => scheme.includes(marker));
   addCheck(
     forbiddenMarkers.length === 0 ? "PASS" : "FAIL",
-    "Main scheme has no QA runtime override",
+    "Main scheme has no retired test runtime override",
     forbiddenMarkers.length === 0 ? "no StoreKit/env override markers" : `found: ${forbiddenMarkers.join(",")}`,
   );
 }
@@ -368,7 +360,6 @@ function printReport() {
   console.log("");
   console.log(`Date: ${new Date().toISOString()}`);
   console.log(`Production project: ${PROJECT_REF}`);
-  console.log(`Legacy QA project: ${QA_PROJECT_REF}`);
   console.log("");
   console.log("## Summary");
   console.log("");

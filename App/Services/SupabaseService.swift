@@ -42,6 +42,14 @@ final class SupabaseService {
     }
 
     func handleAuthURL(_ url: URL) {
+        guard Self.isExpectedAuthCallback(url) else { return }
         client.auth.handle(url)
+    }
+
+    private static func isExpectedAuthCallback(_ url: URL) -> Bool {
+        let expected = RDConfig.Auth.redirectURL
+        guard url.scheme == expected.scheme else { return false }
+        guard url.host == expected.host else { return false }
+        return url.path == expected.path
     }
 }

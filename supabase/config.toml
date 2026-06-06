@@ -66,9 +66,3 @@ verify_jwt = false
 
 [functions.revenuecat-webhook]
 verify_jwt = false
-
-[functions.gemini-free-qa-run]
-verify_jwt = false
-
-[functions.groq-qa-compare]
-verify_jwt = false

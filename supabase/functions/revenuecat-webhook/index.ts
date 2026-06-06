@@ -11,7 +11,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   type PlanTier,
   tierFromProductIdentifier,
-  tierFromProductOrEntitlements,
 } from "../_shared/subscription-tier.ts";
 import {
   resolveRevenueCatEventUserID,
@@ -79,32 +78,6 @@ function normalizeEntitlements(value: unknown): string[] {
   return value
     .map((item) => String(item).trim().toLowerCase())
     .filter(Boolean);
-}
-
-function tierFrom(
-  entitlementIDs: string[],
-  productID: string | null,
-): PlanTier {
-  return tierFromProductOrEntitlements(entitlementIDs, productID);
-}
-
-function parseExpiration(value: unknown): string | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    const ms = value > 10_000_000_000 ? value : value * 1000;
-    return new Date(ms).toISOString();
-  }
-  if (typeof value === "string" && value.trim()) {
-    const parsed = Date.parse(value);
-    if (Number.isFinite(parsed)) return new Date(parsed).toISOString();
-  }
-  return null;
-}
-
-function parsePurchaseDate(event: Record<string, unknown>): string | null {
-  return parseExpiration(
-    event.purchased_at_ms ?? event.purchased_at ??
-      event.purchase_date_ms ?? event.purchase_date,
-  );
 }
 
 function isFutureExpiration(value: string | null): boolean {
@@ -640,12 +613,6 @@ serve(async (req) => {
   const productID = typeof event.product_id === "string"
     ? event.product_id
     : null;
-  const newProductID = typeof event.new_product_id === "string"
-    ? event.new_product_id
-    : null;
-  const effectiveProductID = eventType === "PRODUCT_CHANGE" && newProductID
-    ? newProductID
-    : productID;
   const entitlementIDs = normalizeEntitlements(event.entitlement_ids);
   const appUserID = typeof event.app_user_id === "string"
     ? event.app_user_id
@@ -726,30 +693,12 @@ serve(async (req) => {
     return json(200, { ok: true, ignored: true });
   }
 
-  const entitlementTier = tierFrom(entitlementIDs, effectiveProductID);
-  const expiration = parseExpiration(
-    event.expiration_at_ms ?? event.expiration_at,
-  );
-  let nextTier: PlanTier | null = null;
-  let nextStatus: string | null = null;
+  const shouldRefreshSubscriberState = eventType === "EXPIRATION" ||
+    eventType === "CANCELLATION" ||
+    ACTIVE_STATUSES.has(eventType) ||
+    PASSIVE_STATUSES.has(eventType);
 
-  if (eventType === "EXPIRATION") {
-    nextTier = "free";
-    nextStatus = "expired";
-  } else if (eventType === "CANCELLATION") {
-    nextTier = entitlementTier !== "free" && isFutureExpiration(expiration)
-      ? entitlementTier
-      : null;
-    nextStatus = nextTier ? "active" : "cancellation";
-  } else if (ACTIVE_STATUSES.has(eventType)) {
-    nextTier = entitlementTier;
-    nextStatus = entitlementTier === "free" ? "inactive" : "active";
-  } else if (PASSIVE_STATUSES.has(eventType)) {
-    nextTier = null;
-    nextStatus = eventType.toLowerCase();
-  }
-
-  if (!nextStatus) {
+  if (!shouldRefreshSubscriberState) {
     await supabase
       .from("subscription_events")
       .update({ processed_at: new Date().toISOString() })
@@ -763,12 +712,23 @@ serve(async (req) => {
     });
   }
 
-  const purchaseDate = parsePurchaseDate(event);
-  if (
-    nextTier && nextTier !== "free" && ACTIVE_STATUSES.has(eventType)
-  ) {
+  let verifiedState: ResolvedSubscriberState;
+  try {
+    verifiedState = await fetchRevenueCatSubscriberState(
+      eventUserID,
+      revenueCatAPIKey,
+    );
+  } catch (error) {
+    return json(502, {
+      error: "revenuecat_state_verification_failed",
+      event_id: eventID,
+      detail: safeLogText(error instanceof Error ? error.message : error),
+    });
+  }
+
+  if (verifiedState.tier !== "free") {
     const accountCreatedAt = await profileCreatedAt(supabase, eventUserID);
-    if (purchasePredatesAccount(purchaseDate, accountCreatedAt)) {
+    if (purchasePredatesAccount(verifiedState.purchaseDate, accountCreatedAt)) {
       await writeSubscriptionState({
         supabase,
         userID: eventUserID,
@@ -791,51 +751,22 @@ serve(async (req) => {
         event_conflict: true,
         reason: "purchase_predates_account",
         user_id: eventUserID,
-        purchase_date: purchaseDate,
+        purchase_date: verifiedState.purchaseDate,
         account_created_at: accountCreatedAt,
         event_type: eventType,
       });
     }
   }
 
-  if (nextTier) {
-    await supabase.from("user_subscriptions").upsert({
-      user_id: eventUserID,
-      tier: nextTier,
-      source: "revenuecat",
-      status: nextStatus,
-      revenuecat_app_user_id: appUserID,
-      product_id: effectiveProductID,
-      entitlement_id: entitlementTier === "free" ? null : entitlementTier,
-      entitlement_ids: entitlementIDs,
-      environment,
-      current_period_ends_at: expiration,
-      last_event_id: eventID,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id" });
-
-    await supabase
-      .from("profiles")
-      .update({ tier: nextTier })
-      .eq("id", eventUserID);
-  } else {
-    await supabase
-      .from("user_subscriptions")
-      .update({
-        status: nextStatus,
-        current_period_ends_at: expiration,
-        last_event_id: eventID,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", eventUserID);
-
-    if (eventType === "BILLING_ISSUE" || eventType === "SUBSCRIPTION_PAUSED") {
-      await supabase
-        .from("profiles")
-        .update({ tier: "free" })
-        .eq("id", eventUserID);
-    }
-  }
+  await writeSubscriptionState({
+    supabase,
+    userID: eventUserID,
+    revenueCatAppUserID: appUserID,
+    source: "revenuecat_verified_event",
+    eventID,
+    environment,
+    state: verifiedState,
+  });
 
   await sendAccountUpdatePush({
     supabaseUrl,
@@ -843,7 +774,7 @@ serve(async (req) => {
     userID: eventUserID,
     eventID,
     eventType,
-    tier: nextTier ?? (entitlementTier === "free" ? null : entitlementTier),
+    tier: verifiedState.tier === "free" ? null : verifiedState.tier,
   });
 
   await supabase

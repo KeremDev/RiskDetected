@@ -73,6 +73,18 @@ function safeLogText(value: string, maxLength = 180): string {
     .slice(0, maxLength);
 }
 
+function verifiedTierFromSubscription(subscription: Record<string, unknown> | null): string {
+  const tier = cleanText(subscription?.tier, 40);
+  const status = cleanText(subscription?.status, 40);
+  const periodEndsAt = cleanText(subscription?.current_period_ends_at, 80);
+  const activeStatus = ["active", "trialing", "grace_period"].includes(status);
+  const activePeriod = !periodEndsAt || Date.parse(periodEndsAt) > Date.now();
+  if ((tier === "plus" || tier === "pro") && activeStatus && activePeriod) {
+    return tier;
+  }
+  return "free";
+}
+
 function decodedBase64ByteLength(base64: string): number {
   const normalized = base64.replace(/\s/g, "");
   const padding = normalized.endsWith("==")
@@ -349,13 +361,24 @@ serve(async (req) => {
     .eq("id", user.id)
     .maybeSingle();
 
+  const { data: subscription } = await supabase
+    .from("user_subscriptions")
+    .select("tier,status,current_period_ends_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const authEmail = cleanText(user.email, 240);
+  const profileEmail = cleanText(profile?.email, 240);
   const senderName = cleanText(profile?.full_name, 160) || "Kayıtlı değil";
-  const senderEmail = cleanText(profile?.email, 240) || user.email ||
+  const senderEmail = authEmail || profileEmail ||
     "Kayıtlı değil";
   const senderPhone = cleanText(profile?.phone, 80) || "Kayıtlı değil";
-  const senderTier = cleanText(profile?.tier, 40) || "free";
+  const senderTier = verifiedTierFromSubscription(
+    subscription as Record<string, unknown> | null,
+  );
   const companyName = cleanText(profile?.company_name, 160) || "Kayıtlı değil";
   const senderTitle = cleanText(profile?.title, 120) || "Kayıtlı değil";
+  const replyToEmail = authEmail.includes("@") ? authEmail : undefined;
 
   const escapedMessage = escapeHTML(message).replace(/\n/g, "<br>");
   const html = `
@@ -443,7 +466,7 @@ serve(async (req) => {
     body: JSON.stringify({
       from: fromEmail,
       to: [toEmail],
-      reply_to: senderEmail.includes("@") ? senderEmail : undefined,
+      reply_to: replyToEmail,
       subject: `[RiskDetected Destek] ${subject}`,
       html,
       text,

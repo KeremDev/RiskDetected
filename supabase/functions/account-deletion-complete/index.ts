@@ -284,6 +284,18 @@ serve(async (req) => {
     });
   }
 
+  if (
+    !request.user_id ||
+    (request.target_user_id && request.target_user_id !== request.user_id)
+  ) {
+    return json(409, {
+      error: "target_user_mismatch",
+      message: "Deletion request target does not match the requesting user.",
+      request_id: request.id,
+      support_id: supportID,
+    });
+  }
+
   const targetUserID = request.target_user_id ?? request.user_id;
   if (!isUUID(targetUserID)) {
     return json(409, {

@@ -21,11 +21,6 @@ struct ProfileView: View {
     @State private var profileBadgesSheet: ProfileBadgesSheetItem?
     @State private var isRestoringPurchases = false
     @State private var restoreMessage: String?
-    #if INTERNAL_TEST_RESET_TOOLS
-    @State private var showInternalTestResetConfirmation = false
-    @State private var isResettingInternalTestState = false
-    @State private var internalTestResetMessage: String?
-    #endif
     @State private var stats: ProfileStats? = nil
     @State private var professionalProgressSummary: ProfessionalProgressSummary? = nil
     @State private var onboardingSummary: ProfileOnboardingSummary? = nil
@@ -269,28 +264,6 @@ struct ProfileView: View {
         } message: {
             Text(restoreMessage ?? "")
         }
-        #if INTERNAL_TEST_RESET_TOOLS
-        .confirmationDialog(
-            "Test state temizlensin mi?",
-            isPresented: $showInternalTestResetConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Temiz test başlangıcı", role: .destructive) {
-                resetInternalTestState()
-            }
-            Button("Vazgeç", role: .cancel) {}
-        } message: {
-            Text("Bu işlem cihazdaki RiskDetected oturumunu ve yerel satın alma önbelleğini temizler. Apple Sandbox satın alma geçmişini temizlemez.")
-        }
-        .alert("Test araçları", isPresented: Binding(
-            get: { internalTestResetMessage != nil },
-            set: { if !$0 { internalTestResetMessage = nil } }
-        )) {
-            Button("Tamam") { internalTestResetMessage = nil }
-        } message: {
-            Text(internalTestResetMessage ?? "")
-        }
-        #endif
     }
 
     // MARK: - Header
@@ -1008,9 +981,6 @@ struct ProfileView: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
             .profileCardDepth(colorScheme: colorScheme)
-            #if INTERNAL_TEST_RESET_TOOLS
-            internalTestToolsList
-            #endif
         }
     }
 
@@ -1018,50 +988,6 @@ struct ProfileView: View {
         app.subscriptionState.managementURL
             ?? URL(string: "https://apps.apple.com/account/subscriptions")!
     }
-
-    #if INTERNAL_TEST_RESET_TOOLS
-    private var internalTestToolsList: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            sectionHeader("Test araçları")
-            VStack(spacing: 0) {
-                Button {
-                    UISelectionFeedbackGenerator().selectionChanged()
-                    showInternalTestResetConfirmation = true
-                } label: {
-                    ProfileRow(
-                        icon: "arrow.counterclockwise.circle",
-                        title: "Temiz test başlangıcı",
-                        detail: isResettingInternalTestState ? "Bekle" : "Hazır"
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(isResettingInternalTestState)
-                .accessibilityIdentifier("profile.row.clean_internal_test_start")
-
-                Divider().background(Color.rdLine).padding(.leading, 60)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Apple Sandbox geçmişi uygulama içinden silinmez.")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(profileUpsellTitleColor)
-                    Text("Temiz first-purchase için Settings > Developer > Sandbox Account bölümünde hesabı doğrula, gerekirse Clear Purchase History yap, hesaptan çık/gir ve uygulamayı yeniden aç.")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(profileUpsellTextColor)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 14)
-            }
-            .background(profileCardFill)
-            .overlay(
-                RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .stroke(profileLine, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-            .profileCardDepth(colorScheme: colorScheme)
-        }
-    }
-    #endif
 
     private func restorePurchasesFromProfile() {
         guard !isRestoringPurchases else { return }
@@ -1082,19 +1008,6 @@ struct ProfileView: View {
             isRestoringPurchases = false
         }
     }
-
-    #if INTERNAL_TEST_RESET_TOOLS
-    private func resetInternalTestState() {
-        guard !isResettingInternalTestState else { return }
-        isResettingInternalTestState = true
-
-        Task {
-            let message = await app.resetForCleanInternalTestStart()
-            internalTestResetMessage = "\(message)\n\nApple Sandbox satın alma geçmişi için cihaz Settings veya App Store Connect tarafındaki Clear Purchase History adımını ayrıca yapman gerekir."
-            isResettingInternalTestState = false
-        }
-    }
-    #endif
 
     private func logProfileRestoreTap() {
         PaywallEventService.shared.record(
