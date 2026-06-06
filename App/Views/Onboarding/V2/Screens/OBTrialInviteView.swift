@@ -46,7 +46,7 @@ struct OBTrialInviteView: View {
                 .obStage(delay: 0.4)
 
                 Text("Taahhüt yok, istediğin zaman iptal.")
-                    .font(.system(size: 12))
+                    .font(.system(size: RDFontScale.size(12)))
                     .foregroundStyle(Color.rdSlate)
                     .multilineTextAlignment(.center)
                     .padding(.top, 10)
@@ -79,10 +79,10 @@ struct OBTrialInviteView: View {
         VStack(spacing: 8) {
             (Text("Uygulamayı ").foregroundColor(Color.rdOnyx)
              + Text("ücretsiz").foregroundColor(Color.rdGreen))
-                .font(.system(size: 26, weight: .semibold))
+                .font(.system(size: RDFontScale.size(26), weight: .semibold))
                 .tracking(-0.6)
             Text("denemeni istiyoruz")
-                .font(.system(size: 26, weight: .semibold))
+                .font(.system(size: RDFontScale.size(26), weight: .semibold))
                 .tracking(-0.6)
                 .foregroundStyle(Color.rdOnyx)
         }
@@ -226,9 +226,9 @@ struct OBTrialInviteView: View {
 
             HStack(spacing: 6) {
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 13))
+                    .font(.system(size: RDFontScale.size(13)))
                 Text("Rapor hazır")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(12), weight: .semibold))
             }
             .foregroundStyle(Color.rdGreen)
             .padding(.bottom, 28)
@@ -241,11 +241,11 @@ struct OBTrialInviteView: View {
         HStack(spacing: 10) {
             Circle().fill(level.color).frame(width: 8, height: 8)
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: RDFontScale.size(11), weight: .medium))
                 .foregroundStyle(.white)
             Spacer()
             Text(level.shortLabel)
-                .font(.system(size: 9, weight: .bold))
+                .font(.system(size: RDFontScale.size(9), weight: .bold))
                 .foregroundStyle(level.color)
                 .padding(.horizontal, 6).padding(.vertical, 2)
                 .background(level.bgColor.opacity(0.18))
@@ -259,10 +259,10 @@ struct OBTrialInviteView: View {
     private var noPaymentLine: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark")
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(size: RDFontScale.size(13), weight: .bold))
                 .foregroundStyle(Color.rdOnyx)
             Text("Şu an ödeme yok")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: RDFontScale.size(15), weight: .semibold))
                 .foregroundStyle(Color.rdOnyx)
         }
     }
@@ -276,7 +276,7 @@ struct OBTrialInviteView: View {
             footerLink("Şartlar", action: onTerms)
                 .accessibilityIdentifier("onboarding.trial_invite.terms")
         }
-        .font(.system(size: 11, weight: .medium))
+        .font(.system(size: RDFontScale.size(11), weight: .medium))
     }
 
     private func footerLink(_ text: String, action: @escaping () -> Void) -> some View {

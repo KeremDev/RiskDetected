@@ -39,7 +39,7 @@ struct ProfessionalProgressHomeCard: View {
                     .fill(accent.opacity(0.20))
                     .frame(width: 38, height: 38)
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 21, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(21), weight: .black, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [Color(hex: "#FFE08A"), accent, Color(hex: "#FF6B35")],
@@ -56,11 +56,11 @@ struct ProfessionalProgressHomeCard: View {
                         .rdMono(size: 14, weight: .bold)
                         .foregroundStyle(primaryText)
                     Text("/ \(formattedNumber(nextTitleThreshold)) MDP")
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
                         .foregroundStyle(secondaryText)
                     Spacer(minLength: 0)
                     Text("%\(titleProgressPercent)")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                         .foregroundStyle(secondaryText)
                 }
 
@@ -78,7 +78,7 @@ struct ProfessionalProgressHomeCard: View {
                             .frame(width: filledWidth, height: 10)
                             .shadow(color: accent.opacity(0.24), radius: 7, x: 0, y: 2)
                         Image(systemName: "arrowtriangle.right.fill")
-                            .font(.system(size: 8, weight: .black))
+                            .font(.system(size: RDFontScale.size(8), weight: .black))
                             .foregroundStyle(Color.white)
                             .frame(width: 18, height: 18)
                             .background(accent)
@@ -95,12 +95,12 @@ struct ProfessionalProgressHomeCard: View {
 
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.up.right.circle.fill")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                     Text("Kıdemini yükselt")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     if let nextTitle = summary.nextTitle {
                         Text("· \(nextTitle.label)")
-                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
                             .foregroundStyle(secondaryText)
                             .lineLimit(1)
                     }
@@ -172,12 +172,12 @@ struct ProfessionalProgressHomeCard: View {
                             .rdMono(size: 25, weight: .bold)
                             .foregroundStyle(ink)
                         Text("/ \(formattedNumber(nextTitleThreshold))")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                         Spacer(minLength: 0)
                     }
                     Text(nextTitleLabel)
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
@@ -304,7 +304,7 @@ struct ProfessionalProgressHomeCard: View {
                     .blur(radius: 3)
 
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 39, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(39), weight: .black, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
@@ -323,7 +323,7 @@ struct ProfessionalProgressHomeCard: View {
 
             VStack(spacing: 1) {
                 Text(summary.currentTitle.label)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
@@ -364,18 +364,18 @@ struct ProfessionalProgressHomeCard: View {
                         .overlay {
                             if reached {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 10, weight: .black))
+                                    .font(.system(size: RDFontScale.size(10), weight: .black))
                                     .foregroundStyle(Color.white)
                             } else {
                                 Text("\(stage)")
-                                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
                                     .foregroundStyle(Color.rdSlate.opacity(0.70))
                             }
                         }
                         .shadow(color: reached ? accent.opacity(0.25) : Color.clear, radius: 8, x: 0, y: 0)
 
                     Text(stageLabel(for: title))
-                        .font(.system(size: 7.5, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(7.5), weight: .semibold, design: .rounded))
                         .foregroundStyle(reached ? Color.rdBlack.opacity(0.78) : Color.rdSlate.opacity(0.74))
                         .lineLimit(1)
                         .minimumScaleFactor(0.68)

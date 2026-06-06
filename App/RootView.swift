@@ -237,11 +237,11 @@ private struct OfflineStatusBanner: View {
     var body: some View {
         HStack(spacing: 9) {
             Image(systemName: "wifi.slash")
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdCriticalText)
 
             Text("Çevrimdışısın. Bazı veriler son kayıtlı haliyle görünebilir.")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -269,15 +269,15 @@ private struct LegalUpdateBanner: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "doc.text.fill")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(notice.title)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(notice.message)
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
             }
@@ -285,13 +285,13 @@ private struct LegalUpdateBanner: View {
             Spacer(minLength: 0)
 
             Button("İncele", action: onReview)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
                 .buttonStyle(.plain)
 
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 28, height: 28)
             }
@@ -322,7 +322,7 @@ private struct LegalUpdateDecisionSheet: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: notice.changeType == .explicitConsent ? "checkmark.shield.fill" : "doc.text.fill")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 38, height: 38)
                     .background(Color.rdGreenSoft)
@@ -330,10 +330,10 @@ private struct LegalUpdateDecisionSheet: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(notice.title)
-                        .font(.system(size: 19, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(19), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(notice.message)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
@@ -350,7 +350,7 @@ private struct LegalUpdateDecisionSheet: View {
                     Spacer()
                     Image(systemName: "chevron.right")
                 }
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .padding(.horizontal, 14)
                 .frame(height: 48)
@@ -367,7 +367,7 @@ private struct LegalUpdateDecisionSheet: View {
                     onExplicitAccept()
                 }
                 Button("Şimdilik kapat", action: onClose)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(maxWidth: .infinity)
                     .buttonStyle(.plain)

@@ -64,14 +64,14 @@ struct RDButton: View {
     @ViewBuilder
     private func inlineIcon(_ name: String) -> some View {
         Image(systemName: name)
-            .font(.system(size: 17, weight: .semibold, design: .rounded))
+            .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
     }
 
     @ViewBuilder
     private func capsuleIcon(_ name: String) -> some View {
         if capsuleIconStyle {
             Image(systemName: name)
-                .font(.system(size: 18, weight: .heavy, design: .rounded))
+                .font(.system(size: RDFontScale.size(18), weight: .heavy, design: .rounded))
                 .symbolRenderingMode(.monochrome)
                 .foregroundStyle(Color.rdOnyx)
                 .frame(width: max(38, height - 14), height: max(38, height - 14))
@@ -168,7 +168,7 @@ struct RDModalCloseButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "xmark")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .frame(width: 38, height: 38)
                 .background(Color.rdWhite.opacity(0.96))

@@ -40,7 +40,7 @@ struct RDPlaceholderPhoto: View {
             stripes
             if let label {
                 Text(label)
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .monospaced))
                     .foregroundStyle(Color.rdSlate)
                     .tracking(1.6)
                     .textCase(.uppercase)
@@ -76,7 +76,7 @@ struct RDPlaceholderPhoto: View {
     VStack(spacing: 16) {
         RDCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Card title").font(.system(size: 17, weight: .semibold, design: .rounded))
+                Text("Card title").font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                 Text("Body text").foregroundStyle(Color.rdSlate)
             }
         }

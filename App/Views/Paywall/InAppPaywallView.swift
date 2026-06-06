@@ -147,14 +147,14 @@ struct InAppPaywallView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(plusBilling == .yearly ? "İlk haftanız bizden." : "Plus’a abone olun.")
-                    .font(.system(size: 25, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(25), weight: .black, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
                     .accessibilityIdentifier("in_app_paywall.plus.title")
 
                 plusSubtitle
-                    .font(.system(size: 11.8, weight: .regular, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.8), weight: .regular, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.graphite)
                     .lineSpacing(1.5)
                     .fixedSize(horizontal: false, vertical: true)
@@ -194,14 +194,14 @@ struct InAppPaywallView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Limitsiz Özellikler")
-                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(28), weight: .black, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
                     .accessibilityIdentifier("in_app_paywall.pro.title")
 
                 proSubtitle
-                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .regular, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.graphite)
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -227,7 +227,7 @@ struct InAppPaywallView: View {
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "crown.fill")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.goldTickForeground)
                         .frame(width: 34, height: 34)
                         .background(InAppPaywallColor.goldEdge)
@@ -235,13 +235,13 @@ struct InAppPaywallView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Plus aboneliğini incele")
-                            .font(.system(size: 13.5, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(13.5), weight: .bold, design: .rounded))
                             .foregroundStyle(InAppPaywallColor.onyx)
                             .lineLimit(1)
                             .minimumScaleFactor(0.82)
 
                         Text("Daha uygun fiyatlı başlangıç paketi")
-                            .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(11.5), weight: .medium, design: .rounded))
                             .foregroundStyle(InAppPaywallColor.goldDeep)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
@@ -250,7 +250,7 @@ struct InAppPaywallView: View {
                     Spacer(minLength: 0)
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.goldDeep)
                 }
                 .padding(.horizontal, 14)
@@ -297,7 +297,7 @@ struct InAppPaywallView: View {
             HStack {
                 Button(action: closePaywall) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.onyx)
                         .frame(width: 34, height: 34)
                         .background(Color.white.opacity(0.94))
@@ -313,7 +313,7 @@ struct InAppPaywallView: View {
 
                 Button(action: restore) {
                     Text(isWorking ? "Bekle" : "Geri yükle")
-                        .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.onyx)
                         .padding(.horizontal, 11)
                         .frame(height: 34)
@@ -359,9 +359,9 @@ struct InAppPaywallView: View {
             if activeScreen == .plus && billing(for: .plus) == .yearly {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(11), weight: .black, design: .rounded))
                     Text("Şu an ödeme yok")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(InAppPaywallColor.onyx)
                 .frame(maxWidth: .infinity)
@@ -375,7 +375,7 @@ struct InAppPaywallView: View {
                             .tint(Color.white)
                     }
                     Text(primaryButtonTitle)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
                         .accessibilityIdentifier(selectedPackage == nil ? "in_app_paywall.cta.loading" : "in_app_paywall.cta.ready")
@@ -397,14 +397,14 @@ struct InAppPaywallView: View {
             .accessibilityIdentifier("in_app_paywall.cta")
 
             Text(legalLine)
-                .font(.system(size: 11.5, weight: .regular, design: .rounded))
+                .font(.system(size: RDFontScale.size(11.5), weight: .regular, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.slate)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
                 .padding(.top, 7)
 
             Text("İstediğiniz zaman iptal edebilirsiniz · Otomatik yenilenir")
-                .font(.system(size: 10, weight: .regular, design: .rounded))
+                .font(.system(size: RDFontScale.size(10), weight: .regular, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.slate)
                 .multilineTextAlignment(.center)
                 .padding(.top, activeScreen == .plus && billing(for: .plus) == .yearly ? 2 : 6)
@@ -429,7 +429,7 @@ struct InAppPaywallView: View {
             selectedLegalDocument = document
         } label: {
             Text(title)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.graphite)
         }
         .buttonStyle(.plain)
@@ -442,7 +442,7 @@ struct InAppPaywallView: View {
             openURL(url)
         } label: {
             Text(title)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.graphite)
         }
         .buttonStyle(.plain)
@@ -959,7 +959,7 @@ private struct ProductBadge: View {
                 .foregroundStyle(iconColor)
 
             Text(screen == .plus ? "PLUS" : "PRO")
-                .font(.system(size: 12, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                 .foregroundStyle(textColor)
                 .tracking(0)
         }
@@ -1016,12 +1016,12 @@ private struct InAppBillingToggle: View {
         } label: {
             HStack(spacing: 6) {
                 Text(option.title)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(value == option ? InAppPaywallColor.onyx : InAppPaywallColor.slate)
 
                 if option == .yearly {
                     Text("%17")
-                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(9), weight: .black, design: .rounded))
                         .foregroundStyle(tagForeground(selected: value == option))
                         .padding(.horizontal, 5)
                         .frame(height: 15)
@@ -1117,7 +1117,7 @@ private struct TimelineRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .black, design: .rounded))
                 .foregroundStyle(iconForeground)
                 .frame(width: 30, height: 30)
                 .background(iconBackground)
@@ -1127,10 +1127,10 @@ private struct TimelineRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
-                    .font(.system(size: 12.8, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12.8), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                 Text(detail)
-                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .regular, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.slate)
                     .lineSpacing(1.5)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1181,11 +1181,11 @@ private struct PlusComparison: View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
                 Text("Neler dahil?")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .accessibilityIdentifier("in_app_paywall.plus.included_title")
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.slate)
                     .padding(.top, 1)
             }
@@ -1214,19 +1214,19 @@ private struct PlusComparison: View {
             Button(action: onPro) {
                 HStack(spacing: 6) {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.green)
 
                     Text("Limitsiz özellikler için ")
-                        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12.5), weight: .semibold, design: .rounded))
                         .foregroundColor(InAppPaywallColor.onyx)
                     + Text("PRO’yu incele")
-                        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12.5), weight: .semibold, design: .rounded))
                         .underline()
                         .foregroundColor(InAppPaywallColor.onyx)
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.slate)
                 }
                 .padding(.horizontal, 10)
@@ -1243,13 +1243,13 @@ private struct PlusComparison: View {
             Spacer(minLength: 0)
 
             Text("Ücretsiz")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.slate)
                 .frame(width: 56)
 
             VStack(spacing: 2) {
                 Text("POPÜLER")
-                    .font(.system(size: 8.5, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                     .foregroundStyle(Color.white)
                     .padding(.horizontal, 6)
                     .frame(height: 14)
@@ -1259,10 +1259,10 @@ private struct PlusComparison: View {
 
                 HStack(spacing: 4) {
                     Image(systemName: "crown.fill")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.goldBase)
                     Text("PLUS")
-                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.goldDeep)
                 }
             }
@@ -1275,14 +1275,14 @@ private struct PlusComparison: View {
         HStack(spacing: 8) {
             HStack(spacing: 6) {
                 Text(feature.label)
-                    .font(.system(size: 12.8, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12.8), weight: .medium, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.graphite)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
 
                 if let badge = feature.badge {
                     Text(badge)
-                        .font(.system(size: 8.5, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                         .foregroundStyle(Color.white)
                         .padding(.horizontal, 5)
                         .frame(height: 12)
@@ -1315,19 +1315,19 @@ private struct ComparisonCell: View {
         switch value {
         case .included:
             Image(systemName: "checkmark")
-                .font(.system(size: 11, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .black, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.goldTickForeground)
                 .frame(width: 20, height: 20)
                 .background(InAppPaywallColor.goldEdge)
                 .clipShape(Circle())
         case .notIncluded:
             Image(systemName: "xmark")
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(Color(hex: "#C2C8C5"))
                 .frame(width: 20, height: 20)
         case let .text(text):
             Text(text)
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .monospaced))
                 .foregroundStyle(isPlus ? InAppPaywallColor.goldDeep : InAppPaywallColor.graphite)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
@@ -1349,14 +1349,14 @@ private struct ProFeatureCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "star.fill")
-                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .black, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.green)
                     .frame(width: 28, height: 28)
                     .background(InAppPaywallColor.onyx)
                     .clipShape(Circle())
 
                 Text("Pro üyelik")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
             }
 
@@ -1364,14 +1364,14 @@ private struct ProFeatureCard: View {
                 ForEach(items, id: \.label) { item in
                     HStack(spacing: 10) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .black, design: .rounded))
+                            .font(.system(size: RDFontScale.size(10), weight: .black, design: .rounded))
                             .foregroundStyle(Color.white)
                             .frame(width: 18, height: 18)
                             .background(InAppPaywallColor.green)
                             .clipShape(Circle())
 
                         Text(item.label)
-                            .font(.system(size: 13.5, weight: item.strong ? .bold : .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(13.5), weight: item.strong ? .bold : .medium, design: .rounded))
                             .foregroundStyle(item.strong ? InAppPaywallColor.onyx : InAppPaywallColor.graphite)
                             .lineLimit(2)
                             .minimumScaleFactor(0.82)
@@ -1423,12 +1423,12 @@ struct PaywallProcessingOverlay: View {
 
                 VStack(spacing: 5) {
                     Text(title)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .multilineTextAlignment(.center)
 
                     Text(message)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .lineSpacing(2)
@@ -1461,11 +1461,11 @@ private struct NoticeCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: isError ? "exclamationmark.circle.fill" : "info.circle.fill")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
                 .foregroundStyle(isError ? Color.rdCritical : InAppPaywallColor.greenDark)
 
             Text(text)
-                .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                .font(.system(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.graphite)
                 .fixedSize(horizontal: false, vertical: true)
 

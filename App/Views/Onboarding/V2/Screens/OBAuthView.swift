@@ -86,7 +86,7 @@ struct OBAuthView: View {
             HStack {
                 Button { OBHaptic.soft(); onBack() } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(17), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .frame(width: 40, height: 40)
                 }
@@ -104,7 +104,7 @@ struct OBAuthView: View {
                         .obStage(delay: 0.04)
 
                     Text("Son adım.")
-                        .font(.system(size: 28, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(28), weight: .semibold))
                         .tracking(-0.8)
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
@@ -112,7 +112,7 @@ struct OBAuthView: View {
                         .obStage(delay: 0.08)
 
                     Text("Hazırladığın planı kaydedebilmen için hesabını oluşturalım.")
-                        .font(.system(size: 15))
+                        .font(.system(size: RDFontScale.size(15)))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
@@ -132,10 +132,10 @@ struct OBAuthView: View {
 
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: RDFontScale.size(11), weight: .semibold))
                             .foregroundStyle(Color.rdGreenDark)
                         Text("Planın hesabına kilitlensin diye 10 saniyeni alacağız")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: RDFontScale.size(12), weight: .medium))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.leading)
                             .lineSpacing(2)
@@ -154,7 +154,7 @@ struct OBAuthView: View {
                     VStack(spacing: 10) {
                         authButton(
                             title: isSigningInWithApple ? "Apple ile bağlanıyor..." : "Apple ile devam et",
-                            icon: { Image(systemName: isSigningInWithApple ? "hourglass" : "apple.logo").font(.system(size: 18, weight: .medium)) },
+                            icon: { Image(systemName: isSigningInWithApple ? "hourglass" : "apple.logo").font(.system(size: RDFontScale.size(18), weight: .medium)) },
                             bg: .black, fg: .white, bordered: false
                         ) {
                             OBHaptic.light()
@@ -174,10 +174,10 @@ struct OBAuthView: View {
                             HStack(spacing: 10) {
                                 if isSigningInWithGoogle {
                                     Image(systemName: "hourglass")
-                                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                                         .foregroundStyle(Color.rdOnyx)
                                     Text("Google ile bağlanıyor...")
-                                        .font(.system(size: 16, weight: .semibold))
+                                        .font(.system(size: RDFontScale.size(16), weight: .semibold))
                                         .foregroundStyle(Color.rdOnyx)
                                 } else {
                                     googleG
@@ -203,8 +203,8 @@ struct OBAuthView: View {
                                 withAnimation(.obSpring) { emailPhase = .email }
                             } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "envelope").font(.system(size: 16))
-                                    Text("E-posta ile devam et").font(.system(size: 16, weight: .semibold))
+                                    Image(systemName: "envelope").font(.system(size: RDFontScale.size(16)))
+                                    Text("E-posta ile devam et").font(.system(size: RDFontScale.size(16), weight: .semibold))
                                 }
                                 .foregroundStyle(Color.rdOnyx)
                                 .frame(maxWidth: .infinity).frame(height: 56)
@@ -243,13 +243,13 @@ struct OBAuthView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "person.crop.circle")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: RDFontScale.size(13), weight: .medium))
                                 .foregroundStyle(Color.rdSlate)
                             Text("Zaten hesabım var · ")
-                                .font(.system(size: 13))
+                                .font(.system(size: RDFontScale.size(13)))
                                 .foregroundColor(Color.rdSlate)
                             + Text("Giriş Yap")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: RDFontScale.size(13), weight: .semibold))
                                 .foregroundColor(Color.rdOnyx)
                         }
                         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -286,7 +286,7 @@ struct OBAuthView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: emailPhase == .otp ? "number.square.fill" : "envelope.fill")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 42, height: 42)
                     .background(Color.rdGreen.opacity(0.12))
@@ -294,10 +294,10 @@ struct OBAuthView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(emailPhase == .otp ? "Kod doğrulama açık" : "E-posta ile devam")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdOnyx)
                     Text(emailPhase == .otp ? normalizedEmail : "E-posta adresini gir")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
                 }
@@ -305,7 +305,7 @@ struct OBAuthView: View {
                 Spacer()
 
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold))
                     .foregroundStyle(Color.rdSlate)
             }
             .padding(.horizontal, 12)
@@ -332,7 +332,7 @@ struct OBAuthView: View {
                         Text(isSendingEmailCode ? "Kod gönderiliyor..." : "Kod gönder")
                         Image(systemName: isSendingEmailCode ? "hourglass" : "arrow.right")
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
@@ -352,7 +352,7 @@ struct OBAuthView: View {
                         Text(isVerifyingEmailCode ? "Doğrulanıyor..." : "Doğrula ve devam et")
                         Image(systemName: isVerifyingEmailCode ? "hourglass" : "arrow.right")
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
@@ -377,13 +377,13 @@ struct OBAuthView: View {
                         focusEmailField()
                     }
                 }
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: RDFontScale.size(12), weight: .medium))
                 .foregroundStyle(Color.rdSlate)
             }
 
             if let authErrorMessage {
                 Text(authErrorMessage)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: RDFontScale.size(12), weight: .medium))
                     .foregroundStyle(Color.red.opacity(0.88))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -406,7 +406,7 @@ struct OBAuthView: View {
     private var panelHeader: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: emailPhase == .otp ? "number.square.fill" : "envelope.fill")
-                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .frame(width: 36, height: 36)
                 .background(Color.rdGreen.opacity(0.12))
@@ -414,10 +414,10 @@ struct OBAuthView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(emailPhase == .otp ? "Doğrulama kodu" : "E-posta adresinizi giriniz")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdOnyx)
                 Text(emailPhase == .otp ? "\(normalizedEmail) adresine gönderildi" : "Kod göndermek için e-posta adresini yaz.")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -436,7 +436,7 @@ struct OBAuthView: View {
                 }
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 32, height: 32)
                     .background(Color.rdPaper)
@@ -449,7 +449,7 @@ struct OBAuthView: View {
     private var emailInputRow: some View {
         HStack(spacing: 8) {
             Image(systemName: "envelope.fill")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdOnyx.opacity(0.82))
                 .frame(width: 54, height: 54)
                 .background(Color.white)
@@ -713,7 +713,7 @@ struct OBAuthView: View {
 
             Text(code[index])
                 .multilineTextAlignment(.center)
-                .font(.system(size: 24, weight: .bold, design: .monospaced))
+                .font(.system(size: RDFontScale.size(24), weight: .bold, design: .monospaced))
                 .foregroundStyle(Color.rdOnyx)
 
             if isActive && !hasValue {
@@ -731,7 +731,7 @@ struct OBAuthView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 10).fill(Color.rdGreen)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 14, weight: .heavy))
+                    .font(.system(size: RDFontScale.size(14), weight: .heavy))
                     .foregroundStyle(.white)
             }
             .frame(width: 36, height: 36)
@@ -739,9 +739,9 @@ struct OBAuthView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: RDFontScale.size(9), weight: .bold))
                     Text("SANA ÖZEL")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: RDFontScale.size(9), weight: .bold))
                         .tracking(0.6)
                 }
                 .foregroundStyle(Color.rdGreenDark)
@@ -751,10 +751,10 @@ struct OBAuthView: View {
                 .clipShape(Capsule())
 
                 Text("Planın hazır, seni bekliyor")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
                 Text("47 şablon · \(state.primarySectorLabel) · \(state.certificateLabel)")
-                    .font(.system(size: 12))
+                    .font(.system(size: RDFontScale.size(12)))
                     .foregroundStyle(Color.rdSlate)
             }
             Spacer()
@@ -787,7 +787,7 @@ struct OBAuthView: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 icon()
-                Text(title).font(.system(size: 16, weight: .semibold))
+                Text(title).font(.system(size: RDFontScale.size(16), weight: .semibold))
             }
             .foregroundStyle(fg)
             .frame(maxWidth: .infinity).frame(height: 56)
@@ -805,12 +805,12 @@ struct OBAuthView: View {
     private func onboardingAuthError(_ message: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.circle.fill")
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdCritical)
                 .padding(.top, 1)
 
             Text(message)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdCriticalText)
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -843,7 +843,7 @@ struct OBAuthView: View {
             Text("e").foregroundStyle(Color(hex: "#EA4335"))
             Text(" ile devam et").foregroundStyle(Color.rdOnyx)
         }
-        .font(.system(size: 16, weight: .semibold))
+        .font(.system(size: RDFontScale.size(16), weight: .semibold))
     }
 }
 

@@ -24,13 +24,13 @@ struct OBCertificateView: View {
                         OBHeroTile(tint: .warm) { OBHeroCertificate() }
                             .obStage(delay: 0.08)
                         Text("Hangi sertifika sınıfındasın?")
-                            .font(.system(size: 28, weight: .semibold))
+                            .font(.system(size: RDFontScale.size(28), weight: .semibold))
                             .tracking(-0.8)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
                         Text("Sana özel risk şablonları hazırlayacağız.")
-                            .font(.system(size: 15))
+                            .font(.system(size: RDFontScale.size(15)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.22)
@@ -111,7 +111,7 @@ private struct HelmetBadge: View {
                 .frame(width: 30, height: 18)
 
                 Text(letter)
-                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                    .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .monospaced))
                     .foregroundStyle(selected ? .white : Color.rdOnyx)
             }
         }

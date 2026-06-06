@@ -103,13 +103,13 @@ struct OBTimelinePaywallView: View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Ücretsiz Deneme Nasıl Çalışır")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(30), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineSpacing(1)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text(headerSubtitle)
-                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.5), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -138,7 +138,7 @@ struct OBTimelinePaywallView: View {
                 onDismiss()
             } label: {
                 Text("Şimdilik ücretsiz devam et")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .underline(true, color: Color.rdSlate.opacity(0.75))
                     .lineLimit(1)
@@ -160,7 +160,7 @@ struct OBTimelinePaywallView: View {
                     OBHaptic.light(); onRestore()
                 } label: {
                     Text("Geri yükle")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                 }
                 .disabled(isWorking)
@@ -173,7 +173,7 @@ struct OBTimelinePaywallView: View {
                     OBHaptic.soft(); onTerms()
                 } label: {
                     Text("Kullanım Şartları")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 .disabled(isWorking)
@@ -185,7 +185,7 @@ struct OBTimelinePaywallView: View {
                     OBHaptic.soft(); onPrivacy()
                 } label: {
                     Text("Gizlilik Politikası")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 .disabled(isWorking)
@@ -218,7 +218,7 @@ struct OBTimelinePaywallView: View {
             onDismiss()
         } label: {
             Image(systemName: "xmark")
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .frame(width: 38, height: 38)
                 .background(Color.white.opacity(0.94))
@@ -245,12 +245,12 @@ struct OBTimelinePaywallView: View {
                     .tint(Color.rdBlack)
             } else {
                 Image(systemName: "exclamationmark.circle.fill")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(12), weight: .semibold))
                     .foregroundStyle(Color.rdHigh)
             }
 
             Text(isWorking ? "App Store satın alma ekranı hazırlanıyor..." : noticeMessage ?? "")
-                .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(11.5), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .lineLimit(2)
                 .minimumScaleFactor(0.86)
@@ -302,7 +302,7 @@ struct OBTimelinePaywallView: View {
             .frame(width: 210)
 
             Text(selectedPlan == .yearly ? "%17 İndirim" : monthlyPaywallLine)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                 .foregroundStyle(selectedPlan == .yearly ? Color.rdGreen : Color.rdSlate)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
@@ -319,7 +319,7 @@ struct OBTimelinePaywallView: View {
             }
         } label: {
             Text(label)
-                .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(11.5), weight: .bold, design: .rounded))
                 .foregroundStyle(selected ? Color.rdBlack : Color.rdSlate)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
@@ -490,7 +490,7 @@ struct OBTimelinePaywallView: View {
                         .fill(accent.opacity(0.12))
                         .frame(width: 36, height: 36)
                     Image(systemName: icon)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(15), weight: .semibold))
                         .foregroundStyle(accent)
                 }
 
@@ -504,11 +504,11 @@ struct OBTimelinePaywallView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(day)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
                 if !detail.isEmpty {
                     Text(detail)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -518,10 +518,10 @@ struct OBTimelinePaywallView: View {
                         ForEach(featureItems, id: \.self) { item in
                             HStack(spacing: 7) {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(.system(size: RDFontScale.size(12), weight: .bold))
                                     .foregroundStyle(Color.rdGreen)
                                 Text(item)
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                                     .foregroundStyle(Color.rdBlack)
                                     .fixedSize(horizontal: false, vertical: true)
                             }

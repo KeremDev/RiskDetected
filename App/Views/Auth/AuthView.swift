@@ -74,7 +74,7 @@ struct AuthView: View {
                     VStack(spacing: 10) {
                         RDLogo(size: phase == .email ? 36 : 38)
                         Text("Saha için yapay zekâ destekli iş güvenliği asistanı")
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdGraphite)
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: 270)
@@ -167,7 +167,7 @@ struct AuthView: View {
             HStack(spacing: 12) {
                 Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
                 Text("veya")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdGraphite.opacity(0.78))
                     .padding(.horizontal, 4)
                 Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
@@ -196,14 +196,14 @@ struct AuthView: View {
 
             if let err = authError {
                 Text(err.message)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
                     .padding(.top, 2)
             }
             if let svcErr = app.authError {
                 Text("⚠️ \(svcErr)")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
             }
@@ -215,7 +215,7 @@ struct AuthView: View {
             HStack(spacing: 9) {
                 if isSigningInWithGoogle {
                     Image(systemName: "hourglass")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                 } else {
                     GoogleMark()
@@ -224,7 +224,7 @@ struct AuthView: View {
 
                 if isSigningInWithGoogle {
                     Text("Google ile bağlanıyor...")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .tracking(-0.2)
                 } else {
@@ -262,12 +262,12 @@ struct AuthView: View {
             VStack(alignment: .leading, spacing: 9) {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "exclamationmark.circle.fill")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdCritical)
                         .padding(.top, 1)
 
                     Text(err.message)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdCritical)
                         .multilineTextAlignment(.leading)
                         .lineLimit(nil)
@@ -280,9 +280,9 @@ struct AuthView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: isSendingEmailCode ? "hourglass" : "arrow.clockwise")
-                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                             Text(isSendingEmailCode ? "Yeni kod gönderiliyor..." : "Yeni kod gönder")
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         }
                         .foregroundStyle(Color.rdCritical)
                     }
@@ -307,7 +307,7 @@ struct AuthView: View {
     private var emailForm: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("E-posta Adresinizi Giriniz")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdInk)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
@@ -330,7 +330,7 @@ struct AuthView: View {
                 .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 3)
             HStack(spacing: 8) {
                 Image(systemName: "envelope.fill")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdOnyx.opacity(0.82))
                     .frame(width: 54, height: 52)
                     .background(Color.white)
@@ -346,7 +346,7 @@ struct AuthView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .focused($focusedField, equals: .email)
-                    .font(.system(size: 16, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), design: .rounded))
                     .foregroundColor(Color.rdOnyx)
                     .tint(Color.rdGreen)
                     .padding(.horizontal, 16)
@@ -369,7 +369,7 @@ struct AuthView: View {
             Button("← Diğer giriş yöntemleri") {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .options }
             }
-            .font(.system(size: 14, weight: .semibold, design: .rounded))
+            .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
             .foregroundStyle(Color.rdInk)
             .frame(maxWidth: .infinity)
             .padding(8)
@@ -382,11 +382,11 @@ struct AuthView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Doğrulama kodu")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.white)
                     .shadow(color: Color.black.opacity(0.34), radius: 8, x: 0, y: 2)
                 Text("\(normalizedEmail.isEmpty ? "mail@ornek.com" : normalizedEmail) adresine gönderildi")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.white.opacity(0.94))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -397,7 +397,7 @@ struct AuthView: View {
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
                     .focused($focusedField, equals: .otp)
-                    .font(.system(size: 1))
+                    .font(.system(size: RDFontScale.size(1)))
                     .foregroundStyle(Color.clear)
                     .tint(Color.clear)
                     .multilineTextAlignment(.center)
@@ -420,7 +420,7 @@ struct AuthView: View {
             }
 
             Text("Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin.")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.white.opacity(0.92))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
@@ -442,7 +442,7 @@ struct AuthView: View {
             Button("← E-posta adresini değiştir") {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
-            .font(.system(size: 14, weight: .bold, design: .rounded))
+            .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
             .foregroundStyle(Color.white.opacity(0.94))
             .frame(maxWidth: .infinity)
             .padding(8)
@@ -607,7 +607,7 @@ struct AuthView: View {
 
             Text(code[index])
                 .multilineTextAlignment(.center)
-                .font(.system(size: 28, weight: .bold, design: .monospaced))
+                .font(.system(size: RDFontScale.size(28), weight: .bold, design: .monospaced))
                 .foregroundStyle(Color.rdOnyx)
 
             if isActive && !hasValue {
@@ -629,7 +629,7 @@ private struct GoogleMark: View {
                 .fill(Color.white)
 
             Text("G")
-                .font(.system(size: 16, weight: .heavy, design: .rounded))
+                .font(.system(size: RDFontScale.size(16), weight: .heavy, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
@@ -661,7 +661,7 @@ private struct GoogleWordmark: View {
             Text("e").foregroundStyle(Color(hex: "#EA4335"))
             Text(" ile devam et").foregroundStyle(Color.rdBlack)
         }
-        .font(.system(size: 17, weight: .semibold, design: .rounded))
+        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
         .tracking(-0.2)
     }
 }

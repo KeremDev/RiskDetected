@@ -22,11 +22,11 @@ struct OBPainPointView: View {
                         OBHeroTile(tint: .dusk) {
                             ZStack {
                                 Image(systemName: "moon.stars.fill")
-                                    .font(.system(size: 22))
+                                    .font(.system(size: RDFontScale.size(22)))
                                     .foregroundStyle(Color(hex: "#F4F1E8"))
                                     .offset(x: 32, y: -18)
                                 Image(systemName: "doc.text.fill")
-                                    .font(.system(size: 44))
+                                    .font(.system(size: RDFontScale.size(44)))
                                     .foregroundStyle(Color(hex: "#F8F7F3"))
                                     .rotationEffect(.degrees(5))
                             }
@@ -34,7 +34,7 @@ struct OBPainPointView: View {
                         .obStage(delay: 0.08)
 
                         Text("Sahada gördüklerini akşam ofiste mi yazıyorsun?")
-                            .font(.system(size: 24, weight: .semibold))
+                            .font(.system(size: RDFontScale.size(24), weight: .semibold))
                             .tracking(-0.6)
                             .lineSpacing(2)
                             .foregroundStyle(Color.rdOnyx)
@@ -42,7 +42,7 @@ struct OBPainPointView: View {
                             .obStage(delay: 0.14)
 
                         Text("Tanıdık geliyor mu?")
-                            .font(.system(size: 14))
+                            .font(.system(size: RDFontScale.size(14)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.22)
@@ -83,12 +83,12 @@ struct OBPainPointView: View {
     private func painCard(icon: String, text: String, isChecked: Bool) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 20, weight: .regular))
+                .font(.system(size: RDFontScale.size(20), weight: .regular))
                 .foregroundStyle(Color.rdOnyx)
                 .frame(width: 40, height: 40)
 
             Text(text)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: RDFontScale.size(14), weight: .medium))
                 .foregroundStyle(Color.rdOnyx)
                 .lineLimit(2)
             Spacer()
@@ -102,7 +102,7 @@ struct OBPainPointView: View {
                     .scaleEffect(isChecked ? 1 : 0.2)
                     .opacity(isChecked ? 1 : 0)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .heavy))
+                    .font(.system(size: RDFontScale.size(12), weight: .heavy))
                     .foregroundStyle(.white)
                     .opacity(isChecked ? 1 : 0)
                     .scaleEffect(isChecked ? 1 : 0.4)
@@ -122,7 +122,7 @@ struct OBPainPointView: View {
             (Text("Bunu ").foregroundColor(.white)
              + Text("birlikte").foregroundColor(Color(hex: "#4FE07E")).bold()
              + Text(" değiştireceğiz.").foregroundColor(.white))
-                .font(.system(size: 16, weight: .medium))
+                .font(.system(size: RDFontScale.size(16), weight: .medium))
             Spacer()
         }
         .padding(.horizontal, 20).padding(.vertical, 16)

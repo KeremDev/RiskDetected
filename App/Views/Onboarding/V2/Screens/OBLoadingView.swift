@@ -21,7 +21,7 @@ struct OBLoadingView: View {
             loader
 
             Text(title)
-                .font(.system(size: 20, weight: .semibold))
+                .font(.system(size: RDFontScale.size(20), weight: .semibold))
                 .tracking(-0.4)
                 .foregroundStyle(Color.rdOnyx)
                 .multilineTextAlignment(.center)
@@ -68,7 +68,7 @@ struct OBLoadingView: View {
             ZStack {
                 Circle().fill(Color.rdOnyx)
                 Image(systemName: "doc.text.fill")
-                    .font(.system(size: 20, weight: .regular))
+                    .font(.system(size: RDFontScale.size(20), weight: .regular))
                     .foregroundStyle(.white)
             }
             .frame(width: 48, height: 48)
@@ -100,7 +100,7 @@ struct OBLoadingView: View {
                 Circle().fill(done[i] ? Color.rdGreen : Color.rdOnyx.opacity(0.06))
                 if done[i] {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: RDFontScale.size(11), weight: .bold))
                         .foregroundStyle(.white)
                         .transition(.scale.combined(with: .opacity))
                 } else {
@@ -113,7 +113,7 @@ struct OBLoadingView: View {
             .frame(width: 28, height: 28)
 
             Text(text)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: RDFontScale.size(14), weight: .medium))
                 .foregroundStyle(done[i] ? Color.rdOnyx : Color.rdSlate)
             Spacer()
         }

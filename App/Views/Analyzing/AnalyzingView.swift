@@ -38,11 +38,11 @@ struct AnalyzingView: View {
 
                 VStack(spacing: 6) {
                     Text("Analiz devam ediyor")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
                     Text("AI, görüntüyü iş güvenliği odaklarıyla katman katman tarıyor.")
-                        .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
@@ -127,9 +127,9 @@ struct AnalyzingView: View {
     private func aiSignal(icon: String, label: String, alignment: Alignment) -> some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
             Text(label)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
         }
         .foregroundStyle(Color.rdGreenDark)
         .padding(.horizontal, 8)
@@ -156,10 +156,10 @@ struct AnalyzingView: View {
                     stepDot(index: index)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(label)
-                            .font(.system(size: 13.5, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(13.5), weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                         Text(stepSubtitle(index))
-                            .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(10.5), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .lineLimit(1)
                     }
@@ -194,15 +194,15 @@ struct AnalyzingView: View {
     private func progressStatus(_ update: AnalysisProgressUpdate) -> some View {
         HStack(spacing: 10) {
             Image(systemName: update.icon)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(update.title)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(update.message)
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
             }
@@ -231,11 +231,11 @@ struct AnalyzingView: View {
 
             if index < currentStep {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
             } else if animDone && index != currentStep {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
             } else if index == currentStep {
                 Circle()

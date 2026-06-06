@@ -394,9 +394,9 @@ struct HomeView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: m.icon)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         Text(m.label)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 36)
@@ -456,7 +456,7 @@ struct HomeView: View {
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             } label: {
                                 Image(systemName: "xmark")
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                                     .foregroundStyle(.white)
                                     .frame(width: 28, height: 28)
                                     .background(Color.black.opacity(0.55))
@@ -467,9 +467,9 @@ struct HomeView: View {
                         .overlay(alignment: .bottomLeading) {
                             HStack(spacing: 6) {
                                 Image(systemName: "pencil.tip.crop.circle")
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                                 Text("İşaretlemeyi düzenle")
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                             }
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
@@ -493,16 +493,16 @@ struct HomeView: View {
                                     )
 
                                 Image(systemName: "camera.fill")
-                                    .font(.system(size: 26, weight: .semibold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(26), weight: .semibold, design: .rounded))
                                     .foregroundStyle(Color.rdGreenDark)
                             }
                             .frame(width: 68, height: 68)
 
                             Text("Saha fotoğrafı yükle")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             Text("Kamerayla çek veya galeriden seç")
-                                .font(.system(size: 13, design: .rounded))
+                                .font(.system(size: RDFontScale.size(13), design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -551,25 +551,25 @@ struct HomeView: View {
                         .frame(width: 56, height: 56)
 
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(lockedPhotoCriticalColor)
                 }
                 .frame(width: 82, height: 82)
 
                 Text("Ücretsiz hak doldu")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                     .foregroundStyle(lockedPhotoTitleColor)
                 Text("Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et.")
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(lockedPhotoSubtitleColor)
                     .frame(maxWidth: 280)
 
                 HStack(spacing: 5) {
                     Text("Yükselt")
-                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .heavy, design: .rounded))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                 }
                 .foregroundStyle(lockedPhotoActionColor)
                 .padding(.top, 4)
@@ -668,14 +668,14 @@ struct HomeView: View {
                                 Text("Örn: \"Korkuluk eksik, işçi emniyet kemeri kullanmıyor.\"")
                                     .padding(.top, 4)
                             }
-                            .font(.system(size: 15, design: .rounded))
+                            .font(.system(size: RDFontScale.size(15), design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .padding(.horizontal, 14)
                             .padding(.top, 14)
                             .allowsHitTesting(false)
                         }
                         TextEditor(text: $text)
-                            .font(.system(size: 15, design: .rounded))
+                            .font(.system(size: RDFontScale.size(15), design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .scrollContentBackground(.hidden)
                             .padding(.horizontal, 10)
@@ -699,7 +699,7 @@ struct HomeView: View {
 
                     HStack {
                         Text("Maks. \(maxTextInputCharacters) karakter")
-                            .font(.system(size: 12, design: .rounded))
+                            .font(.system(size: RDFontScale.size(12), design: .rounded))
                         Spacer()
                         Text("\(text.count)/\(maxTextInputCharacters)")
                             .rdMono(size: 12, weight: .medium)
@@ -730,10 +730,10 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Ücretsiz Analiz Hakkı")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(freeQuotaHintSubtitle)
-                        .font(.system(size: 11, design: .rounded))
+                        .font(.system(size: RDFontScale.size(11), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
                 }
@@ -741,7 +741,7 @@ struct HomeView: View {
                 Spacer(minLength: 4)
 
                 Image(systemName: "gift.fill")
-                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .heavy, design: .rounded))
                     .foregroundStyle(SubscriptionTier.plus.accentTextColor)
                     .frame(width: 28, height: 28)
                     .background(SubscriptionTier.plus.accentSoftColor)
@@ -786,25 +786,25 @@ struct HomeView: View {
                     .frame(width: 52, height: 52)
 
                 Image(systemName: icon)
-                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(19), weight: .bold, design: .rounded))
                     .foregroundStyle(lockedPhotoCriticalColor)
             }
 
             Text(title)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(lockedPhotoTitleColor)
 
             Text(subtitle)
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), design: .rounded))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(lockedPhotoSubtitleColor)
                 .frame(maxWidth: 290)
 
             HStack(spacing: 5) {
                 Text("PRO'ya geç")
-                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .heavy, design: .rounded))
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
             }
             .foregroundStyle(lockedPhotoActionColor)
             .padding(.top, 4)
@@ -914,7 +914,7 @@ struct HomeView: View {
     ) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(width: 28, height: 28)
                 .background(tint.opacity(0.10))
@@ -922,12 +922,12 @@ struct HomeView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
 
                 Text(countLabel)
-                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.5), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate.opacity(0.82))
                     .lineLimit(1)
             }
@@ -938,9 +938,9 @@ struct HomeView: View {
                 HStack(spacing: 4) {
                     Text("Tümü")
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 8.5, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                 }
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
                 .padding(.horizontal, 10)
                 .frame(height: 28)
@@ -955,7 +955,7 @@ struct HomeView: View {
         RDCard {
             HStack(spacing: 12) {
                 Image(systemName: "doc.text")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 42, height: 42)
                     .background(Color.rdFog)
@@ -963,10 +963,10 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Henüz rapor oluşturulmadı")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("PDF veya Excel çıktıları burada görünecek.")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 Spacer(minLength: 0)
@@ -978,7 +978,7 @@ struct HomeView: View {
         RDCard {
             HStack(spacing: 12) {
                 Image(systemName: "clock.badge.checkmark")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 42, height: 42)
                     .background(Color.rdGreenSoft)
@@ -986,10 +986,10 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Henüz tamamlanmış analiz yok")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("İlk tarama tamamlandığında burada listelenecek.")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 Spacer(minLength: 0)
@@ -1612,7 +1612,7 @@ struct RecentAnalysisCard: View {
                 } else {
                     HStack(spacing: 3) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 8.5, weight: .black, design: .rounded))
+                            .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                         Text("\(item.count)")
                             .rdMono(size: 10, weight: .black)
                     }
@@ -1644,7 +1644,7 @@ private struct HomeReportRow: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: iconName)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(kindStyle.text)
                     .frame(width: 38, height: 38)
                     .background(kindStyle.background)
@@ -1652,20 +1652,20 @@ private struct HomeReportRow: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(reportTitle)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .lineLimit(1)
 
                     HStack(spacing: 6) {
                         Text(kindLabel)
-                            .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(10.5), weight: .bold, design: .rounded))
                             .foregroundStyle(kindStyle.text)
                             .padding(.horizontal, 8)
                             .frame(height: 23)
                             .background(kindStyle.background)
                             .clipShape(RoundedRectangle(cornerRadius: 7))
                         Text(dateText)
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                     }
                 }
@@ -1676,7 +1676,7 @@ private struct HomeReportRow: View {
                         .controlSize(.small)
                 } else {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
             }
@@ -1752,7 +1752,7 @@ struct PhotoSourceSheet: View {
         VStack(spacing: 16) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "camera.viewfinder")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 48, height: 48)
                     .background(Color.rdGreenSoft)
@@ -1760,10 +1760,10 @@ struct PhotoSourceSheet: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Fotoğraf Yükle")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("Fotoğrafı nereden almak istiyorsun?")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
 
@@ -1771,7 +1771,7 @@ struct PhotoSourceSheet: View {
 
                 Button(action: onClose) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .frame(width: 38, height: 38)
                         .background(Color.rdCloud)
@@ -1808,7 +1808,7 @@ struct PhotoSourceSheet: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(width: 44, height: 44)
                     .background(Color.rdWhite)
@@ -1820,17 +1820,17 @@ struct PhotoSourceSheet: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(subtitle)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
             .padding(12)

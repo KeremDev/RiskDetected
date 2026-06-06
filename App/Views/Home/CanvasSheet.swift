@@ -20,12 +20,12 @@ struct CanvasSheet: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Odaklı Analiz")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
                         .padding(.top, 6)
                     Text(userTier.isPaid ? "Bir veya birden fazla analiz odağı seçebilirsin." : "Bir analiz odağı seçebilirsin.")
-                        .font(.system(size: 14, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -36,7 +36,7 @@ struct CanvasSheet: View {
                     dismiss()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .frame(width: 38, height: 38)
                         .background(Color.rdWhite)
@@ -119,7 +119,7 @@ private struct CanvasCard: View {
                 VStack(alignment: .leading, spacing: 7) {
                     iconBadge
                     Text(canvas.title)
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                 }
@@ -157,7 +157,7 @@ private struct CanvasCard: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(iconBg)
             Image(systemName: canvas.icon)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                 .foregroundStyle(iconColor)
         }
         .frame(width: 28, height: 28)
@@ -166,9 +166,9 @@ private struct CanvasCard: View {
     private var tierBadge: some View {
         HStack(spacing: 2) {
             Image(systemName: canvas.minTier.badgeIcon)
-                .font(.system(size: 7, design: .rounded))
+                .font(.system(size: RDFontScale.size(7), design: .rounded))
             Text(canvas.minTier.badgeLabel)
-                .font(.system(size: 8, weight: .heavy, design: .rounded))
+                .font(.system(size: RDFontScale.size(8), weight: .heavy, design: .rounded))
                 .tracking(0.6)
         }
         .padding(.horizontal, 5)
@@ -181,9 +181,9 @@ private struct CanvasCard: View {
     private var lockedBadge: some View {
         HStack(spacing: 2) {
             Image(systemName: "lock.fill")
-                .font(.system(size: 6.5, design: .rounded))
+                .font(.system(size: RDFontScale.size(6.5), design: .rounded))
             Text("KİLİTLİ")
-                .font(.system(size: 6.8, weight: .heavy, design: .rounded))
+                .font(.system(size: RDFontScale.size(6.8), weight: .heavy, design: .rounded))
                 .tracking(0.35)
         }
         .padding(.horizontal, 5)

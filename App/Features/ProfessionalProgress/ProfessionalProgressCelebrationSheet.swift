@@ -17,7 +17,7 @@ struct ProfessionalProgressCelebrationSheet: View {
 
             VStack(spacing: RDSpacing.lg) {
                 Image(systemName: badge.iconName)
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(34), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 72, height: 72)
                     .background(Color.rdGreenSoft)
@@ -27,7 +27,7 @@ struct ProfessionalProgressCelebrationSheet: View {
 
                 VStack(spacing: 9) {
                     Text("Tebrikler")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdGreenDark)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
@@ -35,12 +35,12 @@ struct ProfessionalProgressCelebrationSheet: View {
                         .clipShape(Capsule())
 
                     Text(badge.title)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .multilineTextAlignment(.center)
 
                     Text(badge.subtitle)
-                        .font(.system(size: 14, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)

@@ -350,13 +350,13 @@ private struct OBSkipConfirmationView: View {
 
                 VStack(spacing: 8) {
                     Text("Sana özel sonuçlar veremeyeceğiz")
-                        .font(.system(size: 23, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(23), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text("Birkaç kısa cevap, analizlerini sektörüne ve çalışma alanına göre daha isabetli hazırlamamıza yardım eder.")
-                        .font(.system(size: 14))
+                        .font(.system(size: RDFontScale.size(14)))
                         .lineSpacing(2)
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
@@ -372,7 +372,7 @@ private struct OBSkipConfirmationView: View {
                         onConfirm()
                     } label: {
                         Text("Yine de atla")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: RDFontScale.size(14), weight: .semibold))
                             .foregroundStyle(Color.rdSlate.opacity(0.72))
                             .frame(maxWidth: .infinity)
                             .frame(height: 48)

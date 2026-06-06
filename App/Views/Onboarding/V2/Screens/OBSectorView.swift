@@ -16,7 +16,7 @@ struct OBSectorView: View {
                     OBHeroTile { OBHeroSector() }
                         .obStage(delay: 0.08)
                     Text("En çok hangi sektörde çalışıyorsun?")
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(24), weight: .semibold))
                         .tracking(-0.6)
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
@@ -24,7 +24,7 @@ struct OBSectorView: View {
                         .frame(maxWidth: .infinity)
                         .obStage(delay: 0.14)
                     Text("En fazla 2 sektör seçebilirsiniz — o sektörlerin risklerini önceleyeceğiz.")
-                        .font(.system(size: 14))
+                        .font(.system(size: RDFontScale.size(14)))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .lineSpacing(2)
@@ -79,7 +79,7 @@ struct OBSectorView: View {
                     RoundedRectangle(cornerRadius: 9)
                         .fill(selected ? Color.rdOnyx : Color.rdFog)
                     Image(systemName: s.icon)
-                        .font(.system(size: 14, weight: .regular))
+                        .font(.system(size: RDFontScale.size(14), weight: .regular))
                         .foregroundStyle(selected ? .white : Color.rdGraphite)
                 }
                 .frame(width: 30, height: 30)
@@ -87,12 +87,12 @@ struct OBSectorView: View {
                 Spacer(minLength: 0)
 
                 Text(s.label)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
                 Text(s.sub)
-                    .font(.system(size: 11))
+                    .font(.system(size: RDFontScale.size(11)))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
             }
@@ -112,7 +112,7 @@ struct OBSectorView: View {
                     ZStack {
                         Circle().fill(Color.rdOnyx)
                         Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .heavy))
+                            .font(.system(size: RDFontScale.size(10), weight: .heavy))
                             .foregroundStyle(.white)
                     }
                     .frame(width: 18, height: 18)

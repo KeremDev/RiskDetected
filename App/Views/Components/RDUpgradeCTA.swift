@@ -39,10 +39,10 @@ struct RDUpgradeCTA: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: icon ?? tier.badgeIcon)
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 Text(title ?? tier.badgeLabel)
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .heavy, design: .rounded))
                     .tracking(title == nil ? 0.7 : 0.1)
                     .foregroundStyle(.white)
             }
@@ -232,14 +232,14 @@ private struct RDHeaderProfileMenu: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .frame(width: 28, height: 28)
                     .foregroundStyle(tint)
                     .background(tint.opacity(0.10))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -253,14 +253,14 @@ private struct RDHeaderProfileMenu: View {
     private func menuInfo(icon: String, title: String, tint: Color) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .frame(width: 28, height: 28)
                 .foregroundStyle(tint)
                 .background(tint.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Text(title)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -278,7 +278,7 @@ private struct RDHeaderProfileMenu: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(maxWidth: .infinity)
                 .frame(height: 38)

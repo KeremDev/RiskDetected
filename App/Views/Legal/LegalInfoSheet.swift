@@ -44,7 +44,7 @@ struct LegalInfoSheet: View {
                         UISelectionFeedbackGenerator().selectionChanged()
                     } label: {
                         Text(kind.shortTitle)
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                             .lineLimit(1)
                             .minimumScaleFactor(0.82)
                             .foregroundStyle(active ? Color.white : Color.rdCharcoal)
@@ -72,7 +72,7 @@ private struct LegalDocumentReader: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(document.title)
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -90,7 +90,7 @@ private struct LegalDocumentReader: View {
 
             ScrollView(showsIndicators: true) {
                 Text(document.text)
-                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .regular, design: .rounded))
                     .foregroundStyle(Color.rdCharcoal)
                     .lineSpacing(5)
                     .textSelection(.enabled)

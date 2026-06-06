@@ -277,14 +277,14 @@ struct ProfileView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(profileDisplayName)
-                            .font(.system(size: 23, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(23), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .lineLimit(1)
                             .minimumScaleFactor(0.72)
                             .padding(.top, 50)
 
                         Text(profileExpertiseLabel)
-                            .font(.system(size: 13.5, weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(13.5), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .lineSpacing(2)
                             .lineLimit(2)
@@ -296,7 +296,7 @@ struct ProfileView: View {
                                 showProfileBadges(professionalProgressSummary)
                             } label: {
                                 Label("Başarılarım", systemImage: "rosette")
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                                     .foregroundStyle(Color.rdGreenDark)
                             }
                             .buttonStyle(.plain)
@@ -449,7 +449,7 @@ struct ProfileView: View {
         }
         .overlay(alignment: .bottomTrailing) {
             Image(systemName: "camera.fill")
-                .font(.system(size: 11, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .black, design: .rounded))
                 .foregroundStyle(Color.rdWhite)
                 .frame(width: 26, height: 26)
                 .background(Color.rdBlack.opacity(0.88))
@@ -465,7 +465,7 @@ struct ProfileView: View {
         switch app.currentTier {
         case .plus:
             Image(systemName: "crown.fill")
-                .font(.system(size: 12, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                 .foregroundStyle(Color.rdWhite)
                 .frame(width: 28, height: 28)
                 .background(Color.rdPlanPlus)
@@ -474,7 +474,7 @@ struct ProfileView: View {
                 .shadow(color: Color.rdPlanPlus.opacity(0.30), radius: 8, x: 0, y: 4)
         case .pro:
             Image(systemName: "star.fill")
-                .font(.system(size: 12, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                 .foregroundStyle(Color.rdWhite)
                 .frame(width: 28, height: 28)
                 .background(Color.rdGreen)
@@ -494,14 +494,14 @@ struct ProfileView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: professionalTitleIcon)
-                    .font(.system(size: 10.5, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10.5), weight: .black, design: .rounded))
                     .foregroundStyle(Color.rdWhite)
                     .frame(width: 21, height: 21)
                     .background(professionalTitleAccent)
                     .clipShape(Circle())
 
                 Text(professionalTitleLabel)
-                    .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.5), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -565,7 +565,7 @@ struct ProfileView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: item.icon)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(item.color)
                     .frame(width: 22, height: 22)
                     .background(item.color.opacity(colorScheme == .dark ? 0.16 : 0.10))
@@ -579,7 +579,7 @@ struct ProfileView: View {
                         .minimumScaleFactor(0.64)
 
                     Text(item.label)
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
                         .minimumScaleFactor(0.68)
@@ -710,12 +710,12 @@ struct ProfileView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(subscriptionPaymentTitle) aktif")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
 
                 Text("\(subscriptionPeriodLabel) · \(subscriptionRenewalLabel)")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
@@ -724,7 +724,7 @@ struct ProfileView: View {
             Spacer(minLength: 8)
 
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(18), weight: .semibold, design: .rounded))
                 .foregroundStyle(app.currentTier.accentColor)
         }
         .padding(.horizontal, 14)
@@ -771,12 +771,12 @@ struct ProfileView: View {
                         RDTierBadge(tier: .pro)
                         Spacer()
                         Image(systemName: "arrow.up.right.circle.fill")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                             .foregroundStyle(profileUpsellArrowColor)
                     }
 
                     Text("Plus veya Pro'ya yükselt")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                         .foregroundStyle(profileUpsellTitleColor)
 
                     VStack(alignment: .leading, spacing: 7) {
@@ -810,14 +810,14 @@ struct ProfileView: View {
     private func upsellBenefit(_ text: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark")
-                .font(.system(size: 9, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(9), weight: .black, design: .rounded))
                 .foregroundStyle(Color.rdOnyx)
                 .frame(width: 18, height: 18)
                 .background(Color.rdPlanPlus)
                 .clipShape(Circle())
 
             Text(text)
-                .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12.5), weight: .semibold, design: .rounded))
                 .foregroundStyle(profileUpsellTextColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
@@ -1035,7 +1035,7 @@ struct ProfileView: View {
         RDCard {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "exclamationmark.shield.fill")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdCriticalText)
                     .frame(width: 40, height: 40)
                     .background(Color.rdCriticalBg)
@@ -1043,10 +1043,10 @@ struct ProfileView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Cihaz güvenliği uyarısı")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(deviceIntegrity.userMessage)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1075,7 +1075,7 @@ struct ProfileView: View {
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.system(size: 11, weight: .bold, design: .rounded))
+            .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
             .tracking(0.6)
             .foregroundStyle(Color.rdSlate)
             .padding(.leading, 4)
@@ -1431,7 +1431,7 @@ private struct ProfileEditSheet: View {
                             .padding(10)
                     } else {
                         Image(systemName: "building.2.crop.circle")
-                            .font(.system(size: 28, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(28), weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                     }
                 }
@@ -1439,10 +1439,10 @@ private struct ProfileEditSheet: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(companyLogo == nil ? "Logo ekle" : "Varsayılan rapor logosu")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text("Firma veya kişisel logon raporlarda varsayılan olarak kullanılır.")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1451,7 +1451,7 @@ private struct ProfileEditSheet: View {
 
                 PhotosPicker(selection: $selectedLogoItem, matching: .images) {
                     Image(systemName: companyLogo == nil ? "plus" : "arrow.triangle.2.circlepath")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                         .frame(width: 36, height: 36)
                         .foregroundStyle(Color.rdGreenDark)
                         .background(Color.rdGreenSoft)
@@ -1515,7 +1515,7 @@ private struct ProfileEditSheet: View {
         } label: {
             VStack(spacing: 4) {
                 Text(method.domain.label)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 Text("R = \(method.domain.formula)")
                     .rdMono(size: 10)
             }
@@ -1535,13 +1535,13 @@ private struct ProfileEditSheet: View {
     private func sectionTitle(_ title: String, icon: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .frame(width: 24, height: 24)
                 .background(Color.rdGreenSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 7))
             Text(title)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
         }
         .padding(.leading, 2)
@@ -1556,7 +1556,7 @@ private struct ProfileEditSheet: View {
     ) -> some View {
         HStack(spacing: 11) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack.opacity(0.72))
                 .frame(width: 36, height: 36)
                 .background(Color.rdCloud)
@@ -1564,10 +1564,10 @@ private struct ProfileEditSheet: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                 TextField(placeholder, text: text)
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .keyboardType(keyboard)
                     .textInputAutocapitalization(keyboard == .default ? .words : .never)
@@ -1646,7 +1646,7 @@ private struct NotificationSettingsSheet: View {
                 RDCard {
                     HStack(alignment: .top, spacing: 10) {
                         Image(systemName: iconName)
-                            .font(.system(size: 19, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(19), weight: .semibold, design: .rounded))
                             .foregroundStyle(iconColor)
                             .frame(width: 42, height: 42)
                             .background(iconColor.opacity(0.12))
@@ -1654,10 +1654,10 @@ private struct NotificationSettingsSheet: View {
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text(statusTitle)
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             Text(statusMessage)
-                                .font(.system(size: 12, design: .rounded))
+                                .font(.system(size: RDFontScale.size(12), design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -1666,7 +1666,7 @@ private struct NotificationSettingsSheet: View {
 
                 if let lastError = notificationService.lastError {
                     Text(lastError)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdCriticalText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1740,7 +1740,7 @@ private struct NotificationSettingsSheet: View {
         RDCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Aktif bildirimler")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
 
                 NotificationInfoRow(icon: "sparkles", title: "Analiz tamamlandı")
@@ -1754,7 +1754,7 @@ private struct NotificationSettingsSheet: View {
         RDCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Mesleki ilerleme")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
 
                 NotificationPreferenceToggle(
@@ -1840,20 +1840,20 @@ private struct NotificationInfoRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .frame(width: 24, height: 24)
                 .background(Color.rdGreen.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Text(title)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
 
             Spacer(minLength: 0)
 
             Text("Açık")
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
         }
     }
@@ -1872,14 +1872,14 @@ private struct NotificationPreferenceToggle: View {
         )) {
             HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 24, height: 24)
                     .background(Color.rdSlate.opacity(0.08))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
             }
         }
@@ -1935,7 +1935,7 @@ private struct ProfileDataControlsSheet: View {
                     )
 
                     Text("Not: Otomatik saklama politikası ayrıca çalışır. Free fotoğraflar 7 gün, Plus fotoğraflar 30 gün, Pro fotoğraflar sınırsız saklanır; raporlar kullanıcı silene kadar kalır.")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(12)
@@ -1969,7 +1969,7 @@ private struct ProfileDataControlsSheet: View {
                 .rdMono(size: 18, weight: .bold)
                 .foregroundStyle(Color.rdBlack)
             Text(label)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity)
@@ -1993,7 +1993,7 @@ private struct ProfileDataControlsSheet: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                     .foregroundStyle(danger ? Color.rdCriticalText : Color.rdGreen)
                     .frame(width: 42, height: 42)
                     .background(danger ? Color.rdCriticalBg : Color.rdGreenSoft)
@@ -2001,10 +2001,10 @@ private struct ProfileDataControlsSheet: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                         .foregroundStyle(danger ? Color.rdCriticalText : Color.rdBlack)
                     Text(subtitle)
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -2015,7 +2015,7 @@ private struct ProfileDataControlsSheet: View {
                         .controlSize(.small)
                 } else {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
             }
@@ -2056,14 +2056,14 @@ struct ProfileRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                 .frame(width: 32, height: 32)
                 .foregroundStyle(iconColor)
                 .background(iconFill)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Text(title)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
                 .foregroundStyle(danger ? Color.rdCriticalText : Color.rdBlack)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -2074,7 +2074,7 @@ struct ProfileRow: View {
             }
             if showsChevron {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
         }
@@ -2164,11 +2164,11 @@ private struct ProfilePreferencesSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title.uppercased())
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .tracking(0.6)
                     .foregroundStyle(Color.rdSlate)
                 Text(subtitle)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -2190,7 +2190,7 @@ private struct PreferenceOptionRow: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .frame(width: 36, height: 36)
                     .foregroundStyle(isSelected ? Color.white : Color.rdCharcoal)
                     .background(isSelected ? Color.rdSelected : Color.rdFog)
@@ -2198,17 +2198,17 @@ private struct PreferenceOptionRow: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(subtitle)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(20), weight: .semibold, design: .rounded))
                     .foregroundStyle(isSelected ? Color.rdGreen : Color.rdSlate.opacity(0.55))
             }
             .padding(14)
