@@ -906,6 +906,7 @@ final class AnalysisService {
     }
 
     /// Free kullanıcı için bugünkü ücretsiz standart analiz kullanımını verir.
+    /// Kullanım, silinebilir analiz kayıtlarından değil kalıcı quota ledger'ından okunur.
     func dailyQuotaUsage() async throws -> DailyQuotaUsage {
         if DataActionFailureSimulation.isEnabled(.quotaExceeded) {
             return DailyQuotaUsage(
@@ -919,11 +920,11 @@ final class AnalysisService {
         let dayStart = Self.istanbulStartOfTodayISO()
 
         let used = try await countRows(
-            table: "analyses",
+            table: "usage_events",
             filters: {
-                $0.eq("status", value: "completed")
-                    .eq("user_id", value: userID.uuidString)
-                    .eq("analysis_mode", value: "standard")
+                $0.eq("user_id", value: userID.uuidString)
+                    .eq("feature", value: "analysis_standard")
+                    .in("event_type", values: ["reserved", "completed"])
                     .gte("created_at", value: dayStart)
             }
         )
@@ -944,20 +945,15 @@ final class AnalysisService {
             ? Self.istanbulStartOfTodayISO()
             : Self.istanbulStartOfCurrentMonthISO()
 
-        let totalReports = try await countRows(
-            table: "reports",
+        let used = try await countRows(
+            table: "usage_events",
             filters: {
                 $0.eq("user_id", value: userID.uuidString)
+                    .eq("feature", value: "report_standard")
+                    .eq("event_type", value: "completed")
                     .gte("created_at", value: periodStart)
             }
         )
-        let used: Int
-        if tier == .free {
-            let riskAnalysisTrialReports = try await countRiskAnalysisTrialReports(since: periodStart)
-            used = max(totalReports - riskAnalysisTrialReports, 0)
-        } else {
-            used = totalReports
-        }
 
         return DailyQuotaUsage(
             used: used,
@@ -1027,11 +1023,12 @@ final class AnalysisService {
             throw AnalysisError.notAuthenticated
         }
         return try await countRows(
-            table: "reports",
+            table: "usage_events",
             filters: { builder in
                 var filtered = builder
                     .eq("user_id", value: userID.uuidString)
-                    .or("kind.in.(riskAnalysis,risk_analysis),format.eq.xlsx,mime_type.eq.application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .eq("feature", value: "report_risk_analysis_trial")
+                    .eq("event_type", value: "completed")
                 if let periodStart {
                     filtered = filtered.gte("created_at", value: periodStart)
                 }

@@ -2377,10 +2377,11 @@ serve(async (req: Request) => {
   let freeRiskAnalysisTrialAvailable = false;
   if (planTier === "free") {
     const { count: trialCount, error: trialCountError } = await supabase
-      .from("reports")
+      .from("usage_events")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
-      .or("kind.in.(riskAnalysis,risk_analysis),format.eq.xlsx");
+      .eq("feature", "report_risk_analysis_trial")
+      .eq("event_type", "completed");
 
     if (trialCountError) {
       return json(500, {
@@ -2406,9 +2407,11 @@ serve(async (req: Request) => {
   const reportLimit = monthlyReportLimit(planTier);
   if (reportLimit !== null && !freeRiskAnalysisTrialAvailable) {
     const { count: reportCount, error: reportCountError } = await supabase
-      .from("reports")
+      .from("usage_events")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
+      .eq("feature", "report_standard")
+      .eq("event_type", "completed")
       .gte("created_at", istanbulMonthStartISO());
 
     if (reportCountError) {
