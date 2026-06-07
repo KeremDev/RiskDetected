@@ -56,6 +56,10 @@ enum QuickScanSource {
     case gallery
 }
 
+enum ProfileDestination {
+    case preferences
+}
+
 private struct BackendSubscriptionRow: Decodable {
     let tier: String
     let status: String?
@@ -85,7 +89,7 @@ final class AppState: ObservableObject {
     @Published var planCapabilities: PlanCapabilities = .forTier(.free)
     @Published var profile: UserProfile?
     @Published var activeTab: RDTab = .home
-    @Published var profilePreferencesRequestID = UUID()
+    @Published var pendingProfileDestination: ProfileDestination?
     @Published var quickScanRequestID = UUID()
     var quickScanSource: QuickScanSource = .chooser
     @Published var hasSeenOnboarding: Bool
@@ -232,6 +236,11 @@ final class AppState: ObservableObject {
     func signIn() {
         flow = .main
         routePendingNotificationIfReady(defaultTab: .home)
+    }
+
+    func requestProfileDestination(_ destination: ProfileDestination) {
+        activeTab = .profile
+        pendingProfileDestination = destination
     }
 
     func signOut() {

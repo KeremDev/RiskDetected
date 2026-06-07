@@ -44,7 +44,7 @@ Fill:
 - Contact email
 - Contact phone
 - Demo account required: yes
-- Demo user name: `riskdetected.appreview@fastmail.com`
+- Demo user name: `riskdetected_appreview@fastmail.com`
 - Demo password: `Email OTP login. See Notes for OTP mailbox access.`
 - Notes: use `QA/App_Review_Webmail_OTP_Access_2026-06-01.md`
 
@@ -219,7 +219,7 @@ Confirmed target:
 
 Run:
 
-- Email OTP login with `riskdetected.appreview@fastmail.com`.
+- Email OTP login with `riskdetected_appreview@fastmail.com`.
 - Apple login.
 - Google login.
 - Paywall product load.

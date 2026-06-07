@@ -139,6 +139,37 @@ export function sanitizeTextReportLanguage(
   return sanitized;
 }
 
+function recommendedMeasureFallback(kind: unknown): string {
+  const normalizedKind = typeof kind === "string"
+    ? normalizeForMatch(kind)
+    : "";
+  if (normalizedKind === "preventive") {
+    return "Tekrarı önlemek için periyodik kontrol ve saha doğrulama kaydı tanımlanmalıdır.";
+  }
+  return "Uygunsuzluğu sahada güvenli hale getirecek düzeltici kontrol uygulanmalıdır.";
+}
+
+function sanitizeRecommendedMeasures(
+  value: unknown,
+  userText: string,
+): unknown {
+  if (!Array.isArray(value)) return value;
+  return value.map((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      return item;
+    }
+    const record = item as Record<string, unknown>;
+    return {
+      ...record,
+      text: sanitizeTextReportLanguage(
+        typeof record.text === "string" ? record.text : "",
+        userText,
+        recommendedMeasureFallback(record.kind),
+      ),
+    };
+  });
+}
+
 export function sanitizeTextAnalysisHazardForReportLanguage<
   T extends {
     title?: unknown;
@@ -148,6 +179,8 @@ export function sanitizeTextAnalysisHazardForReportLanguage<
     preventive_control?: unknown;
     root_cause?: unknown;
     references?: unknown;
+    recommended_action?: unknown;
+    recommended_measures?: unknown;
   },
 >(hazard: T, userText: string | null | undefined): T {
   if (!userText) return hazard;
@@ -191,6 +224,17 @@ export function sanitizeTextAnalysisHazardForReportLanguage<
       typeof hazard.references === "string" ? hazard.references : "",
       userText,
       "Mevzuat karşılığı saha koşullarına göre doğrulanmalıdır.",
+    ),
+    recommended_action: typeof hazard.recommended_action === "string"
+      ? sanitizeTextReportLanguage(
+        hazard.recommended_action,
+        userText,
+        recommendedMeasureFallback("corrective"),
+      )
+      : hazard.recommended_action,
+    recommended_measures: sanitizeRecommendedMeasures(
+      hazard.recommended_measures,
+      userText,
     ),
   };
 }

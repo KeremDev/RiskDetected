@@ -9,7 +9,7 @@ Use these values in `App Review Information`.
 | Field | Value |
 | --- | --- |
 | Sign-in required | Checked |
-| User name | `riskdetected.appreview@fastmail.com` |
+| User name | `riskdetected_appreview@fastmail.com` |
 | Password | `Email OTP login. See Notes for OTP mailbox access.` |
 
 Do not store the real mailbox password in the repo. Paste it only into App Store Connect Notes.
@@ -26,7 +26,7 @@ asc review details-create \
   --contact-email "<CONTACT_EMAIL>" \
   --contact-phone "<CONTACT_PHONE_E164_OR_ASC_FORMAT>" \
   --demo-account-required=true \
-  --demo-account-name "riskdetected.appreview@fastmail.com" \
+  --demo-account-name "riskdetected_appreview@fastmail.com" \
   --demo-account-password "Email OTP login. See Notes for OTP mailbox access." \
   --notes "$(cat /tmp/riskdetected-review-notes.txt)"
 ```
@@ -47,7 +47,7 @@ RiskDetected is a Turkish occupational safety assistant. The app lets users uplo
 
 Reviewer login:
 1. Open the app.
-2. Choose email login and enter riskdetected.appreview@fastmail.com.
+2. Choose email login and enter riskdetected_appreview@fastmail.com.
 3. Open https://app.fastmail.com.
 4. Sign in with the mailbox credentials below.
 5. Use the latest OTP email/code in the app.
@@ -55,7 +55,7 @@ Reviewer login:
 
 Review mailbox:
 Webmail URL: https://app.fastmail.com
-Mailbox username: riskdetected.appreview@fastmail.com
+Mailbox username: riskdetected_appreview@fastmail.com
 Mailbox password: <PASTE_ONLY_IN_APP_STORE_CONNECT_NOTES>
 
 OTP validity:
@@ -88,7 +88,7 @@ Apple Standard EULA: https://www.apple.com/legal/internet-services/itunes/dev/st
 
 ## External Setup Checklist
 
-- Use the dedicated Fastmail review mailbox `riskdetected.appreview@fastmail.com`.
+- Use the dedicated Fastmail review mailbox `riskdetected_appreview@fastmail.com`.
 - Disable 2FA, recovery prompts, device verification friction, and temporary login locks for the review mailbox during review.
 - Use the plain Fastmail address for this first submission.
 - In Supabase Dashboard, confirm `Auth > Providers > Email > Email OTP Expiration = 3600` seconds.
@@ -98,8 +98,8 @@ Apple Standard EULA: https://www.apple.com/legal/internet-services/itunes/dev/st
 ## Smoke Test Before Submission
 
 - Sign into webmail from an incognito/private browser session.
-- Send a normal test email to `riskdetected.appreview@fastmail.com` and confirm delivery.
+- Send a normal test email to `riskdetected_appreview@fastmail.com` and confirm delivery.
 - Install the release candidate from TestFlight on a physical iPhone.
-- Start email login with `riskdetected.appreview@fastmail.com`, open Fastmail webmail, and verify the newest OTP code in the app.
+- Start email login with `riskdetected_appreview@fastmail.com`, open Fastmail webmail, and verify the newest OTP code in the app.
 - Request a second OTP and confirm the newest email/code is the one that works.
 - Confirm the Notes placeholders are replaced in App Store Connect before tapping `Add for Review`.

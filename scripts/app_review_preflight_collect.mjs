@@ -571,7 +571,7 @@ function checkPhysicalSmokeSubgateEvidence() {
       name: "Physical-device auth smoke",
       detail: "Email OTP, Apple login, and Google login should be manually verified on the physical candidate device.",
       rows: [
-        "Email OTP login with `riskdetected.appreview@fastmail.com`",
+        "Email OTP login with `riskdetected_appreview@fastmail.com`",
         "Apple login",
         "Google login",
       ],

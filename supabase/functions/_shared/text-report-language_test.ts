@@ -62,13 +62,36 @@ Deno.test("text hazard sanitizer cleans all report fields", () => {
       root_cause: "Metinde bakım kontrol eksikliği ima edilmiştir.",
       references:
         "İş Ekipmanlarının Kullanımında Sağlık ve Güvenlik Şartları Yönetmeliği.",
+      recommended_action:
+        "Metinde 40 çalışan olduğu belirtilmiştir; kullanıcı alanları ayırsın.",
+      recommended_measures: [
+        {
+          kind: "corrective",
+          text:
+            "Kullanıcının yazdığı bir sürü ekipman için tüm koruyucuları kontrol et.",
+        },
+        {
+          kind: "preventive",
+          text:
+            "Makine koruyucularının periyodik kontrolünü iş ekipmanları kontrol listesine ekle.",
+        },
+        {
+          kind: "preventive",
+          text:
+            "40 çalışan olduğu durumda acil çıkış yönlendirmeleri tekrar gözden geçirilmelidir.",
+        },
+      ],
     },
-    "cam fabrikasında bir sürü ekipman var",
+    "cam fabrikasında bir sürü ekipman var 40 çalışan var",
   );
 
-  const combined = Object.values(hazard).join(" ").toLocaleLowerCase("tr-TR");
+  const combined = JSON.stringify(hazard).toLocaleLowerCase("tr-TR");
   assert(!combined.includes("metinde"));
   assert(!combined.includes("kullanıcı"));
   assert(!combined.includes("bir sürü ekipman var"));
+  assert(!combined.includes("40 çalışan"));
   assert(combined.includes("hareketli parçalı ekipmanlar"));
+  assert(combined.includes("periyodik kontrolünü iş ekipmanları"));
+  assert(combined.includes("düzeltici kontrol uygulanmalıdır"));
+  assert(combined.includes("saha doğrulama kaydı tanımlanmalıdır"));
 });

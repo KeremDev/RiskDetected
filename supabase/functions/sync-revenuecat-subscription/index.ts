@@ -27,6 +27,7 @@ type RevenueCatEntitlement = {
 
 type RevenueCatSubscription = {
   expires_date?: string | null;
+  original_purchase_date?: string | null;
   product_identifier?: string | null;
   purchase_date?: string | null;
 };
@@ -69,6 +70,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
   productID: string | null;
   expiration: string | null;
   purchaseDate: string | null;
+  originalPurchaseDate: string | null;
 } {
   const activeEntitlements = Object.entries(entitlements)
     .filter(([, value]) => isActiveEntitlement(value));
@@ -88,6 +90,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       productID: productResolved.productID,
       expiration: productResolved.expiration,
       purchaseDate: productResolved.purchaseDate,
+      originalPurchaseDate: productResolved.purchaseDate,
     };
   }
 
@@ -99,6 +102,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       productID: pro?.product_identifier ?? null,
       expiration: pro?.expires_date ?? null,
       purchaseDate: pro?.purchase_date ?? null,
+      originalPurchaseDate: pro?.purchase_date ?? null,
     };
   }
 
@@ -110,6 +114,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       productID: plus?.product_identifier ?? null,
       expiration: plus?.expires_date ?? null,
       purchaseDate: plus?.purchase_date ?? null,
+      originalPurchaseDate: plus?.purchase_date ?? null,
     };
   }
 
@@ -119,6 +124,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
     productID: null,
     expiration: null,
     purchaseDate: null,
+    originalPurchaseDate: null,
   };
 }
 
@@ -130,6 +136,7 @@ function subscriptionTier(
   productID: string | null;
   expiration: string | null;
   purchaseDate: string | null;
+  originalPurchaseDate: string | null;
 } | null {
   const active = Object.entries(subscriptions)
     .map(([productID, value]) => ({
@@ -137,6 +144,9 @@ function subscriptionTier(
       tier: tierFromProductIdentifier(productID),
       expiration: value.expires_date ?? null,
       purchaseDate: value.purchase_date ?? null,
+      originalPurchaseDate: value.original_purchase_date ??
+        value.purchase_date ??
+        null,
       purchaseTime: Date.parse(value.purchase_date ?? ""),
     }))
     .filter((item) =>
@@ -160,6 +170,7 @@ function subscriptionTier(
     productID: current.productID,
     expiration: current.expiration,
     purchaseDate: current.purchaseDate,
+    originalPurchaseDate: current.originalPurchaseDate,
   };
 }
 
@@ -357,7 +368,10 @@ serve(async (req) => {
 
   if (
     resolved.tier !== "free" &&
-    purchasePredatesAccount(resolved.purchaseDate, user.created_at)
+    purchasePredatesAccount(
+      resolved.originalPurchaseDate ?? resolved.purchaseDate,
+      user.created_at,
+    )
   ) {
     await writeFreeSubscriptionState(
       supabase,
@@ -372,6 +386,7 @@ serve(async (req) => {
       product_id: resolved.productID,
       entitlement_id: resolved.entitlementID,
       purchase_date: resolved.purchaseDate,
+      original_purchase_date: resolved.originalPurchaseDate,
       account_created_at: user.created_at,
     });
   }

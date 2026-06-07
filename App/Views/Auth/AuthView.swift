@@ -349,12 +349,14 @@ struct AuthView: View {
                     .font(.system(size: RDFontScale.size(16), design: .rounded))
                     .foregroundColor(Color.rdOnyx)
                     .tint(Color.rdGreen)
+                    .lineLimit(1)
                     .padding(.horizontal, 16)
-                    .frame(height: 52)
+                    .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52, alignment: .leading)
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdLine, lineWidth: 1))
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             RDButton(
                 title: isSendingEmailCode ? "Kod gönderiliyor..." : "Kod gönder",
                 style: .primary,

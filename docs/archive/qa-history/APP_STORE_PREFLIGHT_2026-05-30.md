@@ -50,7 +50,7 @@ asc metadata pull --app "<APP_ID>" --version "<VERSION>" --dir ./metadata
 - Evidence: The email OTP review path is now documented in `QA/App_Review_Webmail_OTP_Access_2026-06-01.md` and referenced from `QA/App_Store_Submission_Preparation_2026-05-16.md`, but the real mailbox password and physical-device demo video URL must be pasted directly into App Store Connect Notes before submission.
 - Required before submission in App Store Connect:
   - `Sign-in required` checked.
-  - User name `riskdetected.appreview@fastmail.com`.
+  - User name `riskdetected_appreview@fastmail.com`.
   - Password text `Email OTP login. See Notes for OTP mailbox access.`
   - Webmail URL `https://app.fastmail.com` and real mailbox password in Notes only, not committed to the repo.
   - Physical-device screen recording URL.
@@ -185,7 +185,7 @@ Before submission:
 - Pull ASC metadata with `asc` and re-run metadata checks.
 - Fill only the App Store Connect review notes placeholders from `QA/App_Review_Webmail_OTP_Access_2026-06-01.md`; do not commit the real mailbox password.
 - Add physical-device demo video URL.
-- Confirm `riskdetected.appreview@fastmail.com` mailbox remains active for at least 2 weeks.
+- Confirm `riskdetected_appreview@fastmail.com` mailbox remains active for at least 2 weeks.
 - Confirm Supabase email OTP expiration is `3600` seconds / 1 hour.
 - Confirm ASC privacy nutrition matches `QA/App_Store_Privacy_Nutrition_2026-05-16.md`.
 - Confirm privacy policy URL field is `https://riskdetected.com/gizlilik`.

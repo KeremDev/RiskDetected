@@ -199,7 +199,7 @@ These items exist in some form, but need revision before we treat them as produc
    - Keywords: `isg,risk,analiz,iş,güvenliği,saha,denetim,rapor,fine,kinney,5x5,matris,kkd,pdf,excel`.
 3. Enter/confirm App Store privacy nutrition form from `QA/App_Store_Privacy_Nutrition_2026-05-16.md`.
 4. Provide App Review test account and OTP access plan.
-   - Prepared: review account path is `riskdetected.appreview@fastmail.com` with real email OTP; copy-ready notes live at `QA/App_Review_Webmail_OTP_Access_2026-06-01.md`.
+   - Prepared: review account path is `riskdetected_appreview@fastmail.com` with real email OTP; copy-ready notes live at `QA/App_Review_Webmail_OTP_Access_2026-06-01.md`.
    - Do not commit the actual webmail password. Paste it only into App Store Connect Notes.
    - Before submission, verify Fastmail webmail access, confirm Supabase Email OTP Expiration is `3600` seconds, and run a physical-device TestFlight OTP smoke test.
 5. APNs production real-device/TestFlight push test.

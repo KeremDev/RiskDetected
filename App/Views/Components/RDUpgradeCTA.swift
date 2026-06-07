@@ -151,10 +151,7 @@ struct RDHeaderAccountCTA: View {
 
     private func openProfilePreferences() {
         closeMenu()
-        app.activeTab = .profile
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            app.profilePreferencesRequestID = UUID()
-        }
+        app.requestProfileDestination(.preferences)
     }
 
     private func closeMenu() {

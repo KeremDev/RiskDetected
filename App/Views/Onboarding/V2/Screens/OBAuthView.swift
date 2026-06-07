@@ -300,6 +300,7 @@ struct OBAuthView: View {
                         .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
+                        .truncationMode(.middle)
                 }
 
                 Spacer()
@@ -420,6 +421,7 @@ struct OBAuthView: View {
                     .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
+                    .truncationMode(.middle)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -472,12 +474,13 @@ struct OBAuthView: View {
                 }
             )
             .padding(.horizontal, 16)
-            .frame(height: 54)
+            .frame(maxWidth: .infinity, minHeight: 54, maxHeight: 54, alignment: .leading)
             .background(Color.white)
             .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color.rdLine, lineWidth: 1))
             .clipShape(RoundedRectangle(cornerRadius: 15))
             .accessibilityIdentifier("onboarding.auth.email_input")
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .onTapGesture {
             focusEmailField()
@@ -944,6 +947,8 @@ private struct OBFirstResponderTextField: UIViewRepresentable {
         textField.spellCheckingType = .no
         textField.returnKeyType = .continue
         textField.clearButtonMode = .never
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textField.font = .rdRounded(ofSize: 17, weight: .medium)
         textField.textColor = UIColor(Color.rdOnyx)
         textField.tintColor = UIColor(Color.rdGreen)

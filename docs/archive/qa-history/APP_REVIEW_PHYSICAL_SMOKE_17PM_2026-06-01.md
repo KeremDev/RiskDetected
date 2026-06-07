@@ -81,7 +81,7 @@ Use the physical device screen or the device screen viewer. Mark the matching ro
 10. Run Restore Purchases:
    - Restore completes or shows a clear no-active-subscription message.
 11. Validate authentication paths:
-   - Email OTP delivery for `riskdetected.appreview@fastmail.com`.
+   - Email OTP delivery for `riskdetected_appreview@fastmail.com`.
    - Apple login.
    - Google login.
 12. Run one Free analysis flow.

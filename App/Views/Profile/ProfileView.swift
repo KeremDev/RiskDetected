@@ -81,6 +81,9 @@ struct ProfileView: View {
         .task(id: app.profile?.avatarURL) {
             await loadProfileAvatarImage()
         }
+        .onAppear {
+            consumePendingProfileDestinationIfNeeded()
+        }
         .onChange(of: app.auth.session?.user.id) { _ in
             Task {
                 await loadStats()
@@ -89,9 +92,8 @@ struct ProfileView: View {
                 await loadProfileAvatarImage()
             }
         }
-        .onChange(of: app.profilePreferencesRequestID) { _ in
-            guard app.activeTab == .profile else { return }
-            showPreferences = true
+        .onChange(of: app.pendingProfileDestination) { _ in
+            consumePendingProfileDestinationIfNeeded()
         }
         .onChange(of: selectedProfileAvatarItem) { newItem in
             guard let newItem else { return }
@@ -814,6 +816,16 @@ struct ProfileView: View {
             return "Kur"
         @unknown default:
             return "Kontrol et"
+        }
+    }
+
+    private func consumePendingProfileDestinationIfNeeded() {
+        guard app.activeTab == .profile,
+              let destination = app.pendingProfileDestination else { return }
+        app.pendingProfileDestination = nil
+        switch destination {
+        case .preferences:
+            showPreferences = true
         }
     }
 

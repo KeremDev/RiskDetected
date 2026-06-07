@@ -61,7 +61,7 @@ Current device discovery note, 2026-06-01 21:54 +03:
 | --- | --- | --- |
 | Installed TestFlight build `1.0 (31)` | PASS | 2026-06-01 21:54 +03, `devicectl` reports `iPhone Kerem` has `com.riskdetected.app` `1.0 (31)`. |
 | Fresh launch from closed state | PASS | 2026-06-01 21:50 +03, `devicectl device process launch --terminate-existing com.riskdetected.app` succeeded again on `iPhone Kerem`; latest JSON evidence is `output/app-review-physical-smoke/iphone-17-pro-max/launch-2026-06-01-rerun.json`. |
-| Email OTP login with `riskdetected.appreview@fastmail.com` | PASS | 2026-06-02 05:13 +03 user confirmed final physical-device smoke completed; OTP flow verified. |
+| Email OTP login with `riskdetected_appreview@fastmail.com` | PASS | 2026-06-02 05:13 +03 user confirmed final physical-device smoke completed; OTP flow verified. |
 | Apple login | PASS | 2026-06-02 05:13 +03 user confirmed final physical-device smoke completed; Apple login verified. |
 | Google login | PASS | 2026-06-02 05:13 +03 user confirmed final physical-device smoke completed; Google login verified. |
 | Onboarding Plus monthly price shows TL | PASS | 2026-06-02 05:13 +03 user confirmed onboarding paywall monthly price verified as TL on physical device. |

@@ -146,7 +146,7 @@ Do not mark the preflight goal complete until these are verified and recorded in
 6. Keep Supabase leaked-password protection recorded as accepted known risk for this submission; treat enablement as optional post-release hardening.
 7. Rerun Supabase advisors and `db lint` on submission day if DB credentials/env are available.
 8. Run physical-device TestFlight smoke on build `1.0 (31)`:
-   - Email OTP login with `riskdetected.appreview@fastmail.com`
+   - Email OTP login with `riskdetected_appreview@fastmail.com`
    - Apple login
    - Google login
    - paywall product load

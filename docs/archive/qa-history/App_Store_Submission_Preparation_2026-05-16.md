@@ -127,7 +127,7 @@ App Review Information fields:
 | Field | Value |
 | --- | --- |
 | Sign-in required | Checked |
-| User name | `riskdetected.appreview@fastmail.com` |
+| User name | `riskdetected_appreview@fastmail.com` |
 | Password | `Email OTP login. See Notes for OTP mailbox access.` |
 
 Do not store the real mailbox password in the repo. Paste it only into App Store Connect Notes after the review mailbox is created.
@@ -139,7 +139,7 @@ RiskDetected is a Turkish occupational safety assistant. The app lets users uplo
 Reviewer login path:
 
 1. Open the app.
-2. Choose email login and enter `riskdetected.appreview@fastmail.com`.
+2. Choose email login and enter `riskdetected_appreview@fastmail.com`.
 3. Open `https://app.fastmail.com`.
 4. Sign in with the mailbox credentials provided in App Store Connect Notes.
 5. Enter the latest OTP email/code in the app.
@@ -147,9 +147,9 @@ Reviewer login path:
 
 OTP / mailbox:
 
-- Email: `riskdetected.appreview@fastmail.com`
+- Email: `riskdetected_appreview@fastmail.com`
 - Webmail URL: `https://app.fastmail.com`
-- Webmail username: `riskdetected.appreview@fastmail.com`
+- Webmail username: `riskdetected_appreview@fastmail.com`
 - Webmail password: `<PASTE_ONLY_IN_APP_STORE_CONNECT_NOTES>`
 - OTP validity: `3600` seconds / 1 hour in Supabase Auth > Providers > Email > Email OTP Expiration.
 - Mailbox must stay active for at least 2 weeks after submission.
@@ -321,7 +321,7 @@ Important nuance: workplace photos can theoretically contain injuries or sensiti
 7. Enter/confirm the App Store privacy nutrition form in App Store Connect from the prepared draft.
 8. APNs production secrets/device test should be done if notifications remain enabled for release.
 9. Create final App Store screenshots from clean demo data.
-10. App Review email OTP access plan is documented in `QA/App_Review_Webmail_OTP_Access_2026-06-01.md`; use `riskdetected.appreview@fastmail.com`, paste the real Fastmail password only into App Store Connect Notes, and run the physical-device OTP smoke test.
+10. App Review email OTP access plan is documented in `QA/App_Review_Webmail_OTP_Access_2026-06-01.md`; use `riskdetected_appreview@fastmail.com`, paste the real Fastmail password only into App Store Connect Notes, and run the physical-device OTP smoke test.
 11. Optional: prepare a 15-30 second App Preview video.
 
 ## 7. Local Verification Completed

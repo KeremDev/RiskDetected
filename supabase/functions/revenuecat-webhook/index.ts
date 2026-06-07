@@ -45,6 +45,7 @@ type RevenueCatEntitlement = {
 
 type RevenueCatSubscription = {
   expires_date?: string | null;
+  original_purchase_date?: string | null;
   product_identifier?: string | null;
   purchase_date?: string | null;
 };
@@ -64,6 +65,7 @@ type ResolvedSubscriberState = {
   productID: string | null;
   expiration: string | null;
   purchaseDate: string | null;
+  originalPurchaseDate: string | null;
 };
 
 function json(status: number, body: Record<string, unknown>) {
@@ -101,6 +103,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
   productID: string | null;
   expiration: string | null;
   purchaseDate: string | null;
+  originalPurchaseDate: string | null;
 } {
   const activeEntitlements = Object.entries(entitlements)
     .filter(([, value]) => isActiveEntitlement(value));
@@ -120,6 +123,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       productID: productResolved.productID,
       expiration: productResolved.expiration,
       purchaseDate: productResolved.purchaseDate,
+      originalPurchaseDate: productResolved.purchaseDate,
     };
   }
 
@@ -131,6 +135,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       productID: pro?.product_identifier ?? null,
       expiration: pro?.expires_date ?? null,
       purchaseDate: pro?.purchase_date ?? null,
+      originalPurchaseDate: pro?.purchase_date ?? null,
     };
   }
 
@@ -142,6 +147,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       productID: plus?.product_identifier ?? null,
       expiration: plus?.expires_date ?? null,
       purchaseDate: plus?.purchase_date ?? null,
+      originalPurchaseDate: plus?.purchase_date ?? null,
     };
   }
 
@@ -151,6 +157,7 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
     productID: null,
     expiration: null,
     purchaseDate: null,
+    originalPurchaseDate: null,
   };
 }
 
@@ -162,6 +169,7 @@ function subscriptionTier(
   productID: string | null;
   expiration: string | null;
   purchaseDate: string | null;
+  originalPurchaseDate: string | null;
 } | null {
   const active = Object.entries(subscriptions)
     .map(([productID, value]) => ({
@@ -169,6 +177,9 @@ function subscriptionTier(
       tier: tierFromProductIdentifier(productID),
       expiration: value.expires_date ?? null,
       purchaseDate: value.purchase_date ?? null,
+      originalPurchaseDate: value.original_purchase_date ??
+        value.purchase_date ??
+        null,
       purchaseTime: Date.parse(value.purchase_date ?? ""),
     }))
     .filter((item) =>
@@ -192,6 +203,7 @@ function subscriptionTier(
     productID: current.productID,
     expiration: current.expiration,
     purchaseDate: current.purchaseDate,
+    originalPurchaseDate: current.originalPurchaseDate,
   };
 }
 
@@ -214,6 +226,7 @@ function resolvedStateFromSubscriber(
     productID: resolved.productID,
     expiration: resolved.expiration,
     purchaseDate: resolved.purchaseDate,
+    originalPurchaseDate: resolved.originalPurchaseDate,
   };
 }
 
@@ -226,6 +239,7 @@ function freeSubscriberState(): ResolvedSubscriberState {
     productID: null,
     expiration: null,
     purchaseDate: null,
+    originalPurchaseDate: null,
   };
 }
 
@@ -466,6 +480,36 @@ async function profileCreatedAt(
   return typeof data?.created_at === "string" ? data.created_at : null;
 }
 
+function originalTransactionID(event: Record<string, unknown>): string | null {
+  const value = event.original_transaction_id ??
+    event.original_transaction_identifier ??
+    event.original_transactionId;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+async function priorIdentifiedOwnerForOriginalTransaction(params: {
+  supabase: SupabaseAdminClient;
+  eventID: string;
+  userID: string;
+  event: Record<string, unknown>;
+}): Promise<string | null> {
+  const originalID = originalTransactionID(params.event);
+  if (!originalID) return null;
+
+  const { data } = await params.supabase
+    .from("subscription_events")
+    .select("event_id,user_id,received_at")
+    .neq("event_id", params.eventID)
+    .neq("user_id", params.userID)
+    .eq("raw_event->>original_transaction_id", originalID)
+    .not("user_id", "is", null)
+    .order("received_at", { ascending: true })
+    .limit(1);
+
+  const ownerID = data?.[0]?.user_id;
+  return typeof ownerID === "string" && ownerID ? ownerID : null;
+}
+
 async function processTransferEvent(params: {
   supabase: SupabaseAdminClient;
   event: Record<string, unknown>;
@@ -504,7 +548,10 @@ async function processTransferEvent(params: {
   if (
     targetState.tier !== "free" &&
     (lockedOwnerID ||
-      purchasePredatesAccount(targetState.purchaseDate, targetCreatedAt))
+      purchasePredatesAccount(
+        targetState.originalPurchaseDate ?? targetState.purchaseDate,
+        targetCreatedAt,
+      ))
   ) {
     await writeSubscriptionState({
       supabase: params.supabase,
@@ -530,6 +577,7 @@ async function processTransferEvent(params: {
       user_id: targetUserID,
       locked_owner_user_id: lockedOwnerID,
       purchase_date: targetState.purchaseDate,
+      original_purchase_date: targetState.originalPurchaseDate,
       account_created_at: targetCreatedAt,
       transferred_from: transferredFrom,
       transferred_to: transferredTo,
@@ -728,7 +776,12 @@ serve(async (req) => {
 
   if (verifiedState.tier !== "free") {
     const accountCreatedAt = await profileCreatedAt(supabase, eventUserID);
-    if (purchasePredatesAccount(verifiedState.purchaseDate, accountCreatedAt)) {
+    if (
+      purchasePredatesAccount(
+        verifiedState.originalPurchaseDate ?? verifiedState.purchaseDate,
+        accountCreatedAt,
+      )
+    ) {
       await writeSubscriptionState({
         supabase,
         userID: eventUserID,
@@ -752,7 +805,42 @@ serve(async (req) => {
         reason: "purchase_predates_account",
         user_id: eventUserID,
         purchase_date: verifiedState.purchaseDate,
+        original_purchase_date: verifiedState.originalPurchaseDate,
         account_created_at: accountCreatedAt,
+        event_type: eventType,
+      });
+    }
+
+    const priorOwnerID = await priorIdentifiedOwnerForOriginalTransaction({
+      supabase,
+      eventID,
+      userID: eventUserID,
+      event,
+    });
+    if (priorOwnerID) {
+      await writeSubscriptionState({
+        supabase,
+        userID: eventUserID,
+        revenueCatAppUserID: appUserID,
+        source: "revenuecat_event_conflict",
+        eventID,
+        environment,
+        state: freeSubscriberState(),
+      });
+
+      await supabase
+        .from("subscription_events")
+        .update({
+          processed_at: new Date().toISOString(),
+        })
+        .eq("event_id", eventID);
+
+      return json(200, {
+        ok: true,
+        event_conflict: true,
+        reason: "original_transaction_seen_on_another_user",
+        user_id: eventUserID,
+        owner_user_id: priorOwnerID,
         event_type: eventType,
       });
     }

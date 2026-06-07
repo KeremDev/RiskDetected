@@ -9,7 +9,7 @@ This is a copy-ready App Store Connect Notes draft with placeholders for secrets
 | Field | Value |
 | --- | --- |
 | Sign-in required | Checked |
-| User name | `riskdetected.appreview@fastmail.com` |
+| User name | `riskdetected_appreview@fastmail.com` |
 | Password | `Email OTP login. See Notes for OTP mailbox access.` |
 
 ## Notes
@@ -21,7 +21,7 @@ RiskDetected is a Turkish occupational safety assistant. The app lets users uplo
 
 Reviewer login:
 1. Open the app.
-2. Choose email login and enter riskdetected.appreview@fastmail.com.
+2. Choose email login and enter riskdetected_appreview@fastmail.com.
 3. Open https://app.fastmail.com.
 4. Sign in with the mailbox credentials below.
 5. Use the latest OTP email/code in the app.
@@ -29,7 +29,7 @@ Reviewer login:
 
 Review mailbox:
 Webmail URL: https://app.fastmail.com
-Mailbox username: riskdetected.appreview@fastmail.com
+Mailbox username: riskdetected_appreview@fastmail.com
 Mailbox password: <PASTE_ONLY_IN_APP_STORE_CONNECT_NOTES>
 
 OTP validity:
@@ -68,5 +68,5 @@ Before tapping `Add for Review`, confirm in App Store Connect only:
 - `<PASTE_ONLY_IN_APP_STORE_CONNECT_NOTES>` is replaced with the real review mailbox password.
 - `<PHYSICAL_DEVICE_DEMO_VIDEO_URL>` is replaced with the final physical-device smoke/demo video URL.
 - The review mailbox can be opened from a fresh/private browser session.
-- The newest email OTP for `riskdetected.appreview@fastmail.com` works on the physical release candidate.
+- The newest email OTP for `riskdetected_appreview@fastmail.com` works on the physical release candidate.
 - No private password or OTP value is written into repo files.
