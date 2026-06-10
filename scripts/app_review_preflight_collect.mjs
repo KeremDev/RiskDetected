@@ -71,7 +71,8 @@ const PUBLIC_REVIEW_URLS = [
   "https://riskdetected.com/gizlilik",
   "https://riskdetected.com/kullanim-kosullari",
   "https://riskdetected.com/kvkk",
-  "https://riskdetected.com/acik-riza",
+  "https://riskdetected.com/acik-riza-beyani",
+  "https://riskdetected.com/legal-documents/manifest.json",
   "https://riskdetected.com/cerez-politikasi",
   "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
 ];
@@ -81,7 +82,8 @@ const EXPECTED_APP_WEB_URLS = [
   'static let privacyPolicyURL = URL(string: "https://riskdetected.com/gizlilik")!',
   'static let termsURL = URL(string: "https://riskdetected.com/kullanim-kosullari")!',
   'static let kvkkURL = URL(string: "https://riskdetected.com/kvkk")!',
-  'static let explicitConsentURL = URL(string: "https://riskdetected.com/acik-riza")!',
+  'static let explicitConsentURL = URL(string: "https://riskdetected.com/acik-riza-beyani")!',
+  'static let legalDocumentsBaseURL = URL(string: "https://riskdetected.com/legal-documents/")!',
 ];
 const BUNDLED_LEGAL_DOCS = [
   "App/LegalDocuments/Gizlilik-Politikasi.md",
@@ -223,10 +225,10 @@ const ACCOUNT_DELETION_SOURCE_CHECKS = [
     path: "App/Views/Profile/ProfileView.swift",
     patterns: [
       "ProfileDataControlsSheet",
-      "Hesabımı ve verilerimi sil",
+      "Hesabımı sil / Delete Account",
       "case requestAccountDeletion",
       "AnalysisService.shared.requestAccountDeletion",
-      "Abonelik Apple’dan yönetilir",
+      "e-posta, destek veya web sitesi gerekmez",
     ],
   },
   {

@@ -44,7 +44,7 @@ enum LegalDocumentKind: String, CaseIterable, Codable, Identifiable {
         case .kvkk: return LegalAcceptanceService.kvkkVersion
         case .consent: return LegalAcceptanceService.aiProcessingVersion
         case .terms: return LegalAcceptanceService.termsVersion
-        case .privacy: return "privacy-2026-05-30"
+        case .privacy: return "privacy-2026-06-10"
         }
     }
 
@@ -130,8 +130,8 @@ final class LegalDocumentService: ObservableObject {
     static let shared = LegalDocumentService()
 
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "LegalDocuments")
-    private static let cacheKey = "rd.legal.documents.cache.v1"
-    private static let lastRefreshKey = "rd.legal.documents.last_refresh_at"
+    private static let cacheKey = "rd.legal.documents.cache.v2"
+    private static let lastRefreshKey = "rd.legal.documents.last_refresh_at.v2"
     private static let manifestPath = "manifest.json"
     private static let refreshInterval: TimeInterval = 24 * 60 * 60
     private static let maxDocumentBytes = 262_144
@@ -159,8 +159,10 @@ final class LegalDocumentService: ObservableObject {
         let shouldRefresh = lastRefresh.map { now.timeIntervalSince($0) >= Self.refreshInterval } ?? true
 
         if shouldRefresh {
-            userDefaults.set(now, forKey: Self.lastRefreshKey)
-            await refreshRemoteDocuments()
+            let refreshed = await refreshRemoteDocuments()
+            if refreshed {
+                userDefaults.set(now, forKey: Self.lastRefreshKey)
+            }
         }
 
         await evaluatePendingUpdates(userID: userID)
@@ -186,59 +188,118 @@ final class LegalDocumentService: ObservableObject {
         clear(notice)
     }
 
-    private func refreshRemoteDocuments() async {
+    private func refreshRemoteDocuments() async -> Bool {
+        if await refreshWebsiteDocuments() {
+            return true
+        }
+        return await refreshSupabaseDocuments()
+    }
+
+    private func refreshWebsiteDocuments() async -> Bool {
+        do {
+            let manifestData = try await downloadWebsiteLegalData(path: Self.manifestPath)
+            let remoteDocuments = try await remoteDocuments(
+                manifestData: manifestData,
+                sourceName: "website"
+            ) { path in
+                try await self.downloadWebsiteLegalData(path: path)
+            }
+            return apply(remoteDocuments: remoteDocuments)
+        } catch {
+            Self.logger.warning("Website legal refresh failed: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
+    private func refreshSupabaseDocuments() async -> Bool {
         do {
             let manifestData = try await supabase.storage
                 .from(RDConfig.Bucket.legalDocuments)
                 .download(path: Self.manifestPath)
-            let manifest = try JSONDecoder().decode(LegalDocumentManifest.self, from: manifestData)
-            guard manifest.locale == "tr" else { return }
+            let remoteDocuments = try await remoteDocuments(
+                manifestData: manifestData,
+                sourceName: "supabase"
+            ) { path in
+                try await self.supabase.storage
+                    .from(RDConfig.Bucket.legalDocuments)
+                    .download(path: path)
+            }
+            return apply(remoteDocuments: remoteDocuments)
+        } catch {
+            Self.logger.warning("Supabase legal refresh failed: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
 
-            var remoteDocuments: [LegalDocumentKind: LegalDocument] = [:]
+    private func remoteDocuments(
+        manifestData: Data,
+        sourceName: String,
+        download: (String) async throws -> Data
+    ) async throws -> [LegalDocumentKind: LegalDocument] {
+        let manifest = try JSONDecoder().decode(LegalDocumentManifest.self, from: manifestData)
+        guard manifest.locale == "tr" else { return [:] }
 
-            for item in manifest.documents {
-                guard isSafeMarkdownPath(item.path) else {
-                    Self.logger.warning("Skipped unsafe legal document path: \(item.path, privacy: .public)")
+        var remoteDocuments: [LegalDocumentKind: LegalDocument] = [:]
+
+        for item in manifest.documents {
+            guard isSafeMarkdownPath(item.path) else {
+                Self.logger.warning("Skipped unsafe \(sourceName, privacy: .public) legal document path: \(item.path, privacy: .public)")
+                continue
+            }
+
+            do {
+                let data = try await download(item.path)
+                guard data.count <= Self.maxDocumentBytes else {
+                    Self.logger.warning("Skipped oversized \(sourceName, privacy: .public) legal document: \(item.path, privacy: .public)")
+                    continue
+                }
+                guard Self.hashMatches(data: data, expected: item.hash) else {
+                    Self.logger.warning("Skipped \(sourceName, privacy: .public) legal document with hash mismatch: \(item.path, privacy: .public)")
+                    continue
+                }
+                guard let text = String(data: data, encoding: .utf8), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                     continue
                 }
 
-                do {
-                    let data = try await supabase.storage
-                        .from(RDConfig.Bucket.legalDocuments)
-                        .download(path: item.path)
-                    guard data.count <= Self.maxDocumentBytes else {
-                        Self.logger.warning("Skipped oversized legal document: \(item.path, privacy: .public)")
-                        continue
-                    }
-                    guard Self.hashMatches(data: data, expected: item.hash) else {
-                        Self.logger.warning("Skipped legal document with hash mismatch: \(item.path, privacy: .public)")
-                        continue
-                    }
-                    guard let text = String(data: data, encoding: .utf8), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                        continue
-                    }
-
-                    remoteDocuments[item.kind] = LegalDocument(
-                        kind: item.kind,
-                        title: item.title,
-                        fileName: item.path,
-                        version: item.version,
-                        updatedAt: item.updatedAt,
-                        changeType: item.changeType,
-                        text: text,
-                        source: "remote"
-                    )
-                } catch {
-                    Self.logger.warning("Legal document download failed: \(item.path, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                }
+                remoteDocuments[item.kind] = LegalDocument(
+                    kind: item.kind,
+                    title: item.title,
+                    fileName: item.path,
+                    version: item.version,
+                    updatedAt: item.updatedAt,
+                    changeType: item.changeType,
+                    text: text,
+                    source: "remote"
+                )
+            } catch {
+                Self.logger.warning("\(sourceName, privacy: .public) legal document download failed: \(item.path, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
             }
-
-            guard !remoteDocuments.isEmpty else { return }
-            documents.merge(remoteDocuments) { _, remote in remote }
-            cacheDocuments()
-        } catch {
-            Self.logger.warning("Legal manifest refresh failed: \(error.localizedDescription, privacy: .public)")
         }
+
+        return remoteDocuments
+    }
+
+    private func apply(remoteDocuments: [LegalDocumentKind: LegalDocument]) -> Bool {
+        guard !remoteDocuments.isEmpty else { return false }
+        documents.merge(remoteDocuments) { _, remote in remote }
+        cacheDocuments()
+        return true
+    }
+
+    private func downloadWebsiteLegalData(path: String) async throws -> Data {
+        guard let url = URL(string: path, relativeTo: RDConfig.Web.legalDocumentsBaseURL)?.absoluteURL else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = 15
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse,
+           !(200..<300).contains(httpResponse.statusCode) {
+            throw URLError(.badServerResponse)
+        }
+        return data
     }
 
     private func evaluatePendingUpdates(userID: UUID?) async {

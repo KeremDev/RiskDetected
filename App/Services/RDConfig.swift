@@ -34,7 +34,8 @@ enum RDConfig {
         static let privacyPolicyURL = URL(string: "https://riskdetected.com/gizlilik")!
         static let termsURL = URL(string: "https://riskdetected.com/kullanim-kosullari")!
         static let kvkkURL = URL(string: "https://riskdetected.com/kvkk")!
-        static let explicitConsentURL = URL(string: "https://riskdetected.com/acik-riza")!
+        static let explicitConsentURL = URL(string: "https://riskdetected.com/acik-riza-beyani")!
+        static let legalDocumentsBaseURL = URL(string: "https://riskdetected.com/legal-documents/")!
     }
 
     private static let productionSupabaseURLString = "https://ppcrzemgiztzcgddbins.supabase.co"

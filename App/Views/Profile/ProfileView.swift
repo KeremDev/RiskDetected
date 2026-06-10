@@ -31,6 +31,7 @@ struct ProfileView: View {
     @State private var dataActionInProgress: ProfileDataAction?
     @State private var pendingDataAction: ProfileDataAction?
     @State private var dataMessage: String?
+    @State private var shouldSignOutAfterDataMessageDismiss = false
     @State private var exportedDataFile: ShareItem?
     @State private var deviceIntegrity = DeviceIntegrityService.assess()
     private var preferredModalColorScheme: ColorScheme {
@@ -64,6 +65,7 @@ struct ProfileView: View {
                     if deviceIntegrity.isWarning {
                         deviceIntegrityWarningCard
                     }
+                    deleteAccountCard
                     signOutCard
                 }
                 .padding(.horizontal, 20)
@@ -233,11 +235,11 @@ struct ProfileView: View {
         } message: {
             Text(pendingDataAction?.confirmationMessage ?? "")
         }
-        .alert("Verilerim", isPresented: Binding(
+        .alert(dataAlertTitle, isPresented: Binding(
             get: { dataMessage != nil },
-            set: { if !$0 { dataMessage = nil } }
+            set: { if !$0 { dismissDataMessage() } }
         )) {
-            Button("Tamam") { dataMessage = nil }
+            Button("Tamam") { dismissDataMessage() }
         } message: {
             Text(dataMessage ?? "")
         }
@@ -998,6 +1000,42 @@ struct ProfileView: View {
         .buttonStyle(.plain)
     }
 
+    private var deleteAccountCard: some View {
+        Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            pendingDataAction = .requestAccountDeletion
+        } label: {
+            ProfileRow(
+                icon: "person.crop.circle.badge.xmark",
+                title: "Hesabımı sil / Delete Account",
+                subtitle: "Hesap ve uygulama verilerini kalıcı olarak siler.",
+                danger: true
+            )
+            .background(profileCardFill)
+            .overlay(
+                RoundedRectangle(cornerRadius: RDRadius.lg)
+                    .stroke(profileLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
+            .profileCardDepth(colorScheme: colorScheme)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("profile.row.delete_account")
+    }
+
+    private var dataAlertTitle: String {
+        shouldSignOutAfterDataMessageDismiss
+            ? "Hesap silindi / Account Deleted"
+            : "Verilerim"
+    }
+
+    private func dismissDataMessage() {
+        dataMessage = nil
+        guard shouldSignOutAfterDataMessageDismiss else { return }
+        shouldSignOutAfterDataMessageDismiss = false
+        app.signOut()
+    }
+
     private func sectionHeader(_ text: String) -> some View {
         Text(text.uppercased())
             .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
@@ -1128,6 +1166,7 @@ struct ProfileView: View {
     private func runDataAction(_ action: ProfileDataAction) {
         guard dataActionInProgress == nil else { return }
         pendingDataAction = nil
+        shouldSignOutAfterDataMessageDismiss = false
         if action == .exportData {
             exportedDataFile = nil
         }
@@ -1173,13 +1212,15 @@ struct ProfileView: View {
                         requestID: requestID,
                         supportID: supportID
                     )
-                    dataMessage = result.message ?? "Hesabın ve verilerin silme sürecine alındı."
                     if result.shouldClearLocalSession {
-                        try? await Task.sleep(nanoseconds: 1_200_000_000)
-                        try? await app.auth.signOut()
+                        shouldSignOutAfterDataMessageDismiss = true
+                        dataMessage = result.message ?? "Hesabın ve uygulama verilerin silindi."
+                    } else {
+                        dataMessage = result.message ?? "Hesap silme isteğin alındı. Güvenli silme işlemi devam ediyor."
                     }
                 }
             } catch {
+                shouldSignOutAfterDataMessageDismiss = false
                 dataMessage = AppErrorMessage.make(
                     rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
                     context: action.errorContext,
@@ -1230,7 +1271,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .deleteAnalyses:
             return "Tüm analizler, bulgular, fotoğraf kayıtları ve bu analizlere bağlı raporlar silinir. Bu işlem geri alınamaz."
         case .requestAccountDeletion:
-            return "Hesabın, profilin, analizlerin, raporların ve saklanan dosyaların kalıcı olarak silinir. Aktif App Store aboneliğin varsa iptal ve yönetim işlemleri Apple abonelik ayarlarından yapılır. Bu işlem geri alınamaz."
+            return "Hesabın, profilin, analizlerin, raporların ve saklanan dosyaların kalıcı olarak silinir. Silme işlemi uygulama içinde tamamlanır; e-posta, destek veya web sitesi gerekmez. Aktif App Store aboneliğin varsa iptal ve yönetim işlemleri Apple abonelik ayarlarından yapılır. Bu işlem geri alınamaz."
         }
     }
 
@@ -1239,7 +1280,7 @@ private enum ProfileDataAction: Identifiable, Equatable {
         case .exportData: return "Dışa aktar"
         case .deleteReports: return "Tüm raporları sil"
         case .deleteAnalyses: return "Tüm analizleri sil"
-        case .requestAccountDeletion: return "Hesabımı ve verilerimi sil"
+        case .requestAccountDeletion: return "Hesabımı sil / Delete Account"
         }
     }
 
@@ -1854,8 +1895,8 @@ private struct ProfileDataControlsSheet: View {
                     )
                     dataActionButton(
                         icon: "person.crop.circle.badge.xmark",
-                        title: "Hesabımı ve verilerimi sil",
-                        subtitle: "Profil, analizler, raporlar ve dosyalar kalıcı silinir. Abonelik Apple’dan yönetilir.",
+                        title: "Hesabımı sil / Delete Account",
+                        subtitle: "Profil, analizler, raporlar ve dosyalar kalıcı silinir. E-posta, destek veya web sitesi gerekmez.",
                         action: .requestAccountDeletion,
                         danger: true,
                         onTap: onRequestAccountDeletion
@@ -2007,6 +2048,7 @@ struct ProfileRow: View {
 
     let icon: String
     let title: String
+    var subtitle: String? = nil
     var detail: String? = nil
     var danger: Bool = false
     var showsChevron: Bool = true
@@ -2032,9 +2074,22 @@ struct ProfileRow: View {
                 .background(iconFill)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            Text(title)
-                .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
-                .foregroundStyle(danger ? Color.rdCriticalText : Color.rdBlack)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
+                    .foregroundStyle(danger ? Color.rdCriticalText : Color.rdBlack)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                        .foregroundStyle(danger ? Color.rdCriticalText.opacity(0.82) : Color.rdSlate)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if let detail {

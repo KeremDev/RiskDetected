@@ -370,19 +370,15 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur.").exists)
     }
 
-    func testProfileDataControlsAccountDeletionCopyWithBypass() throws {
+    func testProfileAccountDeletionVisibleAndCopyWithBypass() throws {
         launchMainApp()
 
         XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
         tapTab(.profile)
-        tapScrolling("Verilerim")
-
-        XCTAssertTrue(waitFor("Hesabımı ve verilerimi sil").exists)
-        XCTAssertTrue(waitFor("Profil, analizler, raporlar ve dosyalar kalıcı silinir. Abonelik Apple’dan yönetilir.").exists)
-
-        tapScrolling("Hesabımı ve verilerimi sil")
+        tapScrolling("profile.row.delete_account")
         XCTAssertTrue(waitFor("Hesabın ve verilerin silinsin mi?").exists)
-        XCTAssertTrue(waitFor("Hesabın, profilin, analizlerin, raporların ve saklanan dosyaların kalıcı olarak silinir. Aktif App Store aboneliğin varsa iptal ve yönetim işlemleri Apple abonelik ayarlarından yapılır. Bu işlem geri alınamaz.").exists)
+        XCTAssertTrue(waitFor("Hesabın, profilin, analizlerin, raporların ve saklanan dosyaların kalıcı olarak silinir. Silme işlemi uygulama içinde tamamlanır; e-posta, destek veya web sitesi gerekmez. Aktif App Store aboneliğin varsa iptal ve yönetim işlemleri Apple abonelik ayarlarından yapılır. Bu işlem geri alınamaz.").exists)
+        XCTAssertTrue(waitFor("Hesabımı sil / Delete Account").exists)
     }
 
     func testProfileShowsDeviceIntegrityWarningWhenFlagged() throws {
