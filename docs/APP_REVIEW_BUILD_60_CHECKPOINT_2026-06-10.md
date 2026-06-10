@@ -22,6 +22,36 @@ RiskDetected version `1.0` build `60`, `2026-06-10` tarihinde App Review'e gonde
 - Website restore tag: `app-review-build-60-2026-06-10`
 - Website tag message: `App Review build 60 website legal checkpoint`
 
+## GitHub References
+
+iOS repository:
+
+- Repository: `https://github.com/KeremDev/RiskDetected.git`
+- Checkpoint commit: `https://github.com/KeremDev/RiskDetected/commit/76ddd7184af707a10b6b2b541e1ea8c6661f1154`
+- Working branch: `https://github.com/KeremDev/RiskDetected/tree/codex/worktree-cleanup`
+- Restore branch: `https://github.com/KeremDev/RiskDetected/tree/codex/app-review-build-60`
+- Restore tag: `https://github.com/KeremDev/RiskDetected/tree/app-review-build-60-2026-06-10`
+
+Website repository:
+
+- Repository: `https://github.com/KeremDev/riskdetected-landing.git`
+- Checkpoint commit: `https://github.com/KeremDev/riskdetected-landing/commit/bc4e1f5136237036165b5633b5e80bed921df490`
+- Working branch: `https://github.com/KeremDev/riskdetected-landing/tree/main`
+- Restore branch: `https://github.com/KeremDev/riskdetected-landing/tree/codex/app-review-build-60`
+- Restore tag: `https://github.com/KeremDev/riskdetected-landing/tree/app-review-build-60-2026-06-10`
+
+Remote verification performed after push:
+
+```text
+RiskDetected refs/heads/codex/worktree-cleanup       -> ac74b9bf0859447871a70ee718bc20a4e4d10cf0
+RiskDetected refs/heads/codex/app-review-build-60    -> 76ddd7184af707a10b6b2b541e1ea8c6661f1154
+RiskDetected refs/tags/app-review-build-60-2026-06-10^{} -> 76ddd7184af707a10b6b2b541e1ea8c6661f1154
+
+riskdetected-landing refs/heads/main                 -> bc4e1f5136237036165b5633b5e80bed921df490
+riskdetected-landing refs/heads/codex/app-review-build-60 -> bc4e1f5136237036165b5633b5e80bed921df490
+riskdetected-landing refs/tags/app-review-build-60-2026-06-10^{} -> bc4e1f5136237036165b5633b5e80bed921df490
+```
+
 ## Included Changes
 
 - Profile ekraninda `Cikis yap` ustune dogrudan gorunen `Hesabimi sil / Delete Account` satiri eklendi.
