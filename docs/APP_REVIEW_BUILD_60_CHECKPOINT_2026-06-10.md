@@ -40,10 +40,9 @@ Website repository:
 - Restore branch: `https://github.com/KeremDev/riskdetected-landing/tree/codex/app-review-build-60`
 - Restore tag: `https://github.com/KeremDev/riskdetected-landing/tree/app-review-build-60-2026-06-10`
 
-Remote verification performed after push:
+Remote checkpoint refs verification performed after push. The active working branch can advance with later documentation commits; the immutable restore refs below are the source snapshot for submitted build 60.
 
 ```text
-RiskDetected refs/heads/codex/worktree-cleanup       -> ac74b9bf0859447871a70ee718bc20a4e4d10cf0
 RiskDetected refs/heads/codex/app-review-build-60    -> 76ddd7184af707a10b6b2b541e1ea8c6661f1154
 RiskDetected refs/tags/app-review-build-60-2026-06-10^{} -> 76ddd7184af707a10b6b2b541e1ea8c6661f1154
 
