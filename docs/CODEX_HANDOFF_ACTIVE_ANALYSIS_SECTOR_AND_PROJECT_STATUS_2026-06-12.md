@@ -2,9 +2,9 @@
 
 **Tarih:** 2026-06-12 (son güncelleme: push sonrası)  
 **Branch:** `codex/worktree-cleanup`  
-**Remote:** `origin/codex/worktree-cleanup` — **push edildi** (`b04c2ef` → `7a87f84`)  
-**PR:** https://github.com/KeremDev/RiskDetected/pull/1 (OPEN, 2 sektör commit’i dahil)  
-**HEAD:** `7a87f84`  
+**Remote:** `origin/codex/worktree-cleanup` — **push edildi**  
+**PR:** https://github.com/KeremDev/RiskDetected/pull/1 (OPEN)  
+**HEAD:** `git rev-parse --short HEAD` on `codex/worktree-cleanup`  
 **Hazırlayan:** Cursor agent oturumu (Kerem kaydı)
 
 Bu belge, Codex’in projeyi hızlıca değerlendirmesi için yazıldı. Önce **ne yapıldı**, sonra **proje hangi aşamada**, en sonda **sıradaki işler** özetlenir.
@@ -32,7 +32,7 @@ RiskDetected, iOS üzerinde çalışan bir **İSG (iş sağlığı ve güvenliğ
 | Aktif sektör — backend prompt & persist | ✅ Tamamlandı (`sector-context.ts`, `active-sector-v1`) |
 | Prod Supabase migration + edge deploy | ✅ Uygulandı (2026-06-12) |
 | UI testleri (sektör akışı) | ✅ 3/3 geçiyor |
-| Git remote sync | ✅ `origin/codex/worktree-cleanup` güncel (`7a87f84`) |
+| Git remote sync | ✅ `origin/codex/worktree-cleanup` güncel |
 | PR #1 | 🟡 Açık, merge bekliyor |
 | UI polish (tüm sektörler grid, boşluk) | ✅ `7a87f84` — remote’ta |
 | Gerçek cihaz smoke (analiz → PDF) | ⏳ Yapılmadı |
@@ -275,7 +275,7 @@ Codex bu dosyaları **ayrı epic** olarak ele almalı.
 ## 11. Codex için önerilen sonraki adımlar (öncelik sırası)
 
 ### P0 — Release kapatma
-1. ~~PR #1 branch push~~ ✅ `origin/codex/worktree-cleanup` @ `7a87f84`
+1. ~~PR #1 branch push~~ ✅ `origin/codex/worktree-cleanup` güncel
 2. PR #1 review + merge onayı
 3. Gerçek cihaz smoke: metin analizi → sektör seç → sonuç → PDF (sektör metni + prompt etkisi doğrula)
 4. PR merge → TestFlight / store build planı
@@ -296,7 +296,7 @@ Codex bu dosyaları **ayrı epic** olarak ele almalı.
 ```bash
 # Branch & PR (remote güncel)
 git fetch origin && git checkout codex/worktree-cleanup && git pull
-git log -2 --oneline   # b04c2ef, 7a87f84 beklenir
+git log -5 --oneline   # b04c2ef (sektör), 7a87f84 (UI), 717eca6+ (handoff)
 gh pr view 1
 
 # UI testler
@@ -344,13 +344,16 @@ xcodebuild -project RiskDetected.xcodeproj -scheme RiskDetected \
 | SHA | Mesaj | Kapsam |
 |-----|-------|--------|
 | `b04c2ef` | Add mandatory active analysis sector flow end-to-end. | Model, akış, backend prompt, migration, UI test, prod deploy |
-| `7a87f84` | Show all analysis sectors inline and tighten picker layout. | 15-chip grid, boşluk, katalog kaldırma, handoff doc |
+| `7a87f84` | Show all analysis sectors inline and tighten picker layout. | 15-chip grid, boşluk, katalog kaldırma |
+| `717eca6` | Update Codex handoff doc after remote push. | Handoff doc: push durumu, prompt bölümü, PR scope |
+| (handoff) | Align Codex handoff HEAD refs with latest push commit. | Handoff doc güncellemesi — `git log -1` ile doğrula |
 
-PR branch’i `main`’den birçok önceki commit de içerir; Codex review yaparken **yalnızca bu iki commit’in diff’ine** odaklanması önerilir:
+PR branch’i `main`’den birçok önceki commit de içerir; Codex review yaparken **yalnızca sektör commit’lerinin diff’ine** odaklanması önerilir:
 ```bash
-git diff main...7a87f84 -- App/ supabase/functions/analyze/sector-context.ts supabase/migrations/20260612120000_add_active_analysis_sector.sql RiskDetectedUITests/ scripts/run_ui_tests.sh docs/CODEX_HANDOFF_ACTIVE_ANALYSIS_SECTOR_AND_PROJECT_STATUS_2026-06-12.md
+git fetch origin && git checkout codex/worktree-cleanup && git pull
+git diff main...HEAD -- App/ supabase/functions/analyze/sector-context.ts supabase/migrations/20260612120000_add_active_analysis_sector.sql RiskDetectedUITests/ scripts/run_ui_tests.sh docs/CODEX_HANDOFF_ACTIVE_ANALYSIS_SECTOR_AND_PROJECT_STATUS_2026-06-12.md
 ```
 
 ---
 
-*Bu dosya Codex handoff amaçlıdır. Son güncelleme: 2026-06-12 — remote push (`7a87f84`) + prompt bölümü eklendi.*
+*Bu dosya Codex handoff amaçlıdır. Son güncelleme: 2026-06-12 — remote push tamam, prompt bölümü eklendi.*
