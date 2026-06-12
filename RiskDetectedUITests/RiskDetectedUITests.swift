@@ -89,8 +89,10 @@ final class RiskDetectedUITests: XCTestCase {
         tap("Devam")
 
         XCTAssertTrue(waitFor("onboarding.sector").exists)
+        XCTAssertTrue(waitFor("Birden fazla seçebilirsin. Her analiz öncesinde, o fotoğrafı hangi sektör kapsamında değerlendirmek istediğini ayrıca soracağız.").exists)
         tap("onboarding.sector.construction")
         tap("onboarding.sector.manufacturing")
+        tap("onboarding.sector.mining")
         tap("Devam")
 
         XCTAssertTrue(waitFor("onboarding.frequency").exists)
@@ -381,6 +383,62 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Hesabımı sil / Delete Account").exists)
     }
 
+    func testActiveAnalysisSectorPickerRequiresSelectionBeforeCanvas() throws {
+        launchMainApp()
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("home.mode.text")
+        typeInto("home.text_input", text: "Korkuluk eksik, işçi emniyet kemeri kullanmıyor.")
+        tap("home.start_scan")
+
+        XCTAssertTrue(waitFor("Analiz kapsamını seç", timeout: 8).exists)
+        XCTAssertFalse(isEnabled("Devam et"))
+
+        tap("analysis_sector_chip_construction")
+        XCTAssertTrue(isEnabled("Devam et"))
+        tap("Devam et")
+
+        XCTAssertTrue(waitFor("canvas_sheet", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Odaklı Analiz").exists)
+    }
+
+    func testActiveAnalysisSectorSingleSelectionReplacesPreviousChoice() throws {
+        launchMainApp()
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("home.mode.text")
+        typeInto("home.text_input", text: "Forklift yaya yoluna girdi, raf istifi yüksek.")
+        tap("home.start_scan")
+
+        XCTAssertTrue(waitFor("Analiz kapsamını seç", timeout: 8).exists)
+        tap("analysis_sector_chip_construction")
+        tap("analysis_sector_chip_manufacturing")
+        tap("Devam et")
+
+        XCTAssertTrue(waitFor("canvas_sheet", timeout: 8).exists)
+    }
+
+    func testActiveAnalysisSectorCatalogSheetIsSearchable() throws {
+        launchMainApp()
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("home.mode.text")
+        typeInto("home.text_input", text: "Depo rampasında zemin kaygan ve forklift trafiği yoğun.")
+        tap("home.start_scan")
+
+        XCTAssertTrue(waitFor("Analiz kapsamını seç", timeout: 8).exists)
+        tapScrolling("Tüm sektörleri göster", timeout: 10)
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 8))
+        searchField.tap()
+        searchField.typeText("Depo")
+        XCTAssertTrue(waitFor("analysis_sector_chip_logistics_warehouse").exists)
+        tap("analysis_sector_chip_logistics_warehouse")
+        XCTAssertTrue(waitFor("Analiz kapsamını seç", timeout: 8).exists)
+        tap("Devam et")
+        XCTAssertTrue(waitFor("canvas_sheet", timeout: 8).exists)
+    }
+
     func testProfileShowsDeviceIntegrityWarningWhenFlagged() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_DEVICE_INTEGRITY_WARNING"])
 
@@ -411,12 +469,18 @@ final class RiskDetectedUITests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments = ["RD_UI_TEST_RESET_STATE"] + extraArguments
         app.launchEnvironment["RD_UI_TEST_RESET_STATE"] = "1"
-        app.launch()
+        launchPreparedApp()
     }
 
     private func launchMainApp(extraArguments: [String] = []) {
         app = XCUIApplication()
-        app.launchArguments = ["RD_UI_TEST_MAIN", "RD_UI_TEST_COMPANY_FIXTURES", "RD_UI_TEST_REPORT_FIXTURES"] + extraArguments
+        app.launchArguments = [
+            "RD_UI_TEST_MAIN",
+            "RD_UI_TEST_COMPANY_FIXTURES",
+            "RD_UI_TEST_REPORT_FIXTURES",
+            "-UIViewAnimationEnabled", "NO",
+            "-ApplePersistenceIgnoreState", "YES",
+        ] + extraArguments
         app.launchEnvironment["RD_UI_TEST_MAIN"] = "1"
         app.launchEnvironment["RD_UI_TEST_COMPANY_FIXTURES"] = "1"
         app.launchEnvironment["RD_UI_TEST_REPORT_FIXTURES"] = "1"
@@ -425,6 +489,13 @@ final class RiskDetectedUITests: XCTestCase {
         }
         if extraArguments.contains("RD_UI_TEST_DEVICE_INTEGRITY_WARNING") {
             app.launchEnvironment["RD_UI_TEST_DEVICE_INTEGRITY_WARNING"] = "1"
+        }
+        launchPreparedApp()
+    }
+
+    private func launchPreparedApp() {
+        if app.state != .notRunning {
+            app.terminate()
         }
         app.launch()
     }
@@ -515,6 +586,11 @@ final class RiskDetectedUITests: XCTestCase {
         let element = waitFor(identifier, timeout: timeout)
         XCTAssertTrue(element.isHittable, "Element is not hittable: \(identifier)")
         element.tap()
+    }
+
+    private func isEnabled(_ identifier: String, timeout: TimeInterval = 3) -> Bool {
+        let element = waitFor(identifier, timeout: timeout)
+        return element.isEnabled
     }
 
     private func exists(_ identifier: String, timeout: TimeInterval = 1.5) -> Bool {

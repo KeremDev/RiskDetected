@@ -15,7 +15,7 @@ struct OBSectorView: View {
                 VStack(spacing: 10) {
                     OBHeroTile { OBHeroSector() }
                         .obStage(delay: 0.08)
-                    Text("En çok hangi sektörde çalışıyorsun?")
+                    Text("Hangi sektörlerde çalışıyorsun?")
                         .font(.system(size: RDFontScale.size(24), weight: .semibold))
                         .tracking(-0.6)
                         .foregroundStyle(Color.rdOnyx)
@@ -23,7 +23,7 @@ struct OBSectorView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity)
                         .obStage(delay: 0.14)
-                    Text("En fazla 2 sektör seçebilirsiniz — o sektörlerin risklerini önceleyeceğiz.")
+                    Text("Birden fazla seçebilirsin. Her analiz öncesinde, o fotoğrafı hangi sektör kapsamında değerlendirmek istediğini ayrıca soracağız.")
                         .font(.system(size: RDFontScale.size(14)))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
@@ -40,10 +40,12 @@ struct OBSectorView: View {
                     .frame(maxWidth: .infinity)
                     .obStage(delay: 0.28)
 
-                LazyVGrid(columns: columns, spacing: 10) {
-                    ForEach(Array(OBSector.allCases.enumerated()), id: \.offset) { i, sector in
-                        sectorCard(sector)
-                            .obStage(delay: 0.32 + Double(i) * 0.05)
+                ScrollView(showsIndicators: false) {
+                    LazyVGrid(columns: columns, spacing: 10) {
+                        ForEach(Array(OBSector.allCases.enumerated()), id: \.offset) { i, sector in
+                            sectorCard(sector)
+                                .obStage(delay: 0.32 + Double(i) * 0.05)
+                        }
                     }
                 }
 

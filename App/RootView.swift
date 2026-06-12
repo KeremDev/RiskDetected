@@ -72,8 +72,7 @@ struct RootView: View {
                 .zIndex(210)
             }
         }
-        .animation(.easeInOut(duration: 0.32), value: app.flow)
-        .animation(.easeInOut(duration: 0.22), value: network.isOnline)
+        .modifier(RootFlowAnimationModifier(flow: app.flow, isOnline: network.isOnline))
         .task {
             await refreshLegalDocuments()
         }
@@ -123,6 +122,9 @@ struct RootView: View {
     }
 
     private func refreshLegalDocuments() async {
+        #if DEBUG
+        guard !Self.isUITestLaunch else { return }
+        #endif
         await legalDocuments.refreshIfNeeded(userID: app.auth.session?.user.id)
     }
 
@@ -410,6 +412,34 @@ extension SubscriptionPlanPackage {
                 token.contains("month")
         }
     }
+}
+
+private struct RootFlowAnimationModifier: ViewModifier {
+    let flow: AppFlow
+    let isOnline: Bool
+
+    func body(content: Content) -> some View {
+        #if DEBUG
+        if Self.isUITestLaunch {
+            content
+        } else {
+            content
+                .animation(.easeInOut(duration: 0.32), value: flow)
+                .animation(.easeInOut(duration: 0.22), value: isOnline)
+        }
+        #else
+        content
+            .animation(.easeInOut(duration: 0.32), value: flow)
+            .animation(.easeInOut(duration: 0.22), value: isOnline)
+        #endif
+    }
+
+    #if DEBUG
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+    }
+    #endif
 }
 
 struct SplashView: View {

@@ -73,6 +73,7 @@ struct CanvasSheet: View {
                 onConfirm()
                 dismiss()
             }
+            .accessibilityIdentifier("canvas_sheet.confirm")
             .padding(.horizontal, 20)
             .padding(.top, 8)
             .padding(.bottom, 16)
@@ -80,6 +81,7 @@ struct CanvasSheet: View {
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color.rdPaper.ignoresSafeArea())
+        .accessibilityIdentifier("canvas_sheet")
     }
 
     private func select(_ canvas: AnalysisCanvas) {

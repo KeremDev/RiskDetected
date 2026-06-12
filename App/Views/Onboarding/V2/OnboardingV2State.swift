@@ -45,40 +45,38 @@ enum OBHazardClass: String, CaseIterable, Identifiable {
 }
 
 enum OBSector: String, CaseIterable, Identifiable {
-    case construction, manufacturing, energy, mining, office, other
+    case construction
+    case manufacturing
+    case energy
+    case mining
+    case office
+    case logisticsWarehouse = "logistics_warehouse"
+    case chemicalLaboratory = "chemical_laboratory"
+    case healthcare
+    case foodProduction = "food_production"
+    case agricultureLivestock = "agriculture_livestock"
+    case retail
+    case municipalFieldServices = "municipal_field_services"
+    case education
+    case hospitality
+    case other
+
     var id: String { rawValue }
 
+    var analysisSectorID: AnalysisSectorID? {
+        AnalysisSectorID(rawValue: rawValue)
+    }
+
     var label: String {
-        switch self {
-        case .construction: return "İnşaat"
-        case .manufacturing: return "İmalat"
-        case .energy: return "Enerji"
-        case .mining: return "Maden"
-        case .office: return "Hizmet / Ofis"
-        case .other: return "Diğer"
-        }
+        analysisSectorID?.label() ?? "Diğer"
     }
 
     var sub: String {
-        switch self {
-        case .construction: return "Şantiye, yapı, hafriyat"
-        case .manufacturing: return "Fabrika, atölye, tekstil"
-        case .energy: return "Rafineri, santral, kimya"
-        case .mining: return "Yeraltı, açık ocak, taşocağı"
-        case .office: return "Banka, AVM, perakende"
-        case .other: return "Tarım, lojistik, sağlık"
-        }
+        analysisSectorID?.subtitle ?? "Tanımlanmamış veya farklı sektörler"
     }
 
     var icon: String {
-        switch self {
-        case .construction: return "hammer.fill"
-        case .manufacturing: return "gearshape.2.fill"
-        case .energy: return "flame.fill"
-        case .mining: return "mountain.2.fill"
-        case .office: return "building.2.fill"
-        case .other: return "ellipsis"
-        }
+        analysisSectorID?.icon ?? "ellipsis"
     }
 }
 
@@ -178,15 +176,12 @@ final class OnboardingV2State: ObservableObject {
         if hazards.contains(h) { hazards.remove(h) } else { hazards.insert(h) }
     }
 
-    static let maxSectorSelection = 2
-
     @discardableResult
     func toggleSector(_ s: OBSector) -> Bool {
         if let i = sectors.firstIndex(of: s) {
             sectors.remove(at: i)
             return true
         }
-        guard sectors.count < Self.maxSectorSelection else { return false }
         sectors.append(s)
         return true
     }

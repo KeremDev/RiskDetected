@@ -163,9 +163,10 @@ final class PDFReportService: @unchecked Sendable {
             color: .rdPDFBlack
         )
 
+        let sectorPart = analysis.analysisSectorLabel.map { "Analiz kapsamı: \($0) · " } ?? ""
         drawText(
-            "\(formattedDate(analysis.createdAt, language: input.options.language)) · \(canvasLabel(analysis.canvas)) · \(input.findings.count) bulgu",
-            in: CGRect(x: margin, y: contentTop + 38, width: 480, height: 22),
+            "\(formattedDate(analysis.createdAt, language: input.options.language)) · \(sectorPart)Analiz odağı: \(canvasLabel(analysis.canvas)) · \(input.findings.count) bulgu",
+            in: CGRect(x: margin, y: contentTop + 38, width: 520, height: 22),
             font: .systemFont(ofSize: 12, weight: .medium),
             color: .rdPDFSlate
         )
@@ -539,8 +540,9 @@ final class PDFReportService: @unchecked Sendable {
         let title = input.options.preparedTitle.nonEmpty ?? input.profile?.title ?? "Belirtilmedi"
         let certificate = input.options.certificateNumber.nonEmpty ?? input.profile?.certificateNumber ?? "Belirtilmedi"
         let companyInfo = input.options.companyInfo.nonEmpty ?? input.profile?.phone
+        let sectorLine = analysis.analysisSectorLabel.map { "Analiz kapsamı: \($0)\n" } ?? ""
         drawFittingText(
-            "Analiz: \(analysis.title)\nFirma: \(company)\nFirma bilgisi: \(companyInfo ?? "Belirtilmedi")",
+            "\(sectorLine)Analiz: \(analysis.title)\nFirma: \(company)\nFirma bilgisi: \(companyInfo ?? "Belirtilmedi")",
             in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 260, height: 37),
             baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
             minimumFontSize: 5.8,

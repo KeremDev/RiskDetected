@@ -511,6 +511,9 @@ final class AppState: ObservableObject {
     }
 
     private func observeSubscriptions() {
+        #if DEBUG
+        if Self.isUITestMainLaunch { return }
+        #endif
         subscriptions.statePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in

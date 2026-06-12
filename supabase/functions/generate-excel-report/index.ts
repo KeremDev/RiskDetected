@@ -10,6 +10,10 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import JSZip from "npm:jszip@3.10.1";
 import XLSX from "npm:xlsx-js-style@1.2.0";
+import {
+  analysisSectorLabel,
+  normalizeAnalysisSector,
+} from "../analyze/sector-context.ts";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -47,6 +51,7 @@ type AnalysisRow = Record<string, unknown> & {
   finding_count?: number | null;
   created_at?: string | null;
   completed_at?: string | null;
+  analysis_sector?: string | null;
 };
 
 type FindingRow = Record<string, unknown> & {
@@ -472,6 +477,11 @@ function bandStyle(value: unknown) {
     default:
       return { fg: palette.unknown, bg: palette.unknownSoft };
   }
+}
+
+function analysisSectorLabelFromRow(analysis: AnalysisRow): string {
+  const sector = normalizeAnalysisSector(analysis.analysis_sector);
+  return sector ? analysisSectorLabel(sector, "tr") : "Belirtilmedi";
 }
 
 function canvasLabel(value: unknown): string {
@@ -1357,6 +1367,22 @@ function appendFineKinneyReferenceSheet(
       "",
       "",
     ],
+    [
+      `Analiz kapsamı: ${analysisSectorLabelFromRow(analysis)}`,
+      "",
+      "",
+      "",
+      "",
+      `Analiz odağı: ${canvasLabel(analysis.canvas)}`,
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
   ]);
   setCols(sheet, [12, 18, 18, 18, 4, 12, 18, 18, 18, 4, 12, 18, 18, 18]);
   setRows(sheet, [
@@ -1924,6 +1950,16 @@ function makeWorkbook(
       "",
       "Metot",
       methodLabel(method),
+    ],
+    [
+      "Analiz kapsamı",
+      analysisSectorLabelFromRow(analysis),
+      "",
+      "Analiz odağı",
+      canvasLabel(analysis.canvas),
+      "",
+      "",
+      "",
     ],
     [
       "Başlangıç",

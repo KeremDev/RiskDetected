@@ -39,6 +39,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   sanitizeTextAnalysisHazardForReportLanguage,
 } from "../_shared/text-report-language.ts";
+import {
+  ACTIVE_ANALYSIS_SECTOR_PROMPT_VERSION,
+  type AnalysisSectorId,
+  analysisSectorLabel,
+  buildActiveSectorPromptBlock,
+  normalizeAnalysisSector,
+  onboardingSectorProfileRule,
+} from "./sector-context.ts";
 
 declare const EdgeRuntime: {
   waitUntil: (promise: Promise<unknown>) => void;
@@ -824,12 +832,13 @@ function frequencyContext(value: string | null): string {
 
 function buildOnboardingContext(
   row: OnboardingAnswersRow | null,
+  hasActiveSector: boolean,
 ): OnboardingContext {
   const certificateClass = typeof row?.certificate_class === "string"
     ? row.certificate_class
     : null;
   const hazardClasses = safeStringArray(row?.hazard_classes);
-  const sectors = safeStringArray(row?.sectors).slice(0, 2);
+  const sectors = safeStringArray(row?.sectors);
   const auditFrequency = typeof row?.audit_frequency === "string"
     ? row.audit_frequency
     : null;
@@ -837,12 +846,17 @@ function buildOnboardingContext(
     certificateClass || hazardClasses.length > 0 || sectors.length > 0 ||
       auditFrequency,
   );
+  const sectorLine = hasActiveSector
+    ? `Onboarding sektörleri (${sectors.length}): ${
+      sectors.length > 0 ? sectors.join(", ") : "belirtilmedi"
+    }. ${onboardingSectorProfileRule(true)}`
+    : sectorContext(sectors);
 
   const block = `<kullanici_profili applied="${applied ? "true" : "false"}">
 Bu profil çıktının tonunu ve önceliklerini şekillendirir; tarama prosedürünü veya görsel/metin kanıtını asla atlatmaz.
 - ${certificateContext(certificateClass)}
 - ${onboardingHazardContext(hazardClasses)}
-- ${sectorContext(sectors)}
+- ${sectorLine}
 - ${frequencyContext(auditFrequency)}
 </kullanici_profili>`;
 
@@ -861,6 +875,7 @@ function buildAnalysisContext(params: {
   tier: PlanTier;
   onboardingContext: OnboardingContext;
   companyContext: string | null;
+  activeSector: AnalysisSectorId | null;
 }): string {
   const focusLines = params.canvases
     .filter((c) => c !== "general")
@@ -868,10 +883,15 @@ function buildAnalysisContext(params: {
     .filter(Boolean)
     .join(" ") ||
     CANVAS_FOCUS["general"];
+  const activeSectorBlock = buildActiveSectorPromptBlock({
+    sector: params.activeSector,
+    outputLanguage: "tr",
+  });
 
   return `<analiz_baglami prompt_version="${PROMPT_VERSION}" personalization_version="${PERSONALIZATION_VERSION}">
 <odak>${focusLines}</odak>
 ${buildSubscriptionContext(params.tier)}
+${activeSectorBlock}
 ${params.onboardingContext.block}
 ${params.companyContext ?? ""}
 KRİTİK ÇELİŞKİ KURALLARI:
@@ -2510,9 +2530,29 @@ serve(async (req: Request) => {
     analysis_mode,
     text_input,
     company_id,
+    analysis_sector,
+    analysis_sector_source,
+    analysis_sector_prompt_version,
     photo_paths = [],
     photo_base64_parts = [],
   } = body;
+  const requestedAnalysisSector = typeof analysis_sector === "string"
+    ? analysis_sector.trim()
+    : "";
+  if (requestedAnalysisSector.length > 0) {
+    const normalizedSector = normalizeAnalysisSector(requestedAnalysisSector);
+    if (!normalizedSector) {
+      return errorResponse(
+        400,
+        "Analiz kapsamı geçerli değil. Lütfen sektör seçimini yenileyip tekrar deneyin.",
+        {
+          code: "invalid_analysis_sector",
+          requestID,
+          supportID,
+        },
+      );
+    }
+  }
   const requestedCompanyID = typeof company_id === "string"
     ? company_id.trim()
     : "";
@@ -2553,7 +2593,9 @@ serve(async (req: Request) => {
 
   const { data: ownedAnalysis, error: analysisOwnerErr } = await supabase
     .from("analyses")
-    .select("id,user_id,status,worker_attempt_count")
+    .select(
+      "id,user_id,status,worker_attempt_count,analysis_sector,analysis_sector_source,analysis_sector_prompt_version",
+    )
     .eq("id", analysisID)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -3165,13 +3207,37 @@ serve(async (req: Request) => {
     .map((id) => ({ id, prompt: CANVAS_FOCUS[id] }))
     .filter((item) => Boolean(item.prompt));
   const systemPrompt = buildSystemPrompt();
-  const onboardingContext = buildOnboardingContext(onboardingAnswers);
+  const resolvedActiveSector = normalizeAnalysisSector(
+    requestedAnalysisSector.length > 0
+      ? requestedAnalysisSector
+      : ownedAnalysis?.analysis_sector,
+  );
+  const resolvedActiveSectorSource = typeof analysis_sector_source === "string"
+    ? analysis_sector_source.trim()
+    : typeof ownedAnalysis?.analysis_sector_source === "string"
+    ? ownedAnalysis.analysis_sector_source
+    : resolvedActiveSector
+    ? "legacy_missing"
+    : null;
+  const resolvedActiveSectorPromptVersion =
+    typeof analysis_sector_prompt_version === "string"
+      ? analysis_sector_prompt_version.trim()
+      : typeof ownedAnalysis?.analysis_sector_prompt_version === "string"
+      ? ownedAnalysis.analysis_sector_prompt_version
+      : resolvedActiveSector
+      ? ACTIVE_ANALYSIS_SECTOR_PROMPT_VERSION
+      : null;
+  const onboardingContext = buildOnboardingContext(
+    onboardingAnswers,
+    Boolean(resolvedActiveSector),
+  );
   const companyContext = companyPromptContext(company);
   const analysisContext = buildAnalysisContext({
     canvases: resolvedCanvases,
     tier: qualityTier,
     onboardingContext,
     companyContext,
+    activeSector: resolvedActiveSector,
   });
   const contextHash = await hashedID(analysisContext);
   const referenceMode = referenceModeForTier(qualityTier);
@@ -3183,7 +3249,15 @@ serve(async (req: Request) => {
     certificate_class: onboardingContext.certificateClass,
     hazard_classes: onboardingContext.hazardClasses,
     sectors: onboardingContext.sectors,
+    onboarding_sector_count: onboardingContext.sectors.length,
     audit_frequency: onboardingContext.auditFrequency,
+    active_analysis_sector: resolvedActiveSector,
+    active_analysis_sector_source: resolvedActiveSectorSource,
+    active_analysis_sector_prompt_version: resolvedActiveSectorPromptVersion,
+    active_analysis_sector_label: resolvedActiveSector
+      ? analysisSectorLabel(resolvedActiveSector, "tr")
+      : null,
+    sector_context_applied: Boolean(resolvedActiveSector),
     context_hash: contextHash,
     input_mode: imageBase64Parts.length > 0 ? "photo" : "text",
     inline_photo_count: inlinePhotoCount,

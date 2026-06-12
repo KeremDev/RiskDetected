@@ -997,7 +997,10 @@ struct ReportView: View {
             highestBandFK: RiskLevel.critical.rawValue,
             highestBandM5: RiskLevel.critical.rawValue,
             findingCount: Finding.mock.count,
-            createdAt: "2026-05-28T00:00:00Z"
+            createdAt: "2026-05-28T00:00:00Z",
+            analysisSector: nil,
+            analysisSectorSource: nil,
+            analysisSectorPromptVersion: nil
         )
     }
     #endif

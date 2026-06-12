@@ -27,6 +27,10 @@ struct HomeView: View {
     @State private var text: String = ""
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
     @State private var showCanvasSheet = false
+    @State private var showSectorSheet = false
+    @State private var showSectorCatalogSheet = false
+    @State private var selectedAnalysisSector: AnalysisSectorID?
+    @State private var sectorSearchText = ""
     @State private var showAnnotate = false
     @State private var pendingAnnotateRequestID: UUID?
     @State private var showResult = false
@@ -96,6 +100,7 @@ struct HomeView: View {
                     ) {
                         startAnalysisFlow()
                     }
+                    .accessibilityIdentifier("home.start_scan")
                     .frame(height: 56)
                     .rdCardShadow(colorScheme: colorScheme, radius: 3, x: 8, y: 10)
                     .padding(.top, 14)
@@ -202,6 +207,41 @@ struct HomeView: View {
             )
             .presentationDetents([.height(360), .large])
             .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
+        }
+        .sheet(isPresented: $showSectorSheet) {
+            AnalysisSectorPickerView(
+                items: sectorPickerItems,
+                selected: $selectedAnalysisSector,
+                onContinue: {
+                    showSectorSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        continueAfterSectorSelection()
+                    }
+                },
+                onShowAll: {
+                    showSectorSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        showSectorCatalogSheet = true
+                    }
+                }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
+        }
+        .sheet(isPresented: $showSectorCatalogSheet, onDismiss: {
+            if selectedAnalysisSector != nil, !showCanvasSheet, pendingJob == nil {
+                showSectorSheet = true
+            }
+        }) {
+            AnalysisSectorPickerSheet(
+                items: sectorPickerItems,
+                selected: $selectedAnalysisSector,
+                searchText: $sectorSearchText,
+                onSelect: { _ in }
+            )
+            .presentationDetents([.large])
             .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showCameraPicker) {
@@ -386,6 +426,7 @@ struct HomeView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier(m == .photo ? "home.mode.photo" : "home.mode.text")
             }
         }
         .padding(4)
@@ -658,6 +699,7 @@ struct HomeView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 8)
                             .frame(minHeight: 160)
+                            .accessibilityIdentifier("home.text_input")
                             .onChange(of: text) { new in
                                 if new.count > maxTextInputCharacters {
                                     text = String(new.prefix(maxTextInputCharacters))
@@ -980,7 +1022,7 @@ struct HomeView: View {
         !app.currentTier.isPaid && quotaUsage?.isExhausted == true
     }
 
-    /// "Taramayı Başlat" → foto yoksa picker; varsa canvas sheet.
+    /// "Taramayı Başlat" → foto yoksa picker; varsa sektör veya canvas seçimine geçer.
     private func startAnalysisFlow() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
@@ -999,7 +1041,7 @@ struct HomeView: View {
             ).fullText
             return
         }
-        showCanvasSheet = true
+        beginPreAnalysisSelection()
     }
 
     private func resetAnalysisDraft() {
@@ -1033,7 +1075,7 @@ struct HomeView: View {
         if selectedImage == nil {
             showSourceDialog = true
         } else {
-            showCanvasSheet = true
+            beginPreAnalysisSelection()
         }
     }
 
@@ -1045,19 +1087,45 @@ struct HomeView: View {
     }
 
     /// AnnotateView'daki "İşaretli alanları analiz et" sonrası ana sayfada
-    /// bekletmeden doğrudan analiz odağı seçimine geçer.
+    /// bekletmeden doğrudan sektör veya canvas seçimine geçer.
     private func continueFromAnnotatedPhoto() {
         guard mode == .photo, selectedImage != nil else { return }
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             return
         }
+        beginPreAnalysisSelection()
+    }
+
+    /// Foto/metin hazır olduktan sonra ilk seçim adımı.
+    private func beginPreAnalysisSelection() {
+        if RDConfig.Features.activeAnalysisSectorEnabled {
+            selectedAnalysisSector = nil
+            showSectorSheet = true
+        } else {
+            showCanvasSheet = true
+        }
+    }
+
+    /// Aktif sektör seçildikten sonra canvas seçimine geçer.
+    private func continueAfterSectorSelection() {
+        guard selectedAnalysisSector != nil else { return }
         showCanvasSheet = true
     }
 
-    /// Canvas seçimi onaylandıktan sonra çağrılır.
+    /// Canvas seçimi onaylandıktan sonra analizi başlatır.
     private func continueAfterCanvasSelection() {
         runAnalysis()
+    }
+
+    private var sectorPickerItems: [AnalysisSectorPickerItem] {
+        let onboarding = AnalysisSectorPreferences.onboardingSectors(
+            from: OnboardingAnswersService.shared.pendingDraft()
+        )
+        return AnalysisSectorPreferences.pickerItems(
+            onboardingSectors: onboarding,
+            lastUsed: AnalysisSectorPreferences.lastUsedSector()
+        )
     }
 
     /// Canvas + opsiyonel firma seçimi tamamlandıktan sonra çağrılır.
@@ -1073,6 +1141,14 @@ struct HomeView: View {
         let canvases = selectedCanvasesForCurrentTier()
         let capturedImage = selectedImage
         let capturedText = text
+        let analysisSector: AnalysisSectorID?
+        if RDConfig.Features.activeAnalysisSectorEnabled {
+            guard let selected = selectedAnalysisSector else { return }
+            analysisSector = selected
+            AnalysisSectorPreferences.recordLastUsed(selected)
+        } else {
+            analysisSector = nil
+        }
 
         switch mode {
         case .photo:
@@ -1088,6 +1164,7 @@ struct HomeView: View {
                     userID: userID,
                     images: [img],
                     canvases: canvases,
+                    analysisSector: analysisSector,
                     companyID: nil,
                     onProgress: progress
                 )
@@ -1106,6 +1183,7 @@ struct HomeView: View {
                     userID: userID,
                     text: trimmed,
                     canvases: canvases,
+                    analysisSector: analysisSector,
                     companyID: nil,
                     onProgress: progress
                 )

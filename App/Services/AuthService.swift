@@ -17,6 +17,14 @@ final class AuthService: ObservableObject {
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AuthService")
 
     init() {
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            session = nil
+            profile = nil
+            Self.clearLocalSupabaseSessionSynchronously(using: supabase)
+            return
+        }
+        #endif
         let isFreshInstall = Self.markInstallAndDetectFreshInstall()
         // İlk başta cache'lenmiş session'ı oku. iOS Keychain uygulama silinse bile
         // kalabildiği için fresh install'da eski Supabase session'ını kabul etmiyoruz.
@@ -566,6 +574,22 @@ final class AuthService: ObservableObject {
         let initials = parts.compactMap { $0.first.map(String.init) }.joined().uppercased()
         return initials.isEmpty ? nil : initials
     }
+
+    #if DEBUG
+    private static var isUITestMainLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_MAIN")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
+    }
+
+    private static func clearLocalSupabaseSessionSynchronously(using supabase: SupabaseService) {
+        let semaphore = DispatchSemaphore(value: 0)
+        Task.detached(priority: .userInitiated) {
+            try? await supabase.auth.signOut(scope: .local)
+            semaphore.signal()
+        }
+        _ = semaphore.wait(timeout: .now() + 3)
+    }
+    #endif
 }
 
 struct ProfileUpdateInput {

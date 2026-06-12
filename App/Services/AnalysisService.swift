@@ -103,6 +103,7 @@ final class AnalysisService {
         userID: UUID,
         images: [UIImage],
         canvases: [AnalysisCanvas],
+        analysisSector: AnalysisSectorID? = nil,
         companyID: UUID? = nil,
         title: String? = nil,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
@@ -121,7 +122,8 @@ final class AnalysisService {
             canvases: canvases,
             title: title ?? defaultTitle(for: canvases),
             textInput: nil,
-            companyID: companyID
+            companyID: companyID,
+            analysisSector: analysisSector
         )
 
         // 2) Fotoğrafları Edge Function'a inline base64 gönder.
@@ -136,6 +138,7 @@ final class AnalysisService {
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
             textInput: nil, companyID: companyID,
+            analysisSector: analysisSector,
             photoPaths: [], photoBase64Parts: photoParts,
             onProgress: onProgress
         )
@@ -149,6 +152,7 @@ final class AnalysisService {
         userID: UUID,
         text: String,
         canvases: [AnalysisCanvas],
+        analysisSector: AnalysisSectorID? = nil,
         companyID: UUID? = nil,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
     ) async throws -> AnalysisResultBundle {
@@ -167,12 +171,14 @@ final class AnalysisService {
             canvases: canvases,
             title: defaultTitle(for: canvases),
             textInput: trimmedText,
-            companyID: companyID
+            companyID: companyID,
+            analysisSector: analysisSector
         )
 
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
             textInput: trimmedText, companyID: companyID,
+            analysisSector: analysisSector,
             photoPaths: [], photoBase64Parts: [],
             onProgress: onProgress
         )
@@ -1137,7 +1143,8 @@ final class AnalysisService {
         canvases: [AnalysisCanvas],
         title: String,
         textInput: String?,
-        companyID: UUID?
+        companyID: UUID?,
+        analysisSector: AnalysisSectorID?
     ) async throws -> UUID {
         struct InsertPayload: Encodable {
             let user_id: String
@@ -1147,6 +1154,9 @@ final class AnalysisService {
             let text_input: String?
             let company_id: String?
             let status: String
+            let analysis_sector: String?
+            let analysis_sector_source: String?
+            let analysis_sector_prompt_version: String?
         }
         // `canvas` field = primary (first sorted) id — legacy single-id contract korunuyor.
         // Çoklu seçim backend hazır olunca `canvases` array üzerinden işlenecek.
@@ -1159,7 +1169,10 @@ final class AnalysisService {
             title: title,
             text_input: textInput,
             company_id: companyID?.uuidString,
-            status: "pending"
+            status: "pending",
+            analysis_sector: analysisSector?.rawValue,
+            analysis_sector_source: analysisSector == nil ? nil : "user_selected",
+            analysis_sector_prompt_version: analysisSector == nil ? nil : AnalysisSectorID.activeAnalysisPromptVersion
         )
         do {
             let row: AnalysisRow = try await supabase.client
@@ -1239,6 +1252,7 @@ final class AnalysisService {
         canvases: [AnalysisCanvas],
         textInput: String?,
         companyID: UUID?,
+        analysisSector: AnalysisSectorID?,
         photoPaths: [String],
         photoBase64Parts: [InlinePhotoPart],
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)?
@@ -1252,6 +1266,9 @@ final class AnalysisService {
             let request_id: String
             let support_id: String
             let company_id: String?
+            let analysis_sector: String?
+            let analysis_sector_source: String?
+            let analysis_sector_prompt_version: String?
             let photo_paths: [String]
             let photo_base64_parts: [InlinePhotoPart]
         }
@@ -1270,6 +1287,9 @@ final class AnalysisService {
             request_id: requestID,
             support_id: supportID,
             company_id: companyID?.uuidString,
+            analysis_sector: analysisSector?.rawValue,
+            analysis_sector_source: analysisSector == nil ? nil : "user_selected",
+            analysis_sector_prompt_version: analysisSector == nil ? nil : AnalysisSectorID.activeAnalysisPromptVersion,
             photo_paths: photoPaths,
             photo_base64_parts: photoBase64Parts
         )
@@ -1553,7 +1573,10 @@ final class AnalysisService {
             highestBandFK: RiskLevel.critical.rawValue,
             highestBandM5: RiskLevel.critical.rawValue,
             findingCount: Finding.mock.count,
-            createdAt: ISO8601DateFormatter().string(from: Date())
+            createdAt: ISO8601DateFormatter().string(from: Date()),
+            analysisSector: "construction",
+            analysisSectorSource: "user_selected",
+            analysisSectorPromptVersion: AnalysisSectorID.activeAnalysisPromptVersion
         )
         let rows = Finding.mock.map { finding in
             FindingRow(
@@ -1788,6 +1811,18 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
     let highestBandM5: String?
     let findingCount: Int
     let createdAt: String?
+    let analysisSector: String?
+    let analysisSectorSource: String?
+    let analysisSectorPromptVersion: String?
+
+    var analysisSectorID: AnalysisSectorID? {
+        guard let analysisSector else { return nil }
+        return AnalysisSectorID(rawValue: analysisSector)
+    }
+
+    var analysisSectorLabel: String? {
+        analysisSectorID?.label()
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -1805,6 +1840,9 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
         case highestBandM5  = "highest_band_m5"
         case findingCount   = "finding_count"
         case createdAt      = "created_at"
+        case analysisSector = "analysis_sector"
+        case analysisSectorSource = "analysis_sector_source"
+        case analysisSectorPromptVersion = "analysis_sector_prompt_version"
     }
 }
 

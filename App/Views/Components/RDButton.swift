@@ -21,6 +21,7 @@ struct RDButton: View {
     var reservesActionIconSpace: Bool = true
     var titleFontSize: CGFloat = 17
     var contentOffsetX: CGFloat = 0
+    var a11yID: String? = nil
     let action: () -> Void
 
     var body: some View {
@@ -59,6 +60,7 @@ struct RDButton: View {
             .shadow(color: shadow, radius: 18, x: 0, y: 6)
         }
         .buttonStyle(RDPressableButtonStyle())
+        .accessibilityIdentifier(a11yID ?? title)
     }
 
     @ViewBuilder

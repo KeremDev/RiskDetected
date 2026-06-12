@@ -127,5 +127,6 @@ enum RDConfig {
 
     enum Features {
         static let professionalProgressEnabled = true
+        static let activeAnalysisSectorEnabled = true
     }
 }

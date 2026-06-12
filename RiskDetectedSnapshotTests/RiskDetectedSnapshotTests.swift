@@ -8,7 +8,8 @@ final class RiskDetectedSnapshotTests: SnapshotTest {
     override class func snapshotPreviews() -> [String]? {
         [
             "InAppPaywallView",
-            "AnalyzingView"
+            "AnalyzingView",
+            "AnalysisSectorPickerView"
         ]
     }
 }

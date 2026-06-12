@@ -127,6 +127,13 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
         try? FileManager.default.removeItem(at: diagnosticsFileURL)
     }
 
+    #if DEBUG
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+    }
+    #endif
+
     private static func diagnosticSummary(for customerInfo: CustomerInfo) -> String {
         let entitlements = customerInfo.entitlements.active.keys.sorted().joined(separator: ",")
         let products = customerInfo.activeSubscriptions.sorted().joined(separator: ",")
@@ -142,6 +149,9 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
         guard !isConfigured else { return }
 
         #if DEBUG
+        if Self.isUITestLaunch {
+            return
+        }
         Purchases.logLevel = .debug
         #endif
 

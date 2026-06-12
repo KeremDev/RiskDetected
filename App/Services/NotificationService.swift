@@ -47,6 +47,9 @@ final class NotificationService: NSObject, ObservableObject {
     }
 
     func configure() {
+        #if DEBUG
+        guard !Self.isUITestLaunch else { return }
+        #endif
         UNUserNotificationCenter.current().delegate = self
         Task { await refreshSettings() }
     }
@@ -371,6 +374,18 @@ extension NotificationService: UNUserNotificationCenterDelegate {
 final class RDAppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
+        willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        #if DEBUG
+        if Self.isUITestLaunch {
+            UIView.setAnimationsEnabled(false)
+        }
+        #endif
+        return true
+    }
+
+    func application(
+        _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         NotificationService.shared.didRegisterForRemoteNotifications(deviceToken: deviceToken)
@@ -382,6 +397,13 @@ final class RDAppDelegate: NSObject, UIApplicationDelegate {
     ) {
         NotificationService.shared.didFailToRegisterForRemoteNotifications(error: error)
     }
+
+    #if DEBUG
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+    }
+    #endif
 }
 
 private enum PushEnvironment {

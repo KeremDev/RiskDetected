@@ -38,6 +38,9 @@ struct ResultView: View {
         let id = bundle?.analysis.canvas ?? "general"
         return AnalysisCanvas.all.first { $0.id == id }?.title ?? id
     }
+    private var analysisSectorLabel: String? {
+        bundle?.analysis.analysisSectorLabel
+    }
     private var photoPath: String? {
         bundle?.photos.first?.storagePath
     }
@@ -251,6 +254,17 @@ struct ResultView: View {
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("\(formattedDate) · \(canvasLabel)")
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .lineLimit(1)
+                    if let analysisSectorLabel {
+                        Text("Analiz kapsamı: \(analysisSectorLabel)")
+                            .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                            .foregroundStyle(Color.rdCharcoal)
+                            .lineLimit(1)
+                            .accessibilityIdentifier("result.analysis_sector")
+                    }
+                    Text("Analiz odağı: \(canvasLabel)")
                         .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
