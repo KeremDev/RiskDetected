@@ -1,11 +1,22 @@
 # RiskDetected — Codex Handoff: Aktif Analiz Sektörü & Proje Durumu
 
-**Tarih:** 2026-06-12  
+**Tarih:** 2026-06-12 (son güncelleme: push sonrası)  
 **Branch:** `codex/worktree-cleanup`  
-**PR:** https://github.com/KeremDev/RiskDetected/pull/1 (OPEN)  
+**Remote:** `origin/codex/worktree-cleanup` — **push edildi** (`b04c2ef` → `7a87f84`)  
+**PR:** https://github.com/KeremDev/RiskDetected/pull/1 (OPEN, 2 sektör commit’i dahil)  
+**HEAD:** `7a87f84`  
 **Hazırlayan:** Cursor agent oturumu (Kerem kaydı)
 
 Bu belge, Codex’in projeyi hızlıca değerlendirmesi için yazıldı. Önce **ne yapıldı**, sonra **proje hangi aşamada**, en sonda **sıradaki işler** özetlenir.
+
+### Codex için hızlı checkout
+```bash
+git fetch origin
+git checkout codex/worktree-cleanup
+git pull origin codex/worktree-cleanup
+# Bu handoff dosyası:
+# docs/CODEX_HANDOFF_ACTIVE_ANALYSIS_SECTOR_AND_PROJECT_STATUS_2026-06-12.md
+```
 
 ---
 
@@ -18,11 +29,12 @@ RiskDetected, iOS üzerinde çalışan bir **İSG (iş sağlığı ve güvenliğ
 | Alan | Durum |
 |------|--------|
 | Aktif sektör — iOS UI & akış | ✅ Tamamlandı |
-| Aktif sektör — backend prompt & persist | ✅ Tamamlandı |
+| Aktif sektör — backend prompt & persist | ✅ Tamamlandı (`sector-context.ts`, `active-sector-v1`) |
 | Prod Supabase migration + edge deploy | ✅ Uygulandı (2026-06-12) |
 | UI testleri (sektör akışı) | ✅ 3/3 geçiyor |
+| Git remote sync | ✅ `origin/codex/worktree-cleanup` güncel (`7a87f84`) |
 | PR #1 | 🟡 Açık, merge bekliyor |
-| UI polish (tüm sektörler grid, boşluk) | ✅ Bu commit ile eklendi |
+| UI polish (tüm sektörler grid, boşluk) | ✅ `7a87f84` — remote’ta |
 | Gerçek cihaz smoke (analiz → PDF) | ⏳ Yapılmadı |
 | Rapor arşivi sektör filtresi | ⏳ Planlı, yapılmadı |
 | İngilizce lokalizasyon | ⏳ Ayrı iş paketi |
@@ -89,8 +101,9 @@ Kapsam (~28 dosya, +1361 satır):
 - Edge: `analyze` v106, `generate-excel-report` v58
 - Deno testleri: `sector-context_test.ts` 6/6
 
-### Commit 2: (bu commit) — UI polish & katalog sadeleştirme
-**Mesaj:** `Show all analysis sectors inline and tighten picker layout.`
+### Commit 2: `7a87f84` — UI polish, handoff doc & katalog sadeleştirme
+**Mesaj:** `Show all analysis sectors inline and tighten picker layout.`  
+**Remote:** ✅ push edildi (2026-06-12)
 
 Değişiklikler:
 - 8 chip + “Tüm sektörleri göster” kaldırıldı → **15 sektör tek grid**
@@ -148,6 +161,44 @@ Değişiklikler:
 `general`, `construction`, `manufacturing`, `mining`, `energy`, `office`, `logistics_warehouse`, `chemical_laboratory`, `healthcare`, `food_production`, `agriculture_livestock`, `retail`, `municipal_field_services`, `education`, `hospitality`
 
 Swift `AnalysisSectorCatalog.validateSyncWithBackend()` DEBUG’da senkron kontrol eder.
+
+---
+
+## 6b. Prompt güncellemeleri (Codex — önemli)
+
+**Evet, prompt’lar güncellendi** — `b04c2ef` commit’inde. `7a87f84` yalnızca iOS UI’dır; prompt’a dokunmaz.
+
+### Yeni modül: `supabase/functions/analyze/sector-context.ts`
+- **Prompt versiyonu:** `ACTIVE_ANALYSIS_SECTOR_PROMPT_VERSION = "active-sector-v1"`
+- **14 sektör için** Türkçe `SEKTÖR REHBERİ` blokları (`general` hariç)
+- **`buildActiveSectorPromptBlock()`** — seçilen sektöre göre `<aktif_analiz_sektoru>` XML bloğu üretir
+- **`onboardingSectorProfileRule(hasActiveSector)`** — aktif sektör varken onboarding’in sadece profil sinyali olduğunu modele söyler
+
+### Ana prompt entegrasyonu (`analyze/index.ts`)
+`buildAnalysisContext()` içinde sıra:
+1. Canvas odak (`<odak>`)
+2. Abonelik bağlamı
+3. **`${activeSectorBlock}`** ← yeni
+4. Onboarding profil bloğu
+5. Firma bağlamı
+
+### Üç prompt senaryosu
+| `analysis_sector` | Model davranışı |
+|-------------------|-----------------|
+| Spesifik sektör (ör. `logistics_warehouse`) | Sektör etiketi + sektör rehberi + önceliklendirme kuralları |
+| `general` | Sektöre özel varsayım yapma; genel İSG taraması |
+| Boş / eski client | Legacy fallback; onboarding yalnızca zayıf sinyal |
+
+### Örnek rehber (depo/lojistik)
+Forklift, yaya yolları, raf istifi, rampa zeminleri, araç-yaya ayrımı vb. — `SECTOR_GUIDANCE_TR.logistics_warehouse` içinde.
+
+### Prod deploy
+- Edge function `analyze` **v106** (prompt değişiklikleri prod’da)
+- `generate-excel-report` **v58** (sektör metadata)
+- Deno: `sector-context_test.ts` — **6/6 passed**
+
+### Audit alanları (`_input_audit`)
+`active_analysis_sector`, `active_analysis_sector_source`, `active_analysis_sector_prompt_version`, `active_analysis_sector_label`, `sector_context_applied`
 
 ---
 
@@ -224,9 +275,10 @@ Codex bu dosyaları **ayrı epic** olarak ele almalı.
 ## 11. Codex için önerilen sonraki adımlar (öncelik sırası)
 
 ### P0 — Release kapatma
-1. PR #1’i review et; bu commit’i branch’e push et
-2. Gerçek cihaz smoke: metin analizi → sektör seç → sonuç → PDF
-3. PR merge → TestFlight / store build planı
+1. ~~PR #1 branch push~~ ✅ `origin/codex/worktree-cleanup` @ `7a87f84`
+2. PR #1 review + merge onayı
+3. Gerçek cihaz smoke: metin analizi → sektör seç → sonuç → PDF (sektör metni + prompt etkisi doğrula)
+4. PR merge → TestFlight / store build planı
 
 ### P1 — Ürün tamamlama
 4. Rapor arşivine sektör filtresi
@@ -242,8 +294,9 @@ Codex bu dosyaları **ayrı epic** olarak ele almalı.
 ## 12. Hızlı doğrulama komutları
 
 ```bash
-# Branch & PR
-git branch --show-current
+# Branch & PR (remote güncel)
+git fetch origin && git checkout codex/worktree-cleanup && git pull
+git log -2 --oneline   # b04c2ef, 7a87f84 beklenir
 gh pr view 1
 
 # UI testler
@@ -278,12 +331,26 @@ xcodebuild -project RiskDetected.xcodeproj -scheme RiskDetected \
 | **Maturity** | Production app (build 60 App Review onaylı); aktif feature geliştirme |
 | **Architecture** | SwiftUI iOS client + Supabase BaaS; edge functions iş mantığı |
 | **Test coverage** | Sektör akışı UI testli; geniş E2E/integration sınırlı |
-| **Deploy hygiene** | Migration + edge prod’a uygulandı; PR henüz merge edilmedi |
-| **Tech debt** | Kullanılmayan picker sheet; sheet detent boşluğu; admin migrations repoda dağınık |
-| **Risk** | PR merge öncesi son UI commit push edilmeli; manuel smoke eksik |
+| **Deploy hygiene** | Migration + edge prod’da; iOS branch remote’ta güncel; PR merge bekliyor |
+| **Tech debt** | Kullanılmayan `AnalysisSectorPickerSheet`; sheet `.large` alt boşluğu; admin migrations repoda dağınık |
+| **Risk** | Manuel smoke eksik; PR #1 geniş commit geçmişi içeriyor (sadece sektör diff’ine odaklan) |
 
-**Sonuç:** Aktif analiz sektörü özelliği **implementasyon ve prod altyapı açısından bitti**. Proje bir sonraki release candidate’i bekliyor; Codex merge + QA sonrası P1/P2 epic’lere geçebilir.
+**Sonuç:** Aktif analiz sektörü özelliği **implementasyon, prompt ve prod altyapı açısından bitti**. Remote push tamamlandı. Codex sıradaki iş: PR review → manuel QA → merge.
 
 ---
 
-*Bu dosya Codex handoff amaçlıdır. Güncelleme: 2026-06-12, aktif sektör UI polish commit ile birlikte.*
+## 15. PR #1 commit özeti (sektör ile ilgili)
+
+| SHA | Mesaj | Kapsam |
+|-----|-------|--------|
+| `b04c2ef` | Add mandatory active analysis sector flow end-to-end. | Model, akış, backend prompt, migration, UI test, prod deploy |
+| `7a87f84` | Show all analysis sectors inline and tighten picker layout. | 15-chip grid, boşluk, katalog kaldırma, handoff doc |
+
+PR branch’i `main`’den birçok önceki commit de içerir; Codex review yaparken **yalnızca bu iki commit’in diff’ine** odaklanması önerilir:
+```bash
+git diff main...7a87f84 -- App/ supabase/functions/analyze/sector-context.ts supabase/migrations/20260612120000_add_active_analysis_sector.sql RiskDetectedUITests/ scripts/run_ui_tests.sh docs/CODEX_HANDOFF_ACTIVE_ANALYSIS_SECTOR_AND_PROJECT_STATUS_2026-06-12.md
+```
+
+---
+
+*Bu dosya Codex handoff amaçlıdır. Son güncelleme: 2026-06-12 — remote push (`7a87f84`) + prompt bölümü eklendi.*
