@@ -28,9 +28,7 @@ struct HomeView: View {
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
     @State private var showCanvasSheet = false
     @State private var showSectorSheet = false
-    @State private var showSectorCatalogSheet = false
     @State private var selectedAnalysisSector: AnalysisSectorID?
-    @State private var sectorSearchText = ""
     @State private var showAnnotate = false
     @State private var pendingAnnotateRequestID: UUID?
     @State private var showResult = false
@@ -218,30 +216,10 @@ struct HomeView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                         continueAfterSectorSelection()
                     }
-                },
-                onShowAll: {
-                    showSectorSheet = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        showSectorCatalogSheet = true
-                    }
                 }
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
-            .preferredColorScheme(preferredModalColorScheme)
-        }
-        .sheet(isPresented: $showSectorCatalogSheet, onDismiss: {
-            if selectedAnalysisSector != nil, !showCanvasSheet, pendingJob == nil {
-                showSectorSheet = true
-            }
-        }) {
-            AnalysisSectorPickerSheet(
-                items: sectorPickerItems,
-                selected: $selectedAnalysisSector,
-                searchText: $sectorSearchText,
-                onSelect: { _ in }
-            )
-            .presentationDetents([.large])
             .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showCameraPicker) {

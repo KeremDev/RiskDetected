@@ -418,7 +418,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("canvas_sheet", timeout: 8).exists)
     }
 
-    func testActiveAnalysisSectorCatalogSheetIsSearchable() throws {
+    func testActiveAnalysisSectorFullGridShowsLogisticsWarehouseChip() throws {
         launchMainApp()
 
         XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
@@ -427,14 +427,8 @@ final class RiskDetectedUITests: XCTestCase {
         tap("home.start_scan")
 
         XCTAssertTrue(waitFor("Analiz kapsamını seç", timeout: 8).exists)
-        tapScrolling("Tüm sektörleri göster", timeout: 10)
-        let searchField = app.searchFields.firstMatch
-        XCTAssertTrue(searchField.waitForExistence(timeout: 8))
-        searchField.tap()
-        searchField.typeText("Depo")
-        XCTAssertTrue(waitFor("analysis_sector_chip_logistics_warehouse").exists)
+        XCTAssertTrue(waitFor("analysis_sector_chip_logistics_warehouse", timeout: 8).exists)
         tap("analysis_sector_chip_logistics_warehouse")
-        XCTAssertTrue(waitFor("Analiz kapsamını seç", timeout: 8).exists)
         tap("Devam et")
         XCTAssertTrue(waitFor("canvas_sheet", timeout: 8).exists)
     }

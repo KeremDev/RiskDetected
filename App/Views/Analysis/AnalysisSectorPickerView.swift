@@ -4,15 +4,6 @@ struct AnalysisSectorPickerView: View {
     let items: [AnalysisSectorPickerItem]
     @Binding var selected: AnalysisSectorID?
     var onContinue: () -> Void
-    var onShowAll: () -> Void
-
-    private var inlineItems: [AnalysisSectorPickerItem] {
-        AnalysisSectorPreferences.inlineVisibleItems(from: items).0
-    }
-
-    private var hasMoreItems: Bool {
-        AnalysisSectorPreferences.inlineVisibleItems(from: items).1
-    }
 
     private let chipColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
 
@@ -22,26 +13,8 @@ struct AnalysisSectorPickerView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 16)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    chipGrid
-                    if hasMoreItems {
-                        Button(action: onShowAll) {
-                            HStack(spacing: 6) {
-                                Text("Tüm sektörleri göster")
-                                    .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: RDFontScale.size(12), weight: .bold))
-                            }
-                            .foregroundStyle(Color.rdSelected)
-                        }
-                        .buttonStyle(RDPressableButtonStyle())
-                        .accessibilityIdentifier("analysis_sector_more_button")
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 12)
-            }
+            sectorGridSection
+                .padding(.bottom, 4)
 
             RDButton(title: "Devam et", style: .primary, a11yID: "analysis_sector_continue_button") {
                 onContinue()
@@ -49,6 +22,7 @@ struct AnalysisSectorPickerView: View {
             .disabled(selected == nil)
             .opacity(selected == nil ? 0.45 : 1)
             .padding(.horizontal, 20)
+            .padding(.top, 8)
             .padding(.bottom, 16)
         }
         .padding(.top, 8)
@@ -72,9 +46,20 @@ struct AnalysisSectorPickerView: View {
         .accessibilityIdentifier("analysis_sector_picker_title")
     }
 
+    private var sectorGridSection: some View {
+        ViewThatFits(in: .vertical) {
+            chipGrid
+            ScrollView {
+                chipGrid
+            }
+            .modifier(ShrinkScrollToContentIfAvailable())
+        }
+        .padding(.horizontal, 20)
+    }
+
     private var chipGrid: some View {
-        LazyVGrid(columns: chipColumns, alignment: .leading, spacing: 8) {
-            ForEach(inlineItems) { item in
+        LazyVGrid(columns: chipColumns, alignment: .leading, spacing: 6) {
+            ForEach(items) { item in
                 sectorChip(item)
             }
         }
@@ -88,14 +73,16 @@ struct AnalysisSectorPickerView: View {
                 selected = item.sector
             }
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Image(systemName: item.sector.icon)
                         .font(.system(size: RDFontScale.size(12), weight: .semibold))
                     if let badge = primaryBadge(for: item.badges) {
-                        Text(badge.label)
-                            .font(.system(size: RDFontScale.size(9), weight: .heavy, design: .rounded))
-                            .padding(.horizontal, 6)
+                        Text(badge.compactLabel)
+                            .font(.system(size: RDFontScale.size(8), weight: .heavy, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .padding(.horizontal, 5)
                             .padding(.vertical, 2)
                             .background(Color.rdFog)
                             .clipShape(Capsule())
@@ -103,12 +90,14 @@ struct AnalysisSectorPickerView: View {
                     Spacer(minLength: 0)
                 }
                 Text(item.sector.label())
-                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                     .multilineTextAlignment(.leading)
                     .lineLimit(2)
+                    .minimumScaleFactor(0.9)
             }
-            .padding(8)
-            .frame(maxWidth: .infinity, minHeight: 72, alignment: .topLeading)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 7)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
             .foregroundStyle(isSelected ? Color.white : Color.rdBlack)
             .background(
                 RoundedRectangle(cornerRadius: 14)
@@ -129,6 +118,16 @@ struct AnalysisSectorPickerView: View {
         if badges.contains(.recommended) { return .recommended }
         if badges.contains(.lastUsed) { return .lastUsed }
         return nil
+    }
+}
+
+private struct ShrinkScrollToContentIfAvailable: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16.4, *) {
+            content.scrollBounceBehavior(.basedOnSize, axes: .vertical)
+        } else {
+            content
+        }
     }
 }
 
@@ -222,8 +221,7 @@ private struct StatefulSectorPickerPreview: View {
         AnalysisSectorPickerView(
             items: items,
             selected: $selected,
-            onContinue: {},
-            onShowAll: {}
+            onContinue: {}
         )
     }
 }

@@ -131,6 +131,14 @@ enum AnalysisSectorBadge: String, Hashable, Sendable {
         case .lastUsed: return "Son kullanılan"
         }
     }
+
+    /// Compact chip badge copy for the 3-column inline grid.
+    var compactLabel: String {
+        switch self {
+        case .recommended: return "Önerilen"
+        case .lastUsed: return "Son"
+        }
+    }
 }
 
 struct AnalysisSectorPickerItem: Identifiable, Hashable, Sendable {
@@ -222,11 +230,5 @@ enum AnalysisSectorPreferences {
         }
 
         return items
-    }
-
-    static func inlineVisibleItems(from items: [AnalysisSectorPickerItem], limit: Int = 8) -> ([AnalysisSectorPickerItem], Bool) {
-        guard items.count > limit else { return (items, false) }
-        let inline = Array(items.prefix(limit))
-        return (inline, true)
     }
 }
