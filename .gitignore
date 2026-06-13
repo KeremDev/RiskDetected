@@ -47,6 +47,7 @@ next-env.d.ts
 .env*.local
 
 # Generated review artifacts
+output/
 output/paywall-device-matrix/
 output/paywall-screenshots/
 output/app-review-preflight/
