@@ -207,7 +207,7 @@ struct OBPaywallView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
                     }
-                    Text(isYearly ? "İlk 7 gün ücretsiz · sonra \(displayPrice(for: .yearly))/yıl" : "Hemen başlar · istediğin zaman iptal")
+                    Text(planSubtitle(for: plan))
                         .font(.system(size: RDFontScale.size(12)))
                         .foregroundStyle(.white.opacity(0.6))
                 }
@@ -233,29 +233,30 @@ struct OBPaywallView: View {
         .buttonStyle(OBPressStyle())
     }
 
+    private func planSubtitle(for plan: OBPlan) -> String {
+        switch plan {
+        case .yearly:
+            guard let price = displayPriceValue(for: .yearly) else {
+                return "İlk 7 gün ücretsiz · fiyat App Store üzerinden yüklenecek"
+            }
+            return "İlk 7 gün ücretsiz · sonra \(price)/yıl"
+        case .monthly:
+            return "Hemen başlar · istediğin zaman iptal"
+        }
+    }
+
     private func displayPrice(for plan: OBPlan) -> String {
-        let fallback = plan == .yearly ? OBTrialPriceCopy.yearlyPrice : OBTrialPriceCopy.monthlyPrice
-        guard let package = plusPackage(for: plan) else { return fallback }
-        return Self.shouldUseTRYFallback(for: package.price) ? fallback : package.price
+        displayPriceValue(for: plan) ?? OBTrialPriceCopy.loadingPrice
+    }
+
+    private func displayPriceValue(for plan: OBPlan) -> String? {
+        plusPackage(for: plan)?.displayPrice
     }
 
     private func plusPackage(for plan: OBPlan) -> SubscriptionPlanPackage? {
         packages
             .filter { $0.tier == .plus }
             .first { $0.matchesOnboardingBilling(plan) }
-    }
-
-    private static func shouldUseTRYFallback(for price: String) -> Bool {
-        let trimmed = price.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return true }
-
-        let locale = Locale.current
-        guard locale.region?.identifier == "TR" else { return false }
-
-        let normalized = trimmed
-            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
-            .uppercased(with: Locale(identifier: "en_US"))
-        return normalized.contains("$") || normalized.contains("USD")
     }
 
     private var finePrint: some View {

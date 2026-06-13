@@ -50,6 +50,31 @@ enum AppFlow: Equatable {
     case main
 }
 
+enum SubscriptionOfferingsLoadState: Equatable {
+    case loading
+    case retryingOnce
+    case loaded
+    case failed(String)
+
+    var isLoading: Bool {
+        switch self {
+        case .loading, .retryingOnce:
+            return true
+        case .loaded, .failed:
+            return false
+        }
+    }
+
+    var errorMessage: String? {
+        switch self {
+        case let .failed(message):
+            return message
+        case .loading, .retryingOnce, .loaded:
+            return nil
+        }
+    }
+}
+
 enum QuickScanSource {
     case chooser
     case camera
@@ -98,6 +123,7 @@ final class AppState: ObservableObject {
     @Published private(set) var subscriptionState: SubscriptionState = .free
     @Published private(set) var backendSubscriptionState: SubscriptionState = .free
     @Published private(set) var subscriptionPackages: [SubscriptionPlanPackage] = []
+    @Published private(set) var subscriptionOfferingsLoadState: SubscriptionOfferingsLoadState = .loading
     @Published var isDarkModeEnabled: Bool {
         didSet {
             UserDefaults.standard.set(isDarkModeEnabled, forKey: Self.darkModeKey)
@@ -124,6 +150,7 @@ final class AppState: ObservableObject {
         3_000_000_000,
         5_000_000_000
     ]
+    private let subscriptionOfferingsRetryDelayNanoseconds: UInt64 = 1_200_000_000
     private var pendingNotificationAnalysisID: UUID?
     private var cancellables = Set<AnyCancellable>()
 
@@ -201,8 +228,7 @@ final class AppState: ObservableObject {
             await subscriptions.identify(userID: auth.session?.user.id)
             _ = await (initialProfileRefresh, pendingDraftSync, welcomeEmail)
 
-            async let offeringsLoad: Void = subscriptions.loadOfferings()
-            _ = await offeringsLoad
+            await loadSubscriptionOfferings(retryOnce: true, identifyUserID: nil)
 
             await reconcileBackendSubscriptionSnapshot()
             await auth.refreshProfile()
@@ -252,11 +278,43 @@ final class AppState: ObservableObject {
     func refreshSubscriptionOfferings() async {
         guard let userID = auth.session?.user.id else {
             subscriptionPackages = []
+            subscriptionOfferingsLoadState = .failed("App Store fiyatları için tekrar giriş yapman gerekiyor.")
             return
         }
-        await subscriptions.identify(userID: userID)
+        await loadSubscriptionOfferings(retryOnce: true, identifyUserID: userID)
+    }
+
+    private func loadSubscriptionOfferings(retryOnce: Bool, identifyUserID: UUID?) async {
+        if let identifyUserID {
+            await subscriptions.identify(userID: identifyUserID)
+        }
+
+        subscriptionOfferingsLoadState = .loading
         await subscriptions.loadOfferings()
         subscriptionPackages = subscriptions.packages
+        guard subscriptionPackages.isEmpty else {
+            subscriptionOfferingsLoadState = .loaded
+            return
+        }
+
+        guard retryOnce else {
+            subscriptionOfferingsLoadState = .failed(subscriptionOfferingsFailureMessage())
+            return
+        }
+
+        subscriptionOfferingsLoadState = .retryingOnce
+        try? await Task.sleep(nanoseconds: subscriptionOfferingsRetryDelayNanoseconds)
+        guard !Task.isCancelled else { return }
+
+        await subscriptions.loadOfferings()
+        subscriptionPackages = subscriptions.packages
+        subscriptionOfferingsLoadState = subscriptionPackages.isEmpty
+            ? .failed(subscriptionOfferingsFailureMessage())
+            : .loaded
+    }
+
+    private func subscriptionOfferingsFailureMessage() -> String {
+        return "App Store abonelik fiyatları şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
     }
 
     func refreshPlanState() async {
@@ -528,7 +586,11 @@ final class AppState: ObservableObject {
         subscriptions.packagesPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] packages in
-                self?.subscriptionPackages = packages
+                guard let self else { return }
+                self.subscriptionPackages = packages
+                if !packages.isEmpty {
+                    self.subscriptionOfferingsLoadState = .loaded
+                }
             }
             .store(in: &cancellables)
     }

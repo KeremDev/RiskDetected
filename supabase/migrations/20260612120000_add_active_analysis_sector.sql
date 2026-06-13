@@ -14,3 +14,9 @@ comment on column public.analyses.analysis_sector_prompt_version is
 
 create index if not exists analyses_user_sector_created_idx
 on public.analyses (user_id, analysis_sector, created_at desc);
+
+grant insert (
+  analysis_sector,
+  analysis_sector_source,
+  analysis_sector_prompt_version
+) on public.analyses to authenticated;

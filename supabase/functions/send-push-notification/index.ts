@@ -152,7 +152,7 @@ serve(async (req) => {
   const { data: preference } = await supabase
     .from("notification_preferences")
     .select(
-      "enabled, analysis_complete, report_ready, account_updates, marketing, progress_weekly_summary, progress_monthly_summary, progress_milestones",
+      "enabled, analysis_complete, report_ready, account_updates, marketing, trial_reminder, progress_weekly_summary, progress_monthly_summary, progress_milestones",
     )
     .eq("user_id", body.user_id)
     .maybeSingle();

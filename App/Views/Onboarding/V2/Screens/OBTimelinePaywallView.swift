@@ -13,17 +13,30 @@ import SwiftUI
 //
 // Standalone for now; codex will wire to flow + IAP after approval.
 
+private struct TimelineFeatureItem: Hashable {
+    let title: String
+    let badge: String?
+
+    init(_ title: String, badge: String? = nil) {
+        self.title = title
+        self.badge = badge
+    }
+}
+
 struct OBTimelinePaywallView: View {
     var packages: [SubscriptionPlanPackage] = []
+    var offeringsLoadState: SubscriptionOfferingsLoadState = .loading
     var isWorking: Bool = false
     var noticeMessage: String?
     let onStart: (OBPlan) -> Void
+    let onReloadPackages: () async -> Void
     let onRestore: () -> Void
     let onTerms: () -> Void
     let onPrivacy: () -> Void
     let onDismiss: () -> Void
 
     @State private var selectedPlan: OBPlan = .yearly
+    @State private var isReloadingPackages = false
     @State private var timelineFlow: Bool = false
     @State private var processingOverlayTitle: String?
     @State private var processingOverlayMessage = "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
@@ -54,7 +67,7 @@ struct OBTimelinePaywallView: View {
                         .obStage(delay: 0.12)
                 }
                 .padding(.horizontal, 18)
-                .padding(.bottom, noticeMessage == nil && !isWorking ? 138 : 182)
+                .padding(.bottom, noticeMessage == nil && !isWorking && !isReloadingPackages ? 138 : 182)
             }
 
             bottomBar
@@ -78,6 +91,11 @@ struct OBTimelinePaywallView: View {
                 startProcessingOverlay()
             }
         }
+        .task {
+            if packages.isEmpty {
+                await reloadPackagesIfNeeded()
+            }
+        }
         .onChange(of: isWorking) { newValue in
             if newValue {
                 startProcessingOverlay()
@@ -90,48 +108,39 @@ struct OBTimelinePaywallView: View {
 
     // MARK: - Header
 
-    private var headerSubtitle: String {
-        switch selectedPlan {
-        case .yearly:
-            return yearlyPaywallLine
-        case .monthly:
-            return "Aylık plan hemen başlar. İstediğin zaman iptal edebilirsin."
-        }
-    }
-
     private var banner: some View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Ücretsiz Deneme Nasıl Çalışır")
-                    .font(.system(size: RDFontScale.size(30), weight: .bold, design: .rounded))
+                Text(paywallTitle)
+                    .font(.system(size: RDFontScale.size(33), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineSpacing(1)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(headerSubtitle)
-                    .font(.system(size: RDFontScale.size(11.5), weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
-                    .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.horizontal, 6)
     }
 
+    private var paywallTitle: String {
+        selectedPlan == .yearly
+            ? "Ücretsiz Deneme Nasıl Çalışır"
+            : "Plus Aboneliğin Gücünü Hemen Kullanın"
+    }
+
     private var bottomBar: some View {
         VStack(spacing: 10) {
             OBPrimaryButton(
-                title: selectedPlan == .yearly ? "₺0,00'ye dene" : "Aboneliği başlat",
+                title: primaryButtonTitle,
                 trailingIcon: "arrow.right",
-                isLoading: isWorking,
-                loadingTitle: "Satın alma hazırlanıyor...",
+                isLoading: isWorking || isReloadingPackages || isWaitingForPrice,
+                loadingTitle: isWaitingForPrice || isReloadingPackages ? "Fiyat yükleniyor..." : "Satın alma hazırlanıyor...",
                 style: .onyx,
                 accessibilityID: "onboarding.timeline_paywall.cta"
             ) {
-                onStart(selectedPlan)
+                handlePrimaryAction()
             }
-            .disabled(isWorking)
-            .opacity(isWorking ? 0.72 : 1)
+            .disabled(primaryButtonDisabled)
+            .opacity(primaryButtonDisabled ? 0.72 : 1)
 
             Button {
                 OBHaptic.soft()
@@ -150,7 +159,7 @@ struct OBTimelinePaywallView: View {
             .accessibilityLabel("Şimdilik ücretsiz devam et")
             .accessibilityIdentifier("onboarding.timeline_paywall.continue_free")
 
-            if isWorking || noticeMessage != nil {
+            if isWorking || isReloadingPackages || noticeMessage != nil {
                 paywallNotice
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
@@ -191,10 +200,19 @@ struct OBTimelinePaywallView: View {
                 .disabled(isWorking)
                 .accessibilityIdentifier("onboarding.timeline_paywall.privacy")
             }
+
+            Text(priceLine)
+                .font(.system(size: RDFontScale.size(11.5), weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+                .multilineTextAlignment(.center)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12)
+                .accessibilityIdentifier("onboarding.timeline_paywall.price_line")
         }
         .padding(.horizontal, 18)
         .padding(.top, 12)
-        .padding(.bottom, 18)
+        .padding(.bottom, 6)
         .background(
             LinearGradient(
                 colors: [
@@ -239,7 +257,7 @@ struct OBTimelinePaywallView: View {
     @ViewBuilder
     private var paywallNotice: some View {
         HStack(spacing: 8) {
-            if isWorking {
+            if isWorking || isReloadingPackages {
                 ProgressView()
                     .controlSize(.small)
                     .tint(Color.rdBlack)
@@ -249,7 +267,7 @@ struct OBTimelinePaywallView: View {
                     .foregroundStyle(Color.rdHigh)
             }
 
-            Text(isWorking ? "App Store satın alma ekranı hazırlanıyor..." : noticeMessage ?? "")
+            Text(noticeText)
                 .font(.system(size: RDFontScale.size(11.5), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .lineLimit(2)
@@ -287,6 +305,72 @@ struct OBTimelinePaywallView: View {
         processingOverlayTitle = nil
     }
 
+    private var primaryButtonTitle: String {
+        guard selectedPackage != nil else {
+            return priceLoadError == nil ? "Fiyat yükleniyor..." : "Tekrar dene"
+        }
+        return selectedPlan == .yearly ? "Ücretsiz denemeyi başlat" : "Aboneliği başlat"
+    }
+
+    private var primaryButtonDisabled: Bool {
+        isWorking || isReloadingPackages || (selectedPackage == nil && priceLoadError == nil)
+    }
+
+    private var isWaitingForPrice: Bool {
+        selectedPackage == nil && offeringsLoadState.isLoading
+    }
+
+    private var noticeText: String {
+        if isWorking { return "App Store satın alma ekranı hazırlanıyor..." }
+        if isReloadingPackages { return "App Store fiyatları yükleniyor..." }
+        return noticeMessage ?? ""
+    }
+
+    private var priceLoadError: String? {
+        guard selectedPackage == nil else { return nil }
+        switch offeringsLoadState {
+        case .loading, .retryingOnce:
+            return nil
+        case .loaded:
+            return "App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+        case let .failed(message):
+            let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty
+                ? "App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+                : trimmed
+        }
+    }
+
+    private var priceStatusLine: String {
+        priceLoadError == nil ? OBTrialPriceCopy.loadingPrice : OBTrialPriceCopy.unavailablePrice
+    }
+
+    private var selectedPackage: SubscriptionPlanPackage? {
+        plusPackage(for: selectedPlan).flatMap { $0.displayPrice == nil ? nil : $0 }
+    }
+
+    private func handlePrimaryAction() {
+        guard !isWorking, !isReloadingPackages else { return }
+        guard selectedPackage != nil else {
+            reloadPackages()
+            return
+        }
+        onStart(selectedPlan)
+    }
+
+    private func reloadPackages() {
+        Task {
+            await reloadPackagesIfNeeded()
+        }
+    }
+
+    private func reloadPackagesIfNeeded() async {
+        guard !isWorking, !isReloadingPackages else { return }
+        isReloadingPackages = true
+        await onReloadPackages()
+        isReloadingPackages = false
+    }
+
     // MARK: - Plan toggle
 
     private var planToggle: some View {
@@ -301,11 +385,13 @@ struct OBTimelinePaywallView: View {
             .overlay(Capsule().stroke(Color.rdLine, lineWidth: 1))
             .frame(width: 210)
 
-            Text(selectedPlan == .yearly ? "%17 İndirim" : monthlyPaywallLine)
-                .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
-                .foregroundStyle(selectedPlan == .yearly ? Color.rdGreen : Color.rdSlate)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
+            if selectedPlan == .yearly {
+                Text("%17 İndirim")
+                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreen)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
         }
         .frame(maxWidth: .infinity)
     }
@@ -347,6 +433,16 @@ struct OBTimelinePaywallView: View {
         }
     }
 
+    private var plusFeatureItems: [TimelineFeatureItem] {
+        [
+            TimelineFeatureItem("Detaylı Analiz"),
+            TimelineFeatureItem("Risk Analizi (Fine-Kinney ve 5*5)"),
+            TimelineFeatureItem("PDF/Excel Rapor"),
+            TimelineFeatureItem("Firma Yönetimi"),
+            TimelineFeatureItem("Sektör Bazlı Analiz", badge: "Yeni")
+        ]
+    }
+
     private var yearlyTimeline: some View {
         VStack(alignment: .leading, spacing: 0) {
             timelineStep(
@@ -355,11 +451,7 @@ struct OBTimelinePaywallView: View {
                 accent: Color.rdGreen,
                 day: "Bugün",
                 detail: "Plus özellikleri açılır, ücret alınmaz.",
-                featureItems: [
-                    "Detaylı Analiz",
-                    "Risk Analizi (Fine-Kinney ve 5*5)",
-                    "PDF/Excel Rapor"
-                ],
+                featureItems: plusFeatureItems,
                 isLast: false
             )
             timelineStep(
@@ -397,6 +489,7 @@ struct OBTimelinePaywallView: View {
                 accent: Color(hex: "#F0A400"),
                 day: "Bugün",
                 detail: "Tüm özellikler hemen aktif olur, ödeme başlar.",
+                featureItems: plusFeatureItems,
                 isLast: false
             )
             timelineStep(
@@ -419,37 +512,36 @@ struct OBTimelinePaywallView: View {
     }
 
     private var yearlyPrice: String {
-        displayPrice(for: .yearly, fallback: OBTrialPriceCopy.yearlyPrice)
+        displayPrice(for: .yearly) ?? priceStatusLine
     }
 
     private var monthlyPrice: String {
-        displayPrice(for: .monthly, fallback: OBTrialPriceCopy.monthlyPrice)
+        displayPrice(for: .monthly) ?? priceStatusLine
     }
 
-    private var yearlyMonthlyEquivalent: String {
-        guard let package = plusPackage(for: .yearly),
-              let monthlyEquivalent = package.monthlyEquivalentPrice,
-              !Self.shouldUseTRYFallback(for: monthlyEquivalent) else {
-            return OBTrialPriceCopy.yearlyMonthlyEquivalent
-        }
+    private var yearlyMonthlyEquivalent: String? {
+        guard let monthlyEquivalent = plusPackage(for: .yearly)?.displayMonthlyEquivalentPrice else { return nil }
         return monthlyEquivalent.hasSuffix("/ay") ? monthlyEquivalent : "\(monthlyEquivalent)/ay"
     }
 
     private var yearlyPaywallLine: String {
-        "7 gün ücretsiz, sonra \(yearlyPrice) (\(yearlyMonthlyEquivalent))"
+        guard let price = displayPrice(for: .yearly) else { return priceStatusLine }
+        guard let yearlyMonthlyEquivalent else { return "7 gün ücretsiz, sonra \(price)" }
+        return "7 gün ücretsiz, sonra \(price) (\(yearlyMonthlyEquivalent))"
     }
 
     private var monthlyPaywallLine: String {
-        "\(monthlyPrice)/ay — istediğin zaman iptal"
+        guard let price = displayPrice(for: .monthly) else { return priceStatusLine }
+        return "\(price)/ay — istediğin zaman iptal"
     }
 
     private var monthlyRenewalLine: String {
-        "\(monthlyPrice) otomatik yenilenir. İstediğin zaman iptal edebilirsin."
+        guard let price = displayPrice(for: .monthly) else { return "Aylık fiyat App Store üzerinden yüklenecek." }
+        return "\(price) otomatik yenilenir. İstediğin zaman iptal edebilirsin."
     }
 
-    private func displayPrice(for plan: OBPlan, fallback: String) -> String {
-        guard let package = plusPackage(for: plan) else { return fallback }
-        return Self.shouldUseTRYFallback(for: package.price) ? fallback : package.price
+    private func displayPrice(for plan: OBPlan) -> String? {
+        plusPackage(for: plan)?.displayPrice
     }
 
     private func plusPackage(for plan: OBPlan) -> SubscriptionPlanPackage? {
@@ -458,26 +550,13 @@ struct OBTimelinePaywallView: View {
             .first { $0.matchesOnboardingBilling(plan) }
     }
 
-    private static func shouldUseTRYFallback(for price: String) -> Bool {
-        let trimmed = price.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return true }
-
-        let locale = Locale.current
-        guard locale.region?.identifier == "TR" else { return false }
-
-        let normalized = trimmed
-            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
-            .uppercased(with: Locale(identifier: "en_US"))
-        return normalized.contains("$") || normalized.contains("USD")
-    }
-
     private func timelineStep(
         index: Int,
         icon: String,
         accent: Color,
         day: String,
         detail: String,
-        featureItems: [String] = [],
+        featureItems: [TimelineFeatureItem] = [],
         isLast: Bool
     ) -> some View {
         HStack(alignment: .top, spacing: 14) {
@@ -497,7 +576,7 @@ struct OBTimelinePaywallView: View {
                 if !isLast {
                     timelineConnector(
                         accent: accent,
-                        height: featureItems.isEmpty ? 50 : 108
+                        height: timelineConnectorHeight(featureItemCount: featureItems.count)
                     )
                 }
             }
@@ -520,10 +599,23 @@ struct OBTimelinePaywallView: View {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: RDFontScale.size(12), weight: .bold))
                                     .foregroundStyle(Color.rdGreen)
-                                Text(item)
+                                Text(item.title)
                                     .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                                     .foregroundStyle(Color.rdBlack)
                                     .fixedSize(horizontal: false, vertical: true)
+                                if let badge = item.badge {
+                                    Text(badge)
+                                        .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
+                                        .foregroundStyle(Color.rdGreen)
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.rdGreen.opacity(0.10))
+                                        .clipShape(Capsule())
+                                        .overlay(
+                                            Capsule()
+                                                .stroke(Color.rdGreen.opacity(0.20), lineWidth: 0.8)
+                                        )
+                                }
                             }
                         }
                     }
@@ -535,6 +627,11 @@ struct OBTimelinePaywallView: View {
         }
         .obStage(delay: 0.24 + Double(index) * 0.08)
         .onAppear { startTimelineFlow() }
+    }
+
+    private func timelineConnectorHeight(featureItemCount: Int) -> CGFloat {
+        guard featureItemCount > 0 else { return 50 }
+        return 108 + CGFloat(max(0, featureItemCount - 3)) * 23
     }
 
     private func timelineConnector(accent: Color, height: CGFloat) -> some View {
@@ -690,6 +787,7 @@ private struct HelmetRidgeShape: Shape {
         isWorking: false,
         noticeMessage: nil,
         onStart: { _ in },
+        onReloadPackages: {},
         onRestore: {},
         onTerms: {},
         onPrivacy: {},

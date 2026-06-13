@@ -86,7 +86,7 @@ struct RiskDetailView: View {
                 .tracking(0.6)
                 .foregroundStyle(Color.rdSlate)
 
-            Text(finding.title)
+            Text(finding.displayTitle)
                 .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                 .tracking(-0.4)
                 .foregroundStyle(Color.rdBlack)

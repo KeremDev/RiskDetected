@@ -40,12 +40,11 @@ import {
   sanitizeTextAnalysisHazardForReportLanguage,
 } from "../_shared/text-report-language.ts";
 import {
-  ACTIVE_ANALYSIS_SECTOR_PROMPT_VERSION,
   type AnalysisSectorId,
   analysisSectorLabel,
   buildActiveSectorPromptBlock,
-  normalizeAnalysisSector,
   onboardingSectorProfileRule,
+  resolveActiveSectorState,
 } from "./sector-context.ts";
 
 declare const EdgeRuntime: {
@@ -2539,19 +2538,22 @@ serve(async (req: Request) => {
   const requestedAnalysisSector = typeof analysis_sector === "string"
     ? analysis_sector.trim()
     : "";
-  if (requestedAnalysisSector.length > 0) {
-    const normalizedSector = normalizeAnalysisSector(requestedAnalysisSector);
-    if (!normalizedSector) {
-      return errorResponse(
-        400,
-        "Analiz kapsamı geçerli değil. Lütfen sektör seçimini yenileyip tekrar deneyin.",
-        {
-          code: "invalid_analysis_sector",
-          requestID,
-          supportID,
-        },
-      );
-    }
+  const requestedSectorPreflight = isWorkerInvocation
+    ? null
+    : resolveActiveSectorState({
+      requestedSector: requestedAnalysisSector,
+      persistedSector: null,
+    });
+  if (requestedSectorPreflight && !requestedSectorPreflight.ok) {
+    return errorResponse(
+      requestedSectorPreflight.status,
+      requestedSectorPreflight.message,
+      {
+        code: requestedSectorPreflight.code,
+        requestID,
+        supportID,
+      },
+    );
   }
   const requestedCompanyID = typeof company_id === "string"
     ? company_id.trim()
@@ -2641,6 +2643,51 @@ serve(async (req: Request) => {
       .update(patch)
       .eq("id", analysisID)
       .eq("user_id", user.id);
+
+  const activeSectorState = resolveActiveSectorState({
+    requestedSector: requestedAnalysisSector,
+    persistedSector: ownedAnalysis?.analysis_sector,
+    requestedSource: analysis_sector_source,
+    persistedSource: ownedAnalysis?.analysis_sector_source,
+    requestedPromptVersion: analysis_sector_prompt_version,
+    persistedPromptVersion: ownedAnalysis?.analysis_sector_prompt_version,
+    isWorkerInvocation,
+  });
+
+  if (!activeSectorState.ok) {
+    return errorResponse(activeSectorState.status, activeSectorState.message, {
+      code: activeSectorState.code,
+      requestID,
+      supportID,
+    });
+  }
+
+  if (activeSectorState.shouldBackfill) {
+    const { error: sectorBackfillErr } = await updateOwnedAnalysis(
+      activeSectorState.backfillPatch,
+    );
+    if (sectorBackfillErr) {
+      console.error(
+        "Active analysis sector backfill failed",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogError(sectorBackfillErr),
+        }),
+      );
+      await updateOwnedAnalysis({
+        status: "failed",
+        status_message:
+          `Analiz kapsamı kaydedilemedi. Destek kodu: ${supportID}`,
+      });
+      return errorResponse(500, "Analiz kapsamı kaydedilemedi.", {
+        code: "sector_backfill_failed",
+        requestID,
+        supportID,
+      });
+    }
+  }
 
   const requestedCanvases = [
     ...new Set(
@@ -3207,26 +3254,9 @@ serve(async (req: Request) => {
     .map((id) => ({ id, prompt: CANVAS_FOCUS[id] }))
     .filter((item) => Boolean(item.prompt));
   const systemPrompt = buildSystemPrompt();
-  const resolvedActiveSector = normalizeAnalysisSector(
-    requestedAnalysisSector.length > 0
-      ? requestedAnalysisSector
-      : ownedAnalysis?.analysis_sector,
-  );
-  const resolvedActiveSectorSource = typeof analysis_sector_source === "string"
-    ? analysis_sector_source.trim()
-    : typeof ownedAnalysis?.analysis_sector_source === "string"
-    ? ownedAnalysis.analysis_sector_source
-    : resolvedActiveSector
-    ? "legacy_missing"
-    : null;
-  const resolvedActiveSectorPromptVersion =
-    typeof analysis_sector_prompt_version === "string"
-      ? analysis_sector_prompt_version.trim()
-      : typeof ownedAnalysis?.analysis_sector_prompt_version === "string"
-      ? ownedAnalysis.analysis_sector_prompt_version
-      : resolvedActiveSector
-      ? ACTIVE_ANALYSIS_SECTOR_PROMPT_VERSION
-      : null;
+  const resolvedActiveSector = activeSectorState.sector;
+  const resolvedActiveSectorSource = activeSectorState.source;
+  const resolvedActiveSectorPromptVersion = activeSectorState.promptVersion;
   const onboardingContext = buildOnboardingContext(
     onboardingAnswers,
     Boolean(resolvedActiveSector),

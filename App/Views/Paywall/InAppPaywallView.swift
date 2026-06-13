@@ -452,7 +452,9 @@ struct InAppPaywallView: View {
     private var primaryButtonTitle: String {
         if isWorking { return "Satın alma hazırlanıyor..." }
         if currentPlanIncludesActiveScreen { return "Planın aktif" }
-        if selectedPackage == nil && packageLoadError != nil { return "Tekrar dene" }
+        if selectedPackage == nil {
+            return packageLoadError == nil ? "Fiyat yükleniyor..." : "Tekrar dene"
+        }
         if activeScreen == .plus && billing(for: .plus) == .yearly { return "Ücretsiz denemeyi başlat" }
         return "Aboneliği Başlat"
     }
@@ -490,10 +492,17 @@ struct InAppPaywallView: View {
 
     private var packageLoadError: String? {
         guard selectedPackage == nil else { return nil }
-        if app.subscriptionPackages.isEmpty && app.subscriptionState.errorMessage == nil {
+        switch app.subscriptionOfferingsLoadState {
+        case .loading, .retryingOnce:
             return nil
+        case .loaded:
+            return "Seçili abonelik paketi veya App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+        case let .failed(message):
+            let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty
+                ? "App Store abonelik fiyatları şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+                : trimmed
         }
-        return "Seçili abonelik paketi şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
     }
 
     private func switchTo(_ target: InAppPaywallScreen) {
@@ -761,7 +770,7 @@ struct InAppPaywallView: View {
     ) -> SubscriptionPlanPackage? {
         app.subscriptionPackages
             .filter { $0.tier == screen.tier }
-            .first { $0.matchesInAppPaywall(billing) }
+            .first { $0.matchesInAppPaywall(billing) && $0.displayPrice != nil }
     }
 
     private func annualPriceText(for tier: SubscriptionTier) -> String {
@@ -773,37 +782,12 @@ struct InAppPaywallView: View {
     }
 
     private func priceText(for tier: SubscriptionTier, billing: InAppPaywallBilling) -> String {
-        let fallback = InAppPaywallPlanDisplay.fallback(for: tier)
-        let fallbackValue = billing == .yearly ? fallback.yearlyPrice : fallback.monthlyPrice
-        let fallbackText = Self.currency(fallbackValue)
-
-        guard let package = selectedPackage(for: tier == .plus ? .plus : .pro, billing: billing) else {
-            return fallbackText
-        }
-        return Self.shouldUseTRYFallback(for: package.price) ? fallbackText : package.price
+        selectedPackage(for: tier == .plus ? .plus : .pro, billing: billing)?.displayPrice
+            ?? unavailablePriceText
     }
 
-    private static func shouldUseTRYFallback(for price: String) -> Bool {
-        let trimmed = price.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return true }
-
-        let locale = Locale.current
-        guard locale.region?.identifier == "TR" else { return false }
-
-        let normalized = trimmed
-            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
-            .uppercased(with: Locale(identifier: "en_US"))
-        return normalized.contains("$") || normalized.contains("USD")
-    }
-
-    private static func currency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.numberStyle = .currency
-        formatter.currencySymbol = "₺"
-        formatter.maximumFractionDigits = value.rounded() == value ? 0 : 2
-        formatter.minimumFractionDigits = value.rounded() == value ? 0 : 2
-        return formatter.string(from: NSNumber(value: value)) ?? "₺\(value)"
+    private var unavailablePriceText: String {
+        packageLoadError == nil ? "fiyat yükleniyor" : "fiyat alınamadı"
     }
 
     #if DEBUG
@@ -831,22 +815,6 @@ private struct InAppPaywallColor {
     static let goldSoft = Color(hex: "#FEF6CE")
     static let goldEdge = Color(hex: "#F4D04A")
     static let goldTickForeground = Color(hex: "#7A5C00")
-}
-
-private struct InAppPaywallPlanDisplay {
-    let monthlyPrice: Double
-    let yearlyPrice: Double
-
-    static func fallback(for tier: SubscriptionTier) -> InAppPaywallPlanDisplay {
-        switch tier {
-        case .free:
-            return InAppPaywallPlanDisplay(monthlyPrice: 0, yearlyPrice: 0)
-        case .plus:
-            return InAppPaywallPlanDisplay(monthlyPrice: 199.99, yearlyPrice: 1_999.99)
-        case .pro:
-            return InAppPaywallPlanDisplay(monthlyPrice: 499.99, yearlyPrice: 4_999.99)
-        }
-    }
 }
 
 private struct PaywallHero: View {

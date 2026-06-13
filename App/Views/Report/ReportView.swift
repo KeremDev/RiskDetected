@@ -1627,7 +1627,7 @@ private struct ReportPreview: View {
                 .rdMono(size: 11, weight: .semibold)
                 .frame(width: 20, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
-                Text(finding.title)
+                Text(finding.displayTitle)
                     .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(2)

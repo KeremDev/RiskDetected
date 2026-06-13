@@ -6,27 +6,25 @@ struct AnalysisSectorPickerView: View {
     var onContinue: () -> Void
 
     private let chipColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
+    private let chipHeight: CGFloat = 74
+    private let chipIconSize: CGFloat = 14
+    private let chipTitleSize: CGFloat = 14
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
                 .padding(.horizontal, 20)
-                .padding(.bottom, 16)
+                .padding(.bottom, 14)
 
             sectorGridSection
-                .padding(.bottom, 4)
+                .padding(.bottom, 10)
 
-            RDButton(title: "Devam et", style: .primary, a11yID: "analysis_sector_continue_button") {
-                onContinue()
-            }
-            .disabled(selected == nil)
-            .opacity(selected == nil ? 0.45 : 1)
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 16)
+            Spacer(minLength: 10)
+
+            continueButton
         }
-        .padding(.top, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(.top, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.rdPaper.ignoresSafeArea())
         .accessibilityIdentifier("analysis_sector_picker")
     }
@@ -46,6 +44,21 @@ struct AnalysisSectorPickerView: View {
         .accessibilityIdentifier("analysis_sector_picker_title")
     }
 
+    private var continueButton: some View {
+        RDButton(
+            title: "Devam et",
+            style: .primary,
+            backgroundOverride: .rdCTA,
+            a11yID: "analysis_sector_continue_button"
+        ) {
+            onContinue()
+        }
+        .disabled(selected == nil)
+        .opacity(selected == nil ? 0.45 : 1)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 14)
+    }
+
     private var sectorGridSection: some View {
         ViewThatFits(in: .vertical) {
             chipGrid
@@ -58,7 +71,7 @@ struct AnalysisSectorPickerView: View {
     }
 
     private var chipGrid: some View {
-        LazyVGrid(columns: chipColumns, alignment: .leading, spacing: 6) {
+        LazyVGrid(columns: chipColumns, alignment: .leading, spacing: 8) {
             ForEach(items) { item in
                 sectorChip(item)
             }
@@ -76,29 +89,31 @@ struct AnalysisSectorPickerView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Image(systemName: item.sector.icon)
-                        .font(.system(size: RDFontScale.size(12), weight: .semibold))
+                        .font(.system(size: RDFontScale.size(chipIconSize), weight: .semibold))
+                        .foregroundStyle(iconColor(for: item.sector))
                     if let badge = primaryBadge(for: item.badges) {
                         Text(badge.compactLabel)
                             .font(.system(size: RDFontScale.size(8), weight: .heavy, design: .rounded))
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
+                            .foregroundStyle(isSelected ? Color.rdBlack : Color.rdSlate)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 2)
-                            .background(Color.rdFog)
+                            .background(isSelected ? Color.white.opacity(0.86) : Color.rdFog)
                             .clipShape(Capsule())
                     }
                     Spacer(minLength: 0)
                 }
                 Text(item.sector.label())
-                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(chipTitleSize), weight: .semibold, design: .rounded))
+                    .foregroundStyle(isSelected ? Color.white : Color.rdBlack)
                     .multilineTextAlignment(.leading)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.9)
+                    .minimumScaleFactor(0.82)
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 7)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .foregroundStyle(isSelected ? Color.white : Color.rdBlack)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, minHeight: chipHeight, maxHeight: chipHeight, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(isSelected ? Color.rdSelected : Color.rdWhite)
@@ -118,6 +133,26 @@ struct AnalysisSectorPickerView: View {
         if badges.contains(.recommended) { return .recommended }
         if badges.contains(.lastUsed) { return .lastUsed }
         return nil
+    }
+
+    private func iconColor(for sector: AnalysisSectorID) -> Color {
+        switch sector {
+        case .construction: return Color.rdHigh
+        case .manufacturing: return Color.rdInfo
+        case .mining: return Color.rdSlate
+        case .energy: return Color.rdMedium
+        case .office: return Color(hex: "#5B6CFF")
+        case .logisticsWarehouse: return Color(hex: "#2563EB")
+        case .chemicalLaboratory: return Color(hex: "#7C3AED")
+        case .healthcare: return Color.rdCritical
+        case .foodProduction: return Color(hex: "#0F766E")
+        case .agricultureLivestock: return Color.rdLow
+        case .retail: return Color(hex: "#DB2777")
+        case .municipalFieldServices: return Color(hex: "#C2410C")
+        case .education: return Color(hex: "#4F46E5")
+        case .hospitality: return Color(hex: "#9333EA")
+        case .general: return Color.rdCharcoal
+        }
     }
 }
 

@@ -607,7 +607,7 @@ final class PDFReportService: @unchecked Sendable {
         [
             "\(ordinal)",
             canvasLabel(input.bundle.analysis.canvas),
-            finding.title + "\n" + finding.description,
+            finding.displayTitle + "\n" + finding.description,
             finding.category,
             scoreText(finding.fk.probability),
             scoreText(finding.fk.frequency),
@@ -624,7 +624,7 @@ final class PDFReportService: @unchecked Sendable {
         [
             "\(ordinal)",
             canvasLabel(input.bundle.analysis.canvas),
-            finding.title + "\n" + finding.description,
+            finding.displayTitle + "\n" + finding.description,
             finding.category,
             "\(finding.m5.probability)",
             "\(finding.m5.severity)",
@@ -776,7 +776,7 @@ final class PDFReportService: @unchecked Sendable {
         let titleHeight = max(
             18,
             measuredTextHeight(
-                finding.title,
+                finding.displayTitle,
                 width: 302,
                 font: .systemFont(ofSize: 12, weight: .bold),
                 alignment: .left
@@ -810,7 +810,7 @@ final class PDFReportService: @unchecked Sendable {
         let titleHeight = max(
             18,
             measuredTextHeight(
-                finding.title,
+                finding.displayTitle,
                 width: 302,
                 font: .systemFont(ofSize: 12, weight: .bold),
                 alignment: .left
@@ -818,7 +818,7 @@ final class PDFReportService: @unchecked Sendable {
         )
         let descriptionY = y + 10 + titleHeight + 7
         drawFittingText(
-            finding.title,
+            finding.displayTitle,
             in: CGRect(x: x + 48, y: y + 9, width: 302, height: titleHeight),
             baseFont: .systemFont(ofSize: 12, weight: .bold),
             minimumFontSize: 9.2,

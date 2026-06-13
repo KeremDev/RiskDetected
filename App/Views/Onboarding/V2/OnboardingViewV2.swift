@@ -24,12 +24,14 @@ struct OnboardingViewV2: View {
     var hasCompletedOnboarding: Bool = false
     var currentTier: SubscriptionTier = .free
     var subscriptionPackages: [SubscriptionPlanPackage] = []
+    var subscriptionOfferingsLoadState: SubscriptionOfferingsLoadState = .loading
     var onFinish: () -> Void = {}
     var onAuthApple: () -> Void = {}
     var onAuthGoogle: () -> Void = {}
     var onAuthEmail: () -> Void = {}
     var onSignInExisting: () -> Void = {}
     var onPurchase: (OBPlan) async throws -> Void = { _ in }
+    var onReloadSubscriptionOfferings: () async -> Void = {}
     var onRestorePurchases: () async throws -> Bool = { false }
 
     init(
@@ -38,12 +40,14 @@ struct OnboardingViewV2: View {
         hasCompletedOnboarding: Bool = false,
         currentTier: SubscriptionTier = .free,
         subscriptionPackages: [SubscriptionPlanPackage] = [],
+        subscriptionOfferingsLoadState: SubscriptionOfferingsLoadState = .loading,
         onFinish: @escaping () -> Void = {},
         onAuthApple: @escaping () -> Void = {},
         onAuthGoogle: @escaping () -> Void = {},
         onAuthEmail: @escaping () -> Void = {},
         onSignInExisting: @escaping () -> Void = {},
         onPurchase: @escaping (OBPlan) async throws -> Void = { _ in },
+        onReloadSubscriptionOfferings: @escaping () async -> Void = {},
         onRestorePurchases: @escaping () async throws -> Bool = { false }
     ) {
         _state = StateObject(wrappedValue: OnboardingV2State(step: initialStep))
@@ -51,12 +55,14 @@ struct OnboardingViewV2: View {
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.currentTier = currentTier
         self.subscriptionPackages = subscriptionPackages
+        self.subscriptionOfferingsLoadState = subscriptionOfferingsLoadState
         self.onFinish = onFinish
         self.onAuthApple = onAuthApple
         self.onAuthGoogle = onAuthGoogle
         self.onAuthEmail = onAuthEmail
         self.onSignInExisting = onSignInExisting
         self.onPurchase = onPurchase
+        self.onReloadSubscriptionOfferings = onReloadSubscriptionOfferings
         self.onRestorePurchases = onRestorePurchases
     }
 
@@ -209,10 +215,14 @@ struct OnboardingViewV2: View {
         case 11:
             OBTimelinePaywallView(
                 packages: subscriptionPackages,
+                offeringsLoadState: subscriptionOfferingsLoadState,
                 isWorking: isPaywallWorking,
                 noticeMessage: paywallNoticeMessage,
                 onStart: { plan in
                     startPurchase(plan)
+                },
+                onReloadPackages: {
+                    await onReloadSubscriptionOfferings()
                 },
                 onRestore: {
                     restorePurchases()
@@ -243,10 +253,10 @@ struct OnboardingViewV2: View {
             await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
             await MainActor.run {
                 PaywallEventService.shared.flushPendingIfPossible()
+                withAnimation(.obSpring) {
+                    state.goTo(9)
+                }
             }
-        }
-        withAnimation(.obSpring) {
-            state.goTo(9)
         }
     }
 
@@ -254,8 +264,10 @@ struct OnboardingViewV2: View {
         persistCurrentDraft()
         Task {
             await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+            await MainActor.run {
+                onFinish()
+            }
         }
-        onFinish()
     }
 
     private func restorePurchases() {

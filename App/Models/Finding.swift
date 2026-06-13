@@ -171,6 +171,37 @@ struct Finding: Identifiable, Hashable {
     var fkScore: Double { fk.score }
     var m5Score: Int { m5.score }
 
+    var displayTitle: String {
+        let qualifiers = [
+            "(sahada doğrulanmalı)",
+            "(sahada dogrulanmali)",
+            "(sahada doğrulanmalıdır)",
+            "(sahada dogrulanmalidir)",
+            "sahada doğrulanmalı",
+            "sahada dogrulanmali",
+            "sahada doğrulanmalıdır",
+            "sahada dogrulanmalidir",
+        ]
+        var cleaned = title
+        for qualifier in qualifiers {
+            cleaned = cleaned.replacingOccurrences(
+                of: qualifier,
+                with: "",
+                options: [.caseInsensitive, .diacriticInsensitive]
+            )
+        }
+        cleaned = cleaned.replacingOccurrences(
+            of: #"\s{2,}"#,
+            with: " ",
+            options: .regularExpression
+        )
+        cleaned = cleaned
+            .replacingOccurrences(of: " ()", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-–—·,;: "))
+        return cleaned.isEmpty ? title : cleaned
+    }
+
     var fkBand: RiskBand { RiskBands.fineKinney(fkScore) }
     var m5Band: RiskBand { RiskBands.matrix5x5(m5Score) }
 

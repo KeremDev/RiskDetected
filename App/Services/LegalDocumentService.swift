@@ -153,7 +153,7 @@ final class LegalDocumentService: ObservableObject {
         documents[kind] ?? Self.bundledDocument(for: kind)
     }
 
-    func refreshIfNeeded(userID: UUID?) async {
+    func refreshIfNeeded(userID: UUID?, userCreatedAt: Date? = nil) async {
         let now = Date()
         let lastRefresh = userDefaults.object(forKey: Self.lastRefreshKey) as? Date
         let shouldRefresh = lastRefresh.map { now.timeIntervalSince($0) >= Self.refreshInterval } ?? true
@@ -165,7 +165,7 @@ final class LegalDocumentService: ObservableObject {
             }
         }
 
-        await evaluatePendingUpdates(userID: userID)
+        await evaluatePendingUpdates(userID: userID, userCreatedAt: userCreatedAt)
     }
 
     func recordSeen(_ notice: LegalUpdateNotice, userID: UUID?) async {
@@ -302,7 +302,7 @@ final class LegalDocumentService: ObservableObject {
         return data
     }
 
-    private func evaluatePendingUpdates(userID: UUID?) async {
+    private func evaluatePendingUpdates(userID: UUID?, userCreatedAt: Date?) async {
         guard let userID else {
             pendingBanner = nil
             pendingDecision = nil
@@ -311,6 +311,7 @@ final class LegalDocumentService: ObservableObject {
 
         let remoteDocuments = documents.values
             .filter { $0.source == "remote" && $0.changeType != .baseline }
+            .filter { !Self.wasAlreadyCurrentAtSignup($0, userCreatedAt: userCreatedAt) }
 
         guard !remoteDocuments.isEmpty else {
             pendingBanner = nil
@@ -503,6 +504,24 @@ final class LegalDocumentService: ObservableObject {
 
     private static func isoDate(_ date: Date) -> String {
         ISO8601DateFormatter().string(from: date)
+    }
+
+    private static func wasAlreadyCurrentAtSignup(_ document: LegalDocument, userCreatedAt: Date?) -> Bool {
+        guard let userCreatedAt,
+              let documentUpdatedAt = parseRemoteDate(document.updatedAt)
+        else { return false }
+        return userCreatedAt >= documentUpdatedAt
+    }
+
+    private static func parseRemoteDate(_ value: String?) -> Date? {
+        guard let value else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: value) {
+            return date
+        }
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: value)
     }
 
     private static var appVersion: String {

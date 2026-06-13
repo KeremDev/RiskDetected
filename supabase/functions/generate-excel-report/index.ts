@@ -334,6 +334,32 @@ function safeText(value: unknown, fallback = ""): string {
   return String(value);
 }
 
+function displayFindingTitle(title: unknown): string {
+  const original = safeText(title);
+  const qualifiers = [
+    /\(sahada doğrulanmalı\)/giu,
+    /\(sahada dogrulanmali\)/giu,
+    /\(sahada doğrulanmalıdır\)/giu,
+    /\(sahada dogrulanmalidir\)/giu,
+    /sahada doğrulanmalı/giu,
+    /sahada dogrulanmali/giu,
+    /sahada doğrulanmalıdır/giu,
+    /sahada dogrulanmalidir/giu,
+  ];
+
+  let cleaned = original;
+  for (const qualifier of qualifiers) {
+    cleaned = cleaned.replace(qualifier, "");
+  }
+  cleaned = cleaned
+    .replace(/\s{2,}/gu, " ")
+    .replace(/ \(\)/gu, "")
+    .trim()
+    .replace(/[-–—·,;:\s]+$/u, "");
+
+  return cleaned || original;
+}
+
 function actionWithRootCause(finding: FindingRow): string {
   const rootCause = safeText(finding.root_cause_text).trim();
   const measures = controlMeasuresText(finding);
@@ -2108,7 +2134,7 @@ function makeWorkbook(
     riskHeaders,
     ...findings.map((finding, index) => [
       finding.ordinal ?? index + 1,
-      safeText(finding.title),
+      displayFindingTitle(finding.title),
       safeText(finding.category),
       safeText(finding.description),
       ...metricValues(finding),
@@ -2186,7 +2212,7 @@ function makeWorkbook(
       )
       .map((finding) => [
         finding.ordinal ?? "",
-        safeText(finding.title),
+        displayFindingTitle(finding.title),
         bandLabel(methodBand(finding, method)),
         methodScore(finding, method),
         actionWithRootCause(finding),

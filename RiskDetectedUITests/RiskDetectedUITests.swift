@@ -15,15 +15,17 @@ final class RiskDetectedUITests: XCTestCase {
         app = nil
     }
 
-    func testFreeTierPlusPurchaseCTAStarts() throws {
+    func testFreeTierPaywallUsesRetryWhenStorePriceUnavailable() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
 
         tap("Yükselt", timeout: 20)
         XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
-        XCTAssertTrue(waitFor("in_app_paywall.cta.ready", timeout: 10).exists)
+        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 15).exists)
+        XCTAssertFalse(app.staticTexts["₺199,99"].exists)
+        XCTAssertFalse(app.staticTexts["₺1.999,99"].exists)
 
-        tap("in_app_paywall.cta", timeout: 10)
-        RunLoop.current.run(until: Date().addingTimeInterval(3))
+        tap("Tekrar dene", timeout: 15)
+        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 5).exists)
     }
 
     func testOnboardingPersonalPlanReachesAuth() throws {
@@ -52,7 +54,7 @@ final class RiskDetectedUITests: XCTestCase {
 
         XCTAssertTrue(waitFor("Yıllık", timeout: 8).exists)
         XCTAssertTrue(waitFor("Aylık").exists)
-        XCTAssertTrue(waitFor("₺0,00'ye dene").exists)
+        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12).exists)
         XCTAssertTrue(waitFor("Geri yükle").exists)
         XCTAssertTrue(waitFor("Kullanım Şartları").exists)
         XCTAssertTrue(waitFor("Gizlilik Politikası").exists)
@@ -63,10 +65,12 @@ final class RiskDetectedUITests: XCTestCase {
         tap("Pencereyi kapat")
 
         tap("Aylık")
-        XCTAssertTrue(app.staticTexts["₺199,99/ay — istediğin zaman iptal"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.staticTexts["₺199,99/ay — istediğin zaman iptal"].waitForExistence(timeout: 1))
+        XCTAssertTrue(waitForOne(["App Store fiyatı yükleniyor", "Fiyat alınamadı"], timeout: 8).exists)
 
         tap("Yıllık")
-        XCTAssertTrue(waitFor("7 gün ücretsiz, sonra ₺1.999,99 (₺166,67/ay)", timeout: 3).exists)
+        XCTAssertFalse(app.staticTexts["7 gün ücretsiz, sonra ₺1.999,99 (₺166,67/ay)"].waitForExistence(timeout: 1))
+        XCTAssertTrue(waitForOne(["App Store fiyatı yükleniyor", "Fiyat alınamadı"], timeout: 8).exists)
     }
 
     func testOnboardingAllQuestionScreensAndAuthEmailPanelRender() throws {
@@ -175,10 +179,11 @@ final class RiskDetectedUITests: XCTestCase {
 
         XCTAssertTrue(waitFor("İlk haftanız bizden.", timeout: 8).exists)
         XCTAssertTrue(waitFor("Neler dahil?").exists)
-        XCTAssertTrue(waitFor("Ücretsiz denemeyi başlat", timeout: 15).exists)
-        XCTAssertFalse(app.staticTexts["Seçili abonelik paketi şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."].exists)
+        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 15).exists)
+        XCTAssertFalse(app.staticTexts["₺199,99"].exists)
+        XCTAssertFalse(app.staticTexts["₺1.999,99"].exists)
         let companyTracking = waitFor("Firma takibi")
-        let plusCTA = waitFor("Ücretsiz denemeyi başlat")
+        let plusCTA = waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12)
         XCTAssertLessThan(companyTracking.frame.maxY, plusCTA.frame.minY)
 
         tap("Şartlar")
@@ -188,15 +193,23 @@ final class RiskDetectedUITests: XCTestCase {
 
         tap("Aylık")
         XCTAssertTrue(waitFor("Plus’a abone olun.").exists)
-        XCTAssertTrue(waitFor("Aboneliği Başlat").exists)
+        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12).exists)
 
         tap("in_app_paywall.plus.pro_link")
         XCTAssertTrue(waitFor("Limitsiz Özellikler").exists)
         XCTAssertTrue(waitFor("Tüm Plus özellikleri dahil").exists)
         tap("Aylık")
-        XCTAssertTrue(waitFor("Tüm Pro özellikleri aylık ₺499,99 ile.").exists)
+        XCTAssertFalse(app.staticTexts["Tüm Pro özellikleri aylık ₺499,99 ile."].waitForExistence(timeout: 1))
+        XCTAssertTrue(waitForOne([
+            "Tüm Pro özellikleri aylık fiyat yükleniyor ile.",
+            "Tüm Pro özellikleri aylık fiyat alınamadı ile."
+        ], timeout: 8).exists)
         tap("Yıllık")
-        XCTAssertTrue(waitFor("Yıllık ₺4.999,99 ile tüm Pro özellikleri.").exists)
+        XCTAssertFalse(app.staticTexts["Yıllık ₺4.999,99 ile tüm Pro özellikleri."].waitForExistence(timeout: 1))
+        XCTAssertTrue(waitForOne([
+            "Yıllık fiyat yükleniyor ile tüm Pro özellikleri.",
+            "Yıllık fiyat alınamadı ile tüm Pro özellikleri."
+        ], timeout: 8).exists)
         XCTAssertTrue(waitFor("Plus aboneliğini incele").exists)
 
         tap("in_app_paywall.pro.plus_link")
@@ -218,9 +231,17 @@ final class RiskDetectedUITests: XCTestCase {
         tap("in_app_paywall.plus.pro_link")
         XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
         tap("Aylık")
-        XCTAssertTrue(waitFor("Tüm Pro özellikleri aylık ₺499,99 ile.").exists)
+        XCTAssertFalse(app.staticTexts["Tüm Pro özellikleri aylık ₺499,99 ile."].waitForExistence(timeout: 1))
+        XCTAssertTrue(waitForOne([
+            "Tüm Pro özellikleri aylık fiyat yükleniyor ile.",
+            "Tüm Pro özellikleri aylık fiyat alınamadı ile."
+        ], timeout: 8).exists)
         tap("Yıllık")
-        XCTAssertTrue(waitFor("Yıllık ₺4.999,99 ile tüm Pro özellikleri.").exists)
+        XCTAssertFalse(app.staticTexts["Yıllık ₺4.999,99 ile tüm Pro özellikleri."].waitForExistence(timeout: 1))
+        XCTAssertTrue(waitForOne([
+            "Yıllık fiyat yükleniyor ile tüm Pro özellikleri.",
+            "Yıllık fiyat alınamadı ile tüm Pro özellikleri."
+        ], timeout: 8).exists)
     }
 
     func testCompanyPickerV2FieldsRenderWithFixtures() throws {

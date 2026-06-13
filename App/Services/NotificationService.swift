@@ -252,6 +252,7 @@ final class NotificationService: NSObject, ObservableObject {
             reportReady: enabled,
             accountUpdates: enabled,
             marketing: false,
+            trialReminder: enabled,
             progressWeeklySummary: enabled,
             progressMonthlySummary: enabled,
             progressMilestones: enabled
@@ -348,6 +349,7 @@ extension NotificationService: UNUserNotificationCenterDelegate {
             return
         }
         if kind == "account_updates" ||
+            kind == "trial_reminder" ||
             kind?.hasPrefix("progress_") == true ||
             data?["destination"] as? String == "profile" {
             await MainActor.run {
@@ -443,6 +445,7 @@ private struct NotificationPreferencePayload: Encodable {
     let reportReady: Bool
     let accountUpdates: Bool
     let marketing: Bool
+    let trialReminder: Bool
     let progressWeeklySummary: Bool
     let progressMonthlySummary: Bool
     let progressMilestones: Bool
@@ -454,6 +457,7 @@ private struct NotificationPreferencePayload: Encodable {
         case reportReady = "report_ready"
         case accountUpdates = "account_updates"
         case marketing
+        case trialReminder = "trial_reminder"
         case progressWeeklySummary = "progress_weekly_summary"
         case progressMonthlySummary = "progress_monthly_summary"
         case progressMilestones = "progress_milestones"

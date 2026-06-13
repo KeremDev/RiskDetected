@@ -23,12 +23,14 @@ struct RootView: View {
                     hasCompletedOnboarding: app.hasSeenOnboarding,
                     currentTier: app.currentTier,
                     subscriptionPackages: app.subscriptionPackages,
+                    subscriptionOfferingsLoadState: app.subscriptionOfferingsLoadState,
                     onFinish: { app.finishOnboarding() },
                     onAuthApple: { runAppleSignIn() },
                     onAuthGoogle: { runGoogleSignIn() },
                     onAuthEmail: {},
                     onSignInExisting: {},
                     onPurchase: { plan in try await purchaseOnboardingPlan(plan) },
+                    onReloadSubscriptionOfferings: { await app.refreshSubscriptionOfferings() },
                     onRestorePurchases: { try await restoreOnboardingPurchases() }
                 )
                     .transition(.opacity)
@@ -125,7 +127,10 @@ struct RootView: View {
         #if DEBUG
         guard !Self.isUITestLaunch else { return }
         #endif
-        await legalDocuments.refreshIfNeeded(userID: app.auth.session?.user.id)
+        await legalDocuments.refreshIfNeeded(
+            userID: app.auth.session?.user.id,
+            userCreatedAt: app.auth.session?.user.createdAt
+        )
     }
 
     private var flowIdentifier: String {
@@ -218,7 +223,7 @@ struct RootView: View {
         app.subscriptionPackages
             .filter { $0.tier == .plus }
             .first { package in
-                package.matchesOnboardingBilling(plan)
+                package.matchesOnboardingBilling(plan) && package.displayPrice != nil
             }
     }
 

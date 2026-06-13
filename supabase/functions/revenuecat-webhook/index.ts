@@ -16,6 +16,11 @@ import {
   resolveRevenueCatEventUserID,
   revenueCatTransferIDs,
 } from "../_shared/revenuecat-event.ts";
+import {
+  clearTrialReminderMetadataPatch,
+  type TrialMetadataPatch,
+  trialMetadataPatchForRevenueCatEvent,
+} from "../_shared/trial-reminder.ts";
 
 type SupabaseAdminClient = ReturnType<typeof createClient<any>>;
 
@@ -392,8 +397,9 @@ async function writeSubscriptionState(params: {
   eventID: string;
   environment: string | null;
   state: ResolvedSubscriberState;
+  trialPatch?: TrialMetadataPatch | null;
 }) {
-  await params.supabase.from("user_subscriptions").upsert({
+  const payload: Record<string, unknown> = {
     user_id: params.userID,
     tier: params.state.tier,
     source: params.source,
@@ -406,7 +412,12 @@ async function writeSubscriptionState(params: {
     current_period_ends_at: params.state.expiration,
     last_event_id: params.eventID,
     updated_at: new Date().toISOString(),
-  }, { onConflict: "user_id" });
+  };
+  if (params.trialPatch) Object.assign(payload, params.trialPatch);
+
+  await params.supabase.from("user_subscriptions").upsert(payload, {
+    onConflict: "user_id",
+  });
 
   await params.supabase
     .from("profiles")
@@ -439,6 +450,7 @@ async function deactivateTransferredFromUser(params: {
     environment: params.environment,
     current_period_ends_at: null,
     last_event_id: params.eventID,
+    ...clearTrialReminderMetadataPatch(),
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id" });
 
@@ -561,6 +573,7 @@ async function processTransferEvent(params: {
       eventID: params.eventID,
       environment: params.environment,
       state: freeSubscriberState(),
+      trialPatch: clearTrialReminderMetadataPatch(),
     });
 
     await params.supabase
@@ -790,6 +803,7 @@ serve(async (req) => {
         eventID,
         environment,
         state: freeSubscriberState(),
+        trialPatch: clearTrialReminderMetadataPatch(),
       });
 
       await supabase
@@ -826,6 +840,7 @@ serve(async (req) => {
         eventID,
         environment,
         state: freeSubscriberState(),
+        trialPatch: clearTrialReminderMetadataPatch(),
       });
 
       await supabase
@@ -854,6 +869,13 @@ serve(async (req) => {
     eventID,
     environment,
     state: verifiedState,
+    trialPatch: trialMetadataPatchForRevenueCatEvent(
+      eventType,
+      event,
+      verifiedState.productID,
+      verifiedState.expiration,
+      verifiedState.purchaseDate,
+    ),
   });
 
   await sendAccountUpdatePush({

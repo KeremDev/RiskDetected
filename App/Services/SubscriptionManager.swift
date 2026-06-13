@@ -30,6 +30,29 @@ struct SubscriptionPlanPackage: Identifiable, Equatable {
     let monthlyEquivalentPrice: String?
     let subtitle: String
     let productIdentifier: String
+
+    var displayPrice: String? {
+        Self.displayableStorePrice(price)
+    }
+
+    var displayMonthlyEquivalentPrice: String? {
+        Self.displayableStorePrice(monthlyEquivalentPrice)
+    }
+
+    static func displayableStorePrice(_ price: String?) -> String? {
+        guard let price else { return nil }
+        let trimmed = price.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let locale = Locale.current
+        guard locale.region?.identifier == "TR" else { return trimmed }
+
+        let normalized = trimmed
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
+            .uppercased(with: Locale(identifier: "en_US"))
+        guard !normalized.contains("$"), !normalized.contains("USD") else { return nil }
+        return trimmed
+    }
 }
 
 private enum SubscriptionManagerError: LocalizedError {

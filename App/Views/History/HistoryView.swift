@@ -178,10 +178,10 @@ struct HistoryView: View {
                 VStack(spacing: 2) {
                     Text("\(items.count)")
                         .rdMono(size: 22, weight: .bold)
-                        .foregroundStyle(Color.rdWhite)
+                        .foregroundStyle(Color.white)
                     Text("Analiz")
                         .rdMono(size: 10, weight: .bold)
-                        .foregroundStyle(Color.rdWhite.opacity(0.72))
+                        .foregroundStyle(Color.white.opacity(0.72))
                         .lineLimit(1)
                         .minimumScaleFactor(0.78)
                 }
@@ -222,19 +222,19 @@ struct HistoryView: View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdWhite)
+                .foregroundStyle(Color.white)
                 .frame(width: 26, height: 26)
-                .background(Color.rdWhite.opacity(0.14))
+                .background(Color.white.opacity(0.14))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)
                     .rdMono(size: 14, weight: .bold)
-                    .foregroundStyle(Color.rdWhite)
+                    .foregroundStyle(Color.white)
                     .lineLimit(1)
                 Text(title)
                     .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdWhite.opacity(0.70))
+                    .foregroundStyle(Color.white.opacity(0.70))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

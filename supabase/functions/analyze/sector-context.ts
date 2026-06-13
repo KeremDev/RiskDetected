@@ -35,6 +35,33 @@ export const ANALYSIS_SECTOR_ALLOWLIST: readonly AnalysisSectorId[] = [
   "hospitality",
 ] as const;
 
+export type ActiveSectorResolution =
+  | {
+    ok: true;
+    sector: AnalysisSectorId | null;
+    source: string | null;
+    promptVersion: string | null;
+    shouldBackfill: boolean;
+    backfillPatch: {
+      analysis_sector?: AnalysisSectorId;
+      analysis_sector_source?: string;
+      analysis_sector_prompt_version?: string;
+    };
+  }
+  | {
+    ok: false;
+    status: 400 | 409;
+    code: "invalid_analysis_sector" | "sector_mismatch";
+    message: string;
+    requestedSector: string | null;
+    persistedSector: AnalysisSectorId | null;
+  };
+
+type ActiveSectorBackfillPatch = Extract<
+  ActiveSectorResolution,
+  { ok: true }
+>["backfillPatch"];
+
 const SECTOR_LABELS_TR: Record<AnalysisSectorId, string> = {
   general: "Genel İSG",
   construction: "İnşaat",
@@ -168,6 +195,141 @@ export function normalizeAnalysisSector(
   if (typeof input !== "string") return null;
   const trimmed = input.trim();
   return isAnalysisSectorId(trimmed) ? trimmed : null;
+}
+
+function cleanOptionalString(input: unknown): string | null {
+  if (typeof input !== "string") return null;
+  const trimmed = input.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+export function resolveActiveSectorState(args: {
+  requestedSector: unknown;
+  persistedSector: unknown;
+  requestedSource?: unknown;
+  persistedSource?: unknown;
+  requestedPromptVersion?: unknown;
+  persistedPromptVersion?: unknown;
+  isWorkerInvocation?: boolean;
+}): ActiveSectorResolution {
+  const requestedRaw = cleanOptionalString(args.requestedSector);
+  const persistedSector = normalizeAnalysisSector(args.persistedSector);
+  const requestedSector = requestedRaw
+    ? normalizeAnalysisSector(requestedRaw)
+    : null;
+  if (requestedRaw && !requestedSector) {
+    if (args.isWorkerInvocation === true && persistedSector) {
+      const source = cleanOptionalString(args.persistedSource) ??
+        "legacy_missing";
+      const promptVersion = cleanOptionalString(args.persistedPromptVersion) ??
+        ACTIVE_ANALYSIS_SECTOR_PROMPT_VERSION;
+      const backfillPatch: ActiveSectorBackfillPatch = {};
+
+      if (!cleanOptionalString(args.persistedSource)) {
+        backfillPatch.analysis_sector_source = source;
+      }
+      if (!cleanOptionalString(args.persistedPromptVersion)) {
+        backfillPatch.analysis_sector_prompt_version = promptVersion;
+      }
+
+      return {
+        ok: true,
+        sector: persistedSector,
+        source,
+        promptVersion,
+        shouldBackfill: Object.keys(backfillPatch).length > 0,
+        backfillPatch,
+      };
+    }
+
+    return {
+      ok: false,
+      status: 400,
+      code: "invalid_analysis_sector",
+      message:
+        "Analiz kapsamı geçerli değil. Lütfen sektör seçimini yenileyip tekrar deneyin.",
+      requestedSector: requestedRaw,
+      persistedSector: normalizeAnalysisSector(args.persistedSector),
+    };
+  }
+
+  const requestedSource = cleanOptionalString(args.requestedSource);
+  const persistedSource = cleanOptionalString(args.persistedSource);
+  const requestedPromptVersion = cleanOptionalString(
+    args.requestedPromptVersion,
+  );
+  const persistedPromptVersion = cleanOptionalString(
+    args.persistedPromptVersion,
+  );
+
+  if (persistedSector) {
+    if (
+      requestedSector &&
+      requestedSector !== persistedSector &&
+      args.isWorkerInvocation !== true
+    ) {
+      return {
+        ok: false,
+        status: 409,
+        code: "sector_mismatch",
+        message:
+          "Analiz kapsamı kayıtlı analiz verisiyle eşleşmiyor. Lütfen analizi yeniden başlatın.",
+        requestedSector,
+        persistedSector,
+      };
+    }
+
+    const source = persistedSource ??
+      (requestedSector ? requestedSource : null) ??
+      "legacy_missing";
+    const promptVersion = persistedPromptVersion ??
+      (requestedSector ? requestedPromptVersion : null) ??
+      ACTIVE_ANALYSIS_SECTOR_PROMPT_VERSION;
+    const backfillPatch: ActiveSectorBackfillPatch = {};
+
+    if (!persistedSource) {
+      backfillPatch.analysis_sector_source = source;
+    }
+    if (!persistedPromptVersion) {
+      backfillPatch.analysis_sector_prompt_version = promptVersion;
+    }
+
+    return {
+      ok: true,
+      sector: persistedSector,
+      source,
+      promptVersion,
+      shouldBackfill: Object.keys(backfillPatch).length > 0,
+      backfillPatch,
+    };
+  }
+
+  if (requestedSector) {
+    const source = requestedSource ?? "user_selected";
+    const promptVersion = requestedPromptVersion ??
+      ACTIVE_ANALYSIS_SECTOR_PROMPT_VERSION;
+    return {
+      ok: true,
+      sector: requestedSector,
+      source,
+      promptVersion,
+      shouldBackfill: true,
+      backfillPatch: {
+        analysis_sector: requestedSector,
+        analysis_sector_source: source,
+        analysis_sector_prompt_version: promptVersion,
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    sector: null,
+    source: null,
+    promptVersion: null,
+    shouldBackfill: false,
+    backfillPatch: {},
+  };
 }
 
 export function analysisSectorLabel(

@@ -223,11 +223,11 @@ enum AnalysisSectorPreferences {
             append(lastUsed, badges: [.lastUsed])
         }
 
-        append(.general)
-
         for sector in AnalysisSectorID.allCases.sorted(by: { $0.sortOrder < $1.sortOrder }) where sector != .general {
             append(sector)
         }
+
+        append(.general)
 
         return items
     }

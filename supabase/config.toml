@@ -2,8 +2,16 @@ project_id = "ppcrzemgiztzcgddbins"
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["io.supabase.riskdetected://login-callback"]
+site_url = "https://riskdetected.com"
+additional_redirect_urls = [
+  "io.supabase.riskdetected://login-callback",
+  "https://riskdetected.com/admin/auth/callback",
+  "https://riskdetected.com/admin/login",
+  "https://riskdetected.com/admin/mfa",
+  "http://localhost:5173/admin/auth/callback",
+  "http://localhost:5173/admin/login",
+  "http://localhost:5173/admin/mfa"
+]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 
@@ -65,4 +73,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.revenuecat-webhook]
+verify_jwt = false
+
+[functions.send-trial-reminder-notifications]
 verify_jwt = false

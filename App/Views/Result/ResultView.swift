@@ -60,6 +60,7 @@ struct ResultView: View {
     @State private var reportQuotaExhausted: Bool = false
     @State private var freeRiskAnalysisTrialUsed: Bool = false
     @State private var reportSettingsDetent: PresentationDetent = .height(430)
+    @State private var expandedPhotoPreview: ResultPhotoPreview?
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
     }
@@ -168,6 +169,12 @@ struct ResultView: View {
                         })
             .preferredColorScheme(preferredModalColorScheme)
         }
+        .fullScreenCover(item: $expandedPhotoPreview) { preview in
+            ResultPhotoPreviewView(image: preview.image) {
+                expandedPhotoPreview = nil
+            }
+            .preferredColorScheme(preferredModalColorScheme)
+        }
         .task(id: app.profile?.preferredMethod?.rawValue) {
             if let preferredMethod = app.profile?.preferredMethod?.domain {
                 method = preferredMethod
@@ -243,7 +250,10 @@ struct ResultView: View {
                     image: localPreviewImage,
                     path: photoPath,
                     isTextAnalysis: bundle?.analysis.kind == "text",
-                    cornerRadius: 12
+                    cornerRadius: 12,
+                    onTap: { image in
+                        expandedPhotoPreview = ResultPhotoPreview(image: image)
+                    }
                 )
                     .frame(width: 58, height: 58)
 
@@ -287,14 +297,18 @@ struct ResultView: View {
     }
 
     private var proResultHint: some View {
-        Button {
+        let tier: SubscriptionTier = app.currentTier == .plus ? .pro : .plus
+        let title = tier == .plus
+            ? "Plus ile daha detaylı analiz ve rapor seçenekleri"
+            : "Pro ile daha yüksek kapasite ve gelişmiş analiz"
+        return Button {
             showPaywall = true
         } label: {
             HStack(alignment: .top, spacing: 6) {
-                Image(systemName: "star.fill")
+                Image(systemName: tier.badgeIcon)
                     .font(.system(size: RDFontScale.size(8.5), weight: .bold, design: .rounded))
                     .padding(.top, 2)
-                Text("Pro ile 10 Bulgu ve En az %90 Güven")
+                Text(title)
                     .font(.system(size: RDFontScale.size(10.5), weight: .semibold, design: .rounded))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -303,15 +317,15 @@ struct ResultView: View {
                     .layoutPriority(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .foregroundStyle(Color.rdGreenDark)
+            .foregroundStyle(tier.accentTextColor)
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(Color.rdGreenSoft.opacity(0.78))
+            .background(tier.accentSoftColor.opacity(0.78))
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .buttonStyle(.plain)
-        .accessibilityLabel("Pro ile 10 bulgu ve en az yüzde 90 güven")
+        .accessibilityLabel(title)
     }
 
     private var confidenceChip: some View {
@@ -337,7 +351,7 @@ struct ResultView: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain)
-        .accessibilityHint(app.isPro ? "Pro analiz güven göstergesi" : "Pro ile daha kapsamlı analiz bilgisi")
+        .accessibilityHint(app.isPro ? "Pro analiz güven göstergesi" : "Plus ile daha kapsamlı analiz bilgisi")
     }
 
     private func metaChip(_ text: String, bg: Color, fg: Color) -> some View {
@@ -528,7 +542,13 @@ struct ResultView: View {
                 .padding(.leading, 4)
 
             ForEach(Array(sortedFindings.enumerated()), id: \.element.id) { index, finding in
-                FindingCard(finding: finding, index: index + 1, method: method, currentTier: app.currentTier) {
+                FindingCard(
+                    finding: finding,
+                    index: index + 1,
+                    method: method,
+                    currentTier: app.currentTier,
+                    onPaywall: { showPaywall = true }
+                ) {
                     selectedFinding = finding
                 }
 
@@ -2097,6 +2117,7 @@ struct FindingCard: View {
     let index: Int
     let method: RiskMethod
     let currentTier: SubscriptionTier
+    let onPaywall: () -> Void
     let action: () -> Void
 
     var body: some View {
@@ -2104,18 +2125,18 @@ struct FindingCard: View {
         let score = finding.score(for: method)
         let max: Double = method == .fineKinney ? 1000 : 25
 
-        Button(action: action) {
-            HStack(alignment: .top, spacing: 10) {
-                Text("\(index)")
-                    .rdMono(size: 12, weight: .bold)
-                    .frame(width: 26, height: 26)
-                    .background(Color.rdFog)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .foregroundStyle(Color.rdBlack)
+        HStack(alignment: .top, spacing: 10) {
+            Text("\(index)")
+                .rdMono(size: 12, weight: .bold)
+                .frame(width: 26, height: 26)
+                .background(Color.rdFog)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .foregroundStyle(Color.rdBlack)
 
+            VStack(alignment: .leading, spacing: 6) {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .top, spacing: 8) {
-                        Text(finding.title)
+                        Text(finding.displayTitle)
                             .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .multilineTextAlignment(.leading)
@@ -2133,21 +2154,22 @@ struct FindingCard: View {
                     actionBlock
 
                     rootCauseBlock
-
-                    findingMetaCards(band: band)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture(perform: action)
+
+                findingMetaCards(band: band)
             }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: RDRadius.lg)
-                    .fill(Color.rdWhite)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: RDRadius.lg)
-                            .stroke(Color.rdLine, lineWidth: 1)
-                    )
-            )
         }
-        .buttonStyle(RDPressableButtonStyle())
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: RDRadius.lg)
+                .fill(Color.rdWhite)
+                .overlay(
+                    RoundedRectangle(cornerRadius: RDRadius.lg)
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+        )
     }
 
     private func scoreBlock(band: RiskBand, score: Double, max: Double) -> some View {
@@ -2198,12 +2220,13 @@ struct FindingCard: View {
 
     private var actionBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: "shield.lefthalf.filled")
-                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdGreenDark)
-            Text("Önlem / Kontrol tedbirleri")
-                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdGreenDark)
+            HStack(spacing: 7) {
+                Image(systemName: "shield.lefthalf.filled")
+                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                Text("Önlem / Kontrol tedbirleri")
+                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(Color.rdGreenDark)
 
             ForEach(finding.controlMeasures.indices, id: \.self) { index in
                 let measure = finding.controlMeasures[index]
@@ -2261,7 +2284,8 @@ struct FindingCard: View {
                 icon: referencesUnlocked ? "books.vertical.fill" : "lock.fill",
                 title: "Mevzuat",
                 value: referencesUnlocked ? (finding.references.isEmpty ? "Kontrol edilmeli" : finding.references) : "\(referencesTier.title)'ta açık",
-                tint: referencesUnlocked ? Color.rdGreenDark : referencesTier.accentTextColor
+                tint: referencesUnlocked ? Color.rdGreenDark : referencesTier.accentTextColor,
+                action: referencesUnlocked ? nil : onPaywall
             )
         }
     }
@@ -2270,7 +2294,26 @@ struct FindingCard: View {
         .plus
     }
 
-    private func infoCard(icon: String, title: String, value: String, tint: Color) -> some View {
+    @ViewBuilder
+    private func infoCard(
+        icon: String,
+        title: String,
+        value: String,
+        tint: Color,
+        action: (() -> Void)? = nil
+    ) -> some View {
+        if let action {
+            Button(action: action) {
+                infoCardContent(icon: icon, title: title, value: value, tint: tint)
+            }
+            .buttonStyle(RDPressableButtonStyle())
+            .accessibilityHint("Plus plan ekranını açar")
+        } else {
+            infoCardContent(icon: icon, title: title, value: value, tint: tint)
+        }
+    }
+
+    private func infoCardContent(icon: String, title: String, value: String, tint: Color) -> some View {
         HStack(alignment: .top, spacing: 7) {
             Image(systemName: icon)
                 .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
@@ -2308,8 +2351,13 @@ private struct ResultPhotoThumbnail: View {
     let path: String?
     let isTextAnalysis: Bool
     var cornerRadius: CGFloat
+    var onTap: ((UIImage) -> Void)? = nil
     @State private var remoteImage: UIImage?
     @State private var loadedPath: String?
+
+    private var previewImage: UIImage? {
+        remoteImage ?? image
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -2331,6 +2379,14 @@ private struct ResultPhotoThumbnail: View {
             .frame(width: proxy.size.width, height: proxy.size.height)
             .clipped()
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .onTapGesture {
+                guard let previewImage else { return }
+                onTap?(previewImage)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(previewImage == nil ? "Analiz görseli" : "Analiz görselini büyüt")
+            .accessibilityAddTraits(previewImage == nil ? [] : .isButton)
         }
         .task(id: path) {
             await loadRemoteIfNeeded()
@@ -2347,6 +2403,47 @@ private struct ResultPhotoThumbnail: View {
             }
         } catch {
             remoteImage = nil
+        }
+    }
+}
+
+private struct ResultPhotoPreview: Identifiable {
+    let id = UUID()
+    let image: UIImage
+}
+
+private struct ResultPhotoPreviewView: View {
+    let image: UIImage
+    let onClose: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+
+            GeometryReader { proxy in
+                let maxWidth = max(CGFloat(1), proxy.size.width - 24)
+                let maxHeight = max(CGFloat(1), proxy.size.height - 120)
+
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: maxWidth, maxHeight: maxHeight)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            }
+            .ignoresSafeArea()
+
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Color.white.opacity(0.16))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(RDPressableButtonStyle())
+            .accessibilityLabel("Fotoğrafı kapat")
+            .padding(.top, 18)
+            .padding(.trailing, 18)
         }
     }
 }

@@ -18,6 +18,7 @@ private struct PaywallPresentation: Identifiable {
 
 private let maxTextInputCharacters = AnalysisService.maxTextInputCharacters
 private let freeQuotaCachePrefix = "rd.home.freeQuota"
+private let analysisSectorSheetHeight: CGFloat = 600
 
 struct HomeView: View {
     @EnvironmentObject var app: AppState
@@ -218,7 +219,7 @@ struct HomeView: View {
                     }
                 }
             )
-            .presentationDetents([.large])
+            .presentationDetents([.height(analysisSectorSheetHeight)])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }

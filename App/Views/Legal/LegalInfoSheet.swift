@@ -30,7 +30,10 @@ struct LegalInfoSheet: View {
             }
         }
         .task {
-            await legalDocuments.refreshIfNeeded(userID: SupabaseService.shared.currentUserID)
+            await legalDocuments.refreshIfNeeded(
+                userID: SupabaseService.shared.currentUserID,
+                userCreatedAt: SupabaseService.shared.client.auth.currentUser?.createdAt
+            )
         }
     }
 
