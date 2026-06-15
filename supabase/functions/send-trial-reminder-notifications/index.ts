@@ -98,7 +98,7 @@ async function lockCandidate(params: {
     })
     .eq("user_id", params.userID)
     .eq("trial_product_id", PLUS_YEARLY_PRODUCT_ID)
-    .eq("will_renew", true)
+    .or("will_renew.is.null,will_renew.eq.true")
     .is("trial_reminder_sent_at", null)
     .or(
       `trial_reminder_last_attempt_at.is.null,trial_reminder_last_attempt_at.lt.${retryBefore}`,

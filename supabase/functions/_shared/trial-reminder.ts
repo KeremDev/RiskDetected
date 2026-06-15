@@ -1,4 +1,6 @@
 export const PLUS_YEARLY_PRODUCT_ID = "riskdetected_plus_yearly";
+export const TRIAL_LENGTH_DAYS = 7;
+export const TRIAL_REMINDER_TARGET_DAY = 5;
 
 export const TRIAL_REMINDER_KIND = "trial_reminder";
 export const TRIAL_REMINDER_TITLE = "Detaylı Analiz 2 gün sonra kalıcı oluyor";
@@ -24,6 +26,17 @@ export type TrialMetadataPatch = {
   trial_reminder_sent_at?: string | null;
   trial_reminder_last_attempt_at?: string | null;
   trial_reminder_status?: TrialReminderStatus | null;
+  trial_reminder_notification_event_id?: string | null;
+};
+
+export type ExistingSubscriptionRow = {
+  trial_started_at?: string | null;
+  trial_ends_at?: string | null;
+  trial_product_id?: string | null;
+  will_renew?: boolean | null;
+  trial_reminder_sent_at?: string | null;
+  trial_reminder_last_attempt_at?: string | null;
+  trial_reminder_status?: string | null;
   trial_reminder_notification_event_id?: string | null;
 };
 
@@ -110,6 +123,52 @@ function dateStringToISO(value: string | null | undefined): string | null {
   return Number.isFinite(date.getTime()) ? date.toISOString() : null;
 }
 
+export function isApproximatelySevenDayTrial(
+  startedAt: string | null | undefined,
+  endsAt: string | null | undefined,
+): boolean {
+  if (!startedAt || !endsAt) return false;
+  const startedMs = Date.parse(startedAt);
+  const endsMs = Date.parse(endsAt);
+  if (!Number.isFinite(startedMs) || !Number.isFinite(endsMs)) return false;
+  const durationDays = (endsMs - startedMs) / (24 * 60 * 60 * 1000);
+  return durationDays >= TRIAL_LENGTH_DAYS - 1 &&
+    durationDays <= TRIAL_LENGTH_DAYS + 1.5;
+}
+
+export function isPlusYearlyTrialPeriod(
+  event: Record<string, unknown>,
+  productID?: string | null,
+): boolean {
+  const resolvedProductID = revenueCatEventProductID(event) ?? productID ?? null;
+  if (!isPlusYearlyProduct(resolvedProductID)) return false;
+
+  const periodType = revenueCatEventPeriodType(event);
+  if (periodType === "TRIAL" || periodType === "INTRO") return true;
+  if (event.is_trial_period === true) return true;
+
+  const purchasedAt = revenueCatTimestampToISO(
+    event.purchased_at_ms ?? event.purchase_at_ms ?? event.event_timestamp_ms,
+  );
+  const endsAt = revenueCatTimestampToISO(
+    event.expiration_at_ms ?? event.expires_at_ms,
+  );
+  return isApproximatelySevenDayTrial(purchasedAt, endsAt);
+}
+
+export function resolveWillRenew(event: Record<string, unknown>): boolean {
+  if (event.auto_renew_status === false) return false;
+  if (event.auto_renew_status === true) return true;
+  if (
+    typeof event.unsubscribe_detected_at === "string" &&
+    event.unsubscribe_detected_at.trim()
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/** Transfer / deactivate: wipe subscription trial state entirely. */
 export function clearTrialReminderMetadataPatch(): TrialMetadataPatch {
   return {
     trial_started_at: null,
@@ -123,59 +182,110 @@ export function clearTrialReminderMetadataPatch(): TrialMetadataPatch {
   };
 }
 
-export function trialMetadataPatchForRevenueCatEvent(
+function initialTrialPatch(
+  event: Record<string, unknown>,
+  verifiedExpiration?: string | null,
+  verifiedPurchaseDate?: string | null,
+): TrialMetadataPatch | null {
+  const trialEndsAt = revenueCatTimestampToISO(
+    event.expiration_at_ms ?? event.expires_at_ms,
+  ) ?? dateStringToISO(verifiedExpiration);
+  const trialStartedAt = revenueCatTimestampToISO(
+    event.purchased_at_ms ?? event.purchase_at_ms ?? event.event_timestamp_ms,
+  ) ?? dateStringToISO(verifiedPurchaseDate);
+
+  if (!trialEndsAt || !trialStartedAt) return null;
+
+  return {
+    trial_product_id: PLUS_YEARLY_PRODUCT_ID,
+    trial_started_at: trialStartedAt,
+    trial_ends_at: trialEndsAt,
+    will_renew: resolveWillRenew(event),
+    trial_reminder_sent_at: null,
+    trial_reminder_last_attempt_at: null,
+    trial_reminder_status: null,
+    trial_reminder_notification_event_id: null,
+  };
+}
+
+export function buildTrialPatch(
   eventType: string,
   event: Record<string, unknown>,
+  existing: ExistingSubscriptionRow | null,
   verifiedProductID?: string | null,
   verifiedExpiration?: string | null,
   verifiedPurchaseDate?: string | null,
 ): TrialMetadataPatch | null {
   const normalizedType = eventType.toUpperCase();
-  const productID = revenueCatEventProductID(event) ?? verifiedProductID ??
-    null;
+  const productID = revenueCatEventProductID(event) ?? verifiedProductID ?? null;
+  const isTrialConversion = event.is_trial_conversion === true;
 
-  if (
-    normalizedType === "RENEWAL" ||
-    normalizedType === "EXPIRATION" ||
-    normalizedType === "PRODUCT_CHANGE"
-  ) {
-    return clearTrialReminderMetadataPatch();
+  if (normalizedType === "CANCELLATION") {
+    if (!isPlusYearlyProduct(productID) && !isPlusYearlyProduct(existing?.trial_product_id)) {
+      return null;
+    }
+    return { will_renew: false };
+  }
+
+  if (normalizedType === "UNCANCELLATION") {
+    if (!isPlusYearlyProduct(productID) && !isPlusYearlyProduct(existing?.trial_product_id)) {
+      return null;
+    }
+    return { will_renew: true };
+  }
+
+  if (normalizedType === "RENEWAL") {
+    if (!isPlusYearlyProduct(productID) && !isPlusYearlyProduct(existing?.trial_product_id)) {
+      return null;
+    }
+    // Trial → paid: keep historical trial_* columns for admin reporting.
+    return { will_renew: resolveWillRenew(event) };
+  }
+
+  if (normalizedType === "EXPIRATION") {
+    if (!existing?.trial_started_at && !isPlusYearlyProduct(productID)) return null;
+    return { trial_reminder_status: "inactive" };
+  }
+
+  if (normalizedType === "PRODUCT_CHANGE") {
+    if (isPlusYearlyTrialPeriod(event, productID) && !isTrialConversion) {
+      return initialTrialPatch(event, verifiedExpiration, verifiedPurchaseDate);
+    }
+    if (isPlusYearlyProduct(productID) || isPlusYearlyProduct(existing?.trial_product_id)) {
+      return { will_renew: resolveWillRenew(event) };
+    }
+    return null;
   }
 
   if (!isPlusYearlyProduct(productID)) return null;
 
   if (
     normalizedType === "INITIAL_PURCHASE" &&
-    revenueCatEventPeriodType(event) === "TRIAL"
+    isPlusYearlyTrialPeriod(event, productID) &&
+    !isTrialConversion
   ) {
-    const trialEndsAt = revenueCatTimestampToISO(
-      event.expiration_at_ms ?? event.expires_at_ms,
-    ) ?? dateStringToISO(verifiedExpiration);
-    if (!trialEndsAt) return null;
-
-    return {
-      trial_started_at: revenueCatTimestampToISO(
-        event.purchased_at_ms ?? event.purchase_at_ms,
-      ) ?? dateStringToISO(verifiedPurchaseDate),
-      trial_ends_at: trialEndsAt,
-      trial_product_id: PLUS_YEARLY_PRODUCT_ID,
-      will_renew: true,
-      trial_reminder_sent_at: null,
-      trial_reminder_last_attempt_at: null,
-      trial_reminder_status: null,
-      trial_reminder_notification_event_id: null,
-    };
-  }
-
-  if (normalizedType === "CANCELLATION") {
-    return { will_renew: false };
-  }
-
-  if (normalizedType === "UNCANCELLATION") {
-    return { will_renew: true };
+    return initialTrialPatch(event, verifiedExpiration, verifiedPurchaseDate);
   }
 
   return null;
+}
+
+export function trialMetadataPatchForRevenueCatEvent(
+  eventType: string,
+  event: Record<string, unknown>,
+  verifiedProductID?: string | null,
+  verifiedExpiration?: string | null,
+  verifiedPurchaseDate?: string | null,
+  existing?: ExistingSubscriptionRow | null,
+): TrialMetadataPatch | null {
+  return buildTrialPatch(
+    eventType,
+    event,
+    existing ?? null,
+    verifiedProductID,
+    verifiedExpiration,
+    verifiedPurchaseDate,
+  );
 }
 
 export function trialReminderDecision(

@@ -1,6 +1,9 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
+  buildTrialPatch,
   clearTrialReminderMetadataPatch,
+  isApproximatelySevenDayTrial,
+  isPlusYearlyTrialPeriod,
   PLUS_YEARLY_PRODUCT_ID,
   revenueCatTimestampToISO,
   trialMetadataPatchForRevenueCatEvent,
@@ -11,6 +14,14 @@ const now = new Date("2026-06-13T09:00:00.000Z");
 const in47Hours = new Date(now.getTime() + 47 * 60 * 60 * 1000);
 const in50Hours = new Date(now.getTime() + 50 * 60 * 60 * 1000);
 const in23Hours = new Date(now.getTime() + 23 * 60 * 60 * 1000);
+const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+const existingTrial = {
+  trial_started_at: now.toISOString(),
+  trial_ends_at: in7Days.toISOString(),
+  trial_product_id: PLUS_YEARLY_PRODUCT_ID,
+  will_renew: true,
+};
 
 Deno.test("RevenueCat millisecond timestamps normalize to ISO", () => {
   assertEquals(
@@ -20,12 +31,57 @@ Deno.test("RevenueCat millisecond timestamps normalize to ISO", () => {
   assertEquals(revenueCatTimestampToISO(""), null);
 });
 
-Deno.test("Plus yearly trial INITIAL_PURCHASE creates trial reminder metadata", () => {
+Deno.test("Seven-day trial duration helper accepts intro offer windows", () => {
+  assertEquals(
+    isApproximatelySevenDayTrial(now.toISOString(), in7Days.toISOString()),
+    true,
+  );
+  assertEquals(
+    isApproximatelySevenDayTrial(now.toISOString(), in47Hours.toISOString()),
+    false,
+  );
+});
+
+Deno.test("Plus yearly trial detection accepts TRIAL, INTRO and is_trial_period", () => {
+  assertEquals(
+    isPlusYearlyTrialPeriod({
+      product_id: PLUS_YEARLY_PRODUCT_ID,
+      period_type: "TRIAL",
+    }),
+    true,
+  );
+  assertEquals(
+    isPlusYearlyTrialPeriod({
+      product_id: PLUS_YEARLY_PRODUCT_ID,
+      period_type: "INTRO",
+    }),
+    true,
+  );
+  assertEquals(
+    isPlusYearlyTrialPeriod({
+      product_id: PLUS_YEARLY_PRODUCT_ID,
+      is_trial_period: true,
+    }),
+    true,
+  );
+  assertEquals(
+    isPlusYearlyTrialPeriod({
+      product_id: PLUS_YEARLY_PRODUCT_ID,
+      period_type: "NORMAL",
+      purchased_at_ms: now.getTime(),
+      expiration_at_ms: in7Days.getTime(),
+    }),
+    true,
+  );
+});
+
+Deno.test("Plus yearly trial INITIAL_PURCHASE creates trial metadata", () => {
   const patch = trialMetadataPatchForRevenueCatEvent("INITIAL_PURCHASE", {
     product_id: PLUS_YEARLY_PRODUCT_ID,
     period_type: "TRIAL",
     purchased_at_ms: now.getTime(),
     expiration_at_ms: in47Hours.getTime(),
+    auto_renew_status: true,
   });
 
   assertEquals(patch, {
@@ -40,12 +96,27 @@ Deno.test("Plus yearly trial INITIAL_PURCHASE creates trial reminder metadata", 
   });
 });
 
+Deno.test("Intro offer INITIAL_PURCHASE without TRIAL period_type still sets trial metadata", () => {
+  const patch = buildTrialPatch("INITIAL_PURCHASE", {
+    product_id: PLUS_YEARLY_PRODUCT_ID,
+    period_type: "NORMAL",
+    is_trial_period: true,
+    purchased_at_ms: now.getTime(),
+    expiration_at_ms: in7Days.getTime(),
+  }, null);
+
+  assertEquals(patch?.trial_product_id, PLUS_YEARLY_PRODUCT_ID);
+  assertEquals(patch?.trial_started_at, now.toISOString());
+  assertEquals(patch?.trial_ends_at, in7Days.toISOString());
+});
+
 Deno.test("Non-trial purchases do not create trial reminder metadata", () => {
   assertEquals(
     trialMetadataPatchForRevenueCatEvent("INITIAL_PURCHASE", {
       product_id: PLUS_YEARLY_PRODUCT_ID,
       period_type: "NORMAL",
-      expiration_at_ms: in47Hours.getTime(),
+      purchased_at_ms: now.getTime(),
+      expiration_at_ms: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).getTime(),
     }),
     null,
   );
@@ -83,12 +154,43 @@ Deno.test("Cancellation and uncancellation toggle renewal intent", () => {
   );
 });
 
-Deno.test("Renewal clears stale trial reminder metadata", () => {
+Deno.test("Renewal preserves historical trial metadata", () => {
   assertEquals(
-    trialMetadataPatchForRevenueCatEvent("RENEWAL", {
+    buildTrialPatch(
+      "RENEWAL",
+      {
+        product_id: PLUS_YEARLY_PRODUCT_ID,
+        is_trial_conversion: true,
+        auto_renew_status: true,
+      },
+      existingTrial,
+    ),
+    { will_renew: true },
+  );
+  assertEquals(
+    buildTrialPatch(
+      "RENEWAL",
+      {
+        product_id: PLUS_YEARLY_PRODUCT_ID,
+        auto_renew_status: false,
+        unsubscribe_detected_at: "2026-06-13T10:00:00.000Z",
+      },
+      existingTrial,
+    ),
+    { will_renew: false },
+  );
+});
+
+Deno.test("Expiration only inactivates reminder status without clearing trial history", () => {
+  assertEquals(
+    buildTrialPatch("EXPIRATION", {
       product_id: PLUS_YEARLY_PRODUCT_ID,
-    }),
-    clearTrialReminderMetadataPatch(),
+    }, existingTrial),
+    { trial_reminder_status: "inactive" },
+  );
+  assertEquals(
+    clearTrialReminderMetadataPatch().trial_started_at,
+    null,
   );
 });
 

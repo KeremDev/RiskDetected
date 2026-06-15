@@ -389,6 +389,20 @@ async function existingProfileID(
   return null;
 }
 
+async function existingSubscriptionRow(
+  supabase: SupabaseAdminClient,
+  userID: string,
+) {
+  const { data } = await supabase
+    .from("user_subscriptions")
+    .select(
+      "trial_started_at,trial_ends_at,trial_product_id,will_renew,trial_reminder_sent_at,trial_reminder_last_attempt_at,trial_reminder_status,trial_reminder_notification_event_id",
+    )
+    .eq("user_id", userID)
+    .maybeSingle();
+  return data;
+}
+
 async function writeSubscriptionState(params: {
   supabase: SupabaseAdminClient;
   userID: string;
@@ -875,6 +889,7 @@ serve(async (req) => {
       verifiedState.productID,
       verifiedState.expiration,
       verifiedState.purchaseDate,
+      await existingSubscriptionRow(supabase, eventUserID),
     ),
   });
 
