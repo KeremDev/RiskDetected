@@ -45,7 +45,7 @@ struct OBTopBar: View {
                     OBHaptic.soft(); onBack()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(17), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .frame(width: 40, height: 40)
                         .background(Color.clear)
@@ -64,15 +64,15 @@ struct OBTopBar: View {
                 if trailingDone {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: RDFontScale.size(10), weight: .bold))
                         Text(trailingLabel)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: RDFontScale.size(11), weight: .semibold))
                             .tracking(0.6)
                     }
                     .foregroundStyle(Color.rdGreenDark)
                 } else {
                     Text(trailingLabel)
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .monospaced))
                         .tracking(0.6)
                         .foregroundStyle(Color.rdSlate)
                 }
@@ -114,7 +114,7 @@ struct OBProgress: View {
                 ZStack {
                     Circle().fill(Color.rdGreen)
                     Image(systemName: "checkmark")
-                        .font(.system(size: 7, weight: .bold))
+                        .font(.system(size: RDFontScale.size(7), weight: .bold))
                         .foregroundStyle(.white)
                 }
                 .frame(width: 16, height: 16)
@@ -214,11 +214,11 @@ struct OBCard<Leading: View, Trailing: View>: View {
                 leading
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(16), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                     if let subtitle {
                         Text(subtitle)
-                            .font(.system(size: 13))
+                            .font(.system(size: RDFontScale.size(13)))
                             .foregroundStyle(Color.rdSlate)
                     }
                 }
@@ -253,7 +253,7 @@ struct OBCard<Leading: View, Trailing: View>: View {
                 )
             if isSelected {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold))
                     .foregroundStyle(.white)
                     .transition(.scale.combined(with: .opacity))
             }
@@ -293,6 +293,8 @@ struct OBPrimaryButton: View {
     let title: String
     var trailingIcon: String? = "arrow.right"
     var enabled: Bool = true
+    var isLoading: Bool = false
+    var loadingTitle: String?
     var style: Style = .onyx
     var accessibilityID: String?
     let action: () -> Void
@@ -303,15 +305,25 @@ struct OBPrimaryButton: View {
     @State private var arrowOpacity: Double = 0
 
     var body: some View {
+        let resolvedAccessibilityID = accessibilityID ?? "ob.primary.\(obIdentifierSlug(title))"
+        let displayTitle = isLoading ? (loadingTitle ?? title) : title
+
         Button {
-            if enabled { OBHaptic.light(); action() }
+            if enabled && !isLoading { OBHaptic.light(); action() }
         } label: {
             HStack(spacing: 8) {
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold))
-                if let trailingIcon {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(textColor)
+                }
+
+                Text(displayTitle)
+                    .font(.system(size: RDFontScale.size(16), weight: .semibold))
+
+                if let trailingIcon, !isLoading {
                     Image(systemName: trailingIcon)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(15), weight: .semibold))
                         .offset(x: enabled ? arrowOffset : 0)
                         .opacity(enabled ? arrowOpacity : 1)
                 }
@@ -325,14 +337,19 @@ struct OBPrimaryButton: View {
             .opacity(enabled ? 1 : 1)
         }
         .buttonStyle(OBPressStyle())
-        .disabled(!enabled)
-        .accessibilityIdentifier(accessibilityID ?? "ob.primary.\(obIdentifierSlug(title))")
+        .disabled(!enabled || isLoading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(displayTitle)
+        .accessibilityIdentifier(resolvedAccessibilityID)
         .onAppear {
-            guard enabled else { return }
+            guard enabled, !isLoading else { return }
             animateArrow()
         }
         .onChange(of: enabled) { newValue in
-            if newValue { animateArrow() }
+            if newValue, !isLoading { animateArrow() }
+        }
+        .onChange(of: isLoading) { newValue in
+            if !newValue, enabled { animateArrow() }
         }
     }
 
@@ -407,15 +424,15 @@ struct OBSelectionCounter: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 13))
+                .font(.system(size: RDFontScale.size(13)))
                 .foregroundStyle(Color.rdSlate)
             HStack(spacing: 4) {
                 Text("\(count)")
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .monospaced))
                     .foregroundStyle(Color.rdOnyx)
                     .scaleEffect(pulse ? 1.18 : 1.0)
                 Text(suffix)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: RDFontScale.size(13), weight: .medium))
                     .foregroundStyle(Color.rdSlate)
             }
         }
@@ -437,7 +454,7 @@ struct OBHeroSplashChar: View {
         ZStack {
             Circle().fill(Color(hex: "#EAF8EE")).frame(width: 88, height: 88)
             Image(systemName: "person.fill.badge.plus")
-                .font(.system(size: 36, weight: .bold))
+                .font(.system(size: RDFontScale.size(36), weight: .bold))
                 .foregroundStyle(Color.rdGreen)
         }
     }
@@ -780,12 +797,12 @@ struct OBHeroAuth: View {
     var body: some View {
         ZStack {
             Image(systemName: isClosed ? "lock.fill" : "lock.open.fill")
-                .font(.system(size: 46, weight: .bold))
+                .font(.system(size: RDFontScale.size(46), weight: .bold))
                 .foregroundStyle(Color.rdOnyx)
                 .id(isClosed)
 
             Image(systemName: "checkmark")
-                .font(.system(size: 16, weight: .heavy))
+                .font(.system(size: RDFontScale.size(16), weight: .heavy))
                 .foregroundStyle(Color(hex: "#4FE07E"))
                 .scaleEffect(checkScale)
                 .opacity(checkOpacity)

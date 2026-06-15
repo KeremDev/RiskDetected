@@ -1,9 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct RDAvatar: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var initials: String = "EY"
+    var image: UIImage?
     var size: CGFloat = 36
     var tier: SubscriptionTier = .free
     var pro: Bool = false
@@ -21,17 +23,25 @@ struct RDAvatar: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: gradientColors,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .clipShape(Circle())
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipShape(Circle())
+            } else {
+                LinearGradient(
+                    colors: gradientColors,
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .clipShape(Circle())
 
-            Text(initials)
-                .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
-                .foregroundStyle(colorScheme == .dark ? Color.rdCharcoal : .white)
-                .tracking(0)
+                Text(initials)
+                    .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
+                    .foregroundStyle(colorScheme == .dark ? Color.rdCharcoal : .white)
+                    .tracking(0)
+            }
         }
         .frame(width: size, height: size)
         .overlay(

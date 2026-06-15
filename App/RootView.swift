@@ -1,12 +1,16 @@
 import SwiftUI
 
 struct RootView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var app: AppState
+    @EnvironmentObject private var network: NetworkMonitor
+    @StateObject private var legalDocuments = LegalDocumentService.shared
     @State private var appleSignInService = AppleSignInService()
+    @State private var selectedLegalDocument: LegalDocumentKind?
     private let googleSignInService = GoogleSignInService()
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             Color.rdPaper.ignoresSafeArea()
 
             switch app.flow {
@@ -15,13 +19,19 @@ struct RootView: View {
                     .transition(.opacity)
             case .onboarding:
                 OnboardingViewV2(
-                    isAuthenticated: app.auth.isAuthenticated,
+                    isAuthenticated: app.isAuthenticated,
+                    hasCompletedOnboarding: app.hasSeenOnboarding,
+                    currentTier: app.currentTier,
+                    subscriptionPackages: app.subscriptionPackages,
+                    subscriptionOfferingsLoadState: app.subscriptionOfferingsLoadState,
                     onFinish: { app.finishOnboarding() },
                     onAuthApple: { runAppleSignIn() },
                     onAuthGoogle: { runGoogleSignIn() },
                     onAuthEmail: {},
                     onSignInExisting: {},
-                    onPurchase: { plan, complete in purchaseOnboardingPlan(plan, onComplete: complete) }
+                    onPurchase: { plan in try await purchaseOnboardingPlan(plan) },
+                    onReloadSubscriptionOfferings: { await app.refreshSubscriptionOfferings() },
+                    onRestorePurchases: { try await restoreOnboardingPurchases() }
                 )
                     .transition(.opacity)
             case .auth:
@@ -38,8 +48,89 @@ struct RootView: View {
                     .accessibilityElement(children: .ignore)
                     .accessibilityIdentifier("root.\(flowIdentifier)")
             }
+
+            if app.flow != .splash && !network.isOnline {
+                OfflineStatusBanner()
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(200)
+            }
+
+            if let notice = legalDocuments.pendingBanner, app.flow == .main {
+                LegalUpdateBanner(
+                    notice: notice,
+                    onReview: {
+                        selectedLegalDocument = notice.primaryKind
+                        Task { await legalDocuments.recordSeen(notice, userID: app.auth.session?.user.id) }
+                    },
+                    onDismiss: {
+                        Task { await legalDocuments.recordSeen(notice, userID: app.auth.session?.user.id) }
+                    }
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, network.isOnline ? 10 : 64)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(210)
+            }
         }
-        .animation(.easeInOut(duration: 0.32), value: app.flow)
+        .modifier(RootFlowAnimationModifier(flow: app.flow, isOnline: network.isOnline))
+        .task {
+            await refreshLegalDocuments()
+        }
+        .onChange(of: app.flow) { _ in
+            Task { await refreshLegalDocuments() }
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active {
+                Task { await refreshLegalDocuments() }
+            }
+        }
+        .sheet(item: $selectedLegalDocument) { kind in
+            LegalInfoSheet(initialDocument: kind) {
+                selectedLegalDocument = nil
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(app.themePreference.colorScheme)
+        }
+        .sheet(item: $legalDocuments.pendingDecision) { notice in
+            LegalUpdateDecisionSheet(
+                notice: notice,
+                onReview: {
+                    // LegalUpdateDecisionSheet opens the in-app reader inside its own sheet stack.
+                },
+                onContinue: {
+                    Task {
+                        await legalDocuments.recordContinuedAcceptance(notice, userID: app.auth.session?.user.id)
+                    }
+                },
+                onExplicitAccept: {
+                    Task {
+                        await legalDocuments.recordExplicitAcceptance(notice, userID: app.auth.session?.user.id)
+                    }
+                },
+                onClose: {
+                    Task {
+                        await legalDocuments.dismiss(notice, userID: app.auth.session?.user.id)
+                    }
+                }
+            )
+            .presentationDetents([.height(notice.changeType == .explicitConsent ? 360 : 320), .medium])
+            .presentationDragIndicator(.visible)
+            .interactiveDismissDisabled(notice.changeType == .materialTerms)
+            .preferredColorScheme(app.themePreference.colorScheme)
+        }
+    }
+
+    private func refreshLegalDocuments() async {
+        #if DEBUG
+        guard !Self.isUITestLaunch else { return }
+        #endif
+        await legalDocuments.refreshIfNeeded(
+            userID: app.auth.session?.user.id,
+            userCreatedAt: app.auth.session?.user.createdAt
+        )
     }
 
     private var flowIdentifier: String {
@@ -52,8 +143,12 @@ struct RootView: View {
     }
 
     private static var isUITestLaunch: Bool {
+        #if DEBUG
         CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
             || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+        #else
+        false
+        #endif
     }
 
     private func runAppleSignIn() {
@@ -105,33 +200,30 @@ struct RootView: View {
         }
     }
 
-    private func purchaseOnboardingPlan(_ plan: OBPlan, onComplete: @escaping () -> Void) {
-        Task {
-            do {
-                if app.subscriptionPackages.isEmpty {
-                    await app.refreshSubscriptionOfferings()
-                }
-                guard let package = onboardingPackage(for: plan) else {
-                    app.authError = "Seçilen abonelik paketi şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
-                    return
-                }
-                try await app.purchaseSubscription(packageID: package.id)
-                onComplete()
-            } catch {
-                app.authError = AppErrorMessage.make(
-                    error,
-                    context: "Abonelik başlatılamadı",
-                    fallbackTitle: "Abonelik başlatılamadı"
-                ).message
-            }
+    private func purchaseOnboardingPlan(_ plan: OBPlan) async throws {
+        if app.subscriptionPackages.isEmpty {
+            await app.refreshSubscriptionOfferings()
         }
+        guard let package = onboardingPackage(for: plan) else {
+            throw NSError(
+                domain: "RiskDetected.OnboardingPurchase",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "Seçilen abonelik paketi şu an hazırlanamadı. Lütfen birazdan tekrar dene."]
+            )
+        }
+        try await app.purchaseSubscription(packageID: package.id, expectedTier: .plus)
+    }
+
+    private func restoreOnboardingPurchases() async throws -> Bool {
+        let restoredState = try await app.restoreSubscriptions()
+        return restoredState.tier.isPaid
     }
 
     private func onboardingPackage(for plan: OBPlan) -> SubscriptionPlanPackage? {
         app.subscriptionPackages
             .filter { $0.tier == .plus }
             .first { package in
-                package.matchesOnboardingBilling(plan)
+                package.matchesOnboardingBilling(plan) && package.displayPrice != nil
             }
     }
 
@@ -148,35 +240,211 @@ struct RootView: View {
     }
 }
 
-private extension SubscriptionPlanPackage {
+private struct OfflineStatusBanner: View {
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdCriticalText)
+
+            Text("Çevrimdışısın. Bazı veriler son kayıtlı haliyle görünebilir.")
+                .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdCritical.opacity(0.22), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: Color.rdOnyx.opacity(0.12), radius: 14, x: 0, y: 8)
+        .accessibilityIdentifier("network.offline_banner")
+    }
+}
+
+private struct LegalUpdateBanner: View {
+    let notice: LegalUpdateNotice
+    let onReview: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "doc.text.fill")
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreenDark)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(notice.title)
+                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text(notice.message)
+                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+
+            Button("İncele", action: onReview)
+                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdGreenDark)
+                .buttonStyle(.plain)
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdGreen.opacity(0.20), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: Color.rdOnyx.opacity(0.12), radius: 14, x: 0, y: 8)
+        .accessibilityIdentifier("legal.update.banner")
+    }
+}
+
+private struct LegalUpdateDecisionSheet: View {
+    let notice: LegalUpdateNotice
+    let onReview: () -> Void
+    let onContinue: () -> Void
+    let onExplicitAccept: () -> Void
+    let onClose: () -> Void
+    @State private var selectedLegalDocument: LegalDocumentKind?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: notice.changeType == .explicitConsent ? "checkmark.shield.fill" : "doc.text.fill")
+                    .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreenDark)
+                    .frame(width: 38, height: 38)
+                    .background(Color.rdGreenSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(notice.title)
+                        .font(.system(size: RDFontScale.size(19), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(notice.message)
+                        .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Button {
+                onReview()
+                selectedLegalDocument = notice.primaryKind
+            } label: {
+                HStack {
+                    Image(systemName: "doc.text.magnifyingglass")
+                    Text("Güncel metinleri incele")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .padding(.horizontal, 14)
+                .frame(height: 48)
+                .background(Color.rdWhite)
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdLine, lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 0)
+
+            if notice.changeType == .explicitConsent {
+                RDButton(title: "Kabul ediyorum", style: .primary, icon: "checkmark.shield.fill") {
+                    onExplicitAccept()
+                }
+                Button("Şimdilik kapat", action: onClose)
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .frame(maxWidth: .infinity)
+                    .buttonStyle(.plain)
+            } else {
+                RDButton(title: "Devam et", style: .primary, icon: "checkmark") {
+                    onContinue()
+                }
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.rdPaper)
+        .accessibilityIdentifier("legal.update.decision_sheet")
+        .sheet(item: $selectedLegalDocument) { kind in
+            LegalInfoSheet(initialDocument: kind) {
+                selectedLegalDocument = nil
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+    }
+}
+
+extension SubscriptionPlanPackage {
     func matchesOnboardingBilling(_ plan: OBPlan) -> Bool {
         let token = [
             id,
-            productIdentifier,
-            title,
-            subtitle
+            productIdentifier
         ]
         .joined(separator: " ")
-        .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "tr_TR"))
-        .lowercased(with: Locale(identifier: "tr_TR"))
+        .lowercased(with: Locale(identifier: "en_US"))
 
         switch plan {
         case .yearly:
             return token.contains("annual") ||
                 token.contains("year") ||
-                token.contains("yearly") ||
-                token.contains("yillik") ||
-                token.contains("yıllık") ||
-                token.contains("yılık") ||
-                token.contains("yil")
+                token.contains("yearly")
         case .monthly:
             return token.contains("monthly") ||
-                token.contains("month") ||
-                token.contains("aylik") ||
-                token.contains("aylık") ||
-                token.contains("ay")
+                token.contains("month")
         }
     }
+}
+
+private struct RootFlowAnimationModifier: ViewModifier {
+    let flow: AppFlow
+    let isOnline: Bool
+
+    func body(content: Content) -> some View {
+        #if DEBUG
+        if Self.isUITestLaunch {
+            content
+        } else {
+            content
+                .animation(.easeInOut(duration: 0.32), value: flow)
+                .animation(.easeInOut(duration: 0.22), value: isOnline)
+        }
+        #else
+        content
+            .animation(.easeInOut(duration: 0.32), value: flow)
+            .animation(.easeInOut(duration: 0.22), value: isOnline)
+        #endif
+    }
+
+    #if DEBUG
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+    }
+    #endif
 }
 
 struct SplashView: View {
@@ -189,5 +457,7 @@ struct SplashView: View {
 }
 
 #Preview {
-    RootView().environmentObject(AppState())
+    RootView()
+        .environmentObject(AppState())
+        .environmentObject(NetworkMonitor.shared)
 }

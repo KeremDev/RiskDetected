@@ -21,6 +21,23 @@ type SupportRequestBody = {
   attachments?: SupportAttachment[];
 };
 
+type NormalizedAttachment = {
+  filename: string;
+  mime_type: string;
+  data: string;
+  size_bytes: number;
+};
+
+type SupportRateLimitResult = {
+  ok?: boolean;
+  code?: string;
+  retry_after_seconds?: number;
+};
+
+const MAX_ATTACHMENT_COUNT = 3;
+const MAX_ATTACHMENT_BYTES = 5_000_000;
+const MAX_ATTACHMENT_TOTAL_BYTES = 15_000_000;
+
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -56,26 +73,111 @@ function safeLogText(value: string, maxLength = 180): string {
     .slice(0, maxLength);
 }
 
-function normalizeAttachments(value: unknown): SupportAttachment[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .slice(0, 3)
-    .map((item) => {
-      const source = item as SupportAttachment;
-      return {
-        filename: cleanText(source.filename, 120) || "ek-dosya",
-        mime_type: cleanText(source.mime_type, 80) ||
-          "application/octet-stream",
-        data: cleanText(source.data, 8_000_000),
-        size_bytes: Number(source.size_bytes ?? 0),
-      };
-    })
-    .filter((item) =>
-      item.data && item.size_bytes >= 0 && item.size_bytes <= 5_000_000
-    );
+function verifiedTierFromSubscription(subscription: Record<string, unknown> | null): string {
+  const tier = cleanText(subscription?.tier, 40);
+  const status = cleanText(subscription?.status, 40);
+  const periodEndsAt = cleanText(subscription?.current_period_ends_at, 80);
+  const activeStatus = ["active", "trialing", "grace_period"].includes(status);
+  const activePeriod = !periodEndsAt || Date.parse(periodEndsAt) > Date.now();
+  if ((tier === "plus" || tier === "pro") && activeStatus && activePeriod) {
+    return tier;
+  }
+  return "free";
 }
 
-function attachmentMetadata(attachments: SupportAttachment[]) {
+function decodedBase64ByteLength(base64: string): number {
+  const normalized = base64.replace(/\s/g, "");
+  const padding = normalized.endsWith("==")
+    ? 2
+    : normalized.endsWith("=")
+    ? 1
+    : 0;
+  return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding);
+}
+
+function isValidStandardBase64(value: string): boolean {
+  const normalized = value.replace(/\s/g, "");
+  return normalized.length > 0 &&
+    normalized.length % 4 !== 1 &&
+    /^[A-Za-z0-9+/]*={0,2}$/.test(normalized);
+}
+
+function normalizeAttachments(value: unknown): {
+  attachments: NormalizedAttachment[];
+  error?: { code: string; message: string };
+} {
+  if (value === undefined || value === null) return { attachments: [] };
+  if (!Array.isArray(value)) {
+    return {
+      attachments: [],
+      error: {
+        code: "invalid_attachments",
+        message: "Ek dosya verisi geçersiz.",
+      },
+    };
+  }
+  if (value.length > MAX_ATTACHMENT_COUNT) {
+    return {
+      attachments: [],
+      error: {
+        code: "too_many_attachments",
+        message: `En fazla ${MAX_ATTACHMENT_COUNT} ek dosya gönderebilirsin.`,
+      },
+    };
+  }
+
+  let totalBytes = 0;
+  const attachments: NormalizedAttachment[] = [];
+  for (const item of value) {
+    const source = item as SupportAttachment;
+    const data = typeof source?.data === "string"
+      ? source.data.replace(/\s/g, "")
+      : "";
+    if (!isValidStandardBase64(data)) {
+      return {
+        attachments: [],
+        error: {
+          code: "invalid_attachment_data",
+          message: "Ek dosya verisi geçersiz.",
+        },
+      };
+    }
+
+    const decodedBytes = decodedBase64ByteLength(data);
+    if (decodedBytes > MAX_ATTACHMENT_BYTES) {
+      return {
+        attachments: [],
+        error: {
+          code: "attachment_too_large",
+          message: "Ek dosya 5 MB'dan küçük olmalı.",
+        },
+      };
+    }
+
+    totalBytes += decodedBytes;
+    if (totalBytes > MAX_ATTACHMENT_TOTAL_BYTES) {
+      return {
+        attachments: [],
+        error: {
+          code: "attachments_too_large",
+          message: "Ek dosyaların toplam boyutu çok büyük.",
+        },
+      };
+    }
+
+    attachments.push({
+      filename: cleanText(source.filename, 120) || "ek-dosya",
+      mime_type: cleanText(source.mime_type, 80) ||
+        "application/octet-stream",
+      data,
+      size_bytes: decodedBytes,
+    });
+  }
+
+  return { attachments };
+}
+
+function attachmentMetadata(attachments: NormalizedAttachment[]) {
   return attachments.map((attachment) => ({
     filename: attachment.filename,
     mime_type: attachment.mime_type,
@@ -96,7 +198,7 @@ async function saveSupportRequest(
     senderTier: string;
     companyName: string;
     senderTitle: string;
-    attachments: SupportAttachment[];
+    attachments: NormalizedAttachment[];
     deliveryStatus: "sent" | "stored" | "email_failed";
     deliveryError?: string;
   },
@@ -170,7 +272,15 @@ serve(async (req) => {
 
   const subject = cleanText(body.subject, 120);
   const message = cleanText(body.message, 5000);
-  const attachments = normalizeAttachments(body.attachments);
+  const attachmentResult = normalizeAttachments(body.attachments);
+  if (attachmentResult.error) {
+    return json(400, {
+      error: attachmentResult.error.code,
+      message: attachmentResult.error.message,
+      support_id: supportID,
+    });
+  }
+  const attachments = attachmentResult.attachments;
 
   if (subject.length < 3 || message.length < 10) {
     return json(400, {
@@ -206,19 +316,69 @@ serve(async (req) => {
     });
   }
 
+  const { data: rateLimit, error: rateLimitError } = await supabase.rpc(
+    "check_support_request_rate_limit",
+    {
+      p_user_id: user.id,
+      p_hour_limit: 5,
+      p_day_limit: 20,
+    },
+  );
+  if (rateLimitError) {
+    console.error(
+      "support rate limit check failed",
+      JSON.stringify({
+        support_id: supportID,
+        error: safeLogText(rateLimitError.message),
+      }),
+    );
+    return json(500, {
+      error: "support_rate_check_failed",
+      message: "Destek talebi limiti kontrol edilemedi.",
+      support_id: supportID,
+    });
+  }
+
+  const rateLimitResult = rateLimit as SupportRateLimitResult | null;
+  if (rateLimitResult?.ok !== true) {
+    const retryAfter = Math.max(
+      60,
+      Number(rateLimitResult?.retry_after_seconds ?? 3600),
+    );
+    return json(429, {
+      error: "support_rate_limited",
+      code: rateLimitResult?.code ?? "support_rate_limited",
+      message:
+        "Kısa sürede çok fazla destek talebi gönderdin. Lütfen biraz sonra tekrar dene.",
+      support_id: supportID,
+      retry_after_seconds: retryAfter,
+    });
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name,email,phone,tier,company_name,title")
     .eq("id", user.id)
     .maybeSingle();
 
+  const { data: subscription } = await supabase
+    .from("user_subscriptions")
+    .select("tier,status,current_period_ends_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const authEmail = cleanText(user.email, 240);
+  const profileEmail = cleanText(profile?.email, 240);
   const senderName = cleanText(profile?.full_name, 160) || "Kayıtlı değil";
-  const senderEmail = cleanText(profile?.email, 240) || user.email ||
+  const senderEmail = authEmail || profileEmail ||
     "Kayıtlı değil";
   const senderPhone = cleanText(profile?.phone, 80) || "Kayıtlı değil";
-  const senderTier = cleanText(profile?.tier, 40) || "free";
+  const senderTier = verifiedTierFromSubscription(
+    subscription as Record<string, unknown> | null,
+  );
   const companyName = cleanText(profile?.company_name, 160) || "Kayıtlı değil";
   const senderTitle = cleanText(profile?.title, 120) || "Kayıtlı değil";
+  const replyToEmail = authEmail.includes("@") ? authEmail : undefined;
 
   const escapedMessage = escapeHTML(message).replace(/\n/g, "<br>");
   const html = `
@@ -306,7 +466,7 @@ serve(async (req) => {
     body: JSON.stringify({
       from: fromEmail,
       to: [toEmail],
-      reply_to: senderEmail.includes("@") ? senderEmail : undefined,
+      reply_to: replyToEmail,
       subject: `[RiskDetected Destek] ${subject}`,
       html,
       text,

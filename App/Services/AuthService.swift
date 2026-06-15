@@ -11,14 +11,28 @@ final class AuthService: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var lastError: String?
 
+    private static let installMarkerKey = "rd.install.marker.v1"
     private let supabase = SupabaseService.shared
     private var stateTask: Task<Void, Never>?
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AuthService")
 
     init() {
-        // İlk başta cache'lenmiş session'ı oku
-        session = Self.validSession(supabase.client.auth.currentSession)
-        startObservingAuthChanges()
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            session = nil
+            profile = nil
+            Self.clearLocalSupabaseSessionSynchronously(using: supabase)
+            return
+        }
+        #endif
+        let isFreshInstall = Self.markInstallAndDetectFreshInstall()
+        // İlk başta cache'lenmiş session'ı oku. iOS Keychain uygulama silinse bile
+        // kalabildiği için fresh install'da eski Supabase session'ını kabul etmiyoruz.
+        session = isFreshInstall ? nil : Self.validSession(supabase.client.auth.currentSession)
+        startObservingAuthChanges(discardInitialLocalSession: isFreshInstall)
+        if isFreshInstall {
+            Task { await clearStaleLocalSession(reason: "fresh_install") }
+        }
         // Cache'den session geldiyse profili hemen tazele
         if let session {
             Task { await ensureProfile(for: session.user) }
@@ -31,7 +45,7 @@ final class AuthService: ObservableObject {
 
     var isAuthenticated: Bool { session != nil }
 
-    /// E-posta + şifre ile giriş (demo / dev).
+    /// E-posta + şifre ile giriş.
     /// signIn'in döndürdüğü Session'dan user ID'yi alıyor — currentSession race condition yok.
     func signInWithPassword(email: String, password: String) async throws {
         lastError = nil
@@ -51,7 +65,19 @@ final class AuthService: ObservableObject {
         let response = try await verifyEmailOTPWithSupportedTypes(email: email, token: token)
         if let verifiedSession = response.session {
             await finishSignIn(with: verifiedSession)
+            return
         }
+
+        if let currentSession = await currentValidSessionAfterShortWait() {
+            await finishSignIn(with: currentSession)
+            return
+        }
+
+        throw NSError(
+            domain: "RiskDetected.AuthService",
+            code: -2,
+            userInfo: [NSLocalizedDescriptionKey: "Doğrulama tamamlandı ama oturum oluşturulamadı. Lütfen yeni kod gönderip tekrar deneyin."]
+        )
     }
 
     /// Apple ID ile giriş — UI tarafında ASAuthorizationAppleIDCredential alındıktan sonra
@@ -380,11 +406,20 @@ final class AuthService: ObservableObject {
         }
     }
 
-    private func startObservingAuthChanges() {
+    private func startObservingAuthChanges(discardInitialLocalSession: Bool = false) {
         stateTask = Task { [weak self] in
             guard let self else { return }
+            var shouldDiscardInitialLocalSession = discardInitialLocalSession
             for await change in supabase.auth.authStateChanges {
                 let newSession = Self.validSession(change.session)
+
+                if shouldDiscardInitialLocalSession {
+                    shouldDiscardInitialLocalSession = false
+                    if newSession != nil {
+                        await self.clearStaleLocalSession(reason: "fresh_install_initial_auth_event")
+                        continue
+                    }
+                }
 
                 await MainActor.run {
                     self.session = newSession
@@ -399,9 +434,33 @@ final class AuthService: ObservableObject {
         }
     }
 
+    private static func markInstallAndDetectFreshInstall() -> Bool {
+        let defaults = UserDefaults.standard
+        if defaults.string(forKey: installMarkerKey)?.isEmpty == false {
+            return false
+        }
+        defaults.set(UUID().uuidString, forKey: installMarkerKey)
+        return true
+    }
+
     private static func validSession(_ session: Session?) -> Session? {
         guard let session, !session.isExpired else { return nil }
         return session
+    }
+
+    private func currentValidSessionAfterShortWait() async -> Session? {
+        if let session = Self.validSession(supabase.client.auth.currentSession) {
+            return session
+        }
+
+        for delay in [150_000_000, 350_000_000] {
+            try? await Task.sleep(nanoseconds: UInt64(delay))
+            if let session = Self.validSession(supabase.client.auth.currentSession) {
+                return session
+            }
+        }
+
+        return nil
     }
 
     private func deepLinkURL() -> URL {
@@ -515,6 +574,22 @@ final class AuthService: ObservableObject {
         let initials = parts.compactMap { $0.first.map(String.init) }.joined().uppercased()
         return initials.isEmpty ? nil : initials
     }
+
+    #if DEBUG
+    private static var isUITestMainLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_MAIN")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
+    }
+
+    private static func clearLocalSupabaseSessionSynchronously(using supabase: SupabaseService) {
+        let semaphore = DispatchSemaphore(value: 0)
+        Task.detached(priority: .userInitiated) {
+            try? await supabase.auth.signOut(scope: .local)
+            semaphore.signal()
+        }
+        _ = semaphore.wait(timeout: .now() + 3)
+    }
+    #endif
 }
 
 struct ProfileUpdateInput {

@@ -49,7 +49,7 @@ struct AnalysisCanvas: Identifiable, Equatable, Hashable {
 
 extension AnalysisCanvas {
     static let general = AnalysisCanvas(id: "general", title: "Genel", short: "",
-                                        body: "Tüm iş güvenliği uygunsuzluklarını geniş kapsamlı tara.",
+                                        body: "Standart saha taraması yap; ana risk alanlarını dengeli şekilde değerlendir.",
                                         icon: "sparkles", isPro: false)
     static let ppe = AnalysisCanvas(id: "ppe", title: "KKD", short: "",
                                     body: "Baret, gözlük, eldiven, emniyet kemeri ve yelek kontrolüne odaklan.",

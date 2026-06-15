@@ -10,6 +10,44 @@ Bu dosya yeni sohbet penceresine aktarılacak kısa bağlamdır. Detay arşiv do
 - AI: Gemini/Groq routing; Free/Plus/Pro davranışı ayrılmış. Paid analizlerde `gemini-2.5-flash`, `thinkingBudget: 1024`.
 - Release odağı: TestFlight gerçek cihaz QA, abonelik görünümü, push, firma akışı, onboarding/paywall polish.
 
+## 2026-05-29 Güncel Durum
+
+- Son push edilen commitler:
+  - `9a2beea Verify report quotas and polish app UI`
+  - `9a2beea` remote `main` branch'e pushlandı.
+- Dark mode kart gölge kararı uygulandı:
+  - `App/DesignSystem/RDShadow.swift` merkezi shadow token'ı güncellendi.
+  - Light mode'da sağ-alt net kart derinliği korunuyor.
+  - Dark mode'da kart/row shadow kapatıldı; koyu zeminde kirli halo ve göz yoran gölge oluşmuyor.
+  - Yeni eklenecek kartlar `rdCardShadow` / `rdRowShadow` kullandığı sürece aynı davranışı otomatik alacak.
+- Free kullanıcı rapor/risk analiz hakkı uçtan uca doğrulandı:
+  - Free standart rapor hakkı günlük 1 hak olarak doğrulandı.
+  - Free risk analiz tablosu tek seferlik deneme hakkı olarak doğrulandı.
+  - Risk analiz denemesi standart rapor hakkını bozmuyor.
+  - Kullanımdan sonra `1 hak` etiketi kayboluyor ve Plus devam mesajı görünüyor.
+  - UI test: `testFreeRiskAnalysisTrialDoesNotLockStandardReport` geçti.
+- Rapor çıktı QA genişletildi:
+  - PDF üretimi simulator'da oluşturma/önizleme akışına kadar doğrulandı.
+  - XLSX Edge Function gerçek local çağrıyla çalıştırıldı.
+  - XLSX içinde firma logosu embed edildi.
+  - Uzun firma adı, uzman adı ve unvan XLSX içinde doğrulandı.
+  - Firma sonradan değiştirildiğinde `reports.company_snapshot` eski firma adını ve logo path'ini koruyor.
+- Account deletion avatar cleanup destructive QA tamamlandı:
+  - Temp kullanıcı Supabase Auth Admin API ile oluşturuldu.
+  - `avatars` bucket'a temp avatar yüklendi.
+  - `account-deletion-complete` local Edge Function service role ile çağrıldı.
+  - Function `200` döndü, auth user silindi, `deleted_avatar_objects = 1`, storage avatar objesi temizlendi.
+- Uzun metin görsel QA tamamlandı:
+  - Uzun firma adı, uzun uzman adı ve uzun unvan rapor oluşturma sheet'inde simulator ile kontrol edildi.
+  - PDF risk analiz çıktısı simulator'da yeniden üretildi ve önizlendi.
+  - Bulunan bug: PDF risk analiz bilgi strip'i uzun firma/hazırlayan/unvan metinlerini dar tek satır alanlarda kırpabiliyordu.
+  - Fix: `App/Services/PDFReportService.swift` içinde cover footer ve risk analiz bilgi strip'i fitting/multi-line çizime geçirildi.
+  - PDF metin çıkarımında uzun firma, uzman ve unvan alanlarının çıktı içinde yer aldığı doğrulandı.
+  - XLSX uzun metin/logo/snapshot QA gerçek workbook ile doğrulanmış durumda.
+- Worktree notu:
+  - Kod tarafı commit/push yapıldı.
+  - App Store icon varyant PNG'leri hâlâ untracked bırakıldı; bilinçli olarak commitlenmedi.
+
 ## 2026-05-27 Güncel Durum
 
 - GitHub repo oluşturuldu:
@@ -98,6 +136,18 @@ Bu dosya yeni sohbet penceresine aktarılacak kısa bağlamdır. Detay arşiv do
 - Yeni onboarding akışı:
   - Sorular -> kişiselleştiriliyor animasyonu -> kişisel plan ekranı -> hesap oluşturma -> ücretsiz deneme davet ekranı -> sabit Time Paywall.
 - Kişisel plan ekranı onboarding cevaplarına göre metin/timeline/chip gösteriyor.
+- Nihai Time Paywall tasarımı uygulandı:
+  - Eski baret ağırlıklı görsel kaldırıldı.
+  - Başlık `Ücretsiz Deneme Nasıl Çalışır` oldu; üst ikonu ve yatay mini gün şeridi kaldırıldı.
+  - Ekran artık fiyat/deneme alt metni, güven chip'leri, küçük yıllık/aylık segment, alt timeline kartı ve net `₺0,00'ye dene` CTA'sı ile ilerliyor.
+  - Özellik listesi şimdilik kaldırıldı.
+  - Satın alma, restore ve yasal link callback'leri korunarak sadece görsel katman değiştirildi.
+- Paywall yönlendirme audit'i yapıldı:
+  - Ana uygulama içindeki paywall tetikleri `FreeAwarePaywallView -> InAppPaywallView` hattına gidiyor.
+  - Onboarding paywall `OBTimelinePaywallView` hattına gidiyor.
+  - Eski wrapper'lar yanlışlıkla eski paywall açmasın diye güncellendi:
+    - `PaywallV2View` artık `InAppPaywallView` açıyor.
+    - `OnboardingPaywallV2View` artık `OBTimelinePaywallView` açıyor.
 - Paywall event logging eklendi:
   - `paywall_events`, `PaywallEventService`, variant: `onboarding_personal_plan_time_paywall_v1`.
 - Hybrid QA Runner eklendi:
@@ -161,6 +211,7 @@ Bu dosya yeni sohbet penceresine aktarılacak kısa bağlamdır. Detay arşiv do
 - Hybrid QA: `QA/Hybrid_QA_2026-05-22.md`, PASS=25/WARN=0/FAIL=0.
 - iOS Simulator Debug build/run geçti.
 - UI tests: onboarding personal plan + trial invite/time paywall smoke testleri geçti.
+- UI test: `testTrialInviteAndTimelinePaywallRenderWithAuthBypass` yeni Time Paywall tasarımıyla geçti.
 - `deno check` ilgili Edge Function dosyalarında geçti.
 - `node --check scripts/qa_hybrid_runner.mjs` geçti.
 - `plutil`/`xmllint` proje/scheme kontrolleri geçti.
@@ -173,6 +224,20 @@ Bu dosya yeni sohbet penceresine aktarılacak kısa bağlamdır. Detay arşiv do
   - Rapor oluşturma sheet'inde limit hatası yok.
 - Physical device:
   - Build/install/launch geçti; telefon ekranındaki manuel Plus uçtan uca kullanım ayrıca yapılmalı.
+
+## 2026-05-31 Güncellemesi
+
+- Uygulama içindeki Çerez Politikası görünürlüğü kaldırıldı.
+  - Auth ekranındaki legal kısa link artık `KVKK · Açık rıza · Koşullar · Gizlilik`.
+  - `Yasal Bilgilendirme` sheet'inde artık `Çerez` sekmesi yok.
+  - App bundle içindeki `App/LegalDocuments/Cerez-Politikasi.md` kaldırıldı.
+  - Gizlilik/Kullanım Koşulları metinlerinde çerez atıfları web ortamına ait olacak şekilde sadeleştirildi.
+  - `RDConfig.Web.cookiePolicyURL` kaldırıldı.
+- Web/legal kök arşivi için `Legal/Cerez-Politikasi.md` korunuyor.
+- Doğrulama:
+  - iOS Debug Simulator build geçti.
+- Not:
+  - Worktree'de App Store screenshot/skill/template ve bazı onboarding dosyalarında bu işle ilgisiz değişiklikler görünüyor; çerez politikası commitine dahil edilmemeli.
 
 ## Kısa Notlar
 

@@ -7,10 +7,14 @@ struct ProfessionalProgressTitlesSheet: View {
     @State private var showRankGuide = false
 
     private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8)
     ]
+
+    private let rankIconCircleSize: CGFloat = 50
+    private let rankIconOuterRingSize: CGFloat = 58
+    private let rankIconFrameSize: CGFloat = 62
 
     var body: some View {
         VStack(spacing: 0) {
@@ -47,22 +51,25 @@ struct ProfessionalProgressTitlesSheet: View {
             RDModalCloseButton {
                 dismiss()
             }
-            .frame(width: 42, height: 42)
+            .scaleEffect(0.86)
+            .frame(width: 34, height: 34)
 
             Spacer()
 
             Text("Mesleki Ünvanlar")
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
 
             Spacer()
 
             Color.clear
-                .frame(width: 42, height: 42)
+                .frame(width: 34, height: 34)
         }
         .padding(.horizontal, 18)
-        .padding(.top, 8)
-        .padding(.bottom, 10)
+        .padding(.top, 24)
+        .padding(.bottom, 8)
         .background(Color.rdWhite)
         .overlay(alignment: .bottom) {
             Rectangle()
@@ -86,17 +93,17 @@ struct ProfessionalProgressTitlesSheet: View {
         } label: {
             HStack(spacing: 9) {
                 Image(systemName: "questionmark.circle.fill")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdPlanPlusDark)
 
                 Text("Nasıl rütbe alırım?")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
 
                 Spacer()
 
                 Image(systemName: "chevron.up.circle.fill")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate.opacity(0.65))
             }
             .padding(.horizontal, 14)
@@ -115,7 +122,7 @@ struct ProfessionalProgressTitlesSheet: View {
     private func titleSection(_ title: String, titles: [ProfessionalProgressTitle]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .padding(.horizontal, 24)
 
@@ -124,7 +131,7 @@ struct ProfessionalProgressTitlesSheet: View {
                     rankTile(professionalTitle)
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
         }
         .padding(.vertical, 12)
     }
@@ -146,15 +153,15 @@ struct ProfessionalProgressTitlesSheet: View {
 
                 if current {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdPlanPlus)
-                        .background(Circle().fill(Color.rdWhite).frame(width: 20, height: 20))
-                        .offset(x: 3, y: -2)
+                        .background(Circle().fill(Color.rdWhite).frame(width: 18, height: 18))
+                        .offset(x: 2, y: -2)
                 } else if !earned {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(8), weight: .black, design: .rounded))
                         .foregroundStyle(Color.rdWhite)
-                        .frame(width: 20, height: 20)
+                        .frame(width: 18, height: 18)
                         .background(Color.rdSlate.opacity(0.80))
                         .clipShape(Circle())
                         .overlay(Circle().stroke(Color.rdWhite, lineWidth: 2))
@@ -164,14 +171,14 @@ struct ProfessionalProgressTitlesSheet: View {
 
             VStack(spacing: 1) {
                 Text(title.label)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                     .foregroundStyle(earned ? Color.rdBlack : Color.rdSlate)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.70)
 
                 Text("\(formattedNumber(title.threshold)) MDP")
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
                     .foregroundStyle(earned ? Color.rdSlate : Color.rdSlate.opacity(0.70))
             }
         }
@@ -183,30 +190,30 @@ struct ProfessionalProgressTitlesSheet: View {
         ZStack {
             Circle()
                 .fill(earned ? style.background : lockedIconBackground)
-                .frame(width: 58, height: 58)
+                .frame(width: rankIconCircleSize, height: rankIconCircleSize)
                 .shadow(color: earned ? style.shadow : Color.rdSlate.opacity(0.12), radius: earned ? 12 : 7, x: 0, y: 5)
 
             Circle()
                 .stroke(earned ? Color.rdWhite : Color.rdLine, lineWidth: 4)
-                .frame(width: 58, height: 58)
+                .frame(width: rankIconCircleSize, height: rankIconCircleSize)
 
             Circle()
                 .stroke(current ? Color.rdPlanPlus.opacity(0.95) : Color.clear, lineWidth: 3)
-                .frame(width: 66, height: 66)
+                .frame(width: rankIconOuterRingSize, height: rankIconOuterRingSize)
 
             Image(systemName: style.symbol)
-                .font(.system(size: 23, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(19), weight: .black, design: .rounded))
                 .foregroundStyle(earned ? style.foreground : Color.rdSlate.opacity(0.45))
                 .symbolRenderingMode(.hierarchical)
 
             if earned {
                 Image(systemName: "sparkle")
-                    .font(.system(size: 8, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(7), weight: .black, design: .rounded))
                     .foregroundStyle(Color.white.opacity(0.85))
-                    .offset(x: 17, y: -17)
+                    .offset(x: 14, y: -14)
             }
         }
-        .frame(width: 70, height: 70)
+        .frame(width: rankIconFrameSize, height: rankIconFrameSize)
     }
 
     private var lockedIconBackground: LinearGradient {
@@ -316,7 +323,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 22, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(22), weight: .black, design: .rounded))
                     .foregroundStyle(Color.rdPlanPlusDark)
                     .frame(width: 44, height: 44)
                     .background(Color.rdPlanPlus.opacity(0.16))
@@ -324,10 +331,10 @@ private struct ProfessionalProgressRankGuideSheet: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(summary.currentTitle.label)
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(nextTitleStatusText)
-                        .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -351,7 +358,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
     private var actionHintCard: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "arrow.up.forward.circle.fill")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
                 .frame(width: 38, height: 38)
                 .background(Color.rdGreenSoft)
@@ -359,10 +366,10 @@ private struct ProfessionalProgressRankGuideSheet: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Sana en yakın adım")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                 Text(actionHintText)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -385,7 +392,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
     private var rulesCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("MDP nasıl kazanılır?")
-                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
 
             VStack(spacing: 9) {
@@ -410,15 +417,15 @@ private struct ProfessionalProgressRankGuideSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                 Text("Puanlar gerçek iş çıktısından gelir.")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
             }
 
             Text("Uygulamaya giriş yapmak puan vermez. Aynı analiz veya rapor tekrar işlense bile yeniden MDP yazılmaz. Aynı saha çalışmasından gelen analiz ve raporlar adil ilerleme için sınırlı hesaplanır.")
-                .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                .font(.system(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -431,7 +438,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
     private func scoreRow(icon: String, title: String, points: String, detail: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .frame(width: 30, height: 30)
                 .background(Color.rdFog)
@@ -439,10 +446,10 @@ private struct ProfessionalProgressRankGuideSheet: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13.5, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13.5), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(detail)
-                    .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.5), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -450,7 +457,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
             Spacer(minLength: 8)
 
             Text(points)
-                .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdPlanPlusDark)
                 .padding(.horizontal, 9)
                 .frame(height: 28)
@@ -465,7 +472,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
                 .rdMono(size: 17, weight: .bold)
                 .foregroundStyle(Color.rdBlack)
             Text(label)
-                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(10.5), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

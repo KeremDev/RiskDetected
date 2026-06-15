@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import os
 import RevenueCat
 
 struct SubscriptionState: Equatable {
@@ -8,6 +9,7 @@ struct SubscriptionState: Equatable {
     var source: String
     var updatedAt: Date?
     var errorMessage: String?
+    var managementURL: URL? = nil
 
     var isPro: Bool { tier == .pro }
 
@@ -28,18 +30,53 @@ struct SubscriptionPlanPackage: Identifiable, Equatable {
     let monthlyEquivalentPrice: String?
     let subtitle: String
     let productIdentifier: String
+
+    var displayPrice: String? {
+        Self.displayableStorePrice(price)
+    }
+
+    var displayMonthlyEquivalentPrice: String? {
+        Self.displayableStorePrice(monthlyEquivalentPrice)
+    }
+
+    static func displayableStorePrice(_ price: String?) -> String? {
+        guard let price else { return nil }
+        let trimmed = price.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let locale = Locale.current
+        guard locale.region?.identifier == "TR" else { return trimmed }
+
+        let normalized = trimmed
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
+            .uppercased(with: Locale(identifier: "en_US"))
+        guard !normalized.contains("$"), !normalized.contains("USD") else { return nil }
+        return trimmed
+    }
 }
 
 private enum SubscriptionManagerError: LocalizedError {
     case noPackagesConfigured
     case restoredPurchaseBelongsToAnotherAccount
+    case purchasedSubscriptionBelongsToAnotherAccount
+    case storeAccountAlreadyHasSubscription
+    case purchaseTierMismatch(expected: SubscriptionTier, resolved: SubscriptionTier)
+    case higherTierAlreadyActive(current: SubscriptionTier, selected: SubscriptionTier)
 
     var errorDescription: String? {
         switch self {
         case .noPackagesConfigured:
             return "Abonelik paketleri RevenueCat tarafında bulunamadı."
         case .restoredPurchaseBelongsToAnotherAccount:
-            return "Geri yüklenen abonelik başka bir hesapla ilişkili görünüyor."
+            return AppErrorMessage.subscriptionReceiptConflictMessage
+        case .purchasedSubscriptionBelongsToAnotherAccount:
+            return AppErrorMessage.subscriptionReceiptConflictMessage
+        case .storeAccountAlreadyHasSubscription:
+            return AppErrorMessage.existingAppStoreSubscriptionMessage
+        case let .purchaseTierMismatch(expected, resolved):
+            return "App Store aboneliği doğrulanamadı. Seçilen plan \(expected.title), doğrulanan plan \(resolved.title). Lütfen tekrar dene veya destekle iletişime geç."
+        case let .higherTierAlreadyActive(current, selected):
+            return AppErrorMessage.subscriptionActiveHigherTierMessage(current: current, selected: selected)
         }
     }
 }
@@ -54,7 +91,8 @@ protocol SubscriptionManaging: AnyObject {
     func configure()
     func identify(userID: UUID?) async
     func loadOfferings() async
-    func purchase(packageID: String) async throws
+    @discardableResult
+    func purchase(packageID: String) async throws -> SubscriptionState
     func refreshCustomerInfo() async
     @discardableResult
     func restorePurchases() async throws -> SubscriptionState
@@ -63,6 +101,7 @@ protocol SubscriptionManaging: AnyObject {
 @MainActor
 final class RevenueCatSubscriptionManager: NSObject, ObservableObject, SubscriptionManaging {
     static let shared = RevenueCatSubscriptionManager()
+    private static let logger = Logger(subsystem: "com.riskdetected.app", category: "RevenueCat")
 
     @Published private(set) var state: SubscriptionState = .free
     @Published private(set) var packages: [SubscriptionPlanPackage] = []
@@ -83,21 +122,81 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
         super.init()
     }
 
+    #if DEBUG
+    private static func writeDiagnostics(_ line: String) {
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let entry = "\(timestamp) \(line)\n"
+        guard let data = entry.data(using: .utf8),
+              let fileURL = diagnosticsFileURL
+        else { return }
+        if FileManager.default.fileExists(atPath: fileURL.path),
+           let handle = try? FileHandle(forWritingTo: fileURL) {
+            defer { try? handle.close() }
+            _ = try? handle.seekToEnd()
+            try? handle.write(contentsOf: data)
+        } else {
+            try? data.write(to: fileURL, options: .atomic)
+        }
+    }
+
+    private static var diagnosticsFileURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+            .first?
+            .appendingPathComponent("revenuecat-diagnostics.log")
+    }
+
+    private static func clearDiagnostics() {
+        guard let diagnosticsFileURL else { return }
+        try? FileManager.default.removeItem(at: diagnosticsFileURL)
+    }
+
+    #if DEBUG
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+    }
+    #endif
+
+    private static func diagnosticSummary(for customerInfo: CustomerInfo) -> String {
+        let entitlements = customerInfo.entitlements.active.keys.sorted().joined(separator: ",")
+        let products = customerInfo.activeSubscriptions.sorted().joined(separator: ",")
+        return "original=\(customerInfo.originalAppUserId) activeProducts=[\(products)] activeEntitlements=[\(entitlements)]"
+    }
+    #endif
+
     func configure() {
+        configureIfNeeded()
+    }
+
+    private func configureIfNeeded(appUserID: String? = nil) {
         guard !isConfigured else { return }
 
         #if DEBUG
+        if Self.isUITestLaunch {
+            return
+        }
         Purchases.logLevel = .debug
         #endif
 
-        Purchases.configure(withAPIKey: RDConfig.Subscription.revenueCatAPIKey)
+        if let appUserID {
+            Purchases.configure(withAPIKey: RDConfig.Subscription.revenueCatAPIKey, appUserID: appUserID)
+            currentAppUserID = appUserID
+        } else {
+            Purchases.configure(withAPIKey: RDConfig.Subscription.revenueCatAPIKey)
+        }
         Purchases.shared.delegate = self
+        enableAppleAdsAttributionCollection()
         isConfigured = true
     }
 
-    func identify(userID: UUID?) async {
-        configure()
+    private func enableAppleAdsAttributionCollection() {
+        #if os(iOS)
+        Purchases.shared.attribution.enableAdServicesAttributionTokenCollection()
+        Self.logger.info("RevenueCat Apple Ads AdServices attribution token collection enabled.")
+        #endif
+    }
 
+    func identify(userID: UUID?) async {
         guard let userID else {
             currentAppUserID = nil
             state = .free
@@ -106,9 +205,21 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
 
         do {
             let appUserID = userID.uuidString.lowercased()
-            currentAppUserID = appUserID
+            if !isConfigured {
+                configureIfNeeded(appUserID: appUserID)
+                let customerInfo = try await Purchases.shared.customerInfo()
+                try applyVerified(customerInfo)
+                return
+            }
+            if currentAppUserID == appUserID {
+                let customerInfo = try await Purchases.shared.customerInfo()
+                try applyVerified(customerInfo)
+                return
+            }
             let result = try await Purchases.shared.logIn(appUserID)
-            apply(result.customerInfo)
+            currentAppUserID = appUserID
+            enableAppleAdsAttributionCollection()
+            try applyVerified(result.customerInfo)
         } catch {
             apply(error: error)
         }
@@ -118,8 +229,20 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
         configure()
 
         do {
+            #if DEBUG
+            Self.writeDiagnostics("RD_REVENUECAT_LOAD_OFFERINGS_START")
+            #endif
             let offerings = try await Purchases.shared.offerings()
-            let allPackages = offerings.current?.availablePackages ?? offerings.all.values.flatMap(\.availablePackages)
+            let configuredOfferingID = RDConfig.Subscription.offeringIdentifier
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let selectedOffering = configuredOfferingID.isEmpty
+                ? offerings.current
+                : offerings.offering(identifier: configuredOfferingID)
+            let allPackages = selectedOffering?.availablePackages ?? []
+            #if DEBUG
+            let selectedOfferingLabel = selectedOffering?.identifier ?? "nil"
+            Self.writeDiagnostics("RD_REVENUECAT_SELECTED_OFFERING \(selectedOfferingLabel)")
+            #endif
             var mappedPackages: [SubscriptionPlanPackage] = []
             var rawByID: [String: Package] = [:]
 
@@ -138,6 +261,23 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                         productIdentifier: package.storeProduct.productIdentifier
                     )
                 )
+
+                Self.logger.info(
+                    """
+                    RevenueCat package loaded \
+                    id=\(package.identifier, privacy: .public) \
+                    product=\(package.storeProduct.productIdentifier, privacy: .public) \
+                    tier=\(tier.rawValue, privacy: .public) \
+                    type=\(String(describing: package.packageType), privacy: .public) \
+                    price=\(package.localizedPriceString, privacy: .public) \
+                    monthly=\((package.storeProduct.localizedPricePerMonth ?? "nil"), privacy: .public)
+                    """
+                )
+                #if DEBUG
+                let diagnosticLine = "RD_REVENUECAT_PACKAGE id=\(package.identifier) product=\(package.storeProduct.productIdentifier) tier=\(tier.rawValue) type=\(String(describing: package.packageType)) price=\(package.localizedPriceString) monthly=\(package.storeProduct.localizedPricePerMonth ?? "nil")"
+                print(diagnosticLine)
+                Self.writeDiagnostics(diagnosticLine)
+                #endif
             }
 
             packageByID = rawByID
@@ -147,22 +287,43 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             }
 
             if packages.isEmpty {
+                Self.logger.error("RevenueCat offerings loaded but no app packages were mapped.")
+                #if DEBUG
+                Self.writeDiagnostics("RD_REVENUECAT_NO_MAPPED_PACKAGES")
+                #endif
                 apply(error: SubscriptionManagerError.noPackagesConfigured)
             } else {
+                Self.logger.info("RevenueCat mapped \(self.packages.count, privacy: .public) subscription packages.")
+                #if DEBUG
+                Self.writeDiagnostics("RD_REVENUECAT_MAPPED_COUNT \(self.packages.count)")
+                #endif
                 state = SubscriptionState(
                     tier: state.tier,
                     entitlementID: state.entitlementID,
                     source: state.source,
                     updatedAt: state.updatedAt,
-                    errorMessage: nil
+                    errorMessage: nil,
+                    managementURL: state.managementURL
                 )
             }
         } catch {
+            Self.logger.error("RevenueCat offerings load failed: \(error.localizedDescription, privacy: .public)")
+            #if DEBUG
+            Self.writeDiagnostics("RD_REVENUECAT_LOAD_ERROR \(error.localizedDescription)")
+            #endif
             apply(error: error)
         }
     }
 
-    func purchase(packageID: String) async throws {
+    @discardableResult
+    func purchase(packageID: String) async throws -> SubscriptionState {
+        guard currentAppUserID != nil else {
+            throw NSError(
+                domain: "RiskDetected.Subscription",
+                code: 401,
+                userInfo: [NSLocalizedDescriptionKey: "Abonelik başlatmadan önce tekrar giriş yapman gerekiyor."]
+            )
+        }
         configure()
         if packageByID[packageID] == nil {
             await loadOfferings()
@@ -174,17 +335,103 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                 userInfo: [NSLocalizedDescriptionKey: "Seçilen abonelik paketi bulunamadı."]
             )
         }
-        let result = try await Purchases.shared.purchase(package: package)
-        guard !result.userCancelled else { return }
-        apply(result.customerInfo)
+        let expectedTier = Self.tier(for: package)
+        if let existingCustomerInfo = try? await freshCustomerInfo(reason: "purchase_precheck") {
+            let existingState = Self.state(from: existingCustomerInfo)
+            try validateReceiptOwner(existingCustomerInfo, resolvedState: existingState)
+            if let expectedTier,
+               existingState.tier.isPaid {
+                if existingState.tier == expectedTier {
+                    return apply(existingCustomerInfo)
+                }
+                if existingState.tier.rank > expectedTier.rank {
+                    let error = SubscriptionManagerError.higherTierAlreadyActive(
+                        current: existingState.tier,
+                        selected: expectedTier
+                    )
+                    state = Self.state(
+                        from: existingCustomerInfo,
+                        errorMessage: error.localizedDescription
+                    )
+                    throw error
+                }
+            }
+        }
+        let result: PurchaseResultData
+        do {
+            result = try await Purchases.shared.purchase(package: package)
+        } catch {
+            let classification = PurchaseErrorClassifier.classify(error)
+            Self.logger.error(
+                """
+                RevenueCat purchase failed \
+                product=\(package.storeProduct.productIdentifier, privacy: .public) \
+                \(classification.debugSummary, privacy: .public)
+                """
+            )
+            #if DEBUG
+            Self.writeDiagnostics("RD_REVENUECAT_PURCHASE_ERROR product=\(package.storeProduct.productIdentifier) \(classification.debugSummary)")
+            #endif
+
+            if classification.kind == .cancelled {
+                throw CancellationError()
+            }
+
+            if classification.kind == .existingSubscription,
+               let customerInfo = try? await freshCustomerInfo(reason: "purchase_existing_subscription") {
+                let ownedState = Self.state(from: customerInfo, preferredProductIdentifier: package.storeProduct.productIdentifier)
+                try validateReceiptOwner(customerInfo, resolvedState: ownedState)
+                if let expectedTier = Self.tier(for: package) {
+                    if ownedState.tier == expectedTier {
+                        return apply(customerInfo, preferredProductIdentifier: package.storeProduct.productIdentifier)
+                    }
+                    if ownedState.tier.rank > expectedTier.rank {
+                        let error = SubscriptionManagerError.higherTierAlreadyActive(
+                            current: ownedState.tier,
+                            selected: expectedTier
+                        )
+                        state = Self.state(
+                            from: customerInfo,
+                            preferredProductIdentifier: package.storeProduct.productIdentifier,
+                            errorMessage: error.localizedDescription
+                        )
+                        throw error
+                    }
+                }
+                throw SubscriptionManagerError.storeAccountAlreadyHasSubscription
+            }
+            throw error
+        }
+        guard !result.userCancelled else { throw CancellationError() }
+        let purchasedState = Self.state(from: result.customerInfo, preferredProductIdentifier: package.storeProduct.productIdentifier)
+        #if DEBUG
+        Self.writeDiagnostics(
+            "RD_REVENUECAT_PURCHASE_RESULT product=\(package.storeProduct.productIdentifier) tier=\(purchasedState.tier.rawValue) \(Self.diagnosticSummary(for: result.customerInfo))"
+        )
+        #endif
+        try validateReceiptOwner(result.customerInfo, resolvedState: purchasedState)
+        if let expectedTier, purchasedState.tier != expectedTier {
+            let mappedError = Self.purchaseTierMismatchError(expected: expectedTier, resolved: purchasedState.tier)
+            state = Self.state(
+                from: result.customerInfo,
+                preferredProductIdentifier: package.storeProduct.productIdentifier,
+                errorMessage: mappedError.localizedDescription
+            )
+            throw mappedError
+        }
+        return apply(result.customerInfo, preferredProductIdentifier: package.storeProduct.productIdentifier)
     }
 
     func refreshCustomerInfo() async {
+        guard currentAppUserID != nil else {
+            state = .free
+            return
+        }
         configure()
 
         do {
-            let customerInfo = try await Purchases.shared.customerInfo()
-            apply(customerInfo)
+            let customerInfo = try await freshCustomerInfo(reason: "refresh")
+            try applyVerified(customerInfo)
         } catch {
             apply(error: error)
         }
@@ -192,40 +439,90 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
 
     @discardableResult
     func restorePurchases() async throws -> SubscriptionState {
-        configure()
-        let customerInfo = try await Purchases.shared.restorePurchases()
-        let restoredState = Self.state(from: customerInfo)
-        if restoredState.tier.isPaid,
-           let currentAppUserID,
-           customerInfo.originalAppUserId.lowercased() != currentAppUserID {
-            let error = SubscriptionManagerError.restoredPurchaseBelongsToAnotherAccount
-            state = SubscriptionState(
-                tier: .free,
-                entitlementID: nil,
-                source: "revenuecat",
-                updatedAt: Date(),
-                errorMessage: error.localizedDescription
+        guard currentAppUserID != nil else {
+            throw NSError(
+                domain: "RiskDetected.Subscription",
+                code: 401,
+                userInfo: [NSLocalizedDescriptionKey: "Satın alımları geri yüklemek için tekrar giriş yapman gerekiyor."]
             )
-            throw error
         }
-        return apply(customerInfo)
+        configure()
+        Purchases.shared.invalidateCustomerInfoCache()
+        #if DEBUG
+        Self.writeDiagnostics("RD_REVENUECAT_RESTORE_START")
+        #endif
+        if let preRestoreCustomerInfo = try? await freshCustomerInfo(reason: "restore_precheck") {
+            let preRestoreState = Self.state(from: preRestoreCustomerInfo)
+            try validateReceiptOwner(preRestoreCustomerInfo, resolvedState: preRestoreState)
+        }
+        let customerInfo = try await Purchases.shared.restorePurchases()
+        Purchases.shared.invalidateCustomerInfoCache()
+        let refreshedCustomerInfo = try await freshCustomerInfo(reason: "restore")
+        #if DEBUG
+        Self.writeDiagnostics("RD_REVENUECAT_RESTORE_RESULT \(Self.diagnosticSummary(for: customerInfo))")
+        Self.writeDiagnostics("RD_REVENUECAT_RESTORE_REFRESHED \(Self.diagnosticSummary(for: refreshedCustomerInfo))")
+        #endif
+        let restoredState = Self.state(from: refreshedCustomerInfo)
+        try validateReceiptOwner(refreshedCustomerInfo, resolvedState: restoredState)
+        return apply(refreshedCustomerInfo)
+    }
+
+    private func freshCustomerInfo(reason: String) async throws -> CustomerInfo {
+        Purchases.shared.invalidateCustomerInfoCache()
+        let customerInfo = try await Purchases.shared.customerInfo(fetchPolicy: .fetchCurrent)
+        #if DEBUG
+        Self.writeDiagnostics("RD_REVENUECAT_CUSTOMER_INFO_\(reason.uppercased()) \(Self.diagnosticSummary(for: customerInfo))")
+        #endif
+        return customerInfo
     }
 
     @discardableResult
-    private func apply(_ customerInfo: CustomerInfo) -> SubscriptionState {
-        let nextState = Self.state(from: customerInfo)
+    private func apply(_ customerInfo: CustomerInfo, preferredProductIdentifier: String? = nil) -> SubscriptionState {
+        let nextState = Self.state(from: customerInfo, preferredProductIdentifier: preferredProductIdentifier)
         state = nextState
         return nextState
     }
 
-    private static func state(from customerInfo: CustomerInfo) -> SubscriptionState {
+    @discardableResult
+    private func applyVerified(
+        _ customerInfo: CustomerInfo,
+        preferredProductIdentifier: String? = nil
+    ) throws -> SubscriptionState {
+        let nextState = Self.state(
+            from: customerInfo,
+            preferredProductIdentifier: preferredProductIdentifier
+        )
+        try validateReceiptOwner(customerInfo, resolvedState: nextState)
+        state = nextState
+        return nextState
+    }
+
+    private static func state(
+        from customerInfo: CustomerInfo,
+        preferredProductIdentifier: String? = nil,
+        errorMessage: String? = nil
+    ) -> SubscriptionState {
+        if let preferredProductIdentifier,
+           customerInfo.activeSubscriptions.contains(preferredProductIdentifier),
+           let preferredTier = tier(fromProductIdentifier: preferredProductIdentifier) {
+            return SubscriptionState(
+                tier: preferredTier,
+                entitlementID: preferredTier.rawValue,
+                source: "revenuecat",
+                updatedAt: Date(),
+                errorMessage: errorMessage,
+                managementURL: customerInfo.managementURL
+            )
+        }
+
         if let productTier = tier(fromActiveSubscriptionsIn: customerInfo) {
             return SubscriptionState(
                 tier: productTier,
                 entitlementID: productTier.isPaid ? productTier.rawValue : nil,
                 source: "revenuecat",
                 updatedAt: Date(),
-                errorMessage: nil
+                errorMessage: errorMessage,
+                managementURL: customerInfo.managementURL
             )
         }
 
@@ -247,8 +544,38 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             entitlementID: entitlementID,
             source: "revenuecat",
             updatedAt: Date(),
-            errorMessage: nil
+            errorMessage: errorMessage,
+            managementURL: customerInfo.managementURL
         )
+    }
+
+    private static func purchaseTierMismatchError(
+        expected: SubscriptionTier,
+        resolved: SubscriptionTier
+    ) -> SubscriptionManagerError {
+        if resolved.rank > expected.rank {
+            return .higherTierAlreadyActive(current: resolved, selected: expected)
+        }
+        return .purchaseTierMismatch(expected: expected, resolved: resolved)
+    }
+
+    private func validateReceiptOwner(_ customerInfo: CustomerInfo, resolvedState: SubscriptionState) throws {
+        guard resolvedState.tier.isPaid else { return }
+        guard let currentAppUserID else { return }
+        let original = customerInfo.originalAppUserId.lowercased()
+        guard !original.hasPrefix("$rcanonymousid:") else { return }
+        guard original != currentAppUserID else { return }
+
+        let error = SubscriptionManagerError.storeAccountAlreadyHasSubscription
+        state = SubscriptionState(
+            tier: .free,
+            entitlementID: nil,
+            source: "revenuecat",
+            updatedAt: Date(),
+            errorMessage: error.localizedDescription,
+            managementURL: state.managementURL
+        )
+        throw error
     }
 
     private static func tier(fromActiveSubscriptionsIn customerInfo: CustomerInfo) -> SubscriptionTier? {
@@ -271,10 +598,18 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
     }
 
     private static func tier(fromProductIdentifier productIdentifier: String) -> SubscriptionTier? {
-        let token = productIdentifier.lowercased()
-        if token.contains("plus") { return .plus }
-        if token.contains("pro") { return .pro }
-        return nil
+        let token = productIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch token {
+        case "riskdetected_plus_monthly", "riskdetected_plus_yearly":
+            return .plus
+        case "riskdetected_pro_monthly", "riskdetected_pro_yearly":
+            return .pro
+        default:
+            let parts = Set(token.split { !$0.isLetter && !$0.isNumber }.map(String.init))
+            if parts.contains("plus") { return .plus }
+            if parts.contains("pro") { return .pro }
+            return nil
+        }
     }
 
     private func apply(error: Error) {
@@ -288,14 +623,8 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
     }
 
     private static func tier(for package: Package) -> SubscriptionTier? {
-        let token = [
-            package.identifier,
-            package.storeProduct.productIdentifier,
-            package.storeProduct.localizedTitle,
-        ].joined(separator: " ").lowercased()
-        if token.contains("pro") { return .pro }
-        if token.contains("plus") { return .plus }
-        return nil
+        tier(fromProductIdentifier: package.storeProduct.productIdentifier)
+            ?? tier(fromProductIdentifier: package.identifier)
     }
 
     private static func subtitle(for package: Package) -> String {
@@ -315,7 +644,17 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
 extension RevenueCatSubscriptionManager: PurchasesDelegate {
     nonisolated func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
         Task { @MainActor in
-            RevenueCatSubscriptionManager.shared.apply(customerInfo)
+            guard RevenueCatSubscriptionManager.shared.currentAppUserID != nil else {
+                RevenueCatSubscriptionManager.shared.state = .free
+                return
+            }
+            let updatedState = RevenueCatSubscriptionManager.state(from: customerInfo)
+            do {
+                try RevenueCatSubscriptionManager.shared.validateReceiptOwner(customerInfo, resolvedState: updatedState)
+                RevenueCatSubscriptionManager.shared.apply(customerInfo)
+            } catch {
+                RevenueCatSubscriptionManager.shared.apply(error: error)
+            }
         }
     }
 }

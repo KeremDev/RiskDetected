@@ -1,7 +1,10 @@
 import SwiftUI
 
+// PASSIVE_LEGACY_VIEW: kept for visual reference only.
+// The live onboarding flow uses OBTimelinePaywallView at step 11.
 struct OBPaywallView: View {
     @ObservedObject var state: OnboardingV2State
+    var packages: [SubscriptionPlanPackage] = []
     let onStartTrial: () -> Void
     let onDismiss: () -> Void
 
@@ -26,7 +29,7 @@ struct OBPaywallView: View {
                             .obStage(delay: 0.08)
 
                         Text(titleAttr)
-                            .font(.system(size: 30, weight: .semibold))
+                            .font(.system(size: RDFontScale.size(30), weight: .semibold))
                             .tracking(-0.96)
                             .lineSpacing(2)
                             .padding(.top, 18)
@@ -59,9 +62,9 @@ struct OBPaywallView: View {
                     } label: {
                         HStack(spacing: 8) {
                             Text("Ücretsiz denemeyi başlat")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: RDFontScale.size(16), weight: .semibold))
                             Image(systemName: "arrow.right")
-                                .font(.system(size: 15, weight: .bold))
+                                .font(.system(size: RDFontScale.size(15), weight: .bold))
                         }
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity).frame(height: 58)
@@ -88,7 +91,7 @@ struct OBPaywallView: View {
                 OBHaptic.light(); onDismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(14), weight: .semibold))
                     .foregroundStyle(.white.opacity(0.75))
                     .frame(width: 36, height: 36)
                     .background(.white.opacity(0.1))
@@ -114,7 +117,7 @@ struct OBPaywallView: View {
         HStack(spacing: 6) {
             Circle().fill(Color(hex: "#00E03A")).frame(width: 5, height: 5)
             Text("\(state.primarySectorLabel.uppercased()) UZMANLARI İÇİN HAZIRLANDI")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: RDFontScale.size(11), weight: .semibold))
                 .tracking(0.8)
         }
         .foregroundStyle(Color(hex: "#4FE07E"))
@@ -129,7 +132,7 @@ struct OBPaywallView: View {
             Circle().fill(Color(hex: "#4FE07E")).frame(width: 5, height: 5)
                 .shadow(color: Color(hex: "#4FE07E"), radius: 4)
             Text("Planın hazır · 7 gün ücretsiz dene")
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: RDFontScale.size(12), weight: .medium))
                 .foregroundStyle(.white.opacity(0.78))
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
@@ -144,17 +147,17 @@ struct OBPaywallView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 10).fill(Color.rdGreen.opacity(0.18))
                         Image(systemName: b.icon)
-                            .font(.system(size: 14))
+                            .font(.system(size: RDFontScale.size(14)))
                             .foregroundStyle(Color(hex: "#4FE07E"))
                     }
                     .frame(width: 32, height: 32)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(b.title)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: RDFontScale.size(14), weight: .medium))
                             .foregroundStyle(.white.opacity(0.92))
                         Text(b.sub)
-                            .font(.system(size: 12))
+                            .font(.system(size: RDFontScale.size(12)))
                             .foregroundStyle(.white.opacity(0.55))
                     }
                     Spacer()
@@ -192,11 +195,11 @@ struct OBPaywallView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 8) {
                         Text(isYearly ? "Yıllık" : "Aylık")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: RDFontScale.size(14), weight: .semibold))
                             .foregroundStyle(.white)
                         if isYearly {
-                            Text("%60 TASARRUF")
-                                .font(.system(size: 10, weight: .semibold))
+                            Text("%17 İNDİRİM")
+                                .font(.system(size: RDFontScale.size(10), weight: .semibold))
                                 .tracking(0.4)
                                 .foregroundStyle(Color.rdOnyx)
                                 .padding(.horizontal, 6).padding(.vertical, 2)
@@ -204,17 +207,17 @@ struct OBPaywallView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
                     }
-                    Text(isYearly ? "İlk 7 gün ücretsiz · sonra ₺199 / ay" : "İlk 7 gün ücretsiz")
-                        .font(.system(size: 12))
+                    Text(planSubtitle(for: plan))
+                        .font(.system(size: RDFontScale.size(12)))
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text(isYearly ? "₺2.388" : "₺499")
-                        .font(.system(size: 17, weight: .bold, design: .monospaced))
+                    Text(displayPrice(for: plan))
+                        .font(.system(size: RDFontScale.size(17), weight: .bold, design: .monospaced))
                         .foregroundStyle(.white)
                     Text(isYearly ? "/yıl" : "/ay")
-                        .font(.system(size: 11))
+                        .font(.system(size: RDFontScale.size(11)))
                         .foregroundStyle(.white.opacity(0.55))
                 }
             }
@@ -230,6 +233,32 @@ struct OBPaywallView: View {
         .buttonStyle(OBPressStyle())
     }
 
+    private func planSubtitle(for plan: OBPlan) -> String {
+        switch plan {
+        case .yearly:
+            guard let price = displayPriceValue(for: .yearly) else {
+                return "İlk 7 gün ücretsiz · fiyat App Store üzerinden yüklenecek"
+            }
+            return "İlk 7 gün ücretsiz · sonra \(price)/yıl"
+        case .monthly:
+            return "Hemen başlar · istediğin zaman iptal"
+        }
+    }
+
+    private func displayPrice(for plan: OBPlan) -> String {
+        displayPriceValue(for: plan) ?? OBTrialPriceCopy.loadingPrice
+    }
+
+    private func displayPriceValue(for plan: OBPlan) -> String? {
+        plusPackage(for: plan)?.displayPrice
+    }
+
+    private func plusPackage(for plan: OBPlan) -> SubscriptionPlanPackage? {
+        packages
+            .filter { $0.tier == .plus }
+            .first { $0.matchesOnboardingBilling(plan) }
+    }
+
     private var finePrint: some View {
         VStack(spacing: 4) {
             Text("İstediğin zaman iptal · App Store üzerinden faturalandırılır")
@@ -241,7 +270,7 @@ struct OBPaywallView: View {
                 Text("Satın alımları geri yükle").underline()
             }
         }
-        .font(.system(size: 11))
+        .font(.system(size: RDFontScale.size(11)))
         .foregroundStyle(.white.opacity(0.45))
         .lineSpacing(3)
         .frame(maxWidth: .infinity)
@@ -252,4 +281,12 @@ struct OBPaywallView: View {
             .frame(width: 3, height: 3)
             .padding(.horizontal, 5)
     }
+}
+
+#Preview {
+    OBPaywallView(
+        state: OnboardingV2State.previewSample(step: 11),
+        onStartTrial: {},
+        onDismiss: {}
+    )
 }

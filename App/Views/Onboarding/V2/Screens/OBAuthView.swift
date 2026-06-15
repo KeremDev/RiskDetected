@@ -10,15 +10,21 @@ struct OBAuthView: View {
     let onGoogle: () -> Void
     let onEmail: () -> Void
     let onSignIn: () -> Void
+    let onAuthenticated: () -> Void
+    var onLegalDocument: (LegalDocumentKind) -> Void = { _ in }
     @State private var emailPhase: EmailPhase = .hidden
     @State private var email = ""
     @State private var otpInput = ""
     @State private var autoVerifiedCode: String?
-    @State private var code = Array(repeating: "", count: 6)
+    @State private var code = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
     @State private var isSendingEmailCode = false
     @State private var isVerifyingEmailCode = false
+    @State private var isSigningInWithApple = false
+    @State private var isSigningInWithGoogle = false
+    @State private var appleSignInService = AppleSignInService()
     @State private var authErrorMessage: String?
     @State private var focusRequest = 0
+    private let googleSignInService = GoogleSignInService()
 
     private enum EmailPhase {
         case hidden
@@ -35,7 +41,7 @@ struct OBAuthView: View {
     }
 
     private var canVerifyEmailCode: Bool {
-        otpInput.count == 6 && !isVerifyingEmailCode
+        otpInput.count == RDConfig.Auth.emailOTPLength && !isVerifyingEmailCode
     }
 
     var body: some View {
@@ -80,7 +86,7 @@ struct OBAuthView: View {
             HStack {
                 Button { OBHaptic.soft(); onBack() } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(17), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .frame(width: 40, height: 40)
                 }
@@ -98,7 +104,7 @@ struct OBAuthView: View {
                         .obStage(delay: 0.04)
 
                     Text("Son adım.")
-                        .font(.system(size: 28, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(28), weight: .semibold))
                         .tracking(-0.8)
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
@@ -106,7 +112,7 @@ struct OBAuthView: View {
                         .obStage(delay: 0.08)
 
                     Text("Hazırladığın planı kaydedebilmen için hesabını oluşturalım.")
-                        .font(.system(size: 15))
+                        .font(.system(size: RDFontScale.size(15)))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
@@ -126,10 +132,10 @@ struct OBAuthView: View {
 
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: RDFontScale.size(11), weight: .semibold))
                             .foregroundStyle(Color.rdGreenDark)
                         Text("Planın hesabına kilitlensin diye 10 saniyeni alacağız")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: RDFontScale.size(12), weight: .medium))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.leading)
                             .lineSpacing(2)
@@ -147,19 +153,36 @@ struct OBAuthView: View {
 
                     VStack(spacing: 10) {
                         authButton(
-                            title: "Apple ile devam et",
-                            icon: { Image(systemName: "apple.logo").font(.system(size: 18, weight: .medium)) },
+                            title: isSigningInWithApple ? "Apple ile bağlanıyor..." : "Apple ile devam et",
+                            icon: { Image(systemName: isSigningInWithApple ? "hourglass" : "apple.logo").font(.system(size: RDFontScale.size(18), weight: .medium)) },
                             bg: .black, fg: .white, bordered: false
-                        ) { OBHaptic.light(); onApple() }
+                        ) {
+                            OBHaptic.light()
+                            onApple()
+                            runAppleSignIn()
+                        }
+                        .disabled(isSigningInWithApple)
+                        .opacity(isSigningInWithApple ? 0.75 : 1)
                         .accessibilityIdentifier("onboarding.auth.apple")
                         .obStage(delay: 0.36)
 
                         Button {
-                            OBHaptic.light(); onGoogle()
+                            OBHaptic.light()
+                            onGoogle()
+                            runGoogleSignIn()
                         } label: {
                             HStack(spacing: 10) {
-                                googleG
-                                googleTextColored
+                                if isSigningInWithGoogle {
+                                    Image(systemName: "hourglass")
+                                        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                                        .foregroundStyle(Color.rdOnyx)
+                                    Text("Google ile bağlanıyor...")
+                                        .font(.system(size: RDFontScale.size(16), weight: .semibold))
+                                        .foregroundStyle(Color.rdOnyx)
+                                } else {
+                                    googleG
+                                    googleTextColored
+                                }
                             }
                             .frame(maxWidth: .infinity).frame(height: 56)
                             .background(Color.white)
@@ -168,6 +191,8 @@ struct OBAuthView: View {
                             .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
                         }
                         .buttonStyle(OBPressStyle())
+                        .disabled(isSigningInWithGoogle)
+                        .opacity(isSigningInWithGoogle ? 0.75 : 1)
                         .accessibilityIdentifier("onboarding.auth.google")
                         .obStage(delay: 0.44)
 
@@ -178,8 +203,8 @@ struct OBAuthView: View {
                                 withAnimation(.obSpring) { emailPhase = .email }
                             } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "envelope").font(.system(size: 16))
-                                    Text("E-posta ile devam et").font(.system(size: 16, weight: .semibold))
+                                    Image(systemName: "envelope").font(.system(size: RDFontScale.size(16)))
+                                    Text("E-posta ile devam et").font(.system(size: RDFontScale.size(16), weight: .semibold))
                                 }
                                 .foregroundStyle(Color.rdOnyx)
                                 .frame(maxWidth: .infinity).frame(height: 56)
@@ -201,6 +226,16 @@ struct OBAuthView: View {
                     }
                     .padding(.top, 14)
 
+                    if let authErrorMessage {
+                        onboardingAuthError(authErrorMessage)
+                            .padding(.top, 10)
+                            .obStage(delay: 0.56)
+                    } else if let authError = app.authError, !authError.isEmpty {
+                        onboardingAuthError(authError)
+                            .padding(.top, 10)
+                            .obStage(delay: 0.56)
+                    }
+
                     Button {
                         OBHaptic.light()
                         onSignIn()
@@ -208,13 +243,13 @@ struct OBAuthView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "person.crop.circle")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: RDFontScale.size(13), weight: .medium))
                                 .foregroundStyle(Color.rdSlate)
                             Text("Zaten hesabım var · ")
-                                .font(.system(size: 13))
+                                .font(.system(size: RDFontScale.size(13)))
                                 .foregroundColor(Color.rdSlate)
                             + Text("Giriş Yap")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: RDFontScale.size(13), weight: .semibold))
                                 .foregroundColor(Color.rdOnyx)
                         }
                         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -251,7 +286,7 @@ struct OBAuthView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: emailPhase == .otp ? "number.square.fill" : "envelope.fill")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 42, height: 42)
                     .background(Color.rdGreen.opacity(0.12))
@@ -259,18 +294,19 @@ struct OBAuthView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(emailPhase == .otp ? "Kod doğrulama açık" : "E-posta ile devam")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdOnyx)
                     Text(emailPhase == .otp ? normalizedEmail : "E-posta adresini gir")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
+                        .truncationMode(.middle)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold))
                     .foregroundStyle(Color.rdSlate)
             }
             .padding(.horizontal, 12)
@@ -297,7 +333,7 @@ struct OBAuthView: View {
                         Text(isSendingEmailCode ? "Kod gönderiliyor..." : "Kod gönder")
                         Image(systemName: isSendingEmailCode ? "hourglass" : "arrow.right")
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
@@ -317,7 +353,7 @@ struct OBAuthView: View {
                         Text(isVerifyingEmailCode ? "Doğrulanıyor..." : "Doğrula ve devam et")
                         Image(systemName: isVerifyingEmailCode ? "hourglass" : "arrow.right")
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
@@ -342,13 +378,13 @@ struct OBAuthView: View {
                         focusEmailField()
                     }
                 }
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: RDFontScale.size(12), weight: .medium))
                 .foregroundStyle(Color.rdSlate)
             }
 
             if let authErrorMessage {
                 Text(authErrorMessage)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: RDFontScale.size(12), weight: .medium))
                     .foregroundStyle(Color.red.opacity(0.88))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -371,7 +407,7 @@ struct OBAuthView: View {
     private var panelHeader: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: emailPhase == .otp ? "number.square.fill" : "envelope.fill")
-                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .frame(width: 36, height: 36)
                 .background(Color.rdGreen.opacity(0.12))
@@ -379,12 +415,13 @@ struct OBAuthView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(emailPhase == .otp ? "Doğrulama kodu" : "E-posta adresinizi giriniz")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdOnyx)
                 Text(emailPhase == .otp ? "\(normalizedEmail) adresine gönderildi" : "Kod göndermek için e-posta adresini yaz.")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
+                    .truncationMode(.middle)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -401,7 +438,7 @@ struct OBAuthView: View {
                 }
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 32, height: 32)
                     .background(Color.rdPaper)
@@ -414,7 +451,7 @@ struct OBAuthView: View {
     private var emailInputRow: some View {
         HStack(spacing: 8) {
             Image(systemName: "envelope.fill")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdOnyx.opacity(0.82))
                 .frame(width: 54, height: 54)
                 .background(Color.white)
@@ -437,11 +474,13 @@ struct OBAuthView: View {
                 }
             )
             .padding(.horizontal, 16)
-            .frame(height: 54)
+            .frame(maxWidth: .infinity, minHeight: 54, maxHeight: 54, alignment: .leading)
             .background(Color.white)
             .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color.rdLine, lineWidth: 1))
             .clipShape(RoundedRectangle(cornerRadius: 15))
+            .accessibilityIdentifier("onboarding.auth.email_input")
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .onTapGesture {
             focusEmailField()
@@ -454,7 +493,7 @@ struct OBAuthView: View {
     private var otpInputRow: some View {
         ZStack {
             HStack(spacing: 7) {
-                ForEach(0..<6, id: \.self) { index in
+                ForEach(0..<RDConfig.Auth.emailOTPLength, id: \.self) { index in
                     otpDigitBox(index: index)
                 }
             }
@@ -467,7 +506,7 @@ struct OBAuthView: View {
                 textContentType: .oneTimeCode,
                 isFirstResponder: emailPhase == .otp,
                 focusRequest: focusRequest,
-                maxLength: 6,
+                maxLength: RDConfig.Auth.emailOTPLength,
                 onChange: { value in
                     syncOTPInput(value)
                 },
@@ -499,7 +538,7 @@ struct OBAuthView: View {
                 try await app.auth.sendEmailOTP(email: normalizedEmail)
                 autoVerifiedCode = nil
                 otpInput = ""
-                code = Array(repeating: "", count: 6)
+                code = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
                 withAnimation(.obSpring) { emailPhase = .otp }
                 focusOTPField()
             } catch {
@@ -522,10 +561,65 @@ struct OBAuthView: View {
             do {
                 try await app.auth.verifyEmailOTP(email: normalizedEmail, token: otpInput)
                 await app.auth.refreshProfile()
+                authErrorMessage = nil
+                onAuthenticated()
             } catch {
                 setAuthError(error, context: "Kod doğrulanamadı", fallbackTitle: "Kod doğrulanamadı", operation: "onboarding_verify_email_otp")
             }
             isVerifyingEmailCode = false
+        }
+    }
+
+    private func runAppleSignIn() {
+        guard !isSigningInWithApple else { return }
+        isSigningInWithApple = true
+        authErrorMessage = nil
+        app.authError = nil
+        Task {
+            do {
+                let result = try await appleSignInService.signIn()
+                try await app.auth.signInWithApple(
+                    idToken: result.idToken,
+                    nonce: result.nonce,
+                    email: result.email,
+                    fullName: result.fullName
+                )
+                await app.auth.refreshProfile()
+                authErrorMessage = nil
+                onAuthenticated()
+            } catch {
+                if !isUserCancelledAuth(error) {
+                    setAuthError(error, context: "Apple ile giriş yapılamadı", fallbackTitle: "Apple ile giriş yapılamadı", operation: "onboarding_apple_sign_in")
+                }
+            }
+            isSigningInWithApple = false
+        }
+    }
+
+    private func runGoogleSignIn() {
+        guard !isSigningInWithGoogle else { return }
+        isSigningInWithGoogle = true
+        authErrorMessage = nil
+        app.authError = nil
+        Task {
+            do {
+                let result = try await googleSignInService.signIn()
+                try await app.auth.signInWithGoogle(
+                    idToken: result.idToken,
+                    accessToken: result.accessToken,
+                    nonce: result.nonce,
+                    emailFallback: result.email,
+                    fullNameFallback: result.fullName
+                )
+                await app.auth.refreshProfile()
+                authErrorMessage = nil
+                onAuthenticated()
+            } catch {
+                if !isUserCancelledAuth(error) {
+                    setAuthError(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı", operation: "onboarding_google_sign_in")
+                }
+            }
+            isSigningInWithGoogle = false
         }
     }
 
@@ -537,6 +631,18 @@ struct OBAuthView: View {
         )
         AuthService.logAuthError(message, operation: operation, email: normalizedEmail)
         authErrorMessage = message.message
+    }
+
+    private func isUserCancelledAuth(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        return nsError.code == 1 && nsError.domain.contains("WebAuthenticationSession") ||
+            lower.contains("cancel") ||
+            lower.contains("vazgeç") ||
+            lower.contains("canceled") ||
+            lower.contains("cancelled") ||
+            lower.contains("authentication session error 1") ||
+            lower.contains("webauthenticationsession")
     }
 
     private func focusEmailField() {
@@ -570,22 +676,22 @@ struct OBAuthView: View {
     }
 
     private func syncOTPInput(_ value: String) {
-        let sanitized = String(value.filter(\.isNumber).prefix(6))
+        let sanitized = String(value.filter(\.isNumber).prefix(RDConfig.Auth.emailOTPLength))
         if sanitized != otpInput {
             otpInput = sanitized
             return
         }
 
-        var nextCode = Array(repeating: "", count: 6)
+        var nextCode = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
         for (index, digit) in sanitized.enumerated() where index < nextCode.count {
             nextCode[index] = String(digit)
         }
         code = nextCode
         authErrorMessage = nil
 
-        if sanitized.count < 6 {
+        if sanitized.count < RDConfig.Auth.emailOTPLength {
             autoVerifiedCode = nil
-        } else if sanitized.count == 6, autoVerifiedCode != sanitized, !isVerifyingEmailCode {
+        } else if sanitized.count == RDConfig.Auth.emailOTPLength, autoVerifiedCode != sanitized, !isVerifyingEmailCode {
             autoVerifiedCode = sanitized
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                 guard otpInput == sanitized else { return }
@@ -595,8 +701,8 @@ struct OBAuthView: View {
     }
 
     private func otpDigitBox(index: Int) -> some View {
-        let activeIndex = min(otpInput.count, 5)
-        let isActive = emailPhase == .otp && otpInput.count < 6 && index == activeIndex
+        let activeIndex = min(otpInput.count, RDConfig.Auth.emailOTPLength - 1)
+        let isActive = emailPhase == .otp && otpInput.count < RDConfig.Auth.emailOTPLength && index == activeIndex
         let hasValue = !code[index].isEmpty
 
         return ZStack {
@@ -610,7 +716,7 @@ struct OBAuthView: View {
 
             Text(code[index])
                 .multilineTextAlignment(.center)
-                .font(.system(size: 24, weight: .bold, design: .monospaced))
+                .font(.system(size: RDFontScale.size(24), weight: .bold, design: .monospaced))
                 .foregroundStyle(Color.rdOnyx)
 
             if isActive && !hasValue {
@@ -628,7 +734,7 @@ struct OBAuthView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 10).fill(Color.rdGreen)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 14, weight: .heavy))
+                    .font(.system(size: RDFontScale.size(14), weight: .heavy))
                     .foregroundStyle(.white)
             }
             .frame(width: 36, height: 36)
@@ -636,9 +742,9 @@ struct OBAuthView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: RDFontScale.size(9), weight: .bold))
                     Text("SANA ÖZEL")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: RDFontScale.size(9), weight: .bold))
                         .tracking(0.6)
                 }
                 .foregroundStyle(Color.rdGreenDark)
@@ -648,10 +754,10 @@ struct OBAuthView: View {
                 .clipShape(Capsule())
 
                 Text("Planın hazır, seni bekliyor")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
                 Text("47 şablon · \(state.primarySectorLabel) · \(state.certificateLabel)")
-                    .font(.system(size: 12))
+                    .font(.system(size: RDFontScale.size(12)))
                     .foregroundStyle(Color.rdSlate)
             }
             Spacer()
@@ -666,25 +772,13 @@ struct OBAuthView: View {
     }
 
     private var finePrint: some View {
-        Text(makeFinePrint())
-            .font(.system(size: 12))
-            .foregroundStyle(Color.rdSlate.opacity(0.85))
-            .lineSpacing(3)
-    }
-
-    private func makeFinePrint() -> AttributedString {
-        var s = AttributedString("Devam ederek ")
-        var a = AttributedString("Kullanım Şartları'nı")
-        a.foregroundColor = Color.rdGraphite
-        a.underlineStyle = .single
-        s.append(a)
-        s.append(AttributedString(" ve "))
-        var b = AttributedString("Gizlilik Politikası'nı")
-        b.foregroundColor = Color.rdGraphite
-        b.underlineStyle = .single
-        s.append(b)
-        s.append(AttributedString(" kabul etmiş olursun."))
-        return s
+        LegalAcceptanceNotice(
+            fontSize: 12,
+            textColor: Color.rdSlate.opacity(0.85),
+            linkColor: Color.rdGraphite,
+            accessibilityIdentifier: "onboarding.auth.legal_notice",
+            onOpenDocument: onLegalDocument
+        )
     }
 
     private func authButton<Icon: View>(
@@ -696,7 +790,7 @@ struct OBAuthView: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 icon()
-                Text(title).font(.system(size: 16, weight: .semibold))
+                Text(title).font(.system(size: RDFontScale.size(16), weight: .semibold))
             }
             .foregroundStyle(fg)
             .frame(maxWidth: .infinity).frame(height: 56)
@@ -709,6 +803,31 @@ struct OBAuthView: View {
             .shadow(color: .black.opacity(bordered ? 0.05 : 0), radius: 8, y: 3)
         }
         .buttonStyle(OBPressStyle())
+    }
+
+    private func onboardingAuthError(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdCritical)
+                .padding(.top, 1)
+
+            Text(message)
+                .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                .foregroundStyle(Color.rdCriticalText)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.rdCriticalBg.opacity(0.70))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.rdCritical.opacity(0.22), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .accessibilityIdentifier("onboarding.auth.global_error")
     }
 
     private var googleG: some View {
@@ -727,7 +846,7 @@ struct OBAuthView: View {
             Text("e").foregroundStyle(Color(hex: "#EA4335"))
             Text(" ile devam et").foregroundStyle(Color.rdOnyx)
         }
-        .font(.system(size: 16, weight: .semibold))
+        .font(.system(size: RDFontScale.size(16), weight: .semibold))
     }
 }
 
@@ -828,6 +947,8 @@ private struct OBFirstResponderTextField: UIViewRepresentable {
         textField.spellCheckingType = .no
         textField.returnKeyType = .continue
         textField.clearButtonMode = .never
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textField.font = .rdRounded(ofSize: 17, weight: .medium)
         textField.textColor = UIColor(Color.rdOnyx)
         textField.tintColor = UIColor(Color.rdGreen)
@@ -995,4 +1116,17 @@ private final class OBKeyboardObserver: ObservableObject {
     private static func duration(from notification: Notification) -> Double {
         notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0.25
     }
+}
+
+#Preview {
+    OBAuthView(
+        state: OnboardingV2State.previewSample(step: 8),
+        onBack: {},
+        onApple: {},
+        onGoogle: {},
+        onEmail: {},
+        onSignIn: {},
+        onAuthenticated: {}
+    )
+    .environmentObject(AppState())
 }

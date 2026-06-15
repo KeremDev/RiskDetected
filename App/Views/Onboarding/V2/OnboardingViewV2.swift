@@ -15,15 +15,56 @@ import SwiftUI
 //   8 Auth · 9 Trial Invite · 10 Push Permission · 11 Timeline Paywall (dismissible)
 
 struct OnboardingViewV2: View {
-    @StateObject private var state = OnboardingV2State()
+    @StateObject private var state: OnboardingV2State
     @State private var showSkipConfirmation = false
+    @State private var paywallNoticeMessage: String?
+    @State private var isPaywallWorking = false
+    @State private var selectedLegalDocument: LegalDocumentKind?
     var isAuthenticated: Bool = false
+    var hasCompletedOnboarding: Bool = false
+    var currentTier: SubscriptionTier = .free
+    var subscriptionPackages: [SubscriptionPlanPackage] = []
+    var subscriptionOfferingsLoadState: SubscriptionOfferingsLoadState = .loading
     var onFinish: () -> Void = {}
     var onAuthApple: () -> Void = {}
     var onAuthGoogle: () -> Void = {}
     var onAuthEmail: () -> Void = {}
     var onSignInExisting: () -> Void = {}
-    var onPurchase: (OBPlan, @escaping () -> Void) -> Void = { _, complete in complete() }
+    var onPurchase: (OBPlan) async throws -> Void = { _ in }
+    var onReloadSubscriptionOfferings: () async -> Void = {}
+    var onRestorePurchases: () async throws -> Bool = { false }
+
+    init(
+        initialStep: Int = 0,
+        isAuthenticated: Bool = false,
+        hasCompletedOnboarding: Bool = false,
+        currentTier: SubscriptionTier = .free,
+        subscriptionPackages: [SubscriptionPlanPackage] = [],
+        subscriptionOfferingsLoadState: SubscriptionOfferingsLoadState = .loading,
+        onFinish: @escaping () -> Void = {},
+        onAuthApple: @escaping () -> Void = {},
+        onAuthGoogle: @escaping () -> Void = {},
+        onAuthEmail: @escaping () -> Void = {},
+        onSignInExisting: @escaping () -> Void = {},
+        onPurchase: @escaping (OBPlan) async throws -> Void = { _ in },
+        onReloadSubscriptionOfferings: @escaping () async -> Void = {},
+        onRestorePurchases: @escaping () async throws -> Bool = { false }
+    ) {
+        _state = StateObject(wrappedValue: OnboardingV2State(step: initialStep))
+        self.isAuthenticated = isAuthenticated
+        self.hasCompletedOnboarding = hasCompletedOnboarding
+        self.currentTier = currentTier
+        self.subscriptionPackages = subscriptionPackages
+        self.subscriptionOfferingsLoadState = subscriptionOfferingsLoadState
+        self.onFinish = onFinish
+        self.onAuthApple = onAuthApple
+        self.onAuthGoogle = onAuthGoogle
+        self.onAuthEmail = onAuthEmail
+        self.onSignInExisting = onSignInExisting
+        self.onPurchase = onPurchase
+        self.onReloadSubscriptionOfferings = onReloadSubscriptionOfferings
+        self.onRestorePurchases = onRestorePurchases
+    }
 
     var body: some View {
         ZStack {
@@ -67,23 +108,34 @@ struct OnboardingViewV2: View {
         .background(state.step == 11 ? Color(hex: "#0B0D0E") : Color.rdPaper)
         .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
+        .sheet(item: $selectedLegalDocument) { kind in
+            LegalInfoSheet(initialDocument: kind) {
+                selectedLegalDocument = nil
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(.light)
+        }
         .onChange(of: isAuthenticated) { authenticated in
             guard authenticated else { return }
-            persistCurrentDraft()
-            PaywallEventService.shared.flushPendingIfPossible()
-            Task {
-                await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
-                await MainActor.run {
-                    PaywallEventService.shared.flushPendingIfPossible()
-                }
-            }
-            guard state.step == 8 else { return }
-            withAnimation(.obSpring) {
-                state.goTo(9)
-            }
+            handleAuthenticationCompleted()
+        }
+        .onAppear {
+            handleAuthenticationCompleted()
+        }
+        .onChange(of: currentTier) { tier in
+            guard isAuthenticated, tier.isPaid, state.step >= 9 else { return }
+            finishOnboarding()
         }
         .onChange(of: state.step) { step in
             persistCurrentDraft()
+            if step == 8 {
+                handleAuthenticationCompleted()
+            }
+            if isAuthenticated, currentTier.isPaid, step >= 9 {
+                finishOnboarding()
+                return
+            }
             #if DEBUG
             if step == 8 && Self.isUITestAuthBypassLaunch {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
@@ -105,9 +157,7 @@ struct OnboardingViewV2: View {
     private var currentScreen: some View {
         switch state.step {
         case 0:
-            OBSplashView { state.next() }
-        case 1:
-            OBPainPointView(
+            OBSplashView(
                 onNext: { state.next() },
                 onSkip: {
                     OBHaptic.soft()
@@ -115,6 +165,10 @@ struct OnboardingViewV2: View {
                         showSkipConfirmation = true
                     }
                 }
+            )
+        case 1:
+            OBPainPointView(
+                onNext: { state.next() }
             )
         case 2:
             OBCertificateView(state: state, onBack: { state.back() }, onNext: { state.next() })
@@ -132,34 +186,49 @@ struct OnboardingViewV2: View {
             OBAuthView(
                 state: state,
                 onBack: { state.back() },
-                onApple: { startAuth(onAuthApple) },
-                onGoogle: { startAuth(onAuthGoogle) },
+                onApple: { persistCurrentDraft() },
+                onGoogle: { persistCurrentDraft() },
                 onEmail: { startAuth(onAuthEmail) },
-                onSignIn: { startAuth(onSignInExisting) }
+                onSignIn: { startAuth(onSignInExisting) },
+                onAuthenticated: { handleAuthenticationCompleted(authConfirmed: true) },
+                onLegalDocument: { selectedLegalDocument = $0 }
             )
         case 9:
-            OBTrialInviteView {
-                state.goTo(10)
-            }
+            OBTrialInviteView(
+                onContinue: {
+                    state.goTo(10)
+                },
+                onPrivacy: {
+                    selectedLegalDocument = .privacy
+                },
+                onTerms: {
+                    selectedLegalDocument = .terms
+                },
+                onRestore: {
+                    restorePurchases()
+                }
+            )
         case 10:
             OBNotificationPermissionView {
                 state.goTo(11)
             }
         case 11:
             OBTimelinePaywallView(
+                packages: subscriptionPackages,
+                offeringsLoadState: subscriptionOfferingsLoadState,
+                isWorking: isPaywallWorking,
+                noticeMessage: paywallNoticeMessage,
                 onStart: { plan in
-                    state.selectedPlan = plan
-                    onPurchase(plan) {
-                        finishOnboarding()
-                    }
+                    startPurchase(plan)
+                },
+                onReloadPackages: {
+                    await onReloadSubscriptionOfferings()
                 },
                 onRestore: {
-                    onPurchase(state.selectedPlan) {
-                        finishOnboarding()
-                    }
+                    restorePurchases()
                 },
-                onTerms: {},
-                onPrivacy: {},
+                onTerms: { selectedLegalDocument = .terms },
+                onPrivacy: { selectedLegalDocument = .privacy },
                 onDismiss: { finishOnboarding() }
             )
         default:
@@ -176,12 +245,89 @@ struct OnboardingViewV2: View {
         action()
     }
 
+    private func handleAuthenticationCompleted(authConfirmed: Bool = false) {
+        guard (authConfirmed || isAuthenticated), !hasCompletedOnboarding, state.step == 8 else { return }
+        persistCurrentDraft()
+        PaywallEventService.shared.flushPendingIfPossible()
+        Task {
+            await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+            await MainActor.run {
+                PaywallEventService.shared.flushPendingIfPossible()
+                withAnimation(.obSpring) {
+                    state.goTo(9)
+                }
+            }
+        }
+    }
+
     private func finishOnboarding() {
         persistCurrentDraft()
         Task {
             await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+            await MainActor.run {
+                onFinish()
+            }
         }
-        onFinish()
+    }
+
+    private func restorePurchases() {
+        guard !isPaywallWorking else { return }
+        isPaywallWorking = true
+        paywallNoticeMessage = nil
+
+        Task {
+            do {
+                let hasActiveSubscription = try await onRestorePurchases()
+                await MainActor.run {
+                    isPaywallWorking = false
+                    if hasActiveSubscription {
+                        finishOnboarding()
+                    } else {
+                        paywallNoticeMessage = "Geri yüklenecek aktif abonelik bulunamadı."
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isPaywallWorking = false
+                    paywallNoticeMessage = AppErrorMessage.makePurchase(
+                        error,
+                        context: "Satın alma doğrulanamadı",
+                        fallbackTitle: "Satın alma doğrulanamadı"
+                    ).message
+                }
+            }
+        }
+    }
+
+    private func startPurchase(_ plan: OBPlan) {
+        guard !isPaywallWorking else { return }
+        isPaywallWorking = true
+        paywallNoticeMessage = nil
+        state.selectedPlan = plan
+
+        Task {
+            do {
+                try await onPurchase(plan)
+                await MainActor.run {
+                    isPaywallWorking = false
+                    finishOnboarding()
+                }
+            } catch is CancellationError {
+                await MainActor.run {
+                    isPaywallWorking = false
+                    paywallNoticeMessage = nil
+                }
+            } catch {
+                await MainActor.run {
+                    isPaywallWorking = false
+                    paywallNoticeMessage = AppErrorMessage.makePurchase(
+                        error,
+                        context: "Satın alma doğrulanamadı",
+                        fallbackTitle: "Satın alma doğrulanamadı"
+                    ).message
+                }
+            }
+        }
     }
 
     #if DEBUG
@@ -191,8 +337,12 @@ struct OnboardingViewV2: View {
     #endif
 
     private static var isUITestLaunch: Bool {
+        #if DEBUG
         CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
             || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+        #else
+        false
+        #endif
     }
 }
 
@@ -212,13 +362,13 @@ private struct OBSkipConfirmationView: View {
 
                 VStack(spacing: 8) {
                     Text("Sana özel sonuçlar veremeyeceğiz")
-                        .font(.system(size: 23, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(23), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text("Birkaç kısa cevap, analizlerini sektörüne ve çalışma alanına göre daha isabetli hazırlamamıza yardım eder.")
-                        .font(.system(size: 14))
+                        .font(.system(size: RDFontScale.size(14)))
                         .lineSpacing(2)
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
@@ -234,7 +384,7 @@ private struct OBSkipConfirmationView: View {
                         onConfirm()
                     } label: {
                         Text("Yine de atla")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: RDFontScale.size(14), weight: .semibold))
                             .foregroundStyle(Color.rdSlate.opacity(0.72))
                             .frame(maxWidth: .infinity)
                             .frame(height: 48)
@@ -256,6 +406,7 @@ private struct OBSkipConfirmationView: View {
             .shadow(color: Color.black.opacity(0.18), radius: 30, x: 0, y: 18)
             .padding(.horizontal, 24)
         }
+        .accessibilityIdentifier("onboarding.skip_confirmation")
     }
 
     private var sadIcon: some View {
@@ -300,6 +451,19 @@ private struct SadFaceShape: Shape {
     }
 }
 
-#Preview {
-    OnboardingViewV2()
+#Preview("00 Splash") {
+    OnboardingViewV2(initialStep: 0)
+}
+
+#Preview("02 Certificate") {
+    OnboardingViewV2(initialStep: 2)
+}
+
+#Preview("07 Personal Plan") {
+    OnboardingViewV2(initialStep: 7)
+        .environmentObject(AppState())
+}
+
+#Preview("11 Paywall") {
+    OnboardingViewV2(initialStep: 11)
 }

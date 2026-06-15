@@ -50,6 +50,8 @@ struct Company: Codable, Identifiable, Equatable {
             hazardClass.title,
             department.map { "Birim: \($0)" },
             contactPerson.map { "İlgili: \($0)" },
+            defaultResponsible.map { "Sorumlu: \($0)" },
+            defaultDueDays.map { "Termin: \($0) gün" },
             address.map { "Adres: \($0)" }
         ]
         .compactMap { $0?.nonEmpty }

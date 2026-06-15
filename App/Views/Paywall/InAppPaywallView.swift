@@ -50,14 +50,24 @@ struct InAppPaywallView: View {
     @State private var plusBilling: InAppPaywallBilling = .yearly
     @State private var proBilling: InAppPaywallBilling = .yearly
     @State private var isWorking = false
+    @State private var workingMessage: String?
     @State private var errorMessage: String?
     @State private var funnelSessionID = UUID()
     @State private var didLogView = false
+    @State private var selectedLegalDocument: LegalDocumentKind?
+    @State private var processingOverlayTitle: String?
+    @State private var processingOverlayMessage = "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+    @State private var processingOverlayToken = UUID()
 
     private let variantID = "claude_plus_pro_paywall_v1"
 
     private var activeScreen: InAppPaywallScreen {
-        screenOverride ?? (app.currentTier == .free ? .plus : .pro)
+        #if DEBUG
+        if Self.isUITestForceProPaywall {
+            return .pro
+        }
+        #endif
+        return screenOverride ?? (app.currentTier == .free ? .plus : .pro)
     }
 
     var body: some View {
@@ -71,7 +81,7 @@ struct InAppPaywallView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 0) {
                         PaywallHero()
-                            .frame(height: 112 + safeTop)
+                            .frame(height: 88 + safeTop)
                             .padding(.top, -safeTop)
 
                         screenBody
@@ -86,6 +96,15 @@ struct InAppPaywallView: View {
                     .offset(y: 12)
 
                 topBar(topInset: safeTop)
+
+                if let processingOverlayTitle {
+                    PaywallProcessingOverlay(
+                        title: processingOverlayTitle,
+                        message: processingOverlayMessage
+                    )
+                    .transition(.opacity)
+                    .zIndex(40)
+                }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
@@ -94,6 +113,14 @@ struct InAppPaywallView: View {
             logPaywallViewIfNeeded()
             await app.refreshSubscriptionOfferings()
             alignBillingWithAvailablePackage()
+        }
+        .sheet(item: $selectedLegalDocument) { kind in
+            LegalInfoSheet(initialDocument: kind) {
+                selectedLegalDocument = nil
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(.light)
         }
         .onChange(of: app.subscriptionPackages) { _ in
             alignBillingWithAvailablePackage()
@@ -115,26 +142,26 @@ struct InAppPaywallView: View {
         VStack(alignment: .leading, spacing: 0) {
             ProductBadge(screen: .plus)
                 .padding(.horizontal, 20)
-                .padding(.top, 29)
-                .padding(.bottom, 2)
+                .padding(.top, 46)
+                .padding(.bottom, 8)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(plusBilling == .yearly ? "İlk haftanız bizden." : "Plus’a abone olun.")
-                    .font(.system(size: 25, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(23.5), weight: .black, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
                     .accessibilityIdentifier("in_app_paywall.plus.title")
 
                 plusSubtitle
-                    .font(.system(size: 11.8, weight: .regular, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.8), weight: .regular, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.graphite)
                     .lineSpacing(1.5)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 20)
             .padding(.top, 2)
-            .padding(.bottom, 6)
+            .padding(.bottom, 10)
 
             billingToggle(for: .plus)
 
@@ -146,7 +173,7 @@ struct InAppPaywallView: View {
 
             if plusBilling == .yearly {
                 PlusTimeline(annualPrice: annualPriceText(for: .plus))
-                    .padding(.top, 2)
+                    .padding(.top, 0)
             } else {
                 Color.clear.frame(height: 48)
             }
@@ -154,7 +181,7 @@ struct InAppPaywallView: View {
             PlusComparison(onPro: {
                 switchTo(.pro)
             })
-            .padding(.top, 6)
+            .padding(.top, 10)
         }
     }
 
@@ -162,19 +189,19 @@ struct InAppPaywallView: View {
         VStack(alignment: .leading, spacing: 0) {
             ProductBadge(screen: .pro)
                 .padding(.horizontal, 20)
-                .padding(.top, 14)
+                .padding(.top, 30)
                 .padding(.bottom, 4)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Limitsiz Özellikler")
-                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(28), weight: .black, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
                     .accessibilityIdentifier("in_app_paywall.pro.title")
 
                 proSubtitle
-                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .regular, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.graphite)
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -200,7 +227,7 @@ struct InAppPaywallView: View {
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "crown.fill")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.goldTickForeground)
                         .frame(width: 34, height: 34)
                         .background(InAppPaywallColor.goldEdge)
@@ -208,13 +235,13 @@ struct InAppPaywallView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Plus aboneliğini incele")
-                            .font(.system(size: 13.5, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(13.5), weight: .bold, design: .rounded))
                             .foregroundStyle(InAppPaywallColor.onyx)
                             .lineLimit(1)
                             .minimumScaleFactor(0.82)
 
                         Text("Daha uygun fiyatlı başlangıç paketi")
-                            .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(11.5), weight: .medium, design: .rounded))
                             .foregroundStyle(InAppPaywallColor.goldDeep)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
@@ -223,7 +250,7 @@ struct InAppPaywallView: View {
                     Spacer(minLength: 0)
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.goldDeep)
                 }
                 .padding(.horizontal, 14)
@@ -270,7 +297,7 @@ struct InAppPaywallView: View {
             HStack {
                 Button(action: closePaywall) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.onyx)
                         .frame(width: 34, height: 34)
                         .background(Color.white.opacity(0.94))
@@ -278,22 +305,23 @@ struct InAppPaywallView: View {
                         .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 2)
                 }
                 .buttonStyle(.plain)
+                .disabled(isWorking)
+                .opacity(isWorking ? 0.55 : 1)
                 .accessibilityLabel("Paywall ekranını kapat")
 
                 Spacer()
 
                 Button(action: restore) {
                     Text(isWorking ? "Bekle" : "Geri yükle")
-                        .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.onyx)
-                        .padding(.horizontal, 11)
+                        .padding(.horizontal, 4)
                         .frame(height: 34)
-                        .background(Color.white.opacity(0.94))
-                        .clipShape(Capsule())
-                        .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 2)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(isWorking)
+                .opacity(isWorking ? 0.55 : 1)
                 .accessibilityLabel("Satın alımları geri yükle")
             }
             .frame(maxWidth: 430)
@@ -311,7 +339,7 @@ struct InAppPaywallView: View {
             screen: screen
         )
         .padding(.horizontal, 20)
-        .padding(.bottom, 4)
+        .padding(.bottom, 2)
     }
 
     private func ctaTray(bottomInset: CGFloat) -> some View {
@@ -321,12 +349,18 @@ struct InAppPaywallView: View {
                     .padding(.bottom, 10)
             }
 
+            if let workingMessage {
+                NoticeCard(text: workingMessage, isError: false)
+                    .padding(.bottom, 10)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
             if activeScreen == .plus && billing(for: .plus) == .yearly {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(11), weight: .black, design: .rounded))
                     Text("Şu an ödeme yok")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(InAppPaywallColor.onyx)
                 .frame(maxWidth: .infinity)
@@ -340,9 +374,10 @@ struct InAppPaywallView: View {
                             .tint(Color.white)
                     }
                     Text(primaryButtonTitle)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
+                        .accessibilityIdentifier(selectedPackage == nil ? "in_app_paywall.cta.loading" : "in_app_paywall.cta.ready")
                 }
                 .foregroundStyle(primaryButtonDisabled ? InAppPaywallColor.graphite.opacity(0.62) : Color.white)
                 .frame(maxWidth: .infinity)
@@ -361,21 +396,21 @@ struct InAppPaywallView: View {
             .accessibilityIdentifier("in_app_paywall.cta")
 
             Text(legalLine)
-                .font(.system(size: 11.5, weight: .regular, design: .rounded))
+                .font(.system(size: RDFontScale.size(11.5), weight: .regular, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.slate)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
                 .padding(.top, 7)
 
             Text("İstediğiniz zaman iptal edebilirsiniz · Otomatik yenilenir")
-                .font(.system(size: 10, weight: .regular, design: .rounded))
+                .font(.system(size: RDFontScale.size(10), weight: .regular, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.slate)
                 .multilineTextAlignment(.center)
                 .padding(.top, activeScreen == .plus && billing(for: .plus) == .yearly ? 2 : 6)
 
             HStack(spacing: 16) {
-                legalLink("Şartlar", RDConfig.Web.termsURL)
-                legalLink("Gizlilik", RDConfig.Web.privacyPolicyURL)
+                legalLink("Şartlar", document: .terms)
+                legalLink("Gizlilik", document: .privacy)
                 legalLink("İptal hakkı", URL(string: "https://apps.apple.com/account/subscriptions")!)
             }
             .padding(.top, 6)
@@ -388,21 +423,38 @@ struct InAppPaywallView: View {
         .background(InAppPaywallColor.paper)
     }
 
+    private func legalLink(_ title: String, document: LegalDocumentKind) -> some View {
+        Button {
+            selectedLegalDocument = document
+        } label: {
+            Text(title)
+                .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
+                .foregroundStyle(InAppPaywallColor.graphite)
+        }
+        .buttonStyle(.plain)
+        .disabled(isWorking)
+        .opacity(isWorking ? 0.55 : 1)
+    }
+
     private func legalLink(_ title: String, _ url: URL) -> some View {
         Button {
             openURL(url)
         } label: {
             Text(title)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.graphite)
         }
         .buttonStyle(.plain)
+        .disabled(isWorking)
+        .opacity(isWorking ? 0.55 : 1)
     }
 
     private var primaryButtonTitle: String {
-        if isWorking { return "İşleniyor..." }
+        if isWorking { return "Satın alma hazırlanıyor..." }
         if currentPlanIncludesActiveScreen { return "Planın aktif" }
-        if selectedPackage == nil && packageLoadError != nil { return "Tekrar dene" }
+        if selectedPackage == nil {
+            return packageLoadError == nil ? "Fiyat yükleniyor..." : "Tekrar dene"
+        }
         if activeScreen == .plus && billing(for: .plus) == .yearly { return "Ücretsiz denemeyi başlat" }
         return "Aboneliği Başlat"
     }
@@ -440,13 +492,21 @@ struct InAppPaywallView: View {
 
     private var packageLoadError: String? {
         guard selectedPackage == nil else { return nil }
-        if app.subscriptionPackages.isEmpty && app.subscriptionState.errorMessage == nil {
+        switch app.subscriptionOfferingsLoadState {
+        case .loading, .retryingOnce:
             return nil
+        case .loaded:
+            return "Seçili abonelik paketi veya App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+        case let .failed(message):
+            let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty
+                ? "App Store abonelik fiyatları şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+                : trimmed
         }
-        return "Seçili abonelik paketi şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
     }
 
     private func switchTo(_ target: InAppPaywallScreen) {
+        guard !isWorking else { return }
         guard activeScreen != target else { return }
         switch target {
         case .plus:
@@ -528,6 +588,7 @@ struct InAppPaywallView: View {
     }
 
     private func handlePrimaryAction() {
+        guard !isWorking else { return }
         logPaywallEvent(.ctaTap)
         if selectedPackage == nil {
             reloadPackages()
@@ -539,10 +600,13 @@ struct InAppPaywallView: View {
     private func reloadPackages() {
         guard !isWorking else { return }
         isWorking = true
+        stopProcessingOverlay()
+        workingMessage = "App Store abonelik paketleri yükleniyor..."
         errorMessage = nil
         Task {
             await app.refreshSubscriptionOfferings()
             alignBillingWithAvailablePackage()
+            workingMessage = nil
             isWorking = false
         }
     }
@@ -557,27 +621,58 @@ struct InAppPaywallView: View {
         }
 
         isWorking = true
+        startProcessingOverlay(
+            initialTitle: "App Store ödeme ekranı açılıyor...",
+            initialMessage: "Onay penceresi açıldığında işlemi App Store üzerinden tamamlayabilirsin.",
+            delayedTitle: "Satın alma doğrulanıyor",
+            delayedMessage: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor.",
+            delayedWorkingMessage: "Satın alma doğrulanıyor..."
+        )
+        workingMessage = "App Store ödeme ekranı açılıyor..."
         errorMessage = nil
         logPaywallEvent(.purchaseStarted, screen: purchaseScreen, billing: purchaseBilling)
 
         Task {
             do {
-                try await app.purchaseSubscription(packageID: package.id)
+                let purchasedState = try await app.purchaseSubscription(
+                    packageID: package.id,
+                    expectedTier: purchaseScreen.tier
+                )
                 await app.refreshPlanState()
+                stopProcessingOverlay()
+                workingMessage = nil
                 isWorking = false
 
-                if app.currentTier.includes(purchaseScreen.tier) {
+                if purchasedState.tier == purchaseScreen.tier {
                     logPaywallEvent(.purchaseSucceeded, screen: purchaseScreen, billing: purchaseBilling)
                     onSubscribe()
+                } else {
+                    errorMessage = "Abonelik doğrulanamadı. Seçilen plan \(purchaseScreen.tier.title), doğrulanan plan \(purchasedState.tier.title)."
+                    logPaywallEvent(
+                        .purchaseFailed,
+                        screen: purchaseScreen,
+                        billing: purchaseBilling,
+                        purchaseError: errorMessage
+                    )
                 }
-            } catch {
+            } catch is CancellationError {
+                stopProcessingOverlay()
+                workingMessage = nil
                 isWorking = false
-                errorMessage = error.localizedDescription
+            } catch {
+                stopProcessingOverlay()
+                workingMessage = nil
+                isWorking = false
+                errorMessage = AppErrorMessage.makePurchase(
+                    error,
+                    context: "Satın alma doğrulanamadı",
+                    fallbackTitle: "Satın alma doğrulanamadı"
+                ).message
                 logPaywallEvent(
                     .purchaseFailed,
                     screen: purchaseScreen,
                     billing: purchaseBilling,
-                    purchaseError: error.localizedDescription
+                    purchaseError: errorMessage
                 )
             }
         }
@@ -586,12 +681,22 @@ struct InAppPaywallView: View {
     private func restore() {
         guard !isWorking else { return }
         isWorking = true
+        startProcessingOverlay(
+            initialTitle: "Satın alımlar kontrol ediliyor...",
+            initialMessage: "App Store hesabındaki abonelik kayıtları kontrol ediliyor.",
+            delayedTitle: "Satın alma doğrulanıyor",
+            delayedMessage: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor.",
+            delayedWorkingMessage: "Satın alma doğrulanıyor..."
+        )
+        workingMessage = "App Store satın alımların kontrol ediliyor..."
         errorMessage = nil
         logPaywallEvent(.restoreTap)
 
         Task {
             do {
                 let restoredState = try await app.restoreSubscriptions()
+                stopProcessingOverlay()
+                workingMessage = nil
                 isWorking = false
                 if restoredState.tier.isPaid {
                     onSubscribe()
@@ -599,10 +704,42 @@ struct InAppPaywallView: View {
                     errorMessage = "Geri yüklenecek aktif abonelik bulunamadı."
                 }
             } catch {
+                stopProcessingOverlay()
+                workingMessage = nil
                 isWorking = false
-                errorMessage = error.localizedDescription
+                errorMessage = AppErrorMessage.makePurchase(
+                    error,
+                    context: "Satın alma doğrulanamadı",
+                    fallbackTitle: "Satın alma doğrulanamadı"
+                ).message
             }
         }
+    }
+
+    private func startProcessingOverlay(
+        initialTitle: String,
+        initialMessage: String,
+        delayedTitle: String,
+        delayedMessage: String,
+        delayedWorkingMessage: String
+    ) {
+        let token = UUID()
+        processingOverlayToken = token
+        processingOverlayTitle = initialTitle
+        processingOverlayMessage = initialMessage
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            guard isWorking, processingOverlayToken == token, processingOverlayTitle != nil else { return }
+            processingOverlayTitle = delayedTitle
+            processingOverlayMessage = delayedMessage
+            workingMessage = delayedWorkingMessage
+        }
+    }
+
+    private func stopProcessingOverlay() {
+        processingOverlayToken = UUID()
+        processingOverlayTitle = nil
     }
 
     private func alignBillingWithAvailablePackage() {
@@ -633,7 +770,7 @@ struct InAppPaywallView: View {
     ) -> SubscriptionPlanPackage? {
         app.subscriptionPackages
             .filter { $0.tier == screen.tier }
-            .first { $0.matchesInAppPaywall(billing) }
+            .first { $0.matchesInAppPaywall(billing) && $0.displayPrice != nil }
     }
 
     private func annualPriceText(for tier: SubscriptionTier) -> String {
@@ -645,35 +782,20 @@ struct InAppPaywallView: View {
     }
 
     private func priceText(for tier: SubscriptionTier, billing: InAppPaywallBilling) -> String {
-        let fallback = InAppPaywallPlanDisplay.fallback(for: tier)
-        let fallbackValue = billing == .yearly ? fallback.yearlyPrice : fallback.monthlyPrice
-        let fallbackText = Self.currency(fallbackValue)
-
-        guard let package = selectedPackage(for: tier == .plus ? .plus : .pro, billing: billing) else {
-            return fallbackText
-        }
-        return Self.shouldUseTRYFallback(for: package.price) ? fallbackText : package.price
+        selectedPackage(for: tier == .plus ? .plus : .pro, billing: billing)?.displayPrice
+            ?? unavailablePriceText
     }
 
-    private static func shouldUseTRYFallback(for price: String) -> Bool {
-        let locale = Locale.current
-        guard locale.region?.identifier == "TR" else { return false }
-
-        let normalized = price
-            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US"))
-            .uppercased(with: Locale(identifier: "en_US"))
-        return normalized.contains("$") || normalized.contains("USD")
+    private var unavailablePriceText: String {
+        packageLoadError == nil ? "fiyat yükleniyor" : "fiyat alınamadı"
     }
 
-    private static func currency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.numberStyle = .currency
-        formatter.currencySymbol = "₺"
-        formatter.maximumFractionDigits = value.rounded() == value ? 0 : 2
-        formatter.minimumFractionDigits = value.rounded() == value ? 0 : 2
-        return formatter.string(from: NSNumber(value: value)) ?? "₺\(value)"
+    #if DEBUG
+    private static var isUITestForceProPaywall: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_FORCE_PRO_PAYWALL")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_FORCE_PRO_PAYWALL"] == "1"
     }
+    #endif
 }
 
 private struct InAppPaywallColor {
@@ -693,22 +815,6 @@ private struct InAppPaywallColor {
     static let goldSoft = Color(hex: "#FEF6CE")
     static let goldEdge = Color(hex: "#F4D04A")
     static let goldTickForeground = Color(hex: "#7A5C00")
-}
-
-private struct InAppPaywallPlanDisplay {
-    let monthlyPrice: Double
-    let yearlyPrice: Double
-
-    static func fallback(for tier: SubscriptionTier) -> InAppPaywallPlanDisplay {
-        switch tier {
-        case .free:
-            return InAppPaywallPlanDisplay(monthlyPrice: 0, yearlyPrice: 0)
-        case .plus:
-            return InAppPaywallPlanDisplay(monthlyPrice: 199.90, yearlyPrice: 1_999)
-        case .pro:
-            return InAppPaywallPlanDisplay(monthlyPrice: 499.90, yearlyPrice: 4_999)
-        }
-    }
 }
 
 private struct PaywallHero: View {
@@ -820,7 +926,7 @@ private struct ProductBadge: View {
                 .foregroundStyle(iconColor)
 
             Text(screen == .plus ? "PLUS" : "PRO")
-                .font(.system(size: 12, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                 .foregroundStyle(textColor)
                 .tracking(0)
         }
@@ -863,9 +969,9 @@ private struct InAppBillingToggle: View {
                 option(.monthly)
                 option(.yearly)
             }
-            .padding(4)
+            .padding(3)
             .background(InAppPaywallColor.fog)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
         .frame(maxWidth: .infinity)
         .accessibilityIdentifier("in_app_paywall.billing_toggle")
@@ -877,12 +983,12 @@ private struct InAppBillingToggle: View {
         } label: {
             HStack(spacing: 6) {
                 Text(option.title)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(value == option ? InAppPaywallColor.onyx : InAppPaywallColor.slate)
 
                 if option == .yearly {
                     Text("%17")
-                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(9), weight: .black, design: .rounded))
                         .foregroundStyle(tagForeground(selected: value == option))
                         .padding(.horizontal, 5)
                         .frame(height: 15)
@@ -894,10 +1000,10 @@ private struct InAppBillingToggle: View {
                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
             }
-            .frame(width: option == .yearly ? 104 : 86, height: 34)
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .frame(width: option == .yearly ? 104 : 86, height: 30)
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .background(value == option ? Color.white : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .shadow(
                 color: value == option ? InAppPaywallColor.onyx.opacity(0.08) : .clear,
                 radius: 3,
@@ -939,17 +1045,17 @@ private struct PlusTimeline: View {
             .frame(width: 2)
             .clipShape(Capsule())
             .padding(.leading, 15)
-            .padding(.vertical, 18)
+            .padding(.vertical, 13)
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 7) {
                 TimelineRow(icon: "lock.open.fill", label: "Bugün", detail: "Tüm Plus özelliklerinin kilidini açın.", tone: .green)
                 TimelineRow(icon: "bell.fill", label: "5. gün", detail: "Denemenizin bittiğine dair hatırlatma alın.", tone: .green)
                 TimelineRow(icon: "crown.fill", label: "7. gün", detail: "Yıllık \(annualPrice) ödeme alınır.", tone: .gold)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 9)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white)
         .overlay(
@@ -978,9 +1084,9 @@ private struct TimelineRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                 .foregroundStyle(iconForeground)
-                .frame(width: 30, height: 30)
+                .frame(width: 27, height: 27)
                 .background(iconBackground)
                 .clipShape(Circle())
                 .shadow(color: shadowColor, radius: 8, x: 0, y: 3)
@@ -988,10 +1094,10 @@ private struct TimelineRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
-                    .font(.system(size: 12.8, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                 Text(detail)
-                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.2), weight: .regular, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.slate)
                     .lineSpacing(1.5)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1042,16 +1148,16 @@ private struct PlusComparison: View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
                 Text("Neler dahil?")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .accessibilityIdentifier("in_app_paywall.plus.included_title")
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.slate)
                     .padding(.top, 1)
             }
             .frame(maxWidth: .infinity)
-            .padding(.bottom, 2)
+            .padding(.bottom, 0)
 
             ZStack(alignment: .trailing) {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -1075,27 +1181,27 @@ private struct PlusComparison: View {
             Button(action: onPro) {
                 HStack(spacing: 6) {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.green)
 
                     Text("Limitsiz özellikler için ")
-                        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundColor(InAppPaywallColor.onyx)
                     + Text("PRO’yu incele")
-                        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .underline()
                         .foregroundColor(InAppPaywallColor.onyx)
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.slate)
                 }
                 .padding(.horizontal, 10)
-                .frame(height: 30)
+                .frame(height: 28)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("in_app_paywall.plus.pro_link")
-            .padding(.top, 6)
+            .padding(.top, 2)
         }
     }
 
@@ -1104,13 +1210,13 @@ private struct PlusComparison: View {
             Spacer(minLength: 0)
 
             Text("Ücretsiz")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.slate)
                 .frame(width: 56)
 
             VStack(spacing: 2) {
                 Text("POPÜLER")
-                    .font(.system(size: 8.5, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                     .foregroundStyle(Color.white)
                     .padding(.horizontal, 6)
                     .frame(height: 14)
@@ -1120,33 +1226,33 @@ private struct PlusComparison: View {
 
                 HStack(spacing: 4) {
                     Image(systemName: "crown.fill")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.goldBase)
                     Text("PLUS")
-                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.goldDeep)
                 }
             }
             .frame(width: 64)
         }
-        .frame(height: 42)
+        .frame(height: 36)
     }
 
     private func comparisonRow(_ feature: PlusComparisonFeature) -> some View {
         HStack(spacing: 8) {
             HStack(spacing: 6) {
                 Text(feature.label)
-                    .font(.system(size: 12.8, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12.2), weight: .medium, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.graphite)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
 
                 if let badge = feature.badge {
                     Text(badge)
-                        .font(.system(size: 8.5, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                         .foregroundStyle(Color.white)
                         .padding(.horizontal, 5)
-                        .frame(height: 12)
+                        .frame(height: 11)
                         .background(InAppPaywallColor.onyx)
                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
@@ -1159,7 +1265,7 @@ private struct PlusComparison: View {
             ComparisonCell(value: feature.plus, isPlus: true)
                 .frame(width: 64)
         }
-        .frame(height: 34)
+        .frame(height: 30)
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(InAppPaywallColor.line)
@@ -1176,19 +1282,19 @@ private struct ComparisonCell: View {
         switch value {
         case .included:
             Image(systemName: "checkmark")
-                .font(.system(size: 11, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .black, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.goldTickForeground)
                 .frame(width: 20, height: 20)
                 .background(InAppPaywallColor.goldEdge)
                 .clipShape(Circle())
         case .notIncluded:
             Image(systemName: "xmark")
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(Color(hex: "#C2C8C5"))
                 .frame(width: 20, height: 20)
         case let .text(text):
             Text(text)
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .monospaced))
                 .foregroundStyle(isPlus ? InAppPaywallColor.goldDeep : InAppPaywallColor.graphite)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
@@ -1210,14 +1316,14 @@ private struct ProFeatureCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "star.fill")
-                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .black, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.green)
                     .frame(width: 28, height: 28)
                     .background(InAppPaywallColor.onyx)
                     .clipShape(Circle())
 
                 Text("Pro üyelik")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
             }
 
@@ -1225,14 +1331,14 @@ private struct ProFeatureCard: View {
                 ForEach(items, id: \.label) { item in
                     HStack(spacing: 10) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .black, design: .rounded))
+                            .font(.system(size: RDFontScale.size(10), weight: .black, design: .rounded))
                             .foregroundStyle(Color.white)
                             .frame(width: 18, height: 18)
                             .background(InAppPaywallColor.green)
                             .clipShape(Circle())
 
                         Text(item.label)
-                            .font(.system(size: 13.5, weight: item.strong ? .bold : .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(13.5), weight: item.strong ? .bold : .medium, design: .rounded))
                             .foregroundStyle(item.strong ? InAppPaywallColor.onyx : InAppPaywallColor.graphite)
                             .lineLimit(2)
                             .minimumScaleFactor(0.82)
@@ -1268,6 +1374,53 @@ private struct ProFeatureCard: View {
     }
 }
 
+struct PaywallProcessingOverlay: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.16)
+                .ignoresSafeArea()
+
+            VStack(spacing: 12) {
+                ProgressView()
+                    .controlSize(.regular)
+                    .tint(Color.rdGreen)
+
+                VStack(spacing: 5) {
+                    Text(title)
+                        .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .multilineTextAlignment(.center)
+
+                    Text(message)
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 18)
+            .frame(maxWidth: 300)
+            .background(.ultraThinMaterial)
+            .background(Color.white.opacity(0.88))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(Color.white.opacity(0.72), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.14), radius: 24, x: 0, y: 12)
+            .padding(.horizontal, 28)
+        }
+        .allowsHitTesting(true)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("paywall.processing_overlay")
+    }
+}
+
 private struct NoticeCard: View {
     let text: String
     let isError: Bool
@@ -1275,11 +1428,11 @@ private struct NoticeCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: isError ? "exclamationmark.circle.fill" : "info.circle.fill")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
                 .foregroundStyle(isError ? Color.rdCritical : InAppPaywallColor.greenDark)
 
             Text(text)
-                .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                .font(.system(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.graphite)
                 .fixedSize(horizontal: false, vertical: true)
 

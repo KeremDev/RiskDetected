@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+  cat <<'USAGE'
+Usage:
+  scripts/rd_store_secret.sh <service>
+
+Allowed services:
+  riskdetected_supabase_access_token
+  riskdetected_supabase_db_password
+  riskdetected_revenuecat_rest_api_key
+USAGE
+  exit 1
+fi
+
+service="$1"
+case "$service" in
+  riskdetected_supabase_access_token|riskdetected_supabase_db_password|riskdetected_revenuecat_rest_api_key)
+    ;;
+  *)
+    echo "Unsupported service: $service" >&2
+    exit 1
+    ;;
+esac
+
+printf "Enter secret for %s: " "$service" >&2
+IFS= read -r -s secret
+printf "\n" >&2
+
+if [[ -z "$secret" ]]; then
+  echo "Secret cannot be empty." >&2
+  exit 1
+fi
+
+security add-generic-password \
+  -U \
+  -a "$USER" \
+  -s "$service" \
+  -w "$secret" >/dev/null
+
+echo "Stored $service in macOS Keychain."

@@ -199,6 +199,9 @@ These items exist in some form, but need revision before we treat them as produc
    - Keywords: `isg,risk,analiz,iş,güvenliği,saha,denetim,rapor,fine,kinney,5x5,matris,kkd,pdf,excel`.
 3. Enter/confirm App Store privacy nutrition form from `QA/App_Store_Privacy_Nutrition_2026-05-16.md`.
 4. Provide App Review test account and OTP access plan.
+   - Prepared: review account path is `riskdetected_appreview@fastmail.com` with real email OTP; copy-ready notes live at `QA/App_Review_Webmail_OTP_Access_2026-06-01.md`.
+   - Do not commit the actual webmail password. Paste it only into App Store Connect Notes.
+   - Before submission, verify Fastmail webmail access, confirm Supabase Email OTP Expiration is `3600` seconds, and run a physical-device TestFlight OTP smoke test.
 5. APNs production real-device/TestFlight push test.
 6. Full TestFlight release pass:
    - clean install;
@@ -227,7 +230,14 @@ These items exist in some form, but need revision before we treat them as produc
 11. Optional App Preview video:
     - 15-30 seconds;
     - photo select -> analysis -> report -> share.
-12. Pro AI quality upgrade after launch or before paid scale-up:
+12. Full App Review preflight gate:
+    - run a repo hygiene pass for generated artifacts, QA-only files, screenshots, unused images and review-invisible debug/test surfaces;
+    - verify the final Xcode archive, entitlements, privacy manifest, Info.plist, Release build and app binary contents;
+    - re-check App Store Connect metadata, privacy nutrition, IAP/subscription products, review notes, support/privacy/terms URLs and screenshot sets;
+    - run backend production readiness checks for Supabase functions, secrets, RLS/migrations, RevenueCat webhook/sync, APNs production and support/contact flows;
+    - run physical-device TestFlight smoke for onboarding, auth, paywalls, purchase/restore, analysis, PDF/XLSX, account deletion, support and push;
+    - create/update `QA/APP_STORE_PREFLIGHT_<date>.md` and `QA/APP_STORE_REVIEW_NOTES_<date>.md` before tapping `Add for Review`.
+13. Pro AI quality upgrade after launch or before paid scale-up:
     - stronger paid Gemini model or provider fallback;
     - multi-pass validation;
     - sector/procedure checklist;
@@ -409,7 +419,13 @@ These items exist in some form, but need revision before we treat them as produc
    - Done: PDF report titles/date locale are routed through the report language layer.
    - Follow-up: when another language ships, localize Auth, Home, Analysis, Result, Reports and Profile strings through the same key layer;
    - Follow-up: extend PDF/XLSX table labels and legal/report boilerplate to the new report language.
-3. Preference sync:
+3. Long-term English localization rollout:
+   - add English as a first-class language after launch priorities settle;
+   - scope includes app UI, onboarding, auth, paywalls, reports, PDF/XLSX outputs, AI analysis output, backend notifications, e-mails, permission prompts and legal surfaces;
+   - default behavior should follow the iOS system language, with Profile > Tercihler override for System / Turkce / English;
+   - implementation prerequisites: approved English legal copy, localization key audit, backend `language` / `report_language` contract, Turkish + English UI tests, and PDF/XLSX + AI output language QA;
+   - existing Turkish analyses/reports stay as-is; do not auto-migrate or machine-translate historical records.
+4. Preference sync:
    - keep MVP local-first;
    - later store preferred theme/language in `profiles` or a dedicated `user_preferences` table.
 

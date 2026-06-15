@@ -16,7 +16,7 @@ struct FilterSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
                     Image(systemName: "line.3.horizontal.decrease")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdGreen)
                         .frame(width: 42, height: 42)
                         .background(Color.rdGreenSoft)
@@ -24,10 +24,10 @@ struct FilterSheet: View {
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Analizleri filtrele")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                         Text("Tarih, risk seviyesi ve odak alanına göre daralt.")
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -36,7 +36,7 @@ struct FilterSheet: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .frame(width: 38, height: 38)
                             .background(Color.rdWhite)
@@ -76,7 +76,7 @@ struct FilterSheet: View {
                         selectedKinds = []
                     } label: {
                         Text("Sıfırla")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .frame(width: 92, height: 48)
                             .background(Color.rdFog)
@@ -110,7 +110,7 @@ struct FilterSheet: View {
     private func section<C: View>(_ title: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .tracking(0.6)
                 .foregroundStyle(Color.rdSlate)
             content()
@@ -128,7 +128,7 @@ struct FilterSheet: View {
                     onTap(opt)
                 } label: {
                     Text(opt)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                         .padding(.horizontal, 14)
                         .frame(height: 34)
                         .foregroundStyle(active ? .white : Color.rdCharcoal)
@@ -154,7 +154,7 @@ struct FilterSheet: View {
             HStack(spacing: 6) {
                 Circle().fill(level.color).frame(width: 8, height: 8)
                 Text(level.label)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
             }
             .padding(.horizontal, 12)
             .frame(height: 34)

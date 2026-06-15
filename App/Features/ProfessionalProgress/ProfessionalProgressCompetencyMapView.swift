@@ -8,7 +8,7 @@ struct ProfessionalProgressCompetencyMapView: View {
         VStack(alignment: .leading, spacing: RDSpacing.sm) {
             if !compact {
                 Text("Yetkinlik Haritası")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
             }
 
@@ -63,10 +63,10 @@ struct ProfessionalProgressCompetencyMapView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 6) {
                         Image(systemName: "chart.pie.fill")
-                            .font(.system(size: 12, weight: .black, design: .rounded))
+                            .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                             .foregroundStyle(Color.rdGreenDark)
                         Text("Yetkinlik dağılımı")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                     }
 
@@ -117,7 +117,7 @@ struct ProfessionalProgressCompetencyMapView: View {
                     .rdMono(size: 22, weight: .bold)
                     .foregroundStyle(Color.rdBlack)
                 Text("alan")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
         }
@@ -139,7 +139,7 @@ struct ProfessionalProgressCompetencyMapView: View {
             Text("%\(percent)")
                 .rdMono(size: 10, weight: .bold)
         }
-        .font(.system(size: 10, weight: .bold, design: .rounded))
+        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
         .foregroundStyle(Color.rdBlack)
         .padding(.horizontal, 7)
         .padding(.vertical, 6)
@@ -195,7 +195,7 @@ struct ProfessionalProgressCompetencyMapView: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Image(systemName: competency.icon)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(competency.accent)
                     .frame(width: 32, height: 32)
                     .background(competency.accent.opacity(0.12))
@@ -204,11 +204,11 @@ struct ProfessionalProgressCompetencyMapView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {
                         Text(competency.label)
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                         if stat.onboardingSeed && stat.signalCount == 0 {
                             Text("Beyan edilen alan")
-                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdGreenDark)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 3)
@@ -217,7 +217,7 @@ struct ProfessionalProgressCompetencyMapView: View {
                         }
                     }
                     Text("\(stat.findingCount) bulgu · \(stat.reportCount) rapor")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
 
@@ -259,7 +259,7 @@ struct ProfessionalProgressCompetencyMapView: View {
 
     private func riskChip(label: String, count: Int, color: Color) -> some View {
         Text("\(label) \(count)")
-            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
             .foregroundStyle(color)
             .padding(.horizontal, 7)
             .padding(.vertical, 4)

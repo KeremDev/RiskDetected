@@ -13,6 +13,8 @@ struct HistoryView: View {
     @State private var analysisResult: AnalysisResultBundle? = nil
     @State private var showResult = false
     @State private var analysisError: String? = nil
+    @State private var isLoadingItems = false
+    @State private var loadErrorMessage: String?
     @State private var openingItemID: UUID? = nil
     @State private var deletingItemID: UUID? = nil
     @State private var itemPendingDelete: HistoryItem?
@@ -40,11 +42,15 @@ struct HistoryView: View {
             .zIndex(100)
 
             ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 12) {
+                LazyVStack(spacing: 9) {
                     analysisOverview
                     filterSurface
 
-                    if filteredItems.isEmpty {
+                    if isLoadingItems && items.isEmpty {
+                        loadingState
+                    } else if let loadErrorMessage, items.isEmpty {
+                        loadErrorState(loadErrorMessage)
+                    } else if filteredItems.isEmpty {
                         emptyState
                     } else {
                         ForEach(filteredItems) { item in
@@ -151,7 +157,7 @@ struct HistoryView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "viewfinder")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 42, height: 42)
                     .background(Color.rdGreenSoft)
@@ -159,11 +165,11 @@ struct HistoryView: View {
 
                 VStack(alignment: .leading, spacing: 7) {
                     Text("Saha taramaları")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
 
                     Text("Analizlerini, kritik riskleri ve bulgu sayısını tek yerden takip et.")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -172,18 +178,18 @@ struct HistoryView: View {
                 VStack(spacing: 2) {
                     Text("\(items.count)")
                         .rdMono(size: 22, weight: .bold)
-                        .foregroundStyle(Color.rdWhite)
+                        .foregroundStyle(Color.white)
                     Text("Analiz")
                         .rdMono(size: 10, weight: .bold)
-                        .foregroundStyle(Color.rdWhite.opacity(0.72))
+                        .foregroundStyle(Color.white.opacity(0.72))
                         .lineLimit(1)
                         .minimumScaleFactor(0.78)
                 }
                 .frame(width: 58, height: 54)
-                .background(Color.rdBlack)
+                .background(overviewMetricBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.rdBlack, lineWidth: 1)
+                        .stroke(overviewMetricBorder, lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .historyCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
@@ -199,18 +205,14 @@ struct HistoryView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(
-                colors: [
-                    Color(hex: "#F7FBFF"),
-                    Color(hex: "#F2F7FA"),
-                    Color(hex: "#EEF8F2")
-                ],
+                colors: overviewCardGradientColors,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.rdBlack, lineWidth: 1.4)
+                .stroke(overviewCardBorder, lineWidth: 1.4)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .historyCardDepth(colorScheme: colorScheme, accent: Color.rdGreen, radius: 5, x: 6, y: 8)
@@ -219,33 +221,51 @@ struct HistoryView: View {
     private func overviewMetric(icon: String, title: String, value: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdWhite)
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.white)
                 .frame(width: 26, height: 26)
-                .background(Color.rdWhite.opacity(0.14))
+                .background(Color.white.opacity(0.14))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)
                     .rdMono(size: 14, weight: .bold)
-                    .foregroundStyle(Color.rdWhite)
+                    .foregroundStyle(Color.white)
                     .lineLimit(1)
                 Text(title)
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdWhite.opacity(0.70))
+                    .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.white.opacity(0.70))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(9)
         .frame(maxWidth: .infinity)
-        .background(Color.rdBlack)
+        .background(overviewMetricBackground)
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.rdBlack, lineWidth: 1)
+                .stroke(overviewMetricBorder, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .historyCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
+    }
+
+    private var overviewCardGradientColors: [Color] {
+        colorScheme == .dark
+            ? [Color(hex: "#151A18"), Color(hex: "#111615"), Color(hex: "#0F1D14")]
+            : [Color(hex: "#F7FBFF"), Color(hex: "#F2F7FA"), Color(hex: "#EEF8F2")]
+    }
+
+    private var overviewCardBorder: Color {
+        colorScheme == .dark ? Color.white.opacity(0.10) : Color.rdOnyx
+    }
+
+    private var overviewMetricBackground: Color {
+        colorScheme == .dark ? Color(hex: "#0B120F") : Color.rdOnyx
+    }
+
+    private var overviewMetricBorder: Color {
+        colorScheme == .dark ? Color.rdGreen.opacity(0.20) : Color.rdOnyx
     }
 
     private var filterSurface: some View {
@@ -286,10 +306,10 @@ struct HistoryView: View {
             HStack(spacing: 6) {
                 if active {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                 }
                 Text(title)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
             }
             .padding(.horizontal, 12)
             .frame(height: 32)
@@ -305,10 +325,10 @@ struct HistoryView: View {
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
             TextField("Analiz ara", text: $search)
-                .font(.system(size: 14, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), design: .rounded))
                 .foregroundStyle(Color.rdBlack)
         }
         .padding(.horizontal, 12)
@@ -327,7 +347,7 @@ struct HistoryView: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             Image(systemName: "line.3.horizontal.decrease")
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                 .frame(width: 40, height: 40)
                 .foregroundStyle(Color.rdBlack)
                 .background(Color.rdCloud)
@@ -346,7 +366,7 @@ struct HistoryView: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             Image(systemName: selectedCompanyFilter == nil ? "building.2" : "building.2.fill")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
                 .frame(width: 40, height: 40)
                 .foregroundStyle(selectedCompanyFilter == nil ? Color.rdBlack : Color.rdGreenDark)
                 .background(selectedCompanyFilter == nil ? Color.rdCloud : Color.rdGreenSoft)
@@ -393,17 +413,69 @@ struct HistoryView: View {
         RDCard {
             VStack(alignment: .leading, spacing: 10) {
                 Image(systemName: "doc.text.magnifyingglass")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(24), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 48, height: 48)
                     .background(Color.rdGreenSoft)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 Text("Analiz bulunamadı")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text("Filtreyi değiştir veya yeni bir saha taraması başlat.")
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), design: .rounded))
                     .foregroundStyle(Color.rdSlate)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var loadingState: some View {
+        RDCard {
+            HStack(spacing: 12) {
+                ProgressView()
+                    .controlSize(.regular)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Analizler yükleniyor")
+                        .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text("Son saha taramaların getiriliyor.")
+                        .font(.system(size: RDFontScale.size(13), design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private func loadErrorState(_ message: String) -> some View {
+        RDCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdCriticalText)
+                    .frame(width: 48, height: 48)
+                    .background(Color.rdCriticalBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Analizler yüklenemedi")
+                        .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                    Text(message)
+                        .font(.system(size: RDFontScale.size(13), design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button {
+                    Task { await loadItems() }
+                } label: {
+                    Label("Tekrar dene", systemImage: "arrow.clockwise")
+                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.rdGreenDark)
+                .accessibilityIdentifier("history.reload")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -423,6 +495,9 @@ struct HistoryView: View {
 
     private func loadItems() async {
         guard app.auth.session != nil else { return }
+        isLoadingItems = true
+        defer { isLoadingItems = false }
+
         do {
             async let rowsTask = AnalysisService.shared.listRecent(limit: 50)
             async let companiesTask: [Company] = app.currentTier.isPaid
@@ -434,9 +509,13 @@ struct HistoryView: View {
             items = rows.map { row in
                 HistoryItem(row: row, photoPath: paths[row.id])
             }
+            loadErrorMessage = nil
         } catch {
-            analysisError = AppErrorMessage.make(error, context: "Analizler yüklenemedi", fallbackTitle: "Analizler yüklenemedi").fullText
-            items = []
+            let message = AppErrorMessage.make(error, context: "Analizler yüklenemedi", fallbackTitle: "Analizler yüklenemedi").fullText
+            loadErrorMessage = message
+            if !items.isEmpty {
+                analysisError = message
+            }
         }
     }
 
@@ -525,54 +604,42 @@ private struct HistoryRow: View {
     }
 
     private var rowContent: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 9) {
             ZStack(alignment: .bottomTrailing) {
-                AnalysisThumbnail(path: item.photoPath, isTextAnalysis: item.isTextAnalysis, cornerRadius: 14)
-                    .frame(width: 58, height: 58)
+                AnalysisThumbnail(path: item.photoPath, isTextAnalysis: item.isTextAnalysis, cornerRadius: 11)
+                    .frame(width: 46, height: 46)
 
                 Image(systemName: item.isTextAnalysis ? "text.alignleft" : "camera.fill")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(8.5), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
-                    .frame(width: 20, height: 20)
+                    .frame(width: 17, height: 17)
                     .background(Color.rdWhite)
                     .clipShape(Circle())
-                    .shadow(color: Color.rdOnyx.opacity(0.12), radius: 6, x: 0, y: 3)
-                    .offset(x: 4, y: 4)
+                    .shadow(color: Color.rdOnyx.opacity(0.10), radius: 4, x: 0, y: 2)
+                    .offset(x: 3, y: 3)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    HStack(alignment: .firstTextBaseline, spacing: 5) {
-                        Text(cleanTitle)
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(cleanTitle)
+                        .font(.system(size: RDFontScale.size(13.5), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text(item.level.label)
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
                         .foregroundStyle(item.level.textColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
                         .background(item.level.bgColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
                         .fixedSize(horizontal: true, vertical: false)
                 }
-                .padding(.horizontal, 9)
-                .padding(.vertical, 6)
-                .background(
-                    LinearGradient(
-                        colors: [Color.rdFog, Color.rdWhite],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 11))
 
-                HStack(spacing: 7) {
+                HStack(spacing: 5) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(9.8), weight: .semibold, design: .rounded))
                     Text(item.date)
                         .lineLimit(1)
                         .layoutPriority(3)
@@ -583,37 +650,39 @@ private struct HistoryRow: View {
                         .layoutPriority(1)
                     Text("·")
                     Text("\(item.count) bulgu")
-                        .rdMono(size: 12, weight: .semibold)
+                        .rdMono(size: 10.5, weight: .semibold)
                         .fixedSize(horizontal: true, vertical: false)
                         .layoutPriority(2)
                 }
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.system(size: RDFontScale.size(10.8), weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
 
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(item.status.textColor)
-                        .frame(width: 6, height: 6)
-                    Text(item.status.rawValue)
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(item.status.textColor)
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                HStack(spacing: 5) {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(item.status.textColor)
+                            .frame(width: 5, height: 5)
+                        Text(item.status.rawValue)
+                            .font(.system(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
+                            .foregroundStyle(item.status.textColor)
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
                         .background(item.status.bgColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
 
                     if !companyName.isEmpty {
                         Text(companyName)
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdGreenDark)
                             .lineLimit(1)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
                             .background(Color.rdGreenSoft)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .clipShape(RoundedRectangle(cornerRadius: 7))
                     }
                 }
+            }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if isLoading || isDeleting {
@@ -621,17 +690,19 @@ private struct HistoryRow: View {
                     .controlSize(.small)
             } else {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
+                    .frame(width: 24, height: 24)
             }
         }
-        .padding(10)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
         .background(Color.rdWhite)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 14)
                 .stroke(item.level == .critical ? Color.rdCritical.opacity(0.22) : Color.rdLine, lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
         .contentShape(Rectangle())
         .historyRowDepth()
         .onTapGesture {

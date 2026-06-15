@@ -17,6 +17,14 @@ final class NotificationService: NSObject, ObservableObject {
     @Published var pendingAnalysisHistoryID: UUID?
     @Published var pendingDestinationTab: RDTab?
 
+    var systemAuthorizationGranted: Bool {
+        authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral
+    }
+
+    var notificationsEnabled: Bool {
+        systemAuthorizationGranted && (notificationPreferences?.enabled ?? true)
+    }
+
     enum ProgressPreference {
         case weeklySummary
         case monthlySummary
@@ -39,6 +47,9 @@ final class NotificationService: NSObject, ObservableObject {
     }
 
     func configure() {
+        #if DEBUG
+        guard !Self.isUITestLaunch else { return }
+        #endif
         UNUserNotificationCenter.current().delegate = self
         Task { await refreshSettings() }
     }
@@ -125,12 +136,60 @@ final class NotificationService: NSObject, ObservableObject {
     }
 
     func disableNotifications() {
+        lastError = nil
         Task {
             do {
                 try await setPreference(enabled: false)
+                await refreshSettings()
             } catch {
                 Self.logger.error("Notification preference disable failed error=\(error.localizedDescription, privacy: .public)")
                 lastError = "Bildirim tercihi kaydedilemedi."
+            }
+        }
+    }
+
+    func enableNotifications() {
+        guard !isRegistering else { return }
+        isRegistering = true
+        lastError = nil
+
+        Task {
+            do {
+                let settings = await UNUserNotificationCenter.current().notificationSettings()
+                authorizationStatus = settings.authorizationStatus
+
+                switch settings.authorizationStatus {
+                case .notDetermined:
+                    let granted = try await UNUserNotificationCenter.current().requestAuthorization(
+                        options: [.alert, .badge, .sound]
+                    )
+                    guard granted else {
+                        try await setPreference(enabled: false)
+                        await refreshSettings()
+                        isRegistering = false
+                        return
+                    }
+                case .authorized, .provisional, .ephemeral:
+                    break
+                case .denied:
+                    await refreshSettings()
+                    isRegistering = false
+                    return
+                @unknown default:
+                    await refreshSettings()
+                    isRegistering = false
+                    return
+                }
+
+                try await setPreference(enabled: true)
+                await refreshSettings()
+                UIApplication.shared.registerForRemoteNotifications()
+                isRegistering = false
+            } catch {
+                Self.logger.error("Notification preference enable failed error=\(error.localizedDescription, privacy: .public)")
+                lastError = "Bildirim tercihi açılmadı. Lütfen tekrar dene."
+                await refreshSettings()
+                isRegistering = false
             }
         }
     }
@@ -193,6 +252,7 @@ final class NotificationService: NSObject, ObservableObject {
             reportReady: enabled,
             accountUpdates: enabled,
             marketing: false,
+            trialReminder: enabled,
             progressWeeklySummary: enabled,
             progressMonthlySummary: enabled,
             progressMilestones: enabled
@@ -257,8 +317,12 @@ final class NotificationService: NSObject, ObservableObject {
     }
 
     private static var isUITestLaunch: Bool {
+        #if DEBUG
         CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
             || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+        #else
+        false
+        #endif
     }
 }
 
@@ -267,11 +331,7 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        let kind = notification.request.content.userInfo["kind"] as? String
-        if kind == "analysis_complete" || kind == "report_ready" {
-            return []
-        }
-        return [.banner, .sound, .badge]
+        return []
     }
 
     nonisolated func userNotificationCenter(
@@ -289,6 +349,7 @@ extension NotificationService: UNUserNotificationCenterDelegate {
             return
         }
         if kind == "account_updates" ||
+            kind == "trial_reminder" ||
             kind?.hasPrefix("progress_") == true ||
             data?["destination"] as? String == "profile" {
             await MainActor.run {
@@ -315,6 +376,18 @@ extension NotificationService: UNUserNotificationCenterDelegate {
 final class RDAppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
+        willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        #if DEBUG
+        if Self.isUITestLaunch {
+            UIView.setAnimationsEnabled(false)
+        }
+        #endif
+        return true
+    }
+
+    func application(
+        _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         NotificationService.shared.didRegisterForRemoteNotifications(deviceToken: deviceToken)
@@ -326,6 +399,13 @@ final class RDAppDelegate: NSObject, UIApplicationDelegate {
     ) {
         NotificationService.shared.didFailToRegisterForRemoteNotifications(error: error)
     }
+
+    #if DEBUG
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+    }
+    #endif
 }
 
 private enum PushEnvironment {
@@ -365,6 +445,7 @@ private struct NotificationPreferencePayload: Encodable {
     let reportReady: Bool
     let accountUpdates: Bool
     let marketing: Bool
+    let trialReminder: Bool
     let progressWeeklySummary: Bool
     let progressMonthlySummary: Bool
     let progressMilestones: Bool
@@ -376,6 +457,7 @@ private struct NotificationPreferencePayload: Encodable {
         case reportReady = "report_ready"
         case accountUpdates = "account_updates"
         case marketing
+        case trialReminder = "trial_reminder"
         case progressWeeklySummary = "progress_weekly_summary"
         case progressMonthlySummary = "progress_monthly_summary"
         case progressMilestones = "progress_milestones"
@@ -406,11 +488,13 @@ private struct ProgressPreferencePayload: Encodable {
 }
 
 private struct NotificationPreferencesRow: Decodable {
+    let enabled: Bool
     let progressWeeklySummary: Bool
     let progressMonthlySummary: Bool
     let progressMilestones: Bool
 
     enum CodingKeys: String, CodingKey {
+        case enabled
         case progressWeeklySummary = "progress_weekly_summary"
         case progressMonthlySummary = "progress_monthly_summary"
         case progressMilestones = "progress_milestones"

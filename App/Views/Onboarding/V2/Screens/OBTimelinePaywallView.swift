@@ -1,198 +1,380 @@
 import SwiftUI
 
 // Timeline paywall — trust-building trial flow.
-// Top: dark gradient banner with hardhat hero.
-// Bottom: white card with title + plan toggle + 3-step timeline + CTA.
+// The screen explains the trial as a time sequence: today, reminder day,
+// and billing day. Purchase/restore callbacks stay owned by the flow.
 //
 // Hooks:
 //   onStart   — start trial / purchase
 //   onRestore — restore purchases
-//   onTerms   — open terms URL
-//   onPrivacy — open privacy URL
+//   onTerms   — show terms in-app
+//   onPrivacy — show privacy in-app
 //   onDismiss — close paywall (× button)
 //
 // Standalone for now; codex will wire to flow + IAP after approval.
 
+private struct TimelineFeatureItem: Hashable {
+    let title: String
+    let badge: String?
+
+    init(_ title: String, badge: String? = nil) {
+        self.title = title
+        self.badge = badge
+    }
+}
+
 struct OBTimelinePaywallView: View {
+    var packages: [SubscriptionPlanPackage] = []
+    var offeringsLoadState: SubscriptionOfferingsLoadState = .loading
+    var isWorking: Bool = false
+    var noticeMessage: String?
     let onStart: (OBPlan) -> Void
+    let onReloadPackages: () async -> Void
     let onRestore: () -> Void
     let onTerms: () -> Void
     let onPrivacy: () -> Void
     let onDismiss: () -> Void
 
     @State private var selectedPlan: OBPlan = .yearly
-    @State private var swingAngle: Double = -10
+    @State private var isReloadingPackages = false
+    @State private var timelineFlow: Bool = false
+    @State private var processingOverlayTitle: String?
+    @State private var processingOverlayMessage = "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+    @State private var processingOverlayToken = UUID()
 
     private var priceLine: String {
         switch selectedPlan {
-        case .yearly:  return OBTrialPriceCopy.yearlyPaywallLine
-        case .monthly: return OBTrialPriceCopy.monthlyPaywallLine
+        case .yearly:  return yearlyPaywallLine
+        case .monthly: return monthlyPaywallLine
         }
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            Color.white.ignoresSafeArea()
+        ZStack(alignment: .topTrailing) {
+            Color.rdPaper.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                banner
-                contentCard
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 18) {
+                    banner
+                        .padding(.top, 54)
+                        .padding(.bottom, 10)
+                        .obStage(delay: 0.02)
+
+                    planToggle
+                        .obStage(delay: 0.12)
+
+                    timeline
+                        .obStage(delay: 0.12)
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, noticeMessage == nil && !isWorking && !isReloadingPackages ? 138 : 182)
             }
 
-            // Close button top-right over banner
-            HStack {
-                Spacer()
-                Button {
-                    OBHaptic.light(); onDismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.rdSlate)
-                        .frame(width: 36, height: 36)
-                        .background(Color.rdFog)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.rdLine, lineWidth: 1))
-                }
-                .buttonStyle(OBPressStyle())
-                .padding(.top, 56)
-                .padding(.trailing, 16)
-                .accessibilityIdentifier("onboarding.timeline_paywall.close")
+            bottomBar
+                .frame(maxHeight: .infinity, alignment: .bottom)
+
+            dismissButton
+                .padding(.top, 58)
+                .padding(.trailing, 18)
+
+            if let processingOverlayTitle {
+                PaywallProcessingOverlay(
+                    title: processingOverlayTitle,
+                    message: processingOverlayMessage
+                )
+                .transition(.opacity)
+                .zIndex(40)
             }
         }
-        .ignoresSafeArea()
+        .onAppear {
+            if isWorking {
+                startProcessingOverlay()
+            }
+        }
+        .task {
+            if packages.isEmpty {
+                await reloadPackagesIfNeeded()
+            }
+        }
+        .onChange(of: isWorking) { newValue in
+            if newValue {
+                startProcessingOverlay()
+            } else {
+                stopProcessingOverlay()
+            }
+        }
         .accessibilityIdentifier("onboarding.timeline_paywall")
     }
 
-    // MARK: - Banner (white with premium helmet icon)
+    // MARK: - Header
 
     private var banner: some View {
-        ZStack(alignment: .top) {
-            Color.white
-            helmetHero
+        VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(paywallTitle)
+                    .font(.system(size: RDFontScale.size(33), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .frame(height: 280)
-        .clipped()
-        .onAppear { animateBanner() }
+        .padding(.horizontal, 6)
     }
 
-    private var helmetHero: some View {
-        // Pendulum: rope + helmet as a single rotating stack, anchored at the
-        // top so it swings naturally like hanging on a hook.
-        VStack(spacing: 0) {
-            // Hook at top (small dark anchor point)
-            ZStack {
-                Capsule()
-                    .fill(Color(hex: "#2E2014"))
-                    .frame(width: 10, height: 5)
-                Circle()
-                    .fill(Color(hex: "#1A0F08"))
-                    .frame(width: 3, height: 3)
-            }
-
-            RealisticRope(length: 50)
-
-            Image("Hardhat")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 210, height: 170)
-                .shadow(color: Color.rdGreen.opacity(0.30), radius: 24, y: 12)
-                .shadow(color: Color.black.opacity(0.18), radius: 12, y: 8)
-        }
-        .rotationEffect(.degrees(swingAngle), anchor: .top)
-        .padding(.top, 8)
+    private var paywallTitle: String {
+        selectedPlan == .yearly
+            ? "Ücretsiz Deneme Nasıl Çalışır"
+            : "Plus Aboneliğin Gücünü Hemen Kullanın"
     }
 
-    // MARK: - Content card
-
-    private var contentCard: some View {
-        VStack(spacing: 0) {
-            Text("Ücretsiz Deneme Nasıl Çalışır?")
-                .font(.system(size: 22, weight: .semibold))
-                .tracking(-0.6)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Color.rdOnyx)
-                .padding(.horizontal, 24)
-                .padding(.top, -4)
-                .obStage(delay: 0.05)
-
-            HStack(spacing: 6) {
-                if selectedPlan == .yearly {
-                    Image(systemName: "gift.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.rdGreen)
-                }
-                Text(priceLine)
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color.rdSlate)
-                    .multilineTextAlignment(.center)
+    private var bottomBar: some View {
+        VStack(spacing: 10) {
+            OBPrimaryButton(
+                title: primaryButtonTitle,
+                trailingIcon: "arrow.right",
+                isLoading: isWorking || isReloadingPackages || isWaitingForPrice,
+                loadingTitle: isWaitingForPrice || isReloadingPackages ? "Fiyat yükleniyor..." : "Satın alma hazırlanıyor...",
+                style: .onyx,
+                accessibilityID: "onboarding.timeline_paywall.cta"
+            ) {
+                handlePrimaryAction()
             }
-            .padding(.top, 6)
-            .padding(.horizontal, 24)
-            .obStage(delay: 0.12)
-            .animation(.obSpring, value: selectedPlan)
-
-            planToggle
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-                .obStage(delay: 0.18)
-
-            Spacer(minLength: 12)
-
-            timeline
-                .padding(.horizontal, 24)
+            .disabled(primaryButtonDisabled)
+            .opacity(primaryButtonDisabled ? 0.72 : 1)
 
             Button {
-                OBHaptic.light(); onRestore()
+                OBHaptic.soft()
+                onDismiss()
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.counterclockwise.circle")
-                        .font(.system(size: 13, weight: .medium))
-                    Text("Geri Yükle")
-                        .font(.system(size: 13, weight: .medium))
+                Text("Şimdilik ücretsiz devam et")
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .underline(true, color: Color.rdSlate.opacity(0.75))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.86)
+            }
+            .buttonStyle(.plain)
+            .disabled(isWorking)
+            .opacity(isWorking ? 0.45 : 1)
+            .accessibilityLabel("Şimdilik ücretsiz devam et")
+            .accessibilityIdentifier("onboarding.timeline_paywall.continue_free")
+
+            if isWorking || isReloadingPackages || noticeMessage != nil {
+                paywallNotice
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
+            HStack(spacing: 14) {
+                Button {
+                    OBHaptic.light(); onRestore()
+                } label: {
+                    Text("Geri yükle")
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
                 }
-                .foregroundStyle(Color.rdGreenDark)
-            }
-            .buttonStyle(OBPressStyle())
-            .padding(.top, 12)
-            .obStage(delay: 0.5)
+                .disabled(isWorking)
+                .opacity(isWorking ? 0.55 : 1)
+                .accessibilityIdentifier("onboarding.timeline_paywall.restore")
 
-            Spacer(minLength: 12)
+                Circle().fill(Color.rdSlate.opacity(0.35)).frame(width: 3, height: 3)
 
-            OBPrimaryButton(title: selectedPlan == .yearly ? "Devam Et" : "Aboneliği başlat", style: .onyx, accessibilityID: "onboarding.timeline_paywall.cta") {
-                onStart(selectedPlan)
-            }
-            .padding(.horizontal, 24)
-            .obStage(delay: 0.58)
-
-            HStack(spacing: 12) {
                 Button {
                     OBHaptic.soft(); onTerms()
                 } label: {
                     Text("Kullanım Şartları")
-                        .font(.system(size: 11))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
-                Circle().fill(Color.rdSlate.opacity(0.5)).frame(width: 3, height: 3)
+                .disabled(isWorking)
+                .accessibilityIdentifier("onboarding.timeline_paywall.terms")
+
+                Circle().fill(Color.rdSlate.opacity(0.35)).frame(width: 3, height: 3)
+
                 Button {
                     OBHaptic.soft(); onPrivacy()
                 } label: {
                     Text("Gizlilik Politikası")
-                        .font(.system(size: 11))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
+                .disabled(isWorking)
+                .accessibilityIdentifier("onboarding.timeline_paywall.privacy")
             }
-            .padding(.top, 12)
-            .padding(.bottom, 24)
-            .obStage(delay: 0.66)
+
+            Text(priceLine)
+                .font(.system(size: RDFontScale.size(11.5), weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+                .multilineTextAlignment(.center)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12)
+                .accessibilityIdentifier("onboarding.timeline_paywall.price_line")
         }
-        .padding(.top, 6)
-        .background(Color.white)
+        .padding(.horizontal, 18)
+        .padding(.top, 12)
+        .padding(.bottom, 6)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color.rdPaper.opacity(0),
+                    Color.rdPaper.opacity(0.96),
+                    Color.rdPaper
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
+        .animation(.obSpring, value: selectedPlan)
+        .animation(.obSpring, value: isWorking)
+        .animation(.obSpring, value: noticeMessage)
+    }
+
+    private var dismissButton: some View {
+        Button {
+            OBHaptic.soft()
+            onDismiss()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .frame(width: 38, height: 38)
+                .background(Color.white.opacity(0.94))
+                .clipShape(Circle())
+                .overlay(
+                    Circle()
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+                .shadow(color: Color.rdBlack.opacity(0.10), radius: 12, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .disabled(isWorking)
+        .opacity(isWorking ? 0.45 : 1)
+        .accessibilityLabel("Şimdilik ücretsiz devam et")
+        .accessibilityIdentifier("onboarding.timeline_paywall.dismiss")
+    }
+
+    @ViewBuilder
+    private var paywallNotice: some View {
+        HStack(spacing: 8) {
+            if isWorking || isReloadingPackages {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(Color.rdBlack)
+            } else {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: RDFontScale.size(12), weight: .semibold))
+                    .foregroundStyle(Color.rdHigh)
+            }
+
+            Text(noticeText)
+                .font(.system(size: RDFontScale.size(11.5), weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+                .lineLimit(2)
+                .minimumScaleFactor(0.86)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(Color.white.opacity(0.92))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .accessibilityIdentifier("onboarding.timeline_paywall.notice")
+    }
+
+    private func startProcessingOverlay() {
+        let token = UUID()
+        processingOverlayToken = token
+        processingOverlayTitle = "App Store ödeme ekranı açılıyor..."
+        processingOverlayMessage = "Onay penceresi açıldığında işlemi App Store üzerinden tamamlayabilirsin."
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            guard isWorking, processingOverlayToken == token, processingOverlayTitle != nil else { return }
+            processingOverlayTitle = "Satın alma doğrulanıyor"
+            processingOverlayMessage = "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+        }
+    }
+
+    private func stopProcessingOverlay() {
+        processingOverlayToken = UUID()
+        processingOverlayTitle = nil
+    }
+
+    private var primaryButtonTitle: String {
+        guard selectedPackage != nil else {
+            return priceLoadError == nil ? "Fiyat yükleniyor..." : "Tekrar dene"
+        }
+        return selectedPlan == .yearly ? "Ücretsiz denemeyi başlat" : "Aboneliği başlat"
+    }
+
+    private var primaryButtonDisabled: Bool {
+        isWorking || isReloadingPackages || (selectedPackage == nil && priceLoadError == nil)
+    }
+
+    private var isWaitingForPrice: Bool {
+        selectedPackage == nil && offeringsLoadState.isLoading
+    }
+
+    private var noticeText: String {
+        if isWorking { return "App Store satın alma ekranı hazırlanıyor..." }
+        if isReloadingPackages { return "App Store fiyatları yükleniyor..." }
+        return noticeMessage ?? ""
+    }
+
+    private var priceLoadError: String? {
+        guard selectedPackage == nil else { return nil }
+        switch offeringsLoadState {
+        case .loading, .retryingOnce:
+            return nil
+        case .loaded:
+            return "App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+        case let .failed(message):
+            let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty
+                ? "App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+                : trimmed
+        }
+    }
+
+    private var priceStatusLine: String {
+        priceLoadError == nil ? OBTrialPriceCopy.loadingPrice : OBTrialPriceCopy.unavailablePrice
+    }
+
+    private var selectedPackage: SubscriptionPlanPackage? {
+        plusPackage(for: selectedPlan).flatMap { $0.displayPrice == nil ? nil : $0 }
+    }
+
+    private func handlePrimaryAction() {
+        guard !isWorking, !isReloadingPackages else { return }
+        guard selectedPackage != nil else {
+            reloadPackages()
+            return
+        }
+        onStart(selectedPlan)
+    }
+
+    private func reloadPackages() {
+        Task {
+            await reloadPackagesIfNeeded()
+        }
+    }
+
+    private func reloadPackagesIfNeeded() async {
+        guard !isWorking, !isReloadingPackages else { return }
+        isReloadingPackages = true
+        await onReloadPackages()
+        isReloadingPackages = false
     }
 
     // MARK: - Plan toggle
 
     private var planToggle: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 7) {
             HStack(spacing: 0) {
                 planPill(.yearly, label: "Yıllık")
                 planPill(.monthly, label: "Aylık")
@@ -201,15 +383,17 @@ struct OBTimelinePaywallView: View {
             .background(Color.rdFog)
             .clipShape(Capsule())
             .overlay(Capsule().stroke(Color.rdLine, lineWidth: 1))
-            .frame(maxWidth: 240)
+            .frame(width: 210)
 
-            // Discount caption — only visible when yearly is selected
-            Text("%16 indirim")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.rdGreenDark)
-                .opacity(selectedPlan == .yearly ? 1 : 0)
-                .animation(.obSpring, value: selectedPlan)
+            if selectedPlan == .yearly {
+                Text("%17 İndirim")
+                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreen)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private func planPill(_ plan: OBPlan, label: String) -> some View {
@@ -221,14 +405,18 @@ struct OBTimelinePaywallView: View {
             }
         } label: {
             Text(label)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(selected ? .white : Color.rdOnyx)
-                .frame(maxWidth: .infinity)
-                .frame(height: 38)
-                .background(
-                    Capsule().fill(selected ? Color.rdGreen : Color.clear)
-                        .shadow(color: selected ? Color.rdGreen.opacity(0.3) : .clear, radius: 8, y: 3)
-                )
+                .font(.system(size: RDFontScale.size(11.5), weight: .bold, design: .rounded))
+                .foregroundStyle(selected ? Color.rdBlack : Color.rdSlate)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+            .frame(maxWidth: .infinity)
+            .frame(height: 25)
+            .background(selected ? Color.white : Color.clear)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(selected ? Color.rdBlack.opacity(0.12) : Color.clear, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("onboarding.timeline_paywall.plan.\(plan.rawValue)")
@@ -245,15 +433,25 @@ struct OBTimelinePaywallView: View {
         }
     }
 
+    private var plusFeatureItems: [TimelineFeatureItem] {
+        [
+            TimelineFeatureItem("Detaylı Analiz"),
+            TimelineFeatureItem("Risk Analizi (Fine-Kinney ve 5*5)"),
+            TimelineFeatureItem("PDF/Excel Rapor"),
+            TimelineFeatureItem("Firma Yönetimi"),
+            TimelineFeatureItem("Sektör Bazlı Analiz", badge: "Yeni")
+        ]
+    }
+
     private var yearlyTimeline: some View {
         VStack(alignment: .leading, spacing: 0) {
             timelineStep(
                 index: 0,
                 icon: "lock.shield.fill",
-                accent: Color(hex: "#F0A400"),
+                accent: Color.rdGreen,
                 day: "Bugün",
-                detail: "",
-                extraBadge: plusBadge,
+                detail: "Plus özellikleri açılır, ücret alınmaz.",
+                featureItems: plusFeatureItems,
                 isLast: false
             )
             timelineStep(
@@ -266,15 +464,21 @@ struct OBTimelinePaywallView: View {
             )
             timelineStep(
                 index: 2,
-                icon: "trophy.fill",
-                accent: Color.rdGreen,
+                icon: "crown.fill",
+                accent: Color(hex: "#F0A400"),
                 day: "7. Gün",
-                detail: "Yıllık plan başlar — 2 ay bedava avantajıyla. İstediğin zaman iptal edebilirsin.",
+                detail: "Devam edersen yıllık plan başlar. İstediğin zaman iptal edebilirsin.",
                 isLast: true
             )
         }
-        .frame(maxWidth: 280)
-        .frame(maxWidth: .infinity)
+        .padding(16)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .rdCardShadow()
     }
 
     private var monthlyTimeline: some View {
@@ -285,6 +489,7 @@ struct OBTimelinePaywallView: View {
                 accent: Color(hex: "#F0A400"),
                 day: "Bugün",
                 detail: "Tüm özellikler hemen aktif olur, ödeme başlar.",
+                featureItems: plusFeatureItems,
                 isLast: false
             )
             timelineStep(
@@ -292,15 +497,68 @@ struct OBTimelinePaywallView: View {
                 icon: "calendar.badge.checkmark",
                 accent: Color.rdGreen,
                 day: "Her ay",
-                detail: "₺499 otomatik yenilenir. İstediğin zaman iptal edebilirsin.",
+                detail: monthlyRenewalLine,
                 isLast: true
             )
         }
-        .frame(maxWidth: 280)
-        .frame(maxWidth: .infinity)
+        .padding(16)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .rdCardShadow()
     }
 
-    private func timelineStep(index: Int, icon: String, accent: Color, day: String, detail: String, extraBadge: AnyView? = nil, isLast: Bool) -> some View {
+    private var yearlyPrice: String {
+        displayPrice(for: .yearly) ?? priceStatusLine
+    }
+
+    private var monthlyPrice: String {
+        displayPrice(for: .monthly) ?? priceStatusLine
+    }
+
+    private var yearlyMonthlyEquivalent: String? {
+        guard let monthlyEquivalent = plusPackage(for: .yearly)?.displayMonthlyEquivalentPrice else { return nil }
+        return monthlyEquivalent.hasSuffix("/ay") ? monthlyEquivalent : "\(monthlyEquivalent)/ay"
+    }
+
+    private var yearlyPaywallLine: String {
+        guard let price = displayPrice(for: .yearly) else { return priceStatusLine }
+        guard let yearlyMonthlyEquivalent else { return "7 gün ücretsiz, sonra \(price)" }
+        return "7 gün ücretsiz, sonra \(price) (\(yearlyMonthlyEquivalent))"
+    }
+
+    private var monthlyPaywallLine: String {
+        guard let price = displayPrice(for: .monthly) else { return priceStatusLine }
+        return "\(price)/ay — istediğin zaman iptal"
+    }
+
+    private var monthlyRenewalLine: String {
+        guard let price = displayPrice(for: .monthly) else { return "Aylık fiyat App Store üzerinden yüklenecek." }
+        return "\(price) otomatik yenilenir. İstediğin zaman iptal edebilirsin."
+    }
+
+    private func displayPrice(for plan: OBPlan) -> String? {
+        plusPackage(for: plan)?.displayPrice
+    }
+
+    private func plusPackage(for plan: OBPlan) -> SubscriptionPlanPackage? {
+        packages
+            .filter { $0.tier == .plus }
+            .first { $0.matchesOnboardingBilling(plan) }
+    }
+
+    private func timelineStep(
+        index: Int,
+        icon: String,
+        accent: Color,
+        day: String,
+        detail: String,
+        featureItems: [TimelineFeatureItem] = [],
+        isLast: Bool
+    ) -> some View {
         HStack(alignment: .top, spacing: 14) {
             VStack(spacing: 0) {
                 ZStack {
@@ -311,60 +569,105 @@ struct OBTimelinePaywallView: View {
                         .fill(accent.opacity(0.12))
                         .frame(width: 36, height: 36)
                     Image(systemName: icon)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(15), weight: .semibold))
                         .foregroundStyle(accent)
                 }
 
                 if !isLast {
-                    Rectangle()
-                        .fill(accent.opacity(0.55))
-                        .frame(width: 1.5, height: 42)
+                    timelineConnector(
+                        accent: accent,
+                        height: timelineConnectorHeight(featureItemCount: featureItems.count)
+                    )
                 }
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(day)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
-                if let extraBadge {
-                    extraBadge
-                }
                 if !detail.isEmpty {
                     Text(detail)
-                        .font(.system(size: 13))
+                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
+                }
+                if !featureItems.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(featureItems, id: \.self) { item in
+                            HStack(spacing: 7) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: RDFontScale.size(12), weight: .bold))
+                                    .foregroundStyle(Color.rdGreen)
+                                Text(item.title)
+                                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
+                                    .foregroundStyle(Color.rdBlack)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                if let badge = item.badge {
+                                    Text(badge)
+                                        .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
+                                        .foregroundStyle(Color.rdGreen)
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.rdGreen.opacity(0.10))
+                                        .clipShape(Capsule())
+                                        .overlay(
+                                            Capsule()
+                                                .stroke(Color.rdGreen.opacity(0.20), lineWidth: 0.8)
+                                        )
+                                }
+                            }
+                        }
+                    }
+                    .padding(.top, 6)
                 }
             }
             .padding(.top, 4)
             .padding(.bottom, isLast ? 0 : 12)
         }
         .obStage(delay: 0.24 + Double(index) * 0.08)
+        .onAppear { startTimelineFlow() }
     }
 
-    private var plusBadge: AnyView {
-        AnyView(
-            HStack(spacing: 6) {
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color(hex: "#F0A400"))
-                Text("PLUS üyeliğini tüm özellikleriyle kullan")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.rdSlate)
-                    .fixedSize(horizontal: false, vertical: true)
+    private func timelineConnectorHeight(featureItemCount: Int) -> CGFloat {
+        guard featureItemCount > 0 else { return 50 }
+        return 108 + CGFloat(max(0, featureItemCount - 3)) * 23
+    }
+
+    private func timelineConnector(accent: Color, height: CGFloat) -> some View {
+        ZStack(alignment: .top) {
+            Capsule()
+                .fill(accent.opacity(0.18))
+                .frame(width: 4, height: height)
+
+            GeometryReader { geo in
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                accent.opacity(0),
+                                accent.opacity(0.85),
+                                accent.opacity(0)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 4, height: max(22, geo.size.height * 0.36))
+                    .offset(y: timelineFlow ? geo.size.height : -geo.size.height * 0.4)
             }
-        )
-    }
-
-    // MARK: - Animations
-
-    private func animateBanner() {
-        // Pendulum swing: ease-in-out symmetric loop
-        withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
-            swingAngle = 10
+            .frame(width: 4, height: height)
+            .clipShape(Capsule())
         }
     }
+
+    private func startTimelineFlow() {
+        timelineFlow = false
+        withAnimation(.linear(duration: 1.45).repeatForever(autoreverses: false)) {
+            timelineFlow = true
+        }
+    }
+
 }
 
 // Banner bottom: organic wavy edge with subtle bumps — softer than wedges,
@@ -481,7 +784,10 @@ private struct HelmetRidgeShape: Shape {
 
 #Preview {
     OBTimelinePaywallView(
+        isWorking: false,
+        noticeMessage: nil,
         onStart: { _ in },
+        onReloadPackages: {},
         onRestore: {},
         onTerms: {},
         onPrivacy: {},

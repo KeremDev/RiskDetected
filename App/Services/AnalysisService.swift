@@ -28,6 +28,40 @@ struct AnalysisProgressUpdate: Equatable {
     )
 }
 
+struct AccountDeletionRequestResult: Decodable, Equatable {
+    let ok: Bool?
+    let completed: Bool?
+    let alreadyCompleted: Bool?
+    let authUserDeleted: Bool?
+    let requestID: String?
+    let supportID: String?
+    let message: String?
+
+    enum CodingKeys: String, CodingKey {
+        case ok
+        case completed
+        case alreadyCompleted = "already_completed"
+        case authUserDeleted = "auth_user_deleted"
+        case requestID = "request_id"
+        case supportID = "support_id"
+        case message
+    }
+
+    var shouldClearLocalSession: Bool {
+        completed == true || alreadyCompleted == true || authUserDeleted == true
+    }
+}
+
+private extension DateFormatter {
+    static let rdExportFileStamp: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.timeZone = TimeZone(identifier: "Europe/Istanbul")
+        formatter.dateFormat = "yyyyMMdd_HHmm"
+        return formatter
+    }()
+}
+
 /// Analiz akışını orkestre eder:
 /// 1. `analyses` kaydı oluştur (status: pending)
 /// 2. Edge Function `analyze`'i çağır — Gemini bulguları üretir, DB'ye yazılır
@@ -36,7 +70,7 @@ struct AnalysisProgressUpdate: Equatable {
 final class AnalysisService {
     static let shared = AnalysisService()
     static let freeDailyLimit = 1
-    nonisolated static let maxTextInputCharacters = 100
+    nonisolated static let maxTextInputCharacters = 200
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AnalysisService")
     private let supabase = SupabaseService.shared
 
@@ -69,6 +103,7 @@ final class AnalysisService {
         userID: UUID,
         images: [UIImage],
         canvases: [AnalysisCanvas],
+        analysisSector: AnalysisSectorID? = nil,
         companyID: UUID? = nil,
         title: String? = nil,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
@@ -87,7 +122,8 @@ final class AnalysisService {
             canvases: canvases,
             title: title ?? defaultTitle(for: canvases),
             textInput: nil,
-            companyID: companyID
+            companyID: companyID,
+            analysisSector: analysisSector
         )
 
         // 2) Fotoğrafları Edge Function'a inline base64 gönder.
@@ -102,6 +138,7 @@ final class AnalysisService {
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
             textInput: nil, companyID: companyID,
+            analysisSector: analysisSector,
             photoPaths: [], photoBase64Parts: photoParts,
             onProgress: onProgress
         )
@@ -115,6 +152,7 @@ final class AnalysisService {
         userID: UUID,
         text: String,
         canvases: [AnalysisCanvas],
+        analysisSector: AnalysisSectorID? = nil,
         companyID: UUID? = nil,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
     ) async throws -> AnalysisResultBundle {
@@ -133,12 +171,14 @@ final class AnalysisService {
             canvases: canvases,
             title: defaultTitle(for: canvases),
             textInput: trimmedText,
-            companyID: companyID
+            companyID: companyID,
+            analysisSector: analysisSector
         )
 
         try await invokeAnalyze(
             analysisID: analysisID, canvases: canvases,
             textInput: trimmedText, companyID: companyID,
+            analysisSector: analysisSector,
             photoPaths: [], photoBase64Parts: [],
             onProgress: onProgress
         )
@@ -281,8 +321,7 @@ final class AnalysisService {
         guard supabase.currentUserID != nil else {
             throw AnalysisError.notAuthenticated
         }
-        let rows = try await listReports(limit: 1000)
-        let used = rows.contains { $0.usesRiskAnalysisTrial } ? 1 : 0
+        let used = try await countRiskAnalysisTrialReports() > 0 ? 1 : 0
         return DailyQuotaUsage(used: used, limit: 1)
     }
 
@@ -365,6 +404,29 @@ final class AnalysisService {
             throw AnalysisError.storageFailed("PDF dosyası okunamadı. Destek kodu: \(supportID)")
         }
 
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            return ReportRow(
+                id: UUID(uuidString: "00000000-0000-0000-0000-00000000d399")!,
+                userID: userID,
+                analysisID: bundle.analysis.id,
+                companyID: company?.id,
+                companySnapshot: company.map(CompanySnapshot.init(company:)),
+                format: "pdf",
+                kind: kind.rawValue,
+                method: Self.databaseReportMethodValue(method),
+                title: bundle.analysis.title,
+                storagePath: "ui-test/reports/generated-\(kind.rawValue).pdf",
+                fileName: "generated-\(kind.rawValue).pdf",
+                mimeType: "application/pdf",
+                fileSize: data.count,
+                requestID: requestID,
+                supportID: supportID,
+                createdAt: ISO8601DateFormatter().string(from: Date())
+            )
+        }
+        #endif
+
         let fileName = Self.safeReportFileName(
             for: bundle.analysis,
             kind: kind,
@@ -405,11 +467,8 @@ final class AnalysisService {
             throw AnalysisError.storageFailed("PDF dosyası rapor arşivine yüklenemedi. Destek kodu: \(supportID)")
         }
 
-        struct UpsertPayload: Encodable {
-            let user_id: String
+        struct RegisterReportPayload: Encodable {
             let analysis_id: String
-            let document_no: String
-            let format: String
             let kind: String
             let method: String
             let title: String
@@ -420,22 +479,13 @@ final class AnalysisService {
             let size_bytes: Int
             let page_count: Int
             let company_id: String?
-            let company_snapshot: CompanySnapshot?
             let request_id: String
             let support_id: String
         }
 
         let fileSize = data.count
-        let payload = UpsertPayload(
-            user_id: userID.uuidString,
+        let payload = RegisterReportPayload(
             analysis_id: bundle.analysis.id.uuidString,
-            document_no: Self.reportDocumentNo(
-                for: bundle.analysis,
-                kind: kind,
-                method: method,
-                requestID: requestID
-            ),
-            format: "pdf",
             kind: kind.rawValue,
             method: Self.databaseReportMethodValue(method),
             title: bundle.analysis.title,
@@ -446,7 +496,6 @@ final class AnalysisService {
             size_bytes: fileSize,
             page_count: Self.estimatedPageCount(for: kind, findingCount: bundle.findings.count),
             company_id: company?.id.uuidString,
-            company_snapshot: company.map(CompanySnapshot.init(company:)),
             request_id: requestID,
             support_id: supportID
         )
@@ -458,19 +507,31 @@ final class AnalysisService {
         }
 
         do {
-            let row: ReportRow = try await supabase.client
-                .from("reports")
-                .insert(payload)
-                .select()
-                .single()
-                .execute()
-                .value
-            await sendReportReadyNotificationIfPossible(
-                reportID: row.id,
-                requestID: requestID,
-                supportID: supportID
+            let row: ReportRow = try await supabase.functions.invoke(
+                RDConfig.registerReportFunctionName,
+                options: FunctionInvokeOptions(body: payload)
             )
             return row
+        } catch let FunctionsError.httpError(_, data) {
+            let payload = Self.functionErrorPayload(from: data)
+            let remoteSupportID = payload.supportID ?? supportID
+            let message = payload.message.isEmpty ? "Rapor arşiv kaydı tamamlanamadı." : payload.message
+            Self.logger.error("Report metadata function failed support=\(remoteSupportID, privacy: .public) request=\(requestID, privacy: .public) message=\(message, privacy: .public)")
+            do {
+                _ = try await supabase.storage
+                    .from(RDConfig.Bucket.reports)
+                    .remove(paths: [storagePath])
+            } catch {
+                Self.logger.error("Report orphan cleanup failed support=\(remoteSupportID, privacy: .public) request=\(requestID, privacy: .public) path=\(storagePath, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+            }
+            let joinedMessage = "\(payload.code ?? "") \(message)"
+            if AppErrorMessage.isFreeRiskAnalysisTrialExhausted(joinedMessage) {
+                throw AnalysisError.databaseFailed("free_risk_analysis_trial_exhausted:1/1\nDestek kodu: \(remoteSupportID)")
+            }
+            if AppErrorMessage.isReportQuotaExceeded(joinedMessage) {
+                throw AnalysisError.databaseFailed("report_quota_exceeded\nDestek kodu: \(remoteSupportID)")
+            }
+            throw AnalysisError.databaseFailed(Self.appendSupportID(remoteSupportID, to: message))
         } catch {
             Self.logger.error("Report metadata save failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
             do {
@@ -565,6 +626,12 @@ final class AnalysisService {
 
     /// Kullanıcının seçtiği tek PDF raporu ve ilişkili Storage dosyasını siler.
     func deleteReport(_ report: ReportRow, requestID: String, supportID: String) async throws {
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            return
+        }
+        #endif
+
         if ReportFailureSimulation.isEnabled(.deleteStorage) {
             let error = ReportFailureSimulation.simulatedError(.deleteStorage)
             Self.logger.error("Report file delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
@@ -675,31 +742,10 @@ final class AnalysisService {
                 throw AnalysisError.databaseFailed("Veri dışa aktarımı oluşturulamadı. Destek kodu: \(supportID)")
             }
 
-            async let analyses: [AnalysisRow] = supabase.client
-                .from("analyses")
-                .select()
-                .order("created_at", ascending: false)
-                .limit(1000)
-                .execute()
-                .value
-
-            async let findings: [FindingRow] = supabase.client
-                .from("findings")
-                .select()
-                .order("ordinal", ascending: true)
-                .limit(5000)
-                .execute()
-                .value
-
-            async let photos: [AnalysisPhotoRow] = supabase.client
-                .from("photos")
-                .select("analysis_id,storage_path,width,height,mime_type")
-                .order("created_at", ascending: false)
-                .limit(1000)
-                .execute()
-                .value
-
-            async let reports = listReports(limit: 1000)
+            async let analyses = listAllAnalyses()
+            async let findings = listAllFindings()
+            async let photos = listAllPhotos()
+            async let reports = listAllReports()
 
             let (analysisRows, findingRows, photoRows, reportRows) = try await (analyses, findings, photos, reports)
 
@@ -716,8 +762,18 @@ final class AnalysisService {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             let data = try encoder.encode(payload)
-            let url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("RiskDetected_Verilerim_\(String(userID.uuidString.prefix(8))).json")
+            let documentsURL = try FileManager.default.url(
+                for: .documentDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: true
+            )
+            let exportDirectory = documentsURL.appendingPathComponent("RiskDetected", isDirectory: true)
+            try FileManager.default.createDirectory(at: exportDirectory, withIntermediateDirectories: true)
+
+            let timestamp = DateFormatter.rdExportFileStamp.string(from: Date())
+            let url = exportDirectory
+                .appendingPathComponent("RiskDetected_Verilerim_\(String(userID.uuidString.prefix(8)))_\(timestamp).json")
             try data.write(to: url, options: .atomic)
             return url
         } catch let error as AnalysisError {
@@ -731,7 +787,7 @@ final class AnalysisService {
     /// Kullanıcının tüm PDF raporlarını ve Storage dosyalarını siler.
     func deleteAllReports(requestID: String, supportID: String) async throws {
         do {
-            let reports = try await listReports(limit: 1000)
+            let reports = try await listAllReports()
             guard !reports.isEmpty else { return }
 
             let paths = reports.map(\.storagePath)
@@ -763,13 +819,7 @@ final class AnalysisService {
     /// Kullanıcının tüm analizlerini, ilişkili Storage dosyalarını ve cascade DB kayıtlarını siler.
     func deleteAllAnalyses(requestID: String, supportID: String) async throws {
         do {
-            let analyses: [AnalysisRow] = try await supabase.client
-                .from("analyses")
-                .select()
-                .order("created_at", ascending: false)
-                .limit(1000)
-                .execute()
-                .value
+            let analyses = try await listAllAnalyses()
 
             let ids = analyses.map(\.id)
             guard !ids.isEmpty else { return }
@@ -822,20 +872,18 @@ final class AnalysisService {
         }
     }
 
-    /// Hesap silme talebini denetlenebilir şekilde kaydeder.
-    func requestAccountDeletion(userID: UUID, email: String?, requestID: String, supportID: String) async throws {
+    /// Hesap silme işlemini kullanıcı JWT'siyle doğrulanan Edge Function üzerinden başlatır.
+    func requestAccountDeletion(userID: UUID, email: String?, requestID: String, supportID: String) async throws -> AccountDeletionRequestResult {
         struct Payload: Encodable {
-            let user_id: String
             let email: String?
-            let requested_scope: String
-            let note: String
+            let request_id: String
+            let support_id: String
         }
 
         let payload = Payload(
-            user_id: userID.uuidString,
             email: email,
-            requested_scope: "account_and_data",
-            note: "User requested account and data deletion from iOS Profile > Verilerim."
+            request_id: requestID,
+            support_id: supportID
         )
 
         do {
@@ -845,12 +893,18 @@ final class AnalysisService {
                 throw AnalysisError.databaseFailed("Hesap silme talebi kaydedilemedi. Destek kodu: \(supportID)")
             }
 
-            try await supabase.client
-                .from("account_deletion_requests")
-                .insert(payload)
-                .execute()
+            return try await supabase.functions.invoke(
+                RDConfig.accountDeletionRequestFunctionName,
+                options: FunctionInvokeOptions(body: payload)
+            )
+        } catch let FunctionsError.httpError(_, data) {
+            let payload = Self.functionErrorPayload(from: data)
+            let remoteSupportID = payload.supportID ?? supportID
+            let message = payload.message.isEmpty ? "Hesap silme işlemi başlatılamadı." : payload.message
+            Self.logger.error("Account deletion request failed support=\(remoteSupportID, privacy: .public) request=\(requestID, privacy: .public) user=\(userID.uuidString, privacy: .private(mask: .hash)) message=\(message, privacy: .public)")
+            throw AnalysisError.databaseFailed("\(message) Destek kodu: \(remoteSupportID)")
         } catch {
-            Self.logger.error("Account deletion request failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            Self.logger.error("Account deletion request failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) user=\(userID.uuidString, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
             throw AnalysisError.databaseFailed("Hesap silme talebi kaydedilemedi. Destek kodu: \(supportID)")
         }
     }
@@ -878,6 +932,7 @@ final class AnalysisService {
     }
 
     /// Free kullanıcı için bugünkü ücretsiz standart analiz kullanımını verir.
+    /// Kullanım, silinebilir analiz kayıtlarından değil kalıcı quota ledger'ından okunur.
     func dailyQuotaUsage() async throws -> DailyQuotaUsage {
         if DataActionFailureSimulation.isEnabled(.quotaExceeded) {
             return DailyQuotaUsage(
@@ -891,11 +946,11 @@ final class AnalysisService {
         let dayStart = Self.istanbulStartOfTodayISO()
 
         let used = try await countRows(
-            table: "analyses",
+            table: "usage_events",
             filters: {
-                $0.eq("status", value: "completed")
-                    .eq("user_id", value: userID.uuidString)
-                    .eq("analysis_mode", value: "standard")
+                $0.eq("user_id", value: userID.uuidString)
+                    .in("feature", values: ["analysis_standard", "analysis_detailed"])
+                    .in("event_type", values: ["reserved", "completed"])
                     .gte("created_at", value: dayStart)
             }
         )
@@ -915,17 +970,16 @@ final class AnalysisService {
         let periodStart = tier == .free
             ? Self.istanbulStartOfTodayISO()
             : Self.istanbulStartOfCurrentMonthISO()
-        let rows: [ReportRow] = try await supabase.client
-            .from("reports")
-            .select()
-            .eq("user_id", value: userID.uuidString)
-            .gte("created_at", value: periodStart)
-            .execute()
-            .value
 
-        let used = tier == .free
-            ? rows.filter { !$0.usesRiskAnalysisTrial }.count
-            : rows.count
+        let used = try await countRows(
+            table: "usage_events",
+            filters: {
+                $0.eq("user_id", value: userID.uuidString)
+                    .eq("feature", value: "report_standard")
+                    .eq("event_type", value: "completed")
+                    .gte("created_at", value: periodStart)
+            }
+        )
 
         return DailyQuotaUsage(
             used: used,
@@ -936,11 +990,12 @@ final class AnalysisService {
     // MARK: - Private steps
 
     nonisolated private static let maxInlinePhotoBytes = 1_500_000
+    nonisolated private static let maxInlinePhotoBase64Bytes = 2_100_000
     nonisolated private static let maxInlinePhotoPayloadBytes = 4_500_000
 
     private static func istanbulStartOfTodayISO() -> String {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        calendar.timeZone = RDConfig.Quota.businessTimeZone
         let startOfDay = calendar.startOfDay(for: Date())
 
         return isoString(from: startOfDay)
@@ -948,7 +1003,7 @@ final class AnalysisService {
 
     private static func istanbulStartOfCurrentMonthISO() -> String {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        calendar.timeZone = RDConfig.Quota.businessTimeZone
         let components = calendar.dateComponents([.year, .month], from: Date())
         let startOfMonth = calendar.date(from: components) ?? calendar.startOfDay(for: Date())
         return isoString(from: startOfMonth)
@@ -989,13 +1044,107 @@ final class AnalysisService {
         }
     }
 
+    private func countRiskAnalysisTrialReports(since periodStart: String? = nil) async throws -> Int {
+        guard let userID = supabase.currentUserID else {
+            throw AnalysisError.notAuthenticated
+        }
+        return try await countRows(
+            table: "usage_events",
+            filters: { builder in
+                var filtered = builder
+                    .eq("user_id", value: userID.uuidString)
+                    .eq("feature", value: "report_risk_analysis_trial")
+                    .eq("event_type", value: "completed")
+                if let periodStart {
+                    filtered = filtered.gte("created_at", value: periodStart)
+                }
+                return filtered
+            }
+        )
+    }
+
+    private func listAllReports(pageSize: Int = 500) async throws -> [ReportRow] {
+        var offset = 0
+        var allRows: [ReportRow] = []
+
+        while true {
+            let rows = try await listReports(limit: pageSize, offset: offset)
+            allRows.append(contentsOf: rows)
+            guard rows.count == pageSize else { break }
+            offset += pageSize
+        }
+
+        return allRows
+    }
+
+    private func listAllAnalyses(pageSize: Int = 500) async throws -> [AnalysisRow] {
+        var offset = 0
+        var allRows: [AnalysisRow] = []
+
+        while true {
+            let rows: [AnalysisRow] = try await supabase.client
+                .from("analyses")
+                .select()
+                .order("created_at", ascending: false)
+                .range(from: offset, to: offset + pageSize - 1)
+                .execute()
+                .value
+            allRows.append(contentsOf: rows)
+            guard rows.count == pageSize else { break }
+            offset += pageSize
+        }
+
+        return allRows
+    }
+
+    private func listAllFindings(pageSize: Int = 500) async throws -> [FindingRow] {
+        var offset = 0
+        var allRows: [FindingRow] = []
+
+        while true {
+            let rows: [FindingRow] = try await supabase.client
+                .from("findings")
+                .select()
+                .order("ordinal", ascending: true)
+                .range(from: offset, to: offset + pageSize - 1)
+                .execute()
+                .value
+            allRows.append(contentsOf: rows)
+            guard rows.count == pageSize else { break }
+            offset += pageSize
+        }
+
+        return allRows
+    }
+
+    private func listAllPhotos(pageSize: Int = 500) async throws -> [AnalysisPhotoRow] {
+        var offset = 0
+        var allRows: [AnalysisPhotoRow] = []
+
+        while true {
+            let rows: [AnalysisPhotoRow] = try await supabase.client
+                .from("photos")
+                .select("analysis_id,storage_path,width,height,mime_type")
+                .order("created_at", ascending: false)
+                .range(from: offset, to: offset + pageSize - 1)
+                .execute()
+                .value
+            allRows.append(contentsOf: rows)
+            guard rows.count == pageSize else { break }
+            offset += pageSize
+        }
+
+        return allRows
+    }
+
     private func createAnalysis(
         userID: UUID,
         kind: String,
         canvases: [AnalysisCanvas],
         title: String,
         textInput: String?,
-        companyID: UUID?
+        companyID: UUID?,
+        analysisSector: AnalysisSectorID?
     ) async throws -> UUID {
         struct InsertPayload: Encodable {
             let user_id: String
@@ -1005,6 +1154,9 @@ final class AnalysisService {
             let text_input: String?
             let company_id: String?
             let status: String
+            let analysis_sector: String?
+            let analysis_sector_source: String?
+            let analysis_sector_prompt_version: String?
         }
         // `canvas` field = primary (first sorted) id — legacy single-id contract korunuyor.
         // Çoklu seçim backend hazır olunca `canvases` array üzerinden işlenecek.
@@ -1017,7 +1169,10 @@ final class AnalysisService {
             title: title,
             text_input: textInput,
             company_id: companyID?.uuidString,
-            status: "pending"
+            status: "pending",
+            analysis_sector: analysisSector?.rawValue,
+            analysis_sector_source: analysisSector == nil ? nil : "user_selected",
+            analysis_sector_prompt_version: analysisSector == nil ? nil : AnalysisSectorID.activeAnalysisPromptVersion
         )
         do {
             let row: AnalysisRow = try await supabase.client
@@ -1046,42 +1201,50 @@ final class AnalysisService {
 
     nonisolated private static func makeInlineJPEGParts(from images: [UIImage]) async throws -> [InlinePhotoPart] {
         try await Task.detached(priority: .userInitiated) {
-            try images.map { try inlineJPEGPart(from: $0) }
+            var parts: [InlinePhotoPart] = []
+            parts.reserveCapacity(images.count)
+            var totalPayloadBytes = 0
+
+            for image in images {
+                let part = try autoreleasepool {
+                    try inlineJPEGPart(from: image)
+                }
+                let projectedPayloadBytes = totalPayloadBytes + part.encodedByteCount
+                if projectedPayloadBytes > maxInlinePhotoPayloadBytes {
+                    throw AnalysisError.invalidInput("Fotoğraf paketi çok büyük. Lütfen daha az fotoğraf veya daha düşük çözünürlüklü görsel dene.")
+                }
+                totalPayloadBytes = projectedPayloadBytes
+                parts.append(part)
+            }
+
+            return parts
         }.value
     }
 
     nonisolated private static func inlineJPEGPart(from image: UIImage) throws -> InlinePhotoPart {
-        let renderSizes: [CGFloat] = [1400, 1200, 1000]
-        let qualities: [CGFloat] = [0.72, 0.60, 0.48]
+        let renderSizes: [CGFloat] = [1400, 1200, 1000, 850, 700]
+        let qualities: [CGFloat] = [0.72, 0.60, 0.48, 0.38]
 
-        var lastPhoto: SanitizedPhoto?
         for maxDimension in renderSizes {
             let normalized = image.sanitizedForAnalysis(maxDimension: maxDimension)
             for quality in qualities {
                 guard let data = normalized.image.jpegData(compressionQuality: quality) else { continue }
+                guard data.count <= maxInlinePhotoBytes else { continue }
+
+                let encodedData = data.base64EncodedString()
+                guard encodedData.utf8.count <= maxInlinePhotoBase64Bytes else { continue }
+
                 let photo = SanitizedPhoto(data: data, size: normalized.size)
-                lastPhoto = photo
-                if data.count <= maxInlinePhotoBytes {
-                    return InlinePhotoPart(
-                        mime_type: "image/jpeg",
-                        data: data.base64EncodedString(),
-                        width: photo.width,
-                        height: photo.height
-                    )
-                }
+                return InlinePhotoPart(
+                    mime_type: "image/jpeg",
+                    data: encodedData,
+                    width: photo.width,
+                    height: photo.height
+                )
             }
         }
 
-        if let lastPhoto, lastPhoto.data.count <= maxInlinePhotoBytes * 2 {
-            return InlinePhotoPart(
-                mime_type: "image/jpeg",
-                data: lastPhoto.data.base64EncodedString(),
-                width: lastPhoto.width,
-                height: lastPhoto.height
-            )
-        }
-
-        throw AnalysisError.invalidInput("Fotoğraf dosyası analiz için çok büyük. Lütfen daha küçük bir görsel seç.")
+        throw AnalysisError.invalidInput("Fotoğraf dosyası analiz için çok büyük. Lütfen daha küçük veya daha düşük çözünürlüklü bir görsel seç.")
     }
 
     private func invokeAnalyze(
@@ -1089,6 +1252,7 @@ final class AnalysisService {
         canvases: [AnalysisCanvas],
         textInput: String?,
         companyID: UUID?,
+        analysisSector: AnalysisSectorID?,
         photoPaths: [String],
         photoBase64Parts: [InlinePhotoPart],
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)?
@@ -1102,6 +1266,9 @@ final class AnalysisService {
             let request_id: String
             let support_id: String
             let company_id: String?
+            let analysis_sector: String?
+            let analysis_sector_source: String?
+            let analysis_sector_prompt_version: String?
             let photo_paths: [String]
             let photo_base64_parts: [InlinePhotoPart]
         }
@@ -1120,6 +1287,9 @@ final class AnalysisService {
             request_id: requestID,
             support_id: supportID,
             company_id: companyID?.uuidString,
+            analysis_sector: analysisSector?.rawValue,
+            analysis_sector_source: analysisSector == nil ? nil : "user_selected",
+            analysis_sector_prompt_version: analysisSector == nil ? nil : AnalysisSectorID.activeAnalysisPromptVersion,
             photo_paths: photoPaths,
             photo_base64_parts: photoBase64Parts
         )
@@ -1262,7 +1432,7 @@ final class AnalysisService {
         }
 
         if let body = try? JSONDecoder().decode(FunctionErrorBody.self, from: data) {
-            let message = (body.error ?? body.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let message = (body.message ?? body.error ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             if !message.isEmpty {
                 return (message, body.support_id, body.code, body.tier)
             }
@@ -1403,7 +1573,10 @@ final class AnalysisService {
             highestBandFK: RiskLevel.critical.rawValue,
             highestBandM5: RiskLevel.critical.rawValue,
             findingCount: Finding.mock.count,
-            createdAt: ISO8601DateFormatter().string(from: Date())
+            createdAt: ISO8601DateFormatter().string(from: Date()),
+            analysisSector: "construction",
+            analysisSectorSource: "user_selected",
+            analysisSectorPromptVersion: AnalysisSectorID.activeAnalysisPromptVersion
         )
         let rows = Finding.mock.map { finding in
             FindingRow(
@@ -1414,6 +1587,7 @@ final class AnalysisService {
                 category: finding.category,
                 description: finding.description,
                 recommendedAction: finding.action,
+                recommendedMeasures: finding.controlMeasures,
                 referencesText: finding.references,
                 rootCauseText: finding.rootCause,
                 confidence: finding.confidence,
@@ -1637,6 +1811,18 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
     let highestBandM5: String?
     let findingCount: Int
     let createdAt: String?
+    let analysisSector: String?
+    let analysisSectorSource: String?
+    let analysisSectorPromptVersion: String?
+
+    var analysisSectorID: AnalysisSectorID? {
+        guard let analysisSector else { return nil }
+        return AnalysisSectorID(rawValue: analysisSector)
+    }
+
+    var analysisSectorLabel: String? {
+        analysisSectorID?.label()
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -1654,6 +1840,9 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
         case highestBandM5  = "highest_band_m5"
         case findingCount   = "finding_count"
         case createdAt      = "created_at"
+        case analysisSector = "analysis_sector"
+        case analysisSectorSource = "analysis_sector_source"
+        case analysisSectorPromptVersion = "analysis_sector_prompt_version"
     }
 }
 
@@ -1665,6 +1854,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
     let category: String?
     let description: String?
     let recommendedAction: String?
+    let recommendedMeasures: [FindingMeasure]?
     let referencesText: String?
     let rootCauseText: String?
     let confidence: Double
@@ -1686,6 +1876,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
         case category
         case description
         case recommendedAction  = "recommended_action"
+        case recommendedMeasures = "recommended_measures"
         case referencesText     = "references_text"
         case rootCauseText      = "root_cause_text"
         case confidence
@@ -1709,6 +1900,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
             confidence: confidence,
             description: description ?? "",
             action: recommendedAction ?? "",
+            measures: recommendedMeasures ?? [],
             references: referencesText ?? "",
             rootCause: rootCauseText ?? "",
             fk: FineKinneyParams(
