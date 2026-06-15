@@ -185,7 +185,15 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             Purchases.configure(withAPIKey: RDConfig.Subscription.revenueCatAPIKey)
         }
         Purchases.shared.delegate = self
+        enableAppleAdsAttributionCollection()
         isConfigured = true
+    }
+
+    private func enableAppleAdsAttributionCollection() {
+        #if os(iOS)
+        Purchases.shared.attribution.enableAdServicesAttributionTokenCollection()
+        Self.logger.info("RevenueCat Apple Ads AdServices attribution token collection enabled.")
+        #endif
     }
 
     func identify(userID: UUID?) async {
@@ -210,6 +218,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             }
             let result = try await Purchases.shared.logIn(appUserID)
             currentAppUserID = appUserID
+            enableAppleAdsAttributionCollection()
             try applyVerified(result.customerInfo)
         } catch {
             apply(error: error)
