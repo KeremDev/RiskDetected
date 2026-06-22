@@ -48,6 +48,9 @@ verify_jwt = true
 [functions.generate-excel-report]
 verify_jwt = true
 
+[functions.mutate-analysis-finding]
+verify_jwt = true
+
 [functions.register-report]
 verify_jwt = true
 

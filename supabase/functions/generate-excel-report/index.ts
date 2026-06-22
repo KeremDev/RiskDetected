@@ -2389,6 +2389,23 @@ serve(async (req: Request) => {
     });
   }
 
+  const { data: photos, error: photosError } = await supabase
+    .from("photos")
+    .select("*")
+    .eq("analysis_id", analysisID)
+    .eq("user_id", user.id)
+    .order("sequence_index", { ascending: true, nullsFirst: false })
+    .order("storage_path", { ascending: true });
+
+  if (photosError) {
+    return json(500, {
+      error: "photos_fetch_failed",
+      message: "Analiz fotoğrafları Excel raporu için okunamadı.",
+      request_id: requestID,
+      support_id: supportID,
+    });
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
@@ -2561,6 +2578,17 @@ serve(async (req: Request) => {
       page_count: 1,
       company_id: company?.id ?? null,
       company_snapshot: companySnapshot(company),
+      findings_snapshot_json: findings ?? [],
+      photos_snapshot_json: photos ?? [],
+      analysis_edit_version: Math.max(
+        0,
+        Math.round(Number((analysis as Record<string, unknown>).analysis_edit_version ?? 0)),
+      ),
+      generated_from_user_edited_findings:
+        (analysis as Record<string, unknown>).has_user_edits === true,
+      source_photo_count: Array.isArray(photos) ? photos.length : null,
+      visible_findings_count: Array.isArray(findings) ? findings.length : null,
+      report_page_count: 1,
       request_id: requestID,
       support_id: supportID,
     })

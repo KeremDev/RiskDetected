@@ -24,6 +24,12 @@ type RegisterReportBody = {
   size_bytes?: number;
   page_count?: number;
   company_id?: string | null;
+  findings_snapshot_json?: unknown;
+  photos_snapshot_json?: unknown;
+  analysis_edit_version?: number;
+  generated_from_user_edited_findings?: boolean;
+  source_photo_count?: number;
+  visible_findings_count?: number;
   request_id?: string;
   support_id?: string;
 };
@@ -34,6 +40,8 @@ type AnalysisRow = {
   status: string;
   title: string | null;
   company_id: string | null;
+  analysis_edit_version?: number | null;
+  has_user_edits?: boolean | null;
 };
 
 type CompanyRow = {
@@ -49,6 +57,31 @@ type CompanyRow = {
   default_due_days: number | null;
   is_archived: boolean | null;
 };
+
+type ReportSnapshotResult =
+  | {
+    ok: true;
+    findings: unknown[];
+    photos: unknown[];
+    analysisEditVersion: number;
+    hasUserEdits: boolean;
+    sourcePhotoCount: number;
+    visibleFindingsCount: number;
+  }
+  | {
+    ok: false;
+    code: "report_snapshot_fetch_failed";
+    detail: string;
+  };
+
+const REPORT_ANALYSIS_SELECT =
+  "id,user_id,status,title,company_id,analysis_edit_version,has_user_edits";
+
+const REPORT_FINDINGS_SELECT =
+  "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,ai_confidence,last_user_edit_at,user_edit_count,finding_version,display_order";
+
+const REPORT_PHOTOS_SELECT =
+  "analysis_id,storage_path,width,height,mime_type,sequence_index,client_photo_id,is_primary,thumbnail_storage_path,annotation_storage_path,user_caption,ai_scene_summary";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -104,6 +137,65 @@ function companySnapshot(
     department: company.department,
     default_responsible: company.default_responsible,
     default_due_days: company.default_due_days,
+  };
+}
+
+function nonNegativeInt(value: unknown, fallback = 0): number {
+  const number = Math.round(Number(value ?? fallback));
+  return Number.isFinite(number) ? Math.max(0, number) : fallback;
+}
+
+// deno-lint-ignore no-explicit-any
+async function loadServerReportSnapshot(params: {
+  supabase: any;
+  analysis: AnalysisRow;
+  analysisID: string;
+  userID: string;
+}): Promise<ReportSnapshotResult> {
+  const { data: findings, error: findingsError } = await params.supabase
+    .from("findings")
+    .select(REPORT_FINDINGS_SELECT)
+    .eq("analysis_id", params.analysisID)
+    .eq("user_id", params.userID)
+    .eq("is_user_deleted", false)
+    .eq("report_visibility", "visible")
+    .order("display_order", { ascending: true, nullsFirst: false })
+    .order("ordinal", { ascending: true });
+
+  if (findingsError) {
+    return {
+      ok: false,
+      code: "report_snapshot_fetch_failed",
+      detail: `findings:${String(findingsError.message ?? findingsError)}`,
+    };
+  }
+
+  const { data: photos, error: photosError } = await params.supabase
+    .from("photos")
+    .select(REPORT_PHOTOS_SELECT)
+    .eq("analysis_id", params.analysisID)
+    .eq("user_id", params.userID)
+    .order("sequence_index", { ascending: true, nullsFirst: false })
+    .order("storage_path", { ascending: true });
+
+  if (photosError) {
+    return {
+      ok: false,
+      code: "report_snapshot_fetch_failed",
+      detail: `photos:${String(photosError.message ?? photosError)}`,
+    };
+  }
+
+  const findingRows = Array.isArray(findings) ? findings : [];
+  const photoRows = Array.isArray(photos) ? photos : [];
+  return {
+    ok: true,
+    findings: findingRows,
+    photos: photoRows,
+    analysisEditVersion: nonNegativeInt(params.analysis.analysis_edit_version),
+    hasUserEdits: params.analysis.has_user_edits === true,
+    sourcePhotoCount: photoRows.length,
+    visibleFindingsCount: findingRows.length,
   };
 }
 
@@ -264,7 +356,7 @@ serve(async (req) => {
 
   const { data: analysis, error: analysisError } = await supabase
     .from("analyses")
-    .select("id,user_id,status,title,company_id")
+    .select(REPORT_ANALYSIS_SELECT)
     .eq("id", analysisID)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -334,6 +426,31 @@ serve(async (req) => {
     });
   }
 
+  const snapshot = await loadServerReportSnapshot({
+    supabase,
+    analysis: analysisRow,
+    analysisID,
+    userID: user.id,
+  });
+  if (!snapshot.ok) {
+    await supabase.storage.from("reports").remove([storagePath]);
+    console.error(
+      "PDF report snapshot fetch failed",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        analysis_id: analysisID,
+        error: safeLogText(snapshot.detail),
+      }),
+    );
+    return json(500, {
+      error: snapshot.code,
+      message: "Rapor arşiv verisi hazırlanamadı.",
+      request_id: requestID,
+      support_id: supportID,
+    });
+  }
+
   const { data: documentNo, error: documentNoError } = await supabase.rpc(
     "next_document_no",
     { p_user_id: user.id },
@@ -371,6 +488,13 @@ serve(async (req) => {
       page_count: pageCount,
       company_id: company?.id ?? null,
       company_snapshot: companySnapshot(company),
+      findings_snapshot_json: snapshot.findings,
+      photos_snapshot_json: snapshot.photos,
+      analysis_edit_version: snapshot.analysisEditVersion,
+      generated_from_user_edited_findings: snapshot.hasUserEdits,
+      source_photo_count: snapshot.sourcePhotoCount,
+      visible_findings_count: snapshot.visibleFindingsCount,
+      report_page_count: pageCount,
       request_id: requestID,
       support_id: supportID,
     })

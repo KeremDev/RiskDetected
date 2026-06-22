@@ -16,6 +16,16 @@ private struct PaywallPresentation: Identifiable {
     let id = UUID()
 }
 
+private struct AnalysisPhotoDraft: Identifiable {
+    let id: UUID
+    var image: UIImage
+
+    init(id: UUID = UUID(), image: UIImage) {
+        self.id = id
+        self.image = image
+    }
+}
+
 private let maxTextInputCharacters = AnalysisService.maxTextInputCharacters
 private let freeQuotaCachePrefix = "rd.home.freeQuota"
 private let analysisSectorSheetHeight: CGFloat = 600
@@ -38,7 +48,10 @@ struct HomeView: View {
     @State private var showSourceDialog = false
     @State private var showCameraPicker = false
     @State private var showGalleryPicker = false
-    @State private var selectedImage: UIImage? = nil
+    @State private var selectedPhotos: [AnalysisPhotoDraft] = []
+    @State private var annotatingPhotoID: UUID?
+    @State private var queuedAnnotatePhotoIDs: [UUID] = []
+    @State private var returnToPhotoTrayAfterAnnotation = false
 
     // Analiz state
     @State private var analysisResult: AnalysisResultBundle? = nil
@@ -137,6 +150,7 @@ struct HomeView: View {
         }
         .onAppear {
             closeFreeQuotaEntryPointsIfNeeded()
+            preparePhotoTrayFixtureIfNeeded()
             handlePendingQuickScanOnAppear()
             Task {
                 await loadRecentItems()
@@ -164,27 +178,34 @@ struct HomeView: View {
             handleQuickScanRequest()
         }
         .sheet(isPresented: $showSourceDialog) {
-            PhotoSourceSheet(
-                onCamera: {
+            PhotoMediaTraySheet(
+                photos: selectedPhotos,
+                maxPhotoCount: maxSelectablePhotos,
+                visibleSlotCount: visiblePhotoSlotCount,
+                canAddMore: selectedPhotos.count < maxSelectablePhotos,
+                onCamera: openCameraFromPhotoTray,
+                onGallery: openGalleryFromPhotoTray,
+                onAnnotate: { id in
+                    startAnnotatingPhoto(id, returnToPhotoTray: true)
+                },
+                onRemove: removePhoto,
+                onMove: movePhoto,
+                onLockedSlot: {
                     showSourceDialog = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                            showCameraPicker = true
-                        } else {
-                            showGalleryPicker = true
-                        }
+                        showPlainPaywall()
                     }
                 },
-                onGallery: {
+                onStartAnalysis: {
                     showSourceDialog = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        showGalleryPicker = true
+                        continueFromPhotoTrayToAnalysis()
                     }
                 },
                 onClose: { showSourceDialog = false }
             )
-            .presentationDetents([.height(285)])
-            .presentationDragIndicator(.hidden)
+            .presentationDetents([.height(500)])
+            .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showCanvasSheet) {
@@ -227,19 +248,25 @@ struct HomeView: View {
             CameraPicker { image in
                 showCameraPicker = false
                 if let image {
-                    selectedImage = image
-                    scheduleAnnotatePresentation()
+                    appendPickedPhotos(
+                        [image],
+                        shouldAnnotate: true,
+                        returnToPhotoTrayAfterAnnotate: true
+                    )
                 }
             }
             .ignoresSafeArea()
             .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(isPresented: $showGalleryPicker) {
-            GalleryPicker { image in
+            MultiGalleryPicker(selectionLimit: remainingPhotoSlots) { images in
                 showGalleryPicker = false
-                if let image {
-                    selectedImage = image
-                    scheduleAnnotatePresentation()
+                if !images.isEmpty {
+                    appendPickedPhotos(
+                        images,
+                        shouldAnnotate: true,
+                        returnToPhotoTrayAfterAnnotate: true
+                    )
                 }
             }
             .ignoresSafeArea()
@@ -247,17 +274,24 @@ struct HomeView: View {
         }
         .fullScreenCover(isPresented: annotatePresentationBinding) {
             AnnotateView(
-                initialImage: selectedImage,
+                initialImage: annotatingPhoto?.image,
+                primaryActionTitle: annotatePrimaryActionTitle,
+                primaryActionIcon: annotatePrimaryActionIcon,
                 onCancel: {
                     pendingAnnotateRequestID = nil
+                    annotatingPhotoID = nil
                     showAnnotate = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        continueAfterAnnotationStep()
+                    }
                 },
                 onAnalyze: { annotated in
-                    selectedImage = annotated
+                    updateAnnotatedPhoto(with: annotated)
                     pendingAnnotateRequestID = nil
+                    annotatingPhotoID = nil
                     showAnnotate = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        continueFromAnnotatedPhoto()
+                        continueAfterAnnotationStep()
                     }
                 }
             )
@@ -306,7 +340,8 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showResult) {
             ResultView(
                 bundle: analysisResult,
-                localPreviewImage: selectedImage,
+                localPreviewImage: primarySelectedImage,
+                localPreviewImages: selectedImages,
                 onClose: {
                     showResult = false
                     resetAnalysisDraft()
@@ -362,18 +397,52 @@ struct HomeView: View {
         return Color.rdOnyx.opacity(0.18)
     }
 
+    private var selectedImages: [UIImage] {
+        selectedPhotos.map(\.image)
+    }
+
+    private var primarySelectedImage: UIImage? {
+        selectedPhotos.first?.image
+    }
+
+    private var annotatingPhoto: AnalysisPhotoDraft? {
+        guard let annotatingPhotoID else { return nil }
+        return selectedPhotos.first { $0.id == annotatingPhotoID }
+    }
+
+    private var maxSelectablePhotos: Int {
+        app.planCapabilities.safeMaxPhotosPerAnalysis
+    }
+
+    private var visiblePhotoSlotCount: Int {
+        app.planCapabilities.safeVisiblePhotoSlotsInUI
+    }
+
+    private var remainingPhotoSlots: Int {
+        max(maxSelectablePhotos - selectedPhotos.count, 1)
+    }
+
     private var annotatePresentationBinding: Binding<Bool> {
         Binding(
             get: {
-                showAnnotate && mode == .photo && selectedImage != nil
+                showAnnotate && mode == .photo && annotatingPhoto != nil
             },
             set: { newValue in
                 if !newValue {
                     pendingAnnotateRequestID = nil
+                    annotatingPhotoID = nil
                     showAnnotate = false
                 }
             }
         )
+    }
+
+    private var annotatePrimaryActionTitle: String {
+        returnToPhotoTrayAfterAnnotation ? "İşaretlemeyi kaydet" : "İşaretli alanları analiz et"
+    }
+
+    private var annotatePrimaryActionIcon: String {
+        returnToPhotoTrayAfterAnnotation ? "checkmark" : "sparkles"
     }
 
     private var modeSegment: some View {
@@ -421,117 +490,204 @@ struct HomeView: View {
     }
 
     private var photoUploadCard: some View {
-        Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            if isFreeQuotaExhausted {
-                showQuotaPaywall()
-                return
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Label("Saha fotoğrafları", systemImage: "photo.on.rectangle.angled")
+                    .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Spacer(minLength: 0)
+                Text("\(selectedPhotos.count)/\(maxSelectablePhotos)")
+                    .rdMono(size: 12, weight: .semibold)
+                    .foregroundStyle(Color.rdSlate)
             }
-            if selectedImage != nil {
-                // Mevcut foto varsa direkt çizim ekranına dön
-                if mode == .photo {
-                    pendingAnnotateRequestID = nil
-                    showAnnotate = true
-                }
-            } else {
-                showSourceDialog = true
-            }
-        } label: {
-            ZStack {
-                if let img = selectedImage {
-                    // Seçilmiş foto preview
-                    Image(uiImage: img)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .overlay(alignment: .topTrailing) {
-                            Button {
-                                selectedImage = nil
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                                    .foregroundStyle(.white)
-                                    .frame(width: 28, height: 28)
-                                    .background(Color.black.opacity(0.55))
-                                    .clipShape(Circle())
-                            }
-                            .padding(10)
-                        }
-                        .overlay(alignment: .bottomLeading) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "pencil.tip.crop.circle")
-                                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
-                                Text("İşaretlemeyi düzenle")
-                                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(Color.white.opacity(0.92))
-                            .clipShape(Capsule())
-                            .padding(10)
-                        }
-                } else if isFreeQuotaExhausted {
+
+            if isFreeQuotaExhausted && selectedPhotos.isEmpty {
+                Button {
+                    showQuotaPaywall()
+                } label: {
                     lockedPhotoUploadContent
-                } else {
-                    ZStack {
-                        // İçerik
-                        VStack(spacing: 10) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 18)
-                                    .fill(Color.rdWhite)
-                                    .frame(width: 56, height: 56)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 18)
-                                            .stroke(Color.rdLine, lineWidth: 1)
-                                    )
-
-                                Image(systemName: "camera.fill")
-                                    .font(.system(size: RDFontScale.size(26), weight: .semibold, design: .rounded))
-                                    .foregroundStyle(Color.rdGreenDark)
-                            }
-                            .frame(width: 68, height: 68)
-
-                            Text("Saha fotoğrafı yükle")
-                                .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
-                                .foregroundStyle(Color.rdBlack)
-                            Text("Kamerayla çek veya galeriden seç")
-                                .font(.system(size: RDFontScale.size(13), design: .rounded))
-                                .foregroundStyle(Color.rdSlate)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        VStack {
-                            Spacer()
-                            Text("JPG · PNG · HEIC")
-                                .rdMono(size: 11, weight: .medium)
-                                .foregroundStyle(Color.rdSlate.opacity(0.7))
-                                .padding(.bottom, 14)
-                        }
+                }
+                .buttonStyle(RDPressableButtonStyle())
+            } else {
+                Button {
+                    openPhotoUploadCard()
+                } label: {
+                    if selectedPhotos.isEmpty {
+                        emptyPhotoUploadDropZone
+                    } else {
+                        selectedPhotoUploadSummaryRow
                     }
-                    .frame(height: 220)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.rdWhite)
+                }
+                .buttonStyle(RDPressableButtonStyle())
+                .accessibilityIdentifier("home.photo_tray.open")
 
-                            // Dashed border — marka siyahıyla daha net bir çerçeve.
-                            RoundedRectangle(cornerRadius: 20)
-                                .strokeBorder(
-                                    style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
-                                )
-                                .foregroundStyle(Color.rdBlack)
-                        }
-                    )
+                if !selectedPhotos.isEmpty {
+                    photoUploadPreviewStrip
                 }
             }
         }
-        .buttonStyle(RDPressableButtonStyle())
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.rdWhite)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+        )
         .homeCardDepth(colorScheme: colorScheme, radius: 18, y: 8)
+    }
+
+    private var emptyPhotoUploadDropZone: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color.rdWhite)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [7, 5]))
+                            .foregroundStyle(Color.rdSlate.opacity(0.45))
+                    )
+
+                Image(systemName: "plus")
+                    .font(.system(size: RDFontScale.size(32), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdGreenDark)
+            }
+            .frame(width: 82, height: 82)
+
+            VStack(spacing: 5) {
+                Text("Saha fotoğrafı yükle")
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text("JPG · PNG · HEIC")
+                    .rdMono(size: 11, weight: .medium)
+                    .foregroundStyle(Color.rdSlate.opacity(0.78))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 178)
+        .background(Color.clear)
+        .contentShape(RoundedRectangle(cornerRadius: 18))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var selectedPhotoUploadSummaryRow: some View {
+        HStack(spacing: 12) {
+            photoUploadSummaryIcon
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(selectedPhotos.count) fotoğraf eklendi")
+                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text("Fotoğrafları düzenle")
+                    .rdMono(size: 11, weight: .medium)
+                    .foregroundStyle(Color.rdSlate.opacity(0.78))
+            }
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "chevron.up")
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+                .frame(width: 34, height: 34)
+                .background(Color.rdFog)
+                .clipShape(Circle())
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
+        .background(Color.rdFog)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var photoUploadSummaryIcon: some View {
+        ZStack {
+            if let image = selectedPhotos.first?.image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 54, height: 54)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.white.opacity(0.72), lineWidth: 1)
+                    )
+            } else {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.rdWhite)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(style: StrokeStyle(lineWidth: 1.4, dash: [6, 4]))
+                            .foregroundStyle(Color.rdSlate.opacity(0.45))
+                    )
+                Image(systemName: "plus")
+                    .font(.system(size: RDFontScale.size(22), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdGreenDark)
+            }
+        }
+        .frame(width: 54, height: 54)
+    }
+
+    private var photoUploadPreviewStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(selectedPhotos.enumerated()), id: \.element.id) { index, draft in
+                    Button {
+                        startAnnotatingPhoto(draft.id, returnToPhotoTray: true)
+                    } label: {
+                        ZStack(alignment: .topLeading) {
+                            Image(uiImage: draft.image)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 62, height: 62)
+                                .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                            Text("\(index + 1)")
+                                .rdMono(size: 10, weight: .bold)
+                                .foregroundStyle(Color.rdBlack)
+                                .frame(width: 22, height: 22)
+                                .background(Color.white.opacity(0.92))
+                                .clipShape(Circle())
+                                .padding(5)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("home.photo_preview.\(index + 1)")
+                }
+
+                if selectedPhotos.count < maxSelectablePhotos {
+                    Button {
+                        openPhotoTray()
+                    } label: {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color.rdFog)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .strokeBorder(style: StrokeStyle(lineWidth: 1.3, dash: [6, 4]))
+                                    .foregroundStyle(Color.rdSlate.opacity(0.38))
+                            )
+                            .overlay(
+                                Image(systemName: "plus")
+                                    .font(.system(size: RDFontScale.size(20), weight: .semibold, design: .rounded))
+                                    .foregroundStyle(Color.rdSlate)
+                            )
+                            .frame(width: 62, height: 62)
+                    }
+                    .buttonStyle(RDPressableButtonStyle())
+                    .accessibilityIdentifier("home.photo_preview.add")
+                }
+            }
+            .padding(.vertical, 1)
+        }
     }
 
     private var lockedPhotoUploadContent: some View {
@@ -1001,14 +1157,14 @@ struct HomeView: View {
         !app.currentTier.isPaid && quotaUsage?.isExhausted == true
     }
 
-    /// "Taramayı Başlat" → foto yoksa picker; varsa sektör veya canvas seçimine geçer.
+    /// "Taramayı Başlat" → foto yoksa medya tray; varsa sektör veya canvas seçimine geçer.
     private func startAnalysisFlow() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             return
         }
-        if mode == .photo && selectedImage == nil {
+        if mode == .photo && selectedPhotos.isEmpty {
             showSourceDialog = true
             return
         }
@@ -1023,9 +1179,41 @@ struct HomeView: View {
         beginPreAnalysisSelection()
     }
 
+    private func openPhotoUploadCard() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if selectedPhotos.isEmpty {
+            openInitialPhotoPickerFromHome()
+        } else {
+            openPhotoTray()
+        }
+    }
+
+    private func openPhotoTray() {
+        showSourceDialog = true
+    }
+
+    private func openInitialPhotoPickerFromHome() {
+        #if DEBUG
+        if Self.isUITestDirectHomePhotoPick {
+            appendPickedPhotos(
+                [Self.uiTestPhotoFixture(seed: 2)],
+                shouldAnnotate: true,
+                returnToPhotoTrayAfterAnnotate: true
+            )
+            return
+        }
+        #endif
+
+        showGalleryPicker = true
+    }
+
     private func resetAnalysisDraft() {
         text = ""
-        selectedImage = nil
+        selectedPhotos = []
+        annotatingPhotoID = nil
+        pendingAnnotateRequestID = nil
+        queuedAnnotatePhotoIDs = []
+        returnToPhotoTrayAfterAnnotation = false
     }
 
     private func handleQuickScanRequest() {
@@ -1051,7 +1239,7 @@ struct HomeView: View {
         case .chooser:
             break
         }
-        if selectedImage == nil {
+        if selectedPhotos.isEmpty {
             showSourceDialog = true
         } else {
             beginPreAnalysisSelection()
@@ -1065,15 +1253,63 @@ struct HomeView: View {
         }
     }
 
-    /// AnnotateView'daki "İşaretli alanları analiz et" sonrası ana sayfada
-    /// bekletmeden doğrudan sektör veya canvas seçimine geçer.
+    /// Tray dışından başlatılan anotasyon sonrası sektör veya canvas seçimine geçer.
     private func continueFromAnnotatedPhoto() {
-        guard mode == .photo, selectedImage != nil else { return }
+        guard mode == .photo, !selectedPhotos.isEmpty else { return }
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             return
         }
         beginPreAnalysisSelection()
+    }
+
+    private func continueAfterAnnotationStep() {
+        if presentNextQueuedAnnotationIfNeeded() {
+            return
+        }
+        if returnToPhotoTrayAfterAnnotation {
+            returnToPhotoTrayAfterAnnotation = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                guard mode == .photo else { return }
+                showSourceDialog = true
+            }
+            return
+        }
+        continueFromAnnotatedPhoto()
+    }
+
+    @discardableResult
+    private func presentNextQueuedAnnotationIfNeeded() -> Bool {
+        queuedAnnotatePhotoIDs.removeAll { id in
+            !selectedPhotos.contains(where: { $0.id == id })
+        }
+        guard let nextID = queuedAnnotatePhotoIDs.first else {
+            return false
+        }
+        queuedAnnotatePhotoIDs.removeFirst()
+        scheduleAnnotatePresentation(for: nextID)
+        return true
+    }
+
+    private func queuePhotoAnnotations(
+        for photoIDs: [UUID],
+        returnToPhotoTray: Bool
+    ) {
+        let validIDs = photoIDs.filter { id in
+            selectedPhotos.contains(where: { $0.id == id })
+        }
+        guard !validIDs.isEmpty else { return }
+        queuedAnnotatePhotoIDs.append(contentsOf: validIDs)
+        returnToPhotoTrayAfterAnnotation = returnToPhotoTray
+        _ = presentNextQueuedAnnotationIfNeeded()
+    }
+
+    private func continueFromPhotoTrayToAnalysis() {
+        guard mode == .photo, !selectedPhotos.isEmpty else {
+            showSourceDialog = true
+            return
+        }
+        continueFromAnnotatedPhoto()
     }
 
     /// Foto/metin hazır olduktan sonra ilk seçim adımı.
@@ -1118,7 +1354,7 @@ struct HomeView: View {
             return
         }
         let canvases = selectedCanvasesForCurrentTier()
-        let capturedImage = selectedImage
+        let capturedImages = selectedImages
         let capturedText = text
         let analysisSector: AnalysisSectorID?
         if RDConfig.Features.activeAnalysisSectorEnabled {
@@ -1131,17 +1367,17 @@ struct HomeView: View {
 
         switch mode {
         case .photo:
-            guard let img = capturedImage else {
+            guard let previewImage = capturedImages.first else {
                 return
             }
-            pendingJob = AnalysisJob(previewImage: img, presentationMode: .photo) {
+            pendingJob = AnalysisJob(previewImage: previewImage, presentationMode: .photo) {
                 progress in
                 if app.currentTier.isPaid {
                     await app.refreshPlanState()
                 }
                 return try await AnalysisService.shared.runPhotoAnalysis(
                     userID: userID,
-                    images: [img],
+                    images: capturedImages,
                     canvases: canvases,
                     analysisSector: analysisSector,
                     companyID: nil,
@@ -1231,13 +1467,102 @@ struct HomeView: View {
         }
     }
 
-    private func scheduleAnnotatePresentation() {
+    private func openCameraFromPhotoTray() {
+        showSourceDialog = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                showCameraPicker = true
+            } else {
+                showGalleryPicker = true
+            }
+        }
+    }
+
+    private func openGalleryFromPhotoTray() {
+        showSourceDialog = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+            showGalleryPicker = true
+        }
+    }
+
+    private func appendPickedPhotos(
+        _ images: [UIImage],
+        shouldAnnotate: Bool,
+        returnToPhotoTrayAfterAnnotate: Bool
+    ) {
+        let allowedCount = maxSelectablePhotos - selectedPhotos.count
+        guard allowedCount > 0 else {
+            if app.currentTier.isPaid {
+                analysisError = "Bu planda en fazla \(maxSelectablePhotos) fotoğraf analiz edilebilir."
+            } else {
+                showPlainPaywall()
+            }
+            return
+        }
+        let drafts = images.prefix(allowedCount).map { AnalysisPhotoDraft(image: $0) }
+        guard !drafts.isEmpty else { return }
+        selectedPhotos.append(contentsOf: drafts)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if images.count > allowedCount {
+            analysisError = "En fazla \(maxSelectablePhotos) fotoğraf eklenebilir. Fazla seçimler alınmadı."
+        }
+        if shouldAnnotate {
+            queuePhotoAnnotations(
+                for: drafts.map(\.id),
+                returnToPhotoTray: returnToPhotoTrayAfterAnnotate
+            )
+        } else if returnToPhotoTrayAfterAnnotate {
+            showSourceDialog = true
+        }
+    }
+
+    private func startAnnotatingPhoto(_ id: UUID, returnToPhotoTray: Bool = false) {
+        guard selectedPhotos.contains(where: { $0.id == id }) else { return }
+        queuedAnnotatePhotoIDs = []
+        returnToPhotoTrayAfterAnnotation = returnToPhotoTray
+        showSourceDialog = false
+        annotatingPhotoID = id
+        pendingAnnotateRequestID = nil
+        showAnnotate = true
+    }
+
+    private func updateAnnotatedPhoto(with image: UIImage) {
+        guard let annotatingPhotoID,
+              let index = selectedPhotos.firstIndex(where: { $0.id == annotatingPhotoID })
+        else { return }
+        selectedPhotos[index].image = image
+    }
+
+    private func removePhoto(_ id: UUID) {
+        selectedPhotos.removeAll { $0.id == id }
+        queuedAnnotatePhotoIDs.removeAll { $0 == id }
+        if annotatingPhotoID == id {
+            annotatingPhotoID = nil
+            pendingAnnotateRequestID = nil
+            showAnnotate = false
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    private func movePhoto(_ id: UUID, offset: Int) {
+        guard let currentIndex = selectedPhotos.firstIndex(where: { $0.id == id }) else { return }
+        let newIndex = currentIndex + offset
+        guard selectedPhotos.indices.contains(newIndex) else { return }
+        withAnimation(.easeInOut(duration: 0.16)) {
+            selectedPhotos.swapAt(currentIndex, newIndex)
+        }
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+
+    private func scheduleAnnotatePresentation(for photoID: UUID) {
         let requestID = UUID()
+        annotatingPhotoID = photoID
         pendingAnnotateRequestID = requestID
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             guard pendingAnnotateRequestID == requestID,
                   mode == .photo,
-                  selectedImage != nil
+                  annotatingPhotoID == photoID,
+                  selectedPhotos.contains(where: { $0.id == photoID })
             else { return }
             showAnnotate = true
         }
@@ -1328,10 +1653,63 @@ struct HomeView: View {
         professionalProgressSummary = await ProfessionalProgressService.shared.fetchSummary()
     }
 
+    private func preparePhotoTrayFixtureIfNeeded() {
+        #if DEBUG
+        if Self.isUITestPhotoTrayFixture, selectedPhotos.isEmpty {
+            selectedPhotos = [
+                AnalysisPhotoDraft(image: Self.uiTestPhotoFixture(seed: 0)),
+                AnalysisPhotoDraft(image: Self.uiTestPhotoFixture(seed: 1))
+            ]
+            showSourceDialog = true
+        } else if Self.isUITestOpenPhotoTray {
+            showSourceDialog = true
+        }
+        #endif
+    }
+
     #if DEBUG
     private static var isUITestMainLaunch: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_MAIN")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
+    }
+
+    private static var isUITestPhotoTrayFixture: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"] == "1"
+    }
+
+    private static var isUITestOpenPhotoTray: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_OPEN_PHOTO_TRAY")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_OPEN_PHOTO_TRAY"] == "1"
+    }
+
+    private static var isUITestDirectHomePhotoPick: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_DIRECT_HOME_PHOTO_PICK")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_DIRECT_HOME_PHOTO_PICK"] == "1"
+    }
+
+    private static func uiTestPhotoFixture(seed: Int) -> UIImage {
+        let size = CGSize(width: 720, height: 960)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            let rect = CGRect(origin: .zero, size: size)
+            let base = seed == 0 ? UIColor(red: 0.06, green: 0.40, blue: 0.26, alpha: 1) : UIColor(red: 0.10, green: 0.28, blue: 0.58, alpha: 1)
+            let accent = seed == 0 ? UIColor(red: 0.91, green: 0.20, blue: 0.46, alpha: 1) : UIColor(red: 0.02, green: 0.77, blue: 0.31, alpha: 1)
+            base.setFill()
+            context.fill(rect)
+
+            for index in 0..<9 {
+                let inset = CGFloat(index * 34)
+                let band = CGRect(x: inset - 120, y: CGFloat(index * 92), width: size.width + 220, height: 46)
+                accent.withAlphaComponent(index.isMultiple(of: 2) ? 0.72 : 0.42).setFill()
+                UIBezierPath(roundedRect: band, cornerRadius: 23).fill()
+            }
+
+            UIColor.white.withAlphaComponent(0.88).setStroke()
+            let marker = UIBezierPath(ovalIn: CGRect(x: 205, y: 305, width: 310, height: 420))
+            marker.lineWidth = 12
+            marker.stroke()
+        }
     }
 
     private static var uiTestReports: [ReportRow] {
@@ -1470,6 +1848,8 @@ struct HomeView: View {
         showCameraPicker = false
         showGalleryPicker = false
         showCanvasSheet = false
+        queuedAnnotatePhotoIDs = []
+        returnToPhotoTrayAfterAnnotation = false
     }
 
     private func cacheQuotaUsage(_ usage: DailyQuotaUsage) {
@@ -1662,6 +2042,7 @@ struct RecentAnalysisCard: View {
             .rdRowShadow()
         }
         .buttonStyle(RDPressableButtonStyle())
+        .accessibilityIdentifier("home.recent_analysis.\(item.title)")
     }
 
 }
@@ -1776,108 +2157,297 @@ private struct HomeReportRow: View {
     }
 }
 
-struct PhotoSourceSheet: View {
+private struct PhotoMediaTraySheet: View {
+    let photos: [AnalysisPhotoDraft]
+    let maxPhotoCount: Int
+    let visibleSlotCount: Int
+    let canAddMore: Bool
     let onCamera: () -> Void
     let onGallery: () -> Void
+    let onAnnotate: (UUID) -> Void
+    let onRemove: (UUID) -> Void
+    let onMove: (UUID, Int) -> Void
+    let onLockedSlot: () -> Void
+    let onStartAnalysis: () -> Void
     let onClose: () -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "camera.viewfinder")
-                    .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdGreen)
-                    .frame(width: 48, height: 48)
-                    .background(Color.rdGreenSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+        VStack(spacing: 14) {
+            header
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Fotoğraf Yükle")
-                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                    Text("Fotoğrafı nereden almak istiyorsun?")
-                        .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                }
-
-                Spacer()
-
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                        .frame(width: 38, height: 38)
-                        .background(Color.rdCloud)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(RDPressableButtonStyle())
-                .accessibilityLabel("Kapat")
+            HStack(spacing: 10) {
+                sourceButton(title: "Kamera", icon: "camera.fill", action: onCamera)
+                sourceButton(title: "Galeri", icon: "photo.on.rectangle.angled", action: onGallery)
             }
+            .disabled(!canAddMore)
+            .opacity(canAddMore ? 1 : 0.46)
 
-            VStack(spacing: 10) {
-                sourceButton(
-                    title: "Kamera ile çek",
-                    subtitle: "Sahada anında fotoğraf al",
-                    icon: "camera.fill",
-                    action: onCamera
-                )
-                sourceButton(
-                    title: "Galeriden seç",
-                    subtitle: "Var olan saha görselini kullan",
-                    icon: "photo.on.rectangle.angled",
-                    action: onGallery
-                )
+            LazyVGrid(columns: gridColumns, alignment: .center, spacing: gridSpacing) {
+                ForEach(0..<sheetSlotCount, id: \.self) { index in
+                    slot(at: index, tileSize: tileSize)
+                        .accessibilityIdentifier("home.photo_slot.\(index + 1)")
+                }
             }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 2)
+            .padding(.bottom, 4)
 
+            primaryButton
         }
         .padding(.horizontal, 20)
-        .padding(.top, 22)
-        .padding(.bottom, 12)
+        .padding(.top, 18)
+        .padding(.bottom, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Color.rdPaper)
+        .background(Color.rdWhite)
+        .accessibilityIdentifier("home.photo_tray")
     }
 
-    private func sourceButton(title: String, subtitle: String, icon: String, action: @escaping () -> Void) -> some View {
+    private var header: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Fotoğraflar")
+                    .font(.system(size: RDFontScale.size(23), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text("\(photos.count)/\(maxPhotoCount)")
+                    .rdMono(size: 12, weight: .semibold)
+                    .foregroundStyle(Color.rdSlate)
+            }
+
+            Spacer(minLength: 0)
+
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .frame(width: 36, height: 36)
+                    .background(Color.rdFog)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(RDPressableButtonStyle())
+            .accessibilityLabel("Kapat")
+        }
+    }
+
+    private var gridSpacing: CGFloat { 14 }
+
+    private var tileSize: CGFloat {
+        let contentWidth = UIScreen.main.bounds.width - 40
+        let availableWidth = contentWidth - (gridSpacing * 2)
+        return max(88, min(112, floor(availableWidth / 3)))
+    }
+
+    private var gridColumns: [GridItem] {
+        Array(repeating: GridItem(.fixed(tileSize), spacing: gridSpacing), count: 3)
+    }
+
+    private var sheetSlotCount: Int {
+        max(visibleSlotCount, min(maxPhotoCount, photos.count + 1))
+    }
+
+    @ViewBuilder
+    private func slot(at index: Int, tileSize: CGFloat) -> some View {
+        if index < photos.count {
+            selectedTile(photos[index], index: index, tileSize: tileSize)
+        } else if index >= maxPhotoCount {
+            lockedTile(index: index, tileSize: tileSize)
+        } else {
+            emptyTile(index: index, tileSize: tileSize)
+        }
+    }
+
+    private func sourceButton(title: String, icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
-                    .frame(width: 44, height: 44)
-                    .background(Color.rdWhite)
-                    .clipShape(RoundedRectangle(cornerRadius: 13))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                Text(title)
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(Color.rdBlack)
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(Color.rdFog)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.rdLine, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(title == "Kamera" ? "home.photo_tray.camera" : "home.photo_tray.gallery")
+    }
+
+    private func selectedTile(_ draft: AnalysisPhotoDraft, index: Int, tileSize: CGFloat) -> some View {
+        ZStack {
+            Button {
+                onAnnotate(draft.id)
+            } label: {
+                Image(uiImage: draft.image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: tileSize, height: tileSize)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 17))
+            }
+            .buttonStyle(.plain)
+
+            VStack {
+                HStack {
+                    Text("\(index + 1)")
+                        .rdMono(size: 10, weight: .bold)
+                        .foregroundStyle(Color.rdBlack)
+                        .frame(width: 24, height: 24)
+                        .background(Color.white.opacity(0.92))
+                        .clipShape(Circle())
+
+                    Spacer(minLength: 0)
+
+                    Button {
+                        onRemove(draft.id)
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .frame(width: 24, height: 24)
+                            .background(Color.black.opacity(0.56))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Fotoğrafı sil")
+                }
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: 4) {
+                    tileIconButton("chevron.left", disabled: index == 0) {
+                        onMove(draft.id, -1)
+                    }
+                    tileIconButton("pencil.tip.crop.circle", disabled: false) {
+                        onAnnotate(draft.id)
+                    }
+                    tileIconButton("chevron.right", disabled: index >= photos.count - 1) {
+                        onMove(draft.id, 1)
+                    }
+                }
+                .padding(4)
+                .background(Color.white.opacity(0.90))
+                .clipShape(Capsule())
+            }
+            .padding(7)
+        }
+        .frame(width: tileSize, height: tileSize)
+        .accessibilityIdentifier("home.photo_tile.\(index + 1)")
+    }
+
+    private func emptyTile(index: Int, tileSize: CGFloat) -> some View {
+        Button(action: onGallery) {
+            RoundedRectangle(cornerRadius: 17)
+                .fill(Color.rdWhite)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 17)
+                        .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
+                        .foregroundStyle(Color.rdSlate.opacity(0.34))
+                )
+                .overlay(
+                    Image(systemName: "plus")
+                        .font(.system(size: RDFontScale.size(31), weight: .light, design: .rounded))
+                        .foregroundStyle(Color.rdSlate.opacity(0.58))
+                )
+                .frame(width: tileSize, height: tileSize)
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .disabled(!canAddMore)
+        .accessibilityLabel("Fotoğraf ekle")
+    }
+
+    private func lockedTile(index: Int, tileSize: CGFloat) -> some View {
+        Button(action: onLockedSlot) {
+            ZStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: 17)
+                    .fill(Color.rdFog)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 13)
+                        RoundedRectangle(cornerRadius: 17)
                             .stroke(Color.rdLine, lineWidth: 1)
                     )
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                    Text(subtitle)
-                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                }
+                Image(systemName: "lock.fill")
+                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate.opacity(0.72))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
+                lockedPlanBadge
+                    .padding(.top, 10)
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-            .background(Color.rdWhite)
-            .overlay(
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.rdLine, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .frame(width: tileSize, height: tileSize)
         }
         .buttonStyle(RDPressableButtonStyle())
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(title)
+        .accessibilityLabel("\(index + 1). slot kilitli. Plus veya Pro ile açılır.")
+    }
+
+    private var lockedPlanBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "flame.fill")
+                .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
+            Text("Plus / Pro")
+                .font(.system(size: RDFontScale.size(9.5), weight: .black, design: .rounded))
+                .lineLimit(1)
+        }
+        .foregroundStyle(Color(hex: "#D7DF19"))
+        .padding(.horizontal, 9)
+        .frame(height: 24)
+        .background(Color(hex: "#202322"))
+        .overlay(
+            Capsule()
+                .stroke(Color(hex: "#D7DF19"), lineWidth: 1.4)
+        )
+        .clipShape(Capsule())
+        .shadow(color: Color.black.opacity(0.10), radius: 4, x: 0, y: 2)
+    }
+
+    private func tileIconButton(
+        _ icon: String,
+        disabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                .foregroundStyle(disabled ? Color.rdSlate.opacity(0.34) : Color.rdBlack)
+                .frame(width: 24, height: 22)
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+    }
+
+    private var primaryButton: some View {
+        Button {
+            if photos.isEmpty {
+                onGallery()
+            } else {
+                onStartAnalysis()
+            }
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: photos.isEmpty ? "plus.circle.fill" : "sparkles")
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                Text(photos.isEmpty ? "Fotoğraf ekle" : "Analize geç")
+                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 58)
+            .background(photos.isEmpty && !canAddMore ? Color.rdSlate : Color.rdGreen)
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .disabled(photos.isEmpty && !canAddMore)
+        .accessibilityIdentifier("home.photo_tray.primary")
     }
 }
 

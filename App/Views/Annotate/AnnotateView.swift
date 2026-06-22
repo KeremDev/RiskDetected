@@ -3,6 +3,8 @@ import PencilKit
 
 struct AnnotateView: View {
     var initialImage: UIImage? = nil
+    var primaryActionTitle: String = "İşaretli alanları analiz et"
+    var primaryActionIcon: String = "sparkles"
     var onCancel: () -> Void
     var onAnalyze: (UIImage) -> Void
 
@@ -178,7 +180,7 @@ struct AnnotateView: View {
     // MARK: - Bottom CTA
 
     private var bottomCTA: some View {
-        RDButton(title: "İşaretli alanları analiz et", style: .detect, icon: "sparkles") {
+        RDButton(title: primaryActionTitle, style: .detect, icon: primaryActionIcon) {
             onAnalyze(flattenedImage())
         }
         .padding(.horizontal, 20)

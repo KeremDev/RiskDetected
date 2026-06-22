@@ -10,43 +10,65 @@ struct ResultView: View {
     @Environment(\.colorScheme) private var colorScheme
     var bundle: AnalysisResultBundle? = nil
     var localPreviewImage: UIImage? = nil
+    var localPreviewImages: [UIImage] = []
     var onClose: () -> Void = {}
     var onPdf: () -> Void = {}
 
-    private var findings: [Finding] {
-        bundle?.findings.map { $0.asFinding } ?? []
+    private var currentBundle: AnalysisResultBundle? {
+        editedBundle ?? bundle
     }
-    private var sortedFindings: [Finding] {
-        findings.sorted {
-            let leftBand = $0.band(for: method).level
-            let rightBand = $1.band(for: method).level
+    private var findingRows: [FindingRow] {
+        currentBundle?.findings ?? []
+    }
+    private var findings: [Finding] {
+        findingRows.map { $0.asFinding }
+    }
+    private var sortedFindingRows: [FindingRow] {
+        findingRows.sorted { leftRow, rightRow in
+            let left = leftRow.asFinding
+            let right = rightRow.asFinding
+            let leftBand = left.band(for: method).level
+            let rightBand = right.band(for: method).level
             let leftRank = rankFor(leftBand)
             let rightRank = rankFor(rightBand)
             if leftRank != rightRank { return leftRank > rightRank }
 
-            let leftScore = $0.score(for: method)
-            let rightScore = $1.score(for: method)
+            let leftScore = left.score(for: method)
+            let rightScore = right.score(for: method)
             if leftScore != rightScore { return leftScore > rightScore }
 
-            return $0.confidence > $1.confidence
+            return left.confidence > right.confidence
         }
     }
+    private var sortedFindings: [Finding] {
+        sortedFindingRows.map { $0.asFinding }
+    }
     private var analysisTitle: String {
-        bundle?.analysis.title ?? "Analiz Sonucu"
+        currentBundle?.analysis.title ?? "Analiz Sonucu"
     }
     private var canvasLabel: String {
-        let id = bundle?.analysis.canvas ?? "general"
+        let id = currentBundle?.analysis.canvas ?? "general"
         return AnalysisCanvas.all.first { $0.id == id }?.title ?? id
     }
     private var analysisSectorLabel: String? {
-        bundle?.analysis.analysisSectorLabel
+        currentBundle?.analysis.analysisSectorLabel
     }
     private var photoPath: String? {
-        bundle?.photos.first?.storagePath
+        currentBundle?.photos.first?.storagePath
+    }
+    private var reportPreviewImages: [UIImage] {
+        if !localPreviewImages.isEmpty { return localPreviewImages }
+        if let localPreviewImage { return [localPreviewImage] }
+        return []
     }
 
     @State private var method: RiskMethod = .fineKinney
     @State private var selectedFinding: Finding? = nil
+    @State private var selectedFindingRowForEdit: FindingRow?
+    @State private var pendingDeleteFindingRow: FindingRow?
+    @State private var editedBundle: AnalysisResultBundle?
+    @State private var findingMutationError: String?
+    @State private var isFindingMutationInFlight = false
     @State private var showPaywall: Bool = false
     @StateObject private var pdfGeneration = PDFGenerationProgressController()
     @State private var isExcelGenerating: Bool = false
@@ -114,6 +136,26 @@ struct ResultView: View {
                 .presentationDragIndicator(.visible)
                 .preferredColorScheme(preferredModalColorScheme)
         }
+        .sheet(item: $selectedFindingRowForEdit) { row in
+            FindingEditorSheet(
+                row: row,
+                method: method,
+                photoCount: currentBundle?.analysis.photoCount ?? max(currentBundle?.photos.count ?? 0, 1),
+                isSaving: isFindingMutationInFlight,
+                onSave: { patch in
+                    mutateFinding(row: row, action: .update(patch))
+                },
+                onDelete: {
+                    mutateFinding(row: row, action: .delete)
+                },
+                onClose: {
+                    selectedFindingRowForEdit = nil
+                }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(preferredModalColorScheme)
+        }
         .sheet(item: $shareItem) { item in
             DocumentPreview(url: item.url)
                 .preferredColorScheme(preferredModalColorScheme)
@@ -161,6 +203,27 @@ struct ResultView: View {
         } message: {
             Text(pdfError ?? "")
         }
+        .alert("Bulgu Güncellenemedi", isPresented: Binding(
+            get: { findingMutationError != nil },
+            set: { if !$0 { findingMutationError = nil } }
+        )) {
+            Button("Tamam", role: .cancel) { findingMutationError = nil }
+        } message: {
+            Text(findingMutationError ?? "")
+        }
+        .alert("Bulgu silinsin mi?", isPresented: Binding(
+            get: { pendingDeleteFindingRow != nil },
+            set: { if !$0 { pendingDeleteFindingRow = nil } }
+        )) {
+            Button("Vazgeç", role: .cancel) { pendingDeleteFindingRow = nil }
+            Button("Sil", role: .destructive) {
+                guard let row = pendingDeleteFindingRow else { return }
+                pendingDeleteFindingRow = nil
+                mutateFinding(row: row, action: .delete)
+            }
+        } message: {
+            Text("Bu bulgu yeni raporlara dahil edilmeyecek. Eski rapor snapshotları ve audit kaydı korunur.")
+        }
         .fullScreenCover(isPresented: $showPaywall) {
             FreeAwarePaywallView(onClose: { showPaywall = false },
                         onSubscribe: {
@@ -180,8 +243,14 @@ struct ResultView: View {
                 method = preferredMethod
             }
         }
-        .task(id: bundle?.analysis.companyID) {
+        .task(id: currentBundle?.analysis.companyID) {
             await loadInitialReportCompanyIfNeeded()
+        }
+        .onChange(of: bundle?.analysis.id) { _ in
+            editedBundle = nil
+            selectedFinding = nil
+            selectedFindingRowForEdit = nil
+            pendingDeleteFindingRow = nil
         }
         .onDisappear {
             pdfGeneration.cancel()
@@ -249,7 +318,7 @@ struct ResultView: View {
                 ResultPhotoThumbnail(
                     image: localPreviewImage,
                     path: photoPath,
-                    isTextAnalysis: bundle?.analysis.kind == "text",
+                    isTextAnalysis: currentBundle?.analysis.kind == "text",
                     cornerRadius: 12,
                     onTap: { image in
                         expandedPhotoPreview = ResultPhotoPreview(image: image)
@@ -370,7 +439,7 @@ struct ResultView: View {
     }
 
     private var formattedDate: String {
-        let raw = bundle?.analysis.createdAt ?? ""
+        let raw = currentBundle?.analysis.createdAt ?? ""
         let isoFmt = ISO8601DateFormatter()
         isoFmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let date = isoFmt.date(from: raw) ?? Date()
@@ -541,12 +610,21 @@ struct ResultView: View {
                 .foregroundStyle(Color.rdSlate)
                 .padding(.leading, 4)
 
-            ForEach(Array(sortedFindings.enumerated()), id: \.element.id) { index, finding in
+            ForEach(Array(sortedFindingRows.enumerated()), id: \.element.id) { index, row in
+                let finding = row.asFinding
                 FindingCard(
                     finding: finding,
                     index: index + 1,
                     method: method,
                     currentTier: app.currentTier,
+                    sourcePhotoIndices: row.sourcePhotoIndices ?? [],
+                    canEdit: app.planCapabilities.canEditAIFindings,
+                    onEdit: {
+                        selectedFindingRowForEdit = row
+                    },
+                    onDelete: {
+                        pendingDeleteFindingRow = row
+                    },
                     onPaywall: { showPaywall = true }
                 ) {
                     selectedFinding = finding
@@ -700,6 +778,47 @@ struct ResultView: View {
         }
     }
 
+    private enum FindingMutationAction {
+        case update(FindingMutationPatch)
+        case delete
+    }
+
+    private func mutateFinding(row: FindingRow, action: FindingMutationAction) {
+        guard !isFindingMutationInFlight else { return }
+        guard let analysisID = currentBundle?.analysis.id else { return }
+        isFindingMutationInFlight = true
+        Task {
+            do {
+                let refreshed: AnalysisResultBundle
+                switch action {
+                case let .update(patch):
+                    refreshed = try await AnalysisService.shared.updateFinding(
+                        analysisID: analysisID,
+                        findingID: row.id,
+                        expectedVersion: row.findingVersion,
+                        patch: patch
+                    )
+                case .delete:
+                    refreshed = try await AnalysisService.shared.deleteFinding(
+                        analysisID: analysisID,
+                        findingID: row.id,
+                        expectedVersion: row.findingVersion
+                    )
+                }
+                editedBundle = refreshed
+                selectedFindingRowForEdit = nil
+                selectedFinding = nil
+            } catch {
+                findingMutationError = AppErrorMessage.make(
+                    error,
+                    context: "Bulgu güncellenemedi",
+                    fallbackTitle: "Bulgu güncellenemedi"
+                ).fullText
+            }
+            isFindingMutationInFlight = false
+        }
+    }
+
     // MARK: - Helpers
 
     private func scoreText(_ value: Double, method: RiskMethod) -> String {
@@ -732,7 +851,7 @@ struct ResultView: View {
 
     private func generateAndSharePDF(options: PDFReportOptions? = nil, presentShareSheet: Bool = false) {
         guard !pdfGeneration.isActive else { return }
-        guard let bundle else {
+        guard let bundle = currentBundle else {
             pdfError = AppErrorMessage.make(
                 AnalysisService.AnalysisError.invalidInput("PDF oluşturmak için tamamlanmış bir analiz bulunamadı."),
                 context: "PDF oluşturulamadı",
@@ -761,7 +880,7 @@ struct ResultView: View {
                     showReportSettings = true
                     return
                 }
-                let reportImage = try await loadReportImage()
+                let reportImages = try await loadReportImages()
                 pdfGeneration.advance(to: 0.23)
                 let companyLogo = try await loadCompanyLogo(for: company)
                 let profileLogo = try await loadProfileLogoIfNeeded()
@@ -775,7 +894,7 @@ struct ResultView: View {
                     bundle: bundle,
                     findings: sortedFindings(for: resolvedOptions.method),
                     profile: app.profile,
-                    image: reportImage,
+                    images: reportImages,
                     companyLogo: reportCompanyLogo ?? resolvedLogo ?? uiTestLogo,
                     options: resolvedOptions
                 )
@@ -837,7 +956,7 @@ struct ResultView: View {
 
     private func generateAndShareExcel(method: RiskMethod) {
         guard !isExcelGenerating else { return }
-        guard let bundle else {
+        guard let bundle = currentBundle else {
             pdfError = AppErrorMessage.make(
                 AnalysisService.AnalysisError.invalidInput("Excel oluşturmak için tamamlanmış bir analiz bulunamadı."),
                 context: "Excel oluşturulamadı",
@@ -962,26 +1081,55 @@ struct ResultView: View {
         return true
     }
 
-    private func loadReportImage() async throws -> UIImage? {
-        let resolvedPath: String?
-        if let photoPath {
-            resolvedPath = photoPath
-        } else if let analysisID = bundle?.analysis.id {
-            let paths = try await AnalysisService.shared.firstPhotoPaths(analysisIDs: [analysisID])
-            resolvedPath = paths[analysisID]
-        } else {
-            resolvedPath = nil
+    private func loadReportImages() async throws -> [UIImage] {
+        let localImages = reportPreviewImages
+        if !localImages.isEmpty {
+            return localImages
         }
 
-        guard let resolvedPath else {
-            return localPreviewImage
+        let photoRows = orderedPhotoRowsForReport()
+        if !photoRows.isEmpty {
+            return try await loadImages(paths: photoRows.map(\.storagePath))
         }
 
-        let data = try await AnalysisService.shared.photoData(path: resolvedPath)
-        guard let image = UIImage(data: data) else {
-            throw AnalysisService.AnalysisError.storageFailed("Analiz fotoğrafı indirildi ancak görüntü formatı açılamadı.")
+        guard let analysisID = currentBundle?.analysis.id else {
+            return []
         }
-        return image
+
+        let paths = try await AnalysisService.shared.firstPhotoPaths(analysisIDs: [analysisID])
+        guard let firstPath = paths[analysisID] else {
+            return []
+        }
+        return try await loadImages(paths: [firstPath])
+    }
+
+    private func orderedPhotoRowsForReport() -> [AnalysisPhotoRow] {
+        guard let photos = currentBundle?.photos else { return [] }
+        return photos.sorted { left, right in
+            switch (left.sequenceIndex, right.sequenceIndex) {
+            case let (leftIndex?, rightIndex?) where leftIndex != rightIndex:
+                return leftIndex < rightIndex
+            case (_?, nil):
+                return true
+            case (nil, _?):
+                return false
+            default:
+                return left.storagePath < right.storagePath
+            }
+        }
+    }
+
+    private func loadImages(paths: [String]) async throws -> [UIImage] {
+        var images: [UIImage] = []
+        images.reserveCapacity(paths.count)
+        for path in paths {
+            let data = try await AnalysisService.shared.photoData(path: path)
+            guard let image = UIImage(data: data) else {
+                throw AnalysisService.AnalysisError.storageFailed("Analiz fotoğrafı indirildi ancak görüntü formatı açılamadı.")
+            }
+            images.append(image)
+        }
+        return images
     }
 
     private func sortedFindings(for reportMethod: RiskMethod) -> [Finding] {
@@ -1044,7 +1192,7 @@ struct ResultView: View {
 
     private func loadInitialReportCompanyIfNeeded() async {
         guard selectedReportCompany == nil,
-              let companyID = bundle?.analysis.companyID,
+              let companyID = currentBundle?.analysis.companyID,
               app.currentTier.isPaid
         else { return }
         do {
@@ -2110,6 +2258,213 @@ private struct LockedFindingPreviewCard: View {
     }
 }
 
+// MARK: - Finding Editor
+
+private struct FindingEditorSheet: View {
+    let row: FindingRow
+    let method: RiskMethod
+    let photoCount: Int
+    let isSaving: Bool
+    let onSave: (FindingMutationPatch) -> Void
+    let onDelete: () -> Void
+    let onClose: () -> Void
+
+    @State private var title: String
+    @State private var description: String
+    @State private var actionText: String
+    @State private var referencesText: String
+    @State private var rootCauseText: String
+    @State private var selectedPhotoIndices: Set<Int>
+    @State private var showDeleteConfirmation = false
+
+    init(
+        row: FindingRow,
+        method: RiskMethod,
+        photoCount: Int,
+        isSaving: Bool,
+        onSave: @escaping (FindingMutationPatch) -> Void,
+        onDelete: @escaping () -> Void,
+        onClose: @escaping () -> Void
+    ) {
+        self.row = row
+        self.method = method
+        self.photoCount = max(photoCount, 1)
+        self.isSaving = isSaving
+        self.onSave = onSave
+        self.onDelete = onDelete
+        self.onClose = onClose
+        _title = State(initialValue: row.title)
+        _description = State(initialValue: row.description ?? "")
+        _actionText = State(initialValue: row.recommendedAction ?? row.recommendedMeasures?.first?.text ?? "")
+        _referencesText = State(initialValue: row.referencesText ?? "")
+        _rootCauseText = State(initialValue: row.rootCauseText ?? "")
+        let sourceIndices = row.sourcePhotoIndices?.isEmpty == false ? row.sourcePhotoIndices! : [1]
+        _selectedPhotoIndices = State(initialValue: Set(sourceIndices))
+    }
+
+    private var finding: Finding { row.asFinding }
+    private var band: RiskBand { finding.band(for: method) }
+    private var canSave: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !actionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !selectedPhotoIndices.isEmpty
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 10) {
+                        RDChip(level: band.level, label: band.label)
+                        Text("R = \(finding.formula(for: method))")
+                            .rdMono(size: 11, weight: .semibold)
+                            .foregroundStyle(Color.rdSlate)
+                        Spacer(minLength: 0)
+                    }
+
+                    editorField(title: "Bulgu", text: $title, lineLimit: 2)
+                    editorTextArea(title: "Açıklama", text: $description, minHeight: 112)
+                    editorTextArea(title: "Önlem / kontrol tedbiri", text: $actionText, minHeight: 120)
+                    editorTextArea(title: "Referans", text: $referencesText, minHeight: 76)
+                    editorTextArea(title: "Kök neden", text: $rootCauseText, minHeight: 76)
+
+                    if photoCount > 1 {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Kaynak fotoğraf")
+                                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.rdSlate)
+                            HStack(spacing: 8) {
+                                ForEach(1...photoCount, id: \.self) { index in
+                                    let selected = selectedPhotoIndices.contains(index)
+                                    Button {
+                                        if selected {
+                                            selectedPhotoIndices.remove(index)
+                                        } else {
+                                            selectedPhotoIndices.insert(index)
+                                        }
+                                    } label: {
+                                        Text("\(index)")
+                                            .rdMono(size: 13, weight: .bold)
+                                            .foregroundStyle(selected ? Color.rdBlack : Color.rdSlate)
+                                            .frame(width: 38, height: 34)
+                                            .background(selected ? Color.rdGreenSoft : Color.rdFog)
+                                            .clipShape(RoundedRectangle(cornerRadius: 9))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Label("Bulguyu sil", systemImage: "trash")
+                            .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isSaving)
+                    .padding(.top, 4)
+                }
+                .padding(18)
+                .padding(.bottom, 80)
+            }
+            .background(Color.rdPaper)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                HStack(spacing: 10) {
+                    Button("Vazgeç", action: onClose)
+                        .buttonStyle(.bordered)
+                        .frame(maxWidth: .infinity)
+                    Button {
+                        onSave(makePatch())
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                                .tint(Color.rdBlack)
+                        } else {
+                            Text("Kaydet")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!canSave || isSaving)
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(14)
+                .background(.ultraThinMaterial)
+            }
+            .navigationTitle("Bulguyu Düzenle")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    RDModalCloseButton(action: onClose)
+                }
+            }
+            .alert("Bulgu silinsin mi?", isPresented: $showDeleteConfirmation) {
+                Button("Vazgeç", role: .cancel) {}
+                Button("Sil", role: .destructive) {
+                    onDelete()
+                }
+            } message: {
+                Text("Bu bulgu yeni raporlara dahil edilmeyecek. Eski rapor snapshotları ve audit kaydı korunur.")
+            }
+        }
+    }
+
+    private func makePatch() -> FindingMutationPatch {
+        let cleanAction = actionText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let measures = [
+            FindingMeasure(kind: .corrective, title: "Düzeltici Önlem", text: cleanAction)
+        ]
+        return FindingMutationPatch(
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            category: row.category,
+            description: description.trimmingCharacters(in: .whitespacesAndNewlines),
+            recommendedAction: cleanAction,
+            recommendedMeasures: measures,
+            referencesText: referencesText.trimmingCharacters(in: .whitespacesAndNewlines),
+            rootCauseText: rootCauseText.trimmingCharacters(in: .whitespacesAndNewlines),
+            fkProbability: row.fkProbability,
+            fkFrequency: row.fkFrequency,
+            fkSeverity: row.fkSeverity,
+            m5Probability: row.m5Probability,
+            m5Severity: row.m5Severity,
+            sourcePhotoIndices: selectedPhotoIndices.sorted()
+        )
+    }
+
+    private func editorField(title: String, text: Binding<String>, lineLimit: Int) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(title)
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+            TextField(title, text: text, axis: .vertical)
+                .lineLimit(1...lineLimit)
+                .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
+                .padding(12)
+                .background(Color.rdWhite)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+    }
+
+    private func editorTextArea(title: String, text: Binding<String>, minHeight: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(title)
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+            TextEditor(text: text)
+                .font(.system(size: RDFontScale.size(14), design: .rounded))
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: minHeight)
+                .padding(8)
+                .background(Color.rdWhite)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+    }
+}
+
 // MARK: - FindingCard
 
 struct FindingCard: View {
@@ -2117,6 +2472,10 @@ struct FindingCard: View {
     let index: Int
     let method: RiskMethod
     let currentTier: SubscriptionTier
+    var sourcePhotoIndices: [Int] = []
+    var canEdit: Bool = false
+    var onEdit: () -> Void = {}
+    var onDelete: () -> Void = {}
     let onPaywall: () -> Void
     let action: () -> Void
 
@@ -2142,6 +2501,43 @@ struct FindingCard: View {
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         RDChip(level: band.level, label: band.label)
+                        if canEdit {
+                            Button(action: onEdit) {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                                    .foregroundStyle(Color.rdBlack)
+                                    .frame(width: 28, height: 28)
+                                    .background(Color.rdFog)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Bulguyu düzenle")
+                            .accessibilityIdentifier("result.finding.\(index).edit")
+                            Button(action: onDelete) {
+                                Image(systemName: "trash")
+                                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                                    .foregroundStyle(Color.rdCriticalText)
+                                    .frame(width: 28, height: 28)
+                                    .background(Color.rdCriticalBg)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Bulguyu sil")
+                            .accessibilityIdentifier("result.finding.\(index).delete")
+                        }
+                    }
+                    if !sourcePhotoIndices.isEmpty {
+                        HStack(spacing: 5) {
+                            Image(systemName: "photo.on.rectangle")
+                                .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
+                            Text("Foto \(sourcePhotoIndices.map { String($0) }.joined(separator: ", "))")
+                                .rdMono(size: 10, weight: .semibold)
+                        }
+                        .foregroundStyle(Color.rdSlate)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.rdFog)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
                     Text(finding.description)
                         .font(.system(size: RDFontScale.size(13), design: .rounded))

@@ -3,7 +3,6 @@ import SwiftUI
 struct MainTabView: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.colorScheme) private var colorScheme
-    @State private var showQuickSourceSheet = false
     @State private var showQuotaAlert = false
     @State private var showPaywall = false
 
@@ -33,26 +32,6 @@ struct MainTabView: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
-        .sheet(isPresented: $showQuickSourceSheet) {
-            PhotoSourceSheet(
-                onCamera: {
-                    showQuickSourceSheet = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        app.requestQuickScan(source: .camera)
-                    }
-                },
-                onGallery: {
-                    showQuickSourceSheet = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        app.requestQuickScan(source: .gallery)
-                    }
-                },
-                onClose: { showQuickSourceSheet = false }
-            )
-            .presentationDetents([.height(285)])
-            .presentationDragIndicator(.hidden)
-            .preferredColorScheme(preferredModalColorScheme)
-        }
         .alert("Ücretsiz hak doldu", isPresented: $showQuotaAlert) {
             Button("Yükselt") {
                 showPaywall = true
@@ -85,7 +64,10 @@ struct MainTabView: View {
                 // Kota kontrolü geçici olarak alınamazsa HomeView kendi korumasını yine çalıştırır.
             }
         }
-        showQuickSourceSheet = true
+        app.activeTab = .home
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            app.requestQuickScan(source: .chooser)
+        }
     }
 
     private var preferredModalColorScheme: ColorScheme {

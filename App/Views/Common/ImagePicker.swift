@@ -81,3 +81,58 @@ struct GalleryPicker: UIViewControllerRepresentable {
         }
     }
 }
+
+/// Galeriden birden fazla fotoğraf seçimi için PHPicker sarmalı.
+struct MultiGalleryPicker: UIViewControllerRepresentable {
+    let selectionLimit: Int
+    var onPick: ([UIImage]) -> Void
+
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.filter = .images
+        config.selectionLimit = max(1, selectionLimit)
+        config.preferredAssetRepresentationMode = .current
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onPick: onPick)
+    }
+
+    final class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let onPick: ([UIImage]) -> Void
+
+        init(onPick: @escaping ([UIImage]) -> Void) {
+            self.onPick = onPick
+        }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            guard !results.isEmpty else {
+                picker.dismiss(animated: true) { self.onPick([]) }
+                return
+            }
+
+            let group = DispatchGroup()
+            var images = Array<UIImage?>(repeating: nil, count: results.count)
+            for (index, result) in results.enumerated() {
+                let provider = result.itemProvider
+                guard provider.canLoadObject(ofClass: UIImage.self) else { continue }
+                group.enter()
+                provider.loadObject(ofClass: UIImage.self) { object, _ in
+                    images[index] = object as? UIImage
+                    group.leave()
+                }
+            }
+
+            group.notify(queue: .main) {
+                picker.dismiss(animated: true) {
+                    self.onPick(images.compactMap { $0 })
+                }
+            }
+        }
+    }
+}

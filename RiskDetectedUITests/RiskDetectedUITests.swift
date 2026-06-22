@@ -160,6 +160,83 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Saha fotoğrafı yükle").exists)
     }
 
+    func testHomeMultiPhotoSlotsRenderForPaidFixture() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_PHOTO_TRAY"])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        XCTAssertTrue(waitFor("Saha fotoğrafları").exists)
+        XCTAssertTrue(waitFor("0/5").exists)
+        XCTAssertTrue(waitFor("home.photo_tray").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.1").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.5").exists)
+    }
+
+    func testQuickScanButtonOpensPhotoTray() throws {
+        launchMainApp()
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("tab.quick_scan")
+        XCTAssertTrue(waitFor("home.photo_tray").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.5").exists)
+    }
+
+    func testFreeLockedPhotoSlotOpensPaywall() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_OPEN_PHOTO_TRAY"])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        XCTAssertTrue(waitFor("Plus / Pro").exists)
+        tap("home.photo_slot.2")
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
+    }
+
+    func testHomePhotoUploadReturnsToTrayAfterAnnotation() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_DIRECT_HOME_PHOTO_PICK"])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("home.photo_tray.open")
+        XCTAssertTrue(waitFor("İşaretlemeyi kaydet", timeout: 8).exists)
+
+        tap("İşaretlemeyi kaydet", timeout: 8)
+
+        XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
+        XCTAssertTrue(waitFor("1/5").exists)
+        XCTAssertTrue(waitFor("Analize geç").exists)
+    }
+
+    func testPhotoTrayWithExistingPhotosFixtureRenders() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"])
+
+        XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
+        XCTAssertTrue(waitFor("2/5").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.1").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.2").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.5").exists)
+        XCTAssertTrue(waitFor("Analize geç").exists)
+    }
+
+    func testAnnotateFromPhotoTrayUsesSaveCopy() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"])
+
+        XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
+        tap("home.photo_slot.1")
+        XCTAssertTrue(waitFor("İşaretlemeyi kaydet", timeout: 8).exists)
+        XCTAssertFalse(app.buttons["İşaretli alanları analiz et"].waitForExistence(timeout: 1))
+    }
+
+    func testResultFindingDeleteButtonRequiresConfirmation() throws {
+        launchMainApp()
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tapScrolling("home.recent_analysis.3. Kat şantiye girişi", timeout: 8)
+        XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 8).exists)
+
+        tapScrolling("result.finding.1.delete", timeout: 10)
+        XCTAssertTrue(waitFor("Bulgu silinsin mi?", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Bu bulgu yeni raporlara dahil edilmeyecek. Eski rapor snapshotları ve audit kaydı korunur.", timeout: 4).exists)
+        tap("Vazgeç", timeout: 4)
+        XCTAssertFalse(exists("Bulgu silinsin mi?", timeout: 1))
+    }
+
     func testProfileDarkModePreferencesCanSwitchTheme() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_DARK_MODE"])
 

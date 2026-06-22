@@ -1082,7 +1082,7 @@ struct ReportView: View {
                     showSourceReportSheet = true
                     return
                 }
-                let reportImage = try await loadReportImage(for: selectedBundle)
+                let reportImages = try await loadReportImages(for: selectedBundle)
                 pdfGeneration.advance(to: 0.23)
                 let resolvedLogo = await resolveReportLogo(
                     company: company,
@@ -1092,7 +1092,7 @@ struct ReportView: View {
                     bundle: selectedBundle,
                     findings: sortedFindings(selectedBundle.findings.map(\.asFinding), method: resolvedOptions.method),
                     profile: app.profile,
-                    image: reportImage,
+                    images: reportImages,
                     companyLogo: resolvedLogo,
                     options: resolvedOptions
                 )
@@ -1329,13 +1329,29 @@ struct ReportView: View {
         }
     }
 
-    private func loadReportImage(for bundle: AnalysisResultBundle) async throws -> UIImage? {
-        guard let path = bundle.photos.first?.storagePath else { return nil }
-        let data = try await AnalysisService.shared.photoData(path: path)
-        guard let image = UIImage(data: data) else {
-            throw AnalysisService.AnalysisError.storageFailed("Analiz fotoğrafı indirildi ancak görüntü formatı açılamadı.")
+    private func loadReportImages(for bundle: AnalysisResultBundle) async throws -> [UIImage] {
+        var images: [UIImage] = []
+        let photoRows = bundle.photos.sorted { left, right in
+            switch (left.sequenceIndex, right.sequenceIndex) {
+            case let (leftIndex?, rightIndex?) where leftIndex != rightIndex:
+                return leftIndex < rightIndex
+            case (_?, nil):
+                return true
+            case (nil, _?):
+                return false
+            default:
+                return left.storagePath < right.storagePath
+            }
         }
-        return image
+        images.reserveCapacity(photoRows.count)
+        for row in photoRows {
+            let data = try await AnalysisService.shared.photoData(path: row.storagePath)
+            guard let image = UIImage(data: data) else {
+                throw AnalysisService.AnalysisError.storageFailed("Analiz fotoğrafı indirildi ancak görüntü formatı açılamadı.")
+            }
+            images.append(image)
+        }
+        return images
     }
 
     private func defaultReportOptions(kind: PDFReportKind = .standard) -> PDFReportOptions {

@@ -92,8 +92,43 @@ final class PDFReportService: @unchecked Sendable {
         let findings: [Finding]
         let profile: UserProfile?
         let image: UIImage?
+        let images: [UIImage]
         let companyLogo: UIImage?
         let options: PDFReportOptions
+
+        init(
+            bundle: AnalysisResultBundle,
+            findings: [Finding],
+            profile: UserProfile?,
+            image: UIImage?,
+            companyLogo: UIImage?,
+            options: PDFReportOptions
+        ) {
+            self.bundle = bundle
+            self.findings = findings
+            self.profile = profile
+            self.image = image
+            self.images = image.map { [$0] } ?? []
+            self.companyLogo = companyLogo
+            self.options = options
+        }
+
+        init(
+            bundle: AnalysisResultBundle,
+            findings: [Finding],
+            profile: UserProfile?,
+            images: [UIImage],
+            companyLogo: UIImage?,
+            options: PDFReportOptions
+        ) {
+            self.bundle = bundle
+            self.findings = findings
+            self.profile = profile
+            self.image = images.first
+            self.images = images
+            self.companyLogo = companyLogo
+            self.options = options
+        }
     }
 
     func generateAsync(input: ReportInput) async throws -> URL {
@@ -173,8 +208,8 @@ final class PDFReportService: @unchecked Sendable {
 
         drawSummaryCards(input: input, origin: CGPoint(x: margin, y: contentTop + 88))
 
-        if let image = input.image {
-            drawImage(image, in: CGRect(x: 548, y: contentTop, width: 252, height: 178), cornerRadius: 14)
+        if !input.images.isEmpty {
+            drawCoverImages(input.images, in: CGRect(x: 548, y: contentTop, width: 252, height: 178))
         } else if analysis.kind == "text" {
             drawPlaceholder(in: CGRect(x: 548, y: contentTop, width: 252, height: 178), text: "Metin Analizi")
         } else {
@@ -862,6 +897,49 @@ final class PDFReportService: @unchecked Sendable {
             imageRect = image.aspectFillRect(in: rect)
         }
         image.draw(in: imageRect)
+    }
+
+    private func drawCoverImages(_ images: [UIImage], in rect: CGRect) {
+        let visibleImages = Array(images.prefix(5))
+        guard visibleImages.count > 1 else {
+            if let image = visibleImages.first {
+                drawImage(image, in: rect, cornerRadius: 14)
+            }
+            return
+        }
+
+        roundedFill(rect, radius: 14, color: .rdPDFFog)
+        let gap: CGFloat = 6
+        let columns = visibleImages.count <= 2 ? visibleImages.count : 3
+        let rows = Int(ceil(Double(visibleImages.count) / Double(columns)))
+        let cellWidth = (rect.width - CGFloat(columns - 1) * gap) / CGFloat(columns)
+        let cellHeight = (rect.height - CGFloat(rows - 1) * gap) / CGFloat(rows)
+
+        for (index, image) in visibleImages.enumerated() {
+            let column = index % columns
+            let row = index / columns
+            let cellRect = CGRect(
+                x: rect.minX + CGFloat(column) * (cellWidth + gap),
+                y: rect.minY + CGFloat(row) * (cellHeight + gap),
+                width: cellWidth,
+                height: cellHeight
+            )
+            drawImage(image, in: cellRect, cornerRadius: 10)
+            roundedStroke(
+                cellRect,
+                radius: 10,
+                stroke: UIColor.white.withAlphaComponent(0.82),
+                fill: .clear,
+                lineWidth: 1
+            )
+            drawText(
+                "\(index + 1)",
+                in: CGRect(x: cellRect.minX + 6, y: cellRect.minY + 5, width: 22, height: 14),
+                font: .monospacedSystemFont(ofSize: 9, weight: .bold),
+                color: .white,
+                alignment: .center
+            )
+        }
     }
 
     private func drawPlaceholder(in rect: CGRect, text: String) {

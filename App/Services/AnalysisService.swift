@@ -52,6 +52,38 @@ struct AccountDeletionRequestResult: Decodable, Equatable {
     }
 }
 
+struct FindingMutationPatch: Encodable, Equatable {
+    var title: String?
+    var category: String?
+    var description: String?
+    var recommendedAction: String?
+    var recommendedMeasures: [FindingMeasure]?
+    var referencesText: String?
+    var rootCauseText: String?
+    var fkProbability: Double?
+    var fkFrequency: Double?
+    var fkSeverity: Double?
+    var m5Probability: Int?
+    var m5Severity: Int?
+    var sourcePhotoIndices: [Int]?
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case category
+        case description
+        case recommendedAction = "recommended_action"
+        case recommendedMeasures = "recommended_measures"
+        case referencesText = "references_text"
+        case rootCauseText = "root_cause_text"
+        case fkProbability = "fk_probability"
+        case fkFrequency = "fk_frequency"
+        case fkSeverity = "fk_severity"
+        case m5Probability = "m5_probability"
+        case m5Severity = "m5_severity"
+        case sourcePhotoIndices = "source_photo_indices"
+    }
+}
+
 private extension DateFormatter {
     static let rdExportFileStamp: DateFormatter = {
         let formatter = DateFormatter()
@@ -73,6 +105,12 @@ final class AnalysisService {
     nonisolated static let maxTextInputCharacters = 200
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AnalysisService")
     private let supabase = SupabaseService.shared
+
+    private static var clientAppVersion: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+        return [version, build].compactMap { $0 }.joined(separator: " ")
+    }
 
     enum AnalysisError: LocalizedError {
         case notAuthenticated
@@ -113,6 +151,9 @@ final class AnalysisService {
         }
         guard !images.isEmpty else {
             throw AnalysisError.invalidInput("Analiz için bir fotoğraf seçmelisin.")
+        }
+        guard images.count <= 5 else {
+            throw AnalysisError.invalidInput("Bir analizde en fazla 5 fotoğraf kullanılabilir.")
         }
 
         // 1) Analyses kaydı (kind=photo, status=pending)
@@ -226,6 +267,91 @@ final class AnalysisService {
         return try await fetchResult(analysisID: analysisID)
     }
 
+    func updateFinding(
+        analysisID: UUID,
+        findingID: UUID,
+        expectedVersion: Int?,
+        patch: FindingMutationPatch
+    ) async throws -> AnalysisResultBundle {
+        try await mutateFinding(
+            analysisID: analysisID,
+            findingID: findingID,
+            action: "update",
+            expectedVersion: expectedVersion,
+            patch: patch
+        )
+    }
+
+    func deleteFinding(
+        analysisID: UUID,
+        findingID: UUID,
+        expectedVersion: Int?
+    ) async throws -> AnalysisResultBundle {
+        try await mutateFinding(
+            analysisID: analysisID,
+            findingID: findingID,
+            action: "delete",
+            expectedVersion: expectedVersion,
+            patch: nil
+        )
+    }
+
+    private func mutateFinding(
+        analysisID: UUID,
+        findingID: UUID,
+        action: String,
+        expectedVersion: Int?,
+        patch: FindingMutationPatch?
+    ) async throws -> AnalysisResultBundle {
+        struct Body: Encodable {
+            let analysis_id: String
+            let finding_id: String
+            let action: String
+            let patch: FindingMutationPatch?
+            let expected_finding_version: Int?
+            let client_app_version: String
+            let request_id: String
+            let support_id: String
+        }
+        struct ResponseBody: Decodable {
+            let bundle: AnalysisResultBundle
+        }
+
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
+        let body = Body(
+            analysis_id: analysisID.uuidString,
+            finding_id: findingID.uuidString,
+            action: action,
+            patch: patch,
+            expected_finding_version: expectedVersion,
+            client_app_version: Self.clientAppVersion,
+            request_id: requestID,
+            support_id: supportID
+        )
+
+        do {
+            let response: ResponseBody = try await supabase.functions.invoke(
+                RDConfig.mutateAnalysisFindingFunctionName,
+                options: FunctionInvokeOptions(body: body)
+            )
+            return response.bundle
+        } catch let FunctionsError.httpError(code, data) {
+            let payload = Self.functionErrorPayload(from: data)
+            let remoteSupportID = payload.supportID ?? supportID
+            let message = payload.message.isEmpty ? "Bulgu güncellenemedi." : payload.message
+            if code == 409 {
+                throw AnalysisError.databaseFailed(Self.appendSupportID(remoteSupportID, to: message))
+            }
+            if code == 423 {
+                throw AnalysisError.invalidInput(Self.appendSupportID(remoteSupportID, to: message))
+            }
+            throw AnalysisError.databaseFailed(Self.appendSupportID(remoteSupportID, to: message))
+        } catch {
+            throw AnalysisError.databaseFailed(Self.appendSupportID(supportID, to: error.localizedDescription))
+        }
+    }
+
     func assignCompany(to analysisID: UUID, companyID: UUID) async throws {
         struct Payload: Encodable {
             let company_id: String
@@ -248,8 +374,9 @@ final class AnalysisService {
         do {
             let rows: [AnalysisPhotoRow] = try await supabase.client
                 .from("photos")
-                .select("analysis_id,storage_path,width,height,mime_type")
+                .select("analysis_id,storage_path,width,height,mime_type,sequence_index")
                 .in("analysis_id", values: analysisIDs.map { $0.uuidString })
+                .order("sequence_index", ascending: true)
                 .order("storage_path", ascending: true)
                 .execute()
                 .value
@@ -479,6 +606,12 @@ final class AnalysisService {
             let size_bytes: Int
             let page_count: Int
             let company_id: String?
+            let findings_snapshot_json: [FindingRow]
+            let photos_snapshot_json: [AnalysisPhotoRow]
+            let analysis_edit_version: Int
+            let generated_from_user_edited_findings: Bool
+            let source_photo_count: Int
+            let visible_findings_count: Int
             let request_id: String
             let support_id: String
         }
@@ -496,6 +629,12 @@ final class AnalysisService {
             size_bytes: fileSize,
             page_count: Self.estimatedPageCount(for: kind, findingCount: bundle.findings.count),
             company_id: company?.id.uuidString,
+            findings_snapshot_json: bundle.findings,
+            photos_snapshot_json: bundle.photos,
+            analysis_edit_version: bundle.analysis.analysisEditVersion ?? 0,
+            generated_from_user_edited_findings: bundle.analysis.hasUserEdits == true,
+            source_photo_count: bundle.analysis.photoCount ?? bundle.photos.count,
+            visible_findings_count: bundle.findings.count,
             request_id: requestID,
             support_id: supportID
         )
@@ -991,7 +1130,7 @@ final class AnalysisService {
 
     nonisolated private static let maxInlinePhotoBytes = 1_500_000
     nonisolated private static let maxInlinePhotoBase64Bytes = 2_100_000
-    nonisolated private static let maxInlinePhotoPayloadBytes = 4_500_000
+    nonisolated private static let maxInlinePhotoPayloadBytes = 8_000_000
 
     private static func istanbulStartOfTodayISO() -> String {
         var calendar = Calendar(identifier: .gregorian)
@@ -1193,6 +1332,8 @@ final class AnalysisService {
         let data: String
         let width: Int
         let height: Int
+        let client_photo_id: String
+        let sequence_index: Int
 
         var encodedByteCount: Int {
             data.utf8.count
@@ -1205,9 +1346,9 @@ final class AnalysisService {
             parts.reserveCapacity(images.count)
             var totalPayloadBytes = 0
 
-            for image in images {
+            for (index, image) in images.enumerated() {
                 let part = try autoreleasepool {
-                    try inlineJPEGPart(from: image)
+                    try inlineJPEGPart(from: image, sequenceIndex: index + 1)
                 }
                 let projectedPayloadBytes = totalPayloadBytes + part.encodedByteCount
                 if projectedPayloadBytes > maxInlinePhotoPayloadBytes {
@@ -1221,7 +1362,7 @@ final class AnalysisService {
         }.value
     }
 
-    nonisolated private static func inlineJPEGPart(from image: UIImage) throws -> InlinePhotoPart {
+    nonisolated private static func inlineJPEGPart(from image: UIImage, sequenceIndex: Int) throws -> InlinePhotoPart {
         let renderSizes: [CGFloat] = [1400, 1200, 1000, 850, 700]
         let qualities: [CGFloat] = [0.72, 0.60, 0.48, 0.38]
 
@@ -1239,7 +1380,9 @@ final class AnalysisService {
                     mime_type: "image/jpeg",
                     data: encodedData,
                     width: photo.width,
-                    height: photo.height
+                    height: photo.height,
+                    client_photo_id: UUID().uuidString,
+                    sequence_index: sequenceIndex
                 )
             }
         }
@@ -1315,6 +1458,10 @@ final class AnalysisService {
                 }
                 if code == 409 {
                     throw AnalysisError.alreadyCompleted
+                }
+                if errorCode == "PHOTO_LIMIT_EXCEEDED" {
+                    let fallbackMessage = msg.isEmpty ? "Bu plan için fotoğraf limiti aşıldı." : msg
+                    throw AnalysisError.invalidInput(Self.appendSupportID(remoteSupportID, to: fallbackMessage))
                 }
 
                 let retryable = [429, 500, 502, 503, 504].contains(code)
@@ -1400,8 +1547,9 @@ final class AnalysisService {
 
             let photos: [AnalysisPhotoRow] = try await supabase.client
                 .from("photos")
-                .select("analysis_id,storage_path,width,height,mime_type")
+                .select("analysis_id,storage_path,width,height,mime_type,sequence_index,client_photo_id,is_primary,thumbnail_storage_path,annotation_storage_path,user_caption,ai_scene_summary")
                 .eq("analysis_id", value: analysisID.uuidString)
+                .order("sequence_index", ascending: true)
                 .order("storage_path", ascending: true)
                 .execute()
                 .value
@@ -1702,7 +1850,7 @@ private extension UIImage {
 
 // MARK: - Wire row types
 
-struct AnalysisResultBundle: Equatable {
+struct AnalysisResultBundle: Codable, Equatable {
     let analysis: AnalysisRow
     let findings: [FindingRow]
     let photos: [AnalysisPhotoRow]
@@ -1714,6 +1862,13 @@ struct AnalysisPhotoRow: Codable, Equatable {
     let width: Int?
     let height: Int?
     let mimeType: String?
+    var sequenceIndex: Int? = nil
+    var clientPhotoID: String? = nil
+    var isPrimary: Bool? = nil
+    var thumbnailStoragePath: String? = nil
+    var annotationStoragePath: String? = nil
+    var userCaption: String? = nil
+    var aiSceneSummary: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case analysisID = "analysis_id"
@@ -1721,6 +1876,13 @@ struct AnalysisPhotoRow: Codable, Equatable {
         case width
         case height
         case mimeType = "mime_type"
+        case sequenceIndex = "sequence_index"
+        case clientPhotoID = "client_photo_id"
+        case isPrimary = "is_primary"
+        case thumbnailStoragePath = "thumbnail_storage_path"
+        case annotationStoragePath = "annotation_storage_path"
+        case userCaption = "user_caption"
+        case aiSceneSummary = "ai_scene_summary"
     }
 }
 
@@ -1814,6 +1976,18 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
     let analysisSector: String?
     let analysisSectorSource: String?
     let analysisSectorPromptVersion: String?
+    var inputPayloadVersion: String? = nil
+    var photoCount: Int? = nil
+    var maxPhotosAllowedAtCreation: Int? = nil
+    var maxFindingsPerPhoto: Int? = nil
+    var maxFindingsTotal: Int? = nil
+    var generatedFindingsCount: Int? = nil
+    var visibleFindingsCount: Int? = nil
+    var hiddenOrRejectedFindingsCount: Int? = nil
+    var hasUserEdits: Bool? = nil
+    var userEditCount: Int? = nil
+    var analysisEditVersion: Int? = nil
+    var planAtCreation: String? = nil
 
     var analysisSectorID: AnalysisSectorID? {
         guard let analysisSector else { return nil }
@@ -1843,6 +2017,18 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
         case analysisSector = "analysis_sector"
         case analysisSectorSource = "analysis_sector_source"
         case analysisSectorPromptVersion = "analysis_sector_prompt_version"
+        case inputPayloadVersion = "input_payload_version"
+        case photoCount = "photo_count"
+        case maxPhotosAllowedAtCreation = "max_photos_allowed_at_creation"
+        case maxFindingsPerPhoto = "max_findings_per_photo"
+        case maxFindingsTotal = "max_findings_total"
+        case generatedFindingsCount = "generated_findings_count"
+        case visibleFindingsCount = "visible_findings_count"
+        case hiddenOrRejectedFindingsCount = "hidden_or_rejected_findings_count"
+        case hasUserEdits = "has_user_edits"
+        case userEditCount = "user_edit_count"
+        case analysisEditVersion = "analysis_edit_version"
+        case planAtCreation = "plan_at_creation"
     }
 }
 
@@ -1867,6 +2053,13 @@ struct FindingRow: Codable, Identifiable, Equatable {
     let m5Severity: Int
     let m5Score: Int
     let m5Band: String
+    var origin: String? = nil
+    var sourcePhotoIndices: [Int]? = nil
+    var aiConfidence: Double? = nil
+    var lastUserEditAt: String? = nil
+    var userEditCount: Int? = nil
+    var findingVersion: Int? = nil
+    var displayOrder: Int? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -1889,6 +2082,13 @@ struct FindingRow: Codable, Identifiable, Equatable {
         case m5Severity         = "m5_severity"
         case m5Score            = "m5_score"
         case m5Band             = "m5_band"
+        case origin
+        case sourcePhotoIndices = "source_photo_indices"
+        case aiConfidence = "ai_confidence"
+        case lastUserEditAt = "last_user_edit_at"
+        case userEditCount = "user_edit_count"
+        case findingVersion = "finding_version"
+        case displayOrder = "display_order"
     }
 
     /// FindingRow → UI tarafının Finding modeline projeksiyon.

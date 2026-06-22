@@ -103,9 +103,95 @@ struct PlanCapabilities: Equatable {
     let canUseAutomaticDelivery: Bool
     let canUseTrainedAI: Bool
     let supportLabel: String
+    let maxPhotosPerAnalysis: Int
+    let visiblePhotoSlotsInUI: Int
+    let maxFindingsPerPhoto: Int
+    let maxFindingsPerAnalysis: Int
+    let canUseMultiPhotoAnalysis: Bool
+    let canEditAIFindings: Bool
+    let canAddManualFindings: Bool
 
     var isPaid: Bool { tier.isPaid }
     var isPro: Bool { tier == .pro }
+    var safeVisiblePhotoSlotsInUI: Int { max(1, min(visiblePhotoSlotsInUI, 5)) }
+    var safeMaxPhotosPerAnalysis: Int { max(1, min(maxPhotosPerAnalysis, 5)) }
+
+    init(
+        tier: SubscriptionTier,
+        standardAnalysisLabel: String,
+        detailedAnalysisLabel: String,
+        reportLabel: String,
+        acceleratedReportLabel: String,
+        archiveLabel: String,
+        canUseDetailedRiskTable: Bool,
+        canUseEmergencyRisk: Bool,
+        canUseProcedureCheck: Bool,
+        advancedCanvasLabel: String,
+        canUseAutomaticDelivery: Bool,
+        canUseTrainedAI: Bool,
+        supportLabel: String,
+        maxPhotosPerAnalysis: Int = 1,
+        visiblePhotoSlotsInUI: Int = 1,
+        maxFindingsPerPhoto: Int = 12,
+        maxFindingsPerAnalysis: Int = 12,
+        canUseMultiPhotoAnalysis: Bool = false,
+        canEditAIFindings: Bool = false,
+        canAddManualFindings: Bool = false
+    ) {
+        self.tier = tier
+        self.standardAnalysisLabel = standardAnalysisLabel
+        self.detailedAnalysisLabel = detailedAnalysisLabel
+        self.reportLabel = reportLabel
+        self.acceleratedReportLabel = acceleratedReportLabel
+        self.archiveLabel = archiveLabel
+        self.canUseDetailedRiskTable = canUseDetailedRiskTable
+        self.canUseEmergencyRisk = canUseEmergencyRisk
+        self.canUseProcedureCheck = canUseProcedureCheck
+        self.advancedCanvasLabel = advancedCanvasLabel
+        self.canUseAutomaticDelivery = canUseAutomaticDelivery
+        self.canUseTrainedAI = canUseTrainedAI
+        self.supportLabel = supportLabel
+        self.maxPhotosPerAnalysis = maxPhotosPerAnalysis
+        self.visiblePhotoSlotsInUI = visiblePhotoSlotsInUI
+        self.maxFindingsPerPhoto = maxFindingsPerPhoto
+        self.maxFindingsPerAnalysis = maxFindingsPerAnalysis
+        self.canUseMultiPhotoAnalysis = canUseMultiPhotoAnalysis
+        self.canEditAIFindings = canEditAIFindings
+        self.canAddManualFindings = canAddManualFindings
+    }
+
+    func applyingPhotoRules(
+        maxPhotosPerAnalysis: Int,
+        visiblePhotoSlotsInUI: Int,
+        maxFindingsPerPhoto: Int,
+        maxFindingsPerAnalysis: Int,
+        canUseMultiPhotoAnalysis: Bool,
+        canEditAIFindings: Bool,
+        canAddManualFindings: Bool
+    ) -> PlanCapabilities {
+        PlanCapabilities(
+            tier: tier,
+            standardAnalysisLabel: standardAnalysisLabel,
+            detailedAnalysisLabel: detailedAnalysisLabel,
+            reportLabel: reportLabel,
+            acceleratedReportLabel: acceleratedReportLabel,
+            archiveLabel: archiveLabel,
+            canUseDetailedRiskTable: canUseDetailedRiskTable,
+            canUseEmergencyRisk: canUseEmergencyRisk,
+            canUseProcedureCheck: canUseProcedureCheck,
+            advancedCanvasLabel: advancedCanvasLabel,
+            canUseAutomaticDelivery: canUseAutomaticDelivery,
+            canUseTrainedAI: canUseTrainedAI,
+            supportLabel: supportLabel,
+            maxPhotosPerAnalysis: max(1, min(maxPhotosPerAnalysis, 5)),
+            visiblePhotoSlotsInUI: max(1, min(visiblePhotoSlotsInUI, 5)),
+            maxFindingsPerPhoto: max(1, maxFindingsPerPhoto),
+            maxFindingsPerAnalysis: max(1, maxFindingsPerAnalysis),
+            canUseMultiPhotoAnalysis: canUseMultiPhotoAnalysis,
+            canEditAIFindings: canEditAIFindings,
+            canAddManualFindings: canAddManualFindings
+        )
+    }
 
     static func forTier(_ tier: SubscriptionTier) -> PlanCapabilities {
         switch tier {

@@ -101,6 +101,54 @@ private struct BackendSubscriptionRow: Decodable {
     }
 }
 
+private struct BackendPlanCapabilityRuleRow: Decodable {
+    let maxPhotosPerAnalysis: Int?
+    let visiblePhotoSlotsInUI: Int?
+    let maxFindingsPerPhoto: Int?
+    let maxFindingsPerAnalysis: Int?
+    let canUseMultiPhotoAnalysis: Bool?
+    let canEditAIFindings: Bool?
+    let canAddManualFindings: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case maxPhotosPerAnalysis = "max_photos_per_analysis"
+        case visiblePhotoSlotsInUI = "visible_photo_slots_in_ui"
+        case maxFindingsPerPhoto = "max_findings_per_photo"
+        case maxFindingsPerAnalysis = "max_findings_per_analysis"
+        case canUseMultiPhotoAnalysis = "can_use_multi_photo_analysis"
+        case canEditAIFindings = "can_edit_ai_findings"
+        case canAddManualFindings = "can_add_manual_findings"
+    }
+}
+
+private struct BackendMultiPhotoFlags: Decodable {
+    let enableMultiPhotoAnalysis: Bool?
+    let enablePhotoLimitLockedSlotsForFree: Bool?
+    let enablePlusPro5PhotoLimit: Bool?
+    let enableEditableFindings: Bool?
+    let enableManualFindingAdd: Bool?
+    let maxPhotoCountFree: Int?
+    let maxPhotoCountPlus: Int?
+    let maxPhotoCountPro: Int?
+    let maxFindingsPerPhoto: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case enableMultiPhotoAnalysis = "enable_multi_photo_analysis"
+        case enablePhotoLimitLockedSlotsForFree = "enable_photo_limit_locked_slots_for_free"
+        case enablePlusPro5PhotoLimit = "enable_plus_pro_5_photo_limit"
+        case enableEditableFindings = "enable_editable_findings"
+        case enableManualFindingAdd = "enable_manual_finding_add"
+        case maxPhotoCountFree = "max_photo_count_free"
+        case maxPhotoCountPlus = "max_photo_count_plus"
+        case maxPhotoCountPro = "max_photo_count_pro"
+        case maxFindingsPerPhoto = "max_findings_per_photo"
+    }
+}
+
+private struct BackendFeatureFlagRow: Decodable {
+    let value: BackendMultiPhotoFlags
+}
+
 @MainActor
 final class AppState: ObservableObject {
     private static let onboardingCompletedKey = "rd.onboarding.completed"
@@ -599,6 +647,92 @@ final class AppState: ObservableObject {
         currentTier = tier
         planCapabilities = PlanCapabilities.forTier(tier)
         isPro = tier == .pro
+        Task { [weak self] in
+            await self?.refreshRemotePlanCapabilities(for: tier)
+        }
+    }
+
+    private func refreshRemotePlanCapabilities(for tier: SubscriptionTier) async {
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            planCapabilities = PlanCapabilities.forTier(tier).applyingPhotoRules(
+                maxPhotosPerAnalysis: tier.isPaid ? 5 : 1,
+                visiblePhotoSlotsInUI: 5,
+                maxFindingsPerPhoto: 12,
+                maxFindingsPerAnalysis: tier.isPaid ? 60 : 12,
+                canUseMultiPhotoAnalysis: tier.isPaid,
+                canEditAIFindings: true,
+                canAddManualFindings: false
+            )
+            return
+        }
+        #endif
+
+        guard auth.session != nil else { return }
+        guard let remoteCapabilities = await loadRemotePlanCapabilities(for: tier) else { return }
+        guard currentTier == tier else { return }
+        planCapabilities = remoteCapabilities
+    }
+
+    private func loadRemotePlanCapabilities(for tier: SubscriptionTier) async -> PlanCapabilities? {
+        do {
+            let rules: [BackendPlanCapabilityRuleRow] = try await SupabaseService.shared.client
+                .from("plan_capability_rules")
+                .select("max_photos_per_analysis,visible_photo_slots_in_ui,max_findings_per_photo,max_findings_per_analysis,can_use_multi_photo_analysis,can_edit_ai_findings,can_add_manual_findings")
+                .eq("plan", value: tier.rawValue)
+                .limit(1)
+                .execute()
+                .value
+
+            let flagsResult: [BackendFeatureFlagRow] = try await SupabaseService.shared.client
+                .from("app_feature_flags")
+                .select("value")
+                .eq("key", value: "multi_photo_analysis")
+                .limit(1)
+                .execute()
+                .value
+
+            guard let rule = rules.first, let flags = flagsResult.first?.value else {
+                return nil
+            }
+
+            let base = PlanCapabilities.forTier(tier)
+            let paidMultiPhotoEnabled = tier.isPaid
+                && flags.enableMultiPhotoAnalysis == true
+                && flags.enablePlusPro5PhotoLimit == true
+            let flagPhotoLimit: Int = {
+                switch tier {
+                case .free: return flags.maxPhotoCountFree ?? 1
+                case .plus: return flags.maxPhotoCountPlus ?? 1
+                case .pro: return flags.maxPhotoCountPro ?? 1
+                }
+            }()
+            let resolvedMaxPhotos = tier.isPaid
+                ? (paidMultiPhotoEnabled ? min(rule.maxPhotosPerAnalysis ?? 1, flagPhotoLimit) : 1)
+                : min(rule.maxPhotosPerAnalysis ?? 1, flags.maxPhotoCountFree ?? 1)
+            let resolvedMaxFindingsPerPhoto = min(
+                rule.maxFindingsPerPhoto ?? 12,
+                flags.maxFindingsPerPhoto ?? 12
+            )
+            let resolvedMaxFindingsTotal = min(
+                rule.maxFindingsPerAnalysis ?? resolvedMaxFindingsPerPhoto,
+                max(1, resolvedMaxPhotos) * max(1, resolvedMaxFindingsPerPhoto)
+            )
+            let shouldShowPhotoSlots = paidMultiPhotoEnabled
+                || (tier == .free && flags.enablePhotoLimitLockedSlotsForFree == true)
+
+            return base.applyingPhotoRules(
+                maxPhotosPerAnalysis: resolvedMaxPhotos,
+                visiblePhotoSlotsInUI: shouldShowPhotoSlots ? (rule.visiblePhotoSlotsInUI ?? 5) : 1,
+                maxFindingsPerPhoto: resolvedMaxFindingsPerPhoto,
+                maxFindingsPerAnalysis: resolvedMaxFindingsTotal,
+                canUseMultiPhotoAnalysis: paidMultiPhotoEnabled && rule.canUseMultiPhotoAnalysis == true,
+                canEditAIFindings: flags.enableEditableFindings == true && rule.canEditAIFindings == true,
+                canAddManualFindings: flags.enableManualFindingAdd == true && rule.canAddManualFindings == true
+            )
+        } catch {
+            return nil
+        }
     }
 
     @discardableResult
