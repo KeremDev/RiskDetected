@@ -9,6 +9,7 @@ struct AnalysisJob: Identifiable {
     let id = UUID()
     let previewImage: UIImage?
     let presentationMode: AnalysisWaitingPresentationMode
+    let photoCount: Int
     let work: (@escaping @MainActor (AnalysisProgressUpdate) -> Void) async throws -> AnalysisResultBundle
 }
 
@@ -33,6 +34,7 @@ private let analysisSectorSheetHeight: CGFloat = 600
 struct HomeView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var mode: HomeMode = .photo
     @State private var text: String = ""
@@ -60,7 +62,11 @@ struct HomeView: View {
     @State private var recentItems: [RecentAnalysis] = []
     @State private var recentReports: [ReportRow] = []
     @State private var openingRecentID: UUID? = nil
+    @State private var resumingInFlightID: UUID? = nil
     @State private var openingReportID: UUID? = nil
+    @State private var didOpenUITestResult = false
+    @State private var didOpenUITestAnalyzing = false
+    @State private var didOpenE2ERealAnalysis = false
     @State private var quotaUsage: DailyQuotaUsage? = nil
     @State private var professionalProgressSummary: ProfessionalProgressSummary? = nil
     @State private var showProfessionalTitlesSheet = false
@@ -152,6 +158,11 @@ struct HomeView: View {
             closeFreeQuotaEntryPointsIfNeeded()
             preparePhotoTrayFixtureIfNeeded()
             handlePendingQuickScanOnAppear()
+            openUITestResultIfNeeded()
+            openAnalyzingFixtureIfNeeded()
+            openRealE2EAnalysisIfNeeded()
+            openPendingAnalysisResultIfNeeded()
+            resumeInFlightAnalysisIfNeeded()
             Task {
                 await loadRecentItems()
                 await loadRecentReports()
@@ -165,6 +176,15 @@ struct HomeView: View {
                 await loadQuotaUsage()
                 await loadProfessionalProgress()
             }
+            resumeInFlightAnalysisIfNeeded()
+        }
+        .onChange(of: scenePhase) { phase in
+            guard phase == .active else { return }
+            openPendingAnalysisResultIfNeeded()
+            resumeInFlightAnalysisIfNeeded()
+        }
+        .onChange(of: app.pendingAnalysisResultID) { _ in
+            openPendingAnalysisResultIfNeeded()
         }
         .onChange(of: app.currentTier) { _ in
             normalizeSelectedCanvasesForTier()
@@ -257,6 +277,9 @@ struct HomeView: View {
             }
             .ignoresSafeArea()
             .preferredColorScheme(preferredModalColorScheme)
+            .onDisappear {
+                showCameraPicker = false
+            }
         }
         .fullScreenCover(isPresented: $showGalleryPicker) {
             MultiGalleryPicker(selectionLimit: remainingPhotoSlots) { images in
@@ -271,6 +294,9 @@ struct HomeView: View {
             }
             .ignoresSafeArea()
             .preferredColorScheme(preferredModalColorScheme)
+            .onDisappear {
+                showGalleryPicker = false
+            }
         }
         .fullScreenCover(isPresented: annotatePresentationBinding) {
             AnnotateView(
@@ -306,8 +332,10 @@ struct HomeView: View {
                 asyncWork: job.work,
                 previewImage: job.previewImage,
                 presentationMode: job.presentationMode,
+                photoCount: job.photoCount,
                 onComplete: { result in
                     analysisResult = result
+                    resumingInFlightID = nil
                     if !app.currentTier.isPaid {
                         markFreeQuotaExhaustedLocally()
                     }
@@ -317,6 +345,7 @@ struct HomeView: View {
                     }
                 },
                 onError: { msg in
+                    resumingInFlightID = nil
                     pendingJob = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                         handleAnalysisError(msg)
@@ -411,11 +440,21 @@ struct HomeView: View {
     }
 
     private var maxSelectablePhotos: Int {
-        app.planCapabilities.safeMaxPhotosPerAnalysis
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            return app.currentTier.isPaid ? 5 : 1
+        }
+        #endif
+        return app.planCapabilities.safeMaxPhotosPerAnalysis
     }
 
     private var visiblePhotoSlotCount: Int {
-        app.planCapabilities.safeVisiblePhotoSlotsInUI
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            return 5
+        }
+        #endif
+        return app.planCapabilities.safeVisiblePhotoSlotsInUI
     }
 
     private var remainingPhotoSlots: Int {
@@ -640,28 +679,44 @@ struct HomeView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(Array(selectedPhotos.enumerated()), id: \.element.id) { index, draft in
-                    Button {
-                        startAnnotatingPhoto(draft.id, returnToPhotoTray: true)
-                    } label: {
-                        ZStack(alignment: .topLeading) {
+                    ZStack(alignment: .topTrailing) {
+                        Button {
+                            startAnnotatingPhoto(draft.id, returnToPhotoTray: true)
+                        } label: {
                             Image(uiImage: draft.image)
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 62, height: 62)
                                 .clipped()
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
-
-                            Text("\(index + 1)")
-                                .rdMono(size: 10, weight: .bold)
-                                .foregroundStyle(Color.rdBlack)
-                                .frame(width: 22, height: 22)
-                                .background(Color.white.opacity(0.92))
-                                .clipShape(Circle())
-                                .padding(5)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("home.photo_preview.\(index + 1)")
+
+                        Text("\(index + 1)")
+                            .rdMono(size: 10, weight: .bold)
+                            .foregroundStyle(Color.rdOnyx)
+                            .frame(width: 22, height: 22)
+                            .background(Color.white.opacity(0.92))
+                            .clipShape(Circle())
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            .padding(5)
+
+                        Button {
+                            removePhoto(draft.id)
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .frame(width: 22, height: 22)
+                                .background(Color.black.opacity(0.62))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(RDPressableButtonStyle())
+                        .padding(4)
+                        .accessibilityLabel("\(index + 1). fotoğrafı sil")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("home.photo_preview.\(index + 1)")
+                    .frame(width: 62, height: 62)
                 }
 
                 if selectedPhotos.count < maxSelectablePhotos {
@@ -1204,7 +1259,7 @@ struct HomeView: View {
         }
         #endif
 
-        showGalleryPicker = true
+        presentGalleryPicker()
     }
 
     private func resetAnalysisDraft() {
@@ -1228,13 +1283,13 @@ struct HomeView: View {
         switch source {
         case .camera:
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                showCameraPicker = true
+                presentCameraPicker()
             } else {
-                showGalleryPicker = true
+                presentGalleryPicker()
             }
             return
         case .gallery:
-            showGalleryPicker = true
+            presentGalleryPicker()
             return
         case .chooser:
             break
@@ -1370,7 +1425,7 @@ struct HomeView: View {
             guard let previewImage = capturedImages.first else {
                 return
             }
-            pendingJob = AnalysisJob(previewImage: previewImage, presentationMode: .photo) {
+            pendingJob = AnalysisJob(previewImage: previewImage, presentationMode: .photo, photoCount: capturedImages.count) {
                 progress in
                 if app.currentTier.isPaid {
                     await app.refreshPlanState()
@@ -1389,7 +1444,7 @@ struct HomeView: View {
             guard !trimmed.isEmpty else {
                 return
             }
-            pendingJob = AnalysisJob(previewImage: nil, presentationMode: .text) {
+            pendingJob = AnalysisJob(previewImage: nil, presentationMode: .text, photoCount: 0) {
                 progress in
                 if app.currentTier.isPaid {
                     await app.refreshPlanState()
@@ -1471,9 +1526,9 @@ struct HomeView: View {
         showSourceDialog = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                showCameraPicker = true
+                presentCameraPicker()
             } else {
-                showGalleryPicker = true
+                presentGalleryPicker()
             }
         }
     }
@@ -1481,6 +1536,22 @@ struct HomeView: View {
     private func openGalleryFromPhotoTray() {
         showSourceDialog = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+            presentGalleryPicker()
+        }
+    }
+
+    private func presentCameraPicker() {
+        showCameraPicker = false
+        DispatchQueue.main.async {
+            guard !showSourceDialog else { return }
+            showCameraPicker = true
+        }
+    }
+
+    private func presentGalleryPicker() {
+        showGalleryPicker = false
+        DispatchQueue.main.async {
+            guard !showSourceDialog else { return }
             showGalleryPicker = true
         }
     }
@@ -1541,7 +1612,20 @@ struct HomeView: View {
             pendingAnnotateRequestID = nil
             showAnnotate = false
         }
+        if selectedPhotos.isEmpty {
+            resetEmptyPhotoDraftPresentationState()
+        }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    private func resetEmptyPhotoDraftPresentationState() {
+        queuedAnnotatePhotoIDs = []
+        annotatingPhotoID = nil
+        pendingAnnotateRequestID = nil
+        returnToPhotoTrayAfterAnnotation = false
+        showAnnotate = false
+        showCameraPicker = false
+        showGalleryPicker = false
     }
 
     private func movePhoto(_ id: UUID, offset: Int) {
@@ -1656,10 +1740,11 @@ struct HomeView: View {
     private func preparePhotoTrayFixtureIfNeeded() {
         #if DEBUG
         if Self.isUITestPhotoTrayFixture, selectedPhotos.isEmpty {
-            selectedPhotos = [
+            let fixturePhotos = [
                 AnalysisPhotoDraft(image: Self.uiTestPhotoFixture(seed: 0)),
                 AnalysisPhotoDraft(image: Self.uiTestPhotoFixture(seed: 1))
             ]
+            selectedPhotos = Array(fixturePhotos.prefix(maxSelectablePhotos))
             showSourceDialog = true
         } else if Self.isUITestOpenPhotoTray {
             showSourceDialog = true
@@ -1688,6 +1773,26 @@ struct HomeView: View {
             || ProcessInfo.processInfo.environment["RD_UI_TEST_DIRECT_HOME_PHOTO_PICK"] == "1"
     }
 
+    private static var isUITestOpenResult: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_OPEN_RESULT")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_OPEN_RESULT"] == "1"
+    }
+
+    private static var isUITestOpenAnalyzing: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_OPEN_ANALYZING")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_OPEN_ANALYZING"] == "1"
+    }
+
+    private static var isUITestOpenAnalyzingCompletes: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_OPEN_ANALYZING_COMPLETES")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_OPEN_ANALYZING_COMPLETES"] == "1"
+    }
+
+    private static var isRealE2EAnalysisLaunch: Bool {
+        ProcessInfo.processInfo.environment["RD_E2E_REAL_5_PHOTO_ANALYSIS"] == "1"
+            || CommandLine.arguments.contains("RD_E2E_REAL_5_PHOTO_ANALYSIS")
+    }
+
     private static func uiTestPhotoFixture(seed: Int) -> UIImage {
         let size = CGSize(width: 720, height: 960)
         let renderer = UIGraphicsImageRenderer(size: size)
@@ -1710,6 +1815,123 @@ struct HomeView: View {
             marker.lineWidth = 12
             marker.stroke()
         }
+    }
+
+    private static func e2eHazardPhotoFixture(seed: Int) -> UIImage {
+        if seed == 0, let asset = UIImage(named: "TrialPreviewA") {
+            return asset
+        }
+
+        let hazards: [(title: String, detail: String, color: UIColor)] = [
+            ("KORKULUK YOK", "Yuksekte acik kenar", .systemRed),
+            ("BARET YOK", "KKD eksikligi", .systemOrange),
+            ("ISLAK ZEMIN", "Kayma ve dusme riski", .systemBlue),
+            ("ACIK PANO", "Elektrik tehlikesi", .systemPurple),
+            ("DUZENSIZ SAHA", "Malzeme ve kablo daginik", .systemGreen),
+        ]
+        let item = hazards[max(0, min(seed, hazards.count - 1))]
+        let size = CGSize(width: 1024, height: 768)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            let rect = CGRect(origin: .zero, size: size)
+            UIColor(red: 0.78, green: 0.76, blue: 0.70, alpha: 1).setFill()
+            context.fill(rect)
+
+            UIColor(red: 0.42, green: 0.40, blue: 0.36, alpha: 1).setFill()
+            UIBezierPath(rect: CGRect(x: 0, y: 540, width: size.width, height: 228)).fill()
+
+            UIColor(red: 0.63, green: 0.64, blue: 0.60, alpha: 1).setFill()
+            for index in 0..<6 {
+                UIBezierPath(rect: CGRect(x: CGFloat(index) * 178 - 40, y: 120, width: 42, height: 420)).fill()
+            }
+
+            UIColor(red: 0.16, green: 0.18, blue: 0.20, alpha: 1).setStroke()
+            let platform = UIBezierPath()
+            platform.move(to: CGPoint(x: 80, y: 350))
+            platform.addLine(to: CGPoint(x: 930, y: 350))
+            platform.lineWidth = 10
+            platform.stroke()
+
+            drawE2EWorker(in: CGRect(x: 430, y: 275, width: 110, height: 250), wearingHelmet: seed != 1)
+
+            switch seed {
+            case 0:
+                item.color.setStroke()
+                let openEdge = UIBezierPath()
+                openEdge.move(to: CGPoint(x: 140, y: 310))
+                openEdge.addLine(to: CGPoint(x: 880, y: 310))
+                openEdge.lineWidth = 12
+                openEdge.stroke()
+            case 2:
+                UIColor.systemCyan.withAlphaComponent(0.72).setFill()
+                UIBezierPath(ovalIn: CGRect(x: 210, y: 560, width: 430, height: 70)).fill()
+            case 3:
+                UIColor.darkGray.setFill()
+                UIBezierPath(roundedRect: CGRect(x: 690, y: 245, width: 170, height: 210), cornerRadius: 12).fill()
+                UIColor.systemYellow.setStroke()
+                let wire = UIBezierPath()
+                wire.move(to: CGPoint(x: 725, y: 375))
+                wire.addLine(to: CGPoint(x: 835, y: 430))
+                wire.lineWidth = 8
+                wire.stroke()
+            case 4:
+                UIColor.brown.setFill()
+                for index in 0..<5 {
+                    UIBezierPath(rect: CGRect(x: 170 + index * 90, y: 560 + (index % 2) * 36, width: 140, height: 18)).fill()
+                }
+            default:
+                break
+            }
+
+            let banner = CGRect(x: 64, y: 58, width: 600, height: 116)
+            UIColor.black.withAlphaComponent(0.68).setFill()
+            UIBezierPath(roundedRect: banner, cornerRadius: 18).fill()
+
+            let titleAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 42, weight: .heavy),
+                .foregroundColor: UIColor.white
+            ]
+            let detailAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 26, weight: .semibold),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.86)
+            ]
+            item.title.draw(in: CGRect(x: 92, y: 76, width: 550, height: 48), withAttributes: titleAttributes)
+            item.detail.draw(in: CGRect(x: 92, y: 124, width: 550, height: 38), withAttributes: detailAttributes)
+        }
+    }
+
+    private static func drawE2EWorker(in rect: CGRect, wearingHelmet: Bool) {
+        UIColor(red: 0.12, green: 0.13, blue: 0.15, alpha: 1).setFill()
+        UIBezierPath(ovalIn: CGRect(x: rect.midX - 28, y: rect.minY, width: 56, height: 56)).fill()
+        if wearingHelmet {
+            UIColor.systemYellow.setFill()
+            UIBezierPath(roundedRect: CGRect(x: rect.midX - 38, y: rect.minY - 8, width: 76, height: 28), cornerRadius: 12).fill()
+        }
+
+        UIColor.systemYellow.withAlphaComponent(0.84).setFill()
+        UIBezierPath(roundedRect: CGRect(x: rect.midX - 36, y: rect.minY + 62, width: 72, height: 92), cornerRadius: 14).fill()
+        UIColor.black.setStroke()
+        let leftArm = UIBezierPath()
+        leftArm.move(to: CGPoint(x: rect.midX - 34, y: rect.minY + 82))
+        leftArm.addLine(to: CGPoint(x: rect.midX - 80, y: rect.minY + 130))
+        leftArm.lineWidth = 12
+        leftArm.stroke()
+        let rightArm = UIBezierPath()
+        rightArm.move(to: CGPoint(x: rect.midX + 34, y: rect.minY + 82))
+        rightArm.addLine(to: CGPoint(x: rect.midX + 78, y: rect.minY + 122))
+        rightArm.lineWidth = 12
+        rightArm.stroke()
+
+        let leftLeg = UIBezierPath()
+        leftLeg.move(to: CGPoint(x: rect.midX - 18, y: rect.minY + 154))
+        leftLeg.addLine(to: CGPoint(x: rect.midX - 46, y: rect.maxY))
+        leftLeg.lineWidth = 14
+        leftLeg.stroke()
+        let rightLeg = UIBezierPath()
+        rightLeg.move(to: CGPoint(x: rect.midX + 18, y: rect.minY + 154))
+        rightLeg.addLine(to: CGPoint(x: rect.midX + 48, y: rect.maxY))
+        rightLeg.lineWidth = 14
+        rightLeg.stroke()
     }
 
     private static var uiTestReports: [ReportRow] {
@@ -1884,20 +2106,143 @@ struct HomeView: View {
     }
 
     private func openRecentAnalysis(_ item: RecentAnalysis) {
-        guard openingRecentID == nil else { return }
-        openingRecentID = item.id
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        openAnalysisResult(analysisID: item.id, context: "Analiz açılamadı")
+    }
 
+    private func openAnalysisResult(analysisID: UUID, context: String) {
+        guard openingRecentID == nil else { return }
+        openingRecentID = analysisID
         Task {
             do {
-                let result = try await AnalysisService.shared.result(analysisID: item.id)
+                let result = try await AnalysisService.shared.result(analysisID: analysisID)
                 analysisResult = result
                 showResult = true
             } catch {
-                analysisError = AppErrorMessage.make(error, context: "Analiz açılamadı", fallbackTitle: "Analiz açılamadı").fullText
+                analysisError = AppErrorMessage.make(error, context: context, fallbackTitle: context).fullText
             }
             openingRecentID = nil
         }
+    }
+
+    private func openPendingAnalysisResultIfNeeded() {
+        guard let analysisID = app.pendingAnalysisResultID,
+              pendingJob == nil,
+              !showResult,
+              openingRecentID == nil else { return }
+        app.pendingAnalysisResultID = nil
+        openAnalysisResult(analysisID: analysisID, context: "Analiz sonucu açılamadı")
+    }
+
+    private func resumeInFlightAnalysisIfNeeded() {
+        guard pendingJob == nil,
+              !showResult,
+              openingRecentID == nil,
+              resumingInFlightID == nil,
+              app.pendingAnalysisResultID == nil,
+              let userID = app.auth.session?.user.id,
+              let inFlight = InFlightAnalysisStore.shared.load(for: userID) else {
+            return
+        }
+
+        resumingInFlightID = inFlight.analysisID
+        pendingJob = AnalysisJob(
+            previewImage: nil,
+            presentationMode: inFlight.kind == "text" ? .text : .photo,
+            photoCount: inFlight.photoCount
+        ) { progress in
+            try await AnalysisService.shared.resumeAnalysis(
+                analysisID: inFlight.analysisID,
+                onProgress: progress
+            )
+        }
+    }
+
+    private func openUITestResultIfNeeded() {
+        #if DEBUG
+        guard Self.isUITestOpenResult, !didOpenUITestResult else { return }
+        didOpenUITestResult = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            openRecentAnalysis(RecentAnalysis.mock[0])
+        }
+        #endif
+    }
+
+    private func openAnalyzingFixtureIfNeeded() {
+        #if DEBUG
+        guard (Self.isUITestOpenAnalyzing || Self.isUITestOpenAnalyzingCompletes),
+              !didOpenUITestAnalyzing,
+              pendingJob == nil else { return }
+        didOpenUITestAnalyzing = true
+        pendingJob = AnalysisJob(
+            previewImage: Self.uiTestPhotoFixture(seed: 2),
+            presentationMode: .photo,
+            photoCount: 5
+        ) { progress in
+            progress(.preparingInput)
+            try await Task.sleep(nanoseconds: 420_000_000)
+            progress(.creatingAnalysis)
+            try await Task.sleep(nanoseconds: 420_000_000)
+            progress(.uploadingPhotos)
+            try await Task.sleep(nanoseconds: 420_000_000)
+            progress(.submitting)
+            try await Task.sleep(nanoseconds: 420_000_000)
+            if Self.isUITestOpenAnalyzingCompletes {
+                progress(.queued)
+                try await Task.sleep(nanoseconds: 420_000_000)
+                progress(.analyzing)
+                try await Task.sleep(nanoseconds: 420_000_000)
+                progress(.finalizingResult)
+                try await Task.sleep(nanoseconds: 420_000_000)
+                return try await AnalysisService.shared.resumeAnalysis(
+                    analysisID: UUID(uuidString: "00000000-0000-0000-0000-00000000c071")!,
+                    onProgress: nil
+                )
+            }
+            progress(.retryingNetwork)
+            try await Task.sleep(nanoseconds: 3_000_000_000)
+            progress(.queued)
+            try await Task.sleep(nanoseconds: 620_000_000)
+            progress(.analyzing)
+            try await Task.sleep(nanoseconds: 30_000_000_000)
+            throw AnalysisService.AnalysisError.aiFailed("UI test analiz bekletildi.")
+        }
+        #endif
+    }
+
+    private func openRealE2EAnalysisIfNeeded() {
+        #if DEBUG
+        guard Self.isRealE2EAnalysisLaunch, !didOpenE2ERealAnalysis, pendingJob == nil else { return }
+        guard let userID = app.auth.session?.user.id else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                openRealE2EAnalysisIfNeeded()
+            }
+            return
+        }
+
+        didOpenE2ERealAnalysis = true
+        let images = (0..<5).map(Self.e2eHazardPhotoFixture(seed:))
+        selectedPhotos = images.map { AnalysisPhotoDraft(image: $0) }
+        selectedCanvases = [.general, .ppe, .warningSigns, .workingAtHeight, .electrical]
+        selectedAnalysisSector = .construction
+
+        pendingJob = AnalysisJob(
+            previewImage: images.first,
+            presentationMode: .photo,
+            photoCount: images.count
+        ) { progress in
+            await app.refreshPlanState()
+            return try await AnalysisService.shared.runPhotoAnalysis(
+                userID: userID,
+                images: images,
+                canvases: [.general, .ppe, .warningSigns, .workingAtHeight, .electrical],
+                analysisSector: .construction,
+                companyID: nil,
+                title: "E2E 5 Fotoğraf Storage \(Self.uiTestISODate(minutesAgo: 0))",
+                onProgress: progress
+            )
+        }
+        #endif
     }
 
     private func openReport(_ report: ReportRow) {
@@ -2171,6 +2516,19 @@ private struct PhotoMediaTraySheet: View {
     let onStartAnalysis: () -> Void
     let onClose: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var isDarkMode: Bool { colorScheme == .dark }
+    private var trayBackground: Color { isDarkMode ? Color(hex: "#151819") : Color.rdWhite }
+    private var trayPrimaryText: Color { isDarkMode ? Color.white : Color.rdOnyx }
+    private var traySecondaryText: Color { isDarkMode ? Color.white.opacity(0.64) : Color.rdSlate }
+    private var traySurface: Color { isDarkMode ? Color.white.opacity(0.08) : Color.rdFog }
+    private var trayTileSurface: Color { isDarkMode ? Color.white.opacity(0.06) : Color.rdWhite }
+    private var trayLockedSurface: Color { isDarkMode ? Color.white.opacity(0.07) : Color.rdFog }
+    private var trayStroke: Color { isDarkMode ? Color.white.opacity(0.13) : Color.rdLine }
+    private var trayIconText: Color { isDarkMode ? Color.white : Color.black }
+    private var trayCTA: Color { isDarkMode ? Color.rdGreen : Color.rdOnyx }
+
     var body: some View {
         VStack(spacing: 14) {
             header
@@ -2180,7 +2538,6 @@ private struct PhotoMediaTraySheet: View {
                 sourceButton(title: "Galeri", icon: "photo.on.rectangle.angled", action: onGallery)
             }
             .disabled(!canAddMore)
-            .opacity(canAddMore ? 1 : 0.46)
 
             LazyVGrid(columns: gridColumns, alignment: .center, spacing: gridSpacing) {
                 ForEach(0..<sheetSlotCount, id: \.self) { index in
@@ -2192,13 +2549,17 @@ private struct PhotoMediaTraySheet: View {
             .padding(.top, 2)
             .padding(.bottom, 4)
 
+            if hasLockedSlots {
+                multiPhotoUpgradePrompt
+            }
+
             primaryButton
         }
         .padding(.horizontal, 20)
         .padding(.top, 18)
         .padding(.bottom, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Color.rdWhite)
+        .background(trayBackground)
         .accessibilityIdentifier("home.photo_tray")
     }
 
@@ -2207,10 +2568,10 @@ private struct PhotoMediaTraySheet: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Fotoğraflar")
                     .font(.system(size: RDFontScale.size(23), weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
+                    .foregroundStyle(trayPrimaryText)
                 Text("\(photos.count)/\(maxPhotoCount)")
                     .rdMono(size: 12, weight: .semibold)
-                    .foregroundStyle(Color.rdSlate)
+                    .foregroundStyle(traySecondaryText)
             }
 
             Spacer(minLength: 0)
@@ -2218,9 +2579,9 @@ private struct PhotoMediaTraySheet: View {
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
+                    .foregroundStyle(traySecondaryText)
                     .frame(width: 36, height: 36)
-                    .background(Color.rdFog)
+                    .background(traySurface)
                     .clipShape(Circle())
             }
             .buttonStyle(RDPressableButtonStyle())
@@ -2244,6 +2605,10 @@ private struct PhotoMediaTraySheet: View {
         max(visibleSlotCount, min(maxPhotoCount, photos.count + 1))
     }
 
+    private var hasLockedSlots: Bool {
+        sheetSlotCount > maxPhotoCount
+    }
+
     @ViewBuilder
     private func slot(at index: Int, tileSize: CGFloat) -> some View {
         if index < photos.count {
@@ -2264,13 +2629,13 @@ private struct PhotoMediaTraySheet: View {
                     .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .lineLimit(1)
             }
-            .foregroundStyle(Color.rdBlack)
+            .foregroundStyle(trayIconText)
             .frame(maxWidth: .infinity)
             .frame(height: 46)
-            .background(Color.rdFog)
+            .background(traySurface)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.rdLine, lineWidth: 1)
+                    .stroke(trayStroke, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
@@ -2297,7 +2662,7 @@ private struct PhotoMediaTraySheet: View {
                 HStack {
                     Text("\(index + 1)")
                         .rdMono(size: 10, weight: .bold)
-                        .foregroundStyle(Color.rdBlack)
+                        .foregroundStyle(Color.rdOnyx)
                         .frame(width: 24, height: 24)
                         .background(Color.white.opacity(0.92))
                         .clipShape(Circle())
@@ -2344,16 +2709,16 @@ private struct PhotoMediaTraySheet: View {
     private func emptyTile(index: Int, tileSize: CGFloat) -> some View {
         Button(action: onGallery) {
             RoundedRectangle(cornerRadius: 17)
-                .fill(Color.rdWhite)
+                .fill(trayTileSurface)
                 .overlay(
                     RoundedRectangle(cornerRadius: 17)
                         .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
-                        .foregroundStyle(Color.rdSlate.opacity(0.34))
+                        .foregroundStyle(traySecondaryText.opacity(isDarkMode ? 0.48 : 0.34))
                 )
                 .overlay(
                     Image(systemName: "plus")
                         .font(.system(size: RDFontScale.size(31), weight: .light, design: .rounded))
-                        .foregroundStyle(Color.rdSlate.opacity(0.58))
+                        .foregroundStyle(isDarkMode ? Color.white.opacity(0.72) : Color.rdSlate.opacity(0.58))
                 )
                 .frame(width: tileSize, height: tileSize)
         }
@@ -2364,21 +2729,18 @@ private struct PhotoMediaTraySheet: View {
 
     private func lockedTile(index: Int, tileSize: CGFloat) -> some View {
         Button(action: onLockedSlot) {
-            ZStack(alignment: .top) {
+            ZStack {
                 RoundedRectangle(cornerRadius: 17)
-                    .fill(Color.rdFog)
+                    .fill(trayLockedSurface)
                     .overlay(
                         RoundedRectangle(cornerRadius: 17)
-                            .stroke(Color.rdLine, lineWidth: 1)
+                            .stroke(trayStroke, lineWidth: 1)
                     )
 
                 Image(systemName: "lock.fill")
                     .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdSlate.opacity(0.72))
+                    .foregroundStyle(trayIconText)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                lockedPlanBadge
-                    .padding(.top, 10)
             }
             .frame(width: tileSize, height: tileSize)
         }
@@ -2386,24 +2748,42 @@ private struct PhotoMediaTraySheet: View {
         .accessibilityLabel("\(index + 1). slot kilitli. Plus veya Pro ile açılır.")
     }
 
-    private var lockedPlanBadge: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "flame.fill")
-                .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
-            Text("Plus / Pro")
-                .font(.system(size: RDFontScale.size(9.5), weight: .black, design: .rounded))
-                .lineLimit(1)
+    private var multiPhotoUpgradePrompt: some View {
+        Button(action: onLockedSlot) {
+            HStack(spacing: 9) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                Text("Çoklu fotoğraf özelliği için hesabınızı yükseltin")
+                    .font(.system(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.86)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: RDFontScale.size(10), weight: .black, design: .rounded))
+            }
+            .foregroundStyle(Color(hex: "#8A5A00"))
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            .background(
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#FFF8D7"),
+                        Color(hex: "#FFEFC2")
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color(hex: "#F0C24A"), lineWidth: 1.2)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .shadow(color: Color(hex: "#D9A300").opacity(0.13), radius: 8, x: 0, y: 3)
         }
-        .foregroundStyle(Color(hex: "#D7DF19"))
-        .padding(.horizontal, 9)
-        .frame(height: 24)
-        .background(Color(hex: "#202322"))
-        .overlay(
-            Capsule()
-                .stroke(Color(hex: "#D7DF19"), lineWidth: 1.4)
-        )
-        .clipShape(Capsule())
-        .shadow(color: Color.black.opacity(0.10), radius: 4, x: 0, y: 2)
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityIdentifier("home.photo_tray.multi_photo_upgrade")
     }
 
     private func tileIconButton(
@@ -2414,7 +2794,7 @@ private struct PhotoMediaTraySheet: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
-                .foregroundStyle(disabled ? Color.rdSlate.opacity(0.34) : Color.rdBlack)
+                .foregroundStyle(disabled ? Color.rdSlate.opacity(0.38) : Color.rdOnyx)
                 .frame(width: 24, height: 22)
         }
         .buttonStyle(.plain)
@@ -2431,14 +2811,17 @@ private struct PhotoMediaTraySheet: View {
         } label: {
             HStack(spacing: 9) {
                 Image(systemName: photos.isEmpty ? "plus.circle.fill" : "sparkles")
-                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                 Text(photos.isEmpty ? "Fotoğraf ekle" : "Analize geç")
-                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                    .tracking(0)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .frame(height: 58)
-            .background(photos.isEmpty && !canAddMore ? Color.rdSlate : Color.rdGreen)
+            .background(photos.isEmpty && !canAddMore ? Color.rdSlate : trayCTA)
             .overlay(
                 RoundedRectangle(cornerRadius: 24)
                     .stroke(Color.white.opacity(0.18), lineWidth: 1)

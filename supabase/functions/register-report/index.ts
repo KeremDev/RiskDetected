@@ -30,6 +30,11 @@ type RegisterReportBody = {
   generated_from_user_edited_findings?: boolean;
   source_photo_count?: number;
   visible_findings_count?: number;
+  client_app_version?: string;
+  client_app_build?: string;
+  client_platform?: string;
+  api_contract_version?: number;
+  client_capabilities?: Record<string, unknown>;
   request_id?: string;
   support_id?: string;
 };
@@ -105,6 +110,80 @@ function safeLogText(value: unknown, maxLength = 180): string {
   return String(value)
     .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
     .slice(0, maxLength);
+}
+
+function bool(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function positiveInt(value: unknown, fallback: number): number {
+  const parsed = Math.round(Number(value));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function optionalPositiveInt(value: unknown): number | null {
+  const parsed = Math.round(Number(value));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function stringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? "").trim()).filter(Boolean);
+}
+
+function snapshotGateOpen(
+  value: Record<string, unknown>,
+  body: RegisterReportBody,
+): boolean {
+  if (bool(value.kill_switch, false)) return false;
+  const platform = safeText(body.client_platform, "unknown", 40).toLowerCase();
+  const build = safeText(body.client_app_build, "", 40);
+  const buildNumber = optionalPositiveInt(build);
+  const contractVersion = positiveInt(body.api_contract_version, 1);
+  const capabilities = body.client_capabilities &&
+      typeof body.client_capabilities === "object"
+    ? body.client_capabilities
+    : {};
+  if (platform !== "ios" || contractVersion < 2 || !build) return false;
+  if (capabilities.report_snapshot_v2 !== true) return false;
+
+  const mode = safeText(value.rollout_mode, "off", 40).toLowerCase();
+  if (mode === "all") return true;
+  if (mode === "build_allowlist") {
+    const allowed = stringArray(value.enabled_ios_builds);
+    if (allowed.includes(build)) return true;
+    return buildNumber != null &&
+      allowed
+        .map((item) => optionalPositiveInt(item))
+        .some((item) => item === buildNumber);
+  }
+  if (mode === "min_build") {
+    const minimum = optionalPositiveInt(value.min_ios_build);
+    return buildNumber != null && minimum != null && buildNumber >= minimum;
+  }
+  return false;
+}
+
+async function reportSnapshotV2Enabled(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  body: RegisterReportBody,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("app_feature_flags")
+    .select("value")
+    .eq("key", "multi_photo_analysis")
+    .maybeSingle();
+  if (error) return false;
+  const value = data?.value as Record<string, unknown> | undefined;
+  if (!value || !snapshotGateOpen(value, body)) return false;
+  const features = value.features && typeof value.features === "object"
+    ? value.features as Record<string, unknown>
+    : {};
+  return bool(
+    features.report_snapshot_v2,
+    bool(value.enable_report_snapshot_v2, false),
+  );
 }
 
 function isUUID(value: unknown): value is string {
@@ -426,29 +505,42 @@ serve(async (req) => {
     });
   }
 
-  const snapshot = await loadServerReportSnapshot({
-    supabase,
-    analysis: analysisRow,
-    analysisID,
-    userID: user.id,
-  });
-  if (!snapshot.ok) {
-    await supabase.storage.from("reports").remove([storagePath]);
-    console.error(
-      "PDF report snapshot fetch failed",
-      JSON.stringify({
+  const shouldStoreSnapshot = await reportSnapshotV2Enabled(supabase, body);
+  let snapshotColumns: Record<string, unknown> = {};
+  if (shouldStoreSnapshot) {
+    const snapshot = await loadServerReportSnapshot({
+      supabase,
+      analysis: analysisRow,
+      analysisID,
+      userID: user.id,
+    });
+    if (!snapshot.ok) {
+      await supabase.storage.from("reports").remove([storagePath]);
+      console.error(
+        "PDF report snapshot fetch failed",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogText(snapshot.detail),
+        }),
+      );
+      return json(500, {
+        error: snapshot.code,
+        message: "Rapor arşiv verisi hazırlanamadı.",
         request_id: requestID,
         support_id: supportID,
-        analysis_id: analysisID,
-        error: safeLogText(snapshot.detail),
-      }),
-    );
-    return json(500, {
-      error: snapshot.code,
-      message: "Rapor arşiv verisi hazırlanamadı.",
-      request_id: requestID,
-      support_id: supportID,
-    });
+      });
+    }
+    snapshotColumns = {
+      findings_snapshot_json: snapshot.findings,
+      photos_snapshot_json: snapshot.photos,
+      analysis_edit_version: snapshot.analysisEditVersion,
+      generated_from_user_edited_findings: snapshot.hasUserEdits,
+      source_photo_count: snapshot.sourcePhotoCount,
+      visible_findings_count: snapshot.visibleFindingsCount,
+      report_page_count: pageCount,
+    };
   }
 
   const { data: documentNo, error: documentNoError } = await supabase.rpc(
@@ -488,13 +580,7 @@ serve(async (req) => {
       page_count: pageCount,
       company_id: company?.id ?? null,
       company_snapshot: companySnapshot(company),
-      findings_snapshot_json: snapshot.findings,
-      photos_snapshot_json: snapshot.photos,
-      analysis_edit_version: snapshot.analysisEditVersion,
-      generated_from_user_edited_findings: snapshot.hasUserEdits,
-      source_photo_count: snapshot.sourcePhotoCount,
-      visible_findings_count: snapshot.visibleFindingsCount,
-      report_page_count: pageCount,
+      ...snapshotColumns,
       request_id: requestID,
       support_id: supportID,
     })

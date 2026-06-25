@@ -6,6 +6,7 @@ import UIKit
 @main
 struct RiskDetectedApp: App {
     @UIApplicationDelegateAdaptor(RDAppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var appState = AppState()
     @StateObject private var networkMonitor = NetworkMonitor.shared
 
@@ -27,6 +28,13 @@ struct RiskDetectedApp: App {
                 .onOpenURL { url in
                     if !GoogleSignInService.handle(url) {
                         SupabaseService.shared.handleAuthURL(url)
+                    }
+                }
+                .onChange(of: scenePhase) { phase in
+                    guard phase == .active else { return }
+                    Task {
+                        await NotificationService.shared.refreshSettings()
+                        NotificationService.shared.syncCurrentTokenIfPossible()
                     }
                 }
         }

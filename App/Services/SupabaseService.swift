@@ -11,8 +11,13 @@ final class SupabaseService {
 
     private init() {
         serverTrustPinningDelegate = ServerTrustPinningDelegate()
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 180
+        configuration.timeoutIntervalForResource = 600
+        configuration.waitsForConnectivity = true
+
         pinnedSession = URLSession(
-            configuration: .default,
+            configuration: configuration,
             delegate: serverTrustPinningDelegate,
             delegateQueue: nil
         )

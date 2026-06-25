@@ -31,6 +31,11 @@ type RequestBody = {
   method?: "fine_kinney" | "matrix_5x5";
   report_kind?: "risk_analysis" | "standard";
   company_id?: string | null;
+  client_app_version?: string;
+  client_app_build?: string;
+  client_platform?: string;
+  api_contract_version?: number;
+  client_capabilities?: Record<string, unknown>;
   request_id?: string;
   support_id?: string;
 };
@@ -332,6 +337,81 @@ async function sendReportReadyPush(params: {
 function safeText(value: unknown, fallback = ""): string {
   if (value === null || value === undefined) return fallback;
   return String(value);
+}
+
+function bool(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function positiveInt(value: unknown, fallback: number): number {
+  const parsed = Math.round(Number(value));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function optionalPositiveInt(value: unknown): number | null {
+  const parsed = Math.round(Number(value));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function stringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? "").trim()).filter(Boolean);
+}
+
+function reportSnapshotV2GateOpen(
+  value: Record<string, unknown>,
+  body: RequestBody,
+): boolean {
+  if (bool(value.kill_switch, false)) return false;
+  const platform = safeText(body.client_platform, "unknown").trim()
+    .toLowerCase();
+  const build = safeText(body.client_app_build, "").trim();
+  const buildNumber = optionalPositiveInt(build);
+  const contractVersion = positiveInt(body.api_contract_version, 1);
+  const capabilities = body.client_capabilities &&
+      typeof body.client_capabilities === "object"
+    ? body.client_capabilities
+    : {};
+  if (platform !== "ios" || contractVersion < 2 || !build) return false;
+  if (capabilities.report_snapshot_v2 !== true) return false;
+
+  const mode = safeText(value.rollout_mode, "off").trim().toLowerCase();
+  if (mode === "all") return true;
+  if (mode === "build_allowlist") {
+    const allowed = stringArray(value.enabled_ios_builds);
+    if (allowed.includes(build)) return true;
+    return buildNumber != null &&
+      allowed
+        .map((item) => optionalPositiveInt(item))
+        .some((item) => item === buildNumber);
+  }
+  if (mode === "min_build") {
+    const minimum = optionalPositiveInt(value.min_ios_build);
+    return buildNumber != null && minimum != null && buildNumber >= minimum;
+  }
+  return false;
+}
+
+async function reportSnapshotV2Enabled(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  body: RequestBody,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("app_feature_flags")
+    .select("value")
+    .eq("key", "multi_photo_analysis")
+    .maybeSingle();
+  if (error) return false;
+  const value = data?.value as Record<string, unknown> | undefined;
+  if (!value || !reportSnapshotV2GateOpen(value, body)) return false;
+  const features = value.features && typeof value.features === "object"
+    ? value.features as Record<string, unknown>
+    : {};
+  return bool(
+    features.report_snapshot_v2,
+    bool(value.enable_report_snapshot_v2, false),
+  );
 }
 
 function displayFindingTitle(title: unknown): string {
@@ -886,13 +966,15 @@ const styles = {
   label: {
     font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.slate } },
     alignment: { horizontal: "left", vertical: "top", wrapText: true },
+    border: borderThin,
   },
   value: {
     font: { name: "Aptos", sz: 11, color: { rgb: palette.charcoal } },
     alignment: { horizontal: "left", vertical: "top", wrapText: true },
+    border: borderThin,
   },
   kpiLabel: {
-    font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.slate } },
+    font: { name: "Aptos", sz: 9, bold: true, color: { rgb: palette.slate } },
     fill: { fgColor: { rgb: palette.fog } },
     alignment: { horizontal: "center", vertical: "center", wrapText: true },
     border: borderThin,
@@ -900,7 +982,7 @@ const styles = {
   kpiValue: {
     font: {
       name: "Aptos Display",
-      sz: 20,
+      sz: 16,
       bold: true,
       color: { rgb: palette.ink },
     },
@@ -975,6 +1057,46 @@ function setStyle(
       ensureCell(sheet, address).s = style;
     }
   }
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function estimatedLineCount(value: unknown, widthChars: number): number {
+  const text = safeText(value).trim();
+  if (!text) return 1;
+  const usableWidth = Math.max(8, Math.floor(widthChars * 0.92));
+  return text.split(/\r?\n/u).reduce((sum, line) => {
+    const length = Math.max(1, line.trim().length);
+    return sum + Math.max(1, Math.ceil(length / usableWidth));
+  }, 0);
+}
+
+function estimatedRowHeight(
+  cells: Array<{ value: unknown; width: number }>,
+  options: {
+    min?: number;
+    max?: number;
+    base?: number;
+    lineHeight?: number;
+  } = {},
+): number {
+  const maxLines = cells.reduce(
+    (max, cell) => Math.max(max, estimatedLineCount(cell.value, cell.width)),
+    1,
+  );
+  const base = options.base ?? 8;
+  const lineHeight = options.lineHeight ?? 14;
+  return clampNumber(
+    base + maxLines * lineHeight,
+    options.min ?? 24,
+    options.max ?? 220,
+  );
+}
+
+function totalColumnWidth(widths: number[]): number {
+  return widths.reduce((sum, width) => sum + width, 0);
 }
 
 function methodBand(finding: FindingRow, method: string): RiskBand {
@@ -1935,6 +2057,8 @@ function makeWorkbook(
   const createdDate = formatDate(analysis.created_at);
   const completedDate = formatDate(analysis.completed_at);
   const generatedDate = formatDate(new Date().toISOString());
+  const summaryAIText = safeText(analysis.ai_summary, "Özet bulunamadı.");
+  const summaryColumnWidths = [18, 24, 4, 18, 24, 4, 18, 26];
   const riskOrder: RiskBand[] = [
     "critical",
     "high",
@@ -2000,22 +2124,42 @@ function makeWorkbook(
     [],
     [
       "TOPLAM BULGU",
+      "",
       "EN YÜKSEK RİSK",
+      "",
       "METOT",
+      "",
       "TOPLAM SKOR",
-      "KRİTİK",
-      "YÜKSEK",
-      "ORTA/DÜŞÜK",
       "",
     ],
     [
       totalFindings,
+      "",
       bandLabel(highestBand),
+      "",
       methodLabel(method),
+      "",
       methodTotalScore(analysis, method),
+      "",
+    ],
+    [
+      "KRİTİK",
+      "",
+      "YÜKSEK",
+      "",
+      "ORTA",
+      "",
+      "DÜŞÜK",
+      "",
+    ],
+    [
       counts.critical,
+      "",
       counts.high,
-      `${counts.medium}/${counts.low}`,
+      "",
+      counts.medium,
+      "",
+      counts.low,
       "",
     ],
     [],
@@ -2039,7 +2183,7 @@ function makeWorkbook(
     [],
     ["AI Özeti", "", "", "", "", "", "", ""],
     [
-      safeText(analysis.ai_summary, "Özet bulunamadı."),
+      summaryAIText,
       "",
       "",
       "",
@@ -2049,7 +2193,7 @@ function makeWorkbook(
       "",
     ],
   ]);
-  setCols(summary, [18, 28, 4, 18, 24, 4, 16, 24]);
+  setCols(summary, summaryColumnWidths);
   setRows(summary, [
     32,
     24,
@@ -2058,35 +2202,73 @@ function makeWorkbook(
     24,
     24,
     24,
-    8,
+    24,
+    12,
+    34,
+    26,
+    32,
+    26,
+    10,
+    26,
+    24,
+    24,
+    24,
+    24,
+    24,
+    10,
     28,
-    42,
-    8,
-    24,
-    24,
-    24,
-    24,
-    24,
-    24,
-    8,
-    70,
-    70,
+    estimatedRowHeight(
+      [{ value: summaryAIText, width: totalColumnWidth(summaryColumnWidths) }],
+      { min: 64, max: 180, base: 8, lineHeight: 15 },
+    ),
   ]);
-  addMerges(summary, ["A1:H1", "A2:H2", "D12:H12", "A19:H19", "A20:H20"]);
+  addMerges(summary, [
+    "A1:H1",
+    "A2:H2",
+    "A10:B10",
+    "C10:D10",
+    "E10:F10",
+    "G10:H10",
+    "A11:B11",
+    "C11:D11",
+    "E11:F11",
+    "G11:H11",
+    "A12:B12",
+    "C12:D12",
+    "E12:F12",
+    "G12:H12",
+    "A13:B13",
+    "C13:D13",
+    "E13:F13",
+    "G13:H13",
+    "D15:H15",
+    "D16:H16",
+    "D17:H17",
+    "D18:H18",
+    "D19:H19",
+    "D20:H20",
+    "A22:H22",
+    "A23:H23",
+  ]);
   setStyle(summary, "A1:H1", styles.title);
   setStyle(summary, "A2:H2", styles.subtitle);
-  setStyle(summary, "A4:H7", styles.tableCell);
-  setStyle(summary, "A9:H9", styles.kpiLabel);
-  setStyle(summary, "A10:H10", styles.kpiValue);
-  setStyle(summary, "A12:H12", styles.tableHeader);
-  setStyle(summary, "A13:H17", styles.tableCell);
-  setStyle(summary, "A19:H19", styles.tableHeader);
-  setStyle(summary, "A20:H20", {
+  setStyle(summary, "A4:H8", styles.tableCell);
+  setStyle(summary, "A4:A8", styles.label);
+  setStyle(summary, "D4:D8", styles.label);
+  setStyle(summary, "G4:G8", styles.label);
+  setStyle(summary, "A10:H10", styles.kpiLabel);
+  setStyle(summary, "A11:H11", styles.kpiValue);
+  setStyle(summary, "A12:H12", styles.kpiLabel);
+  setStyle(summary, "A13:H13", styles.kpiValue);
+  setStyle(summary, "A15:H15", styles.tableHeader);
+  setStyle(summary, "A16:H20", styles.tableCell);
+  setStyle(summary, "A22:H22", styles.tableHeader);
+  setStyle(summary, "A23:H23", {
     ...styles.value,
     alignment: { horizontal: "left", vertical: "top", wrapText: true },
   });
   for (let i = 0; i < riskOrder.length; i++) {
-    const row = 13 + i;
+    const row = 16 + i;
     const color = bandStyle(riskOrder[i]);
     setStyle(summary, `A${row}:A${row}`, {
       ...styles.tableCell,
@@ -2148,15 +2330,42 @@ function makeWorkbook(
   ];
   const riskSheet = appendSheet(workbook, "Risk Analiz Tablosu", riskRows);
   const riskColumnWidths = method === "matrix_5x5"
-    ? [6, 26, 18, 56, 11, 11, 12, 16, 64, 34, 36, 16, 14, 32]
-    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 64, 34, 36, 16, 14, 32];
+    ? [6, 28, 18, 62, 11, 11, 12, 16, 72, 40, 42, 16, 14, 32]
+    : [6, 28, 18, 62, 11, 11, 11, 12, 16, 72, 40, 42, 16, 14, 32];
   const riskLastCol = XLSX.utils.encode_col(riskHeaders.length - 1);
   const riskLevelCol = XLSX.utils.encode_col(4 + metricHeaders.length - 1);
   const metricFirstCol = "E";
   const metricLastCol = XLSX.utils.encode_col(4 + metricHeaders.length - 2);
   const statusCol = XLSX.utils.encode_col(riskHeaders.length - 2);
+  const measureColumnIndex = 4 + metricHeaders.length;
+  const rootCauseColumnIndex = measureColumnIndex + 1;
+  const referenceColumnIndex = measureColumnIndex + 2;
   setCols(riskSheet, riskColumnWidths);
-  setRows(riskSheet, [38, ...findings.map(() => 118)]);
+  setRows(riskSheet, [
+    42,
+    ...riskRows.slice(1).map((row) =>
+      estimatedRowHeight(
+        [
+          { value: row[1], width: riskColumnWidths[1] },
+          { value: row[2], width: riskColumnWidths[2] },
+          { value: row[3], width: riskColumnWidths[3] },
+          {
+            value: row[measureColumnIndex],
+            width: riskColumnWidths[measureColumnIndex],
+          },
+          {
+            value: row[rootCauseColumnIndex],
+            width: riskColumnWidths[rootCauseColumnIndex],
+          },
+          {
+            value: row[referenceColumnIndex],
+            width: riskColumnWidths[referenceColumnIndex],
+          },
+        ],
+        { min: 72, max: 260, base: 10, lineHeight: 14 },
+      )
+    ),
+  ]);
   riskSheet["!autofilter"] = {
     ref: `A1:${riskLastCol}${Math.max(1, riskRows.length)}`,
   };
@@ -2188,6 +2397,10 @@ function makeWorkbook(
     });
   }
 
+  const criticalHighFindings = findings
+    .filter((finding) =>
+      ["critical", "high"].includes(methodBand(finding, method))
+    );
   const distribution = appendSheet(workbook, "Risk Dağılımı", [
     ["Risk Dağılımı", "", "", "", "", ""],
     ["Seviye", "Adet", "Oran", "Bar", "Metot", "Not"],
@@ -2206,20 +2419,17 @@ function makeWorkbook(
     }),
     [],
     ["Kritik/Yüksek Bulgular", "", "", "", "", ""],
-    ...findings
-      .filter((finding) =>
-        ["critical", "high"].includes(methodBand(finding, method))
-      )
-      .map((finding) => [
-        finding.ordinal ?? "",
-        displayFindingTitle(finding.title),
-        bandLabel(methodBand(finding, method)),
-        methodScore(finding, method),
-        actionWithRootCause(finding),
-        "",
-      ]),
+    ...criticalHighFindings.map((finding) => [
+      finding.ordinal ?? "",
+      displayFindingTitle(finding.title),
+      bandLabel(methodBand(finding, method)),
+      methodScore(finding, method),
+      actionWithRootCause(finding),
+      "",
+    ]),
   ]);
-  setCols(distribution, [20, 10, 10, 34, 18, 18]);
+  const distributionColumnWidths = [20, 10, 10, 34, 58, 18];
+  setCols(distribution, distributionColumnWidths);
   setRows(distribution, [
     32,
     28,
@@ -2230,7 +2440,15 @@ function makeWorkbook(
     24,
     8,
     28,
-    ...findings.map(() => 68),
+    ...criticalHighFindings.map((finding) =>
+      estimatedRowHeight(
+        [
+          { value: displayFindingTitle(finding.title), width: 34 },
+          { value: actionWithRootCause(finding), width: 58 },
+        ],
+        { min: 54, max: 190, base: 8, lineHeight: 14 },
+      )
+    ),
   ]);
   addMerges(distribution, ["A1:F1", "A8:F8"]);
   setStyle(distribution, "A1:F1", styles.title);
@@ -2254,7 +2472,7 @@ function makeWorkbook(
 
   appendMethodReferenceSheet(workbook, analysis, profile, method, documentNo);
 
-  const info = appendSheet(workbook, "Rapor Bilgileri", [
+  const infoRows = [
     ["Alan", "Değer"],
     ["Analiz ID", analysis.id],
     ["Kullanıcı ID", analysis.user_id],
@@ -2267,9 +2485,19 @@ function makeWorkbook(
     ["Oluşturma tarihi", formatDate(new Date().toISOString())],
     ["Request ID", requestID],
     ["Destek kodu", supportID],
+  ];
+  const info = appendSheet(workbook, "Rapor Bilgileri", infoRows);
+  const infoColumnWidths = [24, 78];
+  setCols(info, infoColumnWidths);
+  setRows(info, [
+    28,
+    ...infoRows.slice(1).map((row) =>
+      estimatedRowHeight(
+        [{ value: row[1], width: infoColumnWidths[1] }],
+        { min: 24, max: 72, base: 8, lineHeight: 14 },
+      )
+    ),
   ]);
-  setCols(info, [24, 72]);
-  setRows(info, Array(12).fill(24));
   setStyle(info, "A1:B1", styles.tableHeader);
   setStyle(info, "A2:B12", styles.tableCell);
   setStyle(info, "A2:A12", styles.label);
@@ -2560,6 +2788,27 @@ serve(async (req: Request) => {
     });
   }
 
+  const shouldStoreSnapshot = await reportSnapshotV2Enabled(supabase, body);
+  const snapshotColumns = shouldStoreSnapshot
+    ? {
+      findings_snapshot_json: findings ?? [],
+      photos_snapshot_json: photos ?? [],
+      analysis_edit_version: Math.max(
+        0,
+        Math.round(
+          Number(
+            (analysis as Record<string, unknown>).analysis_edit_version ?? 0,
+          ),
+        ),
+      ),
+      generated_from_user_edited_findings:
+        (analysis as Record<string, unknown>).has_user_edits === true,
+      source_photo_count: Array.isArray(photos) ? photos.length : null,
+      visible_findings_count: Array.isArray(findings) ? findings.length : null,
+      report_page_count: 1,
+    }
+    : {};
+
   const { data: report, error: reportError } = await supabase
     .from("reports")
     .insert({
@@ -2578,17 +2827,7 @@ serve(async (req: Request) => {
       page_count: 1,
       company_id: company?.id ?? null,
       company_snapshot: companySnapshot(company),
-      findings_snapshot_json: findings ?? [],
-      photos_snapshot_json: photos ?? [],
-      analysis_edit_version: Math.max(
-        0,
-        Math.round(Number((analysis as Record<string, unknown>).analysis_edit_version ?? 0)),
-      ),
-      generated_from_user_edited_findings:
-        (analysis as Record<string, unknown>).has_user_edits === true,
-      source_photo_count: Array.isArray(photos) ? photos.length : null,
-      visible_findings_count: Array.isArray(findings) ? findings.length : null,
-      report_page_count: 1,
+      ...snapshotColumns,
       request_id: requestID,
       support_id: supportID,
     })

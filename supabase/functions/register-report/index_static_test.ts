@@ -73,3 +73,20 @@ Deno.test("register-report insert ignores client supplied snapshot fields", asyn
   assert(!source.includes("Number(body.source_photo_count)"));
   assert(!source.includes("Number(body.visible_findings_count)"));
 });
+
+Deno.test("register-report snapshot storage is build gated", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, "async function reportSnapshotV2Enabled");
+  assertStringIncludes(source, "function snapshotGateOpen");
+  assertStringIncludes(source, "contractVersion < 2");
+  assertStringIncludes(source, "capabilities.report_snapshot_v2 !== true");
+  assertStringIncludes(
+    source,
+    "const shouldStoreSnapshot = await reportSnapshotV2Enabled",
+  );
+  assertStringIncludes(source, "...snapshotColumns");
+});

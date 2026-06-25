@@ -4,27 +4,93 @@ import Supabase
 import Vision
 import OSLog
 
+enum AnalysisProgressPhase: Equatable {
+    case preparingInput
+    case creatingAnalysis
+    case uploadingPhotos
+    case submitting
+    case queued
+    case analyzing
+    case finalizingResult
+    case retryingNetwork
+    case retryingAI
+    case fallbackModel
+}
+
 struct AnalysisProgressUpdate: Equatable {
+    let phase: AnalysisProgressPhase
     let title: String
     let message: String
     let icon: String
 
+    static let preparingInput = AnalysisProgressUpdate(
+        phase: .preparingInput,
+        title: "Girdi hazırlanıyor",
+        message: "Analiz girdisi kontrol edilip güvenli paket hazırlanıyor.",
+        icon: "photo.on.rectangle.angled"
+    )
+
+    static let creatingAnalysis = AnalysisProgressUpdate(
+        phase: .creatingAnalysis,
+        title: "Analiz kaydı açılıyor",
+        message: "Analiz güvenli şekilde başlatılıyor.",
+        icon: "doc.badge.plus"
+    )
+
+    static let uploadingPhotos = AnalysisProgressUpdate(
+        phase: .uploadingPhotos,
+        title: "Fotoğraflar yükleniyor",
+        message: "Fotoğraflar güvenli depoya kaydediliyor.",
+        icon: "icloud.and.arrow.up.fill"
+    )
+
+    static let submitting = AnalysisProgressUpdate(
+        phase: .submitting,
+        title: "Analiz gönderiliyor",
+        message: "Risk sinyalleri için sunucuya güvenli istek gönderiliyor.",
+        icon: "paperplane.fill"
+    )
+
     static let retryingAI = AnalysisProgressUpdate(
+        phase: .retryingAI,
         title: "AI servisi yoğun",
         message: "Model yanıt vermedi. Aynı analizi otomatik tekrar deniyoruz.",
         icon: "arrow.clockwise"
     )
 
+    static let retryingNetwork = AnalysisProgressUpdate(
+        phase: .retryingNetwork,
+        title: "Bağlantı tekrar deneniyor",
+        message: "Depo veya sunucu bağlantısı koptu. Aynı analizi tekrar deniyoruz.",
+        icon: "wifi.exclamationmark"
+    )
+
     static let fallbackModel = AnalysisProgressUpdate(
+        phase: .fallbackModel,
         title: "Alternatif model deneniyor",
         message: "Analizi tamamlamak için uygun yedek model devreye alındı.",
         icon: "sparkles"
     )
 
     static let queued = AnalysisProgressUpdate(
+        phase: .queued,
         title: "Analiz hazırlanıyor",
         message: "Uygulamadan çıksan bile analiz güvenli şekilde tamamlanacak.",
         icon: "clock.arrow.circlepath"
+    )
+
+    static let analyzing = AnalysisProgressUpdate(
+        phase: .analyzing,
+        title: "AI değerlendiriyor",
+        message: "Bulgular, risk seviyeleri ve aksiyonlar yapılandırılıyor.",
+        icon: "brain.head.profile"
+    )
+
+    static let finalizingResult = AnalysisProgressUpdate(
+        phase: .finalizingResult,
+        title: "Sonuç hazırlanıyor",
+        message: "Analiz tamamlandı. Bulgular güvenli şekilde yükleniyor.",
+        icon: "checkmark.seal.fill"
     )
 }
 
@@ -94,6 +160,28 @@ private extension DateFormatter {
     }()
 }
 
+enum AppClientMetadata {
+    static let apiContractVersion = 2
+    static let platform = "ios"
+
+    static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
+    }
+
+    static var appBuild: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+    }
+
+    static var capabilities: [String: Bool] {
+        [
+            "multi_photo_analysis": true,
+            "multi_photo_coverage_v2": true,
+            "editable_findings": true,
+            "report_snapshot_v2": true
+        ]
+    }
+}
+
 /// Analiz akışını orkestre eder:
 /// 1. `analyses` kaydı oluştur (status: pending)
 /// 2. Edge Function `analyze`'i çağır — Gemini bulguları üretir, DB'ye yazılır
@@ -104,12 +192,17 @@ final class AnalysisService {
     static let freeDailyLimit = 1
     nonisolated static let maxTextInputCharacters = 200
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AnalysisService")
+    private static let analysisRecordCreationTimeoutNanoseconds: UInt64 = 25_000_000_000
+    private static let analysisPhotoUploadTimeoutNanoseconds: UInt64 = 45_000_000_000
+    private static let analysisPhotoMetadataTimeoutNanoseconds: UInt64 = 15_000_000_000
+    private static let analysisPhotoCleanupTimeoutNanoseconds: UInt64 = 10_000_000_000
+    private static let analysisSubmissionTimeoutNanoseconds: UInt64 = 45_000_000_000
+    private static let analysisSubmissionCleanupTimeoutNanoseconds: UInt64 = 6_000_000_000
+    private static let analysisResultPollTimeoutNanoseconds: UInt64 = 12_000_000_000
     private let supabase = SupabaseService.shared
 
     private static var clientAppVersion: String {
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-        return [version, build].compactMap { $0 }.joined(separator: " ")
+        AppClientMetadata.appVersion
     }
 
     enum AnalysisError: LocalizedError {
@@ -117,6 +210,7 @@ final class AnalysisService {
         case quotaExceeded(message: String, tier: String)
         case alreadyCompleted
         case aiFailed(String)
+        case networkFailed(String)
         case storageFailed(String)
         case databaseFailed(String)
         case invalidInput(String)
@@ -127,6 +221,7 @@ final class AnalysisService {
             case .quotaExceeded(let message, _): return message
             case .alreadyCompleted:               return "Bu analiz zaten tamamlanmış."
             case .aiFailed(let msg):              return "AI hatası: \(msg)"
+            case .networkFailed(let msg):         return "Bağlantı hatası: \(msg)"
             case .storageFailed(let msg):         return "Yükleme hatası: \(msg)"
             case .databaseFailed(let msg):        return "Veritabanı hatası: \(msg)"
             case .invalidInput(let msg):          return msg
@@ -156,33 +251,105 @@ final class AnalysisService {
             throw AnalysisError.invalidInput("Bir analizde en fazla 5 fotoğraf kullanılabilir.")
         }
 
-        // 1) Analyses kaydı (kind=photo, status=pending)
-        let analysisID = try await createAnalysis(
-            userID: userID,
-            kind: "photo",
-            canvases: canvases,
-            title: title ?? defaultTitle(for: canvases),
-            textInput: nil,
-            companyID: companyID,
-            analysisSector: analysisSector
-        )
-
-        // 2) Fotoğrafları Edge Function'a inline base64 gönder.
-        // Storage RLS client upload akışını kırdığı için analiz yolu Storage'a bağımlı değil.
-        let photoParts = try await Self.makeInlineJPEGParts(from: images)
-        let totalPayloadBytes = photoParts.reduce(0) { $0 + $1.encodedByteCount }
+        // 1) Fotoğrafları analiz kaydı açılmadan önce hazırla.
+        // Hazırlık başarısız olursa DB'de boş pending analiz bırakmayız.
+        onProgress?(.preparingInput)
+        let preparedPhotos = try await Self.makePreparedJPEGPhotos(from: images)
+        let totalPayloadBytes = preparedPhotos.reduce(0) { $0 + $1.encodedByteCount }
         if totalPayloadBytes > Self.maxInlinePhotoPayloadBytes {
             throw AnalysisError.invalidInput("Fotoğraf paketi çok büyük. Lütfen daha az fotoğraf veya daha düşük çözünürlüklü görsel dene.")
         }
 
-        // 3) Edge function
-        try await invokeAnalyze(
-            analysisID: analysisID, canvases: canvases,
-            textInput: nil, companyID: companyID,
-            analysisSector: analysisSector,
-            photoPaths: [], photoBase64Parts: photoParts,
-            onProgress: onProgress
+        // 2) Analyses kaydı (kind=photo, status=pending)
+        onProgress?(.creatingAnalysis)
+        let resolvedTitle = title ?? defaultTitle(for: canvases)
+        let analysisID = try await createAnalysis(
+            userID: userID,
+            kind: "photo",
+            canvases: canvases,
+            title: resolvedTitle,
+            textInput: nil,
+            companyID: companyID,
+            analysisSector: analysisSector
         )
+        InFlightAnalysisStore.shared.save(
+            InFlightAnalysis(
+                analysisID: analysisID,
+                userID: userID,
+                photoCount: images.count,
+                startedAt: Date(),
+                title: resolvedTitle,
+                kind: "photo"
+            )
+        )
+
+        // 3) Edge function
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
+        var uploadedPhotoPaths: [String] = []
+        do {
+            onProgress?(.uploadingPhotos)
+            uploadedPhotoPaths = try await uploadPhotosForAnalysis(
+                userID: userID,
+                analysisID: analysisID,
+                photos: preparedPhotos
+            )
+        } catch {
+            await cleanupUploadedPhotos(
+                userID: userID,
+                analysisID: analysisID,
+                paths: uploadedPhotoPaths,
+                supportID: supportID
+            )
+            await markAnalysisSubmissionFailedIfStillPending(
+                analysisID: analysisID,
+                supportID: supportID,
+                error: error,
+                delayBeforeCheck: false
+            )
+            InFlightAnalysisStore.shared.clear(analysisID: analysisID)
+            throw error
+        }
+
+        onProgress?(.submitting)
+        do {
+            try await invokeAnalyze(
+                analysisID: analysisID, canvases: canvases,
+                textInput: nil, companyID: companyID,
+                analysisSector: analysisSector,
+                photoPaths: uploadedPhotoPaths, photoBase64Parts: [],
+                requestID: requestID, supportID: supportID,
+                onProgress: onProgress
+            )
+        } catch {
+            let queuedOrLater = await recoverPhotoSubmissionIfServerAccepted(
+                analysisID: analysisID,
+                userID: userID,
+                uploadedPhotoPaths: uploadedPhotoPaths,
+                supportID: supportID,
+                error: error,
+                onProgress: onProgress
+            )
+            if queuedOrLater {
+                return try await waitForCompletedResult(analysisID: analysisID, onProgress: onProgress)
+            }
+            let markedFailed = await markAnalysisSubmissionFailedIfStillPending(
+                analysisID: analysisID,
+                supportID: supportID,
+                error: error,
+                delayBeforeCheck: false
+            )
+            if markedFailed {
+                await cleanupUploadedPhotos(
+                    userID: userID,
+                    analysisID: analysisID,
+                    paths: uploadedPhotoPaths,
+                    supportID: supportID
+                )
+                InFlightAnalysisStore.shared.clear(analysisID: analysisID)
+            }
+            throw error
+        }
 
         // 4) Backend kuyruğa aldıktan sonra sonucu DB status ile izle.
         return try await waitForCompletedResult(analysisID: analysisID, onProgress: onProgress)
@@ -206,6 +373,8 @@ final class AnalysisService {
             throw AnalysisError.invalidInput("Analiz için en az 10 karakterlik açıklama girmelisin.")
         }
 
+        onProgress?(.preparingInput)
+        onProgress?(.creatingAnalysis)
         let analysisID = try await createAnalysis(
             userID: userID,
             kind: "text",
@@ -216,13 +385,26 @@ final class AnalysisService {
             analysisSector: analysisSector
         )
 
-        try await invokeAnalyze(
-            analysisID: analysisID, canvases: canvases,
-            textInput: trimmedText, companyID: companyID,
-            analysisSector: analysisSector,
-            photoPaths: [], photoBase64Parts: [],
-            onProgress: onProgress
-        )
+        let requestID = UUID().uuidString
+        let supportID = AppErrorMessage.newSupportID()
+        onProgress?(.submitting)
+        do {
+            try await invokeAnalyze(
+                analysisID: analysisID, canvases: canvases,
+                textInput: trimmedText, companyID: companyID,
+                analysisSector: analysisSector,
+                photoPaths: [], photoBase64Parts: [],
+                requestID: requestID, supportID: supportID,
+                onProgress: onProgress
+            )
+        } catch {
+            await markAnalysisSubmissionFailedIfStillPending(
+                analysisID: analysisID,
+                supportID: supportID,
+                error: error
+            )
+            throw error
+        }
 
         return try await waitForCompletedResult(analysisID: analysisID, onProgress: onProgress)
     }
@@ -264,7 +446,23 @@ final class AnalysisService {
             return Self.uiTestResultBundle(analysisID: analysisID)
         }
         #endif
-        return try await fetchResult(analysisID: analysisID)
+        let bundle = try await fetchResult(analysisID: analysisID)
+        InFlightAnalysisStore.shared.clear(analysisID: analysisID)
+        return bundle
+    }
+
+    /// Devam eden bir analize yeniden bağlanır. Fotoğraf yüklemez ve Edge Function çağırmaz.
+    func resumeAnalysis(
+        analysisID: UUID,
+        onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
+    ) async throws -> AnalysisResultBundle {
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            onProgress?(.finalizingResult)
+            return Self.uiTestResultBundle(analysisID: analysisID)
+        }
+        #endif
+        return try await waitForCompletedResult(analysisID: analysisID, onProgress: onProgress)
     }
 
     func updateFinding(
@@ -273,7 +471,12 @@ final class AnalysisService {
         expectedVersion: Int?,
         patch: FindingMutationPatch
     ) async throws -> AnalysisResultBundle {
-        try await mutateFinding(
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            return Self.uiTestResultBundle(analysisID: analysisID, updatedFindingID: findingID, patch: patch)
+        }
+        #endif
+        return try await mutateFinding(
             analysisID: analysisID,
             findingID: findingID,
             action: "update",
@@ -287,7 +490,12 @@ final class AnalysisService {
         findingID: UUID,
         expectedVersion: Int?
     ) async throws -> AnalysisResultBundle {
-        try await mutateFinding(
+        #if DEBUG
+        if Self.isUITestMainLaunch {
+            return Self.uiTestResultBundle(analysisID: analysisID, deletedFindingID: findingID)
+        }
+        #endif
+        return try await mutateFinding(
             analysisID: analysisID,
             findingID: findingID,
             action: "delete",
@@ -310,6 +518,10 @@ final class AnalysisService {
             let patch: FindingMutationPatch?
             let expected_finding_version: Int?
             let client_app_version: String
+            let client_app_build: String
+            let client_platform: String
+            let api_contract_version: Int
+            let client_capabilities: [String: Bool]
             let request_id: String
             let support_id: String
         }
@@ -326,6 +538,10 @@ final class AnalysisService {
             patch: patch,
             expected_finding_version: expectedVersion,
             client_app_version: Self.clientAppVersion,
+            client_app_build: AppClientMetadata.appBuild,
+            client_platform: AppClientMetadata.platform,
+            api_contract_version: AppClientMetadata.apiContractVersion,
+            client_capabilities: AppClientMetadata.capabilities,
             request_id: requestID,
             support_id: supportID
         )
@@ -467,6 +683,11 @@ final class AnalysisService {
             let report_kind: String
             let report_language: String
             let company_id: String?
+            let client_app_version: String
+            let client_app_build: String
+            let client_platform: String
+            let api_contract_version: Int
+            let client_capabilities: [String: Bool]
             let request_id: String
             let support_id: String
         }
@@ -489,6 +710,11 @@ final class AnalysisService {
             report_kind: PDFReportKind.riskAnalysis.rawValue,
             report_language: language.rawValue,
             company_id: companyID?.uuidString,
+            client_app_version: Self.clientAppVersion,
+            client_app_build: AppClientMetadata.appBuild,
+            client_platform: AppClientMetadata.platform,
+            api_contract_version: AppClientMetadata.apiContractVersion,
+            client_capabilities: AppClientMetadata.capabilities,
             request_id: requestID,
             support_id: supportID
         )
@@ -612,6 +838,11 @@ final class AnalysisService {
             let generated_from_user_edited_findings: Bool
             let source_photo_count: Int
             let visible_findings_count: Int
+            let client_app_version: String
+            let client_app_build: String
+            let client_platform: String
+            let api_contract_version: Int
+            let client_capabilities: [String: Bool]
             let request_id: String
             let support_id: String
         }
@@ -635,6 +866,11 @@ final class AnalysisService {
             generated_from_user_edited_findings: bundle.analysis.hasUserEdits == true,
             source_photo_count: bundle.analysis.photoCount ?? bundle.photos.count,
             visible_findings_count: bundle.findings.count,
+            client_app_version: Self.clientAppVersion,
+            client_app_build: AppClientMetadata.appBuild,
+            client_platform: AppClientMetadata.platform,
+            api_contract_version: AppClientMetadata.apiContractVersion,
+            client_capabilities: AppClientMetadata.capabilities,
             request_id: requestID,
             support_id: supportID
         )
@@ -1032,10 +1268,16 @@ final class AnalysisService {
                 throw AnalysisError.databaseFailed("Hesap silme talebi kaydedilemedi. Destek kodu: \(supportID)")
             }
 
-            return try await supabase.functions.invoke(
+            let result: AccountDeletionRequestResult = try await supabase.functions.invoke(
                 RDConfig.accountDeletionRequestFunctionName,
                 options: FunctionInvokeOptions(body: payload)
             )
+            guard result.shouldClearLocalSession else {
+                let message = result.message ?? "Hesap silme işlemi tamamlanamadı."
+                Self.logger.error("Account deletion request returned incomplete support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) user=\(userID.uuidString, privacy: .private(mask: .hash))")
+                throw AnalysisError.databaseFailed("\(message) Destek kodu: \(supportID)")
+            }
+            return result
         } catch let FunctionsError.httpError(_, data) {
             let payload = Self.functionErrorPayload(from: data)
             let remoteSupportID = payload.supportID ?? supportID
@@ -1130,7 +1372,7 @@ final class AnalysisService {
 
     nonisolated private static let maxInlinePhotoBytes = 1_500_000
     nonisolated private static let maxInlinePhotoBase64Bytes = 2_100_000
-    nonisolated private static let maxInlinePhotoPayloadBytes = 8_000_000
+    nonisolated private static let maxInlinePhotoPayloadBytes = 5_500_000
 
     private static func istanbulStartOfTodayISO() -> String {
         var calendar = Calendar(identifier: .gregorian)
@@ -1314,16 +1556,112 @@ final class AnalysisService {
             analysis_sector_prompt_version: analysisSector == nil ? nil : AnalysisSectorID.activeAnalysisPromptVersion
         )
         do {
-            let row: AnalysisRow = try await supabase.client
-                .from("analyses")
-                .insert(payload)
-                .select()
-                .single()
-                .execute()
-                .value
+            let row: AnalysisRow = try await Self.withTimeout(
+                nanoseconds: Self.analysisRecordCreationTimeoutNanoseconds,
+                timeoutError: AnalysisError.networkFailed("Analiz kaydı başlatılırken bağlantı zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene.")
+            ) {
+                try await self.supabase.client
+                    .from("analyses")
+                    .insert(payload)
+                    .select()
+                    .single()
+                    .execute()
+                    .value
+            }
             return row.id
+        } catch let error as AnalysisError {
+            throw error
         } catch {
             throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
+    private final class TimeoutRaceState<T>: @unchecked Sendable {
+        private let lock = NSLock()
+        private var didFinish = false
+        private var continuation: CheckedContinuation<T, Error>?
+        private var operationTask: Task<Void, Never>?
+        private var timeoutTask: Task<Void, Never>?
+
+        func setContinuation(_ continuation: CheckedContinuation<T, Error>) {
+            lock.lock()
+            if didFinish {
+                lock.unlock()
+                continuation.resume(throwing: CancellationError())
+                return
+            }
+            self.continuation = continuation
+            lock.unlock()
+        }
+
+        func setTasks(operationTask: Task<Void, Never>, timeoutTask: Task<Void, Never>) {
+            lock.lock()
+            if didFinish {
+                lock.unlock()
+                operationTask.cancel()
+                timeoutTask.cancel()
+                return
+            }
+            self.operationTask = operationTask
+            self.timeoutTask = timeoutTask
+            lock.unlock()
+        }
+
+        func finish(_ result: Result<T, Error>) {
+            let continuation: CheckedContinuation<T, Error>?
+            let operationTask: Task<Void, Never>?
+            let timeoutTask: Task<Void, Never>?
+
+            lock.lock()
+            guard !didFinish else {
+                lock.unlock()
+                return
+            }
+            didFinish = true
+            continuation = self.continuation
+            operationTask = self.operationTask
+            timeoutTask = self.timeoutTask
+            self.continuation = nil
+            self.operationTask = nil
+            self.timeoutTask = nil
+            lock.unlock()
+
+            operationTask?.cancel()
+            timeoutTask?.cancel()
+
+            switch result {
+            case .success(let value):
+                continuation?.resume(returning: value)
+            case .failure(let error):
+                continuation?.resume(throwing: error)
+            }
+        }
+    }
+
+    private static func withTimeout<T>(
+        nanoseconds: UInt64,
+        timeoutError: Error,
+        operation: @escaping () async throws -> T
+    ) async throws -> T {
+        let state = TimeoutRaceState<T>()
+        return try await withCheckedThrowingContinuation { continuation in
+            state.setContinuation(continuation)
+            let operationTask = Task {
+                do {
+                    state.finish(.success(try await operation()))
+                } catch {
+                    state.finish(.failure(error))
+                }
+            }
+            let timeoutTask = Task {
+                do {
+                    try await Task.sleep(nanoseconds: nanoseconds)
+                    state.finish(.failure(timeoutError))
+                } catch {
+                    state.finish(.failure(error))
+                }
+            }
+            state.setTasks(operationTask: operationTask, timeoutTask: timeoutTask)
         }
     }
 
@@ -1332,6 +1670,10 @@ final class AnalysisService {
         let data: String
         let width: Int
         let height: Int
+        let decoded_byte_count: Int
+        let jpeg_quality: Double
+        let quality_policy: String
+        let max_dimension: Int
         let client_photo_id: String
         let sequence_index: Int
 
@@ -1340,54 +1682,251 @@ final class AnalysisService {
         }
     }
 
-    nonisolated private static func makeInlineJPEGParts(from images: [UIImage]) async throws -> [InlinePhotoPart] {
+    private struct PreparedAnalysisPhoto: Sendable {
+        let data: Data
+        let width: Int
+        let height: Int
+        let decodedByteCount: Int
+        let encodedByteCount: Int
+        let jpegQuality: Double
+        let qualityPolicy: String
+        let maxDimension: Int
+        let clientPhotoID: String
+        let sequenceIndex: Int
+    }
+
+    private struct StoredAnalysisPhotoInsert: Encodable {
+        let analysis_id: String
+        let user_id: String
+        let storage_path: String
+        let width: Int
+        let height: Int
+        let size_bytes: Int
+        let byte_size: Int
+        let mime_type: String
+        let sequence_index: Int
+        let client_photo_id: String
+        let is_primary: Bool
+        let upload_payload_version: String
+        let compression_metadata: PhotoCompressionMetadata
+    }
+
+    private struct PhotoCompressionMetadata: Encodable {
+        let jpeg_quality: Double
+        let quality_policy: String
+        let max_dimension: Int
+        let encoded_byte_count: Int
+        let storage_strategy: String
+    }
+
+    private struct PhotoCompressionCandidate: Sendable {
+        let maxDimension: Int
+        let jpegQuality: Double
+    }
+
+    nonisolated private static let analysisPhotoQualityPolicy = "balanced-v2-1600-floor1000"
+    nonisolated private static let analysisPhotoCompressionCandidates: [PhotoCompressionCandidate] = [
+        .init(maxDimension: 1600, jpegQuality: 0.78),
+        .init(maxDimension: 1600, jpegQuality: 0.70),
+        .init(maxDimension: 1400, jpegQuality: 0.76),
+        .init(maxDimension: 1400, jpegQuality: 0.68),
+        .init(maxDimension: 1200, jpegQuality: 0.72),
+        .init(maxDimension: 1200, jpegQuality: 0.62),
+        .init(maxDimension: 1000, jpegQuality: 0.60),
+        .init(maxDimension: 1000, jpegQuality: 0.52),
+        .init(maxDimension: 900, jpegQuality: 0.58),
+        .init(maxDimension: 900, jpegQuality: 0.50),
+        .init(maxDimension: 800, jpegQuality: 0.52)
+    ]
+
+    nonisolated private static func makePreparedJPEGPhotos(from images: [UIImage]) async throws -> [PreparedAnalysisPhoto] {
         try await Task.detached(priority: .userInitiated) {
-            var parts: [InlinePhotoPart] = []
-            parts.reserveCapacity(images.count)
+            var photos: [PreparedAnalysisPhoto] = []
+            photos.reserveCapacity(images.count)
             var totalPayloadBytes = 0
+            let photoCount = max(images.count, 1)
+            let adaptiveMaxEncodedBytes = min(
+                maxInlinePhotoBase64Bytes,
+                maxInlinePhotoPayloadBytes / photoCount
+            )
+            let adaptiveMaxDecodedBytes = min(
+                maxInlinePhotoBytes,
+                max(450_000, Int(Double(adaptiveMaxEncodedBytes) * 0.72))
+            )
 
             for (index, image) in images.enumerated() {
-                let part = try autoreleasepool {
-                    try inlineJPEGPart(from: image, sequenceIndex: index + 1)
+                let photo = try autoreleasepool {
+                    try preparedJPEGPhoto(
+                        from: image,
+                        sequenceIndex: index + 1,
+                        maxEncodedBytes: adaptiveMaxEncodedBytes,
+                        maxDecodedBytes: adaptiveMaxDecodedBytes
+                    )
                 }
-                let projectedPayloadBytes = totalPayloadBytes + part.encodedByteCount
+                let projectedPayloadBytes = totalPayloadBytes + photo.encodedByteCount
                 if projectedPayloadBytes > maxInlinePhotoPayloadBytes {
-                    throw AnalysisError.invalidInput("Fotoğraf paketi çok büyük. Lütfen daha az fotoğraf veya daha düşük çözünürlüklü görsel dene.")
+                    throw AnalysisError.invalidInput("Fotoğraf paketi çok büyük. Kaliteyi korumak için lütfen daha az fotoğraf seçerek tekrar dene.")
                 }
                 totalPayloadBytes = projectedPayloadBytes
-                parts.append(part)
+                photos.append(photo)
             }
 
-            return parts
+            return photos
         }.value
     }
 
-    nonisolated private static func inlineJPEGPart(from image: UIImage, sequenceIndex: Int) throws -> InlinePhotoPart {
-        let renderSizes: [CGFloat] = [1400, 1200, 1000, 850, 700]
-        let qualities: [CGFloat] = [0.72, 0.60, 0.48, 0.38]
-
-        for maxDimension in renderSizes {
-            let normalized = image.sanitizedForAnalysis(maxDimension: maxDimension)
-            for quality in qualities {
-                guard let data = normalized.image.jpegData(compressionQuality: quality) else { continue }
-                guard data.count <= maxInlinePhotoBytes else { continue }
-
-                let encodedData = data.base64EncodedString()
-                guard encodedData.utf8.count <= maxInlinePhotoBase64Bytes else { continue }
-
-                let photo = SanitizedPhoto(data: data, size: normalized.size)
-                return InlinePhotoPart(
-                    mime_type: "image/jpeg",
-                    data: encodedData,
-                    width: photo.width,
-                    height: photo.height,
-                    client_photo_id: UUID().uuidString,
-                    sequence_index: sequenceIndex
-                )
+    nonisolated private static func preparedJPEGPhoto(
+        from image: UIImage,
+        sequenceIndex: Int,
+        maxEncodedBytes: Int,
+        maxDecodedBytes: Int
+    ) throws -> PreparedAnalysisPhoto {
+        for candidate in analysisPhotoCompressionCandidates {
+            let normalized = image.sanitizedForAnalysis(maxDimension: CGFloat(candidate.maxDimension))
+            guard let data = normalized.image.jpegData(compressionQuality: CGFloat(candidate.jpegQuality)) else {
+                continue
             }
+            guard data.count <= maxDecodedBytes else { continue }
+
+            let encodedByteCount = base64EncodedByteCount(for: data.count)
+            guard encodedByteCount <= maxEncodedBytes else { continue }
+
+            let photo = SanitizedPhoto(data: data, size: normalized.size)
+            return PreparedAnalysisPhoto(
+                data: data,
+                width: photo.width,
+                height: photo.height,
+                decodedByteCount: data.count,
+                encodedByteCount: encodedByteCount,
+                jpegQuality: candidate.jpegQuality,
+                qualityPolicy: analysisPhotoQualityPolicy,
+                maxDimension: candidate.maxDimension,
+                clientPhotoID: UUID().uuidString,
+                sequenceIndex: sequenceIndex
+            )
         }
 
-        throw AnalysisError.invalidInput("Fotoğraf dosyası analiz için çok büyük. Lütfen daha küçük veya daha düşük çözünürlüklü bir görsel seç.")
+        throw AnalysisError.invalidInput("Fotoğraf dosyası analiz için çok büyük. Kaliteyi korumak için lütfen daha küçük bir görsel veya daha az fotoğraf seç.")
+    }
+
+    nonisolated private static func base64EncodedByteCount(for byteCount: Int) -> Int {
+        ((byteCount + 2) / 3) * 4
+    }
+
+    private func uploadPhotosForAnalysis(
+        userID: UUID,
+        analysisID: UUID,
+        photos: [PreparedAnalysisPhoto]
+    ) async throws -> [String] {
+        var uploadedPaths: [String] = []
+        uploadedPaths.reserveCapacity(photos.count)
+        let userPath = userID.uuidString.lowercased()
+        let analysisPath = analysisID.uuidString.lowercased()
+        let plannedPaths = photos
+            .sorted(by: { $0.sequenceIndex < $1.sequenceIndex })
+            .map { "\(userPath)/\(analysisPath)/p\($0.sequenceIndex).jpg" }
+
+        do {
+            for photo in photos.sorted(by: { $0.sequenceIndex < $1.sequenceIndex }) {
+                let storagePath = "\(userPath)/\(analysisPath)/p\(photo.sequenceIndex).jpg"
+                do {
+                    _ = try await Self.withTimeout(
+                        nanoseconds: Self.analysisPhotoUploadTimeoutNanoseconds,
+                        timeoutError: AnalysisError.storageFailed("Fotoğraf yüklenirken bağlantı zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene.")
+                    ) {
+                        try await self.supabase.storage
+                            .from(RDConfig.Bucket.photos)
+                            .upload(
+                                storagePath,
+                                data: photo.data,
+                                options: FileOptions(contentType: "image/jpeg", upsert: true)
+                            )
+                    }
+                    uploadedPaths.append(storagePath)
+                } catch let error as AnalysisError {
+                    throw error
+                } catch {
+                    throw AnalysisError.storageFailed(error.localizedDescription)
+                }
+
+                let insert = StoredAnalysisPhotoInsert(
+                    analysis_id: analysisID.uuidString,
+                    user_id: userID.uuidString,
+                    storage_path: storagePath,
+                    width: photo.width,
+                    height: photo.height,
+                    size_bytes: photo.decodedByteCount,
+                    byte_size: photo.decodedByteCount,
+                    mime_type: "image/jpeg",
+                    sequence_index: photo.sequenceIndex,
+                    client_photo_id: photo.clientPhotoID,
+                    is_primary: photo.sequenceIndex == 1,
+                    upload_payload_version: "photo-batch-storage-v1",
+                    compression_metadata: PhotoCompressionMetadata(
+                        jpeg_quality: photo.jpegQuality,
+                        quality_policy: photo.qualityPolicy,
+                        max_dimension: photo.maxDimension,
+                        encoded_byte_count: photo.encodedByteCount,
+                        storage_strategy: "client-storage-paths-v1"
+                    )
+                )
+
+                do {
+                    _ = try await Self.withTimeout(
+                        nanoseconds: Self.analysisPhotoMetadataTimeoutNanoseconds,
+                        timeoutError: AnalysisError.databaseFailed("Fotoğraf bilgisi kaydedilirken bağlantı zaman aşımına uğradı. Lütfen tekrar dene.")
+                    ) {
+                        try await self.supabase.client
+                            .from("photos")
+                            .insert(insert)
+                            .execute()
+                    }
+                } catch let error as AnalysisError {
+                    throw error
+                } catch {
+                    throw AnalysisError.databaseFailed(error.localizedDescription)
+                }
+            }
+
+            return uploadedPaths
+        } catch {
+            await cleanupUploadedPhotos(
+                userID: userID,
+                analysisID: analysisID,
+                paths: Array(Set(uploadedPaths + plannedPaths)).sorted(),
+                supportID: AppErrorMessage.newSupportID()
+            )
+            throw error
+        }
+    }
+
+    private func cleanupUploadedPhotos(
+        userID: UUID,
+        analysisID: UUID,
+        paths: [String],
+        supportID: String
+    ) async {
+        do {
+            try await Self.withTimeout(
+                nanoseconds: Self.analysisPhotoCleanupTimeoutNanoseconds,
+                timeoutError: AnalysisError.storageFailed("Fotoğraf temizliği zaman aşımına uğradı.")
+            ) {
+                if !paths.isEmpty {
+                    _ = try await self.supabase.storage
+                        .from(RDConfig.Bucket.photos)
+                        .remove(paths: paths)
+                }
+
+                _ = try await self.supabase.client
+                    .from("photos")
+                    .delete()
+                    .eq("analysis_id", value: analysisID.uuidString)
+                    .eq("user_id", value: userID.uuidString)
+                    .execute()
+            }
+        } catch {
+            Self.logger.error("Photo upload cleanup skipped analysis=\(analysisID.uuidString, privacy: .public) support=\(supportID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func invokeAnalyze(
@@ -1398,6 +1937,8 @@ final class AnalysisService {
         analysisSector: AnalysisSectorID?,
         photoPaths: [String],
         photoBase64Parts: [InlinePhotoPart],
+        requestID: String,
+        supportID: String,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)?
     ) async throws {
         struct Body: Encodable {
@@ -1414,15 +1955,18 @@ final class AnalysisService {
             let analysis_sector_prompt_version: String?
             let photo_paths: [String]
             let photo_base64_parts: [InlinePhotoPart]
+            let client_app_version: String
+            let client_app_build: String
+            let client_platform: String
+            let api_contract_version: Int
+            let client_capabilities: [String: Bool]
         }
         // `canvas` = primary sorted id (tek-canvas contract).
         // `canvases` = tüm seçimler — Edge Function çoklu desteğe geçince kullanılır.
         let sortedCanvasIDs = canvases.map(\.id).sorted()
         let analysisMode = Self.analysisMode(for: canvases)
-        let requestID = UUID().uuidString
-        let supportID = AppErrorMessage.newSupportID()
         let body = Body(
-            analysis_id: analysisID.uuidString,
+            analysis_id: analysisID.uuidString.lowercased(),
             canvas: sortedCanvasIDs.first ?? canvases[0].id,
             canvases: sortedCanvasIDs,
             analysis_mode: analysisMode,
@@ -1434,15 +1978,25 @@ final class AnalysisService {
             analysis_sector_source: analysisSector == nil ? nil : "user_selected",
             analysis_sector_prompt_version: analysisSector == nil ? nil : AnalysisSectorID.activeAnalysisPromptVersion,
             photo_paths: photoPaths,
-            photo_base64_parts: photoBase64Parts
+            photo_base64_parts: photoBase64Parts,
+            client_app_version: Self.clientAppVersion,
+            client_app_build: AppClientMetadata.appBuild,
+            client_platform: AppClientMetadata.platform,
+            api_contract_version: AppClientMetadata.apiContractVersion,
+            client_capabilities: AppClientMetadata.capabilities
         )
         let maxAttempts = 2
         for attempt in 1...maxAttempts {
             do {
-                try await supabase.functions.invoke(
-                    RDConfig.analyzeFunctionName,
-                    options: FunctionInvokeOptions(body: body)
-                )
+                try await Self.withTimeout(
+                    nanoseconds: Self.analysisSubmissionTimeoutNanoseconds,
+                    timeoutError: AnalysisError.networkFailed("Analiz isteği sunucuya gönderilirken bağlantı zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene.")
+                ) {
+                    try await self.supabase.functions.invoke(
+                        RDConfig.analyzeFunctionName,
+                        options: FunctionInvokeOptions(body: body)
+                    )
+                }
                 onProgress?(.queued)
                 return
             } catch let FunctionsError.httpError(code, data) {
@@ -1483,14 +2037,170 @@ final class AnalysisService {
                 }
             } catch {
                 if attempt < maxAttempts {
-                    onProgress?(.retryingAI)
+                    onProgress?(.retryingNetwork)
                     Self.logger.info("Analyze invoke network retry support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) attempt=\(attempt) error=\(error.localizedDescription, privacy: .public)")
                     try? await Task.sleep(nanoseconds: 1_000_000_000)
                     continue
                 }
-                throw AnalysisError.aiFailed(error.localizedDescription)
+                let fallbackMessage = photoBase64Parts.isEmpty
+                    ? "Analiz isteği sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."
+                    : "Fotoğraf paketi sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."
+                throw AnalysisError.networkFailed(Self.appendSupportID(supportID, to: fallbackMessage))
             }
         }
+    }
+
+    private struct AnalysisSubmissionFailurePatch: Encodable {
+        let status: String
+        let status_message: String
+    }
+
+    private struct AnalysisStatusSnapshot: Decodable {
+        let status: String
+        let findingCount: Int?
+        let photoCount: Int?
+        let statusMessage: String?
+        let queuedAt: String?
+        let workerStartedAt: String?
+        let completedAt: String?
+        let updatedAt: String?
+
+        enum CodingKeys: String, CodingKey {
+            case status
+            case findingCount = "finding_count"
+            case photoCount = "photo_count"
+            case statusMessage = "status_message"
+            case queuedAt = "queued_at"
+            case workerStartedAt = "worker_started_at"
+            case completedAt = "completed_at"
+            case updatedAt = "updated_at"
+        }
+    }
+
+    private func fetchAnalysisSubmissionStatus(analysisID: UUID) async throws -> String {
+        try await fetchAnalysisStatusSnapshot(analysisID: analysisID).status
+    }
+
+    private func fetchAnalysisStatusSnapshot(analysisID: UUID) async throws -> AnalysisStatusSnapshot {
+        try await Self.withTimeout(
+            nanoseconds: Self.analysisSubmissionCleanupTimeoutNanoseconds,
+            timeoutError: AnalysisError.networkFailed("Analiz durumu kontrol edilirken bağlantı zaman aşımına uğradı.")
+        ) {
+            try await self.supabase.client
+                .from("analyses")
+                .select("status,finding_count,photo_count,status_message,queued_at,worker_started_at,completed_at,updated_at")
+                .eq("id", value: analysisID.uuidString)
+                .single()
+                .execute()
+                .value
+        }
+    }
+
+    private func recoverPhotoSubmissionIfServerAccepted(
+        analysisID: UUID,
+        userID: UUID,
+        uploadedPhotoPaths: [String],
+        supportID: String,
+        error: Error,
+        onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)?
+    ) async -> Bool {
+        let probeDelays: [UInt64] = [
+            2_000_000_000,
+            3_000_000_000,
+            5_000_000_000
+        ]
+
+        var lastStatus: String?
+        var lastProbeError: Error?
+        for delay in probeDelays {
+            try? await Task.sleep(nanoseconds: delay)
+            do {
+                let status = try await fetchAnalysisSubmissionStatus(analysisID: analysisID)
+                lastStatus = status
+                guard status == "pending" else {
+                    Self.logger.info("Analyze invoke error recovered by DB status analysis=\(analysisID.uuidString, privacy: .public) support=\(supportID, privacy: .public) status=\(status, privacy: .public)")
+                    onProgress?(status == "analyzing" ? .analyzing : .queued)
+                    return true
+                }
+            } catch {
+                lastProbeError = error
+                Self.logger.error("Analyze invoke recovery status probe failed analysis=\(analysisID.uuidString, privacy: .public) support=\(supportID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        guard lastStatus == "pending" else {
+            if let lastProbeError {
+                Self.logger.error("Analyze invoke recovery skipped cleanup after unknown status analysis=\(analysisID.uuidString, privacy: .public) support=\(supportID, privacy: .public) error=\(lastProbeError.localizedDescription, privacy: .public)")
+            }
+            return false
+        }
+
+        await cleanupUploadedPhotos(
+            userID: userID,
+            analysisID: analysisID,
+            paths: uploadedPhotoPaths,
+            supportID: supportID
+        )
+        await markAnalysisSubmissionFailedIfStillPending(
+            analysisID: analysisID,
+            supportID: supportID,
+            error: error,
+            delayBeforeCheck: false
+        )
+        return false
+    }
+
+    @discardableResult
+    private func markAnalysisSubmissionFailedIfStillPending(
+        analysisID: UUID,
+        supportID: String,
+        error: Error,
+        delayBeforeCheck: Bool = true
+    ) async -> Bool {
+        if delayBeforeCheck {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+        }
+
+        do {
+            let status = try await fetchAnalysisSubmissionStatus(analysisID: analysisID)
+            guard status == "pending" else { return false }
+
+            let message = Self.submissionFailureStatusMessage(error: error, supportID: supportID)
+            try await Self.withTimeout(
+                nanoseconds: Self.analysisSubmissionCleanupTimeoutNanoseconds,
+                timeoutError: AnalysisError.networkFailed("Analiz hata durumu güncellenirken bağlantı zaman aşımına uğradı.")
+            ) {
+                _ = try await self.supabase.client
+                    .from("analyses")
+                    .update(AnalysisSubmissionFailurePatch(status: "failed", status_message: message))
+                    .eq("id", value: analysisID.uuidString)
+                    .eq("status", value: "pending")
+                    .execute()
+            }
+            return true
+        } catch {
+            Self.logger.error("Analysis submission failure mark skipped analysis=\(analysisID.uuidString, privacy: .public) support=\(supportID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
+    private static func submissionFailureStatusMessage(error: Error, supportID: String) -> String {
+        let message: String
+        if let analysisError = error as? AnalysisError {
+            switch analysisError {
+            case .networkFailed(let text), .aiFailed(let text), .storageFailed(let text), .databaseFailed(let text), .invalidInput(let text):
+                message = text
+            case .quotaExceeded(let text, _):
+                message = text
+            case .alreadyCompleted:
+                message = "Bu analiz zaten tamamlanmış."
+            case .notAuthenticated:
+                message = "Kullanıcı oturumu bulunamadı."
+            }
+        } else {
+            message = error.localizedDescription
+        }
+        return appendSupportID(supportID, to: message)
     }
 
     private static func analysisMode(for canvases: [AnalysisCanvas]) -> String {
@@ -1502,24 +2212,52 @@ final class AnalysisService {
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)?
     ) async throws -> AnalysisResultBundle {
         let deadline = Date().addingTimeInterval(300)
-        var didShowQueued = false
+        var lastReportedStatus: String?
+        var consecutivePollFailures = 0
 
         while Date() < deadline {
             try Task.checkCancellation()
-            let bundle = try await fetchResult(analysisID: analysisID)
+            let snapshot: AnalysisStatusSnapshot
 
-            switch bundle.analysis.status {
+            do {
+                snapshot = try await fetchAnalysisStatusSnapshot(analysisID: analysisID)
+                consecutivePollFailures = 0
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                consecutivePollFailures += 1
+                onProgress?(.retryingNetwork)
+                lastReportedStatus = "retryingNetwork"
+                Self.logger.error("Analysis status poll failed analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+
+                let delaySeconds = min(2 + consecutivePollFailures, 8)
+                try await Task.sleep(nanoseconds: UInt64(delaySeconds) * 1_000_000_000)
+                continue
+            }
+
+            switch snapshot.status {
             case "completed":
+                if lastReportedStatus != snapshot.status {
+                    onProgress?(.finalizingResult)
+                    lastReportedStatus = snapshot.status
+                }
+                let bundle = try await fetchCompletedResult(
+                    analysisID: analysisID,
+                    statusSnapshot: snapshot
+                )
+                InFlightAnalysisStore.shared.clear(analysisID: analysisID)
                 return bundle
             case "failed":
-                throw AnalysisError.aiFailed(bundle.analysis.statusMessage ?? "Analiz arka planda tamamlanamadı. Lütfen tekrar dene.")
+                InFlightAnalysisStore.shared.clear(analysisID: analysisID)
+                throw AnalysisError.aiFailed(snapshot.statusMessage ?? "Analiz arka planda tamamlanamadı. Lütfen tekrar dene.")
             case "queued", "pending", "analyzing":
-                if !didShowQueued {
-                    onProgress?(.queued)
-                    didShowQueued = true
+                if lastReportedStatus != snapshot.status {
+                    onProgress?(snapshot.status == "analyzing" ? .analyzing : .queued)
+                    lastReportedStatus = snapshot.status
                 }
                 try await Task.sleep(nanoseconds: 2_000_000_000)
             default:
+                Self.logger.error("Analysis status poll returned unknown status analysis=\(analysisID.uuidString, privacy: .public) status=\(snapshot.status, privacy: .public)")
                 try await Task.sleep(nanoseconds: 2_000_000_000)
             }
         }
@@ -1528,35 +2266,142 @@ final class AnalysisService {
     }
 
     private func fetchResult(analysisID: UUID) async throws -> AnalysisResultBundle {
-        do {
-            let analysis: AnalysisRow = try await supabase.client
-                .from("analyses")
-                .select()
-                .eq("id", value: analysisID.uuidString)
-                .single()
-                .execute()
-                .value
+        let core = try await fetchResultCore(analysisID: analysisID, expectedFindingCount: nil)
+        return await hydrateResultBundle(
+            analysisID: analysisID,
+            analysis: core.analysis,
+            findings: core.findings
+        )
+    }
 
-            let findings: [FindingRow] = try await supabase.client
+    private func fetchCompletedResult(
+        analysisID: UUID,
+        statusSnapshot: AnalysisStatusSnapshot
+    ) async throws -> AnalysisResultBundle {
+        let core = try await fetchResultCore(
+            analysisID: analysisID,
+            expectedFindingCount: statusSnapshot.findingCount
+        )
+        return await hydrateResultBundle(
+            analysisID: analysisID,
+            analysis: core.analysis,
+            findings: core.findings
+        )
+    }
+
+    private func fetchResultCore(
+        analysisID: UUID,
+        expectedFindingCount: Int?
+    ) async throws -> (analysis: AnalysisRow, findings: [FindingRow]) {
+        do {
+            let analysis: AnalysisRow = try await Self.withTimeout(
+                nanoseconds: Self.analysisResultPollTimeoutNanoseconds,
+                timeoutError: AnalysisError.networkFailed("Analiz kaydı alınırken bağlantı zaman aşımına uğradı.")
+            ) {
+                try await self.supabase.client
+                    .from("analyses")
+                    .select()
+                    .eq("id", value: analysisID.uuidString)
+                    .single()
+                    .execute()
+                    .value
+            }
+
+            var findings = try await fetchFindingRows(analysisID: analysisID)
+            let expectedCount = expectedFindingCount ?? analysis.findingCount
+            if analysis.status == "completed", expectedCount > 0, findings.isEmpty {
+                for attempt in 1...3 {
+                    Self.logger.error("Completed analysis has no findings yet analysis=\(analysisID.uuidString, privacy: .public) expected=\(expectedCount) attempt=\(attempt)")
+                    try await Task.sleep(nanoseconds: UInt64(250 + attempt * 250) * 1_000_000)
+                    findings = try await fetchFindingRows(analysisID: analysisID)
+                    if !findings.isEmpty { break }
+                }
+            }
+
+            if analysis.status == "completed", expectedCount > 0, findings.isEmpty {
+                throw AnalysisError.databaseFailed("Analiz sonucu hazır ama bulgular yüklenemedi. Lütfen Geçmiş analizlerden tekrar açmayı dene.")
+            }
+
+            return (analysis, findings)
+        } catch let error as AnalysisError {
+            Self.logger.error("Analysis result core hydration failed analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw error
+        } catch {
+            Self.logger.error("Analysis result core hydration failed analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw AnalysisError.databaseFailed(error.localizedDescription)
+        }
+    }
+
+    private func fetchFindingRows(analysisID: UUID) async throws -> [FindingRow] {
+        try await Self.withTimeout(
+            nanoseconds: Self.analysisResultPollTimeoutNanoseconds,
+            timeoutError: AnalysisError.networkFailed("Analiz bulguları alınırken bağlantı zaman aşımına uğradı.")
+        ) {
+            try await self.supabase.client
                 .from("findings")
                 .select()
                 .eq("analysis_id", value: analysisID.uuidString)
                 .order("ordinal", ascending: true)
                 .execute()
                 .value
+        }
+    }
 
-            let photos: [AnalysisPhotoRow] = try await supabase.client
-                .from("photos")
-                .select("analysis_id,storage_path,width,height,mime_type,sequence_index,client_photo_id,is_primary,thumbnail_storage_path,annotation_storage_path,user_caption,ai_scene_summary")
-                .eq("analysis_id", value: analysisID.uuidString)
-                .order("sequence_index", ascending: true)
-                .order("storage_path", ascending: true)
-                .execute()
-                .value
+    private func hydrateResultBundle(
+        analysisID: UUID,
+        analysis: AnalysisRow,
+        findings: [FindingRow]
+    ) async -> AnalysisResultBundle {
+        async let photos = fetchOptionalPhotos(analysisID: analysisID)
+        async let photoSummaries = fetchOptionalPhotoSummaries(analysisID: analysisID)
+        let resolvedPhotos = await photos
+        let resolvedPhotoSummaries = await photoSummaries
+        return AnalysisResultBundle(
+            analysis: analysis,
+            findings: findings,
+            photos: resolvedPhotos,
+            photoSummaries: resolvedPhotoSummaries
+        )
+    }
 
-            return AnalysisResultBundle(analysis: analysis, findings: findings, photos: photos)
+    private func fetchOptionalPhotos(analysisID: UUID) async -> [AnalysisPhotoRow] {
+        do {
+            return try await Self.withTimeout(
+                nanoseconds: Self.analysisResultPollTimeoutNanoseconds,
+                timeoutError: AnalysisError.networkFailed("Analiz fotoğrafları alınırken bağlantı zaman aşımına uğradı.")
+            ) {
+                try await self.supabase.client
+                    .from("photos")
+                    .select("analysis_id,storage_path,width,height,mime_type,sequence_index,client_photo_id,is_primary,thumbnail_storage_path,annotation_storage_path,user_caption,ai_scene_summary")
+                    .eq("analysis_id", value: analysisID.uuidString)
+                    .order("sequence_index", ascending: true)
+                    .order("storage_path", ascending: true)
+                    .execute()
+                    .value
+            }
         } catch {
-            throw AnalysisError.databaseFailed(error.localizedDescription)
+            Self.logger.error("Optional analysis photos hydration skipped analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            return []
+        }
+    }
+
+    private func fetchOptionalPhotoSummaries(analysisID: UUID) async -> [AnalysisPhotoSummaryRow] {
+        do {
+            return try await Self.withTimeout(
+                nanoseconds: Self.analysisResultPollTimeoutNanoseconds,
+                timeoutError: AnalysisError.networkFailed("Fotoğraf özetleri alınırken bağlantı zaman aşımına uğradı.")
+            ) {
+                try await self.supabase.client
+                    .from("analysis_photo_summaries")
+                    .select("analysis_id,photo_sequence_index,scene_summary,candidate_findings_count,generated_findings_count,highest_risk_level,ai_confidence,coverage_status,coverage_gap_reason,target_findings_min,target_findings_max")
+                    .eq("analysis_id", value: analysisID.uuidString)
+                    .order("photo_sequence_index", ascending: true)
+                    .execute()
+                    .value
+            }
+        } catch {
+            Self.logger.error("Optional analysis photo summaries hydration skipped analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            return []
         }
     }
 
@@ -1704,8 +2549,54 @@ final class AnalysisService {
             || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
     }
 
-    private static func uiTestResultBundle(analysisID: UUID) -> AnalysisResultBundle {
+    private static func uiTestResultBundle(
+        analysisID: UUID,
+        updatedFindingID: UUID? = nil,
+        patch: FindingMutationPatch? = nil,
+        deletedFindingID: UUID? = nil
+    ) -> AnalysisResultBundle {
         let userID = UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!
+        let rows = Finding.mock.compactMap { finding -> FindingRow? in
+            let rowID = uiTestFindingID(ordinal: finding.id)
+            if rowID == deletedFindingID {
+                return nil
+            }
+            let appliesPatch = rowID == updatedFindingID
+            let fkProbability = appliesPatch ? (patch?.fkProbability ?? finding.fk.probability) : finding.fk.probability
+            let fkFrequency = appliesPatch ? (patch?.fkFrequency ?? finding.fk.frequency) : finding.fk.frequency
+            let fkSeverity = appliesPatch ? (patch?.fkSeverity ?? finding.fk.severity) : finding.fk.severity
+            let fkScore = fkProbability * fkFrequency * fkSeverity
+            let m5Probability = appliesPatch ? (patch?.m5Probability ?? finding.m5.probability) : finding.m5.probability
+            let m5Severity = appliesPatch ? (patch?.m5Severity ?? finding.m5.severity) : finding.m5.severity
+            let m5Score = m5Probability * m5Severity
+            return FindingRow(
+                id: rowID,
+                analysisID: analysisID,
+                ordinal: finding.id,
+                title: appliesPatch ? (patch?.title ?? finding.title) : finding.title,
+                category: appliesPatch ? (patch?.category ?? finding.category) : finding.category,
+                description: appliesPatch ? (patch?.description ?? finding.description) : finding.description,
+                recommendedAction: appliesPatch ? (patch?.recommendedAction ?? finding.action) : finding.action,
+                recommendedMeasures: appliesPatch ? (patch?.recommendedMeasures ?? finding.controlMeasures) : finding.controlMeasures,
+                referencesText: appliesPatch ? (patch?.referencesText ?? finding.references) : finding.references,
+                rootCauseText: appliesPatch ? (patch?.rootCauseText ?? finding.rootCause) : finding.rootCause,
+                confidence: finding.confidence,
+                fkProbability: fkProbability,
+                fkFrequency: fkFrequency,
+                fkSeverity: fkSeverity,
+                fkScore: fkScore,
+                fkBand: RiskBands.fineKinney(fkScore).level.rawValue,
+                m5Probability: m5Probability,
+                m5Severity: m5Severity,
+                m5Score: m5Score,
+                m5Band: RiskBands.matrix5x5(m5Score).level.rawValue,
+                sourcePhotoIndices: patch?.sourcePhotoIndices ?? [1],
+                lastUserEditAt: appliesPatch || rowID == deletedFindingID ? ISO8601DateFormatter().string(from: Date()) : nil,
+                userEditCount: appliesPatch ? 1 : nil,
+                findingVersion: appliesPatch ? 2 : 1,
+                displayOrder: finding.id
+            )
+        }
         let analysis = AnalysisRow(
             id: analysisID,
             userID: userID,
@@ -1720,39 +2611,86 @@ final class AnalysisService {
             totalScoreM5: 62,
             highestBandFK: RiskLevel.critical.rawValue,
             highestBandM5: RiskLevel.critical.rawValue,
-            findingCount: Finding.mock.count,
+            findingCount: rows.count,
             createdAt: ISO8601DateFormatter().string(from: Date()),
             analysisSector: "construction",
             analysisSectorSource: "user_selected",
             analysisSectorPromptVersion: AnalysisSectorID.activeAnalysisPromptVersion
         )
-        let rows = Finding.mock.map { finding in
-            FindingRow(
-                id: UUID(),
-                analysisID: analysisID,
-                ordinal: finding.id,
-                title: finding.title,
-                category: finding.category,
-                description: finding.description,
-                recommendedAction: finding.action,
-                recommendedMeasures: finding.controlMeasures,
-                referencesText: finding.references,
-                rootCauseText: finding.rootCause,
-                confidence: finding.confidence,
-                fkProbability: finding.fk.probability,
-                fkFrequency: finding.fk.frequency,
-                fkSeverity: finding.fk.severity,
-                fkScore: finding.fkScore,
-                fkBand: finding.fkBand.level.rawValue,
-                m5Probability: finding.m5.probability,
-                m5Severity: finding.m5.severity,
-                m5Score: finding.m5Score,
-                m5Band: finding.m5Band.level.rawValue
-            )
-        }
         return AnalysisResultBundle(analysis: analysis, findings: rows, photos: [])
     }
+
+    private static func uiTestFindingID(ordinal: Int) -> UUID {
+        UUID(uuidString: String(format: "00000000-0000-0000-0000-%012d", ordinal))!
+    }
     #endif
+}
+
+struct InFlightAnalysis: Codable, Equatable {
+    let analysisID: UUID
+    let userID: UUID
+    let photoCount: Int
+    let startedAt: Date
+    let title: String
+    let kind: String
+
+    var isExpired: Bool {
+        Date().timeIntervalSince(startedAt) > 30 * 60
+    }
+}
+
+@MainActor
+final class InFlightAnalysisStore {
+    static let shared = InFlightAnalysisStore()
+
+    private let key = "rd.analysis.inFlight.v1"
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    func save(_ analysis: InFlightAnalysis) {
+        guard let data = try? JSONEncoder().encode(analysis) else { return }
+        defaults.set(data, forKey: key)
+    }
+
+    func load() -> InFlightAnalysis? {
+        guard let data = defaults.data(forKey: key),
+              let analysis = try? JSONDecoder().decode(InFlightAnalysis.self, from: data) else {
+            defaults.removeObject(forKey: key)
+            return nil
+        }
+        if analysis.isExpired {
+            clear(analysisID: analysis.analysisID)
+            return nil
+        }
+        return analysis
+    }
+
+    func load(for userID: UUID) -> InFlightAnalysis? {
+        guard let analysis = load() else { return nil }
+        guard analysis.userID == userID else {
+            clear(analysisID: analysis.analysisID)
+            return nil
+        }
+        return analysis
+    }
+
+    func clear(analysisID: UUID) {
+        guard let current = loadWithoutExpiryCheck() else {
+            defaults.removeObject(forKey: key)
+            return
+        }
+        if current.analysisID == analysisID {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
+    private func loadWithoutExpiryCheck() -> InFlightAnalysis? {
+        guard let data = defaults.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(InFlightAnalysis.self, from: data)
+    }
 }
 
 private struct SanitizedImage {
@@ -1854,6 +2792,35 @@ struct AnalysisResultBundle: Codable, Equatable {
     let analysis: AnalysisRow
     let findings: [FindingRow]
     let photos: [AnalysisPhotoRow]
+    var photoSummaries: [AnalysisPhotoSummaryRow]? = nil
+}
+
+struct AnalysisPhotoSummaryRow: Codable, Equatable {
+    let analysisID: UUID
+    let photoSequenceIndex: Int
+    let sceneSummary: String?
+    let candidateFindingsCount: Int?
+    let generatedFindingsCount: Int?
+    let highestRiskLevel: String?
+    let aiConfidence: Double?
+    let coverageStatus: String?
+    let coverageGapReason: String?
+    let targetFindingsMin: Int?
+    let targetFindingsMax: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case analysisID = "analysis_id"
+        case photoSequenceIndex = "photo_sequence_index"
+        case sceneSummary = "scene_summary"
+        case candidateFindingsCount = "candidate_findings_count"
+        case generatedFindingsCount = "generated_findings_count"
+        case highestRiskLevel = "highest_risk_level"
+        case aiConfidence = "ai_confidence"
+        case coverageStatus = "coverage_status"
+        case coverageGapReason = "coverage_gap_reason"
+        case targetFindingsMin = "target_findings_min"
+        case targetFindingsMax = "target_findings_max"
+    }
 }
 
 struct AnalysisPhotoRow: Codable, Equatable {

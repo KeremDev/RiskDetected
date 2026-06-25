@@ -5,6 +5,20 @@ import OSLog
 
 struct ResultView: View {
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "ResultView")
+    private struct PhotoCoverageRow: Identifiable {
+        let index: Int
+        let findingCount: Int
+        let detail: String?
+
+        var id: Int { index }
+        var compactText: String { "F\(index) \(findingCount)" }
+        var accessibilityText: String {
+            if let detail {
+                return "Foto \(index), \(findingCount) bulgu, \(detail)"
+            }
+            return "Foto \(index), \(findingCount) bulgu"
+        }
+    }
 
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
@@ -56,10 +70,53 @@ struct ResultView: View {
     private var photoPath: String? {
         currentBundle?.photos.first?.storagePath
     }
+    private var resultPhotoItems: [ResultPhotoItem] {
+        let rows = orderedPhotoRowsForReport()
+        let localImages = reportPreviewImages
+        let itemCount = max(rows.count, localImages.count)
+        guard itemCount > 0 else {
+            return [ResultPhotoItem(index: 0, image: localPreviewImage, path: photoPath)]
+        }
+
+        return (0..<itemCount).map { index in
+            ResultPhotoItem(
+                index: index,
+                image: localImages.indices.contains(index) ? localImages[index] : nil,
+                path: rows.indices.contains(index) ? rows[index].storagePath : nil
+            )
+        }
+    }
     private var reportPreviewImages: [UIImage] {
         if !localPreviewImages.isEmpty { return localPreviewImages }
         if let localPreviewImage { return [localPreviewImage] }
         return []
+    }
+    private var photoCoverageRows: [PhotoCoverageRow] {
+        let bundlePhotoCount = currentBundle?.analysis.photoCount ?? 0
+        let photoCount = max(max(bundlePhotoCount, currentBundle?.photos.count ?? 0), reportPreviewImages.count)
+        guard photoCount > 1 else { return [] }
+        let summaries = currentBundle?.photoSummaries ?? []
+        let summaryByIndex = Dictionary(uniqueKeysWithValues: summaries.map { ($0.photoSequenceIndex, $0) })
+
+        return (1...photoCount).map { index in
+            let summary = summaryByIndex[index]
+            let fallbackCount = findingRows.filter { row in
+                let indices = row.sourcePhotoIndices?.isEmpty == false ? row.sourcePhotoIndices! : [1]
+                return indices.contains(index)
+            }.count
+            let count = summary?.generatedFindingsCount ?? fallbackCount
+            return PhotoCoverageRow(
+                index: index,
+                findingCount: count,
+                detail: photoCoverageDetail(summary: summary, count: count)
+            )
+        }
+    }
+    private var photoCoverageSummaryText: String {
+        photoCoverageRows.map(\.compactText).joined(separator: " · ")
+    }
+    private var photoCoverageAccessibilityText: String {
+        photoCoverageRows.map(\.accessibilityText).joined(separator: ", ")
     }
 
     @State private var method: RiskMethod = .fineKinney
@@ -67,6 +124,9 @@ struct ResultView: View {
     @State private var selectedFindingRowForEdit: FindingRow?
     @State private var pendingDeleteFindingRow: FindingRow?
     @State private var editedBundle: AnalysisResultBundle?
+#if DEBUG
+    @State private var didOpenUITestFindingEditor = false
+#endif
     @State private var findingMutationError: String?
     @State private var isFindingMutationInFlight = false
     @State private var showPaywall: Bool = false
@@ -246,11 +306,19 @@ struct ResultView: View {
         .task(id: currentBundle?.analysis.companyID) {
             await loadInitialReportCompanyIfNeeded()
         }
+#if DEBUG
+        .task(id: currentBundle?.analysis.id) {
+            await openUITestFindingEditorIfNeeded()
+        }
+#endif
         .onChange(of: bundle?.analysis.id) { _ in
             editedBundle = nil
             selectedFinding = nil
             selectedFindingRowForEdit = nil
             pendingDeleteFindingRow = nil
+#if DEBUG
+            didOpenUITestFindingEditor = false
+#endif
         }
         .onDisappear {
             pdfGeneration.cancel()
@@ -314,17 +382,14 @@ struct ResultView: View {
 
     private var photoMetaCard: some View {
         RDCard {
-            HStack(alignment: .top, spacing: 16) {
-                ResultPhotoThumbnail(
-                    image: localPreviewImage,
-                    path: photoPath,
+            HStack(alignment: .top, spacing: 14) {
+                ResultPhotoMosaic(
+                    items: resultPhotoItems,
                     isTextAnalysis: currentBundle?.analysis.kind == "text",
-                    cornerRadius: 12,
                     onTap: { image in
                         expandedPhotoPreview = ResultPhotoPreview(image: image)
                     }
                 )
-                    .frame(width: 58, height: 58)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(analysisTitle)
@@ -354,6 +419,11 @@ struct ResultView: View {
                         confidenceChip
                     }
                     .fixedSize(horizontal: false, vertical: true)
+
+                    if !photoCoverageRows.isEmpty {
+                        photoCoverageStrip
+                            .padding(.top, 2)
+                    }
 
                     if !app.isPro {
                         proResultHint
@@ -431,6 +501,36 @@ struct ResultView: View {
             .foregroundStyle(fg)
             .background(bg)
             .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    private var photoCoverageStrip: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "photo.on.rectangle")
+                .font(.system(size: RDFontScale.size(8.5), weight: .semibold, design: .rounded))
+            Text(photoCoverageSummaryText)
+                .rdMono(size: 9.5, weight: .medium)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .allowsTightening(true)
+        }
+        .foregroundStyle(Color.rdSlate.opacity(0.82))
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(Color.rdFog.opacity(0.62))
+        .clipShape(RoundedRectangle(cornerRadius: 5))
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityIdentifier("result.photo_coverage")
+        .accessibilityLabel("Fotoğraf dağılımı: \(photoCoverageAccessibilityText)")
+    }
+
+    private func photoCoverageDetail(summary: AnalysisPhotoSummaryRow?, count: Int) -> String? {
+        let status = summary?.coverageStatus?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if status == "low_quality" { return "kalite yetersiz" }
+        if status == "no_actionable_hazard" { return "kanıt yok" }
+        if let targetMin = summary?.targetFindingsMin, count < targetMin {
+            return "gerekçeli düşük"
+        }
+        return nil
     }
 
     private var averageConfidence: Double {
@@ -681,7 +781,7 @@ struct ResultView: View {
 
     private var lockedFindingPreviews: [LockedFindingPreview] {
         let start = sortedFindings.count + 1
-        let total = max(0, 10 - sortedFindings.count)
+        let total = min(2, max(0, 5 - sortedFindings.count))
         let templates: [(String, RiskLevel, String)] = [
             ("Ek kritik bulgu", .critical, "Detaylı açıklama Pro ile açılır."),
             ("Tolerans dışı durum", .high, "Fine-Kinney ve 5×5 hesabı kilitli."),
@@ -764,6 +864,10 @@ struct ResultView: View {
 
     private func openReportSettings() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        reportOptions = resolvedReportOptions(defaultReportOptions(kind: .standard), company: selectedReportCompany)
+        reportSettingsDetent = .height(430)
+        showReportSettings = true
+
         Task {
             await app.refreshPlanState()
             _ = await refreshReportQuotaState()
@@ -1220,6 +1324,20 @@ struct ResultView: View {
     }
 
     #if DEBUG
+    @MainActor
+    private func openUITestFindingEditorIfNeeded() async {
+        guard Self.usesUITestOpenFindingEditor, !didOpenUITestFindingEditor else { return }
+        guard let row = sortedFindingRows.first else { return }
+        didOpenUITestFindingEditor = true
+        try? await Task.sleep(nanoseconds: 350_000_000)
+        selectedFindingRowForEdit = row
+    }
+
+    private static var usesUITestOpenFindingEditor: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_OPEN_FINDING_EDITOR")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_OPEN_FINDING_EDITOR"] == "1"
+    }
+
     private static var usesUITestLongReportFields: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_LONG_REPORT_FIELDS")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_LONG_REPORT_FIELDS"] == "1"
@@ -2271,11 +2389,19 @@ private struct FindingEditorSheet: View {
 
     @State private var title: String
     @State private var description: String
-    @State private var actionText: String
+    @State private var correctiveText: String
+    @State private var preventiveText: String
     @State private var referencesText: String
     @State private var rootCauseText: String
     @State private var selectedPhotoIndices: Set<Int>
+    @State private var fkProbability: Double
+    @State private var fkFrequency: Double
+    @State private var fkSeverity: Double
+    @State private var m5Probability: Int
+    @State private var m5Severity: Int
     @State private var showDeleteConfirmation = false
+
+    @Environment(\.colorScheme) private var colorScheme
 
     init(
         row: FindingRow,
@@ -2295,45 +2421,71 @@ private struct FindingEditorSheet: View {
         self.onClose = onClose
         _title = State(initialValue: row.title)
         _description = State(initialValue: row.description ?? "")
-        _actionText = State(initialValue: row.recommendedAction ?? row.recommendedMeasures?.first?.text ?? "")
+        let measures = row.recommendedMeasures ?? []
+        let corrective = measures.first { $0.kind == .corrective }?.text
+            ?? row.recommendedAction
+            ?? measures.first?.text
+            ?? ""
+        let preventive = measures.first { $0.kind == .preventive }?.text ?? ""
+        _correctiveText = State(initialValue: corrective)
+        _preventiveText = State(initialValue: preventive)
         _referencesText = State(initialValue: row.referencesText ?? "")
         _rootCauseText = State(initialValue: row.rootCauseText ?? "")
         let sourceIndices = row.sourcePhotoIndices?.isEmpty == false ? row.sourcePhotoIndices! : [1]
         _selectedPhotoIndices = State(initialValue: Set(sourceIndices))
+        _fkProbability = State(initialValue: row.fkProbability)
+        _fkFrequency = State(initialValue: row.fkFrequency)
+        _fkSeverity = State(initialValue: row.fkSeverity)
+        _m5Probability = State(initialValue: row.m5Probability)
+        _m5Severity = State(initialValue: row.m5Severity)
     }
 
-    private var finding: Finding { row.asFinding }
-    private var band: RiskBand { finding.band(for: method) }
+    private var fkScore: Double { fkProbability * fkFrequency * fkSeverity }
+    private var m5Score: Int { m5Probability * m5Severity }
+    private var activeBand: RiskBand {
+        method == .fineKinney ? RiskBands.fineKinney(fkScore) : RiskBands.matrix5x5(m5Score)
+    }
+    private var activeFormula: String {
+        switch method {
+        case .fineKinney:
+            return "O \(formattedFK(fkProbability)) × F \(formattedFK(fkFrequency)) × Ş \(Int(fkSeverity))"
+        case .matrix5x5:
+            return "O \(m5Probability) × Ş \(m5Severity)"
+        }
+    }
     private var canSave: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && !actionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !correctiveText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !preventiveText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !selectedPhotoIndices.isEmpty
     }
+    private var isDarkMode: Bool { colorScheme == .dark }
+    private var editorBackground: Color { isDarkMode ? Color(hex: "#0B0D0E") : Color.rdPaper }
+    private var editorSurface: Color { isDarkMode ? Color(hex: "#151819") : Color.rdWhite }
+    private var editorFieldSurface: Color { isDarkMode ? Color.white.opacity(0.06) : Color.rdCloud }
+    private var editorControlSurface: Color { isDarkMode ? Color.white.opacity(0.08) : Color.rdFog }
+    private var editorBorder: Color { isDarkMode ? Color.white.opacity(0.14) : Color.rdLine.opacity(0.75) }
+    private var editorPrimaryText: Color { isDarkMode ? Color.white : Color.rdOnyx }
+    private var editorSecondaryText: Color { isDarkMode ? Color.white.opacity(0.68) : Color.rdSlate }
+    private var editorSaveColor: Color { isDarkMode ? Color.rdGreen : Color.rdOnyx }
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(spacing: 10) {
-                        RDChip(level: band.level, label: band.label)
-                        Text("R = \(finding.formula(for: method))")
-                            .rdMono(size: 11, weight: .semibold)
-                            .foregroundStyle(Color.rdSlate)
-                        Spacer(minLength: 0)
-                    }
+                VStack(alignment: .leading, spacing: 12) {
+                    riskScoreEditor
 
-                    editorField(title: "Bulgu", text: $title, lineLimit: 2)
-                    editorTextArea(title: "Açıklama", text: $description, minHeight: 112)
-                    editorTextArea(title: "Önlem / kontrol tedbiri", text: $actionText, minHeight: 120)
-                    editorTextArea(title: "Referans", text: $referencesText, minHeight: 76)
-                    editorTextArea(title: "Kök neden", text: $rootCauseText, minHeight: 76)
+                    editorField(title: "Bulgu", icon: "exclamationmark.triangle.fill", text: $title, lineLimit: 2)
+                    editorTextArea(title: "Açıklama", icon: "text.alignleft", text: $description, minLines: 2, maxLines: 4)
+                    editorTextArea(title: "Düzeltici önlem", icon: "wrench.adjustable.fill", text: $correctiveText, minLines: 2, maxLines: 4)
+                    editorTextArea(title: "Önleyici kontrol", icon: "shield.checkered", text: $preventiveText, minLines: 2, maxLines: 4)
+                    editorTextArea(title: "Referans", icon: "book.closed.fill", text: $referencesText, minLines: 1, maxLines: 2)
+                    editorTextArea(title: "Kök neden", icon: "point.3.connected.trianglepath.dotted", text: $rootCauseText, minLines: 1, maxLines: 2)
 
                     if photoCount > 1 {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Kaynak fotoğraf")
-                                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                                .foregroundStyle(Color.rdSlate)
+                        VStack(alignment: .leading, spacing: 9) {
+                            editorLabel(title: "Kaynak fotoğraf", icon: "photo.stack.fill")
                             HStack(spacing: 8) {
                                 ForEach(1...photoCount, id: \.self) { index in
                                     let selected = selectedPhotoIndices.contains(index)
@@ -2355,44 +2507,83 @@ private struct FindingEditorSheet: View {
                                 }
                             }
                         }
+                        .padding(12)
+                        .background(editorSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
-
-                    Button(role: .destructive) {
-                        showDeleteConfirmation = true
-                    } label: {
-                        Label("Bulguyu sil", systemImage: "trash")
-                            .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 48)
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(isSaving)
-                    .padding(.top, 4)
                 }
                 .padding(18)
-                .padding(.bottom, 80)
+                .padding(.bottom, 96)
             }
-            .background(Color.rdPaper)
+            .background(editorBackground)
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                HStack(spacing: 10) {
-                    Button("Vazgeç", action: onClose)
-                        .buttonStyle(.bordered)
-                        .frame(maxWidth: .infinity)
+                HStack(spacing: 9) {
+                    Button {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                            .frame(width: 50, height: 52)
+                    }
+                    .foregroundStyle(isDarkMode ? Color(hex: "#FF6B5F") : Color.rdCritical)
+                    .background(Color.rdCritical.opacity(isDarkMode ? 0.20 : 0.10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(Color.rdCritical.opacity(isDarkMode ? 0.35 : 0.0), lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .buttonStyle(RDPressableButtonStyle())
+                    .accessibilityLabel("Bulgu sil")
+                    .accessibilityIdentifier("finding_editor.delete")
+                    .disabled(isSaving)
+
+                    Button(action: onClose) {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                            .frame(width: 50, height: 52)
+                    }
+                    .foregroundStyle(editorPrimaryText)
+                    .background(editorControlSurface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(editorBorder, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .buttonStyle(RDPressableButtonStyle())
+                    .accessibilityLabel("Vazgeç")
+                    .accessibilityIdentifier("finding_editor.cancel")
+
                     Button {
                         onSave(makePatch())
                     } label: {
-                        if isSaving {
-                            ProgressView()
-                                .tint(Color.rdBlack)
-                        } else {
-                            Text("Kaydet")
+                        HStack(spacing: 9) {
+                            if isSaving {
+                                ProgressView()
+                                    .tint(Color.rdWhite)
+                            } else {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
+                                Text("Kaydet")
+                                    .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                                    .tracking(0)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.82)
+                            }
                         }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .foregroundStyle(.white)
+                        .background(canSave && !isSaving ? editorSaveColor : Color.rdSlate.opacity(isDarkMode ? 0.28 : 0.45))
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                        .contentShape(RoundedRectangle(cornerRadius: 18))
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!canSave || isSaving)
                     .frame(maxWidth: .infinity)
+                    .buttonStyle(RDPressableButtonStyle())
+                    .accessibilityIdentifier("finding_editor.save")
+                    .disabled(!canSave || isSaving)
                 }
-                .padding(14)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
                 .background(.ultraThinMaterial)
             }
             .navigationTitle("Bulguyu Düzenle")
@@ -2414,54 +2605,250 @@ private struct FindingEditorSheet: View {
     }
 
     private func makePatch() -> FindingMutationPatch {
-        let cleanAction = actionText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanCorrective = correctiveText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanPreventive = preventiveText.trimmingCharacters(in: .whitespacesAndNewlines)
         let measures = [
-            FindingMeasure(kind: .corrective, title: "Düzeltici Önlem", text: cleanAction)
+            FindingMeasure(kind: .corrective, title: "Düzeltici Önlem", text: cleanCorrective),
+            FindingMeasure(kind: .preventive, title: "Önleyici Kontrol", text: cleanPreventive)
         ]
         return FindingMutationPatch(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             category: row.category,
             description: description.trimmingCharacters(in: .whitespacesAndNewlines),
-            recommendedAction: cleanAction,
+            recommendedAction: cleanCorrective,
             recommendedMeasures: measures,
             referencesText: referencesText.trimmingCharacters(in: .whitespacesAndNewlines),
             rootCauseText: rootCauseText.trimmingCharacters(in: .whitespacesAndNewlines),
-            fkProbability: row.fkProbability,
-            fkFrequency: row.fkFrequency,
-            fkSeverity: row.fkSeverity,
-            m5Probability: row.m5Probability,
-            m5Severity: row.m5Severity,
+            fkProbability: fkProbability,
+            fkFrequency: fkFrequency,
+            fkSeverity: fkSeverity,
+            m5Probability: m5Probability,
+            m5Severity: m5Severity,
             sourcePhotoIndices: selectedPhotoIndices.sorted()
         )
     }
 
-    private func editorField(title: String, text: Binding<String>, lineLimit: Int) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(title)
-                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
-            TextField(title, text: text, axis: .vertical)
-                .lineLimit(1...lineLimit)
-                .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
-                .padding(12)
-                .background(Color.rdWhite)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+    private var riskScoreEditor: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                riskLevelPill
+                Spacer(minLength: 8)
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text("Aktif yöntem")
+                        .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
+                        .foregroundStyle(editorSecondaryText)
+                    Text("\(method.label) · R \(scoreText)")
+                        .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                        .foregroundStyle(editorPrimaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                }
+            }
+
+            riskScoreGroup(
+                title: "Fine-Kinney",
+                score: formattedScore(fkScore),
+                formula: "O \(formattedFK(fkProbability)) × F \(formattedFK(fkFrequency)) × Ş \(formattedFK(fkSeverity))"
+            ) {
+                HStack(spacing: 8) {
+                    scoreMenu(title: "Olasılık", value: formattedFK(fkProbability), values: [0.2, 0.5, 1, 3, 6, 10].map(formattedFK), identifier: "finding_editor.fk_probability") { selected in
+                        fkProbability = Double(selected) ?? fkProbability
+                    }
+                    scoreMenu(title: "Frekans", value: formattedFK(fkFrequency), values: [0.5, 1, 2, 3, 6, 10].map(formattedFK), identifier: "finding_editor.fk_frequency") { selected in
+                        fkFrequency = Double(selected) ?? fkFrequency
+                    }
+                    scoreMenu(title: "Şiddet", value: formattedFK(fkSeverity), values: [1, 3, 7, 15, 40, 100].map(formattedFK), identifier: "finding_editor.fk_severity") { selected in
+                        fkSeverity = Double(selected) ?? fkSeverity
+                    }
+                }
+            }
+
+            riskScoreGroup(
+                title: "5x5 Matris",
+                score: "\(m5Score)",
+                formula: "O \(m5Probability) × Ş \(m5Severity)"
+            ) {
+                HStack(spacing: 8) {
+                    scoreMenu(title: "Olasılık", value: "\(m5Probability)", values: [1, 2, 3, 4, 5].map(String.init), identifier: "finding_editor.m5_probability") { selected in
+                        m5Probability = Int(selected) ?? m5Probability
+                    }
+                    scoreMenu(title: "Şiddet", value: "\(m5Severity)", values: [1, 2, 3, 4, 5].map(String.init), identifier: "finding_editor.m5_severity") { selected in
+                        m5Severity = Int(selected) ?? m5Severity
+                    }
+                    scoreResultPill("Risk", value: "\(m5Score)")
+                }
+            }
         }
     }
 
-    private func editorTextArea(title: String, text: Binding<String>, minHeight: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
+    private func riskScoreGroup<Content: View>(
+        title: String,
+        score: String,
+        formula: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .lastTextBaseline, spacing: 8) {
+                Text(title)
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .foregroundStyle(editorPrimaryText)
+                Text("R = \(score)")
+                    .rdMono(size: 14, weight: .black)
+                    .foregroundStyle(editorPrimaryText)
+                Spacer(minLength: 0)
+                Text(formula)
+                    .rdMono(size: 9.5, weight: .semibold)
+                    .foregroundStyle(editorSecondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+
+            content()
+        }
+        .padding(12)
+        .background(editorSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 15))
+        .overlay(
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(editorBorder, lineWidth: 1)
+        )
+    }
+
+    private func scoreResultPill(_ title: String, value: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "function")
+                .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+            Text(title)
+                .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+            Text(value)
+                .rdMono(size: 12, weight: .medium)
+        }
+        .foregroundStyle(editorPrimaryText)
+        .frame(maxWidth: .infinity)
+        .frame(height: 38)
+        .background(editorControlSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 11))
+    }
+
+    private var riskLevelPill: some View {
+        HStack(spacing: 7) {
+            Circle()
+                .fill(activeBand.color)
+                .frame(width: 8, height: 8)
+            Text(activeBand.label)
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+        }
+        .foregroundStyle(activeBand.color)
+        .padding(.horizontal, 10)
+        .frame(height: 30)
+        .background(activeBand.color.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var scoreText: String {
+        switch method {
+        case .fineKinney:
+            return formattedScore(fkScore)
+        case .matrix5x5:
+            return "\(m5Score)"
+        }
+    }
+
+    private func scoreMenu(title: String, value: String, values: [String], identifier: String, onSelect: @escaping (String) -> Void) -> some View {
+        Menu {
+            ForEach(values, id: \.self) { candidate in
+                Button(candidate) { onSelect(candidate) }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                    .foregroundStyle(editorSecondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                Spacer(minLength: 0)
+                Text(value)
+                    .rdMono(size: 12, weight: .medium)
+                    .foregroundStyle(editorPrimaryText)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: RDFontScale.size(8), weight: .black, design: .rounded))
+                    .foregroundStyle(editorSecondaryText)
+            }
+            .padding(.horizontal, 9)
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            .background(editorControlSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 11))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func editorLabel(title: String, icon: String) -> some View {
+        HStack(spacing: 7) {
+            Image(systemName: icon)
+                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                .foregroundStyle(editorPrimaryText)
+                .frame(width: 18)
             Text(title)
                 .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
-            TextEditor(text: text)
-                .font(.system(size: RDFontScale.size(14), design: .rounded))
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: minHeight)
-                .padding(8)
-                .background(Color.rdWhite)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .foregroundStyle(editorPrimaryText)
+            Spacer(minLength: 0)
         }
+    }
+
+    private func editorField(title: String, icon: String, text: Binding<String>, lineLimit: Int) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            editorLabel(title: title, icon: icon)
+            TextField(title, text: text, axis: .vertical)
+                .lineLimit(1...lineLimit)
+                .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
+                .foregroundStyle(editorPrimaryText)
+                .tint(Color.rdGreen)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(editorFieldSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 13))
+        }
+        .padding(12)
+        .background(editorSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 15))
+        .overlay(
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(editorBorder, lineWidth: 1)
+        )
+    }
+
+    private func editorTextArea(title: String, icon: String, text: Binding<String>, minLines: Int, maxLines: Int) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            editorLabel(title: title, icon: icon)
+            TextField(title, text: text, axis: .vertical)
+                .font(.system(size: RDFontScale.size(14), design: .rounded))
+                .foregroundStyle(editorPrimaryText)
+                .tint(Color.rdGreen)
+                .lineLimit(minLines...maxLines)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(editorFieldSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 13))
+        }
+        .padding(12)
+        .background(editorSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 15))
+        .overlay(
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(editorBorder, lineWidth: 1)
+        )
+    }
+
+    private func formattedFK(_ value: Double) -> String {
+        value == floor(value) ? "\(Int(value))" : String(format: "%.1f", value)
+    }
+
+    private func formattedScore(_ value: Double) -> String {
+        value == floor(value) ? "\(Int(value))" : String(format: "%.1f", value)
     }
 }
 
@@ -2479,35 +2866,75 @@ struct FindingCard: View {
     let onPaywall: () -> Void
     let action: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var isDarkMode: Bool { colorScheme == .dark }
+    private var cardBackground: Color { isDarkMode ? Color(hex: "#151819") : Color.rdWhite }
+    private var cardStroke: Color { isDarkMode ? Color.white.opacity(0.14) : Color.rdLine }
+    private var cardPrimaryText: Color { isDarkMode ? Color.white : Color.rdOnyx }
+    private var cardSecondaryText: Color { isDarkMode ? Color.white.opacity(0.68) : Color.rdSlate }
+    private var cardSubtleSurface: Color { isDarkMode ? Color.white.opacity(0.07) : Color.rdFog }
+    private var cardInnerSurface: Color { isDarkMode ? Color.white.opacity(0.05) : Color.rdWhite }
+    private var controlBlockText: Color { isDarkMode ? Color.white.opacity(0.92) : Color.rdGraphite }
+    private var actionAccent: Color { isDarkMode ? Color.rdGreen : Color.rdGreenDark }
+
     var body: some View {
         let band = finding.band(for: method)
         let score = finding.score(for: method)
         let max: Double = method == .fineKinney ? 1000 : 25
 
-        HStack(alignment: .top, spacing: 10) {
-            Text("\(index)")
-                .rdMono(size: 12, weight: .bold)
-                .frame(width: 26, height: 26)
-                .background(Color.rdFog)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .foregroundStyle(Color.rdBlack)
+        VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 7) {
+                        HStack(alignment: .top, spacing: 8) {
+                            Text("\(index)")
+                                .rdMono(size: 11, weight: .bold)
+                                .frame(width: 25, height: 25)
+                                .background(cardSubtleSurface)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .foregroundStyle(cardPrimaryText)
 
-            VStack(alignment: .leading, spacing: 6) {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(alignment: .top, spacing: 8) {
-                        Text(finding.displayTitle)
-                            .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        RDChip(level: band.level, label: band.label)
-                        if canEdit {
+                            Text(finding.displayTitle)
+                                .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
+                                .foregroundStyle(cardPrimaryText)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        HStack(spacing: 6) {
+                            RDChip(level: band.level, label: band.label)
+                            if !sourcePhotoIndices.isEmpty {
+                                HStack(spacing: 5) {
+                                    Image(systemName: "photo.on.rectangle")
+                                        .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
+                                    Text(sourcePhotoIndices.map { String($0) }.joined(separator: ", "))
+                                        .rdMono(size: 10, weight: .semibold)
+                                }
+                                .foregroundStyle(cardSecondaryText)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(cardSubtleSurface)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .accessibilityLabel("Kaynak fotoğraf \(sourcePhotoIndices.map { String($0) }.joined(separator: ", "))")
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if canEdit {
+                        HStack(spacing: 8) {
                             Button(action: onEdit) {
                                 Image(systemName: "pencil")
                                     .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                                    .foregroundStyle(Color.rdBlack)
+                                    .foregroundStyle(isDarkMode ? Color(hex: "#FFD166") : Color.rdOnyx)
                                     .frame(width: 28, height: 28)
-                                    .background(Color.rdFog)
+                                    .background(Color.rdPlanPlus.opacity(isDarkMode ? 0.22 : 0.16))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.rdPlanPlus.opacity(isDarkMode ? 0.72 : 0.55), lineWidth: 1)
+                                    )
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
                             .buttonStyle(.plain)
@@ -2516,9 +2943,13 @@ struct FindingCard: View {
                             Button(action: onDelete) {
                                 Image(systemName: "trash")
                                     .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                                    .foregroundStyle(Color.rdCriticalText)
+                                    .foregroundStyle(isDarkMode ? Color(hex: "#FF6B5F") : Color.rdCriticalText)
                                     .frame(width: 28, height: 28)
-                                    .background(Color.rdCriticalBg)
+                                    .background(Color.rdCritical.opacity(isDarkMode ? 0.20 : 0.10))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.rdCritical.opacity(isDarkMode ? 0.42 : 0.0), lineWidth: 1)
+                                    )
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
                             .buttonStyle(.plain)
@@ -2526,44 +2957,32 @@ struct FindingCard: View {
                             .accessibilityIdentifier("result.finding.\(index).delete")
                         }
                     }
-                    if !sourcePhotoIndices.isEmpty {
-                        HStack(spacing: 5) {
-                            Image(systemName: "photo.on.rectangle")
-                                .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
-                            Text("Foto \(sourcePhotoIndices.map { String($0) }.joined(separator: ", "))")
-                                .rdMono(size: 10, weight: .semibold)
-                        }
-                        .foregroundStyle(Color.rdSlate)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color.rdFog)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                    }
-                    Text(finding.description)
-                        .font(.system(size: RDFontScale.size(13), design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    scoreBlock(band: band, score: score, max: max)
-
-                    actionBlock
-
-                    rootCauseBlock
                 }
-                .contentShape(Rectangle())
-                .onTapGesture(perform: action)
 
-                findingMetaCards(band: band)
+                Text(finding.description)
+                    .font(.system(size: RDFontScale.size(13), design: .rounded))
+                    .foregroundStyle(cardPrimaryText.opacity(0.86))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                scoreBlock(band: band, score: score, max: max)
+
+                actionBlock
+
+                rootCauseBlock
             }
+            .contentShape(Rectangle())
+            .onTapGesture(perform: action)
+
+            findingMetaCards(band: band)
         }
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: RDRadius.lg)
-                .fill(Color.rdWhite)
+                .fill(cardBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: RDRadius.lg)
-                        .stroke(Color.rdLine, lineWidth: 1)
+                        .stroke(cardStroke, lineWidth: 1)
                 )
         )
     }
@@ -2590,11 +3009,11 @@ struct FindingCard: View {
                     .foregroundStyle(band.color)
                 Text("R = \(finding.formula(for: method))")
                     .rdMono(size: 11)
-                    .foregroundStyle(Color.rdSlate)
+                    .foregroundStyle(cardSecondaryText)
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2).fill(Color.rdFog)
+                        RoundedRectangle(cornerRadius: 2).fill(cardSubtleSurface)
                         RoundedRectangle(cornerRadius: 2)
                             .fill(band.color)
                             .frame(width: geo.size.width * CGFloat(min(1, score / max)))
@@ -2606,10 +3025,10 @@ struct FindingCard: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(Color.rdWhite)
+                .fill(cardInnerSurface)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.rdLine, lineWidth: 1)
+                        .stroke(cardStroke, lineWidth: 1)
                 )
         )
     }
@@ -2622,7 +3041,7 @@ struct FindingCard: View {
                 Text("Önlem / Kontrol tedbirleri")
                     .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
             }
-            .foregroundStyle(Color.rdGreenDark)
+            .foregroundStyle(actionAccent)
 
             ForEach(finding.controlMeasures.indices, id: \.self) { index in
                 let measure = finding.controlMeasures[index]
@@ -2632,14 +3051,14 @@ struct FindingCard: View {
                     Text(measure.text)
                         .font(.system(size: RDFontScale.size(12), design: .rounded))
                 )
-                .foregroundStyle(Color.rdGraphite)
+                .foregroundStyle(controlBlockText)
                 .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.rdGreenSoft)
+        .background(isDarkMode ? Color.rdGreen.opacity(0.18) : Color.rdGreenSoft)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
@@ -2650,18 +3069,18 @@ struct FindingCard: View {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "point.3.connected.trianglepath.dotted")
                     .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                    .foregroundStyle(SubscriptionTier.plus.accentTextColor)
+                    .foregroundStyle(isDarkMode ? Color.rdPlanPlus : SubscriptionTier.plus.accentTextColor)
                     .padding(.top, 2)
                 (
                     Text("Kök neden · ").font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded)) +
                     Text(finding.rootCause).font(.system(size: RDFontScale.size(12), design: .rounded))
                 )
-                .foregroundStyle(Color.rdGraphite)
+                .foregroundStyle(controlBlockText)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(SubscriptionTier.plus.accentSoftColor)
+            .background(isDarkMode ? Color.rdPlanPlus.opacity(0.18) : SubscriptionTier.plus.accentSoftColor)
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }
@@ -2725,7 +3144,7 @@ struct FindingCard: View {
                     .foregroundStyle(Color.rdSlate)
                 Text(value)
                     .font(.system(size: RDFontScale.size(10.5), weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdGraphite)
+                    .foregroundStyle(controlBlockText)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -2733,12 +3152,84 @@ struct FindingCard: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 7)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(Color.rdFog.opacity(0.72))
+        .background(cardSubtleSurface)
         .overlay(
             RoundedRectangle(cornerRadius: 9)
-                .stroke(Color.rdLine, lineWidth: 1)
+                .stroke(cardStroke, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 9))
+    }
+}
+
+private struct ResultPhotoItem: Identifiable {
+    let index: Int
+    let image: UIImage?
+    let path: String?
+
+    var id: String {
+        path ?? "local-\(index)"
+    }
+}
+
+private struct ResultPhotoMosaic: View {
+    let items: [ResultPhotoItem]
+    let isTextAnalysis: Bool
+    let onTap: (UIImage) -> Void
+
+    private var visibleItems: [ResultPhotoItem] {
+        Array(items.prefix(4))
+    }
+
+    private var hiddenCount: Int {
+        max(0, items.count - visibleItems.count)
+    }
+
+    var body: some View {
+        Group {
+            if items.count <= 1 {
+                ResultPhotoThumbnail(
+                    image: visibleItems.first?.image,
+                    path: visibleItems.first?.path,
+                    isTextAnalysis: isTextAnalysis,
+                    cornerRadius: 14,
+                    onTap: onTap
+                )
+                .frame(width: 70, height: 70)
+            } else {
+                LazyVGrid(
+                    columns: [
+                        GridItem(.fixed(38), spacing: 5),
+                        GridItem(.fixed(38), spacing: 5)
+                    ],
+                    spacing: 5
+                ) {
+                    ForEach(Array(visibleItems.enumerated()), id: \.element.id) { displayIndex, item in
+                        ResultPhotoThumbnail(
+                            image: item.image,
+                            path: item.path,
+                            isTextAnalysis: isTextAnalysis,
+                            cornerRadius: 10,
+                            onTap: onTap
+                        )
+                        .frame(width: 38, height: 38)
+                        .overlay(alignment: .bottomTrailing) {
+                            if hiddenCount > 0 && displayIndex == visibleItems.count - 1 {
+                                Text("+\(hiddenCount)")
+                                    .rdMono(size: 10, weight: .bold)
+                                    .foregroundStyle(Color.white)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .background(Color.black.opacity(0.48))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                    }
+                }
+                .frame(width: 81, height: 81, alignment: .topLeading)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(items.count <= 1 ? "Analiz fotoğrafı" : "\(items.count) analiz fotoğrafı")
     }
 }
 

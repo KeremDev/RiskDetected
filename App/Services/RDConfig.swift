@@ -31,6 +31,7 @@ enum RDConfig {
     enum Web {
         static let websiteURL = URL(string: "https://riskdetected.com")!
         static let supportURL = URL(string: "https://riskdetected.com")!
+        static let appStoreURL = URL(string: "https://apps.apple.com/tr/app/riskdetected-i-sg-risk-analizi/id6769498181")!
         static let privacyPolicyURL = URL(string: "https://riskdetected.com/gizlilik")!
         static let termsURL = URL(string: "https://riskdetected.com/kullanim-kosullari")!
         static let kvkkURL = URL(string: "https://riskdetected.com/kvkk")!
@@ -68,6 +69,7 @@ enum RDConfig {
     static let generateExcelReportFunctionName = "generate-excel-report"
     static let registerReportFunctionName = "register-report"
     static let mutateAnalysisFindingFunctionName = "mutate-analysis-finding"
+    static let appReleasePolicyFunctionName = "app-release-policy"
     static let revenueCatWebhookFunctionName = "revenuecat-webhook"
     static let syncRevenueCatSubscriptionFunctionName = "sync-revenuecat-subscription"
     static let supportContactFunctionName = "support-contact"

@@ -40,6 +40,10 @@ type Body = {
   patch?: FindingPatch;
   expected_finding_version?: unknown;
   client_app_version?: unknown;
+  client_app_build?: unknown;
+  client_platform?: unknown;
+  api_contract_version?: unknown;
+  client_capabilities?: unknown;
   request_id?: unknown;
   support_id?: unknown;
 };
@@ -55,6 +59,16 @@ type FindingRow = Record<string, unknown> & {
 const FK_PROBABILITY_VALUES = [0.2, 0.5, 1, 3, 6, 10];
 const FK_FREQUENCY_VALUES = [0.5, 1, 2, 3, 6, 10];
 const FK_SEVERITY_VALUES = [1, 3, 7, 15, 40, 100];
+
+type ReleaseRolloutMode = "off" | "build_allowlist" | "min_build" | "all";
+
+type ClientReleaseContext = {
+  platform: string;
+  appBuild: string | null;
+  appBuildNumber: number | null;
+  apiContractVersion: number;
+  capabilities: Record<string, boolean>;
+};
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -89,6 +103,88 @@ function requiredText(
   const clean = text(value, maxLength) ?? "";
   if (!clean) throw new Error(`validation:${field}`);
   return clean;
+}
+
+function bool(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function positiveInt(value: unknown, fallback: number): number {
+  const parsed = Math.round(Number(value));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function optionalPositiveInt(value: unknown): number | null {
+  const parsed = Math.round(Number(value));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function stringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item ?? "").trim())
+    .filter((item) => item.length > 0);
+}
+
+function rolloutMode(value: unknown): ReleaseRolloutMode {
+  const mode = String(value ?? "off").trim().toLowerCase();
+  if (
+    mode === "off" || mode === "build_allowlist" || mode === "min_build" ||
+    mode === "all"
+  ) {
+    return mode;
+  }
+  return "off";
+}
+
+function clientReleaseContext(body: Body): ClientReleaseContext {
+  const appBuild = typeof body.client_app_build === "string"
+    ? body.client_app_build.trim()
+    : null;
+  const capabilities = body.client_capabilities &&
+      typeof body.client_capabilities === "object"
+    ? Object.fromEntries(
+      Object.entries(body.client_capabilities as Record<string, unknown>)
+        .map(([key, value]) => [key, value === true]),
+    )
+    : {};
+  return {
+    platform: typeof body.client_platform === "string"
+      ? body.client_platform.trim().toLowerCase()
+      : "unknown",
+    appBuild,
+    appBuildNumber: appBuild ? optionalPositiveInt(appBuild) : null,
+    apiContractVersion: positiveInt(body.api_contract_version, 1),
+    capabilities,
+  };
+}
+
+function editableReleaseGateOpen(
+  value: Record<string, unknown>,
+  client: ClientReleaseContext,
+): boolean {
+  if (bool(value.kill_switch, false)) return false;
+  if (client.platform !== "ios") return false;
+  if (client.apiContractVersion < 2) return false;
+  if (!client.appBuild) return false;
+  if (client.capabilities.editable_findings !== true) return false;
+
+  const mode = rolloutMode(value.rollout_mode);
+  if (mode === "all") return true;
+  if (mode === "build_allowlist") {
+    const allowed = stringArray(value.enabled_ios_builds);
+    if (allowed.includes(client.appBuild)) return true;
+    return client.appBuildNumber != null &&
+      allowed
+        .map((build) => optionalPositiveInt(build))
+        .some((build) => build === client.appBuildNumber);
+  }
+  if (mode === "min_build") {
+    const minimum = optionalPositiveInt(value.min_ios_build);
+    return client.appBuildNumber != null && minimum != null &&
+      client.appBuildNumber >= minimum;
+  }
+  return false;
 }
 
 function optionalNumberFromSet(
@@ -130,6 +226,29 @@ function m5Band(score: number): "low" | "medium" | "high" | "critical" {
   if (score <= 9) return "medium";
   if (score <= 16) return "high";
   return "critical";
+}
+
+function withDerivedRiskSnapshot(
+  before: FindingRow,
+  update: Record<string, unknown>,
+): FindingRow {
+  const snapshot = { ...before, ...update } as FindingRow;
+  const fkP = Number(snapshot.fk_probability);
+  const fkF = Number(snapshot.fk_frequency);
+  const fkS = Number(snapshot.fk_severity);
+  const m5P = Number(snapshot.m5_probability);
+  const m5S = Number(snapshot.m5_severity);
+  if (Number.isFinite(fkP) && Number.isFinite(fkF) && Number.isFinite(fkS)) {
+    const score = fkP * fkF * fkS;
+    snapshot.fk_score = score;
+    snapshot.fk_band = fkBand(score);
+  }
+  if (Number.isFinite(m5P) && Number.isFinite(m5S)) {
+    const score = m5P * m5S;
+    snapshot.m5_score = score;
+    snapshot.m5_band = m5Band(score);
+  }
+  return snapshot;
 }
 
 function normalizeMeasures(value: unknown):
@@ -199,11 +318,16 @@ function publicBundleSelects() {
       "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,source_photo_observations,ai_confidence,last_user_edit_at,last_user_edit_by,user_edit_count,finding_version,display_group,display_order",
     photos:
       "analysis_id,storage_path,width,height,mime_type,sequence_index,client_photo_id,is_primary,thumbnail_storage_path,annotation_storage_path,user_caption,ai_scene_summary",
+    photoSummaries:
+      "analysis_id,photo_sequence_index,scene_summary,candidate_findings_count,generated_findings_count,highest_risk_level,ai_confidence,coverage_status,coverage_gap_reason,target_findings_min,target_findings_max",
   };
 }
 
-// deno-lint-ignore no-explicit-any
-async function editableFindingsEnabled(supabase: any): Promise<boolean> {
+async function editableFindingsEnabled(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  client: ClientReleaseContext,
+): Promise<boolean> {
   const { data, error } = await supabase
     .from("app_feature_flags")
     .select("value")
@@ -211,7 +335,14 @@ async function editableFindingsEnabled(supabase: any): Promise<boolean> {
     .maybeSingle();
   if (error) return false;
   const value = data?.value as Record<string, unknown> | undefined;
-  return value?.enable_editable_findings === true;
+  if (!value || !editableReleaseGateOpen(value, client)) return false;
+  const features = value.features && typeof value.features === "object"
+    ? value.features as Record<string, unknown>
+    : {};
+  return bool(
+    features.editable_findings,
+    bool(value.enable_editable_findings, false),
+  );
 }
 
 serve(async (req) => {
@@ -237,6 +368,7 @@ serve(async (req) => {
     body.support_id,
     `RD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
   );
+  const clientRelease = clientReleaseContext(body);
 
   const authHeader = req.headers.get("Authorization") ?? "";
   if (!authHeader) {
@@ -286,7 +418,7 @@ serve(async (req) => {
     });
   }
 
-  if (!(await editableFindingsEnabled(supabase))) {
+  if (!(await editableFindingsEnabled(supabase, clientRelease))) {
     return json(423, {
       error: "editable_findings_disabled",
       message: "Bulgu düzenleme geçici olarak kapalı.",
@@ -446,7 +578,8 @@ serve(async (req) => {
       if (fkF !== undefined) update.fk_frequency = fkF;
       if (fkS !== undefined) update.fk_severity = fkS;
       if (fkP !== undefined || fkF !== undefined || fkS !== undefined) {
-        update.fk_band = fkBand(resolvedFkP * resolvedFkF * resolvedFkS);
+        const fkScore = resolvedFkP * resolvedFkF * resolvedFkS;
+        update.fk_band = fkBand(fkScore);
       }
 
       const m5P = optionalIntRange(
@@ -461,7 +594,8 @@ serve(async (req) => {
       if (m5P !== undefined) update.m5_probability = m5P;
       if (m5S !== undefined) update.m5_severity = m5S;
       if (m5P !== undefined || m5S !== undefined) {
-        update.m5_band = m5Band(resolvedM5P * resolvedM5S);
+        const m5Score = resolvedM5P * resolvedM5S;
+        update.m5_band = m5Band(m5Score);
       }
 
       if (Object.keys(update).length === 0) {
@@ -479,7 +613,7 @@ serve(async (req) => {
       update.finding_version = beforeVersion + 1;
 
       const fields = changedFields(before, update);
-      const afterSnapshot = { ...before, ...update };
+      const afterSnapshot = withDerivedRiskSnapshot(before, update);
 
       const { error: eventError } = await supabase
         .from("finding_edit_events")
@@ -554,9 +688,19 @@ serve(async (req) => {
         .eq("user_id", user.id)
         .order("sequence_index", { ascending: true, nullsFirst: false })
         .order("storage_path", { ascending: true });
+    const {
+      data: refreshedPhotoSummaries,
+      error: refreshedPhotoSummariesError,
+    } = await supabase
+      .from("analysis_photo_summaries")
+      .select(selects.photoSummaries)
+      .eq("analysis_id", analysisID)
+      .order("photo_sequence_index", { ascending: true });
 
     if (
-      refreshedAnalysisError || refreshedFindingsError || refreshedPhotosError
+      refreshedAnalysisError || refreshedFindingsError ||
+      refreshedPhotosError ||
+      refreshedPhotoSummariesError
     ) {
       throw new Error("refresh_failed");
     }
@@ -568,6 +712,7 @@ serve(async (req) => {
         analysis: refreshedAnalysis,
         findings: refreshedFindings ?? [],
         photos: refreshedPhotos ?? [],
+        photoSummaries: refreshedPhotoSummaries ?? [],
       },
       request_id: requestID,
       support_id: supportID,

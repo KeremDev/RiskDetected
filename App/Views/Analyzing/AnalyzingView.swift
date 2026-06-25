@@ -6,24 +6,177 @@ enum AnalysisWaitingPresentationMode {
     case text
 }
 
+@MainActor
+final class AnalysisProgressController: ObservableObject {
+    @Published private(set) var progress: Double = 0.03
+    @Published private(set) var phase: AnalysisProgressPhase = .preparingInput
+
+    private var target: Double = 0.08
+    private var progressTask: Task<Void, Never>?
+    private var photoCount: Int = 0
+
+    func start(photoCount: Int) {
+        progressTask?.cancel()
+        self.photoCount = max(photoCount, 0)
+        progress = 0.03
+        phase = .preparingInput
+        target = targetValue(for: .preparingInput)
+
+        progressTask = Task { @MainActor in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 380_000_000)
+                guard !Task.isCancelled else { return }
+                advanceOneTick()
+            }
+        }
+    }
+
+    func apply(_ update: AnalysisProgressUpdate) {
+        phase = update.phase
+        target = max(target, targetValue(for: update.phase))
+        let floor = floorValue(for: update.phase)
+        if progress < floor {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                progress = min(floor, target)
+            }
+        }
+    }
+
+    func complete() async {
+        phase = .finalizingResult
+        target = 0.98
+
+        while progress < 0.98 {
+            advanceOneTick(maxStep: 0.035, minStep: 0.010, duration: 0.10)
+            try? await Task.sleep(nanoseconds: 90_000_000)
+        }
+
+        withAnimation(.easeInOut(duration: 0.18)) {
+            progress = 0.98
+        }
+        try? await Task.sleep(nanoseconds: 160_000_000)
+        withAnimation(.easeInOut(duration: 0.20)) {
+            progress = 1
+        }
+        try? await Task.sleep(nanoseconds: 260_000_000)
+        cancel()
+    }
+
+    func cancel() {
+        progressTask?.cancel()
+        progressTask = nil
+    }
+
+    private func targetValue(for phase: AnalysisProgressPhase) -> Double {
+        let multiPhotoBonus = min(Double(max(photoCount - 1, 0)) * 0.012, 0.048)
+
+        switch phase {
+        case .preparingInput:
+            return min(0.08 + multiPhotoBonus, 0.18)
+        case .creatingAnalysis:
+            return 0.18
+        case .uploadingPhotos:
+            return min(0.52 + multiPhotoBonus, 0.58)
+        case .submitting:
+            return min(0.62 + multiPhotoBonus, 0.68)
+        case .queued:
+            return min(0.70 + multiPhotoBonus, 0.76)
+        case .analyzing:
+            return 0.94
+        case .finalizingResult:
+            return 0.98
+        case .retryingNetwork:
+            return min(max(target, progress + 0.035, 0.38), 0.78)
+        case .retryingAI:
+            return min(max(target, progress + 0.03, 0.62), 0.88)
+        case .fallbackModel:
+            return min(max(target, progress + 0.04, 0.72), 0.90)
+        }
+    }
+
+    private func floorValue(for phase: AnalysisProgressPhase) -> Double {
+        let multiPhotoBonus = min(Double(max(photoCount - 1, 0)) * 0.008, 0.032)
+
+        switch phase {
+        case .preparingInput:
+            return 0.03
+        case .creatingAnalysis:
+            return 0.08
+        case .uploadingPhotos:
+            return min(0.20 + multiPhotoBonus, 0.24)
+        case .submitting:
+            return min(0.48 + multiPhotoBonus, 0.54)
+        case .queued:
+            return min(0.58 + multiPhotoBonus, 0.64)
+        case .analyzing:
+            return 0.68
+        case .finalizingResult:
+            return 0.94
+        case .retryingNetwork:
+            return min(max(progress, 0.22 + multiPhotoBonus), 0.58)
+        case .retryingAI:
+            return 0.62
+        case .fallbackModel:
+            return 0.72
+        }
+    }
+
+    private func advanceOneTick(
+        maxStep: Double? = nil,
+        minStep: Double? = nil,
+        duration: Double = 0.24
+    ) {
+        let ceiling = min(target, 0.98)
+        guard progress < ceiling else { return }
+
+        let remaining = ceiling - progress
+        let resolvedMaxStep = maxStep ?? ((phase == .analyzing || phase == .finalizingResult) ? 0.009 : 0.014)
+        let resolvedMinStep = minStep ?? {
+            if progress > 0.90 { return 0.0015 }
+            if progress > 0.68 { return 0.0030 }
+            return 0.0050
+        }()
+        let easedStep = max(resolvedMinStep, remaining * 0.18)
+        let step = min(remaining, min(resolvedMaxStep, easedStep))
+
+        withAnimation(.easeInOut(duration: duration)) {
+            progress = min(progress + step, ceiling)
+        }
+    }
+}
+
 struct AnalyzingView: View {
-    /// Parent'tan binding — dismiss için daha güvenilir (iOS 26 fullScreenCover).
+    /// Parent'tan binding - dismiss icin daha guvenilir (iOS 26 fullScreenCover).
     @Binding var isPresented: Bool
-    /// nil = preview / mock modu; set edilirse gerçek analiz çalıştırılır.
+    /// nil = preview / mock modu; set edilirse gercek analiz calistirilir.
     var asyncWork: ((@escaping @MainActor (AnalysisProgressUpdate) -> Void) async throws -> AnalysisResultBundle)? = nil
     var previewImage: UIImage? = nil
     var presentationMode: AnalysisWaitingPresentationMode = .photo
+    var photoCount: Int = 0
     var onComplete: (AnalysisResultBundle?) -> Void = { _ in }
     var onError: (String) -> Void = { _ in }
 
-    @State private var currentStep: Int = 0
-    @State private var animTask: Task<Void, Never>?
+    @StateObject private var progressController = AnalysisProgressController()
     @State private var workTask: Task<Void, Never>?
+    @State private var minimumDisplayTask: Task<Void, Never>?
     @State private var workDone = false
+    @State private var minimumDisplayDone = false
     @State private var workResult: AnalysisResultBundle? = nil
-    @State private var animDone = false
     @State private var progressUpdate: AnalysisProgressUpdate?
     @State private var signalPulse = false
+    @State private var isFinishing = false
+
+    private var clampedProgress: Double {
+        min(max(progressController.progress, 0), 1)
+    }
+
+    private var percentValue: Int {
+        min(100, max(0, Int((clampedProgress * 100).rounded())))
+    }
+
+    private var resolvedPhotoCount: Int {
+        max(photoCount, previewImage == nil ? 0 : 1)
+    }
 
     var body: some View {
         ZStack {
@@ -46,10 +199,10 @@ struct AnalyzingView: View {
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                 }
-                .padding(.bottom, progressUpdate == nil ? 18 : 12)
+                .padding(.bottom, attentionProgressUpdate == nil ? 18 : 12)
 
-                if let progressUpdate, progressUpdate != .queued {
-                    progressStatus(progressUpdate)
+                if let attentionProgressUpdate {
+                    progressStatus(attentionProgressUpdate)
                         .padding(.bottom, 18)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
@@ -60,16 +213,27 @@ struct AnalyzingView: View {
             }
             .padding(.horizontal, 28)
         }
+        .accessibilityIdentifier("analysis.loading")
         .onAppear {
-            // animTask nil kontrolü: iOS 26'da fullScreenCover animation sırasında
-            // onDisappear/onAppear döngüsü oluşuyor. didStart bayrağı yerine
-            // task varlığını kontrol et — daha güvenilir.
-            guard animTask == nil else { return }
-            startAnimation()
+            guard workTask == nil else { return }
+            if progressController.progress <= 0.031 {
+                progressController.start(photoCount: resolvedPhotoCount)
+            }
+            if minimumDisplayTask == nil && !minimumDisplayDone {
+                startMinimumDisplayTimer()
+            }
             startWork()
             withAnimation(.easeInOut(duration: 1.25).repeatForever(autoreverses: true)) {
                 signalPulse = true
             }
+        }
+        .onDisappear {
+            guard workDone || isFinishing || !isPresented else { return }
+            progressController.cancel()
+            minimumDisplayTask?.cancel()
+            minimumDisplayTask = nil
+            workTask?.cancel()
+            workTask = nil
         }
     }
 
@@ -83,10 +247,12 @@ struct AnalyzingView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: 246, height: 246)
+                        .blur(radius: 7)
                         .clipped()
-                        .overlay(Color.black.opacity(0.16))
+                        .overlay(Color.black.opacity(0.24))
                 } else {
                     RDPlaceholderPhoto(label: "Analiz ediliyor", cornerRadius: 24)
+                        .overlay(Color.black.opacity(0.10))
                 }
 
                 TimelineView(.animation(minimumInterval: 1 / 30)) { timeline in
@@ -105,6 +271,8 @@ struct AnalyzingView: View {
                     }
                 }
 
+                progressGlassOverlay
+
                 RoundedRectangle(cornerRadius: 24)
                     .stroke(Color.rdGreen.opacity(0.75), lineWidth: 2)
                     .shadow(color: Color.rdGreen.opacity(0.32), radius: 14)
@@ -121,6 +289,57 @@ struct AnalyzingView: View {
                 .offset(x: -16, y: 16)
         }
         .frame(width: 296, height: 286)
+    }
+
+    private var progressGlassOverlay: some View {
+        VStack(spacing: 9) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text("\(percentValue)")
+                    .font(.system(size: RDFontScale.size(64), weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .accessibilityIdentifier("analysis.progress.percent")
+                Text("%")
+                    .font(.system(size: RDFontScale.size(28), weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.92))
+            }
+            .shadow(color: .black.opacity(0.26), radius: 8, x: 0, y: 3)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Analiz ilerleme")
+            .accessibilityValue("\(percentValue) yüzde")
+
+            if resolvedPhotoCount > 1 {
+                Label("\(resolvedPhotoCount) fotoğraf", systemImage: "photo.stack.fill")
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .frame(height: 26)
+                    .background(Color.white.opacity(0.16))
+                    .clipShape(Capsule())
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.24))
+                    Capsule()
+                        .fill(Color.rdGreen)
+                        .frame(width: max(8, geo.size.width * clampedProgress))
+                }
+            }
+            .frame(width: 156, height: 7)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 18)
+        .frame(width: 210)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Color.rdBlack.opacity(0.58))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                )
+        )
     }
 
     private func aiSignal(icon: String, label: String, alignment: Alignment) -> some View {
@@ -147,11 +366,41 @@ struct AnalyzingView: View {
     // MARK: - Steps
 
     private var heroSubtitle: String {
-        switch presentationMode {
-        case .photo:
-            return "AI, görüntüyü iş güvenliği odaklarıyla katman katman tarıyor."
-        case .text:
-            return "AI, metni iş güvenliği odaklarıyla katman katman tarıyor."
+        switch progressController.phase {
+        case .preparingInput:
+            return presentationMode == .photo
+                ? "Fotoğraflar analiz için hazırlanıyor."
+                : "Metin girdisi analiz için hazırlanıyor."
+        case .creatingAnalysis:
+            return "Analiz kaydı oluşturuluyor."
+        case .uploadingPhotos:
+            return resolvedPhotoCount > 1
+                ? "Fotoğraflar güvenli depoya yükleniyor."
+                : "Fotoğraf güvenli depoya yükleniyor."
+        case .submitting:
+            return "İstek güvenli şekilde sunucuya gönderiliyor."
+        case .queued:
+            return "Analiz kuyruğa alındı, sonuç düzenli olarak kontrol ediliyor."
+        case .analyzing:
+            return "AI, iş güvenliği bulgularını ve risk seviyelerini çıkarıyor."
+        case .finalizingResult:
+            return "Analiz tamamlandı, sonuç ekrana hazırlanıyor."
+        case .retryingNetwork:
+            return "Bağlantı toparlanırken aynı analiz korunuyor."
+        case .retryingAI:
+            return "AI servisi yoğun; analiz otomatik tekrar deneniyor."
+        case .fallbackModel:
+            return "Analizi tamamlamak için yedek model devrede."
+        }
+    }
+
+    private var attentionProgressUpdate: AnalysisProgressUpdate? {
+        guard let progressUpdate else { return nil }
+        switch progressUpdate.phase {
+        case .retryingNetwork, .retryingAI, .fallbackModel, .finalizingResult:
+            return progressUpdate
+        default:
+            return nil
         }
     }
 
@@ -174,58 +423,74 @@ struct AnalyzingView: View {
         }
     }
 
+    private var stepRanges: [(start: Double, end: Double)] {
+        [
+            (0.03, 0.25),
+            (0.25, 0.55),
+            (0.55, 0.82),
+            (0.82, 1.00),
+        ]
+    }
+
     private var stepsList: some View {
         VStack(alignment: .leading, spacing: 9) {
             ForEach(Array(steps.enumerated()), id: \.offset) { index, label in
-                let isActive = index == currentStep
-                let isReached = animDone || index <= currentStep
+                let fill = stepFill(index)
+                let isCompleted = fill >= 0.995
+                let isActive = !isCompleted && (fill > 0 || index == currentStepIndex)
+
                 HStack(spacing: 10) {
-                    stepDot(index: index)
-                    VStack(alignment: .leading, spacing: 2) {
+                    stepDot(index: index, fill: fill)
+                    VStack(alignment: .leading, spacing: 8) {
                         Text(label)
                             .font(.system(size: RDFontScale.size(13.5), weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
-                        Text(stepSubtitle(index))
-                            .font(.system(size: RDFontScale.size(10.5), weight: .medium, design: .rounded))
-                            .foregroundStyle(Color.rdSlate)
                             .lineLimit(1)
+
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.rdLine.opacity(0.70))
+                                Capsule()
+                                    .fill(Color.rdGreen)
+                                    .frame(width: max(fill > 0 ? 6 : 0, geo.size.width * fill))
+                            }
+                        }
+                        .frame(height: 5)
                     }
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 12)
-                .frame(height: 54)
-                .background(isReached ? Color.rdWhite : Color.rdFog.opacity(0.62))
+                .frame(height: 50)
+                .background(isCompleted || isActive ? Color.rdWhite : Color.rdFog.opacity(0.62))
                 .overlay(
                     RoundedRectangle(cornerRadius: 15)
                         .stroke(isActive ? Color.rdGreen.opacity(0.42) : Color.rdLine.opacity(0.75), lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 15))
                 .shadow(color: isActive ? Color.rdGreen.opacity(0.10) : Color.clear, radius: 12, x: 0, y: 7)
-                .opacity(isReached ? 1.0 : 0.52)
+                .opacity(isCompleted || isActive ? 1.0 : 0.52)
                 .scaleEffect(isActive ? 1.015 : 1)
-                .animation(.spring(response: 0.34, dampingFraction: 0.84), value: currentStep)
+                .animation(.spring(response: 0.34, dampingFraction: 0.84), value: percentValue)
+                .accessibilityIdentifier("analysis.progress.step.\(index + 1)")
             }
         }
         .frame(maxWidth: 320)
     }
 
-    private func stepSubtitle(_ index: Int) -> String {
-        switch presentationMode {
-        case .photo:
-            switch index {
-            case 0: return "Netlik ve görüntü okunabilirliği kontrol ediliyor"
-            case 1: return "Tehlike ipuçları ve uygunsuzluk alanları ayrıştırılıyor"
-            case 2: return "KKD, çevre ve saha düzeni birlikte değerlendiriliyor"
-            default: return "Bulgular, risk seviyesi ve aksiyonlar hazırlanıyor"
-            }
-        case .text:
-            switch index {
-            case 0: return "Metin kalitesi ve saha bağlamı kontrol ediliyor"
-            case 1: return "Tehlike ifadeleri ve uygunsuzluk alanları ayrıştırılıyor"
-            case 2: return "KKD, çevre ve çalışma düzeni birlikte değerlendiriliyor"
-            default: return "Bulgular, risk seviyesi ve aksiyonlar hazırlanıyor"
-            }
+    private var currentStepIndex: Int {
+        for (index, range) in stepRanges.enumerated() where clampedProgress < range.end {
+            return index
         }
+        return max(stepRanges.count - 1, 0)
+    }
+
+    private func stepFill(_ index: Int) -> Double {
+        guard stepRanges.indices.contains(index) else { return 0 }
+        let range = stepRanges[index]
+        if clampedProgress >= range.end { return 1 }
+        if clampedProgress <= range.start { return 0 }
+        return min(max((clampedProgress - range.start) / (range.end - range.start), 0), 1)
     }
 
     private func progressStatus(_ update: AnalysisProgressUpdate) -> some View {
@@ -258,23 +523,22 @@ struct AnalyzingView: View {
     }
 
     @ViewBuilder
-    private func stepDot(index: Int) -> some View {
+    private func stepDot(index: Int, fill: Double) -> some View {
+        let isCompleted = fill >= 0.995
+        let isActive = !isCompleted && (fill > 0 || index == currentStepIndex)
+
         ZStack {
             Circle()
-                .fill(index < currentStep ? Color.rdGreen : Color.rdFog)
+                .fill(isCompleted ? Color.rdGreen : Color.rdFog)
                 .overlay(
-                    Circle().stroke(index == currentStep ? Color.rdSelected : .clear, lineWidth: 2)
+                    Circle().stroke(isActive ? Color.rdSelected : .clear, lineWidth: 2)
                 )
 
-            if index < currentStep {
+            if isCompleted {
                 Image(systemName: "checkmark")
                     .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-            } else if animDone && index != currentStep {
-                Image(systemName: "checkmark")
-                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-            } else if index == currentStep {
+            } else if isActive {
                 Circle()
                     .fill(Color.rdSelected)
                     .frame(width: 7, height: 7)
@@ -283,40 +547,25 @@ struct AnalyzingView: View {
         .frame(width: 22, height: 22)
     }
 
-    // MARK: - Animasyon (minimum görünüm süresi)
+    // MARK: - Minimum display
 
-    private func startAnimation() {
-        animTask?.cancel()
-        currentStep = 0
-        animDone = false
-        animTask = Task.detached { @MainActor [self] in
-            var index = 0
-            var didCompleteMinimumCycle = false
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 700_000_000)
-                if Task.isCancelled { return }
-                index = (index + 1) % steps.count
-                withAnimation(.spring(response: 0.34, dampingFraction: 0.84)) {
-                    self.currentStep = index
-                }
-                if index == steps.count - 1, !didCompleteMinimumCycle {
-                    didCompleteMinimumCycle = true
-                    self.animDone = true
-                    self.finishIfReady()
-                }
-                if didCompleteMinimumCycle, self.workDone {
-                    return
-                }
-            }
+    private func startMinimumDisplayTimer() {
+        minimumDisplayTask?.cancel()
+        minimumDisplayDone = false
+        minimumDisplayTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_200_000_000)
+            guard !Task.isCancelled else { return }
+            minimumDisplayDone = true
+            finishIfReady()
         }
     }
 
-    // MARK: - Gerçek iş
+    // MARK: - Gercek is
 
     private func startWork() {
         guard let work = asyncWork else {
-            // Mock mod: iş yok, sadece animasyon.
             workDone = true
+            finishIfReady()
             return
         }
         workTask = Task { @MainActor in
@@ -325,15 +574,25 @@ struct AnalyzingView: View {
                     withAnimation(.easeInOut(duration: 0.22)) {
                         progressUpdate = update
                     }
+                    progressController.apply(update)
                 }
-                if Task.isCancelled { return }
+                if Task.isCancelled {
+                    workTask = nil
+                    return
+                }
                 workResult = result
                 workDone = true
                 finishIfReady()
             } catch {
-                if Task.isCancelled { return }
+                if Task.isCancelled {
+                    workTask = nil
+                    return
+                }
                 workDone = true
-                animTask?.cancel()
+                progressController.cancel()
+                minimumDisplayTask?.cancel()
+                minimumDisplayTask = nil
+                workTask = nil
                 let msg = error.localizedDescription
                 isPresented = false
                 onError(msg)
@@ -341,17 +600,20 @@ struct AnalyzingView: View {
         }
     }
 
-    /// Hem animasyon hem iş bitince onComplete'i tetikle.
     private func finishIfReady() {
-        guard animDone && workDone else { return }
+        guard minimumDisplayDone && workDone && !isFinishing else { return }
+        isFinishing = true
         let result = workResult
-        isPresented = false
-        onComplete(result)
+        Task { @MainActor in
+            await progressController.complete()
+            isPresented = false
+            onComplete(result)
+        }
     }
 }
 
 #Preview {
-    AnalyzingView(isPresented: .constant(true))
+    AnalyzingView(isPresented: .constant(true), photoCount: 3)
 }
 
 #Preview("Text Analysis") {

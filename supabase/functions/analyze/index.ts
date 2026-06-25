@@ -79,6 +79,19 @@ type CompanyHazardClass = "low" | "medium" | "high";
 type ReferenceMode = "none" | "short" | "full";
 type AIExecutionRoute = "free_legacy" | "free_paid_trial" | "paid_plan";
 type GeminiPoolName = "free" | "paid";
+type AIImagePart = {
+  mimeType: string;
+  data: string;
+  photoIndex: number;
+  width: number;
+  height: number;
+  decodedByteCount: number;
+  encodedByteCount: number;
+  jpegQuality: number | null;
+  qualityPolicy: string | null;
+  maxDimension: number | null;
+  source: "inline" | "storage";
+};
 type PlanCapabilityRule = {
   plan: PlanTier;
   max_photos_per_analysis: number;
@@ -90,17 +103,39 @@ type PlanCapabilityRule = {
   can_add_manual_findings: boolean;
 };
 
+type ReleaseRolloutMode = "off" | "build_allowlist" | "min_build" | "all";
+
 type MultiPhotoFeatureFlags = {
+  kill_switch: boolean;
+  rollout_mode: ReleaseRolloutMode;
+  enabled_ios_builds: string[];
+  min_ios_build: number | null;
+  rollout_gate_open: boolean;
+  rollout_reason: string;
   enable_multi_photo_analysis: boolean;
   enable_photo_limit_locked_slots_for_free: boolean;
   enable_plus_pro_5_photo_limit: boolean;
   enable_editable_findings: boolean;
   enable_manual_finding_add: boolean;
   enable_report_snapshot_v2: boolean;
+  enable_multi_photo_coverage_v2: boolean;
+  coverage_repair_enabled: boolean;
   max_photo_count_free: number;
   max_photo_count_plus: number;
   max_photo_count_pro: number;
   max_findings_per_photo: number;
+  target_findings_per_photo_min: number;
+  target_findings_per_photo_max: number;
+  target_findings_total_max: number;
+};
+
+type ClientReleaseContext = {
+  platform: string;
+  appVersion: string | null;
+  appBuild: string | null;
+  appBuildNumber: number | null;
+  apiContractVersion: number;
+  capabilities: Record<string, boolean>;
 };
 
 type PhotoCapabilities = {
@@ -109,10 +144,48 @@ type PhotoCapabilities = {
   visiblePhotoSlotsInUI: number;
   maxFindingsPerPhoto: number;
   maxFindingsPerAnalysis: number;
+  coverageV2Enabled: boolean;
+  targetFindingsPerPhotoMin: number;
+  targetFindingsPerPhotoMax: number;
+  targetFindingsTotalMax: number;
+  coverageRepairEnabled: boolean;
   canUseMultiPhotoAnalysis: boolean;
   canEditAIFindings: boolean;
   canAddManualFindings: boolean;
   featureFlags: MultiPhotoFeatureFlags;
+};
+
+type CoverageStatus = "actionable" | "no_actionable_hazard" | "low_quality";
+
+type AnalysisFindingPolicy = {
+  photoCount: number;
+  maxFindingsPerPhoto: number;
+  maxFindingsTotal: number;
+  coverageV2Enabled?: boolean;
+  targetFindingsPerPhotoMin?: number;
+  targetFindingsPerPhotoMax?: number;
+  coverageRepairEnabled?: boolean;
+};
+
+type MultiPhotoCoveragePolicy = {
+  enabled: true;
+  photoCount: number;
+  targetMin: number;
+  targetMax: number;
+  totalMax: number;
+  repairEnabled: boolean;
+};
+
+type NormalizedPhotoFindingCoverage = {
+  photo_index: number;
+  coverage_status: CoverageStatus;
+  scene_summary: string;
+  candidate_findings_count: number;
+  coverage_gap_reason: string | null;
+  highest_risk_level: string | null;
+  ai_confidence: number | null;
+  findings: Array<Record<string, unknown>>;
+  record_missing: boolean;
 };
 
 type CompanyRow = {
@@ -168,16 +241,27 @@ const PLAN_LIMITS: Record<PlanTier, {
 };
 
 const DEFAULT_MULTI_PHOTO_FLAGS: MultiPhotoFeatureFlags = {
+  kill_switch: false,
+  rollout_mode: "off",
+  enabled_ios_builds: [],
+  min_ios_build: null,
+  rollout_gate_open: false,
+  rollout_reason: "default_off",
   enable_multi_photo_analysis: false,
   enable_photo_limit_locked_slots_for_free: false,
   enable_plus_pro_5_photo_limit: false,
   enable_editable_findings: false,
   enable_manual_finding_add: false,
   enable_report_snapshot_v2: false,
+  enable_multi_photo_coverage_v2: false,
+  coverage_repair_enabled: true,
   max_photo_count_free: 1,
   max_photo_count_plus: 5,
   max_photo_count_pro: 5,
   max_findings_per_photo: 12,
+  target_findings_per_photo_min: 5,
+  target_findings_per_photo_max: 8,
+  target_findings_total_max: 40,
 };
 
 const DEFAULT_PLAN_CAPABILITY_RULES: Record<PlanTier, PlanCapabilityRule> = {
@@ -239,7 +323,7 @@ TARAMA PROSEDÜRÜ — Her görseli SIRAYLA şu 12 katmanda tara:
 5. MAKİNE, EKİPMAN VE İŞ EKİPMANI: hareketli/dönen parça koruyucusu (muhafaza), acil durdurma, sıkışma/ezilme noktası, el aletinin durumu, periyodik kontrol etiketi.
 6. KALDIRMA, TAŞIMA VE İSTİFLEME: vinç/forklift operasyonu, sapan/halat durumu, yük altında çalışan, raf ve istif stabilitesi, devrilme riski.
 7. KİMYASAL VE TEHLİKELİ MADDE: etiketleme/GBF, uygun depolama, dökülme, yetersiz havalandırma, parlayıcı/patlayıcı madde, uyumsuz maddelerin bir arada bulunması.
-8. YANGIN VE PATLAMA: yangın söndürücü erişimi, tıkalı kaçış yolu, tutuşturucu kaynak, sıcak iş (kaynak/kesme), depolanan yanıcı malzeme/yangın yükü.
+8. YANGIN VE PATLAMA: yangın söndürücü/yangın dolabı erişimi, tıkalı kaçış yolu, tutuşturucu kaynak, sıcak iş (kaynak/kesme), depolanan yanıcı malzeme/yangın yükü. Yangın dolabı veya söndürücü önünde yalnızca geçici olarak duran/çalışan insan varsa bunu "malzeme", "istif" veya "erişim engeli" diye raporlama; erişim engeli bulgusu için sabit/depolanmış malzeme, ekipman, araç, kapatılmış kapak/alan veya belirgin tıkalı erişim kanıtı gerekir.
 9. FİZİKSEL ORTAM ETKENLERİ: aşırı gürültü kaynağı, titreşimli ekipman, toz/duman bulutu, yetersiz aydınlatma, termal konfor (aşırı sıcak/soğuk), yetersiz havalandırma.
 10. ERGONOMİ VE ELLE TAŞIMA: ağır manuel kaldırma, hatalı duruş, tekrarlı hareket, uygunsuz çalışma yüksekliği, taşıma yardımcısı yokluğu.
 11. KAZI, KAPALI ALAN VE ÖZEL İŞLER (saha tipine göre): şev/iksa eksikliği, çökme riski, kapalı alan girişi, malzeme deposu/istif kenarı, su-çamur birikintisi.
@@ -280,6 +364,7 @@ Confidence < 0.50 ise description sonuna "(sahada doğrulanmalı)" ekle.
 KALİTE FİLTRESİ — KAÇIN:
 - Genel ifade ("güvenlik önlemleri alınmalı") yerine somut önlem / kontrol tedbiri yaz.
 - Görselde olmayan riski uydurma.
+- Geçici insan varlığını sabit engel/malzeme gibi yorumlama. Yangın dolabı, yangın söndürücü, acil çıkış veya pano önünde sadece bir kişi duruyorsa "önünde malzeme var", "erişim kapalı" veya "ulaşım engelli" bulgusu üretme. Ancak kişinin yanında/arkasında depolanmış malzeme, araç, ekipman, palet, istif, kablo yığını veya fiziksel kapatma net görünüyorsa erişim engeli yaz.
 - Aynı kök nedenli riskleri tek bulguda topla.
 - Hassas ölçü uydurma; "yaklaşık 3m" veya "1 kat yüksekliğinde" yaz.
 - "Eğitim verilmeli" jenerik aksiyonundan kaçın; hangi iş/ekipman/risk için ne doğrulanacağını söyle.
@@ -334,7 +419,7 @@ const CANVAS_FOCUS: Record<string, string> = {
   sector:
     "Sektör bağlamını tahmin et; inşaat, üretim, depo/lojistik, ofis veya saha çalışmasına özgü tipik İSG risklerini görünür bulgularla ilişkilendir. Tahmin belirsizse açıkça belirt.",
   fire:
-    "Yanıcı/parlayıcı malzeme, sıcak çalışma, elektrik kaynaklı yangın, söndürücü erişimi, yangın dolabı, acil çıkış, tahliye yolu, depolama düzeni ve yangın yükünü analiz et.",
+    "Yanıcı/parlayıcı malzeme, sıcak çalışma, elektrik kaynaklı yangın, söndürücü erişimi, yangın dolabı, acil çıkış, tahliye yolu, depolama düzeni ve yangın yükünü analiz et. Yangın ekipmanı önünde yalnızca insan varsa bunu malzeme/istif/erişim engeli sayma; erişim engeli için fiziksel nesne, depolama, araç, ekipman veya kapatılmış güzergah kanıtı ara.",
   ergonomics:
     "Fotoğraftaki ekipmanı tanımla ve İSG açısından değerlendir. Emin değilsen olasılıkları belirt, varsayım yapma. Kısa başlıklarla şunları ver: ekipman adı, tehlikeler, riskler, önlemler, gerekli KKD, kullanım öncesi kontroller ve durdurma kriterleri. Kritik risk varsa en başta uyar. Eksik bilgi varsa ek fotoğraf veya marka/model iste.",
   environment_measurement:
@@ -414,34 +499,98 @@ function asPositiveInt(value: unknown, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function asOptionalPositiveInt(value: unknown): number | null {
+  const parsed = Math.round(Number(value));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item ?? "").trim())
+    .filter((item) => item.length > 0);
+}
+
+function normalizeRolloutMode(value: unknown): ReleaseRolloutMode {
+  const mode = String(value ?? "off").trim().toLowerCase();
+  if (
+    mode === "build_allowlist" || mode === "min_build" || mode === "all" ||
+    mode === "off"
+  ) {
+    return mode;
+  }
+  return "off";
+}
+
 function normalizeMultiPhotoFlags(value: unknown): MultiPhotoFeatureFlags {
   const record = value && typeof value === "object"
     ? value as Record<string, unknown>
     : {};
+  const features = record.features && typeof record.features === "object"
+    ? record.features as Record<string, unknown>
+    : {};
   return {
+    kill_switch: asBoolean(
+      record.kill_switch,
+      DEFAULT_MULTI_PHOTO_FLAGS.kill_switch,
+    ),
+    rollout_mode: normalizeRolloutMode(record.rollout_mode),
+    enabled_ios_builds: asStringArray(record.enabled_ios_builds),
+    min_ios_build: asOptionalPositiveInt(record.min_ios_build),
+    rollout_gate_open: false,
+    rollout_reason: "not_evaluated",
     enable_multi_photo_analysis: asBoolean(
-      record.enable_multi_photo_analysis,
-      DEFAULT_MULTI_PHOTO_FLAGS.enable_multi_photo_analysis,
+      features.multi_photo_analysis,
+      asBoolean(
+        record.enable_multi_photo_analysis,
+        DEFAULT_MULTI_PHOTO_FLAGS.enable_multi_photo_analysis,
+      ),
     ),
     enable_photo_limit_locked_slots_for_free: asBoolean(
-      record.enable_photo_limit_locked_slots_for_free,
-      DEFAULT_MULTI_PHOTO_FLAGS.enable_photo_limit_locked_slots_for_free,
+      features.photo_limit_locked_slots_for_free,
+      asBoolean(
+        record.enable_photo_limit_locked_slots_for_free,
+        DEFAULT_MULTI_PHOTO_FLAGS.enable_photo_limit_locked_slots_for_free,
+      ),
     ),
     enable_plus_pro_5_photo_limit: asBoolean(
-      record.enable_plus_pro_5_photo_limit,
-      DEFAULT_MULTI_PHOTO_FLAGS.enable_plus_pro_5_photo_limit,
+      features.plus_pro_5_photo_limit,
+      asBoolean(
+        record.enable_plus_pro_5_photo_limit,
+        DEFAULT_MULTI_PHOTO_FLAGS.enable_plus_pro_5_photo_limit,
+      ),
     ),
     enable_editable_findings: asBoolean(
-      record.enable_editable_findings,
-      DEFAULT_MULTI_PHOTO_FLAGS.enable_editable_findings,
+      features.editable_findings,
+      asBoolean(
+        record.enable_editable_findings,
+        DEFAULT_MULTI_PHOTO_FLAGS.enable_editable_findings,
+      ),
     ),
     enable_manual_finding_add: asBoolean(
-      record.enable_manual_finding_add,
-      DEFAULT_MULTI_PHOTO_FLAGS.enable_manual_finding_add,
+      features.manual_finding_add,
+      asBoolean(
+        record.enable_manual_finding_add,
+        DEFAULT_MULTI_PHOTO_FLAGS.enable_manual_finding_add,
+      ),
     ),
     enable_report_snapshot_v2: asBoolean(
-      record.enable_report_snapshot_v2,
-      DEFAULT_MULTI_PHOTO_FLAGS.enable_report_snapshot_v2,
+      features.report_snapshot_v2,
+      asBoolean(
+        record.enable_report_snapshot_v2,
+        DEFAULT_MULTI_PHOTO_FLAGS.enable_report_snapshot_v2,
+      ),
+    ),
+    enable_multi_photo_coverage_v2: asBoolean(
+      features.multi_photo_coverage_v2,
+      asBoolean(
+        record.enable_multi_photo_coverage_v2,
+        DEFAULT_MULTI_PHOTO_FLAGS.enable_multi_photo_coverage_v2,
+      ),
+    ),
+    coverage_repair_enabled: asBoolean(
+      record.coverage_repair_enabled,
+      DEFAULT_MULTI_PHOTO_FLAGS.coverage_repair_enabled,
     ),
     max_photo_count_free: asPositiveInt(
       record.max_photo_count_free,
@@ -459,7 +608,140 @@ function normalizeMultiPhotoFlags(value: unknown): MultiPhotoFeatureFlags {
       record.max_findings_per_photo,
       DEFAULT_MULTI_PHOTO_FLAGS.max_findings_per_photo,
     ),
+    target_findings_per_photo_min: asPositiveInt(
+      record.target_findings_per_photo_min,
+      DEFAULT_MULTI_PHOTO_FLAGS.target_findings_per_photo_min,
+    ),
+    target_findings_per_photo_max: asPositiveInt(
+      record.target_findings_per_photo_max,
+      DEFAULT_MULTI_PHOTO_FLAGS.target_findings_per_photo_max,
+    ),
+    target_findings_total_max: asPositiveInt(
+      record.target_findings_total_max,
+      DEFAULT_MULTI_PHOTO_FLAGS.target_findings_total_max,
+    ),
   };
+}
+
+function parseClientReleaseContext(
+  body: Record<string, unknown>,
+): ClientReleaseContext {
+  const appBuild = typeof body.client_app_build === "string"
+    ? body.client_app_build.trim()
+    : null;
+  const appBuildNumber = appBuild ? asOptionalPositiveInt(appBuild) : null;
+  const capabilities = body.client_capabilities &&
+      typeof body.client_capabilities === "object"
+    ? Object.fromEntries(
+      Object.entries(body.client_capabilities as Record<string, unknown>)
+        .map(([key, value]) => [key, value === true]),
+    )
+    : {};
+  return {
+    platform: typeof body.client_platform === "string"
+      ? body.client_platform.trim().toLowerCase()
+      : "unknown",
+    appVersion: typeof body.client_app_version === "string"
+      ? body.client_app_version.trim()
+      : null,
+    appBuild,
+    appBuildNumber,
+    apiContractVersion: asPositiveInt(body.api_contract_version, 1),
+    capabilities,
+  };
+}
+
+function releaseGateDecision(
+  flags: MultiPhotoFeatureFlags,
+  client: ClientReleaseContext,
+): { open: boolean; reason: string } {
+  if (flags.kill_switch) return { open: false, reason: "kill_switch" };
+  if (client.platform !== "ios") return { open: false, reason: "platform" };
+  if (client.apiContractVersion < 2) {
+    return { open: false, reason: "api_contract" };
+  }
+  if (!client.appBuild) return { open: false, reason: "missing_build" };
+
+  switch (flags.rollout_mode) {
+    case "all":
+      return { open: true, reason: "all" };
+    case "build_allowlist":
+      if (flags.enabled_ios_builds.includes(client.appBuild)) {
+        return { open: true, reason: "build_allowlist" };
+      }
+      if (
+        client.appBuildNumber != null &&
+        flags.enabled_ios_builds
+          .map((build) => asOptionalPositiveInt(build))
+          .some((build) => build === client.appBuildNumber)
+      ) {
+        return { open: true, reason: "build_allowlist_numeric" };
+      }
+      return { open: false, reason: "build_not_allowed" };
+    case "min_build":
+      if (client.appBuildNumber == null || flags.min_ios_build == null) {
+        return { open: false, reason: "missing_min_build" };
+      }
+      return client.appBuildNumber >= flags.min_ios_build
+        ? { open: true, reason: "min_build" }
+        : { open: false, reason: "build_below_min" };
+    default:
+      return { open: false, reason: "rollout_off" };
+  }
+}
+
+function applyReleaseGateToFlags(
+  flags: MultiPhotoFeatureFlags,
+  client: ClientReleaseContext,
+): MultiPhotoFeatureFlags {
+  const decision = releaseGateDecision(flags, client);
+  const supports = (feature: string) => client.capabilities[feature] === true;
+  const enabled = (feature: string, flag: boolean) =>
+    decision.open && supports(feature) && flag;
+  return {
+    ...flags,
+    rollout_gate_open: decision.open,
+    rollout_reason: decision.reason,
+    enable_multi_photo_analysis: enabled(
+      "multi_photo_analysis",
+      flags.enable_multi_photo_analysis,
+    ),
+    enable_photo_limit_locked_slots_for_free: enabled(
+      "multi_photo_analysis",
+      flags.enable_photo_limit_locked_slots_for_free,
+    ),
+    enable_plus_pro_5_photo_limit: enabled(
+      "multi_photo_analysis",
+      flags.enable_plus_pro_5_photo_limit,
+    ),
+    enable_editable_findings: enabled(
+      "editable_findings",
+      flags.enable_editable_findings,
+    ),
+    enable_manual_finding_add: enabled(
+      "manual_finding_add",
+      flags.enable_manual_finding_add,
+    ),
+    enable_report_snapshot_v2: enabled(
+      "report_snapshot_v2",
+      flags.enable_report_snapshot_v2,
+    ),
+    enable_multi_photo_coverage_v2: enabled(
+      "multi_photo_coverage_v2",
+      flags.enable_multi_photo_coverage_v2,
+    ),
+  };
+}
+
+function coverageTargetsFromFlags(flags: MultiPhotoFeatureFlags): {
+  targetMin: number;
+  targetMax: number;
+  targetTotalMax: number;
+} {
+  const targetMin = Math.max(1, flags.target_findings_per_photo_min);
+  const targetMax = Math.max(targetMin, flags.target_findings_per_photo_max);
+  const targetTotalMax = Math.max(targetMax, flags.target_findings_total_max);
+  return { targetMin, targetMax, targetTotalMax };
 }
 
 function fallbackPhotoCapabilities(
@@ -477,12 +759,25 @@ function fallbackPhotoCapabilities(
     : 1;
   const maxFindingsPerPhoto = flags.max_findings_per_photo ||
     rule.max_findings_per_photo;
+  const coverageTargets = coverageTargetsFromFlags(flags);
+  const maxFindingsPerAnalysis = Math.max(1, maxPhotos * maxFindingsPerPhoto);
+  const coverageV2Enabled = flags.enable_multi_photo_coverage_v2 &&
+    paidMultiPhotoEnabled &&
+    maxPhotos > 1;
   return {
     plan: tier,
     maxPhotosPerAnalysis: Math.max(1, maxPhotos),
     visiblePhotoSlotsInUI: rule.visible_photo_slots_in_ui,
     maxFindingsPerPhoto,
-    maxFindingsPerAnalysis: Math.max(1, maxPhotos * maxFindingsPerPhoto),
+    maxFindingsPerAnalysis,
+    coverageV2Enabled,
+    targetFindingsPerPhotoMin: coverageTargets.targetMin,
+    targetFindingsPerPhotoMax: coverageTargets.targetMax,
+    targetFindingsTotalMax: Math.min(
+      maxFindingsPerAnalysis,
+      coverageTargets.targetTotalMax,
+    ),
+    coverageRepairEnabled: flags.coverage_repair_enabled,
     canUseMultiPhotoAnalysis: paidMultiPhotoEnabled,
     canEditAIFindings: flags.enable_editable_findings &&
       rule.can_edit_ai_findings,
@@ -496,6 +791,7 @@ async function resolvePhotoCapabilities(
   // deno-lint-ignore no-explicit-any
   supabase: any,
   tier: PlanTier,
+  client: ClientReleaseContext,
 ): Promise<PhotoCapabilities> {
   let flags = DEFAULT_MULTI_PHOTO_FLAGS;
   try {
@@ -504,7 +800,10 @@ async function resolvePhotoCapabilities(
       .select("value")
       .eq("key", "multi_photo_analysis")
       .maybeSingle();
-    flags = normalizeMultiPhotoFlags(data?.value);
+    flags = applyReleaseGateToFlags(
+      normalizeMultiPhotoFlags(data?.value),
+      client,
+    );
   } catch {
     flags = DEFAULT_MULTI_PHOTO_FLAGS;
   }
@@ -515,8 +814,8 @@ async function resolvePhotoCapabilities(
       .select("*")
       .eq("plan", tier)
       .maybeSingle();
-    const rule = (data ?? DEFAULT_PLAN_CAPABILITY_RULES[tier]) as PlanCapabilityRule;
-    const base = fallbackPhotoCapabilities(tier, flags);
+    const rule =
+      (data ?? DEFAULT_PLAN_CAPABILITY_RULES[tier]) as PlanCapabilityRule;
     const paidMultiPhotoEnabled = flags.enable_multi_photo_analysis &&
       flags.enable_plus_pro_5_photo_limit &&
       tier !== "free";
@@ -532,15 +831,32 @@ async function resolvePhotoCapabilities(
       rule.max_findings_per_photo,
       flags.max_findings_per_photo,
     );
+    const maxFindingsPerAnalysis = Math.max(
+      1,
+      Math.min(
+        rule.max_findings_per_analysis,
+        maxPhotos * maxFindingsPerPhoto,
+      ),
+    );
+    const coverageTargets = coverageTargetsFromFlags(flags);
+    const coverageV2Enabled = flags.enable_multi_photo_coverage_v2 &&
+      paidMultiPhotoEnabled &&
+      maxPhotos > 1 &&
+      rule.can_use_multi_photo_analysis;
     return {
       plan: tier,
       maxPhotosPerAnalysis: Math.max(1, maxPhotos),
       visiblePhotoSlotsInUI: rule.visible_photo_slots_in_ui,
       maxFindingsPerPhoto,
-      maxFindingsPerAnalysis: Math.max(
-        1,
-        Math.min(rule.max_findings_per_analysis, maxPhotos * maxFindingsPerPhoto),
+      maxFindingsPerAnalysis,
+      coverageV2Enabled,
+      targetFindingsPerPhotoMin: coverageTargets.targetMin,
+      targetFindingsPerPhotoMax: coverageTargets.targetMax,
+      targetFindingsTotalMax: Math.min(
+        maxFindingsPerAnalysis,
+        coverageTargets.targetTotalMax,
       ),
+      coverageRepairEnabled: flags.coverage_repair_enabled,
       canUseMultiPhotoAnalysis: paidMultiPhotoEnabled &&
         rule.can_use_multi_photo_analysis,
       canEditAIFindings: flags.enable_editable_findings &&
@@ -554,13 +870,20 @@ async function resolvePhotoCapabilities(
   }
 }
 
-function photoCapabilitiesSnapshot(capabilities: PhotoCapabilities): Record<string, unknown> {
+function photoCapabilitiesSnapshot(
+  capabilities: PhotoCapabilities,
+): Record<string, unknown> {
   return {
     plan: capabilities.plan,
     max_photos_per_analysis: capabilities.maxPhotosPerAnalysis,
     visible_photo_slots_in_ui: capabilities.visiblePhotoSlotsInUI,
     max_findings_per_photo: capabilities.maxFindingsPerPhoto,
     max_findings_per_analysis: capabilities.maxFindingsPerAnalysis,
+    coverage_v2_enabled: capabilities.coverageV2Enabled,
+    target_findings_per_photo_min: capabilities.targetFindingsPerPhotoMin,
+    target_findings_per_photo_max: capabilities.targetFindingsPerPhotoMax,
+    target_findings_total_max: capabilities.targetFindingsTotalMax,
+    coverage_repair_enabled: capabilities.coverageRepairEnabled,
     can_use_multi_photo_analysis: capabilities.canUseMultiPhotoAnalysis,
     can_edit_ai_findings: capabilities.canEditAIFindings,
     can_add_manual_findings: capabilities.canAddManualFindings,
@@ -570,6 +893,98 @@ function photoCapabilitiesSnapshot(capabilities: PhotoCapabilities): Record<stri
 function safeText(value: unknown, fallback = ""): string {
   if (value === null || value === undefined) return fallback;
   return String(value).trim();
+}
+
+function stripPhotoMarkerReferences(value: unknown): string {
+  const text = safeText(value);
+  if (!text) return "";
+  return text
+    .replace(
+      /\bFOTO[_\s-]*(\d+)(?:'d[ae]|'t[ae]|'deki|deki|daki|taki|teki|’d[ae]|’t[ae]|de|da|te|ta)?\s*(?:ve\s+FOTO[_\s-]*\d+(?:'d[ae]|'t[ae]|'deki|deki|daki|taki|teki|’d[ae]|’t[ae]|de|da|te|ta)?\s*)*/giu,
+      "",
+    )
+    .replace(/\bFOTO[_\s-]*\d+\b/giu, "")
+    .replace(/^\s*(?:ve|ile)\s+/giu, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.])/g, "$1")
+    .replace(/^\s*[,.;:-]\s*/g, "")
+    .trim();
+}
+
+function sanitizePhotoHazardTextFields(
+  hazard: Record<string, unknown>,
+): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = { ...hazard };
+  for (
+    const field of [
+      "observed_evidence",
+      "description",
+      "corrective_action",
+      "preventive_control",
+      "recommended_action",
+      "root_cause",
+      "references",
+    ]
+  ) {
+    if (field in sanitized) {
+      sanitized[field] = stripPhotoMarkerReferences(sanitized[field]);
+    }
+  }
+
+  if (Array.isArray(sanitized.recommended_measures)) {
+    sanitized.recommended_measures = sanitized.recommended_measures.map(
+      (item) => {
+        if (!item || typeof item !== "object") return item;
+        const record = item as Record<string, unknown>;
+        return {
+          ...record,
+          text: stripPhotoMarkerReferences(record.text),
+        };
+      },
+    );
+  }
+
+  if (Array.isArray(sanitized.per_photo_observations)) {
+    sanitized.per_photo_observations = sanitized.per_photo_observations.map(
+      (item) => {
+        if (!item || typeof item !== "object") return item;
+        const record = item as Record<string, unknown>;
+        return {
+          ...record,
+          observation: stripPhotoMarkerReferences(record.observation),
+        };
+      },
+    );
+  }
+
+  return sanitized;
+}
+
+function numericMetadata(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string") return null;
+  const parsed = Number(value.trim());
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function imagePartMarkerText(part: AIImagePart): string {
+  return `<foto index="${part.photoIndex}" label="FOTO_${part.photoIndex}">
+Sıradaki görsel FOTO_${part.photoIndex}. Bu marker yalnızca makine-okunur kaynak eşleştirme içindir. Kullanıcıya gösterilecek title, observed_evidence, description, root_cause, corrective_action, preventive_control, references, photo_summaries ve per_photo_observations metinlerinde FOTO_${part.photoIndex} veya başka FOTO_* marker adını yazma. Bu görselden çıkardığın bulgularda source_photo_indices alanına yalnızca ${part.photoIndex} yaz. Aynı bulgu başka fotoğraflarda da görünüyorsa tüm ilgili FOTO numaralarını source_photo_indices içinde birleştir. Her fotoğraf için photo_summaries içinde ayrı özet üret.
+</foto>`;
+}
+
+function imagePartAudit(part: AIImagePart): Record<string, unknown> {
+  return {
+    photo_index: part.photoIndex,
+    source: part.source,
+    width: part.width,
+    height: part.height,
+    decoded_byte_count: part.decodedByteCount,
+    encoded_byte_count: part.encodedByteCount,
+    jpeg_quality: part.jpegQuality,
+    quality_policy: part.qualityPolicy,
+    max_dimension: part.maxDimension,
+  };
 }
 
 function normalizeRecommendedMeasures(
@@ -620,14 +1035,21 @@ function normalizeRecommendedMeasures(
   ];
 }
 
-function normalizeSourcePhotoIndices(value: unknown, photoCount: number): number[] {
+function normalizeSourcePhotoIndices(
+  value: unknown,
+  photoCount: number,
+): number[] {
   if (photoCount <= 0) return [];
   const raw = Array.isArray(value) ? value : [1];
-  const indices = [...new Set(raw
-    .map((item) => Math.round(Number(item)))
-    .filter((item) =>
-      Number.isFinite(item) && item >= 1 && item <= photoCount
-    ))].sort((a, b) => a - b);
+  const indices = [
+    ...new Set(
+      raw
+        .map((item) => Math.round(Number(item)))
+        .filter((item) =>
+          Number.isFinite(item) && item >= 1 && item <= photoCount
+        ),
+    ),
+  ].sort((a, b) => a - b);
   return indices.length > 0 ? indices : [1];
 }
 
@@ -689,7 +1111,376 @@ function enforceFindingBudget(
   return accepted;
 }
 
-function responseSchema(tier: PlanTier) {
+function coveragePolicyFor(
+  capabilities: PhotoCapabilities,
+  photoCount: number,
+): MultiPhotoCoveragePolicy | null {
+  if (photoCount <= 1 || !capabilities.coverageV2Enabled) return null;
+  const targetMin = Math.max(1, capabilities.targetFindingsPerPhotoMin);
+  const targetMax = Math.max(targetMin, capabilities.targetFindingsPerPhotoMax);
+  const totalMax = Math.min(
+    capabilities.maxFindingsPerAnalysis,
+    Math.max(targetMax, capabilities.targetFindingsTotalMax),
+  );
+  return {
+    enabled: true,
+    photoCount,
+    targetMin,
+    targetMax,
+    totalMax,
+    repairEnabled: capabilities.coverageRepairEnabled,
+  };
+}
+
+function normalizeCoverageStatus(
+  value: unknown,
+  findingsCount: number,
+  candidateCount: number,
+): CoverageStatus {
+  const raw = safeText(value).toLowerCase();
+  if (raw === "low_quality") return "low_quality";
+  if (raw === "no_actionable_hazard") return "no_actionable_hazard";
+  if (raw === "actionable") return "actionable";
+  return findingsCount > 0 || candidateCount > 0
+    ? "actionable"
+    : "no_actionable_hazard";
+}
+
+function normalizeCoverageGapReason(
+  status: CoverageStatus,
+  rawReason: unknown,
+  findingsCount: number,
+  targetMin: number,
+  recordMissing: boolean,
+): string | null {
+  const reason = stripPhotoMarkerReferences(rawReason).slice(0, 500);
+  if (status === "actionable" && findingsCount >= targetMin) return null;
+  if (reason) return reason;
+  if (recordMissing) {
+    return "AI bu fotoğraf için ayrı coverage özeti döndürmedi.";
+  }
+  if (status === "low_quality") {
+    return "Görüntü kalitesi güvenilir bulgu üretmek için yetersiz.";
+  }
+  if (status === "no_actionable_hazard") {
+    return "Aksiyonlanabilir risk kanıtı güvenilir şekilde doğrulanamadı.";
+  }
+  if (findingsCount < targetMin) {
+    return `Bu fotoğrafta ${targetMin} ayrı ve duplicate olmayan güvenilir risk kanıtı doğrulanamadı.`;
+  }
+  return null;
+}
+
+function sanitizeCoverageFinding(
+  rawFinding: unknown,
+  photoIndex: number,
+  photoCount: number,
+): Record<string, unknown> | null {
+  if (!rawFinding || typeof rawFinding !== "object") return null;
+  const sanitized = sanitizePhotoHazardTextFields(
+    rawFinding as Record<string, unknown>,
+  );
+  const sourcePhotoIndices = normalizeSourcePhotoIndices(
+    sanitized.source_photo_indices,
+    photoCount,
+  ).filter((index) => index === photoIndex);
+  const effectiveSourcePhotoIndices = sourcePhotoIndices.length > 0
+    ? sourcePhotoIndices
+    : [photoIndex];
+  return {
+    ...sanitized,
+    source_photo_indices: effectiveSourcePhotoIndices,
+    per_photo_observations: normalizePerPhotoObservations(
+      sanitized.per_photo_observations,
+      effectiveSourcePhotoIndices,
+    ),
+  };
+}
+
+function normalizePhotoFindingCoverage(
+  rawPhotoFindings: unknown,
+  policy: MultiPhotoCoveragePolicy,
+): NormalizedPhotoFindingCoverage[] | null {
+  if (!Array.isArray(rawPhotoFindings)) return null;
+  const recordsByPhoto = new Map<number, NormalizedPhotoFindingCoverage>();
+
+  for (const item of rawPhotoFindings) {
+    if (!item || typeof item !== "object") continue;
+    const record = item as Record<string, unknown>;
+    const photoIndex = Math.round(Number(record.photo_index));
+    if (
+      !Number.isFinite(photoIndex) || photoIndex < 1 ||
+      photoIndex > policy.photoCount
+    ) {
+      continue;
+    }
+    const findings = (Array.isArray(record.findings) ? record.findings : [])
+      .map((finding) =>
+        sanitizeCoverageFinding(finding, photoIndex, policy.photoCount)
+      )
+      .filter((finding): finding is Record<string, unknown> => finding !== null)
+      .slice(0, policy.targetMax);
+    const candidateCount = Math.max(
+      findings.length,
+      Math.round(Number(record.candidate_findings_count ?? findings.length)),
+    );
+    const status = normalizeCoverageStatus(
+      record.coverage_status,
+      findings.length,
+      candidateCount,
+    );
+    recordsByPhoto.set(photoIndex, {
+      photo_index: photoIndex,
+      coverage_status: status,
+      scene_summary: stripPhotoMarkerReferences(record.scene_summary).slice(
+        0,
+        1200,
+      ),
+      candidate_findings_count: candidateCount,
+      coverage_gap_reason: normalizeCoverageGapReason(
+        status,
+        record.coverage_gap_reason,
+        findings.length,
+        policy.targetMin,
+        false,
+      ),
+      highest_risk_level: safeText(record.highest_risk_level).slice(0, 40) ||
+        null,
+      ai_confidence: typeof record.ai_confidence === "number"
+        ? Math.max(0, Math.min(1, record.ai_confidence))
+        : null,
+      findings,
+      record_missing: false,
+    });
+  }
+
+  return Array.from({ length: policy.photoCount }, (_, index) => {
+    const photoIndex = index + 1;
+    return recordsByPhoto.get(photoIndex) ?? {
+      photo_index: photoIndex,
+      coverage_status: "no_actionable_hazard" as CoverageStatus,
+      scene_summary: "",
+      candidate_findings_count: 0,
+      coverage_gap_reason: normalizeCoverageGapReason(
+        "no_actionable_hazard",
+        "",
+        0,
+        policy.targetMin,
+        true,
+      ),
+      highest_risk_level: null,
+      ai_confidence: null,
+      findings: [],
+      record_missing: true,
+    };
+  });
+}
+
+function coverageFindingKey(hazard: Record<string, unknown>): string {
+  return [
+    "title",
+    "category",
+    "observed_evidence",
+    "corrective_action",
+    "preventive_control",
+    "root_cause",
+  ]
+    .map((field) => safeText(hazard[field]).toLowerCase())
+    .join("|")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function mergeDuplicateCoverageHazards(
+  hazards: Array<Record<string, unknown>>,
+  photoCount: number,
+  totalMax: number,
+): Array<Record<string, unknown>> {
+  const accepted: Array<Record<string, unknown>> = [];
+  const acceptedByKey = new Map<string, Record<string, unknown>>();
+
+  for (const hazard of hazards) {
+    if (accepted.length >= totalMax) break;
+    const key = coverageFindingKey(hazard);
+    if (!key) continue;
+    const sourcePhotoIndices = normalizeSourcePhotoIndices(
+      hazard.source_photo_indices,
+      photoCount,
+    );
+    const perPhotoObservations = normalizePerPhotoObservations(
+      hazard.per_photo_observations,
+      sourcePhotoIndices,
+    );
+    const existing = acceptedByKey.get(key);
+    if (existing) {
+      const mergedSourcePhotoIndices = [
+        ...new Set([
+          ...normalizeSourcePhotoIndices(
+            existing.source_photo_indices,
+            photoCount,
+          ),
+          ...sourcePhotoIndices,
+        ]),
+      ].sort((a, b) => a - b);
+      const observationKey = (
+        item: { photo_index: number; observation: string },
+      ) => `${item.photo_index}:${item.observation}`;
+      const mergedObservations = [
+        ...normalizePerPhotoObservations(
+          existing.per_photo_observations,
+          mergedSourcePhotoIndices,
+        ),
+        ...perPhotoObservations,
+      ];
+      const uniqueObservations = Array.from(
+        new Map(
+          mergedObservations.map((item) => [observationKey(item), item]),
+        ).values(),
+      ).slice(0, 10);
+      existing.source_photo_indices = mergedSourcePhotoIndices;
+      existing.per_photo_observations = uniqueObservations;
+      continue;
+    }
+    const normalizedHazard = {
+      ...hazard,
+      source_photo_indices: sourcePhotoIndices,
+      per_photo_observations: perPhotoObservations,
+    };
+    acceptedByKey.set(key, normalizedHazard);
+    accepted.push(normalizedHazard);
+  }
+
+  return accepted;
+}
+
+function mergeCoverageRepairRecords(
+  baseRecords: NormalizedPhotoFindingCoverage[],
+  repairRecords: NormalizedPhotoFindingCoverage[],
+  policy: MultiPhotoCoveragePolicy,
+): void {
+  const baseByPhoto = new Map(
+    baseRecords.map((record) => [record.photo_index, record]),
+  );
+  for (const repair of repairRecords) {
+    const base = baseByPhoto.get(repair.photo_index);
+    if (!base) continue;
+    if (repair.scene_summary) base.scene_summary = repair.scene_summary;
+    base.highest_risk_level = repair.highest_risk_level ??
+      base.highest_risk_level;
+    base.ai_confidence = repair.ai_confidence ?? base.ai_confidence;
+    if (
+      repair.coverage_status !== "no_actionable_hazard" ||
+      base.record_missing
+    ) {
+      base.coverage_status = repair.coverage_status;
+    }
+    base.record_missing = false;
+    const existingKeys = new Set(base.findings.map(coverageFindingKey));
+    for (const finding of repair.findings) {
+      if (base.findings.length >= policy.targetMax) break;
+      const key = coverageFindingKey(finding);
+      if (!key || existingKeys.has(key)) continue;
+      existingKeys.add(key);
+      base.findings.push(finding);
+    }
+    base.candidate_findings_count = Math.max(
+      base.candidate_findings_count,
+      repair.candidate_findings_count,
+      base.findings.length,
+    );
+    base.coverage_gap_reason = normalizeCoverageGapReason(
+      base.coverage_status,
+      repair.coverage_gap_reason ?? base.coverage_gap_reason,
+      base.findings.length,
+      policy.targetMin,
+      false,
+    );
+  }
+}
+
+function coverageRepairCandidates(
+  records: NormalizedPhotoFindingCoverage[],
+  policy: MultiPhotoCoveragePolicy,
+): number[] {
+  return records
+    .filter((record) =>
+      record.record_missing ||
+      (record.coverage_status === "actionable" &&
+        record.findings.length < policy.targetMin)
+    )
+    .map((record) => record.photo_index);
+}
+
+function buildCoverageRepairContext(
+  baseContext: string,
+  policy: MultiPhotoCoveragePolicy,
+  records: NormalizedPhotoFindingCoverage[],
+  photoIndices: number[],
+): string {
+  const existingFindings = records
+    .filter((record) => photoIndices.includes(record.photo_index))
+    .map((record) => {
+      const lines = record.findings
+        .map((finding, index) =>
+          `${index + 1}. ${safeText(finding.title)} | ${
+            safeText(finding.observed_evidence)
+          } | ${safeText(finding.corrective_action)}`
+        )
+        .join("\n");
+      return `Foto ${record.photo_index}: mevcut ${record.findings.length} bulgu\n${
+        lines || "Mevcut bulgu yok."
+      }`;
+    })
+    .join("\n\n");
+
+  return `${baseContext}
+<coverage_repair_pass>
+Yalnız şu fotoğraflar için ikinci kısa tarama yap: ${
+    photoIndices.map((index) => `FOTO_${index}`).join(", ")
+  }.
+Amaç: actionable risk kanıtı olan her fotoğrafı en az ${policy.targetMin}, en fazla ${policy.targetMax} duplicate olmayan bulguya tamamlamak.
+Mevcut bulguları tekrar etme; aynı kök neden + aynı kontrol tedbiri + aynı görsel kanıt varsa yeni bulgu sayma.
+Temiz, ilgisiz veya düşük kaliteli fotoğrafta risk uydurma; coverage_status değerini "no_actionable_hazard" veya "low_quality" yap ve coverage_gap_reason yaz.
+Yanıtı yine photo_findings[] formatında üret; sadece istenen fotoğraf indekslerini döndür.
+<mevcut_bulgular>
+${existingFindings}
+</mevcut_bulgular>
+</coverage_repair_pass>`;
+}
+
+function buildPhotoSummariesFromCoverage(
+  records: NormalizedPhotoFindingCoverage[],
+  policy: MultiPhotoCoveragePolicy,
+): Array<Record<string, unknown>> {
+  return records.map((record) => ({
+    photo_index: record.photo_index,
+    scene_summary: record.scene_summary,
+    candidate_findings_count: Math.max(
+      record.candidate_findings_count,
+      record.findings.length,
+    ),
+    generated_findings_count: record.findings.length,
+    highest_risk_level: record.highest_risk_level,
+    ai_confidence: record.ai_confidence,
+    coverage_status: record.coverage_status,
+    coverage_gap_reason: normalizeCoverageGapReason(
+      record.coverage_status,
+      record.coverage_gap_reason,
+      record.findings.length,
+      policy.targetMin,
+      record.record_missing,
+    ),
+    target_findings_min: policy.targetMin,
+    target_findings_max: policy.targetMax,
+  }));
+}
+
+function responseSchema(
+  tier: PlanTier,
+  coveragePolicy?: MultiPhotoCoveragePolicy | null,
+) {
   const includesPaidFields = tier !== "free";
   const hazardProperties: Record<string, unknown> = {
     title: { type: "STRING" },
@@ -739,17 +1530,71 @@ function responseSchema(tier: PlanTier) {
     "m5_severity",
     ...(includesPaidFields ? ["references", "root_cause"] : []),
   ];
+  const hazardSchema = {
+    type: "OBJECT",
+    properties: hazardProperties,
+    required: requiredHazardFields,
+  };
+
+  if (coveragePolicy?.enabled) {
+    return {
+      type: "OBJECT",
+      properties: {
+        photo_findings: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              photo_index: { type: "INTEGER" },
+              coverage_status: { type: "STRING" },
+              scene_summary: { type: "STRING" },
+              candidate_findings_count: { type: "INTEGER" },
+              coverage_gap_reason: { type: "STRING" },
+              highest_risk_level: { type: "STRING" },
+              ai_confidence: { type: "NUMBER" },
+              findings: {
+                type: "ARRAY",
+                items: hazardSchema,
+              },
+            },
+            required: [
+              "photo_index",
+              "coverage_status",
+              "scene_summary",
+              "candidate_findings_count",
+              "findings",
+            ],
+          },
+        },
+        ai_summary: { type: "STRING" },
+        photo_summaries: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              photo_index: { type: "INTEGER" },
+              scene_summary: { type: "STRING" },
+              candidate_findings_count: { type: "INTEGER" },
+              highest_risk_level: { type: "STRING" },
+              ai_confidence: { type: "NUMBER" },
+              coverage_status: { type: "STRING" },
+              coverage_gap_reason: { type: "STRING" },
+            },
+            required: ["photo_index", "scene_summary"],
+          },
+        },
+        limitations: { type: "STRING" },
+      },
+      required: ["photo_findings", "ai_summary"],
+    };
+  }
 
   return {
     type: "OBJECT",
     properties: {
       hazards: {
         type: "ARRAY",
-        items: {
-          type: "OBJECT",
-          properties: hazardProperties,
-          required: requiredHazardFields,
-        },
+        items: hazardSchema,
       },
       ai_summary: { type: "STRING" },
       photo_summaries: {
@@ -772,7 +1617,10 @@ function responseSchema(tier: PlanTier) {
   };
 }
 
-function groqResponseSchemaInstruction(tier: PlanTier): string {
+function groqResponseSchemaInstruction(
+  tier: PlanTier,
+  coveragePolicy?: MultiPhotoCoveragePolicy | null,
+): string {
   const paidFields = tier !== "free"
     ? `,\n      "references": "${
       tier === "pro"
@@ -784,6 +1632,55 @@ function groqResponseSchemaInstruction(tier: PlanTier): string {
         : "kısa saha diliyle kök neden"
     }"`
     : "";
+  if (coveragePolicy?.enabled) {
+    return `Aşağıdaki JSON yapısına birebir uy. Markdown, açıklama veya kod bloğu ekleme:
+{
+  "photo_findings": [
+    {
+      "photo_index": 1,
+      "coverage_status": "actionable",
+      "scene_summary": "fotoğraftaki sahnenin kısa özeti",
+      "candidate_findings_count": ${coveragePolicy.targetMin},
+      "coverage_gap_reason": "",
+      "highest_risk_level": "high",
+      "ai_confidence": 0.7,
+      "findings": [
+        {
+          "title": "kısa tehlike başlığı",
+          "category": "risk kategorisi",
+          "observed_evidence": "rapora uygun nesnel saha kanıtı",
+          "description": "riskin kısa açıklaması",
+          "corrective_action": "mevcut uygunsuzluğu sahada düzelten kısa uygulanabilir önlem",
+          "preventive_control": "tekrarını önleyen kısa kontrol/prosedür/izleme tedbiri",
+          "confidence": 0.0,
+          "fk_probability": 1,
+          "fk_frequency": 1,
+          "fk_severity": 1,
+          "m5_probability": 1,
+          "m5_severity": 1,
+          "source_photo_indices": [1],
+          "per_photo_observations": [
+            { "photo_index": 1, "observation": "fotoğraftaki kısa gözlem" }
+          ]${paidFields}
+        }
+      ]
+    }
+  ],
+  "photo_summaries": [
+    {
+      "photo_index": 1,
+      "scene_summary": "fotoğraftaki sahnenin kısa özeti",
+      "candidate_findings_count": ${coveragePolicy.targetMin},
+      "highest_risk_level": "high",
+      "ai_confidence": 0.7,
+      "coverage_status": "actionable",
+      "coverage_gap_reason": ""
+    }
+  ],
+  "ai_summary": "kısa özet",
+  "limitations": "varsa belirsizlikler"
+}`;
+  }
   return `Aşağıdaki JSON yapısına birebir uy. Markdown, açıklama veya kod bloğu ekleme:
 {
   "hazards": [
@@ -1039,16 +1936,14 @@ ${userText}
 
 function buildSubscriptionContext(
   tier: PlanTier,
-  findingPolicy?: {
-    photoCount: number;
-    maxFindingsPerPhoto: number;
-    maxFindingsTotal: number;
-  },
+  findingPolicy?: AnalysisFindingPolicy,
 ): string {
   const minHazards = PLAN_LIMITS[tier].minHazards;
   const maxHazards = PLAN_LIMITS[tier].maxHazards;
   const hazardCountRule = findingPolicy && findingPolicy.photoCount > 0
-    ? `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Her fotoğraf için en fazla ${findingPolicy.maxFindingsPerPhoto} anlamlı aday/final bulgu üret; toplam final bulgu sayısı ${findingPolicy.maxFindingsTotal} değerini aşmasın. Aynı tehlike birden fazla fotoğrafta görünüyorsa tek final bulguda birleştir, source_photo_indices ve per_photo_observations alanlarını doldur.`
+    ? findingPolicy.coverageV2Enabled
+      ? `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Çıktıyı photo_findings[] formatında fotoğraf bazlı üret. Her fotoğraf için coverage_status alanını "actionable", "no_actionable_hazard" veya "low_quality" olarak yaz. Aksiyonlanabilir risk kanıtı olan her fotoğrafta en az ${findingPolicy.targetFindingsPerPhotoMin}, en fazla ${findingPolicy.targetFindingsPerPhotoMax} kanıta dayalı ve duplicate olmayan bulgu üret; toplam final bulgu üst sınırı ${findingPolicy.maxFindingsTotal}. Temiz, ilgisiz, çok bulanık veya risk kanıtı zayıf fotoğrafta bulgu uydurma; coverage_gap_reason alanında neden düşük kaldığını açıkla. Aynı tehlikeyi yalnız aynı kök neden ve aynı kontrol tedbiri olduğunda birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. Her bulguda source_photo_indices, per_photo_observations ve fotoğraf özeti alanlarını doldur.`
+      : `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Her fotoğraf için photo_summaries içinde ayrı özet üret. Her fotoğraf için 12 katmanlı taramadan çıkan tüm anlamlı bulgu adaylarını yaz; fotoğraf başına en fazla ${findingPolicy.maxFindingsPerPhoto}, toplamda en fazla ${findingPolicy.maxFindingsTotal} final bulgu üret. Kanıt varsa listeyi gereksiz kısaltma: çok fotoğraflı bir analizde tehlike kanıtı güçlü olan her fotoğraftan genellikle birden fazla bulgu beklenir. Risk kanıtı zayıfsa bulgu uydurma. Aynı tehlikeyi yalnız aynı kök neden ve aynı kontrol tedbiri olduğunda birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. source_photo_indices ve per_photo_observations alanlarını doldur.`
     : minHazards && maxHazards
     ? `${minHazards} ile ${maxHazards} arasında tehlike döndür; önem sırasına göre sırala.`
     : maxHazards
@@ -1238,11 +2133,7 @@ function buildAnalysisContext(params: {
   onboardingContext: OnboardingContext;
   companyContext: string | null;
   activeSector: AnalysisSectorId | null;
-  findingPolicy?: {
-    photoCount: number;
-    maxFindingsPerPhoto: number;
-    maxFindingsTotal: number;
-  };
+  findingPolicy?: AnalysisFindingPolicy;
 }): string {
   const focusLines = params.canvases
     .filter((c) => c !== "general")
@@ -1293,16 +2184,18 @@ async function callGemini(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  imageBase64Parts: { mimeType: string; data: string }[],
+  imageBase64Parts: AIImagePart[],
   pool: "free" | "paid",
   tier: PlanTier,
   simulation?: AISimulationConfig,
+  coveragePolicy?: MultiPhotoCoveragePolicy | null,
 ) {
   maybeSimulateAIError(simulation);
 
   const parts: unknown[] = [];
   parts.push({ text: analysisContext });
   for (const img of imageBase64Parts) {
+    parts.push({ text: imagePartMarkerText(img) });
     parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
   }
   if (userText) {
@@ -1317,9 +2210,9 @@ async function callGemini(
     contents: [{ role: "user", parts }],
     generationConfig: {
       responseMimeType: "application/json",
-      responseSchema: responseSchema(tier),
+      responseSchema: responseSchema(tier, coveragePolicy),
       temperature: 0.2,
-      maxOutputTokens: 12000,
+      maxOutputTokens: coveragePolicy?.enabled ? 16000 : 12000,
       ...(thinkingConfig ? { thinkingConfig } : {}),
     },
   };
@@ -1453,9 +2346,10 @@ async function callGroq(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  imageBase64Parts: { mimeType: string; data: string }[],
+  imageBase64Parts: AIImagePart[],
   tier: PlanTier,
   simulation?: AISimulationConfig,
+  coveragePolicy?: MultiPhotoCoveragePolicy | null,
 ) {
   maybeSimulateAIError(simulation);
 
@@ -1472,7 +2366,7 @@ async function callGroq(
     {
       type: "text",
       text: [
-        groqResponseSchemaInstruction(tier),
+        groqResponseSchemaInstruction(tier, coveragePolicy),
         analysisContext,
         userText ? buildUserTextInputBlock(userText) : null,
       ].filter(Boolean).join("\n\n"),
@@ -1486,6 +2380,10 @@ async function callGroq(
         "Groq fallback fotoğraf boyutu limitini aşıyor.",
       );
     }
+    content.push({
+      type: "text",
+      text: imagePartMarkerText(img),
+    });
     content.push({
       type: "image_url",
       image_url: {
@@ -1502,7 +2400,7 @@ async function callGroq(
     ],
     response_format: { type: "json_object" },
     temperature: 0.2,
-    max_completion_tokens: 6000,
+    max_completion_tokens: coveragePolicy?.enabled ? 12000 : 6000,
   };
 
   const res = await fetch(GROQ_API_URL, {
@@ -1882,11 +2780,12 @@ async function callGeminiWithFallback(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  imageBase64Parts: { mimeType: string; data: string }[],
+  imageBase64Parts: AIImagePart[],
   tier: PlanTier,
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
   attemptSequence?: Array<{ keyConfig: GeminiKeyConfig; model: string }>,
+  coveragePolicy?: MultiPhotoCoveragePolicy | null,
 ) {
   let lastError: unknown = null;
   let attempt = 0;
@@ -1909,6 +2808,7 @@ async function callGeminiWithFallback(
         keyConfig.pool,
         tier,
         simulation,
+        coveragePolicy,
       );
       return {
         ...out,
@@ -1952,9 +2852,10 @@ async function callFreeAIWithFallback(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  imageBase64Parts: { mimeType: string; data: string }[],
+  imageBase64Parts: AIImagePart[],
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
+  coveragePolicy?: MultiPhotoCoveragePolicy | null,
 ) {
   try {
     const out = await callGeminiWithFallback(
@@ -1967,6 +2868,8 @@ async function callFreeAIWithFallback(
       "free",
       simulation,
       trace,
+      undefined,
+      coveragePolicy,
     );
     return {
       ...out,
@@ -2002,6 +2905,7 @@ async function callFreeAIWithFallback(
       imageBase64Parts,
       "free",
       simulation,
+      coveragePolicy,
     );
     return {
       ...out,
@@ -2020,10 +2924,11 @@ async function callPaidAIWithFallback(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  imageBase64Parts: { mimeType: string; data: string }[],
+  imageBase64Parts: AIImagePart[],
   tier: PlanTier,
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
+  coveragePolicy?: MultiPhotoCoveragePolicy | null,
 ) {
   try {
     const out = await callGeminiWithFallback(
@@ -2036,6 +2941,8 @@ async function callPaidAIWithFallback(
       tier,
       simulation,
       trace,
+      undefined,
+      coveragePolicy,
     );
     return {
       ...out,
@@ -2071,6 +2978,7 @@ async function callPaidAIWithFallback(
       imageBase64Parts,
       tier,
       simulation,
+      coveragePolicy,
     );
     return {
       ...out,
@@ -2090,9 +2998,10 @@ async function callFreePaidTrialAIWithFallback(
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
-  imageBase64Parts: { mimeType: string; data: string }[],
+  imageBase64Parts: AIImagePart[],
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
+  coveragePolicy?: MultiPhotoCoveragePolicy | null,
 ) {
   try {
     const out = await callGeminiWithFallback(
@@ -2106,6 +3015,7 @@ async function callFreePaidTrialAIWithFallback(
       simulation,
       trace,
       freePaidTrialPaidGeminiAttemptSequence(paidGeminiKeyPool),
+      coveragePolicy,
     );
     return {
       ...out,
@@ -2141,6 +3051,8 @@ async function callFreePaidTrialAIWithFallback(
         "plus",
         simulation,
         trace,
+        undefined,
+        coveragePolicy,
       );
       const fallbackDetails = [
         out.modelUsed !== MODEL_FREE ? out.modelUsed : null,
@@ -2181,6 +3093,7 @@ async function callFreePaidTrialAIWithFallback(
         imageBase64Parts,
         "plus",
         simulation,
+        coveragePolicy,
       );
       return {
         ...out,
@@ -2491,74 +3404,88 @@ async function persistInlinePhotosForQueue(params: {
     ? params.inlinePhotoParts
     : [];
   if (inlinePhotoParts.length === 0) return persistedPhotoPaths;
+  const uploadedPhotoPaths: string[] = [];
 
-  const { error: deletePhotoErr } = await params.supabase.from("photos")
-    .delete()
-    .eq("analysis_id", params.analysisID)
-    .eq("user_id", params.userID);
-  if (deletePhotoErr) {
-    throw new Error(
-      `photo_cleanup_failed:${safeLogText(JSON.stringify(deletePhotoErr))}`,
-    );
-  }
-
-  for (let i = 0; i < inlinePhotoParts.length; i++) {
-    const part = inlinePhotoParts[i];
-    if (!part?.data) continue;
-    const mimeType = normalizedImageMimeType(part.mime_type ?? part.mimeType);
-    const rawBytes = base64ToBytes(part.data);
-    const bytes = stripImageMetadata(rawBytes, mimeType);
-    const ext = mimeType.includes("png") ? "png" : "jpg";
-    const storagePath = `${params.userID}/${params.analysisID}/p${
-      i + 1
-    }.${ext}`;
-    const uploadBody = bytes.byteOffset === 0 &&
-        bytes.byteLength === bytes.buffer.byteLength
-      ? bytes
-      : bytes.slice();
-
-    const uploadResult = await uploadStorageObject({
-      supabaseUrl: params.supabaseUrl,
-      serviceRoleKey: params.serviceRoleKey,
-      bucket: "photos",
-      path: storagePath,
-      body: uploadBody,
-      mimeType,
-    });
-
-    if (!uploadResult.ok) {
+  try {
+    const { error: deletePhotoErr } = await params.supabase.from("photos")
+      .delete()
+      .eq("analysis_id", params.analysisID)
+      .eq("user_id", params.userID);
+    if (deletePhotoErr) {
       throw new Error(
-        `photo_upload_failed:${uploadResult.status}:${
-          safeLogText(uploadResult.error)
-        }`,
+        `photo_cleanup_failed:${safeLogText(JSON.stringify(deletePhotoErr))}`,
       );
     }
 
-    const { error: photoErr } = await params.supabase.from("photos").insert({
-      analysis_id: params.analysisID,
-      user_id: params.userID,
-      storage_path: storagePath,
-      width: sanitizedDimension(part.width),
-      height: sanitizedDimension(part.height),
-      size_bytes: bytes.byteLength,
-      byte_size: bytes.byteLength,
-      mime_type: mimeType,
-      sequence_index: i + 1,
-      client_photo_id: safeText(part.client_photo_id ?? part.clientPhotoID).slice(0, 80) ||
-        null,
-      is_primary: i === 0,
-      upload_payload_version: inlinePhotoParts.length > 1
-        ? "photo-batch-v2"
-        : "photo-single-v1",
-    });
+    for (let i = 0; i < inlinePhotoParts.length; i++) {
+      const part = inlinePhotoParts[i];
+      if (!part?.data) continue;
+      const mimeType = normalizedImageMimeType(part.mime_type ?? part.mimeType);
+      const rawBytes = base64ToBytes(part.data);
+      const bytes = stripImageMetadata(rawBytes, mimeType);
+      const ext = mimeType.includes("png") ? "png" : "jpg";
+      const storagePath = `${params.userID}/${params.analysisID}/p${
+        i + 1
+      }.${ext}`;
+      const uploadBody = bytes.byteOffset === 0 &&
+          bytes.byteLength === bytes.buffer.byteLength
+        ? bytes
+        : bytes.slice();
 
-    if (photoErr) {
-      throw new Error(
-        `photo_metadata_failed:${safeLogText(JSON.stringify(photoErr))}`,
-      );
+      const uploadResult = await uploadStorageObject({
+        supabaseUrl: params.supabaseUrl,
+        serviceRoleKey: params.serviceRoleKey,
+        bucket: "photos",
+        path: storagePath,
+        body: uploadBody,
+        mimeType,
+      });
+
+      if (!uploadResult.ok) {
+        throw new Error(
+          `photo_upload_failed:${uploadResult.status}:${
+            safeLogText(uploadResult.error)
+          }`,
+        );
+      }
+      uploadedPhotoPaths.push(storagePath);
+
+      const { error: photoErr } = await params.supabase.from("photos").insert({
+        analysis_id: params.analysisID,
+        user_id: params.userID,
+        storage_path: storagePath,
+        width: sanitizedDimension(part.width),
+        height: sanitizedDimension(part.height),
+        size_bytes: bytes.byteLength,
+        byte_size: bytes.byteLength,
+        mime_type: mimeType,
+        sequence_index: i + 1,
+        client_photo_id:
+          safeText(part.client_photo_id ?? part.clientPhotoID).slice(0, 80) ||
+          null,
+        is_primary: i === 0,
+        upload_payload_version: inlinePhotoParts.length > 1
+          ? "photo-batch-v2"
+          : "photo-single-v1",
+      });
+
+      if (photoErr) {
+        throw new Error(
+          `photo_metadata_failed:${safeLogText(JSON.stringify(photoErr))}`,
+        );
+      }
+
+      persistedPhotoPaths.push(storagePath);
     }
-
-    persistedPhotoPaths.push(storagePath);
+  } catch (error) {
+    if (uploadedPhotoPaths.length > 0) {
+      await params.supabase.storage.from("photos").remove(uploadedPhotoPaths);
+    }
+    await params.supabase.from("photos")
+      .delete()
+      .eq("analysis_id", params.analysisID)
+      .eq("user_id", params.userID);
+    throw error;
   }
 
   return persistedPhotoPaths;
@@ -2919,6 +3846,9 @@ serve(async (req: Request) => {
     photo_paths = [],
     photo_base64_parts = [],
   } = body;
+  const clientRelease = parseClientReleaseContext(
+    body as Record<string, unknown>,
+  );
   const requestedAnalysisSector = typeof analysis_sector === "string"
     ? analysis_sector.trim()
     : "";
@@ -2974,6 +3904,8 @@ serve(async (req: Request) => {
       support_id: supportID,
       analysis_id: analysisID,
       user_hash: await hashedID(user.id),
+      client_build: clientRelease.appBuild,
+      api_contract_version: clientRelease.apiContractVersion,
     }),
   );
 
@@ -3114,7 +4046,11 @@ serve(async (req: Request) => {
   }
 
   const planTier = resolvePlanTier(subscription);
-  const photoCapabilities = await resolvePhotoCapabilities(supabase, planTier);
+  const photoCapabilities = await resolvePhotoCapabilities(
+    supabase,
+    planTier,
+    clientRelease,
+  );
   const requestedPhotoCount = requestedPhotoPaths.length +
     (Array.isArray(photo_base64_parts) ? photo_base64_parts.length : 0);
   if (requestedPhotoCount > photoCapabilities.maxPhotosPerAnalysis) {
@@ -3447,6 +4383,26 @@ serve(async (req: Request) => {
       );
     } catch (error) {
       await releaseAnalysisQuota(supabase, analysisID, user.id);
+      await updateOwnedAnalysis({
+        status: "failed",
+        status_message:
+          `Fotoğraf kaydı tamamlanamadı. Destek kodu: ${supportID}`,
+        raw_ai_response: {
+          _input_audit: {
+            prompt_version: PROMPT_VERSION,
+            input_mode: "photo",
+            inline_photo_count: Array.isArray(body.photo_base64_parts)
+              ? body.photo_base64_parts.length
+              : 0,
+            storage_photo_count: Array.isArray(body.photo_paths)
+              ? body.photo_paths.length
+              : 0,
+            request_id: requestID,
+            support_id: supportID,
+            enqueue_error: safeLogError(error),
+          },
+        },
+      });
       console.error(
         "Analyze enqueue failed",
         JSON.stringify({
@@ -3477,7 +4433,7 @@ serve(async (req: Request) => {
   const model = primaryModelForRoute(aiExecutionRoute);
 
   // Storage → base64
-  const imageBase64Parts: { mimeType: string; data: string }[] = [];
+  const imageBase64Parts: AIImagePart[] = [];
   const inlinePhotoParts = Array.isArray(photo_base64_parts)
     ? photo_base64_parts
     : [];
@@ -3487,6 +4443,9 @@ serve(async (req: Request) => {
     data: string;
     width: number;
     height: number;
+    jpegQuality: number | null;
+    qualityPolicy: string | null;
+    maxDimension: number | null;
   }[] = [];
   const inlinePhotoCount = inlinePhotoParts.length;
   const storagePhotoCount = requestedPhotoPaths.length;
@@ -3503,10 +4462,29 @@ serve(async (req: Request) => {
       data,
       width: sanitizedDimension(part.width),
       height: sanitizedDimension(part.height),
+      jpegQuality: numericMetadata(part.jpeg_quality ?? part.jpegQuality),
+      qualityPolicy: safeText(
+        part.quality_policy ?? part.qualityPolicy,
+        "legacy-client",
+      ).slice(0, 80),
+      maxDimension: numericMetadata(part.max_dimension ?? part.maxDimension),
     });
+    const photoIndex = imageBase64Parts.length + 1;
     imageBase64Parts.push({
       mimeType,
       data,
+      photoIndex,
+      width: sanitizedDimension(part.width),
+      height: sanitizedDimension(part.height),
+      decodedByteCount: bytes.byteLength,
+      encodedByteCount: data.length,
+      jpegQuality: numericMetadata(part.jpeg_quality ?? part.jpegQuality),
+      qualityPolicy: safeText(
+        part.quality_policy ?? part.qualityPolicy,
+        "legacy-client",
+      ).slice(0, 80),
+      maxDimension: numericMetadata(part.max_dimension ?? part.maxDimension),
+      source: "inline",
     });
   }
 
@@ -3514,6 +4492,70 @@ serve(async (req: Request) => {
   // Client tarafında Storage RLS'e takılmamak için bu işi service role ile Edge Function yapıyor.
   const persistedPhotoPaths: string[] = [];
   const photoPersistErrors: Record<string, unknown>[] = [];
+  const uploadedInlinePhotoPaths: string[] = [];
+  const failPhotoPersistence = async (
+    code: string,
+    message: string,
+    httpStatus = 500,
+  ) => {
+    if (uploadedInlinePhotoPaths.length > 0) {
+      const { error: storageCleanupError } = await supabase.storage.from(
+        "photos",
+      ).remove(uploadedInlinePhotoPaths);
+      if (storageCleanupError) {
+        console.error(
+          "Persist inline photo storage cleanup error",
+          JSON.stringify({
+            request_id: requestID,
+            support_id: supportID,
+            analysis_id: analysisID,
+            error: safeLogError(storageCleanupError),
+          }),
+        );
+      }
+    }
+
+    const { error: metadataCleanupError } = await supabase.from("photos")
+      .delete()
+      .eq("analysis_id", analysisID)
+      .eq("user_id", user.id);
+    if (metadataCleanupError) {
+      console.error(
+        "Persist inline photo metadata cleanup error",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogError(metadataCleanupError),
+        }),
+      );
+    }
+
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message: `${message} Destek kodu: ${supportID}`,
+      raw_ai_response: {
+        _input_audit: {
+          prompt_version: PROMPT_VERSION,
+          input_mode: "photo",
+          inline_photo_count: inlinePhotoCount,
+          storage_photo_count: storagePhotoCount,
+          persisted_photo_count: persistedPhotoPaths.length,
+          persisted_photo_paths: persistedPhotoPaths,
+          photo_persist_error_count: photoPersistErrors.length,
+          photo_persist_errors: photoPersistErrors,
+          request_id: requestID,
+          support_id: supportID,
+        },
+      },
+    });
+    await releaseAnalysisQuota(supabase, analysisID, user.id);
+    return errorResponse(httpStatus, message, {
+      code,
+      requestID,
+      supportID,
+    });
+  };
   if (sanitizedInlinePhotos.length > 0) {
     const { error: deletePhotoErr } = await supabase.from("photos")
       .delete()
@@ -3533,6 +4575,10 @@ serve(async (req: Request) => {
           analysis_id: analysisID,
           error: safeLogError(deletePhotoErr),
         }),
+      );
+      return await failPhotoPersistence(
+        "photo_persist_failed",
+        "Fotoğraf kaydı hazırlanamadı.",
       );
     }
 
@@ -3573,8 +4619,12 @@ serve(async (req: Request) => {
             error: safeLogText(uploadResult.error),
           }),
         );
-        continue;
+        return await failPhotoPersistence(
+          "photo_persist_failed",
+          "Fotoğraf kaydedilemedi.",
+        );
       }
+      uploadedInlinePhotoPaths.push(storagePath);
 
       const { error: photoErr } = await supabase.from("photos").insert({
         analysis_id: analysisID,
@@ -3587,7 +4637,8 @@ serve(async (req: Request) => {
         mime_type: mimeType,
         sequence_index: i + 1,
         client_photo_id: safeText(
-          inlinePhotoParts[i]?.client_photo_id ?? inlinePhotoParts[i]?.clientPhotoID,
+          inlinePhotoParts[i]?.client_photo_id ??
+            inlinePhotoParts[i]?.clientPhotoID,
         ).slice(0, 80) || null,
         is_primary: i === 0,
         upload_payload_version: sanitizedInlinePhotos.length > 1
@@ -3611,7 +4662,10 @@ serve(async (req: Request) => {
             error: safeLogError(photoErr),
           }),
         );
-        continue;
+        return await failPhotoPersistence(
+          "photo_persist_failed",
+          "Fotoğraf kaydı tamamlanamadı.",
+        );
       }
 
       persistedPhotoPaths.push(storagePath);
@@ -3619,11 +4673,20 @@ serve(async (req: Request) => {
   }
 
   const uniqueRequestedPhotoPaths = [...new Set(requestedPhotoPaths)];
+  const requestedPhotoMetaByPath = new Map<
+    string,
+    {
+      width: number;
+      height: number;
+      sizeBytes: number | null;
+      mimeType: string | null;
+    }
+  >();
   if (uniqueRequestedPhotoPaths.length > 0) {
     const expectedPrefix = `${user.id}/${analysisID}/`;
     const { data: ownedPhotoRows, error: ownedPhotoErr } = await supabase
       .from("photos")
-      .select("storage_path")
+      .select("storage_path,width,height,size_bytes,byte_size,mime_type")
       .eq("analysis_id", analysisID)
       .eq("user_id", user.id)
       .in("storage_path", uniqueRequestedPhotoPaths);
@@ -3631,6 +4694,16 @@ serve(async (req: Request) => {
     const ownedPaths = new Set(
       (ownedPhotoRows ?? []).map((row) => String(row.storage_path)),
     );
+    for (const row of ownedPhotoRows ?? []) {
+      const storagePath = String(row.storage_path ?? "");
+      if (!storagePath) continue;
+      requestedPhotoMetaByPath.set(storagePath, {
+        width: sanitizedDimension(row.width),
+        height: sanitizedDimension(row.height),
+        sizeBytes: numericMetadata(row.size_bytes ?? row.byte_size),
+        mimeType: safeText(row.mime_type) || null,
+      });
+    }
     const invalidPaths = uniqueRequestedPhotoPaths.filter((path) =>
       !path.startsWith(expectedPrefix) || !ownedPaths.has(path)
     );
@@ -3677,7 +4750,16 @@ serve(async (req: Request) => {
             : { name: "empty_file_data" },
         }),
       );
-      continue;
+      await updateOwnedAnalysis({
+        status: "failed",
+        status_message: `Fotoğraf indirilemedi. Destek kodu: ${supportID}`,
+      });
+      await releaseAnalysisQuota(supabase, analysisID, user.id);
+      return errorResponse(500, "Fotoğraf indirilemedi.", {
+        code: "photo_download_failed",
+        requestID,
+        supportID,
+      });
     }
     const buffer = await fileData.arrayBuffer();
     const bytes = new Uint8Array(buffer);
@@ -3686,8 +4768,28 @@ serve(async (req: Request) => {
       binary += String.fromCharCode(bytes[i]);
     }
     const base64 = btoa(binary);
-    const mimeType = path.endsWith(".png") ? "image/png" : "image/jpeg";
-    imageBase64Parts.push({ mimeType, data: base64 });
+    const storedMeta = requestedPhotoMetaByPath.get(path);
+    const mimeType = normalizedImageMimeType(
+      storedMeta?.mimeType ??
+        (path.endsWith(".png") ? "image/png" : "image/jpeg"),
+    );
+    const width = sanitizedDimension(storedMeta?.width);
+    const height = sanitizedDimension(storedMeta?.height);
+    const maxDimension = Math.max(width, height);
+    const photoIndex = imageBase64Parts.length + 1;
+    imageBase64Parts.push({
+      mimeType,
+      data: base64,
+      photoIndex,
+      width,
+      height,
+      decodedByteCount: bytes.byteLength,
+      encodedByteCount: base64.length,
+      jpegQuality: null,
+      qualityPolicy: "storage-existing",
+      maxDimension: maxDimension > 0 ? maxDimension : null,
+      source: "storage",
+    });
   }
 
   const validRequestedCanvases = requestedCanvases.filter((id) =>
@@ -3708,13 +4810,8 @@ serve(async (req: Request) => {
     Boolean(resolvedActiveSector),
   );
   const companyContext = companyPromptContext(company);
-  const analysisContext = buildAnalysisContext({
-    canvases: resolvedCanvases,
-    tier: qualityTier,
-    onboardingContext,
-    companyContext,
-    activeSector: resolvedActiveSector,
-    findingPolicy: imageBase64Parts.length > 0
+  const photoFindingPolicy: AnalysisFindingPolicy | null =
+    imageBase64Parts.length > 0
       ? {
         photoCount: imageBase64Parts.length,
         maxFindingsPerPhoto: photoCapabilities.maxFindingsPerPhoto,
@@ -3723,7 +4820,29 @@ serve(async (req: Request) => {
           imageBase64Parts.length * photoCapabilities.maxFindingsPerPhoto,
         ),
       }
-      : undefined,
+      : null;
+  const multiPhotoCoveragePolicy = coveragePolicyFor(
+    photoCapabilities,
+    imageBase64Parts.length,
+  );
+  const analysisFindingPolicy = multiPhotoCoveragePolicy && photoFindingPolicy
+    ? {
+      ...photoFindingPolicy,
+      maxFindingsPerPhoto: multiPhotoCoveragePolicy.targetMax,
+      maxFindingsTotal: multiPhotoCoveragePolicy.totalMax,
+      coverageV2Enabled: true,
+      targetFindingsPerPhotoMin: multiPhotoCoveragePolicy.targetMin,
+      targetFindingsPerPhotoMax: multiPhotoCoveragePolicy.targetMax,
+      coverageRepairEnabled: multiPhotoCoveragePolicy.repairEnabled,
+    }
+    : photoFindingPolicy;
+  const analysisContext = buildAnalysisContext({
+    canvases: resolvedCanvases,
+    tier: qualityTier,
+    onboardingContext,
+    companyContext,
+    activeSector: resolvedActiveSector,
+    findingPolicy: analysisFindingPolicy ?? undefined,
   });
   const contextHash = await hashedID(analysisContext);
   const referenceMode = referenceModeForTier(qualityTier);
@@ -3753,6 +4872,15 @@ serve(async (req: Request) => {
     photo_persist_error_count: photoPersistErrors.length,
     photo_persist_errors: photoPersistErrors,
     gemini_image_part_count: imageBase64Parts.length,
+    ai_image_part_count: imageBase64Parts.length,
+    photo_quality_policy: imageBase64Parts.find((part) => part.qualityPolicy)
+      ?.qualityPolicy ??
+      null,
+    photo_payload_total_base64_bytes: imageBase64Parts.reduce(
+      (sum, part) => sum + part.encodedByteCount,
+      0,
+    ),
+    photo_input_audit: imageBase64Parts.map(imagePartAudit),
     text_input_present: Boolean(text_input),
     analysis_mode: analysisMode,
     user_plan: planTier,
@@ -3769,22 +4897,23 @@ serve(async (req: Request) => {
     company_prompt_context: companyContext,
     onboarding_context_sent: onboardingContext.block,
     analysis_context_sent: analysisContext,
-    min_hazards: imageBase64Parts.length > 0 ? null : PLAN_LIMITS[qualityTier].minHazards ?? null,
+    min_hazards: imageBase64Parts.length > 0
+      ? null
+      : PLAN_LIMITS[qualityTier].minHazards ?? null,
     max_hazards: imageBase64Parts.length > 0
-      ? Math.min(
-        photoCapabilities.maxFindingsPerAnalysis,
-        imageBase64Parts.length * photoCapabilities.maxFindingsPerPhoto,
-      )
+      ? analysisFindingPolicy?.maxFindingsTotal ?? null
       : PLAN_LIMITS[qualityTier].maxHazards ?? null,
     max_findings_per_photo: imageBase64Parts.length > 0
-      ? photoCapabilities.maxFindingsPerPhoto
+      ? analysisFindingPolicy?.maxFindingsPerPhoto ?? null
       : null,
     max_findings_total: imageBase64Parts.length > 0
-      ? Math.min(
-        photoCapabilities.maxFindingsPerAnalysis,
-        imageBase64Parts.length * photoCapabilities.maxFindingsPerPhoto,
-      )
+      ? analysisFindingPolicy?.maxFindingsTotal ?? null
       : null,
+    coverage_v2: Boolean(multiPhotoCoveragePolicy),
+    coverage_repair_enabled: multiPhotoCoveragePolicy?.repairEnabled ?? null,
+    target_findings_per_photo_min: multiPhotoCoveragePolicy?.targetMin ?? null,
+    target_findings_per_photo_max: multiPhotoCoveragePolicy?.targetMax ?? null,
+    target_findings_total_max: multiPhotoCoveragePolicy?.totalMax ?? null,
     reference_mode: referenceMode,
     references_requested: qualityTier !== "free",
     root_cause_requested: qualityTier !== "free",
@@ -3827,42 +4956,58 @@ serve(async (req: Request) => {
   let attemptCount = 0;
   let aiFallbackSource: string | null = null;
   const primaryGeminiAlias = geminiKeys[0]?.alias ?? null;
-
-  try {
-    const out = aiExecutionRoute === "free_legacy"
-      ? await callFreeAIWithFallback(
+  const callAIForAnalysis = async (
+    context: string,
+    parts: AIImagePart[],
+    coveragePolicy?: MultiPhotoCoveragePolicy | null,
+  ) => {
+    if (aiExecutionRoute === "free_legacy") {
+      return await callFreeAIWithFallback(
         geminiKeys,
         model,
         systemPrompt,
-        analysisContext,
+        context,
         text_input ?? null,
-        imageBase64Parts,
+        parts,
         aiSimulation,
         { requestID, supportID },
-      )
-      : aiExecutionRoute === "free_paid_trial"
-      ? await callFreePaidTrialAIWithFallback(
+        coveragePolicy,
+      );
+    }
+    if (aiExecutionRoute === "free_paid_trial") {
+      return await callFreePaidTrialAIWithFallback(
         geminiKeys,
         freeFallbackGeminiKeys,
         model,
         systemPrompt,
-        analysisContext,
+        context,
         text_input ?? null,
-        imageBase64Parts,
+        parts,
         aiSimulation,
         { requestID, supportID },
-      )
-      : await callPaidAIWithFallback(
-        geminiKeys,
-        model,
-        systemPrompt,
-        analysisContext,
-        text_input ?? null,
-        imageBase64Parts,
-        planTier,
-        aiSimulation,
-        { requestID, supportID },
+        coveragePolicy,
       );
+    }
+    return await callPaidAIWithFallback(
+      geminiKeys,
+      model,
+      systemPrompt,
+      context,
+      text_input ?? null,
+      parts,
+      planTier,
+      aiSimulation,
+      { requestID, supportID },
+      coveragePolicy,
+    );
+  };
+
+  try {
+    const out = await callAIForAnalysis(
+      analysisContext,
+      imageBase64Parts,
+      multiPhotoCoveragePolicy,
+    );
     geminiResult = out.result;
     inputTokens = out.inputTokens;
     outputTokens = out.outputTokens;
@@ -3950,6 +5095,117 @@ serve(async (req: Request) => {
     });
   }
 
+  if (multiPhotoCoveragePolicy) {
+    const coverageRecords = normalizePhotoFindingCoverage(
+      geminiResult.photo_findings,
+      multiPhotoCoveragePolicy,
+    );
+    if (!coverageRecords) {
+      inputAudit.coverage_v2_fallback_reason = "missing_photo_findings";
+    } else {
+      const repairCandidates = coverageRepairCandidates(
+        coverageRecords,
+        multiPhotoCoveragePolicy,
+      );
+      inputAudit.coverage_repair_candidate_photo_indices = repairCandidates;
+      if (
+        multiPhotoCoveragePolicy.repairEnabled &&
+        repairCandidates.length > 0
+      ) {
+        try {
+          const repairParts = imageBase64Parts.filter((part) =>
+            repairCandidates.includes(part.photoIndex)
+          );
+          const repairContext = buildCoverageRepairContext(
+            analysisContext,
+            multiPhotoCoveragePolicy,
+            coverageRecords,
+            repairCandidates,
+          );
+          const repairOut = await callAIForAnalysis(
+            repairContext,
+            repairParts,
+            multiPhotoCoveragePolicy,
+          );
+          const repairRecords = normalizePhotoFindingCoverage(
+            repairOut.result?.photo_findings,
+            multiPhotoCoveragePolicy,
+          );
+          if (repairRecords) {
+            mergeCoverageRepairRecords(
+              coverageRecords,
+              repairRecords.filter((record) =>
+                repairCandidates.includes(record.photo_index)
+              ),
+              multiPhotoCoveragePolicy,
+            );
+            inputAudit.coverage_repair_used = true;
+            inputAudit.coverage_repair_photo_indices = repairCandidates;
+            inputAudit.coverage_repair_model = repairOut.modelUsed;
+            inputAudit.coverage_repair_provider = "providerUsed" in repairOut
+              ? repairOut.providerUsed
+              : "gemini";
+            inputAudit.coverage_repair_tokens_in = repairOut.inputTokens;
+            inputAudit.coverage_repair_tokens_out = repairOut.outputTokens;
+            inputTokens += repairOut.inputTokens ?? 0;
+            outputTokens += repairOut.outputTokens ?? 0;
+            cachedTokens = (cachedTokens ?? 0) + (repairOut.cachedTokens ?? 0);
+            thoughtsTokens = (thoughtsTokens ?? 0) +
+              (repairOut.thoughtsTokens ?? 0);
+            totalTokens = (totalTokens ?? 0) + (repairOut.totalTokens ?? 0);
+          } else {
+            inputAudit.coverage_repair_fallback_reason =
+              "missing_photo_findings";
+          }
+        } catch (repairError) {
+          inputAudit.coverage_repair_error = safeLogError(repairError);
+          console.warn(
+            "Coverage repair pass failed; continuing with first pass",
+            JSON.stringify({
+              request_id: requestID,
+              support_id: supportID,
+              analysis_id: analysisID,
+              error: safeLogError(repairError),
+            }),
+          );
+        }
+      } else {
+        inputAudit.coverage_repair_used = false;
+      }
+
+      for (const record of coverageRecords) {
+        record.coverage_gap_reason = normalizeCoverageGapReason(
+          record.coverage_status,
+          record.coverage_gap_reason,
+          record.findings.length,
+          multiPhotoCoveragePolicy.targetMin,
+          record.record_missing,
+        );
+      }
+      const coverageHazards = mergeDuplicateCoverageHazards(
+        coverageRecords.flatMap((record) => record.findings),
+        multiPhotoCoveragePolicy.photoCount,
+        multiPhotoCoveragePolicy.totalMax,
+      );
+      geminiResult = {
+        ...geminiResult,
+        hazards: coverageHazards,
+        photo_summaries: buildPhotoSummariesFromCoverage(
+          coverageRecords,
+          multiPhotoCoveragePolicy,
+        ),
+        _coverage_v2: {
+          enabled: true,
+          target_findings_per_photo_min: multiPhotoCoveragePolicy.targetMin,
+          target_findings_per_photo_max: multiPhotoCoveragePolicy.targetMax,
+          target_findings_total_max: multiPhotoCoveragePolicy.totalMax,
+          repair_enabled: multiPhotoCoveragePolicy.repairEnabled,
+          repair_candidate_photo_indices: repairCandidates,
+        },
+      };
+    }
+  }
+
   const rawHazards = Array.isArray(geminiResult.hazards)
     ? geminiResult.hazards
     : [];
@@ -3964,28 +5220,28 @@ serve(async (req: Request) => {
         text_input ?? "",
       )
     )
+    : imageBase64Parts.length > 0
+    ? rawHazards.map((hazard: unknown) =>
+      sanitizePhotoHazardTextFields(
+        hazard && typeof hazard === "object"
+          ? hazard as Record<string, unknown>
+          : {},
+      )
+    )
     : rawHazards;
-  const photoFindingPolicy = imageBase64Parts.length > 0
-    ? {
-      photoCount: imageBase64Parts.length,
-      maxFindingsPerPhoto: photoCapabilities.maxFindingsPerPhoto,
-      maxFindingsTotal: Math.min(
-        photoCapabilities.maxFindingsPerAnalysis,
-        imageBase64Parts.length * photoCapabilities.maxFindingsPerPhoto,
-      ),
-    }
-    : null;
-  const maxHazards = photoFindingPolicy?.maxFindingsTotal ??
+  const maxHazards = analysisFindingPolicy?.maxFindingsTotal ??
     PLAN_LIMITS[qualityTier].maxHazards;
-  const hazards = photoFindingPolicy
+  const hazards = analysisFindingPolicy
     ? enforceFindingBudget(
       reportLanguageSafeHazards,
-      photoFindingPolicy.photoCount,
-      photoFindingPolicy.maxFindingsPerPhoto,
-      photoFindingPolicy.maxFindingsTotal,
+      analysisFindingPolicy.photoCount,
+      analysisFindingPolicy.maxFindingsPerPhoto,
+      analysisFindingPolicy.maxFindingsTotal,
     )
     : maxHazards
-    ? reportLanguageSafeHazards.slice(0, maxHazards) as Array<Record<string, unknown>>
+    ? reportLanguageSafeHazards.slice(0, maxHazards) as Array<
+      Record<string, unknown>
+    >
     : reportLanguageSafeHazards as Array<Record<string, unknown>>;
   const hiddenOrRejectedFindingsCount = Math.max(
     0,
@@ -4037,7 +5293,7 @@ serve(async (req: Request) => {
       ai_original_snapshot: h,
       source_photo_indices: sourcePhotoIndices,
       source_photo_observations: perPhotoObservations,
-      finding_budget_policy: photoFindingPolicy,
+      finding_budget_policy: analysisFindingPolicy,
       ai_confidence: Math.max(0, Math.min(1, h.confidence)),
       fk_probability: fkP,
       fk_frequency: fkF,
@@ -4079,9 +5335,10 @@ serve(async (req: Request) => {
 
   if (imageBase64Parts.length > 0) {
     try {
-      const rawPhotoSummaries: unknown[] = Array.isArray(geminiResult.photo_summaries)
-        ? geminiResult.photo_summaries
-        : [];
+      const rawPhotoSummaries: unknown[] =
+        Array.isArray(geminiResult.photo_summaries)
+          ? geminiResult.photo_summaries
+          : [];
       const { data: photoRows } = await supabase
         .from("photos")
         .select("id,sequence_index,storage_path")
@@ -4091,7 +5348,9 @@ serve(async (req: Request) => {
       for (const row of photoRows ?? []) {
         const sequence = Number(row.sequence_index) ||
           Number(String(row.storage_path ?? "").match(/\/p(\d+)\./)?.[1] ?? 0);
-        if (sequence > 0) photosBySequence.set(sequence, { id: String(row.id) });
+        if (sequence > 0) {
+          photosBySequence.set(sequence, { id: String(row.id) });
+        }
       }
       const summaries = rawPhotoSummaries
         .slice(0, imageBase64Parts.length)
@@ -4099,7 +5358,10 @@ serve(async (req: Request) => {
           if (!item || typeof item !== "object") return null;
           const record = item as Record<string, unknown>;
           const photoIndex = Math.round(Number(record.photo_index));
-          if (!Number.isFinite(photoIndex) || photoIndex < 1 || photoIndex > imageBase64Parts.length) {
+          if (
+            !Number.isFinite(photoIndex) || photoIndex < 1 ||
+            photoIndex > imageBase64Parts.length
+          ) {
             return null;
           }
           return {
@@ -4107,7 +5369,8 @@ serve(async (req: Request) => {
             user_id: user.id,
             photo_id: photosBySequence.get(photoIndex)?.id ?? null,
             photo_sequence_index: photoIndex,
-            scene_summary: safeText(record.scene_summary).slice(0, 1200),
+            scene_summary: stripPhotoMarkerReferences(record.scene_summary)
+              .slice(0, 1200),
             candidate_findings_count: Math.max(
               0,
               Math.round(Number(record.candidate_findings_count ?? 0)),
@@ -4116,11 +5379,31 @@ serve(async (req: Request) => {
               Array.isArray(row.source_photo_indices) &&
               row.source_photo_indices.includes(photoIndex)
             ).length,
-            highest_risk_level: safeText(record.highest_risk_level).slice(0, 40) ||
+            highest_risk_level:
+              safeText(record.highest_risk_level).slice(0, 40) ||
               null,
             ai_confidence: typeof record.ai_confidence === "number"
               ? Math.max(0, Math.min(1, record.ai_confidence))
               : null,
+            coverage_status: safeText(record.coverage_status).slice(0, 40) ||
+              null,
+            coverage_gap_reason:
+              stripPhotoMarkerReferences(record.coverage_gap_reason).slice(
+                0,
+                500,
+              ) || null,
+            target_findings_min: record.target_findings_min == null
+              ? null
+              : Math.max(
+                0,
+                Math.round(Number(record.target_findings_min)),
+              ),
+            target_findings_max: record.target_findings_max == null
+              ? null
+              : Math.max(
+                0,
+                Math.round(Number(record.target_findings_max)),
+              ),
             raw_summary: record,
           };
         })
@@ -4128,7 +5411,9 @@ serve(async (req: Request) => {
       if (summaries.length > 0) {
         await supabase
           .from("analysis_photo_summaries")
-          .upsert(summaries, { onConflict: "analysis_id,photo_sequence_index" });
+          .upsert(summaries, {
+            onConflict: "analysis_id,photo_sequence_index",
+          });
       }
     } catch (summaryError) {
       console.warn(
@@ -4143,6 +5428,10 @@ serve(async (req: Request) => {
     }
   }
 
+  const safeAISummary = imageBase64Parts.length > 0
+    ? stripPhotoMarkerReferences(geminiResult.ai_summary)
+    : geminiResult.ai_summary;
+
   await updateOwnedAnalysis({
     status: "completed",
     status_message: `${
@@ -4151,7 +5440,7 @@ serve(async (req: Request) => {
       text_input ? "metin var" : "metin yok"
     } · ${supportID}`,
     completed_at: new Date().toISOString(),
-    ai_summary: geminiResult.ai_summary,
+    ai_summary: safeAISummary,
     total_score_fk: totalScoreFK,
     total_score_m5: totalScoreM5,
     highest_band_fk: highestBandFK,
@@ -4160,9 +5449,15 @@ serve(async (req: Request) => {
     generated_findings_count: findingRows.length,
     visible_findings_count: findingRows.length,
     hidden_or_rejected_findings_count: hiddenOrRejectedFindingsCount,
-    max_findings_per_photo: photoCapabilities.maxFindingsPerPhoto,
-    max_findings_total: photoFindingPolicy?.maxFindingsTotal ?? maxHazards ?? null,
-    raw_ai_response: { ...geminiResult, _input_audit: inputAudit },
+    max_findings_per_photo: analysisFindingPolicy?.maxFindingsPerPhoto ??
+      photoCapabilities.maxFindingsPerPhoto,
+    max_findings_total: analysisFindingPolicy?.maxFindingsTotal ?? maxHazards ??
+      null,
+    raw_ai_response: {
+      ...geminiResult,
+      ai_summary: safeAISummary,
+      _input_audit: inputAudit,
+    },
     ai_models_used: [modelUsed],
   });
 

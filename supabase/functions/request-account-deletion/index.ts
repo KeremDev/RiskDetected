@@ -211,15 +211,15 @@ serve(async (req) => {
   >;
 
   if (!workerResponse.ok) {
-    return json(202, {
-      ok: true,
+    return json(500, {
+      ok: false,
       completed: false,
       request_id: deletionRequest.id,
       support_id: String(workerBody.support_id ?? supportID),
       worker_status: workerResponse.status,
       worker_error: workerBody.error ?? "worker_failed",
       message:
-        "Hesap silme isteğin alındı. Güvenli silme işlemi kuyruğa alındı; işlem tamamlanmazsa destek koduyla bize ulaş.",
+        "Hesap silme işlemi tamamlanamadı. Lütfen tekrar dene; sorun devam ederse destek koduyla bize ulaş.",
     });
   }
 

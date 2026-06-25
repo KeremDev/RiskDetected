@@ -51,6 +51,9 @@ verify_jwt = true
 [functions.mutate-analysis-finding]
 verify_jwt = true
 
+[functions.app-release-policy]
+verify_jwt = false
+
 [functions.register-report]
 verify_jwt = true
 

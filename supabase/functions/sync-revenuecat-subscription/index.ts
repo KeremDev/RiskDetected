@@ -45,6 +45,13 @@ type SyncRequestBody = {
   expected_entitlement_id?: string | null;
 };
 
+type SubscriptionTestOverride = {
+  id: string;
+  tier: "plus" | "pro";
+  expires_at: string;
+  reason: string | null;
+};
+
 const PUBLIC_REVENUECAT_API_KEY = "appl_mckFFxUrvtNqzjShezjMIrFmItA";
 const ACTIVE_BACKEND_STATUSES = new Set(["active", "trialing", "grace_period"]);
 
@@ -272,6 +279,75 @@ async function writeFreeSubscriptionState(
     .eq("id", userID);
 }
 
+async function activeSubscriptionTestOverride(
+  supabase: ReturnType<typeof createClient<any>>,
+  userID: string,
+): Promise<
+  | { status: "found"; override: SubscriptionTestOverride }
+  | { status: "none" }
+  | { status: "unknown" }
+> {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("subscription_test_overrides")
+    .select("id,tier,expires_at,reason")
+    .eq("user_id", userID)
+    .is("revoked_at", null)
+    .lte("starts_at", now)
+    .gt("expires_at", now)
+    .in("tier", ["plus", "pro"])
+    .order("expires_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.warn(
+      "subscription_test_override_lookup_failed",
+      JSON.stringify({ user_id: userID, error: error.message }),
+    );
+    return { status: "unknown" };
+  }
+
+  if (!data || (data.tier !== "plus" && data.tier !== "pro")) {
+    return { status: "none" };
+  }
+
+  return {
+    status: "found",
+    override: {
+      id: String(data.id),
+      tier: data.tier,
+      expires_at: String(data.expires_at),
+      reason: typeof data.reason === "string" ? data.reason : null,
+    },
+  };
+}
+
+async function writeTestOverrideSubscriptionState(
+  supabase: ReturnType<typeof createClient<any>>,
+  userID: string,
+  override: SubscriptionTestOverride,
+) {
+  await supabase.from("user_subscriptions").upsert({
+    user_id: userID,
+    tier: override.tier,
+    source: "test_override",
+    status: "active",
+    revenuecat_app_user_id: userID,
+    product_id: `test_override_${override.tier}`,
+    entitlement_id: override.tier,
+    entitlement_ids: [override.tier],
+    environment: "test_override",
+    current_period_ends_at: override.expires_at,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+
+  await supabase
+    .from("profiles")
+    .update({ tier: override.tier })
+    .eq("id", userID);
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return json(405, { error: "method_not_allowed" });
@@ -308,6 +384,62 @@ serve(async (req) => {
     return json(401, { error: "auth_invalid" });
   }
 
+  let { data: previousSubscription } = await supabase
+    .from("user_subscriptions")
+    .select(
+      "tier,status,current_period_ends_at,entitlement_id,product_id,source",
+    )
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const testOverride = await activeSubscriptionTestOverride(supabase, user.id);
+  if (testOverride.status === "found") {
+    if (expectedTier && expectedTier !== testOverride.override.tier) {
+      return json(409, {
+        error: "test_override_tier_mismatch",
+        tier: testOverride.override.tier,
+        expected_tier: expectedTier,
+      });
+    }
+
+    await writeTestOverrideSubscriptionState(
+      supabase,
+      user.id,
+      testOverride.override,
+    );
+
+    return json(200, {
+      ok: true,
+      tier: testOverride.override.tier,
+      status: "active",
+      entitlement_id: testOverride.override.tier,
+      product_id: `test_override_${testOverride.override.tier}`,
+      current_period_ends_at: testOverride.override.expires_at,
+      test_override: true,
+      test_override_id: testOverride.override.id,
+      test_override_expires_at: testOverride.override.expires_at,
+    });
+  }
+
+  if (
+    testOverride.status === "none" &&
+    previousSubscription?.source === "test_override"
+  ) {
+    await writeFreeSubscriptionState(
+      supabase,
+      user.id,
+      "test_override_expired",
+    );
+    previousSubscription = {
+      tier: "free",
+      status: "inactive",
+      current_period_ends_at: null,
+      entitlement_id: null,
+      product_id: null,
+      source: "test_override_expired",
+    };
+  }
+
   const revenueCatResponse = await fetch(
     `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(user.id)}`,
     {
@@ -336,11 +468,6 @@ serve(async (req) => {
   const resolved = subscriptionTier(subscriptions) ??
     entitlementTier(entitlements);
 
-  const { data: previousSubscription } = await supabase
-    .from("user_subscriptions")
-    .select("tier,status,current_period_ends_at,entitlement_id,product_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
   const previousTier = normalizeTier(previousSubscription?.tier);
   const previousStatus = typeof previousSubscription?.status === "string"
     ? previousSubscription.status

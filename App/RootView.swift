@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RootView: View {
+    @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var app: AppState
     @EnvironmentObject private var network: NetworkMonitor
@@ -73,17 +74,44 @@ struct RootView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .zIndex(210)
             }
+
+            if case let .soft(policy) = app.releaseUpdateRequirement {
+                AppReleaseSoftUpdateBanner(
+                    policy: policy,
+                    onUpdate: { openURL(policy.appStoreURL) },
+                    onDismiss: { app.dismissSoftReleaseNotice() }
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, softUpdateTopPadding)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(240)
+            }
+
+            if case let .hard(policy) = app.releaseUpdateRequirement {
+                AppReleaseRequiredView(
+                    policy: policy,
+                    currentVersion: AppClientMetadata.appVersion,
+                    currentBuild: AppClientMetadata.appBuild,
+                    onUpdate: { openURL(policy.appStoreURL) }
+                )
+                .transition(.opacity)
+                .zIndex(1000)
+            }
         }
         .modifier(RootFlowAnimationModifier(flow: app.flow, isOnline: network.isOnline))
         .task {
             await refreshLegalDocuments()
+            await app.refreshReleasePolicy()
         }
         .onChange(of: app.flow) { _ in
             Task { await refreshLegalDocuments() }
         }
         .onChange(of: scenePhase) { phase in
             if phase == .active {
-                Task { await refreshLegalDocuments() }
+                Task {
+                    await refreshLegalDocuments()
+                    await app.refreshReleasePolicy()
+                }
             }
         }
         .sheet(item: $selectedLegalDocument) { kind in
@@ -140,6 +168,17 @@ struct RootView: View {
         case .auth: return "auth"
         case .main: return "main"
         }
+    }
+
+    private var softUpdateTopPadding: CGFloat {
+        var padding: CGFloat = 10
+        if app.flow != .splash && !network.isOnline {
+            padding += 54
+        }
+        if legalDocuments.pendingBanner != nil && app.flow == .main {
+            padding += 54
+        }
+        return padding
     }
 
     private static var isUITestLaunch: Bool {
@@ -314,6 +353,137 @@ private struct LegalUpdateBanner: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .shadow(color: Color.rdOnyx.opacity(0.12), radius: 14, x: 0, y: 8)
         .accessibilityIdentifier("legal.update.banner")
+    }
+}
+
+private struct AppReleaseSoftUpdateBanner: View {
+    let policy: AppReleasePolicy
+    let onUpdate: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.down.app.fill")
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdPlanPlusDark)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Yeni sürüm hazır")
+                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text(policy.displayMessage)
+                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdCharcoal)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+
+            Button("Güncelle", action: onUpdate)
+                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdPlanPlusDark)
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("app_release.soft_update.update")
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Daha sonra")
+            .accessibilityIdentifier("app_release.soft_update.dismiss")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.rdPlanPlusSoft)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.rdPlanPlus.opacity(0.45), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: Color.rdPlanPlus.opacity(0.16), radius: 14, x: 0, y: 8)
+        .accessibilityIdentifier("app_release.soft_update")
+    }
+}
+
+private struct AppReleaseRequiredView: View {
+    let policy: AppReleasePolicy
+    let currentVersion: String
+    let currentBuild: String
+    let onUpdate: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.rdPaper.ignoresSafeArea()
+
+            VStack(spacing: 22) {
+                Spacer(minLength: 0)
+
+                VStack(spacing: 14) {
+                    Image(systemName: "arrow.down.app.fill")
+                        .font(.system(size: RDFontScale.size(34), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdPlanPlusDark)
+                        .frame(width: 76, height: 76)
+                        .background(Color.rdPlanPlusSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 22))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22)
+                                .stroke(Color.rdPlanPlus.opacity(0.36), lineWidth: 1)
+                        )
+
+                    Text("Güncelleme gerekli")
+                        .font(.system(size: RDFontScale.size(27), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .multilineTextAlignment(.center)
+
+                    Text(policy.displayMessage)
+                        .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdCharcoal)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                HStack(spacing: 8) {
+                    Text("Mevcut sürüm")
+                        .foregroundStyle(Color.rdSlate)
+                    Text("\(currentVersion) (\(currentBuild))")
+                        .foregroundStyle(Color.rdBlack)
+                }
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                .padding(.horizontal, 14)
+                .frame(height: 40)
+                .background(Color.rdWhite)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 13)
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 13))
+
+                Button(action: onUpdate) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "arrow.up.forward.app.fill")
+                        Text("App Store'da güncelle")
+                    }
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .background(Color.rdOnyx)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: Color.rdOnyx.opacity(0.18), radius: 18, x: 0, y: 10)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("app_release.hard_update.button")
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 34)
+        }
+        .accessibilityIdentifier("app_release.hard_update")
     }
 }
 

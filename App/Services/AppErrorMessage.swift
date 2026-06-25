@@ -530,6 +530,8 @@ struct AppErrorMessage: Equatable {
             )
         case .aiFailed(let message):
             return make(rawMessage: message, context: context ?? "AI analizi tamamlanamadı", fallbackTitle: "AI analizi tamamlanamadı")
+        case .networkFailed(let message):
+            return make(rawMessage: message, context: context ?? "Analiz isteği gönderilemedi", fallbackTitle: "Analiz isteği gönderilemedi")
         case .storageFailed(let message):
             return make(rawMessage: message, context: context ?? "Dosya işlemi tamamlanamadı", fallbackTitle: "Dosya işlemi tamamlanamadı")
         case .databaseFailed(let message):

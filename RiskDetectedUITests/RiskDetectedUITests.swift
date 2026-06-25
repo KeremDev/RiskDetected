@@ -58,6 +58,8 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Geri yükle").exists)
         XCTAssertTrue(waitFor("Kullanım Şartları").exists)
         XCTAssertTrue(waitFor("Gizlilik Politikası").exists)
+        XCTAssertTrue(waitFor("Firma Yönetimi").exists)
+        XCTAssertTrue(waitFor("Çoklu Fotoğraf Analizi").exists)
 
         tap("Kullanım Şartları")
         XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 4).exists)
@@ -184,7 +186,7 @@ final class RiskDetectedUITests: XCTestCase {
         launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_OPEN_PHOTO_TRAY"])
 
         XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
-        XCTAssertTrue(waitFor("Plus / Pro").exists)
+        XCTAssertTrue(waitFor("Çoklu fotoğraf özelliği için hesabınızı yükseltin").exists)
         tap("home.photo_slot.2")
         XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
     }
@@ -214,6 +216,57 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Analize geç").exists)
     }
 
+    func testAnalyzingProgressOverlayRendersWithPercentAndSteps() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_ANALYZING"])
+
+        XCTAssertTrue(waitFor("analysis.loading", timeout: 10).exists)
+        XCTAssertTrue(waitFor("analysis.progress.percent", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Görüntü kalitesi okunuyor").exists)
+        XCTAssertTrue(waitFor("Bulgular yapılandırılıyor").exists)
+        XCTAssertFalse(app.staticTexts["Netlik ve görüntü okunabilirliği kontrol ediliyor"].waitForExistence(timeout: 0.5))
+        XCTAssertTrue(waitFor("5 fotoğraf").exists)
+        XCTAssertFalse(app.staticTexts["100"].waitForExistence(timeout: 0.5))
+        XCTAssertTrue(waitFor("Bağlantı tekrar deneniyor", timeout: 6).exists)
+    }
+
+    func testAnalyzingProgressCompletesIntoResult() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_ANALYZING_COMPLETES"])
+
+        XCTAssertTrue(waitFor("analysis.loading", timeout: 10).exists)
+        XCTAssertTrue(waitFor("analysis.progress.percent", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Sonuç hazırlanıyor", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 12).exists)
+    }
+
+    func testE2ERealFivePhotoAnalysisCompletes() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["RD_E2E_REAL_5_PHOTO_ANALYSIS"] == "1" else {
+            throw XCTSkip("Set RD_E2E_REAL_5_PHOTO_ANALYSIS=1 to run the real Supabase 5-photo analysis gate.")
+        }
+        let email = environment["RD_E2E_EMAIL"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let password = environment["RD_E2E_PASSWORD"] ?? ""
+        guard !email.isEmpty, !password.isEmpty else {
+            throw XCTSkip("RD_E2E_EMAIL and RD_E2E_PASSWORD are required for the real Supabase E2E gate.")
+        }
+
+        app = XCUIApplication()
+        app.launchArguments = [
+            "RD_E2E_REAL_5_PHOTO_ANALYSIS",
+            "-UIViewAnimationEnabled", "NO",
+            "-ApplePersistenceIgnoreState", "YES",
+        ]
+        app.launchEnvironment["RD_E2E_REAL_5_PHOTO_ANALYSIS"] = "1"
+        app.launchEnvironment["RD_E2E_EMAIL"] = email
+        app.launchEnvironment["RD_E2E_PASSWORD"] = password
+        launchPreparedApp()
+
+        XCTAssertTrue(waitFor("analysis.loading", timeout: 75).exists)
+        XCTAssertTrue(waitFor("analysis.progress.percent", timeout: 8).exists)
+        XCTAssertTrue(waitFor("5 fotoğraf", timeout: 8).exists)
+        XCTAssertFalse(app.staticTexts["100"].waitForExistence(timeout: 0.5))
+        XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 420).exists)
+    }
+
     func testAnnotateFromPhotoTrayUsesSaveCopy() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"])
 
@@ -235,6 +288,23 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Bu bulgu yeni raporlara dahil edilmeyecek. Eski rapor snapshotları ve audit kaydı korunur.", timeout: 4).exists)
         tap("Vazgeç", timeout: 4)
         XCTAssertFalse(exists("Bulgu silinsin mi?", timeout: 1))
+    }
+
+    func testFindingEditorSheetRendersCompactControls() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT", "RD_UI_TEST_OPEN_FINDING_EDITOR"])
+
+        XCTAssertTrue(waitFor("Bulguyu Düzenle", timeout: 10).exists)
+        XCTAssertTrue(waitFor("Tolerans dışı").exists)
+        XCTAssertTrue(waitFor("finding_editor.fk_probability").exists)
+        XCTAssertTrue(waitFor("finding_editor.fk_frequency").exists)
+        XCTAssertTrue(waitFor("finding_editor.fk_severity").exists)
+        XCTAssertTrue(waitFor("finding_editor.m5_probability").exists)
+        XCTAssertTrue(waitFor("finding_editor.m5_severity").exists)
+        XCTAssertTrue(waitFor("Düzeltici önlem").exists)
+        XCTAssertTrue(waitFor("Önleyici kontrol").exists)
+        XCTAssertTrue(waitFor("finding_editor.delete").exists)
+        XCTAssertTrue(waitFor("finding_editor.cancel").exists)
+        XCTAssertTrue(waitFor("finding_editor.save").exists)
     }
 
     func testProfileDarkModePreferencesCanSwitchTheme() throws {
@@ -259,9 +329,10 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 15).exists)
         XCTAssertFalse(app.staticTexts["₺199,99"].exists)
         XCTAssertFalse(app.staticTexts["₺1.999,99"].exists)
-        let companyTracking = waitFor("Firma takibi")
+        XCTAssertTrue(waitFor("Firma yönetimi").exists)
+        let multiPhotoAnalysis = waitFor("Çoklu Fotoğraf Analizi")
         let plusCTA = waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12)
-        XCTAssertLessThan(companyTracking.frame.maxY, plusCTA.frame.minY)
+        XCTAssertLessThan(multiPhotoAnalysis.frame.maxY, plusCTA.frame.minY)
 
         tap("Şartlar")
         XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 4).exists)
@@ -481,6 +552,25 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Hesabımı sil / Delete Account").exists)
     }
 
+    func testHardUpdatePolicyBlocksAppWithUpdateCTA() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FORCE_HARD_UPDATE"])
+
+        XCTAssertTrue(waitFor("app_release.hard_update", timeout: 10).exists)
+        XCTAssertTrue(waitFor("Güncelleme gerekli").exists)
+        XCTAssertTrue(waitFor("Yeni sürüm mevcut. Devam etmek için uygulamayı güncelleyin.").exists)
+        XCTAssertTrue(waitFor("App Store'da güncelle").exists)
+    }
+
+    func testSoftUpdatePolicyCanBeDismissed() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FORCE_SOFT_UPDATE"])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        XCTAssertTrue(waitFor("app_release.soft_update", timeout: 10).exists)
+        XCTAssertTrue(waitFor("Yeni sürüm hazır").exists)
+        tap("Daha sonra")
+        XCTAssertFalse(exists("app_release.soft_update", timeout: 2))
+    }
+
     func testActiveAnalysisSectorPickerRequiresSelectionBeforeCanvas() throws {
         launchMainApp()
 
@@ -576,6 +666,9 @@ final class RiskDetectedUITests: XCTestCase {
         app.launchEnvironment["RD_UI_TEST_MAIN"] = "1"
         app.launchEnvironment["RD_UI_TEST_COMPANY_FIXTURES"] = "1"
         app.launchEnvironment["RD_UI_TEST_REPORT_FIXTURES"] = "1"
+        for argument in extraArguments where argument.hasPrefix("RD_UI_TEST_") {
+            app.launchEnvironment[argument] = "1"
+        }
         if extraArguments.contains("RD_UI_TEST_DARK_MODE") {
             app.launchEnvironment["RD_UI_TEST_DARK_MODE"] = "1"
         }

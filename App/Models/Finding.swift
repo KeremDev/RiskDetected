@@ -267,6 +267,10 @@ extension Finding {
                 confidence: 0.94,
                 description: "İşçi 3 metre üzerinde çalışıyor; paraşüt tipi emniyet kemeri ve sabitleme noktası görünmüyor.",
                 action: "Çalışmayı derhal durdur. Uygun emniyet kemeri ve çift kancalı lanyard temin et. Sertifikalı sabitleme noktası belirle.",
+                measures: [
+                    FindingMeasure(kind: .corrective, title: "Düzeltici Önlem", text: "Çalışmayı derhal durdur. Uygun emniyet kemeri ve çift kancalı lanyard temin et. Sertifikalı sabitleme noktası belirle."),
+                    FindingMeasure(kind: .preventive, title: "Önleyici Kontrol", text: "Yüksekte çalışma izin formuna ankraj ve KKD kontrol adımı ekle; vardiya başlangıcında saha sorumlusu doğrulaması iste.")
+                ],
                 references: "6331/4857 · ÇSGB Yüksekte Çalışma",
                 rootCause: "Yüksekte çalışma alanında toplu koruma ve ankraj planı eksik.",
                 fk: FineKinneyParams(probability: 6, frequency: 6, severity: 40),
@@ -277,6 +281,10 @@ extension Finding {
                 confidence: 0.88,
                 description: "Forklift trafiğinin olduğu alanda iki çalışanda yüksek görünürlüklü yelek bulunmuyor.",
                 action: "Tüm çalışanlara EN ISO 20471 sınıf 2 yelek dağıt. Vardiya başında KKD kontrol formu işlet.",
+                measures: [
+                    FindingMeasure(kind: .corrective, title: "Düzeltici Önlem", text: "Forklift trafiği olan alandaki çalışanlara EN ISO 20471 sınıf 2 reflektif yelek ver ve kullanımı hemen başlat."),
+                    FindingMeasure(kind: .preventive, title: "Önleyici Kontrol", text: "Vardiya girişinde KKD kontrol listesini işlet; yelek uygunluğunu saha turunda sorumlu kişi tarafından doğrulat.")
+                ],
                 references: "EN ISO 20471",
                 rootCause: "KKD dağıtımı ve vardiya başlangıç kontrolü düzenli işletilmiyor.",
                 fk: FineKinneyParams(probability: 3, frequency: 6, severity: 15),
@@ -287,6 +295,10 @@ extension Finding {
                 confidence: 0.81,
                 description: "Yangın çıkış güzergâhı üzerinde geçici olarak istiflenmiş paletler tespit edildi.",
                 action: "Paletleri 24 saat içinde belirlenmiş depolama alanına taşı. Geçiş yolunu sarı şerit ile işaretle.",
+                measures: [
+                    FindingMeasure(kind: .corrective, title: "Düzeltici Önlem", text: "Paletleri belirlenmiş depolama alanına taşı ve yangın çıkış güzergahını hemen boşalt."),
+                    FindingMeasure(kind: .preventive, title: "Önleyici Kontrol", text: "Geçiş yolu kontrolünü günlük 5S/saha turu listesine ekle; geçici istif sorumluluğunu vardiya bazında ata.")
+                ],
                 references: "İSG-PRO-12",
                 rootCause: "Geçici istif alanı ve sorumluluk düzeni net tanımlanmamış.",
                 fk: FineKinneyParams(probability: 3, frequency: 3, severity: 15),
@@ -297,6 +309,10 @@ extension Finding {
                 confidence: 0.72,
                 description: "Çalışma alanının arka kısmında 200 lüks altında ışık seviyesi gözleniyor; net algı düşük.",
                 action: "Geçici LED projektör yerleştir. Kalıcı aydınlatma planı için elektrik ekibine bildir.",
+                measures: [
+                    FindingMeasure(kind: .corrective, title: "Düzeltici Önlem", text: "Çalışma alanına geçici LED projektör yerleştir ve düşük aydınlatmalı bölgede işi güvenli seviyeye gelene kadar sınırla."),
+                    FindingMeasure(kind: .preventive, title: "Önleyici Kontrol", text: "Aydınlatma ölçümünü periyodik kontrol planına ekle; saha değişikliklerinde elektrik ekibine kontrol tetikleyicisi tanımla.")
+                ],
                 references: "EN 12464-1",
                 rootCause: "Aydınlatma periyodik kontrolü ve saha değişiklikleri birlikte yönetilmiyor.",
                 fk: FineKinneyParams(probability: 3, frequency: 6, severity: 7),
@@ -307,6 +323,10 @@ extension Finding {
                 confidence: 0.66,
                 description: "Elektrik panosu yanındaki \"Yüksek Gerilim\" tabelasının okunabilirliği düşmüş.",
                 action: "Tabelayı 1 hafta içinde yenisiyle değiştir. Periyodik kontrol planına ekle.",
+                measures: [
+                    FindingMeasure(kind: .corrective, title: "Düzeltici Önlem", text: "Okunabilirliği düşen yüksek gerilim tabelasını yenisiyle değiştir ve pano çevresindeki uyarıyı görünür hale getir."),
+                    FindingMeasure(kind: .preventive, title: "Önleyici Kontrol", text: "Saha işaretleri için aylık görünürlük kontrolü tanımla; solmuş veya hasarlı tabela değişimini kayıt altına al.")
+                ],
                 references: "TS EN 7010",
                 rootCause: "Saha işaretleri için düzenli görünürlük kontrolü yapılmıyor.",
                 fk: FineKinneyParams(probability: 1, frequency: 6, severity: 7),

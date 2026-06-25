@@ -54,10 +54,10 @@ struct OBTimelinePaywallView: View {
             Color.rdPaper.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
+                VStack(spacing: 15) {
                     banner
-                        .padding(.top, 54)
-                        .padding(.bottom, 10)
+                        .padding(.top, 48)
+                        .padding(.bottom, 6)
                         .obStage(delay: 0.02)
 
                     planToggle
@@ -112,7 +112,7 @@ struct OBTimelinePaywallView: View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(paywallTitle)
-                    .font(.system(size: RDFontScale.size(33), weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(30), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineSpacing(1)
                     .fixedSize(horizontal: false, vertical: true)
@@ -439,7 +439,8 @@ struct OBTimelinePaywallView: View {
             TimelineFeatureItem("Risk Analizi (Fine-Kinney ve 5*5)"),
             TimelineFeatureItem("PDF/Excel Rapor"),
             TimelineFeatureItem("Firma Yönetimi"),
-            TimelineFeatureItem("Sektör Bazlı Analiz", badge: "Yeni")
+            TimelineFeatureItem("Çoklu Fotoğraf Analizi", badge: "Yeni"),
+            TimelineFeatureItem("Sektör Bazlı Analiz")
         ]
     }
 
@@ -471,7 +472,7 @@ struct OBTimelinePaywallView: View {
                 isLast: true
             )
         }
-        .padding(16)
+        .padding(14)
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
@@ -501,7 +502,7 @@ struct OBTimelinePaywallView: View {
                 isLast: true
             )
         }
-        .padding(16)
+        .padding(14)
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
@@ -559,7 +560,7 @@ struct OBTimelinePaywallView: View {
         featureItems: [TimelineFeatureItem] = [],
         isLast: Bool
     ) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 13) {
             VStack(spacing: 0) {
                 ZStack {
                     Circle()
@@ -581,34 +582,34 @@ struct OBTimelinePaywallView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(day)
                     .font(.system(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
                 if !detail.isEmpty {
                     Text(detail)
-                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12.2), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if !featureItems.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 4) {
                         ForEach(featureItems, id: \.self) { item in
-                            HStack(spacing: 7) {
+                            HStack(spacing: 6) {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: RDFontScale.size(12), weight: .bold))
+                                    .font(.system(size: RDFontScale.size(11), weight: .bold))
                                     .foregroundStyle(Color.rdGreen)
                                 Text(item.title)
-                                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
+                                    .font(.system(size: RDFontScale.size(11.4), weight: .semibold, design: .rounded))
                                     .foregroundStyle(Color.rdBlack)
                                     .fixedSize(horizontal: false, vertical: true)
                                 if let badge = item.badge {
                                     Text(badge)
-                                        .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
+                                        .font(.system(size: RDFontScale.size(8.2), weight: .bold, design: .rounded))
                                         .foregroundStyle(Color.rdGreen)
                                         .padding(.horizontal, 5)
-                                        .padding(.vertical, 2)
+                                        .padding(.vertical, 1.5)
                                         .background(Color.rdGreen.opacity(0.10))
                                         .clipShape(Capsule())
                                         .overlay(
@@ -619,11 +620,11 @@ struct OBTimelinePaywallView: View {
                             }
                         }
                     }
-                    .padding(.top, 6)
+                    .padding(.top, 4)
                 }
             }
             .padding(.top, 4)
-            .padding(.bottom, isLast ? 0 : 12)
+            .padding(.bottom, isLast ? 0 : 10)
         }
         .obStage(delay: 0.24 + Double(index) * 0.08)
         .onAppear { startTimelineFlow() }
@@ -631,7 +632,7 @@ struct OBTimelinePaywallView: View {
 
     private func timelineConnectorHeight(featureItemCount: Int) -> CGFloat {
         guard featureItemCount > 0 else { return 50 }
-        return 108 + CGFloat(max(0, featureItemCount - 3)) * 23
+        return 102 + CGFloat(max(0, featureItemCount - 3)) * 19
     }
 
     private func timelineConnector(accent: Color, height: CGFloat) -> some View {

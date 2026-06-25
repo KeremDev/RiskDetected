@@ -1,5 +1,6 @@
--- Multi-photo analysis, editable findings, and report snapshots.
--- All changes are additive/backward-compatible for existing app builds.
+-- Expand-only migration for multi-photo analysis, editable findings, and report snapshots.
+-- This migration is intentionally backward-compatible with build 62:
+-- no column drops/renames, no trigger replacement, and no large backfill.
 
 create table if not exists public.plan_capability_rules (
   plan text primary key check (plan in ('free', 'plus', 'pro')),
@@ -62,6 +63,20 @@ create policy app_feature_flags_select_authenticated
 
 insert into public.app_feature_flags (key, value) values
   ('multi_photo_analysis', jsonb_build_object(
+    'kill_switch', true,
+    'rollout_mode', 'build_allowlist',
+    'enabled_ios_builds', jsonb_build_array('63', '64', '65', '66'),
+    'min_ios_build', null,
+    'features', jsonb_build_object(
+      'multi_photo_analysis', true,
+      'photo_limit_locked_slots_for_free', true,
+      'plus_pro_5_photo_limit', true,
+      'editable_findings', true,
+      'manual_finding_add', false,
+      'report_snapshot_v2', true
+    ),
+    -- Keep legacy flat flags false so pre-gate backend code cannot enable
+    -- the feature for build 62 during a deploy window.
     'enable_multi_photo_analysis', false,
     'enable_photo_limit_locked_slots_for_free', false,
     'enable_plus_pro_5_photo_limit', false,
@@ -72,6 +87,16 @@ insert into public.app_feature_flags (key, value) values
     'max_photo_count_plus', 5,
     'max_photo_count_pro', 5,
     'max_findings_per_photo', 12
+  )),
+  ('ios_release_policy', jsonb_build_object(
+    'minimum_supported_build', 62,
+    'latest_build', 66,
+    'hard_update_enabled', false,
+    'soft_update_enabled', true,
+    'app_store_url', 'https://apps.apple.com/tr/app/riskdetected-i-sg-risk-analizi/id6769498181',
+    'message_tr', 'Yeni sürüm mevcut. Devam etmek için uygulamayı güncelleyin.',
+    'message_en', 'A new version is available. Please update the app to continue.',
+    'policy_version', 'build-66-testflight'
   ))
 on conflict (key) do update set
   value = excluded.value,
@@ -107,10 +132,6 @@ alter table public.photos
   add column if not exists upload_payload_version text not null default 'photo-single-v1',
   add column if not exists compression_metadata jsonb not null default '{}'::jsonb,
   add column if not exists ai_scene_summary text;
-
-update public.photos
-set byte_size = coalesce(byte_size, size_bytes)
-where byte_size is null;
 
 create unique index if not exists photos_analysis_sequence_unique
   on public.photos(analysis_id, sequence_index)
@@ -291,23 +312,13 @@ $function$;
 revoke all on function public.recalc_analysis_rollup(uuid) from public, anon, authenticated;
 grant execute on function public.recalc_analysis_rollup(uuid) to service_role;
 
-create or replace function public.tg_recalc_finding_count()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $function$
-begin
-  perform public.recalc_analysis_rollup(coalesce(new.analysis_id, old.analysis_id));
-  return null;
-end
-$function$;
-
-drop trigger if exists findings_after_change on public.findings;
-create trigger findings_after_change
-  after insert or delete on public.findings
-  for each row execute function public.tg_recalc_finding_count();
+-- Do not replace public.findings_after_change in the expand phase.
+-- The editable finding endpoint calls recalc_analysis_rollup explicitly.
+-- Any trigger switch belongs to a later activate migration after App Review.
 
 grant select on public.plan_capability_rules to authenticated;
 grant select on public.app_feature_flags to authenticated;
 grant select on public.analysis_photo_summaries to authenticated;
+grant select on public.plan_capability_rules to service_role;
+grant select on public.app_feature_flags to service_role;
+grant select, insert, update, delete on public.analysis_photo_summaries to service_role;

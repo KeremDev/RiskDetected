@@ -51,7 +51,10 @@ final class NotificationService: NSObject, ObservableObject {
         guard !Self.isUITestLaunch else { return }
         #endif
         UNUserNotificationCenter.current().delegate = self
-        Task { await refreshSettings() }
+        Task {
+            await refreshSettings()
+            syncCurrentTokenIfPossible()
+        }
     }
 
     func refreshSettings() async {
@@ -195,9 +198,15 @@ final class NotificationService: NSObject, ObservableObject {
     }
 
     func syncCurrentTokenIfPossible() {
-        guard authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral else {
+        guard supabase.currentUserID != nil else {
+            Self.logger.info("Push token sync skipped reason=no_user")
             return
         }
+        guard authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral else {
+            Self.logger.info("Push token sync skipped reason=not_authorized status=\(self.authorizationStatus.rawValue, privacy: .public)")
+            return
+        }
+        Self.logger.info("Push token sync requested")
         UIApplication.shared.registerForRemoteNotifications()
     }
 
@@ -207,7 +216,10 @@ final class NotificationService: NSObject, ObservableObject {
             lastDeviceToken = token
             do {
                 try await saveDeviceToken(token)
-                try await setPreference(enabled: true)
+                if notificationPreferences?.enabled != false {
+                    try await setPreference(enabled: true)
+                }
+                Self.logger.info("Device token saved environment=\(PushEnvironment.current, privacy: .public)")
                 isRegistering = false
             } catch {
                 Self.logger.error("Device token save failed error=\(error.localizedDescription, privacy: .public)")
@@ -227,6 +239,7 @@ final class NotificationService: NSObject, ObservableObject {
 
     private func saveDeviceToken(_ token: String) async throws {
         guard let userID = supabase.currentUserID else { return }
+        let preferenceAllowsNotifications = notificationPreferences?.enabled ?? true
         let payload = PushDeviceTokenPayload(
             userID: userID.uuidString,
             token: token,
@@ -234,7 +247,8 @@ final class NotificationService: NSObject, ObservableObject {
             environment: PushEnvironment.current,
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
             deviceModel: UIDevice.current.model,
-            notificationsEnabled: true
+            notificationsEnabled: preferenceAllowsNotifications,
+            lastRegisteredAt: ISO8601DateFormatter().string(from: Date())
         )
 
         try await supabase.client
@@ -426,6 +440,7 @@ private struct PushDeviceTokenPayload: Encodable {
     let appVersion: String?
     let deviceModel: String
     let notificationsEnabled: Bool
+    let lastRegisteredAt: String
 
     enum CodingKeys: String, CodingKey {
         case userID = "user_id"
@@ -435,6 +450,7 @@ private struct PushDeviceTokenPayload: Encodable {
         case appVersion = "app_version"
         case deviceModel = "device_model"
         case notificationsEnabled = "notifications_enabled"
+        case lastRegisteredAt = "last_registered_at"
     }
 }
 

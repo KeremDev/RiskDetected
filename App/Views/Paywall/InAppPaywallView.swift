@@ -142,8 +142,8 @@ struct InAppPaywallView: View {
         VStack(alignment: .leading, spacing: 0) {
             ProductBadge(screen: .plus)
                 .padding(.horizontal, 20)
-                .padding(.top, 46)
-                .padding(.bottom, 8)
+                .padding(.top, 40)
+                .padding(.bottom, 6)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(plusBilling == .yearly ? "İlk haftanız bizden." : "Plus’a abone olun.")
@@ -161,7 +161,7 @@ struct InAppPaywallView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 2)
-            .padding(.bottom, 10)
+            .padding(.bottom, 8)
 
             billingToggle(for: .plus)
 
@@ -181,7 +181,7 @@ struct InAppPaywallView: View {
             PlusComparison(onPro: {
                 switchTo(.pro)
             })
-            .padding(.top, 10)
+            .padding(.top, 6)
         }
     }
 
@@ -1141,7 +1141,8 @@ private struct PlusComparison: View {
         PlusComparisonFeature(label: "Risk Analizi", free: .notIncluded, plus: .included, badge: nil),
         PlusComparisonFeature(label: "Detaylı analiz", free: .notIncluded, plus: .included, badge: nil),
         PlusComparisonFeature(label: "Derin Araştırma", free: .notIncluded, plus: .included, badge: nil),
-        PlusComparisonFeature(label: "Firma takibi", free: .notIncluded, plus: .included, badge: "YENİ")
+        PlusComparisonFeature(label: "Firma yönetimi", free: .notIncluded, plus: .included, badge: nil),
+        PlusComparisonFeature(label: "Çoklu Fotoğraf Analizi", free: .notIncluded, plus: .included, badge: "YENİ")
     ]
 
     var body: some View {
@@ -1235,24 +1236,24 @@ private struct PlusComparison: View {
             }
             .frame(width: 64)
         }
-        .frame(height: 36)
+        .frame(height: 34)
     }
 
     private func comparisonRow(_ feature: PlusComparisonFeature) -> some View {
         HStack(spacing: 8) {
             HStack(spacing: 6) {
                 Text(feature.label)
-                    .font(.system(size: RDFontScale.size(12.2), weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.5), weight: .medium, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.graphite)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.78)
+                    .minimumScaleFactor(0.72)
 
                 if let badge = feature.badge {
                     Text(badge)
-                        .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(8), weight: .black, design: .rounded))
                         .foregroundStyle(Color.white)
-                        .padding(.horizontal, 5)
-                        .frame(height: 11)
+                        .padding(.horizontal, 4)
+                        .frame(height: 12)
                         .background(InAppPaywallColor.onyx)
                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
@@ -1265,7 +1266,7 @@ private struct PlusComparison: View {
             ComparisonCell(value: feature.plus, isPlus: true)
                 .frame(width: 64)
         }
-        .frame(height: 30)
+        .frame(height: 27)
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(InAppPaywallColor.line)

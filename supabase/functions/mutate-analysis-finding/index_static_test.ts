@@ -33,6 +33,42 @@ Deno.test("mutate-analysis-finding checks analysis update and rollup errors", as
   assertStringIncludes(source, "rollup:${rollupError.message}");
 });
 
+Deno.test("mutate-analysis-finding lets generated score columns recalculate", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(
+    source,
+    "const fkScore = resolvedFkP * resolvedFkF * resolvedFkS;",
+  );
+  assertStringIncludes(source, "update.fk_band = fkBand(fkScore);");
+  assertStringIncludes(
+    source,
+    "const m5Score = resolvedM5P * resolvedM5S;",
+  );
+  assertStringIncludes(source, "update.m5_band = m5Band(m5Score);");
+  assertStringIncludes(source, "function withDerivedRiskSnapshot");
+  assertStringIncludes(source, "snapshot.fk_score = score;");
+  assertStringIncludes(source, "snapshot.m5_score = score;");
+});
+
+Deno.test("mutate-analysis-finding hard delete removes row after audit", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, 'event_type: "hard_delete"');
+  assertStringIncludes(source, 'changed_fields: ["__deleted__"]');
+  assertStringIncludes(source, '.from("findings")');
+  assertStringIncludes(source, ".delete()");
+  assertStringIncludes(source, '.eq("id", findingID)');
+  assertStringIncludes(source, '.eq("analysis_id", analysisID)');
+  assertStringIncludes(source, '.eq("user_id", user.id)');
+});
+
 Deno.test("finding edit audit table grants service_role access explicitly", async () => {
   const migration = await readTextIfAllowed(
     new URL(
@@ -46,5 +82,25 @@ Deno.test("finding edit audit table grants service_role access explicitly", asyn
   assertStringIncludes(
     normalizedSQL,
     "grant select, insert on table public.finding_edit_events to service_role",
+  );
+});
+
+Deno.test("finding edits require build gated API contract", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, "type ClientReleaseContext");
+  assertStringIncludes(source, "function clientReleaseContext");
+  assertStringIncludes(source, "function editableReleaseGateOpen");
+  assertStringIncludes(source, "client.apiContractVersion < 2");
+  assertStringIncludes(
+    source,
+    "client.capabilities.editable_findings !== true",
+  );
+  assertStringIncludes(
+    source,
+    "editableFindingsEnabled(supabase, clientRelease)",
   );
 });

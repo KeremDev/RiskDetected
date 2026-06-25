@@ -122,6 +122,11 @@ private struct BackendPlanCapabilityRuleRow: Decodable {
 }
 
 private struct BackendMultiPhotoFlags: Decodable {
+    let killSwitch: Bool?
+    let rolloutMode: String?
+    let enabledIOSBuilds: [String]?
+    let minIOSBuild: Int?
+    let features: BackendFeatureFlags?
     let enableMultiPhotoAnalysis: Bool?
     let enablePhotoLimitLockedSlotsForFree: Bool?
     let enablePlusPro5PhotoLimit: Bool?
@@ -133,6 +138,11 @@ private struct BackendMultiPhotoFlags: Decodable {
     let maxFindingsPerPhoto: Int?
 
     enum CodingKeys: String, CodingKey {
+        case killSwitch = "kill_switch"
+        case rolloutMode = "rollout_mode"
+        case enabledIOSBuilds = "enabled_ios_builds"
+        case minIOSBuild = "min_ios_build"
+        case features
         case enableMultiPhotoAnalysis = "enable_multi_photo_analysis"
         case enablePhotoLimitLockedSlotsForFree = "enable_photo_limit_locked_slots_for_free"
         case enablePlusPro5PhotoLimit = "enable_plus_pro_5_photo_limit"
@@ -145,8 +155,157 @@ private struct BackendMultiPhotoFlags: Decodable {
     }
 }
 
+private struct BackendFeatureFlags: Decodable {
+    let multiPhotoAnalysis: Bool?
+    let photoLimitLockedSlotsForFree: Bool?
+    let plusPro5PhotoLimit: Bool?
+    let editableFindings: Bool?
+    let manualFindingAdd: Bool?
+    let reportSnapshotV2: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case multiPhotoAnalysis = "multi_photo_analysis"
+        case photoLimitLockedSlotsForFree = "photo_limit_locked_slots_for_free"
+        case plusPro5PhotoLimit = "plus_pro_5_photo_limit"
+        case editableFindings = "editable_findings"
+        case manualFindingAdd = "manual_finding_add"
+        case reportSnapshotV2 = "report_snapshot_v2"
+    }
+}
+
+private extension BackendMultiPhotoFlags {
+    var isReleaseGateOpenForCurrentBuild: Bool {
+        guard killSwitch != true else { return false }
+        let build = AppClientMetadata.appBuild.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !build.isEmpty, build != "unknown" else { return false }
+
+        switch (rolloutMode ?? "off").lowercased() {
+        case "all":
+            return true
+        case "build_allowlist":
+            let allowed = enabledIOSBuilds ?? []
+            if allowed.contains(build) { return true }
+            guard let buildNumber = Int(build) else { return false }
+            return allowed.compactMap(Int.init).contains(buildNumber)
+        case "min_build":
+            guard let buildNumber = Int(build), let minimum = minIOSBuild else { return false }
+            return buildNumber >= minimum
+        default:
+            return false
+        }
+    }
+
+    var effectiveEnableMultiPhotoAnalysis: Bool {
+        isReleaseGateOpenForCurrentBuild && (features?.multiPhotoAnalysis ?? enableMultiPhotoAnalysis ?? false)
+    }
+
+    var effectiveEnablePhotoLimitLockedSlotsForFree: Bool {
+        isReleaseGateOpenForCurrentBuild && (features?.photoLimitLockedSlotsForFree ?? enablePhotoLimitLockedSlotsForFree ?? false)
+    }
+
+    var effectiveEnablePlusPro5PhotoLimit: Bool {
+        isReleaseGateOpenForCurrentBuild && (features?.plusPro5PhotoLimit ?? enablePlusPro5PhotoLimit ?? false)
+    }
+
+    var effectiveEnableEditableFindings: Bool {
+        isReleaseGateOpenForCurrentBuild && (features?.editableFindings ?? enableEditableFindings ?? false)
+    }
+
+    var effectiveEnableManualFindingAdd: Bool {
+        isReleaseGateOpenForCurrentBuild && (features?.manualFindingAdd ?? enableManualFindingAdd ?? false)
+    }
+}
+
 private struct BackendFeatureFlagRow: Decodable {
     let value: BackendMultiPhotoFlags
+}
+
+struct AppReleasePolicy: Codable, Equatable {
+    let minimumSupportedBuild: Int?
+    let latestBuild: Int?
+    let hardUpdateEnabled: Bool?
+    let softUpdateEnabled: Bool?
+    let appStoreURLString: String?
+    let messageTR: String?
+    let messageEN: String?
+    let policyVersion: String?
+
+    enum CodingKeys: String, CodingKey {
+        case minimumSupportedBuild = "minimum_supported_build"
+        case latestBuild = "latest_build"
+        case hardUpdateEnabled = "hard_update_enabled"
+        case softUpdateEnabled = "soft_update_enabled"
+        case appStoreURLString = "app_store_url"
+        case messageTR = "message_tr"
+        case messageEN = "message_en"
+        case policyVersion = "policy_version"
+    }
+
+    static let fallback = AppReleasePolicy(
+        minimumSupportedBuild: 62,
+        latestBuild: 72,
+        hardUpdateEnabled: false,
+        softUpdateEnabled: false,
+        appStoreURLString: RDConfig.Web.appStoreURL.absoluteString,
+        messageTR: "Yeni sürüm mevcut. Devam etmek için uygulamayı güncelleyin.",
+        messageEN: "A new version is available. Please update the app to continue.",
+        policyVersion: "fallback"
+    )
+
+    var appStoreURL: URL {
+        URL(string: appStoreURLString ?? "") ?? RDConfig.Web.appStoreURL
+    }
+
+    var displayMessage: String {
+        let trimmed = (messageTR ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty
+            ? "Yeni sürüm mevcut. Devam etmek için uygulamayı güncelleyin."
+            : trimmed
+    }
+
+    var identity: String {
+        [
+            policyVersion,
+            minimumSupportedBuild.map(String.init),
+            latestBuild.map(String.init)
+        ]
+        .compactMap { $0 }
+        .joined(separator: "|")
+    }
+
+    func requiresHardUpdate(currentBuild: Int?) -> Bool {
+        guard hardUpdateEnabled == true,
+              let currentBuild,
+              let minimumSupportedBuild
+        else { return false }
+        return currentBuild < minimumSupportedBuild
+    }
+
+    func offersSoftUpdate(currentBuild: Int?) -> Bool {
+        guard softUpdateEnabled == true,
+              let currentBuild,
+              let latestBuild
+        else { return false }
+        return currentBuild < latestBuild
+    }
+}
+
+private struct AppReleasePolicyResponse: Decodable {
+    let ok: Bool?
+    let policy: AppReleasePolicy?
+}
+
+private struct AppReleasePolicyRequest: Encodable {
+    let client_platform: String
+    let client_app_version: String
+    let client_app_build: String
+    let api_contract_version: Int
+}
+
+enum AppReleaseUpdateRequirement: Equatable {
+    case none
+    case soft(AppReleasePolicy)
+    case hard(AppReleasePolicy)
 }
 
 @MainActor
@@ -155,14 +314,18 @@ final class AppState: ObservableObject {
     private static let darkModeKey = "rd.theme.darkModeEnabled"
     private static let themePreferenceKey = "rd.theme.preference"
     private static let languagePreferenceKey = "rd.language.preference"
+    private static let cachedHardReleasePolicyKey = "rd.releasePolicy.cachedHard"
+    private static let dismissedSoftReleasePolicyKey = "rd.releasePolicy.dismissedSoft"
 
     @Published var flow: AppFlow = .splash
     @Published var isPro: Bool = false
     @Published var currentTier: SubscriptionTier = .free
     @Published var planCapabilities: PlanCapabilities = .forTier(.free)
+    @Published private(set) var releaseUpdateRequirement: AppReleaseUpdateRequirement = .none
     @Published var profile: UserProfile?
     @Published var activeTab: RDTab = .home
     @Published var pendingProfileDestination: ProfileDestination?
+    @Published var pendingAnalysisResultID: UUID?
     @Published var quickScanRequestID = UUID()
     var quickScanSource: QuickScanSource = .chooser
     @Published var hasSeenOnboarding: Bool
@@ -208,6 +371,7 @@ final class AppState: ObservableObject {
     ) {
         #if DEBUG
         Self.prepareForUITestLaunchIfNeeded()
+        Self.prepareForRealE2ELaunchIfNeeded()
         #endif
 
         let resolved = auth ?? AuthService()
@@ -232,6 +396,17 @@ final class AppState: ObservableObject {
         observeNotificationRouting()
 
         #if DEBUG
+        let releasePolicyOverridden = applyUITestReleasePolicyOverrideIfNeeded()
+        if !releasePolicyOverridden && !Self.isUITestLaunch {
+            applyCachedHardReleasePolicyIfNeeded()
+            Task { await refreshReleasePolicy() }
+        }
+        #else
+        applyCachedHardReleasePolicyIfNeeded()
+        Task { await refreshReleasePolicy() }
+        #endif
+
+        #if DEBUG
         if Self.isUITestResetLaunch {
             flow = .onboarding
             Task { await resolved.resetLocalSessionForUITests() }
@@ -249,6 +424,10 @@ final class AppState: ObservableObject {
             )
             applyTier(testTier)
             flow = .main
+            return
+        }
+        if Self.isRealE2EAnalysisLaunch {
+            Task { await bootstrapRealE2EAnalysis() }
             return
         }
         #endif
@@ -289,6 +468,40 @@ final class AppState: ObservableObject {
 
         flow = hasSeenOnboarding ? .auth : .onboarding
     }
+
+    #if DEBUG
+    private func bootstrapRealE2EAnalysis() async {
+        hasSeenOnboarding = true
+        UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
+
+        if !auth.isAuthenticated {
+            let environment = ProcessInfo.processInfo.environment
+            let email = environment["RD_E2E_EMAIL"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let password = environment["RD_E2E_PASSWORD"] ?? ""
+            guard !email.isEmpty, !password.isEmpty else {
+                authError = "RD_E2E_EMAIL ve RD_E2E_PASSWORD olmadan gerçek E2E login başlatılamaz."
+                flow = .auth
+                return
+            }
+
+            do {
+                try await auth.signInWithPassword(email: email, password: password)
+            } catch {
+                authError = "Gerçek E2E login başarısız: \(error.localizedDescription)"
+                flow = .auth
+                return
+            }
+        }
+
+        await auth.refreshProfile()
+        await subscriptions.identify(userID: auth.session?.user.id)
+        let backendState = await refreshBackendSubscriptionState()
+        applyTier(backendState.tier)
+        await refreshPlanState()
+        flow = .main
+        routePendingNotificationIfReady(defaultTab: .home)
+    }
+    #endif
 
     func finishOnboarding() {
         hasSeenOnboarding = true
@@ -379,6 +592,123 @@ final class AppState: ObservableObject {
         let backendState = await refreshBackendSubscriptionState()
         applyTier(backendState.tier)
     }
+
+    func refreshReleasePolicy() async {
+        #if DEBUG
+        if Self.isUITestLaunch { return }
+        #endif
+
+        let payload = AppReleasePolicyRequest(
+            client_platform: AppClientMetadata.platform,
+            client_app_version: AppClientMetadata.appVersion,
+            client_app_build: AppClientMetadata.appBuild,
+            api_contract_version: AppClientMetadata.apiContractVersion
+        )
+
+        do {
+            let response: AppReleasePolicyResponse = try await SupabaseService.shared.client.functions.invoke(
+                RDConfig.appReleasePolicyFunctionName,
+                options: FunctionInvokeOptions(body: payload)
+            )
+            applyReleasePolicy(response.policy ?? .fallback, cacheHardPolicy: true)
+        } catch {
+            applyCachedHardReleasePolicyIfNeeded()
+        }
+    }
+
+    func dismissSoftReleaseNotice() {
+        guard case let .soft(policy) = releaseUpdateRequirement else { return }
+        UserDefaults.standard.set(policy.identity, forKey: Self.dismissedSoftReleasePolicyKey)
+        releaseUpdateRequirement = .none
+    }
+
+    private func applyReleasePolicy(_ policy: AppReleasePolicy, cacheHardPolicy: Bool) {
+        if policy.requiresHardUpdate(currentBuild: currentAppBuildNumber) {
+            releaseUpdateRequirement = .hard(policy)
+            if cacheHardPolicy {
+                cacheHardReleasePolicy(policy)
+            }
+            return
+        }
+
+        clearCachedHardReleasePolicy()
+        if policy.offersSoftUpdate(currentBuild: currentAppBuildNumber),
+           UserDefaults.standard.string(forKey: Self.dismissedSoftReleasePolicyKey) != policy.identity {
+            releaseUpdateRequirement = .soft(policy)
+        } else {
+            releaseUpdateRequirement = .none
+        }
+    }
+
+    private func applyCachedHardReleasePolicyIfNeeded() {
+        guard let policy = cachedHardReleasePolicy(),
+              policy.requiresHardUpdate(currentBuild: currentAppBuildNumber)
+        else { return }
+        releaseUpdateRequirement = .hard(policy)
+    }
+
+    private func cacheHardReleasePolicy(_ policy: AppReleasePolicy) {
+        guard let data = try? JSONEncoder().encode(policy) else { return }
+        UserDefaults.standard.set(data, forKey: Self.cachedHardReleasePolicyKey)
+    }
+
+    private func cachedHardReleasePolicy() -> AppReleasePolicy? {
+        guard let data = UserDefaults.standard.data(forKey: Self.cachedHardReleasePolicyKey) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(AppReleasePolicy.self, from: data)
+    }
+
+    private func clearCachedHardReleasePolicy() {
+        UserDefaults.standard.removeObject(forKey: Self.cachedHardReleasePolicyKey)
+    }
+
+    private var currentAppBuildNumber: Int? {
+        Int(AppClientMetadata.appBuild.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    #if DEBUG
+    @discardableResult
+    private func applyUITestReleasePolicyOverrideIfNeeded() -> Bool {
+        if CommandLine.arguments.contains("RD_UI_TEST_FORCE_HARD_UPDATE")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_FORCE_HARD_UPDATE"] == "1" {
+            let nextBuild = (currentAppBuildNumber ?? 63) + 1
+            releaseUpdateRequirement = .hard(
+                AppReleasePolicy(
+                    minimumSupportedBuild: nextBuild,
+                    latestBuild: nextBuild,
+                    hardUpdateEnabled: true,
+                    softUpdateEnabled: false,
+                    appStoreURLString: RDConfig.Web.appStoreURL.absoluteString,
+                    messageTR: "Yeni sürüm mevcut. Devam etmek için uygulamayı güncelleyin.",
+                    messageEN: "A new version is available. Please update the app to continue.",
+                    policyVersion: "ui-test-hard"
+                )
+            )
+            return true
+        }
+
+        if CommandLine.arguments.contains("RD_UI_TEST_FORCE_SOFT_UPDATE")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_FORCE_SOFT_UPDATE"] == "1" {
+            let nextBuild = (currentAppBuildNumber ?? 63) + 1
+            releaseUpdateRequirement = .soft(
+                AppReleasePolicy(
+                    minimumSupportedBuild: currentAppBuildNumber ?? 1,
+                    latestBuild: nextBuild,
+                    hardUpdateEnabled: false,
+                    softUpdateEnabled: true,
+                    appStoreURLString: RDConfig.Web.appStoreURL.absoluteString,
+                    messageTR: "Yeni sürüm hazır. Uygulamayı güncel tutarak son geliştirmeleri kullanabilirsin.",
+                    messageEN: "A new version is ready.",
+                    policyVersion: "ui-test-soft"
+                )
+            )
+            return true
+        }
+
+        return false
+    }
+    #endif
 
     @discardableResult
     func purchaseSubscription(packageID: String, expectedTier: SubscriptionTier? = nil) async throws -> SubscriptionState {
@@ -472,6 +802,16 @@ final class AppState: ObservableObject {
             || ProcessInfo.processInfo.environment["RD_UI_TEST_FREE_TIER"] == "1"
     }
 
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+    }
+
+    private static var isRealE2EAnalysisLaunch: Bool {
+        CommandLine.arguments.contains("RD_E2E_REAL_5_PHOTO_ANALYSIS")
+            || ProcessInfo.processInfo.environment["RD_E2E_REAL_5_PHOTO_ANALYSIS"] == "1"
+    }
+
     private static func prepareForUITestLaunchIfNeeded() {
         guard isUITestResetLaunch || isUITestMainLaunch else { return }
         let defaults = UserDefaults.standard
@@ -483,6 +823,8 @@ final class AppState: ObservableObject {
                 "rd.theme.preference",
                 "rd.language.preference",
                 "rd.paywall.funnelSessionID",
+                cachedHardReleasePolicyKey,
+                dismissedSoftReleasePolicyKey,
             ].forEach { defaults.removeObject(forKey: $0) }
         }
 
@@ -490,6 +832,11 @@ final class AppState: ObservableObject {
             || ProcessInfo.processInfo.environment["RD_UI_TEST_DARK_MODE"] == "1" {
             defaults.set(RDThemePreference.dark.rawValue, forKey: themePreferenceKey)
         }
+    }
+
+    private static func prepareForRealE2ELaunchIfNeeded() {
+        guard isRealE2EAnalysisLaunch else { return }
+        UserDefaults.standard.set(true, forKey: onboardingCompletedKey)
     }
 
     private static func uiTestProfile(tier: SubscriptionTier = .plus) -> UserProfile {
@@ -607,8 +954,9 @@ final class AppState: ObservableObject {
             }
             return
         }
-        if pendingNotificationAnalysisID != nil {
-            activeTab = .analyses
+        if let analysisID = pendingNotificationAnalysisID {
+            pendingAnalysisResultID = analysisID
+            activeTab = .home
             pendingNotificationAnalysisID = nil
             NotificationService.shared.pendingAnalysisHistoryID = nil
         } else if let defaultTab {
@@ -698,8 +1046,8 @@ final class AppState: ObservableObject {
 
             let base = PlanCapabilities.forTier(tier)
             let paidMultiPhotoEnabled = tier.isPaid
-                && flags.enableMultiPhotoAnalysis == true
-                && flags.enablePlusPro5PhotoLimit == true
+                && flags.effectiveEnableMultiPhotoAnalysis
+                && flags.effectiveEnablePlusPro5PhotoLimit
             let flagPhotoLimit: Int = {
                 switch tier {
                 case .free: return flags.maxPhotoCountFree ?? 1
@@ -719,7 +1067,7 @@ final class AppState: ObservableObject {
                 max(1, resolvedMaxPhotos) * max(1, resolvedMaxFindingsPerPhoto)
             )
             let shouldShowPhotoSlots = paidMultiPhotoEnabled
-                || (tier == .free && flags.enablePhotoLimitLockedSlotsForFree == true)
+                || (tier == .free && flags.effectiveEnablePhotoLimitLockedSlotsForFree)
 
             return base.applyingPhotoRules(
                 maxPhotosPerAnalysis: resolvedMaxPhotos,
@@ -727,8 +1075,8 @@ final class AppState: ObservableObject {
                 maxFindingsPerPhoto: resolvedMaxFindingsPerPhoto,
                 maxFindingsPerAnalysis: resolvedMaxFindingsTotal,
                 canUseMultiPhotoAnalysis: paidMultiPhotoEnabled && rule.canUseMultiPhotoAnalysis == true,
-                canEditAIFindings: flags.enableEditableFindings == true && rule.canEditAIFindings == true,
-                canAddManualFindings: flags.enableManualFindingAdd == true && rule.canAddManualFindings == true
+                canEditAIFindings: flags.effectiveEnableEditableFindings && rule.canEditAIFindings == true,
+                canAddManualFindings: flags.effectiveEnableManualFindingAdd && rule.canAddManualFindings == true
             )
         } catch {
             return nil
