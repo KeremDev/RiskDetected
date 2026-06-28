@@ -243,7 +243,7 @@ struct AppReleasePolicy: Codable, Equatable {
 
     static let fallback = AppReleasePolicy(
         minimumSupportedBuild: 62,
-        latestBuild: 72,
+        latestBuild: 73,
         hardUpdateEnabled: false,
         softUpdateEnabled: false,
         appStoreURLString: RDConfig.Web.appStoreURL.absoluteString,

@@ -17,6 +17,11 @@ private struct PaywallPresentation: Identifiable {
     let id = UUID()
 }
 
+private enum PhotoTrayPickerRequest {
+    case camera
+    case gallery
+}
+
 private struct AnalysisPhotoDraft: Identifiable {
     let id: UUID
     var image: UIImage
@@ -54,6 +59,7 @@ struct HomeView: View {
     @State private var annotatingPhotoID: UUID?
     @State private var queuedAnnotatePhotoIDs: [UUID] = []
     @State private var returnToPhotoTrayAfterAnnotation = false
+    @State private var pendingPhotoTrayPickerRequest: PhotoTrayPickerRequest?
 
     // Analiz state
     @State private var analysisResult: AnalysisResultBundle? = nil
@@ -197,7 +203,7 @@ struct HomeView: View {
         .onChange(of: app.quickScanRequestID) { _ in
             handleQuickScanRequest()
         }
-        .sheet(isPresented: $showSourceDialog) {
+        .sheet(isPresented: $showSourceDialog, onDismiss: presentPendingPhotoTrayPickerIfNeeded) {
             PhotoMediaTraySheet(
                 photos: selectedPhotos,
                 maxPhotoCount: maxSelectablePhotos,
@@ -1523,20 +1529,30 @@ struct HomeView: View {
     }
 
     private func openCameraFromPhotoTray() {
+        pendingPhotoTrayPickerRequest = .camera
         showSourceDialog = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                presentCameraPicker()
-            } else {
-                presentGalleryPicker()
-            }
-        }
     }
 
     private func openGalleryFromPhotoTray() {
+        pendingPhotoTrayPickerRequest = .gallery
         showSourceDialog = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-            presentGalleryPicker()
+    }
+
+    private func presentPendingPhotoTrayPickerIfNeeded() {
+        guard let request = pendingPhotoTrayPickerRequest else { return }
+        pendingPhotoTrayPickerRequest = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            guard !showSourceDialog else { return }
+            switch request {
+            case .camera:
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    presentCameraPicker()
+                } else {
+                    presentGalleryPicker()
+                }
+            case .gallery:
+                presentGalleryPicker()
+            }
         }
     }
 
@@ -1623,6 +1639,7 @@ struct HomeView: View {
         annotatingPhotoID = nil
         pendingAnnotateRequestID = nil
         returnToPhotoTrayAfterAnnotation = false
+        pendingPhotoTrayPickerRequest = nil
         showAnnotate = false
         showCameraPicker = false
         showGalleryPicker = false

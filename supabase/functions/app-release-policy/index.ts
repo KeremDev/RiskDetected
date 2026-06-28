@@ -35,7 +35,7 @@ const CORS_HEADERS = {
 
 const DEFAULT_POLICY: IOSReleasePolicy = {
   minimum_supported_build: 62,
-  latest_build: 71,
+  latest_build: 73,
   hard_update_enabled: false,
   soft_update_enabled: false,
   app_store_url:
