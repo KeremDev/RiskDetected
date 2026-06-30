@@ -215,16 +215,16 @@ function optionalIntRange(
 }
 
 function fkBand(score: number): "low" | "medium" | "high" | "critical" {
-  if (score < 70) return "low";
-  if (score < 200) return "medium";
-  if (score < 400) return "high";
+  if (score <= 70) return "low";
+  if (score <= 200) return "medium";
+  if (score <= 400) return "high";
   return "critical";
 }
 
 function m5Band(score: number): "low" | "medium" | "high" | "critical" {
   if (score <= 4) return "low";
   if (score <= 9) return "medium";
-  if (score <= 16) return "high";
+  if (score <= 19) return "high";
   return "critical";
 }
 
@@ -315,7 +315,7 @@ function publicBundleSelects() {
     analysis:
       "id,user_id,company_id,title,kind,canvas,status,status_message,ai_summary,total_score_fk,total_score_m5,highest_band_fk,highest_band_m5,finding_count,created_at,analysis_sector,analysis_sector_source,analysis_sector_prompt_version,input_payload_version,photo_count,max_photos_allowed_at_creation,max_findings_per_photo,max_findings_total,generated_findings_count,visible_findings_count,hidden_or_rejected_findings_count,has_user_edits,user_edit_count,analysis_edit_version,plan_at_creation,capability_snapshot,rollout_snapshot",
     findings:
-      "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,source_photo_observations,ai_confidence,last_user_edit_at,last_user_edit_by,user_edit_count,finding_version,display_group,display_order",
+      "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,needs_field_verification,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,source_photo_observations,ai_confidence,last_user_edit_at,last_user_edit_by,user_edit_count,finding_version,display_group,display_order",
     photos:
       "analysis_id,storage_path,width,height,mime_type,sequence_index,client_photo_id,is_primary,thumbnail_storage_path,annotation_storage_path,user_caption,ai_scene_summary",
     photoSummaries:

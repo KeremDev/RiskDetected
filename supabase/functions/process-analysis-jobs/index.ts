@@ -10,6 +10,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const QUEUE_NAME = "analysis_jobs";
 const MAX_READ_COUNT = 3;
+const ANALYZE_WORKER_TIMEOUT_MS = 540_000;
 
 type QueueMessage = {
   msg_id: number | string;
@@ -30,6 +31,25 @@ function safeText(value: unknown, maxLength = 220): string {
     .slice(0, maxLength);
 }
 
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutID = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(`analyze_fetch_timeout:${timeoutMs}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutID);
+  }
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return json(405, { error: "Method not allowed" });
@@ -44,7 +64,8 @@ serve(async (req) => {
   const authHeader = req.headers.get("Authorization") ?? "";
   const workerSecret = Deno.env.get("PROCESS_ANALYSIS_JOBS_SECRET");
   const secretHeader = req.headers.get("x-analysis-worker-secret") ?? "";
-  const authorizedBySecret = Boolean(workerSecret) && secretHeader === workerSecret;
+  const authorizedBySecret = Boolean(workerSecret) &&
+    secretHeader === workerSecret;
   if (authHeader !== `Bearer ${serviceRoleKey}` && !authorizedBySecret) {
     return json(401, { error: "Unauthorized" });
   }
@@ -71,7 +92,8 @@ serve(async (req) => {
     return json(500, { error: "Queue read failed", detail: readError.message });
   }
 
-  const queueMessages = (Array.isArray(messages) ? messages : []) as QueueMessage[];
+  const queueMessages =
+    (Array.isArray(messages) ? messages : []) as QueueMessage[];
   if (queueMessages.length === 0) {
     return json(200, { status: "empty", processed: 0 });
   }
@@ -86,18 +108,23 @@ serve(async (req) => {
       ? job.analysis_id
       : null;
     const userID = typeof job.user_id === "string" ? job.user_id : null;
+    const isRepairJob = job.job_mode === "repair";
 
     try {
-      const response = await fetch(`${supabaseUrl}/functions/v1/analyze`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${serviceRoleKey}`,
-          "Content-Type": "application/json",
-          "x-request-id": String(job.request_id ?? crypto.randomUUID()),
-          "x-support-id": String(job.support_id ?? ""),
+      const response = await fetchWithTimeout(
+        `${supabaseUrl}/functions/v1/analyze`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${serviceRoleKey}`,
+            "Content-Type": "application/json",
+            "x-request-id": String(job.request_id ?? crypto.randomUUID()),
+            "x-support-id": String(job.support_id ?? ""),
+          },
+          body: JSON.stringify({ ...job, __worker: true }),
         },
-        body: JSON.stringify({ ...job, __worker: true }),
-      });
+        ANALYZE_WORKER_TIMEOUT_MS,
+      );
       const responseText = await response.text();
 
       if (!response.ok) {
@@ -113,8 +140,52 @@ serve(async (req) => {
       }
       processed += 1;
     } catch (error) {
+      let errorText = safeText(error);
+
+      if (message.read_ct >= MAX_READ_COUNT && isRepairJob) {
+        try {
+          const fallbackResponse = await fetchWithTimeout(
+            `${supabaseUrl}/functions/v1/analyze`,
+            {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${serviceRoleKey}`,
+                "Content-Type": "application/json",
+                "x-request-id": String(job.request_id ?? crypto.randomUUID()),
+                "x-support-id": String(job.support_id ?? ""),
+              },
+              body: JSON.stringify({
+                ...job,
+                __worker: true,
+                coverage_repair_fallback_only: true,
+                coverage_repair_fallback_reason: errorText,
+              }),
+            },
+            ANALYZE_WORKER_TIMEOUT_MS,
+          );
+          const fallbackText = await fallbackResponse.text();
+          if (!fallbackResponse.ok) {
+            throw new Error(
+              `repair_fallback_failed:${fallbackResponse.status}:${
+                safeText(fallbackText)
+              }`,
+            );
+          }
+          const { error: deleteError } = await supabase
+            .rpc("delete_analysis_job_message", {
+              p_msg_id: message.msg_id,
+            });
+          if (deleteError) {
+            throw new Error(`delete_failed:${deleteError.message}`);
+          }
+          processed += 1;
+          continue;
+        } catch (fallbackError) {
+          errorText = safeText(fallbackError);
+        }
+      }
+
       failed += 1;
-      const errorText = safeText(error);
       if (analysisID && userID) {
         await supabase
           .from("analyses")

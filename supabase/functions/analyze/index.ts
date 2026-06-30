@@ -72,6 +72,14 @@ const MAX_ANALYSIS_IMAGE_PARTS = 5;
 const MAX_INLINE_PHOTO_BASE64_BYTES = 2_100_000;
 const MAX_INLINE_PHOTO_DECODED_BYTES = 1_500_000;
 const MAX_INLINE_PHOTO_TOTAL_BASE64_BYTES = 8_000_000;
+const PHOTO_POLICY_VERSION = "single-multi-targets-v1";
+const SINGLE_PHOTO_TARGET_MIN = 12;
+const SINGLE_PHOTO_TARGET_MAX = 14;
+const MULTI_PHOTO_TARGET_MIN = 9;
+const MULTI_PHOTO_TARGET_MAX = 13;
+const PHOTO_TARGET_TOTAL_MAX = 65;
+const MAIN_AI_TIMEOUT_MS = 150_000;
+const REPAIR_AI_TIMEOUT_MS = 60_000;
 
 type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
@@ -174,6 +182,11 @@ type MultiPhotoCoveragePolicy = {
   targetMax: number;
   totalMax: number;
   repairEnabled: boolean;
+  policyVersion: typeof PHOTO_POLICY_VERSION;
+};
+
+type AIRequestOptions = {
+  isRepairPass?: boolean;
 };
 
 type NormalizedPhotoFindingCoverage = {
@@ -214,8 +227,7 @@ type OnboardingContext = {
   auditFrequency: string | null;
 };
 
-const PROMPT_VERSION =
-  "isg-photo-text-report-language-v2026-06-06-twelve-layer-two-measures";
+const PROMPT_VERSION = "isg-photo-policy-v2026-07-single-multi-targets";
 const PERSONALIZATION_VERSION = "onboarding-v1";
 const BUSINESS_TIME_ZONE = "Europe/Istanbul";
 
@@ -258,10 +270,10 @@ const DEFAULT_MULTI_PHOTO_FLAGS: MultiPhotoFeatureFlags = {
   max_photo_count_free: 1,
   max_photo_count_plus: 5,
   max_photo_count_pro: 5,
-  max_findings_per_photo: 12,
-  target_findings_per_photo_min: 5,
-  target_findings_per_photo_max: 8,
-  target_findings_total_max: 40,
+  max_findings_per_photo: 13,
+  target_findings_per_photo_min: 9,
+  target_findings_per_photo_max: 13,
+  target_findings_total_max: 65,
 };
 
 const DEFAULT_PLAN_CAPABILITY_RULES: Record<PlanTier, PlanCapabilityRule> = {
@@ -279,8 +291,8 @@ const DEFAULT_PLAN_CAPABILITY_RULES: Record<PlanTier, PlanCapabilityRule> = {
     plan: "plus",
     max_photos_per_analysis: 5,
     visible_photo_slots_in_ui: 5,
-    max_findings_per_photo: 12,
-    max_findings_per_analysis: 60,
+    max_findings_per_photo: 13,
+    max_findings_per_analysis: 65,
     can_use_multi_photo_analysis: true,
     can_edit_ai_findings: true,
     can_add_manual_findings: false,
@@ -289,8 +301,8 @@ const DEFAULT_PLAN_CAPABILITY_RULES: Record<PlanTier, PlanCapabilityRule> = {
     plan: "pro",
     max_photos_per_analysis: 5,
     visible_photo_slots_in_ui: 5,
-    max_findings_per_photo: 12,
-    max_findings_per_analysis: 60,
+    max_findings_per_photo: 13,
+    max_findings_per_analysis: 65,
     can_use_multi_photo_analysis: true,
     can_edit_ai_findings: true,
     can_add_manual_findings: false,
@@ -300,14 +312,29 @@ const DEFAULT_PLAN_CAPABILITY_RULES: Record<PlanTier, PlanCapabilityRule> = {
 function geminiThinkingConfig(
   model: string,
   pool: "free" | "paid",
+  isRepairPass = false,
 ): Record<string, string | number> | null {
-  if (model === MODEL_PAID_FAST && pool === "paid") {
-    return { thinkingBudget: 1024 };
+  if (model === MODEL_FREE || model === MODEL_PAID_FAST) {
+    return { thinkingBudget: isRepairPass ? 1024 : 3072 };
   }
   if (model === MODEL_FLASH_LITE) {
     return { thinkingLevel: pool === "paid" ? "high" : "medium" };
   }
   return null;
+}
+
+function thinkingBudgetFor(isRepairPass: boolean): number {
+  return isRepairPass ? 1024 : 3072;
+}
+
+function maxOutputTokensFor(photoCount: number, tier: PlanTier): number {
+  if (photoCount <= 1) {
+    if (tier === "free") return 14_000;
+    if (tier === "plus") return 16_000;
+    return 18_000;
+  }
+  const perPhoto = tier === "pro" ? 6_500 : 5_500;
+  return Math.min(48_000, 8_000 + photoCount * perPhoto);
 }
 
 const CORE_ANALYSIS_PROMPT =
@@ -327,7 +354,7 @@ TARAMA PROSEDÜRÜ — Her görseli SIRAYLA şu 12 katmanda tara:
 9. FİZİKSEL ORTAM ETKENLERİ: aşırı gürültü kaynağı, titreşimli ekipman, toz/duman bulutu, yetersiz aydınlatma, termal konfor (aşırı sıcak/soğuk), yetersiz havalandırma.
 10. ERGONOMİ VE ELLE TAŞIMA: ağır manuel kaldırma, hatalı duruş, tekrarlı hareket, uygunsuz çalışma yüksekliği, taşıma yardımcısı yokluğu.
 11. KAZI, KAPALI ALAN VE ÖZEL İŞLER (saha tipine göre): şev/iksa eksikliği, çökme riski, kapalı alan girişi, malzeme deposu/istif kenarı, su-çamur birikintisi.
-12. ÇEVRE, ACİL DURUM, İŞARETLEME VE YETKİNLİK: atık/dökülme yönetimi, acil çıkış ve toplanma alanı, ilk yardım donanımı görünürlüğü, trafik/üst yapı/hava koşulu, uyarı tabelası/işaretleme; görsel/metin kanıtı destekliyorsa işe özgü eğitim, talimat, yetkilendirme ve mesleki yeterlilik belgesi ihtiyacını "sahada doğrulanmalı" tonuyla sorgula.
+12. ÇEVRE, ACİL DURUM, İŞARETLEME VE YETKİNLİK: atık/dökülme yönetimi, acil çıkış ve toplanma alanı, ilk yardım donanımı görünürlüğü, trafik/üst yapı/hava koşulu, uyarı tabelası/işaretleme; görsel/metin kanıtı destekliyorsa işe özgü eğitim, talimat, yetkilendirme ve mesleki yeterlilik belgesi ihtiyacını net saha denetimi diliyle sorgula.
 
 Her katmanı gözden geçir; bir katmanda risk yoksa atla, ama tarama atlama.
 
@@ -338,7 +365,7 @@ Her katmanı gözden geçir; bir katmanda risk yoksa atla, ama tarama atlama.
 
 RİSK PUANLAMA KALİBRASYONU — Fine-Kinney ŞİDDET:
 - 100 = Birden fazla ölüm veya kalıcı çevre felaketi.
-- 40  = Tek ölüm veya kalıcı iş göremezlik (elektrik çarpması, korumasız 3m+ düşme).
+- 40  = Tek ölüm veya kalıcı iş göremezlik (elektrik çarpması, korumasız 2m+ düşme).
 - 15  = Ağır yaralanma, uzun süreli iş göremezlik (kırık, ciddi kesi).
 - 7   = Önemli yaralanma, kısa süreli iş göremezlik (burkulma, dikiş).
 - 3   = Hafif yaralanma, ilk yardım yeterli.
@@ -356,10 +383,9 @@ KRİTİK KURAL: 2m+ yükseklikte koruma yoksa Ş değeri ASLA 40'ın altına dü
 CONFIDENCE:
 - 0.90-0.98: net, tartışmasız kanıt.
 - 0.70-0.89: güçlü kanıt, bazı detaylar belirsiz.
-- 0.50-0.69: ipucu var, kesin değil.
-- 0.30-0.49: sadece bağlamsal şüphe.
-- < 0.30: bulguyu döndürme.
-Confidence < 0.50 ise description sonuna "(sahada doğrulanmalı)" ekle.
+- 0.50-0.69: orta güven; bulguyu döndür, needs_field_verification=true yap.
+- < 0.50: bulguyu döndürme.
+Description, observed_evidence, corrective_action, preventive_control veya root_cause içine "sahada doğrulanmalı", "teyit edilmeli" gibi hedging ifadeleri ekleme; belirsizliği yalnız needs_field_verification boolean alanıyla işaretle.
 
 KALİTE FİLTRESİ — KAÇIN:
 - Genel ifade ("güvenlik önlemleri alınmalı") yerine somut önlem / kontrol tedbiri yaz.
@@ -470,9 +496,9 @@ function clampFK(value: number, allowed: number[]): number {
 
 // Fine-Kinney skor → risk_level enum
 function fkBand(score: number): "low" | "medium" | "high" | "critical" {
-  if (score < 70) return "low";
-  if (score < 200) return "medium";
-  if (score < 400) return "high";
+  if (score <= 70) return "low";
+  if (score <= 200) return "medium";
+  if (score <= 400) return "high";
   return "critical";
 }
 
@@ -480,7 +506,7 @@ function fkBand(score: number): "low" | "medium" | "high" | "critical" {
 function m5Band(score: number): "low" | "medium" | "high" | "critical" {
   if (score <= 4) return "low";
   if (score <= 9) return "medium";
-  if (score <= 16) return "high";
+  if (score <= 19) return "high";
   return "critical";
 }
 
@@ -911,6 +937,23 @@ function stripPhotoMarkerReferences(value: unknown): string {
     .trim();
 }
 
+function stripFieldVerificationHedging(value: unknown): string {
+  const text = safeText(value);
+  if (!text) return "";
+  return text
+    .replace(
+      /\s*\(?\b(?:sahada|yerinde)?\s*(?:doğrulanmalı|dogrulanmali|teyit edilmeli|kontrol edilmeli|ölçümle doğrulanmalı|olcumle dogrulanmali)\b\.?\)?/giu,
+      "",
+    )
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.])/g, "$1")
+    .trim();
+}
+
+function cleanHazardNarrative(value: unknown): string {
+  return stripFieldVerificationHedging(stripPhotoMarkerReferences(value));
+}
+
 function sanitizePhotoHazardTextFields(
   hazard: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -927,7 +970,7 @@ function sanitizePhotoHazardTextFields(
     ]
   ) {
     if (field in sanitized) {
-      sanitized[field] = stripPhotoMarkerReferences(sanitized[field]);
+      sanitized[field] = cleanHazardNarrative(sanitized[field]);
     }
   }
 
@@ -938,7 +981,7 @@ function sanitizePhotoHazardTextFields(
         const record = item as Record<string, unknown>;
         return {
           ...record,
-          text: stripPhotoMarkerReferences(record.text),
+          text: cleanHazardNarrative(record.text),
         };
       },
     );
@@ -951,7 +994,7 @@ function sanitizePhotoHazardTextFields(
         const record = item as Record<string, unknown>;
         return {
           ...record,
-          observation: stripPhotoMarkerReferences(record.observation),
+          observation: cleanHazardNarrative(record.observation),
         };
       },
     );
@@ -1111,16 +1154,71 @@ function enforceFindingBudget(
   return accepted;
 }
 
+function hazardConfidence(hazard: Record<string, unknown>): number {
+  const value = Number(hazard.confidence);
+  return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+}
+
+function hasHeightFatalityPattern(hazard: Record<string, unknown>): boolean {
+  const text = [
+    hazard.title,
+    hazard.category,
+    hazard.observed_evidence,
+    hazard.description,
+    hazard.root_cause,
+  ].map((value) => safeText(value).toLocaleLowerCase("tr-TR")).join(" ");
+  const heightMention =
+    /\b(?:2|3|4|5|6|7|8|9|10)\s*(?:m|metre)\b/u.test(text) ||
+    /yüksekte|yuksekte|açık kenar|acik kenar|kenar koruma|korkuluk|iskele|platform|döşeme boşluğu|doseme boslugu|merdiven/u
+      .test(text);
+  const protectionMissing =
+    /korumasız|korumasiz|korkuluk yok|korkuluk eksik|kenar koruması yok|kenar korumasi yok|yaşam hattı yok|yasam hatti yok|emniyet kemeri yok|düşme|dusme/u
+      .test(text);
+  return heightMention && protectionMissing;
+}
+
+function calibratedRiskInputs(hazard: Record<string, unknown>): {
+  fkP: number;
+  fkF: number;
+  fkS: number;
+  m5P: number;
+  m5S: number;
+} {
+  const fkP = clampFK(Number(hazard.fk_probability), FK_PROBABILITY_VALUES);
+  const fkF = clampFK(Number(hazard.fk_frequency), FK_FREQUENCY_VALUES);
+  let fkS = clampFK(Number(hazard.fk_severity), FK_SEVERITY_VALUES);
+  const m5P = Math.max(
+    1,
+    Math.min(5, Math.round(Number(hazard.m5_probability))),
+  );
+  let m5S = Math.max(1, Math.min(5, Math.round(Number(hazard.m5_severity))));
+
+  if (hazardConfidence(hazard) >= 0.7 && hasHeightFatalityPattern(hazard)) {
+    fkS = Math.max(fkS, 40);
+    m5S = 5;
+  }
+
+  return { fkP, fkF, fkS, m5P, m5S };
+}
+
 function coveragePolicyFor(
   capabilities: PhotoCapabilities,
   photoCount: number,
 ): MultiPhotoCoveragePolicy | null {
-  if (photoCount <= 1 || !capabilities.coverageV2Enabled) return null;
-  const targetMin = Math.max(1, capabilities.targetFindingsPerPhotoMin);
-  const targetMax = Math.max(targetMin, capabilities.targetFindingsPerPhotoMax);
-  const totalMax = Math.min(
+  if (photoCount < 1) return null;
+  if (photoCount > 1 && !capabilities.coverageV2Enabled) return null;
+  const targetMin = photoCount === 1
+    ? SINGLE_PHOTO_TARGET_MIN
+    : Math.max(MULTI_PHOTO_TARGET_MIN, capabilities.targetFindingsPerPhotoMin);
+  const targetMax = photoCount === 1 ? SINGLE_PHOTO_TARGET_MAX : Math.max(
+    targetMin,
+    MULTI_PHOTO_TARGET_MAX,
+    capabilities.targetFindingsPerPhotoMax,
+  );
+  const totalMax = photoCount === 1 ? SINGLE_PHOTO_TARGET_MAX : Math.min(
+    PHOTO_TARGET_TOTAL_MAX,
     capabilities.maxFindingsPerAnalysis,
-    Math.max(targetMax, capabilities.targetFindingsTotalMax),
+    photoCount * MULTI_PHOTO_TARGET_MAX,
   );
   return {
     enabled: true,
@@ -1129,6 +1227,7 @@ function coveragePolicyFor(
     targetMax,
     totalMax,
     repairEnabled: capabilities.coverageRepairEnabled,
+    policyVersion: PHOTO_POLICY_VERSION,
   };
 }
 
@@ -1413,6 +1512,22 @@ function coverageRepairCandidates(
     .map((record) => record.photo_index);
 }
 
+function normalizeRepairPhotoIndices(
+  value: unknown,
+  photoCount: number,
+): number[] {
+  if (photoCount <= 0 || !Array.isArray(value)) return [];
+  return [
+    ...new Set(
+      value
+        .map((item) => Math.round(Number(item)))
+        .filter((item) =>
+          Number.isFinite(item) && item >= 1 && item <= photoCount
+        ),
+    ),
+  ].sort((a, b) => a - b);
+}
+
 function buildCoverageRepairContext(
   baseContext: string,
   policy: MultiPhotoCoveragePolicy,
@@ -1487,9 +1602,11 @@ function responseSchema(
     category: { type: "STRING" },
     observed_evidence: { type: "STRING" },
     description: { type: "STRING" },
+    root_cause: { type: "STRING" },
     corrective_action: { type: "STRING" },
     preventive_control: { type: "STRING" },
     confidence: { type: "NUMBER" },
+    needs_field_verification: { type: "BOOLEAN" },
     fk_probability: { type: "NUMBER" },
     fk_frequency: { type: "NUMBER" },
     fk_severity: { type: "NUMBER" },
@@ -1513,27 +1630,47 @@ function responseSchema(
   };
   if (includesPaidFields) {
     hazardProperties.references = { type: "STRING" };
-    hazardProperties.root_cause = { type: "STRING" };
   }
   const requiredHazardFields = [
     "title",
     "category",
     "observed_evidence",
     "description",
+    "root_cause",
     "corrective_action",
     "preventive_control",
     "confidence",
+    "needs_field_verification",
     "fk_probability",
     "fk_frequency",
     "fk_severity",
     "m5_probability",
     "m5_severity",
-    ...(includesPaidFields ? ["references", "root_cause"] : []),
+    ...(includesPaidFields ? ["references"] : []),
   ];
   const hazardSchema = {
     type: "OBJECT",
     properties: hazardProperties,
     required: requiredHazardFields,
+    propertyOrdering: [
+      "title",
+      "category",
+      "observed_evidence",
+      "description",
+      "root_cause",
+      "corrective_action",
+      "preventive_control",
+      "confidence",
+      "needs_field_verification",
+      "fk_probability",
+      "fk_frequency",
+      "fk_severity",
+      "m5_probability",
+      "m5_severity",
+      ...(includesPaidFields ? ["references"] : []),
+      "source_photo_indices",
+      "per_photo_observations",
+    ],
   };
 
   if (coveragePolicy?.enabled) {
@@ -1564,6 +1701,18 @@ function responseSchema(
               "candidate_findings_count",
               "findings",
             ],
+          },
+        },
+        analysis_quality: {
+          type: "OBJECT",
+          properties: {
+            photo_policy_version: { type: "STRING" },
+            coverage_target_met: { type: "BOOLEAN" },
+            shortfall_photo_indices: {
+              type: "ARRAY",
+              items: { type: "INTEGER" },
+            },
+            repair_recommended: { type: "BOOLEAN" },
           },
         },
         ai_summary: { type: "STRING" },
@@ -1621,17 +1770,16 @@ function groqResponseSchemaInstruction(
   tier: PlanTier,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
 ): string {
-  const paidFields = tier !== "free"
-    ? `,\n      "references": "${
+  const referenceField = tier !== "free"
+    ? `,\n          "references": "${
       tier === "pro"
-        ? "tam veya doğrulanmalı mevzuat referansı"
-        : "kısa mevzuat referansı veya mevzuat karşılığı kontrol edilmeli"
-    }",\n      "root_cause": "${
-      tier === "pro"
-        ? "sistematik kök neden özeti"
-        : "kısa saha diliyle kök neden"
+        ? "emin olunan tam mevzuat referansı"
+        : "emin olunan kısa mevzuat referansı"
     }"`
     : "";
+  const rootCauseExample = tier === "pro"
+    ? "sistematik kök neden özeti"
+    : "kısa saha diliyle kök neden";
   if (coveragePolicy?.enabled) {
     return `Aşağıdaki JSON yapısına birebir uy. Markdown, açıklama veya kod bloğu ekleme:
 {
@@ -1650,9 +1798,11 @@ function groqResponseSchemaInstruction(
           "category": "risk kategorisi",
           "observed_evidence": "rapora uygun nesnel saha kanıtı",
           "description": "riskin kısa açıklaması",
+          "root_cause": "${rootCauseExample}",
           "corrective_action": "mevcut uygunsuzluğu sahada düzelten kısa uygulanabilir önlem",
           "preventive_control": "tekrarını önleyen kısa kontrol/prosedür/izleme tedbiri",
           "confidence": 0.0,
+          "needs_field_verification": false,
           "fk_probability": 1,
           "fk_frequency": 1,
           "fk_severity": 1,
@@ -1661,7 +1811,7 @@ function groqResponseSchemaInstruction(
           "source_photo_indices": [1],
           "per_photo_observations": [
             { "photo_index": 1, "observation": "fotoğraftaki kısa gözlem" }
-          ]${paidFields}
+          ]${referenceField}
         }
       ]
     }
@@ -1689,18 +1839,20 @@ function groqResponseSchemaInstruction(
       "category": "risk kategorisi",
       "observed_evidence": "rapora uygun nesnel saha kanıtı; metin modunda kullanıcı notunu alıntılama",
       "description": "riskin kısa açıklaması",
+      "root_cause": "${rootCauseExample}",
       "corrective_action": "mevcut uygunsuzluğu sahada düzelten kısa uygulanabilir önlem",
       "preventive_control": "tekrarını önleyen kısa kontrol/prosedür/izleme tedbiri",
       "confidence": 0.0,
+      "needs_field_verification": false,
       "fk_probability": 1,
       "fk_frequency": 1,
       "fk_severity": 1,
       "m5_probability": 1,
-      "m5_severity": 1,
-      "source_photo_indices": [1],
-      "per_photo_observations": [
-        { "photo_index": 1, "observation": "fotoğraftaki kısa gözlem" }
-      ]${paidFields}
+      "m5_severity": 1${
+    tier !== "free"
+      ? ',\n      "references": "emin olunan kısa mevzuat referansı"'
+      : ""
+  }
     }
   ],
   "photo_summaries": [
@@ -1725,6 +1877,21 @@ class GeminiAPIError extends Error {
     super(`Gemini HTTP ${status}: ${body}`);
     this.status = status;
     this.body = body;
+  }
+}
+
+class AIRequestTimeoutError extends Error {
+  constructor(provider: string, timeoutMs: number) {
+    super(`${provider} request timed out after ${timeoutMs}ms`);
+  }
+}
+
+class AITruncatedResponseError extends Error {
+  finishReason: string;
+
+  constructor(finishReason: string) {
+    super(`AI response truncated with finishReason=${finishReason}`);
+    this.finishReason = finishReason;
   }
 }
 
@@ -1923,11 +2090,11 @@ METİN ANALİZİ TALİMATI:
 - Aşağıdaki metni rapora geçirilecek beyan değil; saha bağlamı, denetim yönlendirmesi ve tehlike arama ipucu olarak değerlendir.
 - Ana system prompttaki 12 katmanlı taramayı metne uyarla: zemin/düzen, KKD, yüksekte çalışma, elektrik/enerji, makine/ekipman, kaldırma/istif, kimyasal, yangın/patlama, fiziksel ortam, ergonomi, özel işler, acil durum/işaretleme/yetkinlik eksenlerini sırayla sorgula.
 - Yalnızca metinde açıkça belirtilen veya güçlü şekilde ima edilen tehlikeleri bulguya dönüştür.
-- Fotoğraf kanıtı olmadığı için belirsiz noktaları uydurma; gerekiyorsa description içinde "(sahada doğrulanmalı)" tonunu kullan.
+- Fotoğraf kanıtı olmadığı için belirsiz noktaları uydurma; orta güvenli bulguda description içine hedging ekleme, yalnız needs_field_verification=true yap.
 - Metindeki iş, ortam, ekipman, yükseklik, kimyasal, çalışan davranışı, firma/alan veya sektör ipuçlarını risk önceliklendirmede kullan.
 - Kullanıcı metni kısa veya eksikse az ama güvenilir bulgu döndür; listeyi doldurmak için risk üretme.
 - Kullanıcı metnini hiçbir alanda aynen alıntılama; tırnak içinde yazma; "metinde", "kullanıcı", "ifadesi", "belirtmiştir", "yazmış", "demiş" gibi kaynak atfı yapan kelimeleri kullanma.
-- observed_evidence ve description alanlarını işverenle paylaşılabilir saha denetimi diliyle yaz. Örnek: "Makine koruyucularının yeterliliği sahada doğrulanmalıdır."
+- observed_evidence ve description alanlarını işverenle paylaşılabilir saha denetimi diliyle yaz. Örnek: "Makine koruyucularının yeterliliği ve erişim kontrolü eksik görünüyor."
 
 KULLANICI METNİ:
 ${userText}
@@ -1954,7 +2121,8 @@ function buildSubscriptionContext(
     return `<abonelik_seviyesi tier="free">
 ÇIKTI KAPSAMI:
 - ${hazardCountRule}
-- references ve root_cause alanı üretme; ayrı mevzuat/referans alanı Free'de kapalı.
+- root_cause alanını her bulguda en fazla 1 kısa cümleyle üret.
+- references alanı üretme; ayrı mevzuat/referans alanı Free'de kapalı.
 - corrective_action veya preventive_control alanlarında kullanıcıya uygulanabilir değer sağlayan standart veya mevzuat adı geçebilir.
 - RG tarihi, uzun mevzuat dökümü, madde listesi veya ayrı referans açıklaması verme.
 </abonelik_seviyesi>`;
@@ -1974,7 +2142,7 @@ function buildSubscriptionContext(
 ÇIKTI KAPSAMI:
 - ${hazardCountRule}
 - Her bulguda references alanını daha tam yaz: yönetmelik/kanun + madde + güvenliysen RG tarihi.
-- TS EN/ISO gibi standartları yalnız ilgili ve emin olduğun bulgularda kullan; emin değilsen "doğrulanmalı" yaz.
+- TS EN/ISO gibi standartları yalnız ilgili ve emin olduğun bulgularda kullan; emin değilsen standart numarası yazma.
 - Her bulguda root_cause alanını sistematik, teknik ve kısa kök neden perspektifiyle yaz.
 </abonelik_seviyesi>`;
 }
@@ -2189,6 +2357,7 @@ async function callGemini(
   tier: PlanTier,
   simulation?: AISimulationConfig,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
+  options: AIRequestOptions = {},
 ) {
   maybeSimulateAIError(simulation);
 
@@ -2204,45 +2373,81 @@ async function callGemini(
     throw new Error("En az bir fotoğraf veya metin girdisi gerekli.");
   }
 
-  const thinkingConfig = geminiThinkingConfig(model, pool);
-  const body = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: [{ role: "user", parts }],
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: responseSchema(tier, coveragePolicy),
-      temperature: 0.2,
-      maxOutputTokens: coveragePolicy?.enabled ? 16000 : 12000,
-      ...(thinkingConfig ? { thinkingConfig } : {}),
-    },
-  };
-
   const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const isRepairPass = options.isRepairPass === true;
+  const thinkingConfig = geminiThinkingConfig(model, pool, isRepairPass);
+  const baseMaxOutputTokens = maxOutputTokensFor(imageBase64Parts.length, tier);
+  let jsonParseRetryCount = 0;
+  let maxOutputTokens = baseMaxOutputTokens;
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new GeminiAPIError(res.status, errText);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const body = {
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema(tier, coveragePolicy),
+        temperature: 0.2,
+        maxOutputTokens,
+        ...(thinkingConfig ? { thinkingConfig } : {}),
+      },
+    };
+
+    const res = await fetchWithTimeout(
+      url,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+      isRepairPass ? REPAIR_AI_TIMEOUT_MS : MAIN_AI_TIMEOUT_MS,
+      "Gemini",
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new GeminiAPIError(res.status, errText);
+    }
+
+    const json = await res.json();
+    const candidate = json.candidates?.[0];
+    if (!candidate) throw new Error("Gemini yanıt boş.");
+    const finishReason = String(candidate.finishReason ?? "");
+    if (finishReason === "MAX_TOKENS") {
+      if (attempt === 0 && maxOutputTokens < 48_000) {
+        jsonParseRetryCount += 1;
+        maxOutputTokens = Math.min(48_000, maxOutputTokens + 8_000);
+        continue;
+      }
+      throw new AITruncatedResponseError(finishReason);
+    }
+    if (
+      finishReason &&
+      !["STOP", "FINISH_REASON_UNSPECIFIED"].includes(finishReason)
+    ) {
+      throw new Error(`Gemini finishReason=${finishReason}`);
+    }
+
+    const text = candidate.content?.parts?.[0]?.text;
+    if (!text) throw new Error("Gemini yanıtında metin yok.");
+
+    return {
+      result: JSON.parse(text),
+      inputTokens: json.usageMetadata?.promptTokenCount ?? 0,
+      outputTokens: json.usageMetadata?.candidatesTokenCount ?? 0,
+      cachedTokens: json.usageMetadata?.cachedContentTokenCount ?? null,
+      thoughtsTokens: json.usageMetadata?.thoughtsTokenCount ?? null,
+      totalTokens: json.usageMetadata?.totalTokenCount ?? null,
+      finishReason: finishReason || "STOP",
+      jsonParseRetryCount,
+      thinkingBudget: model === MODEL_FLASH_LITE
+        ? null
+        : thinkingBudgetFor(isRepairPass),
+      maxOutputTokens,
+    };
   }
 
-  const json = await res.json();
-  const candidate = json.candidates?.[0];
-  if (!candidate) throw new Error("Gemini yanıt boş.");
-  const text = candidate.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Gemini yanıtında metin yok.");
-
-  return {
-    result: JSON.parse(text),
-    inputTokens: json.usageMetadata?.promptTokenCount ?? 0,
-    outputTokens: json.usageMetadata?.candidatesTokenCount ?? 0,
-    cachedTokens: json.usageMetadata?.cachedContentTokenCount ?? null,
-    thoughtsTokens: json.usageMetadata?.thoughtsTokenCount ?? null,
-    totalTokens: json.usageMetadata?.totalTokenCount ?? null,
-  };
+  throw new AITruncatedResponseError("MAX_TOKENS");
 }
 
 function decodedBase64ByteLength(base64: string): number {
@@ -2350,6 +2555,7 @@ async function callGroq(
   tier: PlanTier,
   simulation?: AISimulationConfig,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
+  options: AIRequestOptions = {},
 ) {
   maybeSimulateAIError(simulation);
 
@@ -2392,6 +2598,10 @@ async function callGroq(
     });
   }
 
+  const isRepairPass = options.isRepairPass === true;
+  const maxCompletionTokens = coveragePolicy?.enabled
+    ? Math.min(16_000, maxOutputTokensFor(imageBase64Parts.length, tier))
+    : 8_000;
   const body = {
     model,
     messages: [
@@ -2400,17 +2610,22 @@ async function callGroq(
     ],
     response_format: { type: "json_object" },
     temperature: 0.2,
-    max_completion_tokens: coveragePolicy?.enabled ? 12000 : 6000,
+    max_completion_tokens: maxCompletionTokens,
   };
 
-  const res = await fetch(GROQ_API_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+  const res = await fetchWithTimeout(
+    GROQ_API_URL,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    isRepairPass ? REPAIR_AI_TIMEOUT_MS : MAIN_AI_TIMEOUT_MS,
+    "Groq",
+  );
 
   if (!res.ok) {
     const errText = await res.text();
@@ -2429,11 +2644,35 @@ async function callGroq(
     thoughtsTokens: null,
     totalTokens: json.usage?.total_tokens ??
       ((json.usage?.prompt_tokens ?? 0) + (json.usage?.completion_tokens ?? 0)),
+    finishReason: String(json.choices?.[0]?.finish_reason ?? "stop"),
+    jsonParseRetryCount: 0,
+    thinkingBudget: null,
+    maxOutputTokens: maxCompletionTokens,
   };
 }
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  provider: string,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutID = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new AIRequestTimeoutError(provider, timeoutMs);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutID);
+  }
 }
 
 function orderGeminiKeys(
@@ -2608,6 +2847,20 @@ function primaryModelForRoute(aiExecutionRoute: AIExecutionRoute): string {
 function userFacingAIError(
   err: unknown,
 ): { status: number; code: string; message: string } {
+  if (err instanceof AIRequestTimeoutError) {
+    return {
+      status: 503,
+      code: "ai_timeout",
+      message: "AI modeli zamanında yanıt veremedi. Lütfen tekrar dene.",
+    };
+  }
+  if (err instanceof AITruncatedResponseError) {
+    return {
+      status: 502,
+      code: "ai_truncated_response",
+      message: "AI yanıtı tamamlanmadan kesildi. Lütfen tekrar dene.",
+    };
+  }
   if (err instanceof GeminiAPIError) {
     if (err.status === 429) {
       return {
@@ -2670,6 +2923,12 @@ function userFacingAIError(
 }
 
 function isRetryableAIError(err: unknown): boolean {
+  if (
+    err instanceof AIRequestTimeoutError ||
+    err instanceof AITruncatedResponseError
+  ) {
+    return true;
+  }
   if (err instanceof SyntaxError) return true;
   if (err instanceof GeminiAPIError || err instanceof GroqAPIError) {
     return [429, 500, 502, 503, 504].includes(err.status);
@@ -2786,6 +3045,7 @@ async function callGeminiWithFallback(
   trace?: TraceMeta,
   attemptSequence?: Array<{ keyConfig: GeminiKeyConfig; model: string }>,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
+  options: AIRequestOptions = {},
 ) {
   let lastError: unknown = null;
   let attempt = 0;
@@ -2809,6 +3069,7 @@ async function callGeminiWithFallback(
         tier,
         simulation,
         coveragePolicy,
+        options,
       );
       return {
         ...out,
@@ -2819,9 +3080,7 @@ async function callGeminiWithFallback(
       };
     } catch (err) {
       lastError = err;
-      const retryable = err instanceof SyntaxError ||
-        (err instanceof GeminiAPIError &&
-          [429, 500, 502, 503, 504].includes(err.status));
+      const retryable = isRetryableAIError(err);
       const failure: GeminiAttemptFailure = {
         apiKeyAlias: keyConfig.alias,
         model,
@@ -2856,6 +3115,7 @@ async function callFreeAIWithFallback(
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
+  options: AIRequestOptions = {},
 ) {
   try {
     const out = await callGeminiWithFallback(
@@ -2870,6 +3130,7 @@ async function callFreeAIWithFallback(
       trace,
       undefined,
       coveragePolicy,
+      options,
     );
     return {
       ...out,
@@ -2906,6 +3167,7 @@ async function callFreeAIWithFallback(
       "free",
       simulation,
       coveragePolicy,
+      options,
     );
     return {
       ...out,
@@ -2929,6 +3191,7 @@ async function callPaidAIWithFallback(
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
+  options: AIRequestOptions = {},
 ) {
   try {
     const out = await callGeminiWithFallback(
@@ -2943,6 +3206,7 @@ async function callPaidAIWithFallback(
       trace,
       undefined,
       coveragePolicy,
+      options,
     );
     return {
       ...out,
@@ -2979,6 +3243,7 @@ async function callPaidAIWithFallback(
       tier,
       simulation,
       coveragePolicy,
+      options,
     );
     return {
       ...out,
@@ -2999,9 +3264,11 @@ async function callFreePaidTrialAIWithFallback(
   analysisContext: string,
   userText: string | null,
   imageBase64Parts: AIImagePart[],
+  outputTier: PlanTier,
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
+  options: AIRequestOptions = {},
 ) {
   try {
     const out = await callGeminiWithFallback(
@@ -3011,11 +3278,12 @@ async function callFreePaidTrialAIWithFallback(
       analysisContext,
       userText,
       imageBase64Parts,
-      "plus",
+      outputTier,
       simulation,
       trace,
       freePaidTrialPaidGeminiAttemptSequence(paidGeminiKeyPool),
       coveragePolicy,
+      options,
     );
     return {
       ...out,
@@ -3048,11 +3316,12 @@ async function callFreePaidTrialAIWithFallback(
         analysisContext,
         userText,
         imageBase64Parts,
-        "plus",
+        outputTier,
         simulation,
         trace,
         undefined,
         coveragePolicy,
+        options,
       );
       const fallbackDetails = [
         out.modelUsed !== MODEL_FREE ? out.modelUsed : null,
@@ -3091,9 +3360,10 @@ async function callFreePaidTrialAIWithFallback(
         analysisContext,
         userText,
         imageBase64Parts,
-        "plus",
+        outputTier,
         simulation,
         coveragePolicy,
+        options,
       );
       return {
         ...out,
@@ -3529,6 +3799,7 @@ async function enqueueAnalysisJob(params: {
   const jobBody = {
     ...params.body,
     __worker: true,
+    job_mode: "analysis",
     user_id: params.userID,
     request_id: params.requestID,
     support_id: params.supportID,
@@ -3571,6 +3842,54 @@ async function enqueueAnalysisJob(params: {
   }
 
   return { queuedPhotoPaths };
+}
+
+async function enqueueCoverageRepairJob(params: {
+  // deno-lint-ignore no-explicit-any
+  supabase: any;
+  // deno-lint-ignore no-explicit-any
+  body: any;
+  userID: string;
+  analysisID: string;
+  requestID: string;
+  supportID: string;
+  repairPhotoIndices: number[];
+}) {
+  const jobBody = {
+    ...params.body,
+    __worker: true,
+    job_mode: "repair",
+    user_id: params.userID,
+    analysis_id: params.analysisID,
+    request_id: params.requestID,
+    support_id: params.supportID,
+    repair_photo_indices: params.repairPhotoIndices,
+    photo_base64_parts: [],
+  };
+
+  const { error: updateErr } = await params.supabase
+    .from("analyses")
+    .update({
+      status: "queued",
+      status_message:
+        `Analiz kapsamı ikinci taramaya alındı. Destek kodu: ${params.supportID}`,
+      last_worker_error: null,
+    })
+    .eq("id", params.analysisID)
+    .eq("user_id", params.userID);
+
+  if (updateErr) {
+    throw new Error(`coverage_repair_update_failed:${safeLogError(updateErr)}`);
+  }
+
+  const { error: queueErr } = await params.supabase.rpc(
+    "enqueue_analysis_job_message",
+    { p_message: jobBody },
+  );
+
+  if (queueErr) {
+    throw new Error(`coverage_repair_queue_failed:${safeLogError(queueErr)}`);
+  }
 }
 
 function triggerAnalysisWorker(params: {
@@ -3800,6 +4119,9 @@ serve(async (req: Request) => {
 
   requestID = normalizedTraceValue(body.request_id, requestID);
   supportID = normalizedTraceValue(body.support_id, supportID);
+  const jobMode: "analysis" | "repair" = body.job_mode === "repair"
+    ? "repair"
+    : "analysis";
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
@@ -3912,7 +4234,7 @@ serve(async (req: Request) => {
   const { data: ownedAnalysis, error: analysisOwnerErr } = await supabase
     .from("analyses")
     .select(
-      "id,user_id,status,worker_attempt_count,analysis_sector,analysis_sector_source,analysis_sector_prompt_version",
+      "id,user_id,status,worker_attempt_count,analysis_sector,analysis_sector_source,analysis_sector_prompt_version,raw_ai_response",
     )
     .eq("id", analysisID)
     .eq("user_id", user.id)
@@ -4825,6 +5147,17 @@ serve(async (req: Request) => {
     photoCapabilities,
     imageBase64Parts.length,
   );
+  const requestedRepairPhotoIndices = normalizeRepairPhotoIndices(
+    body.repair_photo_indices,
+    imageBase64Parts.length,
+  );
+  const previousCoverageRecords =
+    jobMode === "repair" && multiPhotoCoveragePolicy
+      ? normalizePhotoFindingCoverage(
+        ownedAnalysis.raw_ai_response?.photo_findings,
+        multiPhotoCoveragePolicy,
+      )
+      : null;
   const analysisFindingPolicy = multiPhotoCoveragePolicy && photoFindingPolicy
     ? {
       ...photoFindingPolicy,
@@ -4838,14 +5171,14 @@ serve(async (req: Request) => {
     : photoFindingPolicy;
   const analysisContext = buildAnalysisContext({
     canvases: resolvedCanvases,
-    tier: qualityTier,
+    tier: planTier,
     onboardingContext,
     companyContext,
     activeSector: resolvedActiveSector,
     findingPolicy: analysisFindingPolicy ?? undefined,
   });
   const contextHash = await hashedID(analysisContext);
-  const referenceMode = referenceModeForTier(qualityTier);
+  const referenceMode = referenceModeForTier(planTier);
   const aiSimulation = aiSimulationConfig();
   const inputAudit: Record<string, unknown> = {
     prompt_version: PROMPT_VERSION,
@@ -4864,6 +5197,8 @@ serve(async (req: Request) => {
       : null,
     sector_context_applied: Boolean(resolvedActiveSector),
     context_hash: contextHash,
+    job_mode: jobMode,
+    requested_repair_photo_indices: requestedRepairPhotoIndices,
     input_mode: imageBase64Parts.length > 0 ? "photo" : "text",
     inline_photo_count: inlinePhotoCount,
     storage_photo_count: storagePhotoCount,
@@ -4899,10 +5234,10 @@ serve(async (req: Request) => {
     analysis_context_sent: analysisContext,
     min_hazards: imageBase64Parts.length > 0
       ? null
-      : PLAN_LIMITS[qualityTier].minHazards ?? null,
+      : PLAN_LIMITS[planTier].minHazards ?? null,
     max_hazards: imageBase64Parts.length > 0
       ? analysisFindingPolicy?.maxFindingsTotal ?? null
-      : PLAN_LIMITS[qualityTier].maxHazards ?? null,
+      : PLAN_LIMITS[planTier].maxHazards ?? null,
     max_findings_per_photo: imageBase64Parts.length > 0
       ? analysisFindingPolicy?.maxFindingsPerPhoto ?? null
       : null,
@@ -4914,11 +5249,18 @@ serve(async (req: Request) => {
     target_findings_per_photo_min: multiPhotoCoveragePolicy?.targetMin ?? null,
     target_findings_per_photo_max: multiPhotoCoveragePolicy?.targetMax ?? null,
     target_findings_total_max: multiPhotoCoveragePolicy?.totalMax ?? null,
+    photo_policy_version: multiPhotoCoveragePolicy?.policyVersion ?? null,
+    coverage_policy_version: multiPhotoCoveragePolicy?.policyVersion ?? null,
+    repair_job_used: jobMode === "repair",
+    repair_photo_indices: jobMode === "repair"
+      ? requestedRepairPhotoIndices
+      : [],
     reference_mode: referenceMode,
-    references_requested: qualityTier !== "free",
-    root_cause_requested: qualityTier !== "free",
-    response_schema_includes_references: qualityTier !== "free",
-    response_schema_includes_root_cause: qualityTier !== "free",
+    references_requested: planTier !== "free",
+    root_cause_requested: true,
+    response_schema_includes_references: planTier !== "free",
+    response_schema_includes_root_cause: true,
+    response_schema_includes_needs_field_verification: true,
     system_prompt_sent: systemPrompt,
     model,
     gemini_key_pool: expectedGeminiPool,
@@ -4960,6 +5302,7 @@ serve(async (req: Request) => {
     context: string,
     parts: AIImagePart[],
     coveragePolicy?: MultiPhotoCoveragePolicy | null,
+    options: AIRequestOptions = {},
   ) => {
     if (aiExecutionRoute === "free_legacy") {
       return await callFreeAIWithFallback(
@@ -4972,6 +5315,7 @@ serve(async (req: Request) => {
         aiSimulation,
         { requestID, supportID },
         coveragePolicy,
+        options,
       );
     }
     if (aiExecutionRoute === "free_paid_trial") {
@@ -4983,9 +5327,11 @@ serve(async (req: Request) => {
         context,
         text_input ?? null,
         parts,
+        planTier,
         aiSimulation,
         { requestID, supportID },
         coveragePolicy,
+        options,
       );
     }
     return await callPaidAIWithFallback(
@@ -4999,107 +5345,222 @@ serve(async (req: Request) => {
       aiSimulation,
       { requestID, supportID },
       coveragePolicy,
+      options,
     );
   };
 
-  try {
-    const out = await callAIForAnalysis(
+  const effectiveRepairPhotoIndices = jobMode === "repair" &&
+      multiPhotoCoveragePolicy
+    ? (requestedRepairPhotoIndices.length > 0
+      ? requestedRepairPhotoIndices
+      : coverageRepairCandidates(
+        previousCoverageRecords ?? [],
+        multiPhotoCoveragePolicy,
+      ))
+    : [];
+  const aiContext = jobMode === "repair" && multiPhotoCoveragePolicy &&
+      previousCoverageRecords && effectiveRepairPhotoIndices.length > 0
+    ? buildCoverageRepairContext(
       analysisContext,
-      imageBase64Parts,
       multiPhotoCoveragePolicy,
-    );
-    geminiResult = out.result;
-    inputTokens = out.inputTokens;
-    outputTokens = out.outputTokens;
-    cachedTokens = out.cachedTokens;
-    thoughtsTokens = out.thoughtsTokens;
-    totalTokens = out.totalTokens;
-    modelUsed = out.modelUsed;
-    providerUsed = "providerUsed" in out ? out.providerUsed : "gemini";
-    inputAudit.model = out.modelUsed;
-    inputAudit.gemini_thinking_config = providerUsed === "gemini"
-      ? geminiThinkingConfig(
-        out.modelUsed,
-        aiExecutionRoute === "free_legacy" ? "free" : "paid",
+      previousCoverageRecords,
+      effectiveRepairPhotoIndices,
+    )
+    : analysisContext;
+  const aiImageParts =
+    jobMode === "repair" && effectiveRepairPhotoIndices.length > 0
+      ? imageBase64Parts.filter((part) =>
+        effectiveRepairPhotoIndices.includes(part.photoIndex)
       )
-      : null;
-    apiKeyAlias = out.apiKeyAlias;
-    attemptCount = out.attempt ?? 0;
-    inputAudit.api_key_alias = apiKeyAlias;
-    inputAudit.provider = providerUsed;
-    inputAudit.promptTokenCount = inputTokens;
-    inputAudit.candidatesTokenCount = outputTokens;
-    inputAudit.cachedContentTokenCount = cachedTokens;
-    inputAudit.thoughtsTokenCount = thoughtsTokens;
-    inputAudit.totalTokenCount = totalTokens;
-    inputAudit.gemini_attempt_failures = "geminiAttemptFailures" in out
-      ? out.geminiAttemptFailures
-      : [];
-    if ("fallbackSource" in out) {
-      aiFallbackSource = out.fallbackSource;
-      inputAudit.fallback_source = aiFallbackSource;
-    }
-    if (providerUsed === "gemini") {
-      inputAudit.gemini_attempt_count = attemptCount;
-    } else {
-      inputAudit.groq_fallback_used = true;
-    }
-  } catch (err) {
-    aiError = String(err);
-    const cleanError = userFacingAIError(err);
-    await releaseAnalysisQuota(supabase, analysisID, user.id);
-    await updateOwnedAnalysis({
-      status: "failed",
-      status_message: `${cleanError.message} Destek kodu: ${supportID}`,
-      raw_ai_response: {
-        _input_audit: inputAudit,
-        _error: {
-          message: aiError,
-          code: cleanError.code,
-          support_id: supportID,
-          request_id: requestID,
-        },
+      : imageBase64Parts;
+  const aiRequestOptions: AIRequestOptions = jobMode === "repair"
+    ? { isRepairPass: true }
+    : {};
+  const repairFallbackOnly = jobMode === "repair" &&
+    body.coverage_repair_fallback_only === true &&
+    ownedAnalysis.raw_ai_response &&
+    typeof ownedAnalysis.raw_ai_response === "object";
+
+  if (repairFallbackOnly) {
+    const fallbackReason = safeLogText(
+      String(
+        body.coverage_repair_fallback_reason ??
+          "repair_worker_retries_exhausted",
+      ),
+    );
+    geminiResult = {
+      ...(ownedAnalysis.raw_ai_response as Record<string, unknown>),
+      _repair_error: {
+        message: fallbackReason,
+        code: "coverage_repair_worker_fallback",
+        support_id: supportID,
+        request_id: requestID,
       },
-    });
-    await logUsage(supabase, {
-      analysis_id: analysisID,
-      user_id: user.id,
-      provider: providerUsed,
-      model,
-      tokens_in: 0,
-      tokens_out: 0,
-      duration_ms: Date.now() - startMs,
-      error: aiError,
-      user_plan: planTier,
-      quality_tier: qualityTier,
-      ai_execution_route: aiExecutionRoute,
-      request_id: requestID,
-      support_id: supportID,
-      error_code: cleanError.code,
-      http_status: cleanError.status,
-      fallback_source: aiFallbackSource ??
-        (modelUsed === model ? null : modelUsed),
-      api_key_alias: apiKeyAlias,
-      attempt_count: attemptCount || null,
-      prompt_version: PROMPT_VERSION,
-      personalization_version: PERSONALIZATION_VERSION,
-      context_hash: contextHash,
-      cached_tokens: null,
-      thoughts_tokens: null,
-      total_tokens: null,
-    });
-    return errorResponse(cleanError.status, cleanError.message, {
-      code: cleanError.code,
-      requestID,
-      supportID,
-    });
+    };
+    inputAudit.coverage_repair_fallback_only = true;
+    inputAudit.coverage_repair_error = fallbackReason;
+    inputAudit.coverage_repair_failed_but_completed = true;
+    inputAudit.finish_reason = null;
+    inputAudit.json_parse_retry_count = 0;
+    inputAudit.thinking_budget = thinkingBudgetFor(true);
+    inputAudit.max_output_tokens = maxOutputTokensFor(
+      Math.max(1, effectiveRepairPhotoIndices.length),
+      planTier,
+    );
+  } else {
+    try {
+      const out = await callAIForAnalysis(
+        aiContext,
+        aiImageParts,
+        multiPhotoCoveragePolicy,
+        aiRequestOptions,
+      );
+      geminiResult = out.result;
+      inputTokens = out.inputTokens;
+      outputTokens = out.outputTokens;
+      cachedTokens = out.cachedTokens;
+      thoughtsTokens = out.thoughtsTokens;
+      totalTokens = out.totalTokens;
+      modelUsed = out.modelUsed;
+      providerUsed = "providerUsed" in out ? out.providerUsed : "gemini";
+      inputAudit.model = out.modelUsed;
+      inputAudit.gemini_thinking_config = providerUsed === "gemini"
+        ? geminiThinkingConfig(
+          out.modelUsed,
+          aiExecutionRoute === "free_legacy" ? "free" : "paid",
+          jobMode === "repair",
+        )
+        : null;
+      apiKeyAlias = out.apiKeyAlias;
+      attemptCount = out.attempt ?? 0;
+      inputAudit.api_key_alias = apiKeyAlias;
+      inputAudit.provider = providerUsed;
+      inputAudit.finish_reason = out.finishReason;
+      inputAudit.json_parse_retry_count = out.jsonParseRetryCount;
+      inputAudit.thinking_budget = out.thinkingBudget;
+      inputAudit.max_output_tokens = out.maxOutputTokens;
+      inputAudit.repair_job_used = jobMode === "repair";
+      inputAudit.repair_photo_indices = jobMode === "repair"
+        ? requestedRepairPhotoIndices
+        : [];
+      inputAudit.promptTokenCount = inputTokens;
+      inputAudit.candidatesTokenCount = outputTokens;
+      inputAudit.cachedContentTokenCount = cachedTokens;
+      inputAudit.thoughtsTokenCount = thoughtsTokens;
+      inputAudit.totalTokenCount = totalTokens;
+      inputAudit.gemini_attempt_failures = "geminiAttemptFailures" in out
+        ? out.geminiAttemptFailures
+        : [];
+      if ("fallbackSource" in out) {
+        aiFallbackSource = out.fallbackSource;
+        inputAudit.fallback_source = aiFallbackSource;
+      }
+      if (providerUsed === "gemini") {
+        inputAudit.gemini_attempt_count = attemptCount;
+      } else {
+        inputAudit.groq_fallback_used = true;
+      }
+    } catch (err) {
+      aiError = String(err);
+      if (
+        jobMode === "repair" &&
+        previousCoverageRecords &&
+        ownedAnalysis.raw_ai_response &&
+        typeof ownedAnalysis.raw_ai_response === "object"
+      ) {
+        const cleanError = userFacingAIError(err);
+        geminiResult = {
+          ...(ownedAnalysis.raw_ai_response as Record<string, unknown>),
+          _repair_error: {
+            message: aiError,
+            code: cleanError.code,
+            support_id: supportID,
+            request_id: requestID,
+          },
+        };
+        inputAudit.coverage_repair_error = safeLogError(err);
+        inputAudit.coverage_repair_failed_but_completed = true;
+        inputAudit.finish_reason = null;
+        inputAudit.json_parse_retry_count = 0;
+        inputAudit.thinking_budget = thinkingBudgetFor(true);
+        inputAudit.max_output_tokens = maxOutputTokensFor(
+          Math.max(1, effectiveRepairPhotoIndices.length),
+          planTier,
+        );
+      } else {
+        const cleanError = userFacingAIError(err);
+        await releaseAnalysisQuota(supabase, analysisID, user.id);
+        await updateOwnedAnalysis({
+          status: "failed",
+          status_message: `${cleanError.message} Destek kodu: ${supportID}`,
+          raw_ai_response: {
+            _input_audit: inputAudit,
+            _error: {
+              message: aiError,
+              code: cleanError.code,
+              support_id: supportID,
+              request_id: requestID,
+            },
+          },
+        });
+        await logUsage(supabase, {
+          analysis_id: analysisID,
+          user_id: user.id,
+          provider: providerUsed,
+          model,
+          tokens_in: 0,
+          tokens_out: 0,
+          duration_ms: Date.now() - startMs,
+          error: aiError,
+          user_plan: planTier,
+          quality_tier: qualityTier,
+          ai_execution_route: aiExecutionRoute,
+          request_id: requestID,
+          support_id: supportID,
+          error_code: cleanError.code,
+          http_status: cleanError.status,
+          fallback_source: aiFallbackSource ??
+            (modelUsed === model ? null : modelUsed),
+          api_key_alias: apiKeyAlias,
+          attempt_count: attemptCount || null,
+          prompt_version: PROMPT_VERSION,
+          personalization_version: PERSONALIZATION_VERSION,
+          context_hash: contextHash,
+          cached_tokens: null,
+          thoughts_tokens: null,
+          total_tokens: null,
+        });
+        return errorResponse(cleanError.status, cleanError.message, {
+          code: cleanError.code,
+          requestID,
+          supportID,
+        });
+      }
+    }
   }
 
   if (multiPhotoCoveragePolicy) {
-    const coverageRecords = normalizePhotoFindingCoverage(
+    let coverageRecords = normalizePhotoFindingCoverage(
       geminiResult.photo_findings,
       multiPhotoCoveragePolicy,
     );
+    if (jobMode === "repair" && previousCoverageRecords) {
+      const repairRecords = coverageRecords;
+      coverageRecords = previousCoverageRecords;
+      if (repairRecords) {
+        mergeCoverageRepairRecords(
+          coverageRecords,
+          repairRecords.filter((record) =>
+            effectiveRepairPhotoIndices.includes(record.photo_index)
+          ),
+          multiPhotoCoveragePolicy,
+        );
+        inputAudit.coverage_repair_used = true;
+        inputAudit.coverage_repair_photo_indices = effectiveRepairPhotoIndices;
+      } else {
+        inputAudit.coverage_repair_fallback_reason = "missing_photo_findings";
+      }
+    }
     if (!coverageRecords) {
       inputAudit.coverage_v2_fallback_reason = "missing_photo_findings";
     } else {
@@ -5109,67 +5570,110 @@ serve(async (req: Request) => {
       );
       inputAudit.coverage_repair_candidate_photo_indices = repairCandidates;
       if (
+        jobMode === "analysis" &&
         multiPhotoCoveragePolicy.repairEnabled &&
         repairCandidates.length > 0
       ) {
         try {
-          const repairParts = imageBase64Parts.filter((part) =>
-            repairCandidates.includes(part.photoIndex)
-          );
-          const repairContext = buildCoverageRepairContext(
-            analysisContext,
-            multiPhotoCoveragePolicy,
-            coverageRecords,
-            repairCandidates,
-          );
-          const repairOut = await callAIForAnalysis(
-            repairContext,
-            repairParts,
-            multiPhotoCoveragePolicy,
-          );
-          const repairRecords = normalizePhotoFindingCoverage(
-            repairOut.result?.photo_findings,
-            multiPhotoCoveragePolicy,
-          );
-          if (repairRecords) {
-            mergeCoverageRepairRecords(
-              coverageRecords,
-              repairRecords.filter((record) =>
-                repairCandidates.includes(record.photo_index)
-              ),
-              multiPhotoCoveragePolicy,
+          for (const record of coverageRecords) {
+            record.coverage_gap_reason = normalizeCoverageGapReason(
+              record.coverage_status,
+              record.coverage_gap_reason,
+              record.findings.length,
+              multiPhotoCoveragePolicy.targetMin,
+              record.record_missing,
             );
-            inputAudit.coverage_repair_used = true;
-            inputAudit.coverage_repair_photo_indices = repairCandidates;
-            inputAudit.coverage_repair_model = repairOut.modelUsed;
-            inputAudit.coverage_repair_provider = "providerUsed" in repairOut
-              ? repairOut.providerUsed
-              : "gemini";
-            inputAudit.coverage_repair_tokens_in = repairOut.inputTokens;
-            inputAudit.coverage_repair_tokens_out = repairOut.outputTokens;
-            inputTokens += repairOut.inputTokens ?? 0;
-            outputTokens += repairOut.outputTokens ?? 0;
-            cachedTokens = (cachedTokens ?? 0) + (repairOut.cachedTokens ?? 0);
-            thoughtsTokens = (thoughtsTokens ?? 0) +
-              (repairOut.thoughtsTokens ?? 0);
-            totalTokens = (totalTokens ?? 0) + (repairOut.totalTokens ?? 0);
-          } else {
-            inputAudit.coverage_repair_fallback_reason =
-              "missing_photo_findings";
           }
-        } catch (repairError) {
-          inputAudit.coverage_repair_error = safeLogError(repairError);
+          const firstPassShortfalls = coverageRepairCandidates(
+            coverageRecords,
+            multiPhotoCoveragePolicy,
+          );
+          const firstPassHazards = mergeDuplicateCoverageHazards(
+            coverageRecords.flatMap((record) => record.findings),
+            multiPhotoCoveragePolicy.photoCount,
+            multiPhotoCoveragePolicy.totalMax,
+          );
+          const interimResult = {
+            ...geminiResult,
+            hazards: firstPassHazards,
+            photo_summaries: buildPhotoSummariesFromCoverage(
+              coverageRecords,
+              multiPhotoCoveragePolicy,
+            ),
+            analysis_quality: {
+              photo_policy_version: multiPhotoCoveragePolicy.policyVersion,
+              coverage_target_met: firstPassShortfalls.length === 0,
+              shortfall_photo_indices: firstPassShortfalls,
+              repair_recommended: repairCandidates.length > 0,
+            },
+            _coverage_v2: {
+              enabled: true,
+              policy_version: multiPhotoCoveragePolicy.policyVersion,
+              target_findings_per_photo_min: multiPhotoCoveragePolicy.targetMin,
+              target_findings_per_photo_max: multiPhotoCoveragePolicy.targetMax,
+              target_findings_total_max: multiPhotoCoveragePolicy.totalMax,
+              repair_enabled: multiPhotoCoveragePolicy.repairEnabled,
+              repair_candidate_photo_indices: repairCandidates,
+            },
+          };
+          inputAudit.coverage_repair_job_enqueued = true;
+          inputAudit.coverage_repair_used = false;
+          inputAudit.repair_job_used = false;
+          inputAudit.coverage_target_met = firstPassShortfalls.length === 0;
+          inputAudit.shortfall_photo_indices = firstPassShortfalls;
+          await updateOwnedAnalysis({
+            status: "queued",
+            status_message:
+              `Analiz kapsamı ikinci taramaya alındı. Destek kodu: ${supportID}`,
+            raw_ai_response: {
+              ...interimResult,
+              _input_audit: inputAudit,
+            },
+          });
+          await enqueueCoverageRepairJob({
+            supabase,
+            body,
+            userID: user.id,
+            analysisID,
+            requestID,
+            supportID,
+            repairPhotoIndices: repairCandidates,
+          });
+          triggerAnalysisWorker({
+            supabaseUrl,
+            serviceRoleKey,
+            requestID,
+            supportID,
+          });
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              status: "repair_queued",
+              analysis_id: analysisID,
+              repair_photo_indices: repairCandidates,
+              request_id: requestID,
+              support_id: supportID,
+            }),
+            {
+              status: 202,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        } catch (repairQueueError) {
+          inputAudit.coverage_repair_queue_error = safeLogError(
+            repairQueueError,
+          );
           console.warn(
-            "Coverage repair pass failed; continuing with first pass",
+            "Coverage repair enqueue failed; completing first pass",
             JSON.stringify({
               request_id: requestID,
               support_id: supportID,
               analysis_id: analysisID,
-              error: safeLogError(repairError),
+              error: safeLogError(repairQueueError),
             }),
           );
         }
-      } else {
+      } else if (jobMode !== "repair") {
         inputAudit.coverage_repair_used = false;
       }
 
@@ -5187,6 +5691,10 @@ serve(async (req: Request) => {
         multiPhotoCoveragePolicy.photoCount,
         multiPhotoCoveragePolicy.totalMax,
       );
+      const finalShortfalls = coverageRepairCandidates(
+        coverageRecords,
+        multiPhotoCoveragePolicy,
+      );
       geminiResult = {
         ...geminiResult,
         hazards: coverageHazards,
@@ -5194,15 +5702,29 @@ serve(async (req: Request) => {
           coverageRecords,
           multiPhotoCoveragePolicy,
         ),
+        analysis_quality: {
+          photo_policy_version: multiPhotoCoveragePolicy.policyVersion,
+          coverage_target_met: finalShortfalls.length === 0,
+          shortfall_photo_indices: finalShortfalls,
+          repair_recommended: repairCandidates.length > 0,
+        },
         _coverage_v2: {
           enabled: true,
+          policy_version: multiPhotoCoveragePolicy.policyVersion,
           target_findings_per_photo_min: multiPhotoCoveragePolicy.targetMin,
           target_findings_per_photo_max: multiPhotoCoveragePolicy.targetMax,
           target_findings_total_max: multiPhotoCoveragePolicy.totalMax,
           repair_enabled: multiPhotoCoveragePolicy.repairEnabled,
           repair_candidate_photo_indices: repairCandidates,
+          post_merge_shortfall_photo_indices: finalShortfalls,
         },
       };
+      inputAudit.coverage_target_met = finalShortfalls.length === 0;
+      inputAudit.post_merge_shortfall_photo_indices = finalShortfalls;
+      inputAudit.shortfall_photo_indices = finalShortfalls;
+      inputAudit.coverage_gap_reason = finalShortfalls.length > 0
+        ? "coverage_target_shortfall"
+        : null;
     }
   }
 
@@ -5229,20 +5751,35 @@ serve(async (req: Request) => {
       )
     )
     : rawHazards;
+  const confidenceFilteredHazards = reportLanguageSafeHazards
+    .map((hazard: unknown) =>
+      hazard && typeof hazard === "object"
+        ? sanitizePhotoHazardTextFields(hazard as Record<string, unknown>)
+        : hazard
+    )
+    .filter((hazard: unknown) => {
+      if (!hazard || typeof hazard !== "object") return false;
+      return hazardConfidence(hazard as Record<string, unknown>) >= 0.5;
+    });
+  inputAudit.rejected_low_confidence_findings_count = Math.max(
+    0,
+    reportLanguageSafeHazards.length - confidenceFilteredHazards.length,
+  );
+
   const maxHazards = analysisFindingPolicy?.maxFindingsTotal ??
-    PLAN_LIMITS[qualityTier].maxHazards;
+    PLAN_LIMITS[planTier].maxHazards;
   const hazards = analysisFindingPolicy
     ? enforceFindingBudget(
-      reportLanguageSafeHazards,
+      confidenceFilteredHazards,
       analysisFindingPolicy.photoCount,
       analysisFindingPolicy.maxFindingsPerPhoto,
       analysisFindingPolicy.maxFindingsTotal,
     )
     : maxHazards
-    ? reportLanguageSafeHazards.slice(0, maxHazards) as Array<
+    ? confidenceFilteredHazards.slice(0, maxHazards) as Array<
       Record<string, unknown>
     >
-    : reportLanguageSafeHazards as Array<Record<string, unknown>>;
+    : confidenceFilteredHazards as Array<Record<string, unknown>>;
   const hiddenOrRejectedFindingsCount = Math.max(
     0,
     reportLanguageSafeHazards.length - hazards.length,
@@ -5264,13 +5801,12 @@ serve(async (req: Request) => {
       h.per_photo_observations,
       sourcePhotoIndices,
     );
-    const fkP = clampFK(h.fk_probability, FK_PROBABILITY_VALUES);
-    const fkF = clampFK(h.fk_frequency, FK_FREQUENCY_VALUES);
-    const fkS = clampFK(h.fk_severity, FK_SEVERITY_VALUES);
+    const confidence = hazardConfidence(h);
+    const needsFieldVerification = Boolean(h.needs_field_verification) ||
+      (confidence >= 0.5 && confidence < 0.7);
+    const { fkP, fkF, fkS, m5P, m5S } = calibratedRiskInputs(h);
     const fkSc = fkP * fkF * fkS;
     const fkB = fkBand(fkSc);
-    const m5P = Math.max(1, Math.min(5, Math.round(h.m5_probability)));
-    const m5S = Math.max(1, Math.min(5, Math.round(h.m5_severity)));
     const m5Sc = m5P * m5S;
     const m5B = m5Band(m5Sc);
     totalScoreFK += fkSc;
@@ -5286,15 +5822,19 @@ serve(async (req: Request) => {
       description: `${h.observed_evidence}\n\n${h.description}`.trim(),
       recommended_action: recommendedMeasures[0]?.text ?? "",
       recommended_measures: recommendedMeasures,
-      references_text: qualityTier !== "free" ? h.references ?? "" : "",
-      root_cause_text: qualityTier !== "free" ? h.root_cause ?? "" : "",
-      confidence: Math.max(0, Math.min(1, h.confidence)),
+      references_text: planTier !== "free" ? h.references ?? "" : "",
+      root_cause_text: h.root_cause ?? "",
+      confidence,
+      needs_field_verification: needsFieldVerification,
       origin: "ai",
-      ai_original_snapshot: h,
+      ai_original_snapshot: {
+        ...h,
+        needs_field_verification: needsFieldVerification,
+      },
       source_photo_indices: sourcePhotoIndices,
       source_photo_observations: perPhotoObservations,
       finding_budget_policy: analysisFindingPolicy,
-      ai_confidence: Math.max(0, Math.min(1, h.confidence)),
+      ai_confidence: confidence,
       fk_probability: fkP,
       fk_frequency: fkF,
       fk_severity: fkS,

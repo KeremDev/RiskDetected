@@ -52,6 +52,11 @@ Deno.test("mutate-analysis-finding lets generated score columns recalculate", as
   assertStringIncludes(source, "function withDerivedRiskSnapshot");
   assertStringIncludes(source, "snapshot.fk_score = score;");
   assertStringIncludes(source, "snapshot.m5_score = score;");
+  assertStringIncludes(source, 'if (score <= 70) return "low";');
+  assertStringIncludes(source, 'if (score <= 200) return "medium";');
+  assertStringIncludes(source, 'if (score <= 400) return "high";');
+  assertStringIncludes(source, 'if (score <= 19) return "high";');
+  assertStringIncludes(source, "needs_field_verification");
 });
 
 Deno.test("mutate-analysis-finding hard delete removes row after audit", async () => {

@@ -23,6 +23,7 @@ Deno.test("register-report snapshots are rebuilt from server-side rows", async (
 
   assertStringIncludes(source, "async function loadServerReportSnapshot");
   assertStringIncludes(source, '.from("findings")');
+  assertStringIncludes(source, "needs_field_verification");
   assertStringIncludes(source, '.from("photos")');
   assertStringIncludes(source, '.eq("analysis_id", params.analysisID)');
   assertStringIncludes(source, '.eq("user_id", params.userID)');

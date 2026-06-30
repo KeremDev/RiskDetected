@@ -338,6 +338,7 @@ private struct OBSplashBottomSheet: View {
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 11)
+                .accessibilityIdentifier("onboarding.splash.subtitle")
 
             OBSplashCTAButton(action: onNext)
                 .padding(.top, 17)

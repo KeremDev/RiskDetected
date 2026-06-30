@@ -331,7 +331,7 @@ final class AnalysisService {
                 onProgress: onProgress
             )
             if queuedOrLater {
-                return try await waitForCompletedResult(analysisID: analysisID, onProgress: onProgress)
+                return try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
             }
             let markedFailed = await markAnalysisSubmissionFailedIfStillPending(
                 analysisID: analysisID,
@@ -352,7 +352,7 @@ final class AnalysisService {
         }
 
         // 4) Backend kuyruğa aldıktan sonra sonucu DB status ile izle.
-        return try await waitForCompletedResult(analysisID: analysisID, onProgress: onProgress)
+        return try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
     }
 
     /// Metin bazlı analiz akışı.
@@ -1724,19 +1724,17 @@ final class AnalysisService {
         let jpegQuality: Double
     }
 
-    nonisolated private static let analysisPhotoQualityPolicy = "balanced-v2-1600-floor1000"
+    nonisolated private static let analysisPhotoQualityPolicy = "balanced-v3-1536-floor1024"
     nonisolated private static let analysisPhotoCompressionCandidates: [PhotoCompressionCandidate] = [
-        .init(maxDimension: 1600, jpegQuality: 0.78),
-        .init(maxDimension: 1600, jpegQuality: 0.70),
+        .init(maxDimension: 1536, jpegQuality: 0.78),
+        .init(maxDimension: 1536, jpegQuality: 0.70),
         .init(maxDimension: 1400, jpegQuality: 0.76),
         .init(maxDimension: 1400, jpegQuality: 0.68),
         .init(maxDimension: 1200, jpegQuality: 0.72),
         .init(maxDimension: 1200, jpegQuality: 0.62),
-        .init(maxDimension: 1000, jpegQuality: 0.60),
-        .init(maxDimension: 1000, jpegQuality: 0.52),
-        .init(maxDimension: 900, jpegQuality: 0.58),
-        .init(maxDimension: 900, jpegQuality: 0.50),
-        .init(maxDimension: 800, jpegQuality: 0.52)
+        .init(maxDimension: 1024, jpegQuality: 0.68),
+        .init(maxDimension: 1024, jpegQuality: 0.60),
+        .init(maxDimension: 1024, jpegQuality: 0.52)
     ]
 
     nonisolated private static func makePreparedJPEGPhotos(from images: [UIImage]) async throws -> [PreparedAnalysisPhoto] {
@@ -2209,18 +2207,26 @@ final class AnalysisService {
 
     private func waitForCompletedResult(
         analysisID: UUID,
+        photoCount: Int? = nil,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)?
     ) async throws -> AnalysisResultBundle {
-        let deadline = Date().addingTimeInterval(300)
+        let startedAt = Date()
+        let storedPhotoCount = InFlightAnalysisStore.shared.load()?.analysisID == analysisID
+            ? InFlightAnalysisStore.shared.load()?.photoCount
+            : nil
+        var deadlineSeconds: TimeInterval = ((photoCount ?? storedPhotoCount ?? 0) > 1) ? 420 : 300
         var lastReportedStatus: String?
         var consecutivePollFailures = 0
 
-        while Date() < deadline {
+        while Date().timeIntervalSince(startedAt) < deadlineSeconds {
             try Task.checkCancellation()
             let snapshot: AnalysisStatusSnapshot
 
             do {
                 snapshot = try await fetchAnalysisStatusSnapshot(analysisID: analysisID)
+                if (snapshot.photoCount ?? 0) > 1 {
+                    deadlineSeconds = 420
+                }
                 consecutivePollFailures = 0
             } catch is CancellationError {
                 throw CancellationError()
@@ -2569,6 +2575,17 @@ final class AnalysisService {
             let m5Probability = appliesPatch ? (patch?.m5Probability ?? finding.m5.probability) : finding.m5.probability
             let m5Severity = appliesPatch ? (patch?.m5Severity ?? finding.m5.severity) : finding.m5.severity
             let m5Score = m5Probability * m5Severity
+            let defaultSourcePhotoIndices: [Int]
+            switch finding.id {
+            case 1:
+                defaultSourcePhotoIndices = [4]
+            case 2:
+                defaultSourcePhotoIndices = [2, 4]
+            case 3:
+                defaultSourcePhotoIndices = []
+            default:
+                defaultSourcePhotoIndices = [1]
+            }
             return FindingRow(
                 id: rowID,
                 analysisID: analysisID,
@@ -2580,6 +2597,7 @@ final class AnalysisService {
                 recommendedMeasures: appliesPatch ? (patch?.recommendedMeasures ?? finding.controlMeasures) : finding.controlMeasures,
                 referencesText: appliesPatch ? (patch?.referencesText ?? finding.references) : finding.references,
                 rootCauseText: appliesPatch ? (patch?.rootCauseText ?? finding.rootCause) : finding.rootCause,
+                needsFieldVerification: finding.id == 1,
                 confidence: finding.confidence,
                 fkProbability: fkProbability,
                 fkFrequency: fkFrequency,
@@ -2590,7 +2608,7 @@ final class AnalysisService {
                 m5Severity: m5Severity,
                 m5Score: m5Score,
                 m5Band: RiskBands.matrix5x5(m5Score).level.rawValue,
-                sourcePhotoIndices: patch?.sourcePhotoIndices ?? [1],
+                sourcePhotoIndices: patch?.sourcePhotoIndices ?? defaultSourcePhotoIndices,
                 lastUserEditAt: appliesPatch || rowID == deletedFindingID ? ISO8601DateFormatter().string(from: Date()) : nil,
                 userEditCount: appliesPatch ? 1 : nil,
                 findingVersion: appliesPatch ? 2 : 1,
@@ -2602,7 +2620,7 @@ final class AnalysisService {
             userID: userID,
             companyID: nil,
             title: "UI Test Saha Analizi",
-            kind: "text",
+            kind: "photo",
             canvas: "ppe",
             status: "completed",
             statusMessage: nil,
@@ -2617,7 +2635,19 @@ final class AnalysisService {
             analysisSectorSource: "user_selected",
             analysisSectorPromptVersion: AnalysisSectorID.activeAnalysisPromptVersion
         )
-        return AnalysisResultBundle(analysis: analysis, findings: rows, photos: [])
+        let photos = (1...5).map { index in
+            AnalysisPhotoRow(
+                analysisID: analysisID,
+                storagePath: "ui-tests/analysis-\(analysisID.uuidString)/p\(index).jpg",
+                width: 1024,
+                height: 768,
+                mimeType: "image/jpeg",
+                sequenceIndex: index,
+                clientPhotoID: "ui-test-photo-\(index)",
+                isPrimary: index == 1
+            )
+        }
+        return AnalysisResultBundle(analysis: analysis, findings: rows, photos: photos)
     }
 
     private static func uiTestFindingID(ordinal: Int) -> UUID {
@@ -3010,6 +3040,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
     let recommendedMeasures: [FindingMeasure]?
     let referencesText: String?
     let rootCauseText: String?
+    var needsFieldVerification: Bool? = nil
     let confidence: Double
     let fkProbability: Double
     let fkFrequency: Double
@@ -3039,6 +3070,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
         case recommendedMeasures = "recommended_measures"
         case referencesText     = "references_text"
         case rootCauseText      = "root_cause_text"
+        case needsFieldVerification = "needs_field_verification"
         case confidence
         case fkProbability      = "fk_probability"
         case fkFrequency        = "fk_frequency"
@@ -3070,6 +3102,7 @@ struct FindingRow: Codable, Identifiable, Equatable {
             measures: recommendedMeasures ?? [],
             references: referencesText ?? "",
             rootCause: rootCauseText ?? "",
+            needsFieldVerification: needsFieldVerification == true,
             fk: FineKinneyParams(
                 probability: fkProbability,
                 frequency: fkFrequency,

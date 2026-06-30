@@ -139,6 +139,7 @@ struct Finding: Identifiable, Hashable {
     let measures: [FindingMeasure]
     let references: String
     let rootCause: String
+    let needsFieldVerification: Bool
     let fk: FineKinneyParams
     let m5: FiveByFiveParams
 
@@ -152,6 +153,7 @@ struct Finding: Identifiable, Hashable {
         measures: [FindingMeasure] = [],
         references: String,
         rootCause: String,
+        needsFieldVerification: Bool = false,
         fk: FineKinneyParams,
         m5: FiveByFiveParams
     ) {
@@ -164,6 +166,7 @@ struct Finding: Identifiable, Hashable {
         self.measures = measures
         self.references = references
         self.rootCause = rootCause
+        self.needsFieldVerification = needsFieldVerification
         self.fk = fk
         self.m5 = m5
     }

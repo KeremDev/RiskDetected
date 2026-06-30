@@ -121,7 +121,7 @@ final class RiskDetectedUITests: XCTestCase {
 
         XCTAssertTrue(waitFor("onboarding.splash", timeout: 12).exists)
         XCTAssertTrue(waitFor("Profesyonel İSG Asistanı").exists)
-        XCTAssertTrue(waitFor("Fotoğraf çek; yapay zekâ uygunsuzlukları otomatik tespit etsin ve raporunu anında oluştursun.").exists)
+        XCTAssertTrue(waitFor("onboarding.splash.subtitle").exists)
         XCTAssertTrue(waitFor("onboarding.splash.preview_phone").exists)
         XCTAssertTrue(waitFor("onboarding.splash.progress").exists)
         XCTAssertTrue(waitFor("onboarding.splash.chip.detection").exists)
@@ -288,6 +288,24 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Bu bulgu yeni raporlara dahil edilmeyecek. Eski rapor snapshotları ve audit kaydı korunur.", timeout: 4).exists)
         tap("Vazgeç", timeout: 4)
         XCTAssertFalse(exists("Bulgu silinsin mi?", timeout: 1))
+    }
+
+    func testResultFindingShowsFieldVerificationBadge() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT"])
+
+        XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 8).exists)
+        XCTAssertTrue(waitFor("result.finding.1.field_verification", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Saha teyidi", timeout: 4).exists)
+    }
+
+    func testResultFindingDetailUsesSourcePhoto() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT"])
+
+        XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 8).exists)
+        tapScrolling("result.finding.1.card", timeout: 10)
+        XCTAssertTrue(waitFor("result.detail.photo_index.4", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Foto 4", timeout: 4).exists)
+        XCTAssertTrue(waitFor("result.detail.close", timeout: 4).exists)
     }
 
     func testFindingEditorSheetRendersCompactControls() throws {

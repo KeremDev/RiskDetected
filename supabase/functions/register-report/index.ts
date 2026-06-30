@@ -83,7 +83,7 @@ const REPORT_ANALYSIS_SELECT =
   "id,user_id,status,title,company_id,analysis_edit_version,has_user_edits";
 
 const REPORT_FINDINGS_SELECT =
-  "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,ai_confidence,last_user_edit_at,user_edit_count,finding_version,display_order";
+  "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,needs_field_verification,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,ai_confidence,last_user_edit_at,user_edit_count,finding_version,display_order";
 
 const REPORT_PHOTOS_SELECT =
   "analysis_id,storage_path,width,height,mime_type,sequence_index,client_photo_id,is_primary,thumbnail_storage_path,annotation_storage_path,user_caption,ai_scene_summary";

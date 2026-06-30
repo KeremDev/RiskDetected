@@ -21,14 +21,15 @@ Deno.test("iOS photo compression keeps balanced quality floor", async () => {
   );
   if (source == null) return;
 
-  assertStringIncludes(source, "balanced-v2-1600-floor1000");
-  assertStringIncludes(source, ".init(maxDimension: 1600, jpegQuality: 0.78)");
-  assertStringIncludes(source, ".init(maxDimension: 1000, jpegQuality: 0.60)");
+  assertStringIncludes(source, "balanced-v3-1536-floor1024");
+  assertStringIncludes(source, ".init(maxDimension: 1536, jpegQuality: 0.78)");
+  assertStringIncludes(source, ".init(maxDimension: 1024, jpegQuality: 0.52)");
   assertStringIncludes(source, "decodedByteCount: data.count");
   assertStringIncludes(source, "qualityPolicy: analysisPhotoQualityPolicy");
   assertStringIncludes(source, 'storage_strategy: "client-storage-paths-v1"');
-  assert(!source.includes(".init(maxDimension: 850"));
-  assert(!source.includes(".init(maxDimension: 700"));
+  assert(!source.includes(".init(maxDimension: 1000"));
+  assert(!source.includes(".init(maxDimension: 900"));
+  assert(!source.includes(".init(maxDimension: 800"));
 });
 
 Deno.test("iOS sends dynamic build metadata without hardcoded build gate", async () => {
@@ -272,31 +273,25 @@ Deno.test("expand migration keeps build 62 safe", async () => {
   assert(!normalizedSQL.includes("update public.photos set byte_size"));
 });
 
-Deno.test("coverage v2 migration is client capability gated", async () => {
+Deno.test("analysis prompt limit migration raises coverage targets", async () => {
   const migration = await readTextIfAllowed(
     new URL(
-      "../../migrations/20260625191650_multi_photo_coverage_v2.sql",
+      "../../migrations/20260630115105_analysis_prompt_limit_integration.sql",
       import.meta.url,
     ),
   );
   if (migration == null) return;
   const normalizedSQL = migration.toLowerCase().replace(/\s+/g, " ");
 
-  assertStringIncludes(normalizedSQL, "coverage_status");
-  assertStringIncludes(normalizedSQL, "coverage_gap_reason");
-  assertStringIncludes(normalizedSQL, "target_findings_min");
-  assertStringIncludes(normalizedSQL, "target_findings_max");
-  assertStringIncludes(normalizedSQL, "multi_photo_coverage_v2");
+  assertStringIncludes(normalizedSQL, "needs_field_verification boolean");
+  assertStringIncludes(normalizedSQL, "max_findings_per_photo = 13");
+  assertStringIncludes(normalizedSQL, "max_findings_per_analysis = 65");
   assertStringIncludes(normalizedSQL, "target_findings_per_photo_min");
-  assertStringIncludes(normalizedSQL, "'5'::jsonb");
+  assertStringIncludes(normalizedSQL, "'9'::jsonb");
   assertStringIncludes(normalizedSQL, "target_findings_per_photo_max");
-  assertStringIncludes(normalizedSQL, "'8'::jsonb");
+  assertStringIncludes(normalizedSQL, "'13'::jsonb");
   assertStringIncludes(normalizedSQL, "target_findings_total_max");
-  assertStringIncludes(normalizedSQL, "'40'::jsonb");
-  assertStringIncludes(
-    normalizedSQL,
-    "requires client_capabilities.multi_photo_coverage_v2=true",
-  );
+  assertStringIncludes(normalizedSQL, "'65'::jsonb");
 });
 
 Deno.test("coverage v2 pipeline normalizes repair and summaries", async () => {
@@ -316,4 +311,128 @@ Deno.test("coverage v2 pipeline normalizes repair and summaries", async () => {
     "target_findings_per_photo_min: multiPhotoCoveragePolicy.targetMin",
   );
   assertStringIncludes(source, "coverage_repair_candidate_photo_indices");
+});
+
+Deno.test("analysis schema and policy use single and multi photo targets", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(
+    source,
+    'const PHOTO_POLICY_VERSION = "single-multi-targets-v1"',
+  );
+  assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MIN = 12");
+  assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MAX = 14");
+  assertStringIncludes(source, "const MULTI_PHOTO_TARGET_MIN = 9");
+  assertStringIncludes(source, "const MULTI_PHOTO_TARGET_MAX = 13");
+  assertStringIncludes(source, "const PHOTO_TARGET_TOTAL_MAX = 65");
+  assertStringIncludes(source, 'root_cause: { type: "STRING" }');
+  assertStringIncludes(source, 'needs_field_verification: { type: "BOOLEAN" }');
+  assertStringIncludes(source, "if (includesPaidFields)");
+  assertStringIncludes(source, "hazardProperties.references");
+  assertStringIncludes(source, "photo_findings");
+});
+
+Deno.test("AI timeout and token budgets are explicit", async () => {
+  const analyzeSource = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  const workerSource = await readTextIfAllowed(
+    new URL("../process-analysis-jobs/index.ts", import.meta.url),
+  );
+  if (analyzeSource == null || workerSource == null) return;
+
+  assertStringIncludes(analyzeSource, "const MAIN_AI_TIMEOUT_MS = 150_000");
+  assertStringIncludes(analyzeSource, "const REPAIR_AI_TIMEOUT_MS = 60_000");
+  assertStringIncludes(
+    analyzeSource,
+    "thinkingBudget: isRepairPass ? 1024 : 3072",
+  );
+  assertStringIncludes(analyzeSource, "return 14_000");
+  assertStringIncludes(analyzeSource, "return 16_000");
+  assertStringIncludes(analyzeSource, "return 18_000");
+  assertStringIncludes(
+    analyzeSource,
+    "Math.min(48_000, 8_000 + photoCount * perPhoto)",
+  );
+  assertStringIncludes(analyzeSource, 'finishReason === "MAX_TOKENS"');
+  assertStringIncludes(
+    workerSource,
+    "const ANALYZE_WORKER_TIMEOUT_MS = 540_000",
+  );
+  assertStringIncludes(workerSource, "p_visibility_timeout: 600");
+});
+
+Deno.test("coverage repair is queued as a separate job", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  const workerSource = await readTextIfAllowed(
+    new URL("../process-analysis-jobs/index.ts", import.meta.url),
+  );
+  if (source == null || workerSource == null) return;
+
+  assertStringIncludes(source, "async function enqueueCoverageRepairJob");
+  assertStringIncludes(source, 'job_mode: "repair"');
+  assertStringIncludes(
+    source,
+    "repair_photo_indices: params.repairPhotoIndices",
+  );
+  assertStringIncludes(source, 'status: "repair_queued"');
+  assertStringIncludes(source, "coverage_repair_failed_but_completed");
+  assertStringIncludes(source, "coverage_repair_fallback_only");
+  assertStringIncludes(workerSource, "coverage_repair_fallback_only");
+  assertStringIncludes(workerSource, "repair_fallback_failed");
+  assert(
+    !source.includes("Coverage repair pass failed; continuing with first pass"),
+  );
+});
+
+Deno.test("iOS result model and UI preserve field verification flag", async () => {
+  const serviceSource = await readTextIfAllowed(
+    new URL("../../../App/Services/AnalysisService.swift", import.meta.url),
+  );
+  const findingSource = await readTextIfAllowed(
+    new URL("../../../App/Models/Finding.swift", import.meta.url),
+  );
+  const resultSource = await readTextIfAllowed(
+    new URL("../../../App/Views/Result/ResultView.swift", import.meta.url),
+  );
+  const riskDetailSource = await readTextIfAllowed(
+    new URL(
+      "../../../App/Views/Result/RiskDetailView.swift",
+      import.meta.url,
+    ),
+  );
+  if (
+    serviceSource == null || findingSource == null || resultSource == null ||
+    riskDetailSource == null
+  ) {
+    return;
+  }
+
+  assertStringIncludes(
+    serviceSource,
+    'case needsFieldVerification = "needs_field_verification"',
+  );
+  assertStringIncludes(
+    serviceSource,
+    "needsFieldVerification: needsFieldVerification == true",
+  );
+  assertStringIncludes(serviceSource, "photoCount: images.count");
+  assertStringIncludes(serviceSource, "? 420 : 300");
+  assertStringIncludes(serviceSource, "deadlineSeconds = 420");
+  assertStringIncludes(findingSource, "let needsFieldVerification: Bool");
+  assertStringIncludes(resultSource, "finding.needsFieldVerification");
+  assertStringIncludes(resultSource, "Saha teyidi");
+  assertStringIncludes(resultSource, "field_verification");
+  assertStringIncludes(resultSource, "SelectedFindingDetail");
+  assertStringIncludes(resultSource, "resolvedSourcePhotoIndex");
+  assertStringIncludes(resultSource, "photoRow(forSourceIndex:");
+  assertStringIncludes(resultSource, "localPreviewImage(forSourceIndex:");
+  assertStringIncludes(riskDetailSource, "var photoIndex: Int = 1");
+  assertStringIncludes(riskDetailSource, "result.detail.photo_index.");
+  assertStringIncludes(riskDetailSource, "RDCard(showsShadow: false)");
 });

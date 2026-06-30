@@ -68,6 +68,7 @@ type FindingRow = Record<string, unknown> & {
   recommended_measures?: unknown;
   references_text?: string | null;
   root_cause_text?: string | null;
+  needs_field_verification?: boolean | null;
   confidence?: number | null;
   fk_probability?: number | null;
   fk_frequency?: number | null;

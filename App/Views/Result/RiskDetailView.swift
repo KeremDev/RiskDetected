@@ -5,6 +5,7 @@ struct RiskDetailView: View {
     let finding: Finding
     var photoPath: String? = nil
     var localPreviewImage: UIImage? = nil
+    var photoIndex: Int = 1
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -18,16 +19,20 @@ struct RiskDetailView: View {
         finding: Finding,
         method: RiskMethod = .fineKinney,
         photoPath: String? = nil,
-        localPreviewImage: UIImage? = nil
+        localPreviewImage: UIImage? = nil,
+        photoIndex: Int = 1
     ) {
         self.finding = finding
         self.photoPath = photoPath
         self.localPreviewImage = localPreviewImage
+        self.photoIndex = max(1, photoIndex)
         _method = State(initialValue: method)
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        VStack(spacing: 0) {
+            detailTopBar
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
@@ -43,10 +48,27 @@ struct RiskDetailView: View {
                     Color.clear.frame(height: 12)
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
+                .padding(.top, 6)
+                .padding(.bottom, 28)
             }
+            .background(Color.rdPaper)
+        }
+        .background(Color.rdPaper.ignoresSafeArea())
+        .fullScreenCover(isPresented: $showPaywall) {
+            FreeAwarePaywallView(
+                onClose: { showPaywall = false },
+                onSubscribe: {
+                    showPaywall = false
+                    Task { await app.auth.refreshProfile() }
+                }
+            )
+            .preferredColorScheme(preferredModalColorScheme)
+        }
+    }
 
+    private var detailTopBar: some View {
+        HStack {
+            Spacer()
             Button {
                 dismiss()
             } label: {
@@ -59,21 +81,13 @@ struct RiskDetailView: View {
                     .shadow(color: Color.rdOnyx.opacity(0.14), radius: 10, x: 0, y: 5)
             }
             .buttonStyle(RDPressableButtonStyle())
-            .padding(.top, 10)
-            .padding(.trailing, 18)
             .accessibilityLabel("Pencereyi kapat")
+            .accessibilityIdentifier("result.detail.close")
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 6)
         .background(Color.rdPaper)
-        .fullScreenCover(isPresented: $showPaywall) {
-            FreeAwarePaywallView(
-                onClose: { showPaywall = false },
-                onSubscribe: {
-                    showPaywall = false
-                    Task { await app.auth.refreshProfile() }
-                }
-            )
-            .preferredColorScheme(preferredModalColorScheme)
-        }
     }
 
     // MARK: - Header
@@ -109,12 +123,36 @@ struct RiskDetailView: View {
     private var photoScoreCard: some View {
         ZStack(alignment: .bottom) {
             ResultDetailPhoto(image: localPreviewImage, path: photoPath)
-                .frame(height: 210)
+                .frame(height: 238)
 
             methodologyOverlay
                 .padding(.horizontal, 14)
                 .padding(.bottom, 12)
         }
+        .overlay(alignment: .topLeading) {
+            photoIndexBadge
+                .padding(12)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("result.detail.photo_card")
+    }
+
+    private var photoIndexBadge: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "photo.on.rectangle")
+                .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
+            Text("Foto \(photoIndex)")
+                .rdMono(size: 11, weight: .bold)
+        }
+        .foregroundStyle(Color.rdOnyx)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.rdWhite.opacity(0.92))
+        .clipShape(RoundedRectangle(cornerRadius: 9))
+        .shadow(color: Color.rdOnyx.opacity(0.12), radius: 8, x: 0, y: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Kaynak fotoğraf \(photoIndex)")
+        .accessibilityIdentifier("result.detail.photo_index.\(photoIndex)")
     }
 
     // MARK: - Methodology
@@ -190,7 +228,7 @@ struct RiskDetailView: View {
     }
 
     private var comparisonCard: some View {
-        RDCard {
+        RDCard(showsShadow: false) {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Yöntem karşılaştırması".uppercased())
                     .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
@@ -217,6 +255,7 @@ struct RiskDetailView: View {
                 }
             }
         }
+        .padding(.top, 2)
     }
 
     private func methodBox(title: String, formula: String, score: Int, band: RiskBand, active: Bool, targetMethod: RiskMethod) -> some View {
@@ -400,10 +439,12 @@ private struct ResultDetailPhoto: View {
                 Image(uiImage: remoteImage)
                     .resizable()
                     .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 AnalysisThumbnail(path: nil, cornerRadius: 16)
             }
@@ -416,8 +457,10 @@ private struct ResultDetailPhoto: View {
     }
 
     private func loadRemoteIfNeeded() async {
-        guard let path, loadedPath != path else { return }
+        guard loadedPath != path else { return }
         loadedPath = path
+        remoteImage = nil
+        guard let path else { return }
         do {
             let data = try await AnalysisService.shared.photoData(path: path)
             if let downloaded = UIImage(data: data) {

@@ -19,6 +19,17 @@ struct ResultView: View {
             return "Foto \(index), \(findingCount) bulgu"
         }
     }
+    private struct SelectedFindingDetail: Identifiable {
+        let rowID: UUID
+        let finding: Finding
+        let photoIndex: Int
+        let photoPath: String?
+        let localPreviewImage: UIImage?
+
+        var id: String {
+            "\(rowID.uuidString)-photo-\(photoIndex)-\(photoPath ?? "local")"
+        }
+    }
 
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
@@ -120,7 +131,7 @@ struct ResultView: View {
     }
 
     @State private var method: RiskMethod = .fineKinney
-    @State private var selectedFinding: Finding? = nil
+    @State private var selectedFindingDetail: SelectedFindingDetail? = nil
     @State private var selectedFindingRowForEdit: FindingRow?
     @State private var pendingDeleteFindingRow: FindingRow?
     @State private var editedBundle: AnalysisResultBundle?
@@ -185,12 +196,13 @@ struct ResultView: View {
             }
         }
         .animation(.easeInOut(duration: 0.22), value: pdfGeneration.isActive)
-        .sheet(item: $selectedFinding) { finding in
+        .sheet(item: $selectedFindingDetail) { selection in
             RiskDetailView(
-                finding: finding,
+                finding: selection.finding,
                 method: method,
-                photoPath: photoPath,
-                localPreviewImage: localPreviewImage
+                photoPath: selection.photoPath,
+                localPreviewImage: selection.localPreviewImage,
+                photoIndex: selection.photoIndex
             )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
@@ -313,7 +325,7 @@ struct ResultView: View {
 #endif
         .onChange(of: bundle?.analysis.id) { _ in
             editedBundle = nil
-            selectedFinding = nil
+            selectedFindingDetail = nil
             selectedFindingRowForEdit = nil
             pendingDeleteFindingRow = nil
 #if DEBUG
@@ -727,7 +739,7 @@ struct ResultView: View {
                     },
                     onPaywall: { showPaywall = true }
                 ) {
-                    selectedFinding = finding
+                    selectedFindingDetail = detailSelection(for: row)
                 }
 
                 if let preview = lockedFindingPreview(afterVisibleIndex: index) {
@@ -911,7 +923,7 @@ struct ResultView: View {
                 }
                 editedBundle = refreshed
                 selectedFindingRowForEdit = nil
-                selectedFinding = nil
+                selectedFindingDetail = nil
             } catch {
                 findingMutationError = AppErrorMessage.make(
                     error,
@@ -1183,6 +1195,49 @@ struct ResultView: View {
             fallbackTitle: "Risk analizi tablosu oluşturulamadı"
         ).fullText
         return true
+    }
+
+    private func detailSelection(for row: FindingRow) -> SelectedFindingDetail {
+        let sourceIndex = resolvedSourcePhotoIndex(for: row)
+        let photoRow = photoRow(forSourceIndex: sourceIndex)
+        return SelectedFindingDetail(
+            rowID: row.id,
+            finding: row.asFinding,
+            photoIndex: sourceIndex,
+            photoPath: photoRow?.storagePath ?? (sourceIndex == 1 ? photoPath : nil),
+            localPreviewImage: localPreviewImage(forSourceIndex: sourceIndex)
+        )
+    }
+
+    private func resolvedSourcePhotoIndex(for row: FindingRow) -> Int {
+        let photoCount = max(
+            max(currentBundle?.analysis.photoCount ?? 0, orderedPhotoRowsForReport().count),
+            max(reportPreviewImages.count, 1)
+        )
+        let validRange = 1...photoCount
+        if let firstValid = row.sourcePhotoIndices?.first(where: { validRange.contains($0) }) {
+            return firstValid
+        }
+        return 1
+    }
+
+    private func photoRow(forSourceIndex sourceIndex: Int) -> AnalysisPhotoRow? {
+        let rows = orderedPhotoRowsForReport()
+        if let exact = rows.first(where: { $0.sequenceIndex == sourceIndex }) {
+            return exact
+        }
+        let fallbackIndex = sourceIndex - 1
+        guard rows.indices.contains(fallbackIndex) else { return nil }
+        return rows[fallbackIndex]
+    }
+
+    private func localPreviewImage(forSourceIndex sourceIndex: Int) -> UIImage? {
+        let images = reportPreviewImages
+        let fallbackIndex = sourceIndex - 1
+        if images.indices.contains(fallbackIndex) {
+            return images[fallbackIndex]
+        }
+        return sourceIndex == 1 ? localPreviewImage : nil
     }
 
     private func loadReportImages() async throws -> [UIImage] {
@@ -2905,6 +2960,20 @@ struct FindingCard: View {
 
                         HStack(spacing: 6) {
                             RDChip(level: band.level, label: band.label)
+                            if finding.needsFieldVerification {
+                                HStack(spacing: 5) {
+                                    Image(systemName: "checkmark.shield")
+                                        .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
+                                    Text("Saha teyidi")
+                                        .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
+                                }
+                                .foregroundStyle(cardSecondaryText)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(cardSubtleSurface)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .accessibilityIdentifier("result.finding.\(index).field_verification")
+                            }
                             if !sourcePhotoIndices.isEmpty {
                                 HStack(spacing: 5) {
                                     Image(systemName: "photo.on.rectangle")
@@ -2985,6 +3054,9 @@ struct FindingCard: View {
                         .stroke(cardStroke, lineWidth: 1)
                 )
         )
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("result.finding.\(index).card")
     }
 
     private func scoreBlock(band: RiskBand, score: Double, max: Double) -> some View {
@@ -3064,8 +3136,7 @@ struct FindingCard: View {
 
     @ViewBuilder
     private var rootCauseBlock: some View {
-        if currentTier.isPaid,
-           !finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if !finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "point.3.connected.trianglepath.dotted")
                     .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
