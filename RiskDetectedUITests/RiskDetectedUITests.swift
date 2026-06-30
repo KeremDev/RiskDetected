@@ -167,10 +167,10 @@ final class RiskDetectedUITests: XCTestCase {
 
         XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
         XCTAssertTrue(waitFor("Saha fotoğrafları").exists)
-        XCTAssertTrue(waitFor("0/5").exists)
+        XCTAssertTrue(waitFor("0/3").exists)
         XCTAssertTrue(waitFor("home.photo_tray").exists)
         XCTAssertTrue(waitFor("home.photo_slot.1").exists)
-        XCTAssertTrue(waitFor("home.photo_slot.5").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.3").exists)
     }
 
     func testQuickScanButtonOpensPhotoTray() throws {
@@ -179,7 +179,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
         tap("tab.quick_scan")
         XCTAssertTrue(waitFor("home.photo_tray").exists)
-        XCTAssertTrue(waitFor("home.photo_slot.5").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.3").exists)
     }
 
     func testFreeLockedPhotoSlotOpensPaywall() throws {
@@ -201,7 +201,7 @@ final class RiskDetectedUITests: XCTestCase {
         tap("İşaretlemeyi kaydet", timeout: 8)
 
         XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
-        XCTAssertTrue(waitFor("1/5").exists)
+        XCTAssertTrue(waitFor("1/3").exists)
         XCTAssertTrue(waitFor("Analize geç").exists)
     }
 
@@ -209,10 +209,10 @@ final class RiskDetectedUITests: XCTestCase {
         launchMainApp(extraArguments: ["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"])
 
         XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
-        XCTAssertTrue(waitFor("2/5").exists)
+        XCTAssertTrue(waitFor("2/3").exists)
         XCTAssertTrue(waitFor("home.photo_slot.1").exists)
         XCTAssertTrue(waitFor("home.photo_slot.2").exists)
-        XCTAssertTrue(waitFor("home.photo_slot.5").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.3").exists)
         XCTAssertTrue(waitFor("Analize geç").exists)
     }
 
@@ -224,7 +224,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Görüntü kalitesi okunuyor").exists)
         XCTAssertTrue(waitFor("Bulgular yapılandırılıyor").exists)
         XCTAssertFalse(app.staticTexts["Netlik ve görüntü okunabilirliği kontrol ediliyor"].waitForExistence(timeout: 0.5))
-        XCTAssertTrue(waitFor("5 fotoğraf").exists)
+        XCTAssertTrue(waitFor("3 fotoğraf").exists)
         XCTAssertFalse(app.staticTexts["100"].waitForExistence(timeout: 0.5))
         XCTAssertTrue(waitFor("Bağlantı tekrar deneniyor", timeout: 6).exists)
     }
@@ -238,10 +238,10 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 12).exists)
     }
 
-    func testE2ERealFivePhotoAnalysisCompletes() throws {
+    func testE2ERealThreePhotoAnalysisCompletes() throws {
         let environment = ProcessInfo.processInfo.environment
-        guard environment["RD_E2E_REAL_5_PHOTO_ANALYSIS"] == "1" else {
-            throw XCTSkip("Set RD_E2E_REAL_5_PHOTO_ANALYSIS=1 to run the real Supabase 5-photo analysis gate.")
+        guard environment["RD_E2E_REAL_3_PHOTO_ANALYSIS"] == "1" else {
+            throw XCTSkip("Set RD_E2E_REAL_3_PHOTO_ANALYSIS=1 to run the real Supabase 3-photo analysis gate.")
         }
         let email = environment["RD_E2E_EMAIL"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let password = environment["RD_E2E_PASSWORD"] ?? ""
@@ -251,18 +251,18 @@ final class RiskDetectedUITests: XCTestCase {
 
         app = XCUIApplication()
         app.launchArguments = [
-            "RD_E2E_REAL_5_PHOTO_ANALYSIS",
+            "RD_E2E_REAL_3_PHOTO_ANALYSIS",
             "-UIViewAnimationEnabled", "NO",
             "-ApplePersistenceIgnoreState", "YES",
         ]
-        app.launchEnvironment["RD_E2E_REAL_5_PHOTO_ANALYSIS"] = "1"
+        app.launchEnvironment["RD_E2E_REAL_3_PHOTO_ANALYSIS"] = "1"
         app.launchEnvironment["RD_E2E_EMAIL"] = email
         app.launchEnvironment["RD_E2E_PASSWORD"] = password
         launchPreparedApp()
 
         XCTAssertTrue(waitFor("analysis.loading", timeout: 75).exists)
         XCTAssertTrue(waitFor("analysis.progress.percent", timeout: 8).exists)
-        XCTAssertTrue(waitFor("5 fotoğraf", timeout: 8).exists)
+        XCTAssertTrue(waitFor("3 fotoğraf", timeout: 8).exists)
         XCTAssertFalse(app.staticTexts["100"].waitForExistence(timeout: 0.5))
         XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 420).exists)
     }

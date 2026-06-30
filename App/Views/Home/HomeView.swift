@@ -1823,8 +1823,8 @@ struct HomeView: View {
     }
 
     private static var isRealE2EAnalysisLaunch: Bool {
-        ProcessInfo.processInfo.environment["RD_E2E_REAL_5_PHOTO_ANALYSIS"] == "1"
-            || CommandLine.arguments.contains("RD_E2E_REAL_5_PHOTO_ANALYSIS")
+        ProcessInfo.processInfo.environment["RD_E2E_REAL_3_PHOTO_ANALYSIS"] == "1"
+            || CommandLine.arguments.contains("RD_E2E_REAL_3_PHOTO_ANALYSIS")
     }
 
     private static func uiTestPhotoFixture(seed: Int) -> UIImage {
@@ -2211,7 +2211,7 @@ struct HomeView: View {
         pendingJob = AnalysisJob(
             previewImage: Self.uiTestPhotoFixture(seed: 2),
             presentationMode: .photo,
-            photoCount: 5
+            photoCount: 3
         ) { progress in
             progress(.preparingInput)
             try await Task.sleep(nanoseconds: 420_000_000)
@@ -2255,7 +2255,7 @@ struct HomeView: View {
         }
 
         didOpenE2ERealAnalysis = true
-        let images = (0..<5).map(Self.e2eHazardPhotoFixture(seed:))
+        let images = (0..<3).map(Self.e2eHazardPhotoFixture(seed:))
         selectedPhotos = images.map { AnalysisPhotoDraft(image: $0) }
         selectedCanvases = [.general, .ppe, .warningSigns, .workingAtHeight, .electrical]
         selectedAnalysisSector = .construction
@@ -2272,7 +2272,7 @@ struct HomeView: View {
                 canvases: [.general, .ppe, .warningSigns, .workingAtHeight, .electrical],
                 analysisSector: .construction,
                 companyID: nil,
-                title: "E2E 5 Fotoğraf Storage \(Self.uiTestISODate(minutesAgo: 0))",
+                title: "E2E 3 Fotoğraf Storage \(Self.uiTestISODate(minutesAgo: 0))",
                 onProgress: progress
             )
         }

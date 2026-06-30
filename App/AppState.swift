@@ -808,8 +808,8 @@ final class AppState: ObservableObject {
     }
 
     private static var isRealE2EAnalysisLaunch: Bool {
-        CommandLine.arguments.contains("RD_E2E_REAL_5_PHOTO_ANALYSIS")
-            || ProcessInfo.processInfo.environment["RD_E2E_REAL_5_PHOTO_ANALYSIS"] == "1"
+        CommandLine.arguments.contains("RD_E2E_REAL_3_PHOTO_ANALYSIS")
+            || ProcessInfo.processInfo.environment["RD_E2E_REAL_3_PHOTO_ANALYSIS"] == "1"
     }
 
     private static func prepareForUITestLaunchIfNeeded() {
@@ -1004,10 +1004,10 @@ final class AppState: ObservableObject {
         #if DEBUG
         if Self.isUITestMainLaunch {
             planCapabilities = PlanCapabilities.forTier(tier).applyingPhotoRules(
-                maxPhotosPerAnalysis: tier.isPaid ? 5 : 1,
-                visiblePhotoSlotsInUI: 5,
-                maxFindingsPerPhoto: 12,
-                maxFindingsPerAnalysis: tier.isPaid ? 60 : 12,
+                maxPhotosPerAnalysis: tier.isPaid ? 3 : 1,
+                visiblePhotoSlotsInUI: 3,
+                maxFindingsPerPhoto: 13,
+                maxFindingsPerAnalysis: tier.isPaid ? 39 : 12,
                 canUseMultiPhotoAnalysis: tier.isPaid,
                 canEditAIFindings: true,
                 canAddManualFindings: false

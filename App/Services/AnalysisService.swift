@@ -247,8 +247,8 @@ final class AnalysisService {
         guard !images.isEmpty else {
             throw AnalysisError.invalidInput("Analiz için bir fotoğraf seçmelisin.")
         }
-        guard images.count <= 5 else {
-            throw AnalysisError.invalidInput("Bir analizde en fazla 5 fotoğraf kullanılabilir.")
+        guard images.count <= 3 else {
+            throw AnalysisError.invalidInput("Bir analizde en fazla 3 fotoğraf kullanılabilir.")
         }
 
         // 1) Fotoğrafları analiz kaydı açılmadan önce hazırla.

@@ -113,8 +113,8 @@ struct PlanCapabilities: Equatable {
 
     var isPaid: Bool { tier.isPaid }
     var isPro: Bool { tier == .pro }
-    var safeVisiblePhotoSlotsInUI: Int { max(1, min(visiblePhotoSlotsInUI, 5)) }
-    var safeMaxPhotosPerAnalysis: Int { max(1, min(maxPhotosPerAnalysis, 5)) }
+    var safeVisiblePhotoSlotsInUI: Int { max(1, min(visiblePhotoSlotsInUI, 3)) }
+    var safeMaxPhotosPerAnalysis: Int { max(1, min(maxPhotosPerAnalysis, 3)) }
 
     init(
         tier: SubscriptionTier,
@@ -183,8 +183,8 @@ struct PlanCapabilities: Equatable {
             canUseAutomaticDelivery: canUseAutomaticDelivery,
             canUseTrainedAI: canUseTrainedAI,
             supportLabel: supportLabel,
-            maxPhotosPerAnalysis: max(1, min(maxPhotosPerAnalysis, 5)),
-            visiblePhotoSlotsInUI: max(1, min(visiblePhotoSlotsInUI, 5)),
+            maxPhotosPerAnalysis: max(1, min(maxPhotosPerAnalysis, 3)),
+            visiblePhotoSlotsInUI: max(1, min(visiblePhotoSlotsInUI, 3)),
             maxFindingsPerPhoto: max(1, maxFindingsPerPhoto),
             maxFindingsPerAnalysis: max(1, maxFindingsPerAnalysis),
             canUseMultiPhotoAnalysis: canUseMultiPhotoAnalysis,
