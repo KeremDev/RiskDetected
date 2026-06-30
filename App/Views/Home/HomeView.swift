@@ -231,7 +231,13 @@ struct HomeView: View {
                 },
                 onClose: { showSourceDialog = false }
             )
-            .presentationDetents([.height(500)])
+            .presentationDetents([
+                .height(PhotoMediaTraySheet.detentHeight(
+                    photosCount: selectedPhotos.count,
+                    maxPhotoCount: maxSelectablePhotos,
+                    visibleSlotCount: visiblePhotoSlotCount
+                ))
+            ])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -347,6 +353,9 @@ struct HomeView: View {
                         markFreeQuotaExhaustedLocally()
                     }
                     pendingJob = nil
+                    Task {
+                        await loadProfessionalProgress()
+                    }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                         showResult = true
                     }
@@ -386,6 +395,7 @@ struct HomeView: View {
                         await loadRecentItems()
                         await loadRecentReports()
                         await loadQuotaUsage()
+                        await loadProfessionalProgress()
                     }
                 }
             )
@@ -2551,6 +2561,35 @@ private struct PhotoMediaTraySheet: View {
     let onClose: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
+
+    static func detentHeight(
+        photosCount: Int,
+        maxPhotoCount: Int,
+        visibleSlotCount: Int
+    ) -> CGFloat {
+        let gridSpacing: CGFloat = 14
+        let slotCount = max(visibleSlotCount, min(maxPhotoCount, photosCount + 1))
+        let rowCount = max(1, Int(ceil(Double(slotCount) / 3.0)))
+        let contentWidth = UIScreen.main.bounds.width - 40
+        let availableWidth = contentWidth - (gridSpacing * 2)
+        let tileSize = max(88, min(112, floor(availableWidth / 3)))
+        let gridHeight = (CGFloat(rowCount) * tileSize) + (CGFloat(max(rowCount - 1, 0)) * gridSpacing) + 6
+        let hasLockedSlots = slotCount > maxPhotoCount
+        let verticalSpacing = CGFloat(hasLockedSlots ? 4 : 3) * 14
+        let upgradePromptHeight: CGFloat = hasLockedSlots ? 38 : 0
+
+        let contentHeight =
+            18 + // top padding
+            46 + // header
+            46 + // source buttons
+            gridHeight +
+            upgradePromptHeight +
+            58 + // primary button
+            verticalSpacing +
+            20 // bottom padding
+
+        return ceil(min(max(contentHeight + 28, 360), 500))
+    }
 
     private var isDarkMode: Bool { colorScheme == .dark }
     private var trayBackground: Color { isDarkMode ? Color(hex: "#151819") : Color.rdWhite }

@@ -14,6 +14,7 @@ final class AnalysisProgressController: ObservableObject {
     private var target: Double = 0.08
     private var progressTask: Task<Void, Never>?
     private var photoCount: Int = 0
+    private var analyzingStartedAt: Date?
 
     func start(photoCount: Int) {
         progressTask?.cancel()
@@ -21,6 +22,7 @@ final class AnalysisProgressController: ObservableObject {
         progress = 0.03
         phase = .preparingInput
         target = targetValue(for: .preparingInput)
+        analyzingStartedAt = nil
 
         progressTask = Task { @MainActor in
             while !Task.isCancelled {
@@ -32,7 +34,17 @@ final class AnalysisProgressController: ObservableObject {
     }
 
     func apply(_ update: AnalysisProgressUpdate) {
+        let previousPhase = phase
         phase = update.phase
+
+        if update.phase == .analyzing {
+            if previousPhase != .analyzing || analyzingStartedAt == nil {
+                analyzingStartedAt = Date()
+            }
+        } else if previousPhase == .analyzing {
+            analyzingStartedAt = nil
+        }
+
         target = max(target, targetValue(for: update.phase))
         let floor = floorValue(for: update.phase)
         if progress < floor {
@@ -44,15 +56,16 @@ final class AnalysisProgressController: ObservableObject {
 
     func complete() async {
         phase = .finalizingResult
-        target = 0.98
+        analyzingStartedAt = nil
+        target = max(target, 0.99)
 
-        while progress < 0.98 {
+        while progress < 0.99 {
             advanceOneTick(maxStep: 0.035, minStep: 0.010, duration: 0.10)
             try? await Task.sleep(nanoseconds: 90_000_000)
         }
 
         withAnimation(.easeInOut(duration: 0.18)) {
-            progress = 0.98
+            progress = 0.99
         }
         try? await Task.sleep(nanoseconds: 160_000_000)
         withAnimation(.easeInOut(duration: 0.20)) {
@@ -65,6 +78,7 @@ final class AnalysisProgressController: ObservableObject {
     func cancel() {
         progressTask?.cancel()
         progressTask = nil
+        analyzingStartedAt = nil
     }
 
     private func targetValue(for phase: AnalysisProgressPhase) -> Double {
@@ -82,9 +96,9 @@ final class AnalysisProgressController: ObservableObject {
         case .queued:
             return min(0.70 + multiPhotoBonus, 0.76)
         case .analyzing:
-            return 0.94
+            return analyzingSoftTarget()
         case .finalizingResult:
-            return 0.98
+            return 0.99
         case .retryingNetwork:
             return min(max(target, progress + 0.035, 0.38), 0.78)
         case .retryingAI:
@@ -126,7 +140,7 @@ final class AnalysisProgressController: ObservableObject {
         minStep: Double? = nil,
         duration: Double = 0.24
     ) {
-        let ceiling = min(target, 0.98)
+        let ceiling = min(effectiveTarget(), maximumProgressBeforeCompletion())
         guard progress < ceiling else { return }
 
         let remaining = ceiling - progress
@@ -142,6 +156,50 @@ final class AnalysisProgressController: ObservableObject {
         withAnimation(.easeInOut(duration: duration)) {
             progress = min(progress + step, ceiling)
         }
+    }
+
+    private func effectiveTarget() -> Double {
+        switch phase {
+        case .analyzing:
+            return max(target, analyzingSoftTarget())
+        case .finalizingResult:
+            return max(target, 0.99)
+        default:
+            return target
+        }
+    }
+
+    private func maximumProgressBeforeCompletion() -> Double {
+        switch phase {
+        case .analyzing:
+            return 0.98
+        case .finalizingResult:
+            return 0.99
+        default:
+            return 0.98
+        }
+    }
+
+    private func analyzingSoftTarget(now: Date = Date()) -> Double {
+        guard let analyzingStartedAt else { return 0.94 }
+
+        let elapsed = max(0, now.timeIntervalSince(analyzingStartedAt))
+        switch elapsed {
+        case ..<10:
+            return interpolatedProgress(from: 0.94, to: 0.95, elapsed: elapsed, duration: 10)
+        case ..<25:
+            return interpolatedProgress(from: 0.95, to: 0.96, elapsed: elapsed - 10, duration: 15)
+        case ..<50:
+            return interpolatedProgress(from: 0.96, to: 0.97, elapsed: elapsed - 25, duration: 25)
+        default:
+            return interpolatedProgress(from: 0.97, to: 0.98, elapsed: elapsed - 50, duration: 25)
+        }
+    }
+
+    private func interpolatedProgress(from start: Double, to end: Double, elapsed: TimeInterval, duration: TimeInterval) -> Double {
+        guard duration > 0 else { return end }
+        let fraction = min(max(elapsed / duration, 0), 1)
+        return start + ((end - start) * fraction)
     }
 }
 
@@ -171,7 +229,8 @@ struct AnalyzingView: View {
     }
 
     private var percentValue: Int {
-        min(100, max(0, Int((clampedProgress * 100).rounded())))
+        if clampedProgress >= 0.999 { return 100 }
+        return min(99, max(0, Int((clampedProgress * 100).rounded(.down))))
     }
 
     private var resolvedPhotoCount: Int {

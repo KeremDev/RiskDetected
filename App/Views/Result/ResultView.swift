@@ -885,9 +885,9 @@ struct ResultView: View {
             _ = await refreshReportQuotaState()
             await refreshFreeRiskAnalysisTrialState()
             await loadInitialReportCompanyIfNeeded()
-            reportOptions = resolvedReportOptions(defaultReportOptions(kind: .standard), company: selectedReportCompany)
-            reportSettingsDetent = .height(430)
-            showReportSettings = true
+            guard showReportSettings else { return }
+            reportOptions = resolvedReportOptions(reportOptions, company: selectedReportCompany)
+            reportSettingsDetent = reportOptions.kind == .riskAnalysis ? .large : .height(430)
             if !reportQuotaExhausted {
                 _ = try? await loadProfileLogoIfNeeded()
             }
