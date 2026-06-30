@@ -344,8 +344,8 @@ Deno.test("AI timeout and token budgets are explicit", async () => {
   );
   if (analyzeSource == null || workerSource == null) return;
 
-  assertStringIncludes(analyzeSource, "const MAIN_AI_TIMEOUT_MS = 150_000");
-  assertStringIncludes(analyzeSource, "const REPAIR_AI_TIMEOUT_MS = 60_000");
+  assertStringIncludes(analyzeSource, "const MAIN_AI_TIMEOUT_MS = 120_000");
+  assertStringIncludes(analyzeSource, "const REPAIR_AI_TIMEOUT_MS = 45_000");
   assertStringIncludes(
     analyzeSource,
     "thinkingBudget: isRepairPass ? 1024 : 3072",
@@ -360,9 +360,16 @@ Deno.test("AI timeout and token budgets are explicit", async () => {
   assertStringIncludes(analyzeSource, 'finishReason === "MAX_TOKENS"');
   assertStringIncludes(
     workerSource,
-    "const ANALYZE_WORKER_TIMEOUT_MS = 540_000",
+    "const ANALYZE_WORKER_TIMEOUT_MS = 135_000",
   );
-  assertStringIncludes(workerSource, "p_visibility_timeout: 600");
+  assertStringIncludes(
+    workerSource,
+    "const ANALYSIS_JOB_VISIBILITY_TIMEOUT_SECONDS = 180",
+  );
+  assertStringIncludes(
+    workerSource,
+    "p_visibility_timeout: ANALYSIS_JOB_VISIBILITY_TIMEOUT_SECONDS",
+  );
 });
 
 Deno.test("coverage repair is queued as a separate job", async () => {

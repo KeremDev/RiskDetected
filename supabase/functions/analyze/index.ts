@@ -78,8 +78,8 @@ const SINGLE_PHOTO_TARGET_MAX = 14;
 const MULTI_PHOTO_TARGET_MIN = 9;
 const MULTI_PHOTO_TARGET_MAX = 13;
 const PHOTO_TARGET_TOTAL_MAX = 65;
-const MAIN_AI_TIMEOUT_MS = 150_000;
-const REPAIR_AI_TIMEOUT_MS = 60_000;
+const MAIN_AI_TIMEOUT_MS = 120_000;
+const REPAIR_AI_TIMEOUT_MS = 45_000;
 
 type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";

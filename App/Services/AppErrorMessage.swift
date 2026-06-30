@@ -12,6 +12,7 @@ struct AppErrorMessage: Equatable {
         case reportArchiveFailed
         case pdfRenderFailed
         case validationFailed
+        case backgroundAnalysisPending
         case databaseFailed
         case unknown
     }
@@ -226,6 +227,19 @@ struct AppErrorMessage: Equatable {
                 message: "Bu plan için rapor oluşturma limitin dolmuş görünüyor.",
                 action: "Bir üst plana yükselt veya yeni kota dönemini bekle.",
                 category: .quotaExceeded,
+                supportID: supportID
+            )
+        }
+
+        if lower.contains("arka planda devam ediyor") ||
+            lower.contains("geçmiş analizler") ||
+            lower.contains("gecmis analizler")
+        {
+            return AppErrorMessage(
+                title: "Analiz arka planda devam ediyor",
+                message: raw.components(separatedBy: "\n").first ?? "Analiz arka planda devam ediyor.",
+                action: "Aynı analizi tekrar başlatmadan önce Geçmiş analizler ekranını birkaç dakika sonra yenile.",
+                category: .backgroundAnalysisPending,
                 supportID: supportID
             )
         }

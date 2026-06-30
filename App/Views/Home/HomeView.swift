@@ -64,6 +64,7 @@ struct HomeView: View {
     // Analiz state
     @State private var analysisResult: AnalysisResultBundle? = nil
     @State private var analysisError: String? = nil
+    @State private var analysisErrorTitle: String = "Analiz Hatası"
     @State private var pendingJob: AnalysisJob? = nil
     @State private var recentItems: [RecentAnalysis] = []
     @State private var recentReports: [ReportRow] = []
@@ -405,11 +406,19 @@ struct HomeView: View {
             )
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .alert("Analiz Hatası", isPresented: .init(
+        .alert(analysisErrorTitle, isPresented: .init(
             get: { analysisError != nil },
-            set: { if !$0 { analysisError = nil } }
+            set: {
+                if !$0 {
+                    analysisError = nil
+                    analysisErrorTitle = "Analiz Hatası"
+                }
+            }
         )) {
-            Button("Tamam") { analysisError = nil }
+            Button("Tamam") {
+                analysisError = nil
+                analysisErrorTitle = "Analiz Hatası"
+            }
         } message: {
             Text(analysisError ?? "")
         }
@@ -1230,11 +1239,11 @@ struct HomeView: View {
             return
         }
         if mode == .text && text.trimmingCharacters(in: .whitespacesAndNewlines).count < 10 {
-            analysisError = AppErrorMessage.make(
+            presentAnalysisError(AppErrorMessage.make(
                 AnalysisService.AnalysisError.invalidInput("Analiz için en az 10 karakterlik bir açıklama yazmalısın."),
                 context: "Eksik metin",
                 fallbackTitle: "Eksik metin"
-            ).fullText
+            ))
             return
         }
         beginPreAnalysisSelection()
@@ -1411,7 +1420,7 @@ struct HomeView: View {
 
         // AuthService.session authStateChanges'ten geliyor — currentSession'dan daha güvenilir.
         guard let userID = app.auth.session?.user.id else {
-            analysisError = AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated).fullText
+            presentAnalysisError(AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated))
             return
         }
         let canvases = selectedCanvasesForCurrentTier()
@@ -1471,12 +1480,18 @@ struct HomeView: View {
         let normalized = AppErrorMessage.make(rawMessage: msg, context: "Analiz tamamlanamadı", fallbackTitle: "Analiz tamamlanamadı")
         if normalized.category == .quotaExceeded {
             analysisError = nil
+            analysisErrorTitle = "Analiz Hatası"
             markFreeQuotaExhaustedLocally()
             showQuotaPaywall()
             Task { await loadQuotaUsage() }
         } else {
-            analysisError = normalized.fullText
+            presentAnalysisError(normalized)
         }
+    }
+
+    private func presentAnalysisError(_ error: AppErrorMessage) {
+        analysisErrorTitle = error.title
+        analysisError = error.fullText
     }
 
     private func selectedCanvasesForCurrentTier() -> [AnalysisCanvas] {
@@ -1580,6 +1595,7 @@ struct HomeView: View {
         let allowedCount = maxSelectablePhotos - selectedPhotos.count
         guard allowedCount > 0 else {
             if app.currentTier.isPaid {
+                analysisErrorTitle = "Fotoğraf limiti"
                 analysisError = "Bu planda en fazla \(maxSelectablePhotos) fotoğraf analiz edilebilir."
             } else {
                 showPlainPaywall()
@@ -1591,6 +1607,7 @@ struct HomeView: View {
         selectedPhotos.append(contentsOf: drafts)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         if images.count > allowedCount {
+            analysisErrorTitle = "Fotoğraf limiti"
             analysisError = "En fazla \(maxSelectablePhotos) fotoğraf eklenebilir. Fazla seçimler alınmadı."
         }
         if shouldAnnotate {
@@ -2136,7 +2153,7 @@ struct HomeView: View {
                 analysisResult = result
                 showResult = true
             } catch {
-                analysisError = AppErrorMessage.make(error, context: context, fallbackTitle: context).fullText
+                presentAnalysisError(AppErrorMessage.make(error, context: context, fallbackTitle: context))
             }
             openingRecentID = nil
         }
@@ -2278,11 +2295,11 @@ struct HomeView: View {
                 )
                 reportPreviewItem = ShareItem(url: url)
             } catch {
-                analysisError = AppErrorMessage.make(
+                presentAnalysisError(AppErrorMessage.make(
                     error,
                     context: "Rapor açılamadı",
                     fallbackTitle: "Rapor açılamadı"
-                ).fullText
+                ))
             }
             openingReportID = nil
         }
