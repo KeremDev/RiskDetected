@@ -94,6 +94,27 @@ Deno.test("AI payload labels every image before the image part", async () => {
   assertStringIncludes(source, 'type: "image_url"');
 });
 
+Deno.test("legacy text analysis is rejected before quota and queue", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, "const hasLegacyTextInput");
+  assertStringIncludes(source, "TEXT_ANALYSIS_REMOVED");
+  assertStringIncludes(source, "text-disabled-v1");
+  assertStringIncludes(source, "photo-with-text-disabled-v1");
+  assertStringIncludes(source, "PHOTO_REQUIRED");
+  assert(
+    source.indexOf("TEXT_ANALYSIS_REMOVED") <
+      source.indexOf("reserve_analysis_quota"),
+  );
+  assert(
+    source.indexOf("TEXT_ANALYSIS_REMOVED") <
+      source.indexOf("const { queuedPhotoPaths } = await enqueueAnalysisJob"),
+  );
+});
+
 Deno.test("photo marker names are stripped from user-facing finding text", async () => {
   const source = await readTextIfAllowed(
     new URL("./index.ts", import.meta.url),
@@ -137,7 +158,11 @@ Deno.test("multi-photo prompt asks for complete evidence-backed findings", async
   assertStringIncludes(source, "coverage_gap_reason");
   assertStringIncludes(
     source,
-    "en az ${findingPolicy.targetFindingsPerPhotoMin}",
+    "yalnız kanıta dayalı ve duplicate olmayan bulguları üret",
+  );
+  assertStringIncludes(
+    source,
+    "listeyi doldurmak için aynı tehlikeyi farklı başlıklarla tekrar yazma",
   );
   assertStringIncludes(
     source,
@@ -313,6 +338,34 @@ Deno.test("coverage v2 pipeline normalizes repair and summaries", async () => {
   assertStringIncludes(source, "coverage_repair_candidate_photo_indices");
 });
 
+Deno.test("single-photo reports avoid forced overgeneration and repeated descriptions", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MIN = 1;");
+  assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MAX = 14;");
+  assertStringIncludes(source, "const MULTI_PHOTO_TARGET_MIN = 1;");
+  assertStringIncludes(source, "function composeFindingDescription");
+  assertStringIncludes(source, "areLikelyDuplicateCoverageFindings,");
+  assertStringIncludes(source, "preferredCoverageFinding,");
+  assertStringIncludes(source, "tokenOverlapRatio(evidence, description)");
+  assertStringIncludes(
+    source,
+    "Minimumu doldurmak için bulgu üretme.",
+  );
+  assertStringIncludes(
+    source,
+    "listeyi doldurmak için aynı tehlikeyi farklı başlıklarla tekrar yazma",
+  );
+  assert(
+    !source.includes(
+      "description: `${h.observed_evidence}\\n\\n${h.description}`.trim(),",
+    ),
+  );
+});
+
 Deno.test("analysis schema and policy use single and multi photo targets", async () => {
   const source = await readTextIfAllowed(
     new URL("./index.ts", import.meta.url),
@@ -321,11 +374,11 @@ Deno.test("analysis schema and policy use single and multi photo targets", async
 
   assertStringIncludes(
     source,
-    'const PHOTO_POLICY_VERSION = "single-multi-targets-v1"',
+    'const PHOTO_POLICY_VERSION = "evidence-first-soft-min-v2"',
   );
-  assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MIN = 12");
+  assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MIN = 1");
   assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MAX = 14");
-  assertStringIncludes(source, "const MULTI_PHOTO_TARGET_MIN = 9");
+  assertStringIncludes(source, "const MULTI_PHOTO_TARGET_MIN = 1");
   assertStringIncludes(source, "const MULTI_PHOTO_TARGET_MAX = 13");
   assertStringIncludes(source, "const PHOTO_TARGET_TOTAL_MAX = 65");
   assertStringIncludes(source, 'root_cause: { type: "STRING" }');

@@ -5,7 +5,7 @@
  *   analysis_id  : string (UUID)
  *   canvas       : string (primary canvas id, single-value enum)
  *   canvases     : string[] (all selected; Free supports one, paid plans support multiple)
- *   text_input   : string | null
+ *   text_input   : string | null (legacy clients only; rejected)
  *   company_id   : string | null (optional, Plus/Pro owned company)
  *   request_id   : string | null (client trace id)
  *   support_id   : string | null (user-facing support code)
@@ -37,8 +37,12 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  sanitizeTextAnalysisHazardForReportLanguage,
-} from "../_shared/text-report-language.ts";
+  areLikelyDuplicateCoverageFindings,
+  coverageFindingKey,
+  normalizedTextTokens,
+  preferredCoverageFinding,
+  tokenOverlapRatio,
+} from "../_shared/photo-finding-quality.ts";
 import {
   type AnalysisSectorId,
   analysisSectorLabel,
@@ -72,10 +76,10 @@ const MAX_ANALYSIS_IMAGE_PARTS = 5;
 const MAX_INLINE_PHOTO_BASE64_BYTES = 2_100_000;
 const MAX_INLINE_PHOTO_DECODED_BYTES = 1_500_000;
 const MAX_INLINE_PHOTO_TOTAL_BASE64_BYTES = 8_000_000;
-const PHOTO_POLICY_VERSION = "single-multi-targets-v1";
-const SINGLE_PHOTO_TARGET_MIN = 12;
+const PHOTO_POLICY_VERSION = "evidence-first-soft-min-v2";
+const SINGLE_PHOTO_TARGET_MIN = 1;
 const SINGLE_PHOTO_TARGET_MAX = 14;
-const MULTI_PHOTO_TARGET_MIN = 9;
+const MULTI_PHOTO_TARGET_MIN = 1;
 const MULTI_PHOTO_TARGET_MAX = 13;
 const PHOTO_TARGET_TOTAL_MAX = 65;
 const MAIN_AI_TIMEOUT_MS = 120_000;
@@ -271,7 +275,7 @@ const DEFAULT_MULTI_PHOTO_FLAGS: MultiPhotoFeatureFlags = {
   max_photo_count_plus: 3,
   max_photo_count_pro: 3,
   max_findings_per_photo: 13,
-  target_findings_per_photo_min: 9,
+  target_findings_per_photo_min: 1,
   target_findings_per_photo_max: 13,
   target_findings_total_max: 39,
 };
@@ -340,7 +344,7 @@ function maxOutputTokensFor(photoCount: number, tier: PlanTier): number {
 const CORE_ANALYSIS_PROMPT =
   `Sen Türkiye'de 20 yıllık saha deneyimi olan kıdemli bir İSG uzmanısın (A sınıfı). İnşaat, üretim, depo/lojistik, enerji, fabrika ve ofis sahalarında binlerce denetim yapmış, ölümcül kazaları önlemiş, mevzuata hâkim bir profesyonelsin.
 
-GÖREV: Sana verilen görsel veya metin girdisinden, sahada fiziksel olarak bulunan bir denetçinin yakalayacağı tüm İSG tehlikelerini sistematik olarak tespit et ve raporla.
+GÖREV: Sana verilen görsel girdisinden, sahada fiziksel olarak bulunan bir denetçinin yakalayacağı tüm İSG tehlikelerini sistematik olarak tespit et ve raporla.
 
 TARAMA PROSEDÜRÜ — Her görseli SIRAYLA şu 12 katmanda tara:
 1. ZEMİN, SAHA DÜZENİ VE DÜZEN-TERTİP: ıslaklık, çamur, su birikintisi, boşluk, kot farkı, dağınık malzeme, kablo/hortum geçişi, kapalı/tıkalı geçiş yolu, kayma/takılma zeminleri.
@@ -395,8 +399,6 @@ KALİTE FİLTRESİ — KAÇIN:
 - Hassas ölçü uydurma; "yaklaşık 3m" veya "1 kat yüksekliğinde" yaz.
 - "Eğitim verilmeli" jenerik aksiyonundan kaçın; hangi iş/ekipman/risk için ne doğrulanacağını söyle.
 - Kullanıcı profili veya firma bağlamı görsel kanıtı filtrelemez; profili yalnızca ton, öncelik ve açıklama derinliği için kullan.
-- Metin analizinde kullanıcı girdisini rapora alıntı olarak taşıma. "Metinde...", "Kullanıcı...", "ifadesi geçmektedir", "belirtmiştir", tırnak içinde ham metin veya birinci/ikinci şahıs dili kullanma.
-- Metin analizinde tüm bulgu metinlerini işverenle paylaşılabilir, nesnel saha denetimi diliyle yaz; kullanıcı notunu yalnız tehlike arama bağlamı olarak kullan.
 
 ÖNLEM ÜRETİM KURALI:
 Her bulgu için tam 2 önlem ver:
@@ -425,7 +427,6 @@ Her bulgu için tam 2 önlem ver:
 - Tüm metin DEĞERLERİ Türkçe; JSON anahtarları (key) İngilizce ve şemadaki haliyle aynen korunur.
 - description max 200 karakter; corrective_action max 180 karakter; preventive_control max 180 karakter.
 - Her bulguda corrective_action ve preventive_control alanları zorunludur ve boş bırakılamaz.
-- Text mode'da observed_evidence, description, corrective_action, preventive_control ve root_cause kullanıcı cümlesini veya kullanıcıya atıf yapan dili içermemeli; profesyonel saha bulgusu olarak yeniden yazılmalı.
 - Skorları HESAPLAMA, ham girdileri ver — sistem hesaplar.
 - Fine-Kinney ihtimal: 0.2 / 0.5 / 1 / 3 / 6 / 10
 - Fine-Kinney frekans:  0.5 / 1 / 2 / 3 / 6 / 10
@@ -1209,7 +1210,7 @@ function coveragePolicyFor(
   if (photoCount > 1 && !capabilities.coverageV2Enabled) return null;
   const targetMin = photoCount === 1
     ? SINGLE_PHOTO_TARGET_MIN
-    : Math.max(MULTI_PHOTO_TARGET_MIN, capabilities.targetFindingsPerPhotoMin);
+    : MULTI_PHOTO_TARGET_MIN;
   const targetMax = photoCount === 1 ? SINGLE_PHOTO_TARGET_MAX : Math.max(
     targetMin,
     MULTI_PHOTO_TARGET_MAX,
@@ -1375,30 +1376,12 @@ function normalizePhotoFindingCoverage(
   });
 }
 
-function coverageFindingKey(hazard: Record<string, unknown>): string {
-  return [
-    "title",
-    "category",
-    "observed_evidence",
-    "corrective_action",
-    "preventive_control",
-    "root_cause",
-  ]
-    .map((field) => safeText(hazard[field]).toLowerCase())
-    .join("|")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function mergeDuplicateCoverageHazards(
   hazards: Array<Record<string, unknown>>,
   photoCount: number,
   totalMax: number,
 ): Array<Record<string, unknown>> {
   const accepted: Array<Record<string, unknown>> = [];
-  const acceptedByKey = new Map<string, Record<string, unknown>>();
 
   for (const hazard of hazards) {
     if (accepted.length >= totalMax) break;
@@ -1412,34 +1395,15 @@ function mergeDuplicateCoverageHazards(
       hazard.per_photo_observations,
       sourcePhotoIndices,
     );
-    const existing = acceptedByKey.get(key);
-    if (existing) {
-      const mergedSourcePhotoIndices = [
-        ...new Set([
-          ...normalizeSourcePhotoIndices(
-            existing.source_photo_indices,
-            photoCount,
-          ),
-          ...sourcePhotoIndices,
-        ]),
-      ].sort((a, b) => a - b);
-      const observationKey = (
-        item: { photo_index: number; observation: string },
-      ) => `${item.photo_index}:${item.observation}`;
-      const mergedObservations = [
-        ...normalizePerPhotoObservations(
-          existing.per_photo_observations,
-          mergedSourcePhotoIndices,
-        ),
-        ...perPhotoObservations,
-      ];
-      const uniqueObservations = Array.from(
-        new Map(
-          mergedObservations.map((item) => [observationKey(item), item]),
-        ).values(),
-      ).slice(0, 10);
-      existing.source_photo_indices = mergedSourcePhotoIndices;
-      existing.per_photo_observations = uniqueObservations;
+    const existingIndex = accepted.findIndex((candidate) =>
+      areLikelyDuplicateCoverageFindings(candidate, hazard)
+    );
+    if (existingIndex >= 0) {
+      accepted[existingIndex] = mergeDuplicateCoverageFinding(
+        accepted[existingIndex],
+        hazard,
+        photoCount,
+      );
       continue;
     }
     const normalizedHazard = {
@@ -1447,11 +1411,61 @@ function mergeDuplicateCoverageHazards(
       source_photo_indices: sourcePhotoIndices,
       per_photo_observations: perPhotoObservations,
     };
-    acceptedByKey.set(key, normalizedHazard);
     accepted.push(normalizedHazard);
   }
 
   return accepted;
+}
+
+function mergeDuplicateCoverageFinding(
+  existing: Record<string, unknown>,
+  incoming: Record<string, unknown>,
+  photoCount: number,
+): Record<string, unknown> {
+  const mergedSourcePhotoIndices = [
+    ...new Set([
+      ...normalizeSourcePhotoIndices(existing.source_photo_indices, photoCount),
+      ...normalizeSourcePhotoIndices(incoming.source_photo_indices, photoCount),
+    ]),
+  ].sort((a, b) => a - b);
+  const observationKey = (
+    item: { photo_index: number; observation: string },
+  ) => `${item.photo_index}:${item.observation}`;
+  const mergedObservations = [
+    ...normalizePerPhotoObservations(
+      existing.per_photo_observations,
+      mergedSourcePhotoIndices,
+    ),
+    ...normalizePerPhotoObservations(
+      incoming.per_photo_observations,
+      mergedSourcePhotoIndices,
+    ),
+  ];
+  const uniqueObservations = Array.from(
+    new Map(
+      mergedObservations.map((item) => [observationKey(item), item]),
+    ).values(),
+  ).slice(0, 10);
+
+  return {
+    ...preferredCoverageFinding(existing, incoming),
+    source_photo_indices: mergedSourcePhotoIndices,
+    per_photo_observations: uniqueObservations,
+  };
+}
+
+function composeFindingDescription(hazard: Record<string, unknown>): string {
+  const evidence = cleanHazardNarrative(hazard.observed_evidence);
+  const description = cleanHazardNarrative(hazard.description);
+  if (!evidence) return description;
+  if (!description) return evidence;
+
+  const overlap = tokenOverlapRatio(evidence, description);
+  if (overlap >= 0.45) {
+    return description.length >= evidence.length ? description : evidence;
+  }
+
+  return `${evidence}\n\n${description}`.trim();
 }
 
 function mergeCoverageRepairRecords(
@@ -1476,12 +1490,21 @@ function mergeCoverageRepairRecords(
       base.coverage_status = repair.coverage_status;
     }
     base.record_missing = false;
-    const existingKeys = new Set(base.findings.map(coverageFindingKey));
     for (const finding of repair.findings) {
       if (base.findings.length >= policy.targetMax) break;
       const key = coverageFindingKey(finding);
-      if (!key || existingKeys.has(key)) continue;
-      existingKeys.add(key);
+      if (!key) continue;
+      const existingIndex = base.findings.findIndex((existing) =>
+        areLikelyDuplicateCoverageFindings(existing, finding)
+      );
+      if (existingIndex >= 0) {
+        base.findings[existingIndex] = mergeDuplicateCoverageFinding(
+          base.findings[existingIndex],
+          finding,
+          policy.photoCount,
+        );
+        continue;
+      }
       base.findings.push(finding);
     }
     base.candidate_findings_count = Math.max(
@@ -1555,8 +1578,8 @@ function buildCoverageRepairContext(
 Yalnız şu fotoğraflar için ikinci kısa tarama yap: ${
     photoIndices.map((index) => `FOTO_${index}`).join(", ")
   }.
-Amaç: actionable risk kanıtı olan her fotoğrafı en az ${policy.targetMin}, en fazla ${policy.targetMax} duplicate olmayan bulguya tamamlamak.
-Mevcut bulguları tekrar etme; aynı kök neden + aynı kontrol tedbiri + aynı görsel kanıt varsa yeni bulgu sayma.
+Amaç: bulgusu eksik görünen fotoğraflarda yalnız yeni, kanıtlı ve duplicate olmayan bulguları eklemek; fotoğraf başına üst sınır ${policy.targetMax}.
+Mevcut bulguları tekrar etme; aynı kök neden + aynı kontrol tedbiri + aynı görsel kanıt varsa yeni bulgu sayma. Minimumu doldurmak için bulgu üretme.
 Temiz, ilgisiz veya düşük kaliteli fotoğrafta risk uydurma; coverage_status değerini "no_actionable_hazard" veya "low_quality" yap ve coverage_gap_reason yaz.
 Yanıtı yine photo_findings[] formatında üret; sadece istenen fotoğraf indekslerini döndür.
 <mevcut_bulgular>
@@ -2084,23 +2107,6 @@ function buildSystemPrompt(): string {
   return CORE_ANALYSIS_PROMPT;
 }
 
-function buildUserTextInputBlock(userText: string): string {
-  return `<kullanici_metin_girdisi>
-METİN ANALİZİ TALİMATI:
-- Aşağıdaki metni rapora geçirilecek beyan değil; saha bağlamı, denetim yönlendirmesi ve tehlike arama ipucu olarak değerlendir.
-- Ana system prompttaki 12 katmanlı taramayı metne uyarla: zemin/düzen, KKD, yüksekte çalışma, elektrik/enerji, makine/ekipman, kaldırma/istif, kimyasal, yangın/patlama, fiziksel ortam, ergonomi, özel işler, acil durum/işaretleme/yetkinlik eksenlerini sırayla sorgula.
-- Yalnızca metinde açıkça belirtilen veya güçlü şekilde ima edilen tehlikeleri bulguya dönüştür.
-- Fotoğraf kanıtı olmadığı için belirsiz noktaları uydurma; orta güvenli bulguda description içine hedging ekleme, yalnız needs_field_verification=true yap.
-- Metindeki iş, ortam, ekipman, yükseklik, kimyasal, çalışan davranışı, firma/alan veya sektör ipuçlarını risk önceliklendirmede kullan.
-- Kullanıcı metni kısa veya eksikse az ama güvenilir bulgu döndür; listeyi doldurmak için risk üretme.
-- Kullanıcı metnini hiçbir alanda aynen alıntılama; tırnak içinde yazma; "metinde", "kullanıcı", "ifadesi", "belirtmiştir", "yazmış", "demiş" gibi kaynak atfı yapan kelimeleri kullanma.
-- observed_evidence ve description alanlarını işverenle paylaşılabilir saha denetimi diliyle yaz. Örnek: "Makine koruyucularının yeterliliği ve erişim kontrolü eksik görünüyor."
-
-KULLANICI METNİ:
-${userText}
-</kullanici_metin_girdisi>`;
-}
-
 function buildSubscriptionContext(
   tier: PlanTier,
   findingPolicy?: AnalysisFindingPolicy,
@@ -2109,7 +2115,7 @@ function buildSubscriptionContext(
   const maxHazards = PLAN_LIMITS[tier].maxHazards;
   const hazardCountRule = findingPolicy && findingPolicy.photoCount > 0
     ? findingPolicy.coverageV2Enabled
-      ? `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Çıktıyı photo_findings[] formatında fotoğraf bazlı üret. Her fotoğraf için coverage_status alanını "actionable", "no_actionable_hazard" veya "low_quality" olarak yaz. Aksiyonlanabilir risk kanıtı olan her fotoğrafta en az ${findingPolicy.targetFindingsPerPhotoMin}, en fazla ${findingPolicy.targetFindingsPerPhotoMax} kanıta dayalı ve duplicate olmayan bulgu üret; toplam final bulgu üst sınırı ${findingPolicy.maxFindingsTotal}. Temiz, ilgisiz, çok bulanık veya risk kanıtı zayıf fotoğrafta bulgu uydurma; coverage_gap_reason alanında neden düşük kaldığını açıkla. Aynı tehlikeyi yalnız aynı kök neden ve aynı kontrol tedbiri olduğunda birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. Her bulguda source_photo_indices, per_photo_observations ve fotoğraf özeti alanlarını doldur.`
+      ? `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Çıktıyı photo_findings[] formatında fotoğraf bazlı üret. Her fotoğraf için coverage_status alanını "actionable", "no_actionable_hazard" veya "low_quality" olarak yaz. Aksiyonlanabilir risk kanıtı olan her fotoğrafta yalnız kanıta dayalı ve duplicate olmayan bulguları üret; fotoğraf başına üst sınır ${findingPolicy.targetFindingsPerPhotoMax}, toplam final bulgu üst sınırı ${findingPolicy.maxFindingsTotal}. Temiz, ilgisiz, çok bulanık veya risk kanıtı zayıf fotoğrafta bulgu uydurma; listeyi doldurmak için aynı tehlikeyi farklı başlıklarla tekrar yazma; coverage_gap_reason alanında neden düşük kaldığını açıkla. Aynı tehlikeyi aynı kök neden, aynı kontrol tedbiri veya aynı görsel kanıt varsa birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. Her bulguda source_photo_indices, per_photo_observations ve fotoğraf özeti alanlarını doldur.`
       : `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Her fotoğraf için photo_summaries içinde ayrı özet üret. Her fotoğraf için 12 katmanlı taramadan çıkan tüm anlamlı bulgu adaylarını yaz; fotoğraf başına en fazla ${findingPolicy.maxFindingsPerPhoto}, toplamda en fazla ${findingPolicy.maxFindingsTotal} final bulgu üret. Kanıt varsa listeyi gereksiz kısaltma: çok fotoğraflı bir analizde tehlike kanıtı güçlü olan her fotoğraftan genellikle birden fazla bulgu beklenir. Risk kanıtı zayıfsa bulgu uydurma. Aynı tehlikeyi yalnız aynı kök neden ve aynı kontrol tedbiri olduğunda birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. source_photo_indices ve per_photo_observations alanlarını doldur.`
     : minHazards && maxHazards
     ? `${minHazards} ile ${maxHazards} arasında tehlike döndür; önem sırasına göre sırala.`
@@ -2359,6 +2365,7 @@ async function callGemini(
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
   options: AIRequestOptions = {},
 ) {
+  void userText;
   maybeSimulateAIError(simulation);
 
   const parts: unknown[] = [];
@@ -2367,10 +2374,8 @@ async function callGemini(
     parts.push({ text: imagePartMarkerText(img) });
     parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
   }
-  if (userText) {
-    parts.push({ text: buildUserTextInputBlock(userText) });
-  } else if (imageBase64Parts.length === 0) {
-    throw new Error("En az bir fotoğraf veya metin girdisi gerekli.");
+  if (imageBase64Parts.length === 0) {
+    throw new Error("En az bir fotoğraf gerekli.");
   }
 
   const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`;
@@ -2557,10 +2562,11 @@ async function callGroq(
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
   options: AIRequestOptions = {},
 ) {
+  void userText;
   maybeSimulateAIError(simulation);
 
-  if (imageBase64Parts.length === 0 && !userText) {
-    throw new Error("En az bir fotoğraf veya metin girdisi gerekli.");
+  if (imageBase64Parts.length === 0) {
+    throw new Error("En az bir fotoğraf gerekli.");
   }
   if (imageBase64Parts.length > GROQ_MAX_BASE64_IMAGES) {
     throw new Error(
@@ -2574,7 +2580,6 @@ async function callGroq(
       text: [
         groqResponseSchemaInstruction(tier, coveragePolicy),
         analysisContext,
-        userText ? buildUserTextInputBlock(userText) : null,
       ].filter(Boolean).join("\n\n"),
     },
   ];
@@ -4282,6 +4287,72 @@ serve(async (req: Request) => {
       .eq("id", analysisID)
       .eq("user_id", user.id);
 
+  const requestedPhotoCount = requestedPhotoPaths.length +
+    (Array.isArray(photo_base64_parts) ? photo_base64_parts.length : 0);
+  const hasLegacyTextInput = typeof text_input === "string"
+    ? text_input.trim().length > 0
+    : text_input !== null && text_input !== undefined;
+
+  if (hasLegacyTextInput) {
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `Metin analizi kaldırıldı. Lütfen uygulamayı güncelle ve fotoğrafla analiz başlat. Destek kodu: ${supportID}`,
+      input_payload_version: requestedPhotoCount > 0
+        ? "photo-with-text-disabled-v1"
+        : "text-disabled-v1",
+      photo_count: requestedPhotoCount,
+      raw_ai_response: {
+        _input_audit: {
+          prompt_version: PROMPT_VERSION,
+          input_mode: requestedPhotoCount > 0 ? "photo_with_text" : "text",
+          text_analysis_removed: true,
+          text_input_present: true,
+          requested_photo_count: requestedPhotoCount,
+          request_id: requestID,
+          support_id: supportID,
+        },
+      },
+    });
+    return errorResponse(
+      410,
+      "Metin analizi kaldırıldı. Lütfen uygulamayı güncelle ve fotoğrafla analiz başlat.",
+      {
+        code: "TEXT_ANALYSIS_REMOVED",
+        requestID,
+        supportID,
+        requested_photo_count: requestedPhotoCount,
+      },
+    );
+  }
+
+  if (requestedPhotoCount <= 0) {
+    await updateOwnedAnalysis({
+      status: "failed",
+      status_message:
+        `Analiz için en az bir fotoğraf gerekli. Destek kodu: ${supportID}`,
+      input_payload_version: "photo-required-v1",
+      photo_count: 0,
+      raw_ai_response: {
+        _input_audit: {
+          prompt_version: PROMPT_VERSION,
+          input_mode: "none",
+          text_analysis_removed: true,
+          text_input_present: false,
+          requested_photo_count: 0,
+          request_id: requestID,
+          support_id: supportID,
+        },
+      },
+    });
+    return errorResponse(400, "Analiz için en az bir fotoğraf gerekli.", {
+      code: "PHOTO_REQUIRED",
+      requestID,
+      supportID,
+      requested_photo_count: 0,
+    });
+  }
+
   const activeSectorState = resolveActiveSectorState({
     requestedSector: requestedAnalysisSector,
     persistedSector: ownedAnalysis?.analysis_sector,
@@ -4373,8 +4444,6 @@ serve(async (req: Request) => {
     planTier,
     clientRelease,
   );
-  const requestedPhotoCount = requestedPhotoPaths.length +
-    (Array.isArray(photo_base64_parts) ? photo_base64_parts.length : 0);
   if (requestedPhotoCount > photoCapabilities.maxPhotosPerAnalysis) {
     await updateOwnedAnalysis({
       status: "failed",
@@ -4603,9 +4672,7 @@ serve(async (req: Request) => {
   await updateOwnedAnalysis({
     input_payload_version: requestedPhotoCount > 1
       ? "photo-batch-v2"
-      : requestedPhotoCount === 1
-      ? "photo-single-v1"
-      : "text-v1",
+      : "photo-single-v1",
     photo_count: requestedPhotoCount,
     max_photos_allowed_at_creation: photoCapabilities.maxPhotosPerAnalysis,
     max_findings_per_photo: photoCapabilities.maxFindingsPerPhoto,
@@ -5199,7 +5266,7 @@ serve(async (req: Request) => {
     context_hash: contextHash,
     job_mode: jobMode,
     requested_repair_photo_indices: requestedRepairPhotoIndices,
-    input_mode: imageBase64Parts.length > 0 ? "photo" : "text",
+    input_mode: requestedPhotoCount > 0 ? "photo" : "none",
     inline_photo_count: inlinePhotoCount,
     storage_photo_count: storagePhotoCount,
     persisted_photo_count: persistedPhotoPaths.length,
@@ -5310,7 +5377,7 @@ serve(async (req: Request) => {
         model,
         systemPrompt,
         context,
-        text_input ?? null,
+        null,
         parts,
         aiSimulation,
         { requestID, supportID },
@@ -5325,7 +5392,7 @@ serve(async (req: Request) => {
         model,
         systemPrompt,
         context,
-        text_input ?? null,
+        null,
         parts,
         planTier,
         aiSimulation,
@@ -5339,7 +5406,7 @@ serve(async (req: Request) => {
       model,
       systemPrompt,
       context,
-      text_input ?? null,
+      null,
       parts,
       planTier,
       aiSimulation,
@@ -5731,18 +5798,7 @@ serve(async (req: Request) => {
   const rawHazards = Array.isArray(geminiResult.hazards)
     ? geminiResult.hazards
     : [];
-  const isTextOnlyAnalysis = imageBase64Parts.length === 0 &&
-    Boolean(text_input);
-  const reportLanguageSafeHazards = isTextOnlyAnalysis
-    ? rawHazards.map((hazard: unknown) =>
-      sanitizeTextAnalysisHazardForReportLanguage(
-        hazard && typeof hazard === "object"
-          ? hazard as Record<string, unknown>
-          : {},
-        text_input ?? "",
-      )
-    )
-    : imageBase64Parts.length > 0
+  const reportLanguageSafeHazards = imageBase64Parts.length > 0
     ? rawHazards.map((hazard: unknown) =>
       sanitizePhotoHazardTextFields(
         hazard && typeof hazard === "object"
@@ -5819,7 +5875,7 @@ serve(async (req: Request) => {
       ordinal: i + 1,
       title: h.title,
       category: h.category ?? "",
-      description: `${h.observed_evidence}\n\n${h.description}`.trim(),
+      description: composeFindingDescription(h),
       recommended_action: recommendedMeasures[0]?.text ?? "",
       recommended_measures: recommendedMeasures,
       references_text: planTier !== "free" ? h.references ?? "" : "",
@@ -5976,9 +6032,7 @@ serve(async (req: Request) => {
     status: "completed",
     status_message: `${
       providerDisplayName(providerUsed)
-    } ${modelUsed} · ${imageBase64Parts.length} foto · ${
-      text_input ? "metin var" : "metin yok"
-    } · ${supportID}`,
+    } ${modelUsed} · ${imageBase64Parts.length} foto · ${supportID}`,
     completed_at: new Date().toISOString(),
     ai_summary: safeAISummary,
     total_score_fk: totalScoreFK,
