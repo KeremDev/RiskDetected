@@ -70,3 +70,33 @@ Deno.test("subscription test override migration is service-role only and time bo
     "grant select, insert, update, delete on table public.subscription_test_overrides to service_role",
   );
 });
+
+Deno.test("passive RevenueCat sync updates only matching active Plus trial metadata", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, "canPassivelySyncPlusTrialMetadata(");
+  assertStringIncludes(source, "verifiedTrialMetadataPatch({");
+  assertStringIncludes(source, "renewal_intent_synced: true");
+  assertStringIncludes(
+    source,
+    "previous.entitlement_id !== resolved.entitlementID",
+  );
+  assertStringIncludes(
+    source,
+    "!timestampsMatch(previous.current_period_ends_at, resolved.expiration)",
+  );
+
+  const passiveStart = source.indexOf("if (!expectedTier) {");
+  const mismatchStart = source.indexOf(
+    "if (expectedTier && expectedTier !== resolved.tier)",
+    passiveStart,
+  );
+  assert(passiveStart > 0 && mismatchStart > passiveStart);
+  const passiveBlock = source.slice(passiveStart, mismatchStart);
+  assertStringIncludes(passiveBlock, '.from("user_subscriptions")');
+  assert(!passiveBlock.includes('.from("profiles")'));
+  assert(!passiveBlock.includes('source: "revenuecat_sync"'));
+});

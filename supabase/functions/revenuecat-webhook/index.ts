@@ -18,8 +18,11 @@ import {
 } from "../_shared/revenuecat-event.ts";
 import {
   clearTrialReminderMetadataPatch,
+  mergeTrialMetadataPatches,
+  revenueCatSubscriptionRenewalIntent,
   type TrialMetadataPatch,
   trialMetadataPatchForRevenueCatEvent,
+  verifiedTrialMetadataPatch,
 } from "../_shared/trial-reminder.ts";
 
 type SupabaseAdminClient = ReturnType<typeof createClient<any>>;
@@ -51,8 +54,10 @@ type RevenueCatEntitlement = {
 type RevenueCatSubscription = {
   expires_date?: string | null;
   original_purchase_date?: string | null;
+  period_type?: string | null;
   product_identifier?: string | null;
   purchase_date?: string | null;
+  unsubscribe_detected_at?: string | null;
 };
 
 type RevenueCatSubscriberResponse = {
@@ -71,6 +76,8 @@ type ResolvedSubscriberState = {
   expiration: string | null;
   purchaseDate: string | null;
   originalPurchaseDate: string | null;
+  periodType: string | null;
+  renewalIntent: boolean | null;
 };
 
 function json(status: number, body: Record<string, unknown>) {
@@ -109,6 +116,8 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
   expiration: string | null;
   purchaseDate: string | null;
   originalPurchaseDate: string | null;
+  periodType: string | null;
+  renewalIntent: boolean | null;
 } {
   const activeEntitlements = Object.entries(entitlements)
     .filter(([, value]) => isActiveEntitlement(value));
@@ -129,6 +138,8 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       expiration: productResolved.expiration,
       purchaseDate: productResolved.purchaseDate,
       originalPurchaseDate: productResolved.purchaseDate,
+      periodType: null,
+      renewalIntent: null,
     };
   }
 
@@ -141,6 +152,8 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       expiration: pro?.expires_date ?? null,
       purchaseDate: pro?.purchase_date ?? null,
       originalPurchaseDate: pro?.purchase_date ?? null,
+      periodType: null,
+      renewalIntent: null,
     };
   }
 
@@ -153,6 +166,8 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       expiration: plus?.expires_date ?? null,
       purchaseDate: plus?.purchase_date ?? null,
       originalPurchaseDate: plus?.purchase_date ?? null,
+      periodType: null,
+      renewalIntent: null,
     };
   }
 
@@ -163,6 +178,8 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
     expiration: null,
     purchaseDate: null,
     originalPurchaseDate: null,
+    periodType: null,
+    renewalIntent: null,
   };
 }
 
@@ -175,6 +192,8 @@ function subscriptionTier(
   expiration: string | null;
   purchaseDate: string | null;
   originalPurchaseDate: string | null;
+  periodType: string | null;
+  renewalIntent: boolean | null;
 } | null {
   const active = Object.entries(subscriptions)
     .map(([productID, value]) => ({
@@ -185,6 +204,10 @@ function subscriptionTier(
       originalPurchaseDate: value.original_purchase_date ??
         value.purchase_date ??
         null,
+      periodType: value.period_type ?? null,
+      renewalIntent: revenueCatSubscriptionRenewalIntent(
+        value as unknown as Record<string, unknown>,
+      ),
       purchaseTime: Date.parse(value.purchase_date ?? ""),
     }))
     .filter((item) =>
@@ -209,6 +232,8 @@ function subscriptionTier(
     expiration: current.expiration,
     purchaseDate: current.purchaseDate,
     originalPurchaseDate: current.originalPurchaseDate,
+    periodType: current.periodType,
+    renewalIntent: current.renewalIntent,
   };
 }
 
@@ -232,6 +257,8 @@ function resolvedStateFromSubscriber(
     expiration: resolved.expiration,
     purchaseDate: resolved.purchaseDate,
     originalPurchaseDate: resolved.originalPurchaseDate,
+    periodType: resolved.periodType,
+    renewalIntent: resolved.renewalIntent,
   };
 }
 
@@ -245,6 +272,8 @@ function freeSubscriberState(): ResolvedSubscriberState {
     expiration: null,
     purchaseDate: null,
     originalPurchaseDate: null,
+    periodType: null,
+    renewalIntent: null,
   };
 }
 
@@ -875,6 +904,26 @@ serve(async (req) => {
     }
   }
 
+  const existingSubscription = await existingSubscriptionRow(
+    supabase,
+    eventUserID,
+  );
+  const eventTrialPatch = trialMetadataPatchForRevenueCatEvent(
+    eventType,
+    event,
+    verifiedState.productID,
+    verifiedState.expiration,
+    verifiedState.purchaseDate,
+    existingSubscription,
+  );
+  const verifiedTrialPatch = verifiedTrialMetadataPatch({
+    productID: verifiedState.productID,
+    periodType: verifiedState.periodType,
+    purchaseDate: verifiedState.purchaseDate,
+    expiration: verifiedState.expiration,
+    renewalIntent: verifiedState.renewalIntent,
+  }, existingSubscription);
+
   await writeSubscriptionState({
     supabase,
     userID: eventUserID,
@@ -883,13 +932,11 @@ serve(async (req) => {
     eventID,
     environment,
     state: verifiedState,
-    trialPatch: trialMetadataPatchForRevenueCatEvent(
-      eventType,
-      event,
-      verifiedState.productID,
-      verifiedState.expiration,
-      verifiedState.purchaseDate,
-      await existingSubscriptionRow(supabase, eventUserID),
+    // The verified subscriber snapshot wins over a duplicated or delayed
+    // cancellation event when it exposes current renewal intent.
+    trialPatch: mergeTrialMetadataPatches(
+      eventTrialPatch,
+      verifiedTrialPatch,
     ),
   });
 

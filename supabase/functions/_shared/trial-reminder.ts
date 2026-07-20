@@ -140,7 +140,8 @@ export function isPlusYearlyTrialPeriod(
   event: Record<string, unknown>,
   productID?: string | null,
 ): boolean {
-  const resolvedProductID = revenueCatEventProductID(event) ?? productID ?? null;
+  const resolvedProductID = revenueCatEventProductID(event) ?? productID ??
+    null;
   if (!isPlusYearlyProduct(resolvedProductID)) return false;
 
   const periodType = revenueCatEventPeriodType(event);
@@ -166,6 +167,81 @@ export function resolveWillRenew(event: Record<string, unknown>): boolean {
     return false;
   }
   return true;
+}
+
+export type VerifiedRevenueCatSubscriptionTrialState = {
+  productID?: string | null;
+  periodType?: string | null;
+  purchaseDate?: string | null;
+  expiration?: string | null;
+  renewalIntent?: boolean | null;
+};
+
+/**
+ * RevenueCat's subscriber snapshot uses the presence of
+ * `unsubscribe_detected_at` to expose current renewal intent. Keeping this
+ * tri-state prevents an omitted field from being mistaken for an uncancel.
+ */
+export function revenueCatSubscriptionRenewalIntent(
+  subscription: Record<string, unknown>,
+): boolean | null {
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      subscription,
+      "unsubscribe_detected_at",
+    )
+  ) {
+    return null;
+  }
+  const value = subscription.unsubscribe_detected_at;
+  if (value === null || value === "") return true;
+  if (typeof value === "string" && value.trim()) return false;
+  return null;
+}
+
+export function verifiedTrialMetadataPatch(
+  state: VerifiedRevenueCatSubscriptionTrialState,
+  existing: ExistingSubscriptionRow | null,
+): TrialMetadataPatch | null {
+  const periodType = state.periodType?.trim().toUpperCase() ?? null;
+  const verifiedStartedAt = dateStringToISO(state.purchaseDate);
+  const verifiedEndsAt = dateStringToISO(state.expiration);
+  const verifiedSevenDayTrial = isApproximatelySevenDayTrial(
+    verifiedStartedAt,
+    verifiedEndsAt,
+  );
+  const currentTrial = isPlusYearlyProduct(state.productID) &&
+    (periodType === "TRIAL" || periodType === "INTRO" ||
+      verifiedSevenDayTrial);
+  const historicalTrial = isPlusYearlyProduct(existing?.trial_product_id) &&
+    isApproximatelySevenDayTrial(
+      existing?.trial_started_at,
+      existing?.trial_ends_at,
+    );
+
+  if (!currentTrial && !historicalTrial) return null;
+
+  const patch: TrialMetadataPatch = {};
+  if (currentTrial && verifiedSevenDayTrial) {
+    patch.trial_product_id = PLUS_YEARLY_PRODUCT_ID;
+    patch.trial_started_at = verifiedStartedAt;
+    patch.trial_ends_at = verifiedEndsAt;
+  }
+  if (state.renewalIntent !== null && state.renewalIntent !== undefined) {
+    patch.will_renew = state.renewalIntent;
+  }
+  return Object.keys(patch).length > 0 ? patch : null;
+}
+
+export function mergeTrialMetadataPatches(
+  eventPatch: TrialMetadataPatch | null,
+  verifiedPatch: TrialMetadataPatch | null,
+): TrialMetadataPatch | null {
+  if (!eventPatch && !verifiedPatch) return null;
+  return {
+    ...(eventPatch ?? {}),
+    ...(verifiedPatch ?? {}),
+  };
 }
 
 /** Transfer / deactivate: wipe subscription trial state entirely. */
@@ -217,25 +293,35 @@ export function buildTrialPatch(
   verifiedPurchaseDate?: string | null,
 ): TrialMetadataPatch | null {
   const normalizedType = eventType.toUpperCase();
-  const productID = revenueCatEventProductID(event) ?? verifiedProductID ?? null;
+  const productID = revenueCatEventProductID(event) ?? verifiedProductID ??
+    null;
   const isTrialConversion = event.is_trial_conversion === true;
 
   if (normalizedType === "CANCELLATION") {
-    if (!isPlusYearlyProduct(productID) && !isPlusYearlyProduct(existing?.trial_product_id)) {
+    if (
+      !isPlusYearlyProduct(productID) &&
+      !isPlusYearlyProduct(existing?.trial_product_id)
+    ) {
       return null;
     }
     return { will_renew: false };
   }
 
   if (normalizedType === "UNCANCELLATION") {
-    if (!isPlusYearlyProduct(productID) && !isPlusYearlyProduct(existing?.trial_product_id)) {
+    if (
+      !isPlusYearlyProduct(productID) &&
+      !isPlusYearlyProduct(existing?.trial_product_id)
+    ) {
       return null;
     }
     return { will_renew: true };
   }
 
   if (normalizedType === "RENEWAL") {
-    if (!isPlusYearlyProduct(productID) && !isPlusYearlyProduct(existing?.trial_product_id)) {
+    if (
+      !isPlusYearlyProduct(productID) &&
+      !isPlusYearlyProduct(existing?.trial_product_id)
+    ) {
       return null;
     }
     // Trial → paid: keep historical trial_* columns for admin reporting.
@@ -243,7 +329,9 @@ export function buildTrialPatch(
   }
 
   if (normalizedType === "EXPIRATION") {
-    if (!existing?.trial_started_at && !isPlusYearlyProduct(productID)) return null;
+    if (!existing?.trial_started_at && !isPlusYearlyProduct(productID)) {
+      return null;
+    }
     return { trial_reminder_status: "inactive" };
   }
 
@@ -251,7 +339,10 @@ export function buildTrialPatch(
     if (isPlusYearlyTrialPeriod(event, productID) && !isTrialConversion) {
       return initialTrialPatch(event, verifiedExpiration, verifiedPurchaseDate);
     }
-    if (isPlusYearlyProduct(productID) || isPlusYearlyProduct(existing?.trial_product_id)) {
+    if (
+      isPlusYearlyProduct(productID) ||
+      isPlusYearlyProduct(existing?.trial_product_id)
+    ) {
       return { will_renew: resolveWillRenew(event) };
     }
     return null;

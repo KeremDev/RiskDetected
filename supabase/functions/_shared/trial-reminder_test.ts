@@ -4,10 +4,13 @@ import {
   clearTrialReminderMetadataPatch,
   isApproximatelySevenDayTrial,
   isPlusYearlyTrialPeriod,
+  mergeTrialMetadataPatches,
   PLUS_YEARLY_PRODUCT_ID,
+  revenueCatSubscriptionRenewalIntent,
   revenueCatTimestampToISO,
   trialMetadataPatchForRevenueCatEvent,
   trialReminderDecision,
+  verifiedTrialMetadataPatch,
 } from "./trial-reminder.ts";
 
 const now = new Date("2026-06-13T09:00:00.000Z");
@@ -116,7 +119,8 @@ Deno.test("Non-trial purchases do not create trial reminder metadata", () => {
       product_id: PLUS_YEARLY_PRODUCT_ID,
       period_type: "NORMAL",
       purchased_at_ms: now.getTime(),
-      expiration_at_ms: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).getTime(),
+      expiration_at_ms: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
+        .getTime(),
     }),
     null,
   );
@@ -151,6 +155,88 @@ Deno.test("Cancellation and uncancellation toggle renewal intent", () => {
       product_id: PLUS_YEARLY_PRODUCT_ID,
     }),
     { will_renew: true },
+  );
+});
+
+Deno.test("RevenueCat subscriber renewal intent remains tri-state", () => {
+  assertEquals(revenueCatSubscriptionRenewalIntent({}), null);
+  assertEquals(
+    revenueCatSubscriptionRenewalIntent({ unsubscribe_detected_at: null }),
+    true,
+  );
+  assertEquals(
+    revenueCatSubscriptionRenewalIntent({
+      unsubscribe_detected_at: "2026-06-13T10:00:00.000Z",
+    }),
+    false,
+  );
+  assertEquals(
+    revenueCatSubscriptionRenewalIntent({ unsubscribe_detected_at: false }),
+    null,
+  );
+});
+
+Deno.test("verified trial snapshot supplies dates and current renewal intent", () => {
+  assertEquals(
+    verifiedTrialMetadataPatch({
+      productID: PLUS_YEARLY_PRODUCT_ID,
+      periodType: "trial",
+      purchaseDate: now.toISOString(),
+      expiration: in7Days.toISOString(),
+      renewalIntent: false,
+    }, null),
+    {
+      trial_product_id: PLUS_YEARLY_PRODUCT_ID,
+      trial_started_at: now.toISOString(),
+      trial_ends_at: in7Days.toISOString(),
+      will_renew: false,
+    },
+  );
+});
+
+Deno.test("verified subscriber snapshot wins over an out-of-order event", () => {
+  const oldCancellation = trialMetadataPatchForRevenueCatEvent(
+    "CANCELLATION",
+    { product_id: PLUS_YEARLY_PRODUCT_ID },
+    undefined,
+    undefined,
+    undefined,
+    existingTrial,
+  );
+  const currentSubscriber = verifiedTrialMetadataPatch({
+    productID: PLUS_YEARLY_PRODUCT_ID,
+    periodType: "TRIAL",
+    purchaseDate: now.toISOString(),
+    expiration: in7Days.toISOString(),
+    renewalIntent: true,
+  }, existingTrial);
+
+  assertEquals(
+    mergeTrialMetadataPatches(oldCancellation, currentSubscriber)?.will_renew,
+    true,
+  );
+});
+
+Deno.test("billing issue without verified unsubscribe does not change renewal intent", () => {
+  assertEquals(
+    mergeTrialMetadataPatches(
+      trialMetadataPatchForRevenueCatEvent(
+        "BILLING_ISSUE",
+        { product_id: PLUS_YEARLY_PRODUCT_ID },
+        undefined,
+        undefined,
+        undefined,
+        existingTrial,
+      ),
+      verifiedTrialMetadataPatch({
+        productID: PLUS_YEARLY_PRODUCT_ID,
+        periodType: "TRIAL",
+        purchaseDate: now.toISOString(),
+        expiration: in7Days.toISOString(),
+        renewalIntent: null,
+      }, existingTrial),
+    )?.will_renew,
+    undefined,
   );
 });
 

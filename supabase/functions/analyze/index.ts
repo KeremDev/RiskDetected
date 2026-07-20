@@ -44,6 +44,14 @@ import {
   tokenOverlapRatio,
 } from "../_shared/photo-finding-quality.ts";
 import {
+  CANCELLED_PLUS_TRIAL_ROUTE,
+  CANCELLED_PLUS_TRIAL_ROUTING_FLAG_KEY,
+  type CancelledPlusTrialRoutingDecision,
+  cancelledPlusTrialRoutingDecision,
+  type CancelledPlusTrialRoutingFlag,
+  normalizeCancelledPlusTrialRoutingFlag,
+} from "../_shared/cancelled-plus-trial-routing.ts";
+import {
   type AnalysisSectorId,
   analysisSectorLabel,
   buildActiveSectorPromptBlock,
@@ -89,7 +97,11 @@ type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
 type CompanyHazardClass = "low" | "medium" | "high";
 type ReferenceMode = "none" | "short" | "full";
-type AIExecutionRoute = "free_legacy" | "free_paid_trial" | "paid_plan";
+type AIExecutionRoute =
+  | "free_legacy"
+  | "free_paid_trial"
+  | "paid_plan"
+  | typeof CANCELLED_PLUS_TRIAL_ROUTE;
 type GeminiPoolName = "free" | "paid";
 type AIImagePart = {
   mimeType: string;
@@ -2802,10 +2814,31 @@ function freeStandardAnalysisRouteFlag(): "paid_trial" | "free_legacy" {
   return rawValue === "free_legacy" ? "free_legacy" : "paid_trial";
 }
 
+async function loadCancelledPlusTrialRoutingFlag(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+): Promise<CancelledPlusTrialRoutingFlag> {
+  try {
+    const { data, error } = await supabase
+      .from("app_feature_flags")
+      .select("value")
+      .eq("key", CANCELLED_PLUS_TRIAL_ROUTING_FLAG_KEY)
+      .maybeSingle();
+    if (error) return normalizeCancelledPlusTrialRoutingFlag(null);
+    return normalizeCancelledPlusTrialRoutingFlag(data?.value);
+  } catch {
+    return normalizeCancelledPlusTrialRoutingFlag(null);
+  }
+}
+
 function resolveAIExecutionRoute(
   planTier: PlanTier,
   analysisMode: AnalysisMode,
+  cancelledTrialRoutingEnabled = false,
 ): AIExecutionRoute {
+  if (planTier === "plus" && cancelledTrialRoutingEnabled) {
+    return CANCELLED_PLUS_TRIAL_ROUTE;
+  }
   if (planTier !== "free") return "paid_plan";
   if (
     analysisMode === "standard" &&
@@ -2814,6 +2847,13 @@ function resolveAIExecutionRoute(
     return "free_paid_trial";
   }
   return "free_legacy";
+}
+
+function usesFreeGeminiProviderPool(
+  aiExecutionRoute: AIExecutionRoute,
+): boolean {
+  return aiExecutionRoute === "free_legacy" ||
+    aiExecutionRoute === CANCELLED_PLUS_TRIAL_ROUTE;
 }
 
 function resolveQualityTier(
@@ -2826,7 +2866,7 @@ function resolveQualityTier(
 function geminiKeyPoolForRoute(
   aiExecutionRoute: AIExecutionRoute,
 ): GeminiKeyConfig[] {
-  return aiExecutionRoute === "free_legacy"
+  return usesFreeGeminiProviderPool(aiExecutionRoute)
     ? freeGeminiKeyPool()
     : paidGeminiKeyPool();
 }
@@ -2834,19 +2874,21 @@ function geminiKeyPoolForRoute(
 function expectedGeminiPoolForRoute(
   aiExecutionRoute: AIExecutionRoute,
 ): GeminiPoolName {
-  return aiExecutionRoute === "free_legacy" ? "free" : "paid";
+  return usesFreeGeminiProviderPool(aiExecutionRoute) ? "free" : "paid";
 }
 
 function geminiRequiredSecretNameForRoute(
   aiExecutionRoute: AIExecutionRoute,
 ): string {
-  return aiExecutionRoute === "free_legacy"
+  return usesFreeGeminiProviderPool(aiExecutionRoute)
     ? "GEMINI_API_KEY_PRIMARY veya GEMINI_API_KEY"
     : "GEMINI_API_KEY_PAID";
 }
 
 function primaryModelForRoute(aiExecutionRoute: AIExecutionRoute): string {
-  return aiExecutionRoute === "free_legacy" ? MODEL_FREE : MODEL_PAID_FAST;
+  return usesFreeGeminiProviderPool(aiExecutionRoute)
+    ? MODEL_FREE
+    : MODEL_PAID_FAST;
 }
 
 function userFacingAIError(
@@ -2992,11 +3034,7 @@ function geminiAttemptSequence(
     return attempts;
   }
 
-  const primary = keyPool.find((item) => item.alias === "gemini_primary");
-  const secondary = keyPool.find((item) => item.alias === "gemini_secondary");
-  const orderedFreeKeys = [primary, secondary].filter(
-    (item): item is GeminiKeyConfig => Boolean(item),
-  );
+  const orderedFreeKeys = keyPool.filter((item) => item.pool === "free");
 
   for (const keyConfig of orderedFreeKeys) {
     pushAttempts(keyConfig, [MODEL_FREE]);
@@ -3110,13 +3148,14 @@ async function callGeminiWithFallback(
   throw lastError ?? new Error("Gemini analizi başarısız.");
 }
 
-async function callFreeAIWithFallback(
+async function callAIWithFreeProviderPool(
   geminiKeyPool: GeminiKeyConfig[],
   preferredModel: string,
   systemPrompt: string,
   analysisContext: string,
   userText: string | null,
   imageBase64Parts: AIImagePart[],
+  outputTier: PlanTier,
   simulation?: AISimulationConfig,
   trace?: TraceMeta,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
@@ -3130,7 +3169,7 @@ async function callFreeAIWithFallback(
       analysisContext,
       userText,
       imageBase64Parts,
-      "free",
+      outputTier,
       simulation,
       trace,
       undefined,
@@ -3169,7 +3208,7 @@ async function callFreeAIWithFallback(
       analysisContext,
       userText,
       imageBase64Parts,
-      "free",
+      outputTier,
       simulation,
       coveragePolicy,
       options,
@@ -4410,7 +4449,9 @@ serve(async (req: Request) => {
   // Backend-synced subscription tier is the only source for paid AI routing.
   const { data: subscription, error: subscriptionError } = await supabase
     .from("user_subscriptions")
-    .select("tier,status,current_period_ends_at")
+    .select(
+      "tier,status,product_id,current_period_ends_at,trial_started_at,trial_ends_at,trial_product_id,will_renew",
+    )
     .eq("user_id", user.id)
     .maybeSingle();
   if (subscriptionError) {
@@ -4439,6 +4480,15 @@ serve(async (req: Request) => {
   }
 
   const planTier = resolvePlanTier(subscription);
+  const cancelledTrialRoutingFlag = planTier === "plus"
+    ? await loadCancelledPlusTrialRoutingFlag(supabase)
+    : normalizeCancelledPlusTrialRoutingFlag(null);
+  const cancelledTrialRouting: CancelledPlusTrialRoutingDecision =
+    cancelledPlusTrialRoutingDecision({
+      subscription,
+      flag: cancelledTrialRoutingFlag,
+      userHash: await hashedID(user.id),
+    });
   const photoCapabilities = await resolvePhotoCapabilities(
     supabase,
     planTier,
@@ -4474,7 +4524,11 @@ serve(async (req: Request) => {
       },
     );
   }
-  const aiExecutionRoute = resolveAIExecutionRoute(planTier, analysisMode);
+  const aiExecutionRoute = resolveAIExecutionRoute(
+    planTier,
+    analysisMode,
+    cancelledTrialRouting.enabled,
+  );
   const qualityTier = resolveQualityTier(planTier, aiExecutionRoute);
   const geminiKeys = geminiKeyPoolForRoute(aiExecutionRoute);
   const freeFallbackGeminiKeys = aiExecutionRoute === "free_paid_trial"
@@ -5288,6 +5342,10 @@ serve(async (req: Request) => {
     user_plan: planTier,
     quality_tier: qualityTier,
     ai_execution_route: aiExecutionRoute,
+    cancelled_plus_trial_free_candidate: cancelledTrialRouting.eligible,
+    cancelled_plus_trial_free_enabled: cancelledTrialRouting.enabled,
+    cancelled_plus_trial_routing_mode: cancelledTrialRouting.mode,
+    cancelled_plus_trial_routing_reason: cancelledTrialRouting.reason,
     free_standard_analysis_route_flag: freeStandardAnalysisRouteFlag(),
     request_id: requestID,
     support_id: supportID,
@@ -5371,14 +5429,15 @@ serve(async (req: Request) => {
     coveragePolicy?: MultiPhotoCoveragePolicy | null,
     options: AIRequestOptions = {},
   ) => {
-    if (aiExecutionRoute === "free_legacy") {
-      return await callFreeAIWithFallback(
+    if (usesFreeGeminiProviderPool(aiExecutionRoute)) {
+      return await callAIWithFreeProviderPool(
         geminiKeys,
         model,
         systemPrompt,
         context,
         null,
         parts,
+        aiExecutionRoute === CANCELLED_PLUS_TRIAL_ROUTE ? planTier : "free",
         aiSimulation,
         { requestID, supportID },
         coveragePolicy,
@@ -5494,7 +5553,7 @@ serve(async (req: Request) => {
       inputAudit.gemini_thinking_config = providerUsed === "gemini"
         ? geminiThinkingConfig(
           out.modelUsed,
-          aiExecutionRoute === "free_legacy" ? "free" : "paid",
+          expectedGeminiPool,
           jobMode === "repair",
         )
         : null;
