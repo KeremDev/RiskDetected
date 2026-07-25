@@ -1,7 +1,7 @@
 # RiskDetected Gizlilik Politikası
 
-Yürürlük tarihi: 10 Haziran 2026
-Belge sürümü: privacy-2026-06-10
+Yürürlük tarihi: 8 Temmuz 2026
+Belge sürümü: privacy-2026-07-08
 
 Bu Gizlilik Politikası, RiskDetected mobil uygulaması ve bağlantılı hizmetlerde hangi
 verilerin toplandığını, neden kullanıldığını, kimlerle paylaşılabileceğini, ne kadar
@@ -16,10 +16,10 @@ Veri sorumlusu/hizmet sağlayıcı:
 
 ## 1. RiskDetected ne yapar?
 
-RiskDetected, fotoğraf veya metin üzerinden yapay zeka destekli iş güvenliği analizi,
-risk/bulgu tespiti, PDF/XLSX raporlama, firma takibi, bildirimler ve mesleki ilerleme
-özellikleri sunar. AI çıktıları karar destek niteliğindedir; resmi denetim, hukuki
-uygunluk garantisi veya uzman görüşü yerine geçmez.
+RiskDetected, fotoğraf üzerinden yapay zeka destekli iş güvenliği analizi, risk/bulgu
+tespiti, PDF/XLSX raporlama, firma takibi, bildirimler ve mesleki ilerleme özellikleri
+sunar. AI çıktıları karar destek niteliğindedir; resmi denetim, hukuki uygunluk
+garantisi veya uzman görüşü yerine geçmez.
 
 ## 2. Topladığımız veri kategorileri
 
@@ -27,7 +27,7 @@ Uygulamanın kullanımına göre aşağıdaki veriler işlenebilir:
 
 - Hesap verileri: kullanıcı ID, e-posta, giriş yöntemi, profil adı, avatar, hesap durumu.
 - Onboarding yanıtları: uzmanlık sınıfı, tehlike sınıfı, sektör, çalışma alanı, analiz sıklığı ve kullanım amacı.
-- Kullanıcı içerikleri: fotoğraflar, metin girdileri, canvas/analiz seçimi, saha notları, firma bilgileri, logo, rapor hazırlayan bilgileri.
+- Kullanıcı içerikleri: fotoğraflar, önceki sürümlerde oluşturulmuş metin girdileri, canvas/analiz seçimi, saha notları, firma bilgileri, logo, rapor hazırlayan bilgileri.
 - AI analiz çıktıları: bulgular, risk seviyeleri, skorlar, kök neden, önerilen aksiyon, kısa referanslar, analiz özeti ve risk tablosu bilgileri.
 - Rapor ve arşiv verileri: PDF/XLSX raporları, rapor türü, dosya adı, indirme/paylaşım için gerekli teknik kayıtlar.
 - Firma modülü verileri: firma adı, tehlike sınıfı, adres, ilgili kişi, departman, sorumlu, termin günü, logo ve arşiv durumu.
@@ -40,7 +40,7 @@ Uygulamanın kullanımına göre aşağıdaki veriler işlenebilir:
 RiskDetected ödeme kartı bilgilerinizi doğrudan almaz veya saklamaz. App Store ödemeleri
 Apple tarafından yürütülür.
 
-## 3. Fotoğraf, metin ve hassas içerik
+## 3. Fotoğraf ve hassas içerik
 
 Fotoğraflar; çalışan/ziyaretçi görüntüsü, yüz, ekipman, firma logosu, tabela, plaka,
 tesis, üretim alanı, maden, inşaat sahası veya ticari sır niteliğinde bilgi içerebilir.
@@ -56,12 +56,16 @@ Fotoğraflar analiz öncesinde yeniden işlenerek EXIF, konum ve kamera metadata
 bilgisinin azaltılması hedeflenir; görsel içerikte görünen bilgiler analiz için
 işlenmeye devam eder.
 
+Yeni analizler fotoğraf yükleme veya kamera ile çekim üzerinden başlatılır. Önceki
+sürümlerde oluşturulmuş metin girdileri geçmiş kayıt, veri dışa aktarma, hesap silme ve
+hukuki saklama süreçleriyle sınırlı olarak işlenebilir.
+
 ## 4. Verileri neden kullanıyoruz?
 
 Verileri şu amaçlarla kullanırız:
 
 - Hesap oluşturma, oturum açma ve güvenlik.
-- Fotoğraf/metin analizi, risk/bulgu üretimi ve raporlama.
+- Fotoğraf analizi, risk/bulgu üretimi ve raporlama.
 - Firma bazlı rapor, logo ve arşiv yönetimi.
 - Kota, abonelik, deneme hakkı ve paywall erişimi.
 - Mesleki ilerleme, MDP, ünvan, rozet, yetkinlik haritası ve haftalık takip.
@@ -81,17 +85,17 @@ başka uyumlu AI sağlayıcıları fallback olarak kullanılabilir. Free kullan�
 standart analiz hakkı da iyi ilk deneyim sağlamak için paid Gemini hattından
 çalışabilir; bu, kullanıcının planını veya ücretli özellik yetkilerini değiştirmez.
 
-AI sağlayıcılarına gönderilen içerik, analiz yanıtı üretmek için gerekli fotoğraf/metin
-ve bağlamla sınırlı tutulmaya çalışılır. AI kullanım loglarında model, sağlayıcı,
-anahtar havuzu takma adı, token sayısı, süre, hata/fallback bilgisi ve support ID gibi
-teknik kayıtlar tutulabilir.
+AI sağlayıcılarına gönderilen içerik, analiz yanıtı üretmek için gerekli fotoğraf ve
+bağlamla sınırlı tutulmaya çalışılır. AI kullanım loglarında model, sağlayıcı, anahtar
+havuzu takma adı, token sayısı, süre, hata/fallback bilgisi ve support ID gibi teknik
+kayıtlar tutulabilir.
 
 ## 6. Üçüncü taraf hizmetler
 
 Hizmetin sunumu için şu altyapılar kullanılabilir:
 
 - Supabase: kimlik doğrulama, veri tabanı, storage, edge function, RLS ve teknik altyapı.
-- Google Gemini/Google AI: fotoğraf/metin analizi.
+- Google Gemini/Google AI: fotoğraf analizi.
 - Groq: AI fallback veya kalite karşılaştırma süreçleri.
 - RevenueCat ve Apple App Store: abonelik, deneme, satın alma ve entitlement doğrulama.
 - Apple Push Notification service: bildirim gönderimi.

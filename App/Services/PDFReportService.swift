@@ -78,6 +78,7 @@ struct PDFReportOptions: Equatable {
 
 final class PDFReportService: @unchecked Sendable {
     static let shared = PDFReportService()
+    private static let coverImageRasterScale: CGFloat = 2
 
     private struct AssessmentTableRow {
         let ordinal: Int
@@ -903,7 +904,7 @@ final class PDFReportService: @unchecked Sendable {
         let visibleImages = Array(images.prefix(5))
         guard visibleImages.count > 1 else {
             if let image = visibleImages.first {
-                drawImage(image, in: rect, cornerRadius: 14)
+                drawCoverImage(image, in: rect, cornerRadius: 14)
             }
             return
         }
@@ -924,7 +925,7 @@ final class PDFReportService: @unchecked Sendable {
                 width: cellWidth,
                 height: cellHeight
             )
-            drawImage(image, in: cellRect, cornerRadius: 10)
+            drawCoverImage(image, in: cellRect, cornerRadius: 10)
             roundedStroke(
                 cellRect,
                 radius: 10,
@@ -940,6 +941,14 @@ final class PDFReportService: @unchecked Sendable {
                 alignment: .center
             )
         }
+    }
+
+    private func drawCoverImage(_ image: UIImage, in rect: CGRect, cornerRadius: CGFloat) {
+        let rasterized = image.pdfCoverRasterized(
+            filling: rect.size,
+            scale: Self.coverImageRasterScale
+        )
+        drawImage(rasterized, in: rect, cornerRadius: cornerRadius)
     }
 
     private func drawPlaceholder(in rect: CGRect, text: String) {
@@ -1074,6 +1083,21 @@ private extension Array {
 }
 
 private extension UIImage {
+    func pdfCoverRasterized(filling targetSize: CGSize, scale: CGFloat) -> UIImage {
+        guard targetSize.width > 0, targetSize.height > 0 else { return self }
+
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = max(1, scale)
+        format.opaque = true
+        let targetRect = CGRect(origin: .zero, size: targetSize)
+        let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
+        return renderer.image { _ in
+            UIColor.white.setFill()
+            UIBezierPath(rect: targetRect).fill()
+            draw(in: aspectFillRect(in: targetRect))
+        }
+    }
+
     func aspectFillRect(in rect: CGRect) -> CGRect {
         let scale = max(rect.width / size.width, rect.height / size.height)
         let drawSize = CGSize(width: size.width * scale, height: size.height * scale)

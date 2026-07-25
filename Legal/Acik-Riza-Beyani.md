@@ -1,18 +1,18 @@
 # RiskDetected Açık Rıza Beyanı
 
-Yürürlük tarihi: 10 Haziran 2026
-Belge sürümü: consent-2026-06-10
+Yürürlük tarihi: 8 Temmuz 2026
+Belge sürümü: consent-2026-07-08
 
 Bu beyan, RiskDetected'in açık rızaya dayalı veri işleme faaliyetleri için
 hazırlanmıştır. Açık rıza vermeniz, geri çekmeniz veya belirli rızaları vermemeniz
 durumunda hangi özelliklerin etkilenebileceği aşağıda açıklanır.
 
-## 1. AI fotoğraf/metin analizi rızası
+## 1. AI fotoğraf analizi rızası
 
-RiskDetected'e yüklediğim fotoğraf ve/veya metinlerin; fotoğrafta yer alabilecek kişi
-yüzleri, çalışan/ziyaretçi görüntüleri, iş kıyafetleri, ekipmanlar, firma adı/logo,
-tabela, mekan, plaka, üretim alanı ve benzeri görsel bilgiler dahil olmak üzere, yapay
-zeka destekli risk analizi, bulgu üretimi, rapor oluşturma ve kalite/servis sürekliliği
+RiskDetected'e yüklediğim fotoğrafların; fotoğrafta yer alabilecek kişi yüzleri,
+çalışan/ziyaretçi görüntüleri, iş kıyafetleri, ekipmanlar, firma adı/logo, tabela,
+mekan, plaka, üretim alanı ve benzeri görsel bilgiler dahil olmak üzere, yapay zeka
+destekli risk analizi, bulgu üretimi, rapor oluşturma ve kalite/servis sürekliliği
 amacıyla işlenmesine açık rıza veriyorum.
 
 AI çıktılarının karar destek niteliğinde olduğunu; resmi denetim, hukuki güvence,
@@ -65,7 +65,7 @@ Açık rızamı dilediğim zaman
 info@riskdetected.com üzerinden veya uygulama
 içi destek/ayar kanallarıyla geri çekebilirim. Rızanın geri çekilmesi, geri çekmeden
 önce yapılan işlemlerin hukuka uygunluğunu etkilemez. Rıza geri çekildiğinde
-fotoğraf/metin analizi, rapor üretimi, avatar/logo gösterimi, bildirim veya mesleki
+fotoğraf analizi, rapor üretimi, avatar/logo gösterimi, bildirim veya mesleki
 ilerleme gibi bazı özellikler teknik olarak sunulamayabilir.
 
 Rıza geri çekme işlemi hesap silme işleminden ayrıdır. Hesabımı ve hesabıma bağlı

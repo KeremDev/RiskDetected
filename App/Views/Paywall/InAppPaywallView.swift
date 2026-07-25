@@ -612,6 +612,10 @@ struct InAppPaywallView: View {
     }
 
     private func purchaseSelectedPlan() {
+        // Migration uygulanana kadar pending ödemeler purchase_failed olarak loglanır.
+        // migrations-pending/20260630200000_paywall_payment_pending_event.sql → supabase/migrations/
+        let paymentPendingPaywallEventEnabled = false
+
         let purchaseScreen = activeScreen
         let purchaseBilling = billing(for: purchaseScreen)
 
@@ -663,13 +667,16 @@ struct InAppPaywallView: View {
                 stopProcessingOverlay()
                 workingMessage = nil
                 isWorking = false
+                let classification = PurchaseErrorClassifier.classify(error)
                 errorMessage = AppErrorMessage.makePurchase(
-                    error,
+                    classification: classification,
                     context: "Satın alma doğrulanamadı",
                     fallbackTitle: "Satın alma doğrulanamadı"
                 ).message
                 logPaywallEvent(
-                    .purchaseFailed,
+                    paymentPendingPaywallEventEnabled && classification.kind == .paymentPending
+                        ? .paymentPending
+                        : .purchaseFailed,
                     screen: purchaseScreen,
                     billing: purchaseBilling,
                     purchaseError: errorMessage

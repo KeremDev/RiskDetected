@@ -33,8 +33,7 @@ struct RiskDetectedApp: App {
                 .onChange(of: scenePhase) { phase in
                     guard phase == .active else { return }
                     Task {
-                        await NotificationService.shared.refreshSettings()
-                        NotificationService.shared.syncCurrentTokenIfPossible()
+                        await NotificationService.shared.handleAppBecameActive()
                     }
                 }
         }

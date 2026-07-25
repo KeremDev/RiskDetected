@@ -45,7 +45,6 @@ Mevcut örnek body:
   "canvas": "general",
   "canvases": ["general", "ppe", "working_at_height"],
   "analysis_mode": "standard",
-  "text_input": null,
   "request_id": "client-trace-id",
   "support_id": "RD-XXXXXXXX",
   "company_id": null,
@@ -165,7 +164,7 @@ Tüm analizlerde aynı `CORE_ANALYSIS_PROMPT` kullanılır.
 System prompt'un ana görevleri:
 
 - AI'a Türkiye'de saha deneyimi olan kıdemli A sınıfı İSG uzmanı rolü verir.
-- Görsel veya metin girdisinden sahadaki tüm İSG tehlikelerini sistematik tespit etmesini ister.
+- Görsel girdisinden sahadaki tüm İSG tehlikelerini sistematik tespit etmesini ister.
 - Her görseli 12 katmanda taratır.
 - Ölümcül potansiyelli bulguları üstte sıralatır.
 - Fine-Kinney ve 5x5 ham risk girdilerini kalibre eder.
@@ -196,7 +195,7 @@ System prompt örnek iskeleti:
 Sen Türkiye'de 20 yıllık saha deneyimi olan kıdemli bir İSG uzmanısın.
 
 GÖREV:
-Sana verilen görsel veya metin girdisinden sahada fiziksel olarak bulunan
+Sana verilen görsel girdisinden sahada fiziksel olarak bulunan
 bir denetçinin yakalayacağı tüm İSG tehlikelerini sistematik olarak tespit et.
 
 TARAMA PROSEDÜRÜ:
@@ -224,7 +223,7 @@ Tüm değerler Türkçe, JSON key'leri İngilizce.
 Şablon:
 
 ```text
-<analiz_baglami prompt_version="isg-photo-text-report-language-v2026-06-06-twelve-layer-two-measures" personalization_version="onboarding-v1">
+<analiz_baglami prompt_version="isg-photo-policy-v2026-07-single-multi-targets" personalization_version="onboarding-v1">
 <odak>{canvas promptları}</odak>
 
 <abonelik_seviyesi tier="{free|plus|pro}">
@@ -289,24 +288,9 @@ Bu marker'lar kullanıcıya gösterilmez. Backend sonradan metin alanlarından `
 
 ## 7. Metin Analizi Promptu
 
-Metin input varsa user content'in sonuna eklenir:
-
-```text
-<kullanici_metin_girdisi>
-METİN ANALİZİ TALİMATI:
-- Aşağıdaki metni rapora geçirilecek beyan değil; saha bağlamı, denetim yönlendirmesi ve tehlike arama ipucu olarak değerlendir.
-- Ana system prompttaki 12 katmanlı taramayı metne uyarla.
-- Yalnızca metinde açıkça belirtilen veya güçlü şekilde ima edilen tehlikeleri bulguya dönüştür.
-- Fotoğraf kanıtı olmadığı için belirsiz noktaları uydurma.
-- Kullanıcı metni kısa veya eksikse az ama güvenilir bulgu döndür; listeyi doldurmak için risk üretme.
-- Kullanıcı metnini hiçbir alanda aynen alıntılama.
-
-KULLANICI METNİ:
-{text_input}
-</kullanici_metin_girdisi>
-```
-
-Mevcut sistemde metin analizleri foto coverage akışına girmez; `hazards[]` döndürür.
+`text_input` dolu gelen legacy istekler artık user content'e eklenmez. `analyze`
+Edge Function bu istekleri kota düşmeden ve queue job oluşturmadan
+`TEXT_ANALYSIS_REMOVED` hatasıyla reddeder.
 
 ## 8. Canvas Promptları
 
@@ -392,7 +376,7 @@ AKTİF ANALİZ SEKTÖRÜ
 
 Kullanıcı bu analizi genel İSG kapsamında başlatmıştır.
 Sektöre özel varsayımlar yapma.
-Görsel veya metin kanıtına dayalı genel saha güvenliği taraması uygula.
+Görsel kanıta dayalı genel saha güvenliği taraması uygula.
 </aktif_analiz_sektoru>
 ```
 
@@ -525,54 +509,20 @@ Bu ayarlar bugünkü 5 foto analizde 20-25 bandını normal hale getiriyor.
 
 ## 12. Mevcut Analiz Varyasyonları
 
-### 12.1 Metin Analizi
+### 12.1 Legacy Metin İsteği Reddetme
 
 Koşul:
 
-- `imageBase64Parts.length === 0`
 - `text_input` dolu
+- Fotoğraf olsa bile bu istek legacy text isteği sayılır.
 
-Prompt:
+Davranış:
 
-```text
-system_instruction = CORE_ANALYSIS_PROMPT
-user.parts = [
-  analysisContext,
-  userTextInputBlock
-]
-```
-
-Bulgu sayısı:
-
-- Plus/Pro quality tier ise `PLAN_LIMITS`: 12-16.
-- Free legacy ise fallback prompt: 10-13.
-
-JSON:
-
-```json
-{
-  "hazards": [
-    {
-      "title": "Makine koruyucularının sahada doğrulanması",
-      "category": "Makine, Ekipman ve İş Ekipmanı",
-      "observed_evidence": "Üretim ekipmanı ve operasyon güvenliği için koruyucu yeterliliği sahada doğrulanmalıdır.",
-      "description": "Makine koruyucusu eksikliği temas veya sıkışma riskini artırabilir.",
-      "corrective_action": "Koruyucu uygunluğunu sahada kontrol et; eksikse ekipmanı devre dışı bırak.",
-      "preventive_control": "Periyodik makine güvenliği kontrol listesi ve sorumlu onayı tanımla.",
-      "confidence": 0.62,
-      "fk_probability": 3,
-      "fk_frequency": 3,
-      "fk_severity": 15,
-      "m5_probability": 3,
-      "m5_severity": 4,
-      "references": "İş Ekipmanlarının Kullanımında Sağlık ve Güvenlik Şartları Yönetmeliği",
-      "root_cause": "Makine güvenlik kontrolünün sahada doğrulanmamış olması"
-    }
-  ],
-  "ai_summary": "Kısa özet",
-  "limitations": "Metin girdisi sınırlı olduğu için bazı alanlar sahada doğrulanmalıdır."
-}
-```
+- `410 TEXT_ANALYSIS_REMOVED` döner.
+- Kota düşülmez.
+- Queue job oluşturulmaz.
+- Varsa ilgili analiz satırı `failed` durumuna alınır ve audit için
+  `request_id`, `support_id`, `requested_photo_count` saklanır.
 
 ### 12.2 Tek Foto Analizi - Mevcut
 
@@ -971,12 +921,6 @@ max_findings_per_analysis: 65
 ### 15.3 Prompt Version
 
 Mevcut prompt version:
-
-```text
-isg-photo-text-report-language-v2026-06-06-twelve-layer-two-measures
-```
-
-Hedef yeni versiyon önerisi:
 
 ```text
 isg-photo-policy-v2026-07-single-multi-targets

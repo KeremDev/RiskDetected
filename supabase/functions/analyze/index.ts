@@ -58,6 +58,27 @@ import {
   onboardingSectorProfileRule,
   resolveActiveSectorState,
 } from "./sector-context.ts";
+import {
+  applyInspectionLayerEvidenceGuard,
+  INSPECTION_LAYER_KEYS,
+  INSPECTION_LAYER_STATUSES,
+  type InspectionLayerKey,
+  invalidInspectionLayerKeyCount,
+  type NormalizedInspectionLayer,
+  normalizeInspectionLayerKeys,
+  normalizeInspectionLayers,
+} from "./inspection-layer-audit.ts";
+import {
+  coverageRecordRequiresRepair,
+  exactCoverageSchemaConstraints,
+  inspectPhotoCoverageContract,
+  type PhotoCoverageContract,
+} from "./photo-coverage-contract.ts";
+import {
+  type ProviderAttemptReason,
+  ProviderAttemptTracker,
+} from "./provider-attempt-tracker.ts";
+import { fetchWithDeadline } from "./provider-fetch.ts";
 
 declare const EdgeRuntime: {
   waitUntil: (promise: Promise<unknown>) => void;
@@ -84,7 +105,8 @@ const MAX_ANALYSIS_IMAGE_PARTS = 5;
 const MAX_INLINE_PHOTO_BASE64_BYTES = 2_100_000;
 const MAX_INLINE_PHOTO_DECODED_BYTES = 1_500_000;
 const MAX_INLINE_PHOTO_TOTAL_BASE64_BYTES = 8_000_000;
-const PHOTO_POLICY_VERSION = "evidence-first-soft-min-v2";
+const LEGACY_PHOTO_POLICY_VERSION = "evidence-first-soft-min-v2";
+const LAYER_AUDIT_POLICY_VERSION = "single-pass-12-layer-audit-v4";
 const SINGLE_PHOTO_TARGET_MIN = 1;
 const SINGLE_PHOTO_TARGET_MAX = 14;
 const MULTI_PHOTO_TARGET_MIN = 1;
@@ -92,9 +114,31 @@ const MULTI_PHOTO_TARGET_MAX = 13;
 const PHOTO_TARGET_TOTAL_MAX = 65;
 const MAIN_AI_TIMEOUT_MS = 120_000;
 const REPAIR_AI_TIMEOUT_MS = 45_000;
+const ANALYSIS_PIPELINE_V2_FLAG_KEY = "analysis_pipeline_v2";
+const ANALYSIS_AMBIGUOUS_DISPATCH_GUARD_FLAG_KEY =
+  "analysis_ambiguous_dispatch_guard";
+const MULTI_PHOTO_EXACT_COVERAGE_SCHEMA_FLAG_KEY =
+  "multi_photo_exact_coverage_schema";
 
 type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
+type AnalysisPipelineRolloutMode = "off" | "allowlist" | "on";
+type AnalysisPipelineV2Flag = {
+  enabled: boolean;
+  rolloutMode: AnalysisPipelineRolloutMode;
+  leaseSeconds: number;
+  maxWorkerAttempts: number;
+};
+type AnalysisAmbiguousDispatchGuardFlag = {
+  enabled: boolean;
+  rolloutMode: AnalysisPipelineRolloutMode;
+};
+type ExactCoverageSchemaFlag = {
+  enabled: boolean;
+  rolloutMode: AnalysisPipelineRolloutMode;
+  schemaVersion: 2;
+  killSwitch: boolean;
+};
 type CompanyHazardClass = "low" | "medium" | "high";
 type ReferenceMode = "none" | "short" | "full";
 type AIExecutionRoute =
@@ -143,6 +187,12 @@ type MultiPhotoFeatureFlags = {
   enable_manual_finding_add: boolean;
   enable_report_snapshot_v2: boolean;
   enable_multi_photo_coverage_v2: boolean;
+  single_photo_layer_audit_enabled: boolean;
+  multi_photo_layer_audit_enabled: boolean;
+  single_photo_compact_layer_schema_enabled: boolean;
+  single_photo_evidence_guard_enabled: boolean;
+  single_photo_thinking_budget: number;
+  multi_photo_thinking_budget: number;
   coverage_repair_enabled: boolean;
   max_photo_count_free: number;
   max_photo_count_plus: number;
@@ -189,6 +239,9 @@ type AnalysisFindingPolicy = {
   targetFindingsPerPhotoMin?: number;
   targetFindingsPerPhotoMax?: number;
   coverageRepairEnabled?: boolean;
+  layerAuditEnabled?: boolean;
+  compactLayerSchemaEnabled?: boolean;
+  evidenceGuardEnabled?: boolean;
 };
 
 type MultiPhotoCoveragePolicy = {
@@ -198,11 +251,23 @@ type MultiPhotoCoveragePolicy = {
   targetMax: number;
   totalMax: number;
   repairEnabled: boolean;
-  policyVersion: typeof PHOTO_POLICY_VERSION;
+  policyVersion: string;
+  layerAuditEnabled: boolean;
+  compactLayerSchemaEnabled: boolean;
+  evidenceGuardEnabled: boolean;
 };
 
 type AIRequestOptions = {
   isRepairPass?: boolean;
+  layerAuditEnabled?: boolean;
+  expectedPhotoCount?: number;
+  expectedPhotoIndices?: number[];
+  coverageSchemaVersion?: 1 | 2;
+  providerAttemptTracker?: ProviderAttemptTracker;
+  providerAttemptReason?: ProviderAttemptReason;
+  apiKeyAlias?: string;
+  fetchImpl?: typeof fetch;
+  thinkingBudget?: number;
 };
 
 type NormalizedPhotoFindingCoverage = {
@@ -215,6 +280,21 @@ type NormalizedPhotoFindingCoverage = {
   ai_confidence: number | null;
   findings: Array<Record<string, unknown>>;
   record_missing: boolean;
+  scene_elements: string[];
+  inspection_layers: NormalizedInspectionLayer[];
+  coverage_conclusion: string;
+  layer_audit: {
+    missing_layer_keys: InspectionLayerKey[];
+    duplicate_layer_keys: InspectionLayerKey[];
+    invalid_layer_keys_count: number;
+    invalid_layer_statuses_count: number;
+  };
+  evidence_guard: {
+    applied: boolean;
+    rejected_unlinked_count: number;
+    rejected_non_actionable_count: number;
+    marked_uncertain_count: number;
+  };
 };
 
 type CompanyRow = {
@@ -282,6 +362,12 @@ const DEFAULT_MULTI_PHOTO_FLAGS: MultiPhotoFeatureFlags = {
   enable_manual_finding_add: false,
   enable_report_snapshot_v2: false,
   enable_multi_photo_coverage_v2: false,
+  single_photo_layer_audit_enabled: false,
+  multi_photo_layer_audit_enabled: false,
+  single_photo_compact_layer_schema_enabled: false,
+  single_photo_evidence_guard_enabled: false,
+  single_photo_thinking_budget: 3072,
+  multi_photo_thinking_budget: 3072,
   coverage_repair_enabled: true,
   max_photo_count_free: 1,
   max_photo_count_plus: 3,
@@ -329,9 +415,15 @@ function geminiThinkingConfig(
   model: string,
   pool: "free" | "paid",
   isRepairPass = false,
+  requestedBudget?: number,
 ): Record<string, string | number> | null {
   if (model === MODEL_FREE || model === MODEL_PAID_FAST) {
-    return { thinkingBudget: isRepairPass ? 1024 : 3072 };
+    return {
+      thinkingBudget: isRepairPass ? 1024 : normalizeThinkingBudget(
+        requestedBudget,
+        3072,
+      ),
+    };
   }
   if (model === MODEL_FLASH_LITE) {
     return { thinkingLevel: pool === "paid" ? "high" : "medium" };
@@ -339,8 +431,18 @@ function geminiThinkingConfig(
   return null;
 }
 
-function thinkingBudgetFor(isRepairPass: boolean): number {
-  return isRepairPass ? 1024 : 3072;
+function normalizeThinkingBudget(value: unknown, fallback: number): number {
+  const parsed = Math.round(Number(value));
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 8192
+    ? parsed
+    : fallback;
+}
+
+function thinkingBudgetFor(
+  isRepairPass: boolean,
+  requestedBudget?: number,
+): number {
+  return isRepairPass ? 1024 : normalizeThinkingBudget(requestedBudget, 3072);
 }
 
 function maxOutputTokensFor(photoCount: number, tier: PlanTier): number {
@@ -626,6 +728,30 @@ function normalizeMultiPhotoFlags(value: unknown): MultiPhotoFeatureFlags {
         record.enable_multi_photo_coverage_v2,
         DEFAULT_MULTI_PHOTO_FLAGS.enable_multi_photo_coverage_v2,
       ),
+    ),
+    single_photo_layer_audit_enabled: asBoolean(
+      record.single_photo_layer_audit_enabled,
+      DEFAULT_MULTI_PHOTO_FLAGS.single_photo_layer_audit_enabled,
+    ),
+    multi_photo_layer_audit_enabled: asBoolean(
+      record.multi_photo_layer_audit_enabled,
+      DEFAULT_MULTI_PHOTO_FLAGS.multi_photo_layer_audit_enabled,
+    ),
+    single_photo_compact_layer_schema_enabled: asBoolean(
+      record.single_photo_compact_layer_schema_enabled,
+      DEFAULT_MULTI_PHOTO_FLAGS.single_photo_compact_layer_schema_enabled,
+    ),
+    single_photo_evidence_guard_enabled: asBoolean(
+      record.single_photo_evidence_guard_enabled,
+      DEFAULT_MULTI_PHOTO_FLAGS.single_photo_evidence_guard_enabled,
+    ),
+    single_photo_thinking_budget: normalizeThinkingBudget(
+      record.single_photo_thinking_budget,
+      DEFAULT_MULTI_PHOTO_FLAGS.single_photo_thinking_budget,
+    ),
+    multi_photo_thinking_budget: normalizeThinkingBudget(
+      record.multi_photo_thinking_budget,
+      DEFAULT_MULTI_PHOTO_FLAGS.multi_photo_thinking_budget,
     ),
     coverage_repair_enabled: asBoolean(
       record.coverage_repair_enabled,
@@ -1220,6 +1346,9 @@ function coveragePolicyFor(
 ): MultiPhotoCoveragePolicy | null {
   if (photoCount < 1) return null;
   if (photoCount > 1 && !capabilities.coverageV2Enabled) return null;
+  const layerAuditEnabled = photoCount === 1
+    ? capabilities.featureFlags.single_photo_layer_audit_enabled
+    : capabilities.featureFlags.multi_photo_layer_audit_enabled;
   const targetMin = photoCount === 1
     ? SINGLE_PHOTO_TARGET_MIN
     : MULTI_PHOTO_TARGET_MIN;
@@ -1239,8 +1368,17 @@ function coveragePolicyFor(
     targetMin,
     targetMax,
     totalMax,
-    repairEnabled: capabilities.coverageRepairEnabled,
-    policyVersion: PHOTO_POLICY_VERSION,
+    repairEnabled: layerAuditEnabled
+      ? false
+      : capabilities.coverageRepairEnabled,
+    policyVersion: layerAuditEnabled
+      ? LAYER_AUDIT_POLICY_VERSION
+      : LEGACY_PHOTO_POLICY_VERSION,
+    layerAuditEnabled,
+    compactLayerSchemaEnabled: photoCount === 1 && layerAuditEnabled &&
+      capabilities.featureFlags.single_photo_compact_layer_schema_enabled,
+    evidenceGuardEnabled: photoCount === 1 && layerAuditEnabled &&
+      capabilities.featureFlags.single_photo_evidence_guard_enabled,
   };
 }
 
@@ -1299,6 +1437,9 @@ function sanitizeCoverageFinding(
   const effectiveSourcePhotoIndices = sourcePhotoIndices.length > 0
     ? sourcePhotoIndices
     : [photoIndex];
+  const inspectionLayerKeys = normalizeInspectionLayerKeys(
+    sanitized.inspection_layer_keys,
+  );
   return {
     ...sanitized,
     source_photo_indices: effectiveSourcePhotoIndices,
@@ -1306,6 +1447,115 @@ function sanitizeCoverageFinding(
       sanitized.per_photo_observations,
       effectiveSourcePhotoIndices,
     ),
+    ...(inspectionLayerKeys.length > 0
+      ? { inspection_layer_keys: inspectionLayerKeys }
+      : {}),
+  };
+}
+
+function mergeDuplicateCoverageRecord(
+  base: NormalizedPhotoFindingCoverage,
+  incoming: NormalizedPhotoFindingCoverage,
+  policy: MultiPhotoCoveragePolicy,
+): NormalizedPhotoFindingCoverage {
+  const findings = [...base.findings];
+  for (const finding of incoming.findings) {
+    if (findings.length >= policy.targetMax) break;
+    if (!coverageFindingKey(finding)) continue;
+    const existingIndex = findings.findIndex((candidate) =>
+      areLikelyDuplicateCoverageFindings(candidate, finding)
+    );
+    if (existingIndex >= 0) {
+      findings[existingIndex] = mergeDuplicateCoverageFinding(
+        findings[existingIndex],
+        finding,
+        policy.photoCount,
+      );
+    } else {
+      findings.push(finding);
+    }
+  }
+
+  const layersByKey = new Map<InspectionLayerKey, NormalizedInspectionLayer>();
+  for (
+    const layer of [...base.inspection_layers, ...incoming.inspection_layers]
+  ) {
+    const existing = layersByKey.get(layer.layer_key);
+    if (!existing || layer.status === "actionable") {
+      layersByKey.set(layer.layer_key, layer);
+    }
+  }
+  const inspectionLayers = [...layersByKey.values()];
+  const status: CoverageStatus = findings.length > 0 ||
+      base.coverage_status === "actionable" ||
+      incoming.coverage_status === "actionable"
+    ? "actionable"
+    : base.coverage_status === "low_quality" &&
+        incoming.coverage_status === "low_quality"
+    ? "low_quality"
+    : "no_actionable_hazard";
+  const candidateCount = Math.max(
+    base.candidate_findings_count,
+    incoming.candidate_findings_count,
+    findings.length,
+  );
+
+  return {
+    ...base,
+    coverage_status: status,
+    scene_summary: incoming.scene_summary.length > base.scene_summary.length
+      ? incoming.scene_summary
+      : base.scene_summary,
+    candidate_findings_count: candidateCount,
+    coverage_gap_reason: normalizeCoverageGapReason(
+      status,
+      incoming.coverage_gap_reason ?? base.coverage_gap_reason,
+      findings.length,
+      policy.targetMin,
+      false,
+    ),
+    highest_risk_level: incoming.highest_risk_level ??
+      base.highest_risk_level,
+    ai_confidence: Math.max(
+      base.ai_confidence ?? 0,
+      incoming.ai_confidence ?? 0,
+    ) || null,
+    findings,
+    record_missing: false,
+    scene_elements: [
+      ...new Set([...base.scene_elements, ...incoming.scene_elements]),
+    ].slice(0, 12),
+    inspection_layers: inspectionLayers,
+    coverage_conclusion:
+      incoming.coverage_conclusion.length > base.coverage_conclusion.length
+        ? incoming.coverage_conclusion
+        : base.coverage_conclusion,
+    layer_audit: {
+      missing_layer_keys: INSPECTION_LAYER_KEYS.filter((key) =>
+        !layersByKey.has(key)
+      ),
+      duplicate_layer_keys: [
+        ...new Set([
+          ...base.layer_audit.duplicate_layer_keys,
+          ...incoming.layer_audit.duplicate_layer_keys,
+        ]),
+      ],
+      invalid_layer_keys_count: base.layer_audit.invalid_layer_keys_count +
+        incoming.layer_audit.invalid_layer_keys_count,
+      invalid_layer_statuses_count:
+        base.layer_audit.invalid_layer_statuses_count +
+        incoming.layer_audit.invalid_layer_statuses_count,
+    },
+    evidence_guard: {
+      applied: base.evidence_guard.applied || incoming.evidence_guard.applied,
+      rejected_unlinked_count: base.evidence_guard.rejected_unlinked_count +
+        incoming.evidence_guard.rejected_unlinked_count,
+      rejected_non_actionable_count:
+        base.evidence_guard.rejected_non_actionable_count +
+        incoming.evidence_guard.rejected_non_actionable_count,
+      marked_uncertain_count: base.evidence_guard.marked_uncertain_count +
+        incoming.evidence_guard.marked_uncertain_count,
+    },
   };
 }
 
@@ -1326,14 +1576,25 @@ function normalizePhotoFindingCoverage(
     ) {
       continue;
     }
-    const findings = (Array.isArray(record.findings) ? record.findings : [])
+    const rawFindings = (Array.isArray(record.findings) ? record.findings : [])
       .map((finding) =>
         sanitizeCoverageFinding(finding, photoIndex, policy.photoCount)
       )
-      .filter((finding): finding is Record<string, unknown> => finding !== null)
-      .slice(0, policy.targetMax);
+      .filter((finding): finding is Record<string, unknown> =>
+        finding !== null
+      );
+    const inspection = normalizeInspectionLayers(
+      record.inspection_layers,
+      (value) => stripPhotoMarkerReferences(value),
+    );
+    const evidenceGuard = applyInspectionLayerEvidenceGuard(
+      rawFindings,
+      inspection,
+      policy.evidenceGuardEnabled,
+    );
+    const findings = evidenceGuard.findings.slice(0, policy.targetMax);
     const candidateCount = Math.max(
-      findings.length,
+      rawFindings.length,
       Math.round(Number(record.candidate_findings_count ?? findings.length)),
     );
     const status = normalizeCoverageStatus(
@@ -1341,7 +1602,7 @@ function normalizePhotoFindingCoverage(
       findings.length,
       candidateCount,
     );
-    recordsByPhoto.set(photoIndex, {
+    const normalizedRecord: NormalizedPhotoFindingCoverage = {
       photo_index: photoIndex,
       coverage_status: status,
       scene_summary: stripPhotoMarkerReferences(record.scene_summary).slice(
@@ -1363,7 +1624,40 @@ function normalizePhotoFindingCoverage(
         : null,
       findings,
       record_missing: false,
-    });
+      scene_elements:
+        (Array.isArray(record.scene_elements) ? record.scene_elements : []).map(
+          (item) => stripPhotoMarkerReferences(item).slice(0, 120),
+        )
+          .filter(Boolean).slice(0, 12),
+      inspection_layers: inspection.layers,
+      coverage_conclusion: stripPhotoMarkerReferences(
+        record.coverage_conclusion,
+      ).slice(0, 500),
+      layer_audit: {
+        missing_layer_keys: inspection.missing,
+        duplicate_layer_keys: inspection.duplicates,
+        invalid_layer_keys_count: inspection.invalidKeyCount,
+        invalid_layer_statuses_count: inspection.invalidStatusCount,
+      },
+      evidence_guard: {
+        applied: evidenceGuard.applied,
+        rejected_unlinked_count: evidenceGuard.rejected_unlinked_count,
+        rejected_non_actionable_count:
+          evidenceGuard.rejected_non_actionable_count,
+        marked_uncertain_count: evidenceGuard.marked_uncertain_count,
+      },
+    };
+    const existingRecord = recordsByPhoto.get(photoIndex);
+    recordsByPhoto.set(
+      photoIndex,
+      existingRecord
+        ? mergeDuplicateCoverageRecord(
+          existingRecord,
+          normalizedRecord,
+          policy,
+        )
+        : normalizedRecord,
+    );
   }
 
   return Array.from({ length: policy.photoCount }, (_, index) => {
@@ -1384,8 +1678,100 @@ function normalizePhotoFindingCoverage(
       ai_confidence: null,
       findings: [],
       record_missing: true,
+      scene_elements: [],
+      inspection_layers: [],
+      coverage_conclusion: "",
+      layer_audit: {
+        missing_layer_keys: [...INSPECTION_LAYER_KEYS],
+        duplicate_layer_keys: [],
+        invalid_layer_keys_count: 0,
+        invalid_layer_statuses_count: 0,
+      },
+      evidence_guard: {
+        applied: false,
+        rejected_unlinked_count: 0,
+        rejected_non_actionable_count: 0,
+        marked_uncertain_count: 0,
+      },
     };
   });
+}
+
+function buildLayerAuditSummary(
+  records: NormalizedPhotoFindingCoverage[],
+  hazards: Array<Record<string, unknown>>,
+  provider: string,
+  schemaFallbackUsed: boolean,
+): Record<string, unknown> {
+  const representedByPhoto = new Map<number, Set<InspectionLayerKey>>();
+  let unlinkedFindingCount = 0;
+  let invalidFindingLayerKeysCount = 0;
+  for (const hazard of hazards) {
+    const keys = normalizeInspectionLayerKeys(hazard.inspection_layer_keys);
+    invalidFindingLayerKeysCount += invalidInspectionLayerKeyCount(
+      hazard.inspection_layer_keys,
+    );
+    if (keys.length === 0) unlinkedFindingCount += 1;
+    for (
+      const photoIndex of normalizeSourcePhotoIndices(
+        hazard.source_photo_indices,
+        records.length,
+      )
+    ) {
+      const represented = representedByPhoto.get(photoIndex) ?? new Set();
+      keys.forEach((key) => represented.add(key));
+      representedByPhoto.set(photoIndex, represented);
+    }
+  }
+
+  const photos = records.map((record) => {
+    const represented = representedByPhoto.get(record.photo_index) ?? new Set();
+    const unrepresentedActionableLayers = record.inspection_layers
+      .filter((layer) =>
+        layer.status === "actionable" && !represented.has(layer.layer_key)
+      )
+      .map((layer) => layer.layer_key);
+    return {
+      photo_index: record.photo_index,
+      scene_elements_count: record.scene_elements.length,
+      unique_layer_count: record.inspection_layers.length,
+      missing_layer_keys: record.layer_audit.missing_layer_keys,
+      duplicate_layer_keys: record.layer_audit.duplicate_layer_keys,
+      invalid_layer_keys_count: record.layer_audit.invalid_layer_keys_count,
+      invalid_layer_statuses_count:
+        record.layer_audit.invalid_layer_statuses_count,
+      evidence_guard_applied: record.evidence_guard.applied,
+      rejected_unlinked_findings_count:
+        record.evidence_guard.rejected_unlinked_count,
+      rejected_non_actionable_findings_count:
+        record.evidence_guard.rejected_non_actionable_count,
+      marked_uncertain_findings_count:
+        record.evidence_guard.marked_uncertain_count,
+      unrepresented_actionable_layers: unrepresentedActionableLayers,
+      coverage_conclusion_present: Boolean(record.coverage_conclusion),
+    };
+  });
+  const complete = photos.every((photo) =>
+    photo.unique_layer_count === INSPECTION_LAYER_KEYS.length &&
+    photo.missing_layer_keys.length === 0 &&
+    photo.duplicate_layer_keys.length === 0 &&
+    photo.invalid_layer_keys_count === 0 &&
+    photo.invalid_layer_statuses_count === 0
+  );
+  const evidenceGuardApplied = records.some((record) =>
+    record.evidence_guard.applied
+  );
+  return {
+    enabled: true,
+    policy_version: LAYER_AUDIT_POLICY_VERSION,
+    provider_contract: provider === "groq" ? "prompt_only_groq" : "schema",
+    schema_fallback_used: schemaFallbackUsed,
+    coverage_contract_complete: complete,
+    evidence_guard_applied: evidenceGuardApplied,
+    unlinked_finding_count: unlinkedFindingCount,
+    invalid_finding_layer_keys_count: invalidFindingLayerKeysCount,
+    photos,
+  };
 }
 
 function mergeDuplicateCoverageHazards(
@@ -1458,11 +1844,20 @@ function mergeDuplicateCoverageFinding(
       mergedObservations.map((item) => [observationKey(item), item]),
     ).values(),
   ).slice(0, 10);
+  const mergedInspectionLayerKeys = [
+    ...new Set([
+      ...normalizeInspectionLayerKeys(existing.inspection_layer_keys),
+      ...normalizeInspectionLayerKeys(incoming.inspection_layer_keys),
+    ]),
+  ];
 
   return {
     ...preferredCoverageFinding(existing, incoming),
     source_photo_indices: mergedSourcePhotoIndices,
     per_photo_observations: uniqueObservations,
+    ...(mergedInspectionLayerKeys.length > 0
+      ? { inspection_layer_keys: mergedInspectionLayerKeys }
+      : {}),
   };
 }
 
@@ -1540,9 +1935,12 @@ function coverageRepairCandidates(
 ): number[] {
   return records
     .filter((record) =>
-      record.record_missing ||
-      (record.coverage_status === "actionable" &&
-        record.findings.length < policy.targetMin)
+      coverageRecordRequiresRepair({
+        recordMissing: record.record_missing,
+        coverageStatus: record.coverage_status,
+        findingCount: record.findings.length,
+        targetMin: policy.targetMin,
+      })
     )
     .map((record) => record.photo_index);
 }
@@ -1630,8 +2028,18 @@ function buildPhotoSummariesFromCoverage(
 function responseSchema(
   tier: PlanTier,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
+  options: AIRequestOptions = {},
 ) {
   const includesPaidFields = tier !== "free";
+  const layerAuditEnabled = options.layerAuditEnabled === true &&
+    options.isRepairPass !== true;
+  const compactLayerSchemaEnabled = layerAuditEnabled &&
+    coveragePolicy?.compactLayerSchemaEnabled === true;
+  const exactCoverage = exactCoverageSchemaConstraints({
+    schemaVersion: options.coverageSchemaVersion,
+    originalPhotoCount: coveragePolicy?.photoCount,
+    expectedPhotoIndices: options.expectedPhotoIndices,
+  });
   const hazardProperties: Record<string, unknown> = {
     title: { type: "STRING" },
     category: { type: "STRING" },
@@ -1666,6 +2074,15 @@ function responseSchema(
   if (includesPaidFields) {
     hazardProperties.references = { type: "STRING" };
   }
+  if (layerAuditEnabled) {
+    hazardProperties.inspection_layer_keys = {
+      type: "ARRAY",
+      minItems: 1,
+      items: compactLayerSchemaEnabled
+        ? { type: "STRING" }
+        : { type: "STRING", enum: [...INSPECTION_LAYER_KEYS] },
+    };
+  }
   const requiredHazardFields = [
     "title",
     "category",
@@ -1682,6 +2099,7 @@ function responseSchema(
     "m5_probability",
     "m5_severity",
     ...(includesPaidFields ? ["references"] : []),
+    ...(layerAuditEnabled ? ["inspection_layer_keys"] : []),
   ];
   const hazardSchema = {
     type: "OBJECT",
@@ -1703,6 +2121,7 @@ function responseSchema(
       "m5_probability",
       "m5_severity",
       ...(includesPaidFields ? ["references"] : []),
+      ...(layerAuditEnabled ? ["inspection_layer_keys"] : []),
       "source_photo_indices",
       "per_photo_observations",
     ],
@@ -1714,16 +2133,61 @@ function responseSchema(
       properties: {
         photo_findings: {
           type: "ARRAY",
+          ...(exactCoverage.enabled
+            ? {
+              minItems: exactCoverage.minItems,
+              maxItems: exactCoverage.maxItems,
+            }
+            : {}),
           items: {
             type: "OBJECT",
             properties: {
-              photo_index: { type: "INTEGER" },
+              photo_index: {
+                type: "INTEGER",
+                ...(exactCoverage.enabled
+                  ? { enum: exactCoverage.photoIndexEnum }
+                  : {}),
+              },
               coverage_status: { type: "STRING" },
               scene_summary: { type: "STRING" },
               candidate_findings_count: { type: "INTEGER" },
               coverage_gap_reason: { type: "STRING" },
               highest_risk_level: { type: "STRING" },
               ai_confidence: { type: "NUMBER" },
+              ...(layerAuditEnabled
+                ? {
+                  scene_elements: {
+                    type: "ARRAY",
+                    maxItems: 12,
+                    items: { type: "STRING" },
+                  },
+                  inspection_layers: {
+                    type: "ARRAY",
+                    minItems: 12,
+                    maxItems: 12,
+                    items: {
+                      type: "OBJECT",
+                      properties: {
+                        layer_key: {
+                          type: "STRING",
+                          ...(compactLayerSchemaEnabled
+                            ? {}
+                            : { enum: [...INSPECTION_LAYER_KEYS] }),
+                        },
+                        status: {
+                          type: "STRING",
+                          ...(compactLayerSchemaEnabled
+                            ? {}
+                            : { enum: [...INSPECTION_LAYER_STATUSES] }),
+                        },
+                        visual_evidence: { type: "STRING" },
+                      },
+                      required: ["layer_key", "status", "visual_evidence"],
+                    },
+                  },
+                  coverage_conclusion: { type: "STRING" },
+                }
+                : {}),
               findings: {
                 type: "ARRAY",
                 items: hazardSchema,
@@ -1734,39 +2198,50 @@ function responseSchema(
               "coverage_status",
               "scene_summary",
               "candidate_findings_count",
+              ...(layerAuditEnabled
+                ? [
+                  "scene_elements",
+                  "inspection_layers",
+                  "coverage_conclusion",
+                ]
+                : []),
               "findings",
             ],
           },
         },
-        analysis_quality: {
-          type: "OBJECT",
-          properties: {
-            photo_policy_version: { type: "STRING" },
-            coverage_target_met: { type: "BOOLEAN" },
-            shortfall_photo_indices: {
-              type: "ARRAY",
-              items: { type: "INTEGER" },
-            },
-            repair_recommended: { type: "BOOLEAN" },
-          },
-        },
-        ai_summary: { type: "STRING" },
-        photo_summaries: {
-          type: "ARRAY",
-          items: {
+        ...(compactLayerSchemaEnabled ? {} : {
+          analysis_quality: {
             type: "OBJECT",
             properties: {
-              photo_index: { type: "INTEGER" },
-              scene_summary: { type: "STRING" },
-              candidate_findings_count: { type: "INTEGER" },
-              highest_risk_level: { type: "STRING" },
-              ai_confidence: { type: "NUMBER" },
-              coverage_status: { type: "STRING" },
-              coverage_gap_reason: { type: "STRING" },
+              photo_policy_version: { type: "STRING" },
+              coverage_target_met: { type: "BOOLEAN" },
+              shortfall_photo_indices: {
+                type: "ARRAY",
+                items: { type: "INTEGER" },
+              },
+              repair_recommended: { type: "BOOLEAN" },
             },
-            required: ["photo_index", "scene_summary"],
           },
-        },
+        }),
+        ai_summary: { type: "STRING" },
+        ...(compactLayerSchemaEnabled ? {} : {
+          photo_summaries: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                photo_index: { type: "INTEGER" },
+                scene_summary: { type: "STRING" },
+                candidate_findings_count: { type: "INTEGER" },
+                highest_risk_level: { type: "STRING" },
+                ai_confidence: { type: "NUMBER" },
+                coverage_status: { type: "STRING" },
+                coverage_gap_reason: { type: "STRING" },
+              },
+              required: ["photo_index", "scene_summary"],
+            },
+          },
+        }),
         limitations: { type: "STRING" },
       },
       required: ["photo_findings", "ai_summary"],
@@ -1804,6 +2279,7 @@ function responseSchema(
 function groqResponseSchemaInstruction(
   tier: PlanTier,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
+  options: AIRequestOptions = {},
 ): string {
   const referenceField = tier !== "free"
     ? `,\n          "references": "${
@@ -1815,6 +2291,50 @@ function groqResponseSchemaInstruction(
   const rootCauseExample = tier === "pro"
     ? "sistematik kök neden özeti"
     : "kısa saha diliyle kök neden";
+  const layerAuditEnabled = options.layerAuditEnabled === true &&
+    options.isRepairPass !== true;
+  const compactLayerSchemaEnabled = layerAuditEnabled &&
+    coveragePolicy?.compactLayerSchemaEnabled === true;
+  const expectedPhotoIndices = [
+    ...new Set(
+      (options.expectedPhotoIndices ?? [])
+        .map((value) => Math.round(Number(value)))
+        .filter((value) => Number.isFinite(value) && value > 0),
+    ),
+  ].sort((a, b) => a - b);
+  const exactCoverageInstruction = options.coverageSchemaVersion === 2 &&
+      (coveragePolicy?.photoCount ?? 0) > 1 && expectedPhotoIndices.length > 0
+    ? `\nphoto_findings TAM ${expectedPhotoIndices.length} kayıt içermeli. photo_index değerleri yalnız [${
+      expectedPhotoIndices.join(", ")
+    }] olmalı ve her indeks tam bir kez dönmeli.`
+    : "";
+  const inspectionLayerExamples = INSPECTION_LAYER_KEYS.map((key) =>
+    `        { "layer_key": "${key}", "status": "checked_no_hazard", "visual_evidence": "kısa görsel dayanak" }`
+  ).join(",\n");
+  const layerAuditPhotoFields = layerAuditEnabled
+    ? `
+      "scene_elements": ["görünen nesne veya bölge"],
+      "inspection_layers": [
+${inspectionLayerExamples}
+      ],
+      "coverage_conclusion": "12 katman sonunda bu bulgu sayısına neden ulaşıldığının kısa özeti",`
+    : "";
+  const layerAuditFindingField = layerAuditEnabled
+    ? `,
+          "inspection_layer_keys": ["ground_housekeeping"]`
+    : "";
+  const photoSummariesExample = compactLayerSchemaEnabled ? "" : `,
+  "photo_summaries": [
+    {
+      "photo_index": 1,
+      "scene_summary": "fotoğraftaki sahnenin kısa özeti",
+      "candidate_findings_count": ${coveragePolicy?.targetMin ?? 1},
+      "highest_risk_level": "high",
+      "ai_confidence": 0.7,
+      "coverage_status": "actionable",
+      "coverage_gap_reason": ""
+    }
+  ]`;
   if (coveragePolicy?.enabled) {
     return `Aşağıdaki JSON yapısına birebir uy. Markdown, açıklama veya kod bloğu ekleme:
 {
@@ -1827,6 +2347,7 @@ function groqResponseSchemaInstruction(
       "coverage_gap_reason": "",
       "highest_risk_level": "high",
       "ai_confidence": 0.7,
+${layerAuditPhotoFields}
       "findings": [
         {
           "title": "kısa tehlike başlığı",
@@ -1846,25 +2367,23 @@ function groqResponseSchemaInstruction(
           "source_photo_indices": [1],
           "per_photo_observations": [
             { "photo_index": 1, "observation": "fotoğraftaki kısa gözlem" }
-          ]${referenceField}
+          ]${referenceField}${layerAuditFindingField}
         }
       ]
     }
-  ],
-  "photo_summaries": [
-    {
-      "photo_index": 1,
-      "scene_summary": "fotoğraftaki sahnenin kısa özeti",
-      "candidate_findings_count": ${coveragePolicy.targetMin},
-      "highest_risk_level": "high",
-      "ai_confidence": 0.7,
-      "coverage_status": "actionable",
-      "coverage_gap_reason": ""
-    }
-  ],
+  ]${photoSummariesExample},
   "ai_summary": "kısa özet",
   "limitations": "varsa belirsizlikler"
-}`;
+}${
+      layerAuditEnabled
+        ? `
+inspection_layers her fotoğraf için TAM 12 kayıt içermeli; her layer_key tam bir kez kullanılmalı. İzinli layer_key değerleri: ${
+          INSPECTION_LAYER_KEYS.join(", ")
+        }. İzinli status değerleri: ${
+          INSPECTION_LAYER_STATUSES.join(", ")
+        }. Her bulguyu inspection_layer_keys ile en az bir katmana bağla.`
+        : ""
+    }${exactCoverageInstruction}`;
   }
   return `Aşağıdaki JSON yapısına birebir uy. Markdown, açıklama veya kod bloğu ekleme:
 {
@@ -1913,6 +2432,63 @@ class GeminiAPIError extends Error {
     this.status = status;
     this.body = body;
   }
+}
+
+function geminiSchemaFallbackAudit(
+  httpStatus: number,
+  body: string,
+): Record<string, unknown> {
+  let apiCode: number | null = null;
+  let apiStatus: string | null = null;
+  let message = "Gemini structured output schema rejected.";
+  try {
+    const parsed = JSON.parse(body) as {
+      error?: { code?: unknown; status?: unknown; message?: unknown };
+    };
+    const parsedCode = Number(parsed.error?.code);
+    apiCode = Number.isFinite(parsedCode) ? parsedCode : null;
+    apiStatus = typeof parsed.error?.status === "string"
+      ? parsed.error.status.slice(0, 80)
+      : null;
+    message = typeof parsed.error?.message === "string"
+      ? parsed.error.message.replace(/key=[^&\s]+/gi, "key=[redacted]").slice(
+        0,
+        500,
+      )
+      : message;
+  } catch {
+    // Never persist a raw provider response; it may contain request details.
+  }
+  return {
+    http_status: httpStatus,
+    api_code: apiCode,
+    api_status: apiStatus,
+    message,
+    schema_version: LAYER_AUDIT_POLICY_VERSION,
+  };
+}
+
+function isExplicitGeminiResponseSchemaError(
+  httpStatus: number,
+  body: string,
+): boolean {
+  if (httpStatus !== 400) return false;
+  let message = body;
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: unknown } };
+    if (typeof parsed.error?.message === "string") {
+      message = parsed.error.message;
+    }
+  } catch {
+    // A non-JSON provider error can still explicitly name responseSchema.
+  }
+  const normalized = message.toLowerCase();
+  const namesResponseSchema = /response[_\s-]?schema/.test(normalized) ||
+    /generation[_\s-]?config[^\n]{0,160}schema/.test(normalized);
+  const namesSchemaConstraint = /minitems|maxitems|enum|schema/.test(
+    normalized,
+  );
+  return namesResponseSchema && namesSchemaConstraint;
 }
 
 class AIRequestTimeoutError extends Error {
@@ -2119,6 +2695,16 @@ function buildSystemPrompt(): string {
   return CORE_ANALYSIS_PROMPT;
 }
 
+function layerAuditPromptRule(policy: AnalysisFindingPolicy): string {
+  if (!policy.layerAuditEnabled) return "";
+  if (!policy.compactLayerSchemaEnabled) {
+    return "Her fotoğrafı tek çağrıda şu sırayla incele: önce görünen temel nesne ve bölgeleri scene_elements içine çıkar; sonra 12 denetim katmanının HER BİRİNİ inspection_layers içinde tam bir kez değerlendir; ancak bundan sonra bağımsız bulguları üret. Bir katman görünmüyorsa not_visible, görünür ve tehlike yoksa checked_no_hazard, doğrulanabilir tehlike varsa actionable, görsel kanıt yetersizse uncertain yaz. Her actionable katmanı en az bir finding ile ilişkilendir ve her finding içinde inspection_layer_keys alanını doldur. 12 katman tamamlanmadan yanıtı bitirme. Katmanları tamamlamak bulgu sayısını yapay olarak artırma zorunluluğu değildir; yalnız bir doğrulanabilir tehlike varsa bir bulgu geçerlidir. ";
+  }
+  return `Her fotoğrafı tek çağrıda şu sırayla incele: önce ön planı, orta alanı, arka planı, dört kenarı, geçiş yollarını, kişileri, ekipmanları, yüzeyleri ve işaretleri tara; görünen temel nesne ve bölgeleri scene_elements içine çıkar; sonra 12 denetim katmanının HER BİRİNİ inspection_layers içinde tam bir kez değerlendir; ancak bundan sonra bağımsız bulguları üret. layer_key ve inspection_layer_keys alanlarında yalnızca şu kanonik değerleri aynen kullan, Türkçe karşılık veya yeni anahtar üretme: ${
+    INSPECTION_LAYER_KEYS.join(", ")
+  }. Bir katman görünmüyorsa not_visible, yeterince görünür ve tehlike yoksa checked_no_hazard, doğrudan görsel kanıtlı tehlike varsa actionable, görünür bir dayanak var fakat kesin hüküm verilemiyorsa uncertain yaz. Kırpma, kadraj dışında kalma, bulanıklık, düşük çözünürlük veya görüntü kalitesi nedeniyle bir KKD, donanım ya da bölge görülemiyorsa bu durum not_visible olmalı; actionable veya uncertain işaretleme ve bu görünmezlikten finding üretme. Her actionable veya uncertain bulguyu inspection_layer_keys ile ilgili katmana bağla. 12 katman tamamlanmadan yanıtı bitirme. Katmanları tamamlamak bulgu sayısını yapay olarak artırma zorunluluğu değildir; yalnız bir doğrulanabilir tehlike varsa bir bulgu geçerlidir. Eğitim, güvenlik kültürü, prosedür, yetkinlik, periyodik kontrol, gürültü seviyesi, havalandırma performansı veya kapalı alan sınıflandırması için doğrudan görünür belge, ölçüm, etiket, fiziksel belirti ya da saha koşulu yoksa bulgu üretme. Bir ekipman veya işaretin yokluğunu ancak bulunması gereken ilgili alan bütünüyle ve yeterli netlikte görünüyorsa bulgu yap. Aynı fiziksel tehlike birden fazla katmanla ilişkiliyse ayrı maddeler oluşturma; tek bulguyu ilgili tüm inspection_layer_keys değerlerine bağla. `;
+}
+
 function buildSubscriptionContext(
   tier: PlanTier,
   findingPolicy?: AnalysisFindingPolicy,
@@ -2127,7 +2713,9 @@ function buildSubscriptionContext(
   const maxHazards = PLAN_LIMITS[tier].maxHazards;
   const hazardCountRule = findingPolicy && findingPolicy.photoCount > 0
     ? findingPolicy.coverageV2Enabled
-      ? `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Çıktıyı photo_findings[] formatında fotoğraf bazlı üret. Her fotoğraf için coverage_status alanını "actionable", "no_actionable_hazard" veya "low_quality" olarak yaz. Aksiyonlanabilir risk kanıtı olan her fotoğrafta yalnız kanıta dayalı ve duplicate olmayan bulguları üret; fotoğraf başına üst sınır ${findingPolicy.targetFindingsPerPhotoMax}, toplam final bulgu üst sınırı ${findingPolicy.maxFindingsTotal}. Temiz, ilgisiz, çok bulanık veya risk kanıtı zayıf fotoğrafta bulgu uydurma; listeyi doldurmak için aynı tehlikeyi farklı başlıklarla tekrar yazma; coverage_gap_reason alanında neden düşük kaldığını açıkla. Aynı tehlikeyi aynı kök neden, aynı kontrol tedbiri veya aynı görsel kanıt varsa birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. Her bulguda source_photo_indices, per_photo_observations ve fotoğraf özeti alanlarını doldur.`
+      ? `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Çıktıyı photo_findings[] formatında fotoğraf bazlı üret. Her fotoğraf için coverage_status alanını "actionable", "no_actionable_hazard" veya "low_quality" olarak yaz. ${
+        layerAuditPromptRule(findingPolicy)
+      }Aksiyonlanabilir risk kanıtı olan her fotoğrafta yalnız kanıta dayalı ve duplicate olmayan bulguları üret; fotoğraf başına üst sınır ${findingPolicy.targetFindingsPerPhotoMax}, toplam final bulgu üst sınırı ${findingPolicy.maxFindingsTotal}. Temiz, ilgisiz, çok bulanık veya risk kanıtı zayıf fotoğrafta bulgu uydurma; listeyi doldurmak için aynı tehlikeyi farklı başlıklarla tekrar yazma; coverage_gap_reason alanında neden düşük kaldığını açıkla. Aynı tehlikeyi aynı kök neden, aynı kontrol tedbiri veya aynı görsel kanıt varsa birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. Her bulguda source_photo_indices, per_photo_observations ve fotoğraf özeti alanlarını doldur.`
       : `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Her fotoğraf için photo_summaries içinde ayrı özet üret. Her fotoğraf için 12 katmanlı taramadan çıkan tüm anlamlı bulgu adaylarını yaz; fotoğraf başına en fazla ${findingPolicy.maxFindingsPerPhoto}, toplamda en fazla ${findingPolicy.maxFindingsTotal} final bulgu üret. Kanıt varsa listeyi gereksiz kısaltma: çok fotoğraflı bir analizde tehlike kanıtı güçlü olan her fotoğraftan genellikle birden fazla bulgu beklenir. Risk kanıtı zayıfsa bulgu uydurma. Aynı tehlikeyi yalnız aynı kök neden ve aynı kontrol tedbiri olduğunda birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. source_photo_indices ve per_photo_observations alanlarını doldur.`
     : minHazards && maxHazards
     ? `${minHazards} ile ${maxHazards} arasında tehlike döndür; önem sırasına göre sırala.`
@@ -2392,48 +2980,177 @@ async function callGemini(
 
   const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`;
   const isRepairPass = options.isRepairPass === true;
-  const thinkingConfig = geminiThinkingConfig(model, pool, isRepairPass);
+  const thinkingConfig = geminiThinkingConfig(
+    model,
+    pool,
+    isRepairPass,
+    options.thinkingBudget,
+  );
   const baseMaxOutputTokens = maxOutputTokensFor(imageBase64Parts.length, tier);
   let jsonParseRetryCount = 0;
   let maxOutputTokens = baseMaxOutputTokens;
+  let schemaAuditEnabled = options.layerAuditEnabled === true && !isRepairPass;
+  let layerAuditSchemaFallbackUsed = false;
+  let layerAuditSchemaFallbackError: Record<string, unknown> | null = null;
+  let exactCoverageSchemaEnabled = options.coverageSchemaVersion === 2 &&
+    (coveragePolicy?.photoCount ?? 0) > 1 &&
+    (options.expectedPhotoIndices?.length ?? 0) > 0;
+  let coverageSchemaFallbackUsed = false;
+  let coverageSchemaFallbackError: Record<string, unknown> | null = null;
+  let maxTokenRetryCount = 0;
+  let nextAttemptReason = options.providerAttemptReason ?? "initial";
+  const recordAttempt = (
+    reason: ProviderAttemptReason,
+    startedAt: number,
+    httpStatus: number | null,
+    outcome: string,
+    usageMetadata?: Record<string, unknown> | null,
+  ) => {
+    options.providerAttemptTracker?.record({
+      provider: "gemini",
+      model,
+      api_key_alias: options.apiKeyAlias ?? null,
+      reason,
+      http_status: httpStatus,
+      outcome,
+      duration_ms: Date.now() - startedAt,
+      input_tokens: usageMetadata?.promptTokenCount,
+      output_tokens: usageMetadata?.candidatesTokenCount,
+      thoughts_tokens: usageMetadata?.thoughtsTokenCount,
+      total_tokens: usageMetadata?.totalTokenCount,
+    });
+  };
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  // Schema fallbacks do not consume the two legacy MAX_TOKENS retries.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const attemptReason = nextAttemptReason;
+    const requestOptions = {
+      ...options,
+      layerAuditEnabled: schemaAuditEnabled,
+      coverageSchemaVersion: exactCoverageSchemaEnabled
+        ? 2 as const
+        : 1 as const,
+    };
     const body = {
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: "user", parts }],
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: responseSchema(tier, coveragePolicy),
+        responseSchema: responseSchema(tier, coveragePolicy, requestOptions),
         temperature: 0.2,
         maxOutputTokens,
         ...(thinkingConfig ? { thinkingConfig } : {}),
       },
     };
 
-    const res = await fetchWithTimeout(
-      url,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-      isRepairPass ? REPAIR_AI_TIMEOUT_MS : MAIN_AI_TIMEOUT_MS,
-      "Gemini",
-    );
+    const startedAt = Date.now();
+    let res: Response;
+    try {
+      res = await fetchWithTimeout(
+        url,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        isRepairPass ? REPAIR_AI_TIMEOUT_MS : MAIN_AI_TIMEOUT_MS,
+        "Gemini",
+        options.fetchImpl,
+      );
+    } catch (error) {
+      recordAttempt(
+        attemptReason,
+        startedAt,
+        null,
+        error instanceof AIRequestTimeoutError ? "timeout" : "transport_error",
+      );
+      throw error;
+    }
 
     if (!res.ok) {
       const errText = await res.text();
+      const explicitSchemaError = isExplicitGeminiResponseSchemaError(
+        res.status,
+        errText,
+      );
+      recordAttempt(
+        attemptReason,
+        startedAt,
+        res.status,
+        explicitSchemaError ? "schema_rejected" : "provider_error",
+      );
+      if (res.status === 400 && schemaAuditEnabled) {
+        layerAuditSchemaFallbackError = geminiSchemaFallbackAudit(
+          res.status,
+          errText,
+        );
+        schemaAuditEnabled = false;
+        layerAuditSchemaFallbackUsed = true;
+        nextAttemptReason = "layer_schema_fallback";
+        continue;
+      }
+      if (
+        exactCoverageSchemaEnabled && explicitSchemaError &&
+        !coverageSchemaFallbackUsed
+      ) {
+        coverageSchemaFallbackError = geminiSchemaFallbackAudit(
+          res.status,
+          errText,
+        );
+        exactCoverageSchemaEnabled = false;
+        coverageSchemaFallbackUsed = true;
+        nextAttemptReason = "coverage_schema_fallback";
+        continue;
+      }
       throw new GeminiAPIError(res.status, errText);
     }
 
-    const json = await res.json();
+    let json: {
+      candidates?: Array<{
+        finishReason?: unknown;
+        content?: { parts?: Array<{ text?: string }> };
+      }>;
+      usageMetadata?: Record<string, unknown>;
+    };
+    try {
+      json = await res.json();
+    } catch (error) {
+      recordAttempt(
+        attemptReason,
+        startedAt,
+        res.status,
+        "invalid_response_json",
+      );
+      throw error;
+    }
+    const usageMetadata = json.usageMetadata as
+      | Record<string, unknown>
+      | undefined;
     const candidate = json.candidates?.[0];
-    if (!candidate) throw new Error("Gemini yanıt boş.");
+    if (!candidate) {
+      recordAttempt(
+        attemptReason,
+        startedAt,
+        res.status,
+        "empty_response",
+        usageMetadata,
+      );
+      throw new Error("Gemini yanıt boş.");
+    }
     const finishReason = String(candidate.finishReason ?? "");
     if (finishReason === "MAX_TOKENS") {
-      if (attempt === 0 && maxOutputTokens < 48_000) {
+      recordAttempt(
+        attemptReason,
+        startedAt,
+        res.status,
+        "max_tokens",
+        usageMetadata,
+      );
+      if (maxOutputTokens < 48_000 && maxTokenRetryCount < 2) {
         jsonParseRetryCount += 1;
+        maxTokenRetryCount += 1;
         maxOutputTokens = Math.min(48_000, maxOutputTokens + 8_000);
+        nextAttemptReason = "max_tokens_retry";
         continue;
       }
       throw new AITruncatedResponseError(finishReason);
@@ -2442,25 +3159,87 @@ async function callGemini(
       finishReason &&
       !["STOP", "FINISH_REASON_UNSPECIFIED"].includes(finishReason)
     ) {
+      recordAttempt(
+        attemptReason,
+        startedAt,
+        res.status,
+        "finish_reason_error",
+        usageMetadata,
+      );
       throw new Error(`Gemini finishReason=${finishReason}`);
     }
 
     const text = candidate.content?.parts?.[0]?.text;
-    if (!text) throw new Error("Gemini yanıtında metin yok.");
+    if (!text) {
+      recordAttempt(
+        attemptReason,
+        startedAt,
+        res.status,
+        "missing_text",
+        usageMetadata,
+      );
+      throw new Error("Gemini yanıtında metin yok.");
+    }
+
+    let result: unknown;
+    try {
+      result = JSON.parse(text);
+    } catch (error) {
+      recordAttempt(
+        attemptReason,
+        startedAt,
+        res.status,
+        "invalid_json",
+        usageMetadata,
+      );
+      throw error;
+    }
+    recordAttempt(
+      attemptReason,
+      startedAt,
+      res.status,
+      "success",
+      usageMetadata,
+    );
 
     return {
-      result: JSON.parse(text),
-      inputTokens: json.usageMetadata?.promptTokenCount ?? 0,
-      outputTokens: json.usageMetadata?.candidatesTokenCount ?? 0,
-      cachedTokens: json.usageMetadata?.cachedContentTokenCount ?? null,
-      thoughtsTokens: json.usageMetadata?.thoughtsTokenCount ?? null,
-      totalTokens: json.usageMetadata?.totalTokenCount ?? null,
+      result,
+      inputTokens: Math.max(
+        0,
+        Math.round(Number(json.usageMetadata?.promptTokenCount) || 0),
+      ),
+      outputTokens: Math.max(
+        0,
+        Math.round(Number(json.usageMetadata?.candidatesTokenCount) || 0),
+      ),
+      cachedTokens: json.usageMetadata?.cachedContentTokenCount == null
+        ? null
+        : Math.max(
+          0,
+          Math.round(Number(json.usageMetadata.cachedContentTokenCount) || 0),
+        ),
+      thoughtsTokens: json.usageMetadata?.thoughtsTokenCount == null
+        ? null
+        : Math.max(
+          0,
+          Math.round(Number(json.usageMetadata.thoughtsTokenCount) || 0),
+        ),
+      totalTokens: json.usageMetadata?.totalTokenCount == null
+        ? null
+        : Math.max(
+          0,
+          Math.round(Number(json.usageMetadata.totalTokenCount) || 0),
+        ),
       finishReason: finishReason || "STOP",
       jsonParseRetryCount,
       thinkingBudget: model === MODEL_FLASH_LITE
         ? null
-        : thinkingBudgetFor(isRepairPass),
+        : thinkingBudgetFor(isRepairPass, options.thinkingBudget),
       maxOutputTokens,
+      layerAuditSchemaFallbackUsed,
+      layerAuditSchemaFallbackError,
+      coverageSchemaFallbackUsed,
+      coverageSchemaFallbackError,
     };
   }
 
@@ -2590,7 +3369,7 @@ async function callGroq(
     {
       type: "text",
       text: [
-        groqResponseSchemaInstruction(tier, coveragePolicy),
+        groqResponseSchemaInstruction(tier, coveragePolicy, options),
         analysisContext,
       ].filter(Boolean).join("\n\n"),
     },
@@ -2630,41 +3409,108 @@ async function callGroq(
     max_completion_tokens: maxCompletionTokens,
   };
 
-  const res = await fetchWithTimeout(
-    GROQ_API_URL,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+  const startedAt = Date.now();
+  const attemptReason = options.providerAttemptReason ?? "initial";
+  const recordAttempt = (
+    httpStatus: number | null,
+    outcome: string,
+    usage?: Record<string, unknown> | null,
+  ) => {
+    options.providerAttemptTracker?.record({
+      provider: "groq",
+      model,
+      api_key_alias: options.apiKeyAlias ?? null,
+      reason: attemptReason,
+      http_status: httpStatus,
+      outcome,
+      duration_ms: Date.now() - startedAt,
+      input_tokens: usage?.prompt_tokens,
+      output_tokens: usage?.completion_tokens,
+      total_tokens: usage?.total_tokens,
+    });
+  };
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(
+      GROQ_API_URL,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    },
-    isRepairPass ? REPAIR_AI_TIMEOUT_MS : MAIN_AI_TIMEOUT_MS,
-    "Groq",
-  );
+      isRepairPass ? REPAIR_AI_TIMEOUT_MS : MAIN_AI_TIMEOUT_MS,
+      "Groq",
+      options.fetchImpl,
+    );
+  } catch (error) {
+    recordAttempt(
+      null,
+      error instanceof AIRequestTimeoutError ? "timeout" : "transport_error",
+    );
+    throw error;
+  }
 
   if (!res.ok) {
     const errText = await res.text();
+    recordAttempt(res.status, "provider_error");
     throw new GroqAPIError(res.status, errText);
   }
 
-  const json = await res.json();
+  let json: {
+    choices?: Array<{
+      message?: { content?: string };
+      finish_reason?: unknown;
+    }>;
+    usage?: Record<string, unknown>;
+  };
+  try {
+    json = await res.json();
+  } catch (error) {
+    recordAttempt(res.status, "invalid_response_json");
+    throw error;
+  }
+  const usage = json.usage as Record<string, unknown> | undefined;
   const text = json.choices?.[0]?.message?.content;
-  if (!text) throw new Error("Groq yanıtında metin yok.");
+  if (!text) {
+    recordAttempt(res.status, "missing_text", usage);
+    throw new Error("Groq yanıtında metin yok.");
+  }
+  let result: unknown;
+  try {
+    result = JSON.parse(text);
+  } catch (error) {
+    recordAttempt(res.status, "invalid_json", usage);
+    throw error;
+  }
+  recordAttempt(res.status, "success", usage);
 
   return {
-    result: JSON.parse(text),
-    inputTokens: json.usage?.prompt_tokens ?? 0,
-    outputTokens: json.usage?.completion_tokens ?? 0,
+    result,
+    inputTokens: Math.max(
+      0,
+      Math.round(Number(json.usage?.prompt_tokens) || 0),
+    ),
+    outputTokens: Math.max(
+      0,
+      Math.round(Number(json.usage?.completion_tokens) || 0),
+    ),
     cachedTokens: null,
     thoughtsTokens: null,
-    totalTokens: json.usage?.total_tokens ??
-      ((json.usage?.prompt_tokens ?? 0) + (json.usage?.completion_tokens ?? 0)),
+    totalTokens: json.usage?.total_tokens == null
+      ? Math.max(0, Math.round(Number(json.usage?.prompt_tokens) || 0)) +
+        Math.max(0, Math.round(Number(json.usage?.completion_tokens) || 0))
+      : Math.max(0, Math.round(Number(json.usage.total_tokens) || 0)),
     finishReason: String(json.choices?.[0]?.finish_reason ?? "stop"),
     jsonParseRetryCount: 0,
     thinkingBudget: null,
     maxOutputTokens: maxCompletionTokens,
+    layerAuditSchemaFallbackUsed: false,
+    layerAuditSchemaFallbackError: null,
+    coverageSchemaFallbackUsed: false,
+    coverageSchemaFallbackError: null,
   };
 }
 
@@ -2677,18 +3523,15 @@ async function fetchWithTimeout(
   init: RequestInit,
   timeoutMs: number,
   provider: string,
+  fetchImpl: typeof fetch = fetch,
 ): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutID = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    return await fetchWithDeadline(fetchImpl, url, init, timeoutMs);
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new AIRequestTimeoutError(provider, timeoutMs);
     }
     throw error;
-  } finally {
-    clearTimeout(timeoutID);
   }
 }
 
@@ -2828,6 +3671,136 @@ async function loadCancelledPlusTrialRoutingFlag(
     return normalizeCancelledPlusTrialRoutingFlag(data?.value);
   } catch {
     return normalizeCancelledPlusTrialRoutingFlag(null);
+  }
+}
+
+async function loadAnalysisPipelineV2Flag(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userID: string,
+): Promise<AnalysisPipelineV2Flag> {
+  const fallback: AnalysisPipelineV2Flag = {
+    enabled: false,
+    rolloutMode: "off",
+    leaseSeconds: 300,
+    maxWorkerAttempts: 3,
+  };
+  try {
+    const { data, error } = await supabase
+      .from("app_feature_flags")
+      .select("value")
+      .eq("key", ANALYSIS_PIPELINE_V2_FLAG_KEY)
+      .maybeSingle();
+    if (error || !data?.value || typeof data.value !== "object") {
+      return fallback;
+    }
+    const value = data.value as Record<string, unknown>;
+    const rolloutMode: AnalysisPipelineRolloutMode = value.rollout_mode === "on"
+      ? "on"
+      : value.rollout_mode === "allowlist"
+      ? "allowlist"
+      : "off";
+    const enabledHashes = Array.isArray(value.enabled_user_hashes)
+      ? value.enabled_user_hashes.map((item) => String(item))
+      : [];
+    const userHash = rolloutMode === "allowlist" ? await hashedID(userID) : "";
+    return {
+      enabled: rolloutMode === "on" ||
+        (rolloutMode === "allowlist" && enabledHashes.includes(userHash)),
+      rolloutMode,
+      leaseSeconds: Math.max(
+        30,
+        Math.min(900, Number(value.lease_seconds ?? 300) || 300),
+      ),
+      maxWorkerAttempts: Math.max(
+        1,
+        Math.min(10, Number(value.max_worker_attempts ?? 3) || 3),
+      ),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+async function loadAnalysisAmbiguousDispatchGuardFlag(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userID: string,
+): Promise<AnalysisAmbiguousDispatchGuardFlag> {
+  const fallback: AnalysisAmbiguousDispatchGuardFlag = {
+    enabled: false,
+    rolloutMode: "off",
+  };
+  try {
+    const { data, error } = await supabase
+      .from("app_feature_flags")
+      .select("value")
+      .eq("key", ANALYSIS_AMBIGUOUS_DISPATCH_GUARD_FLAG_KEY)
+      .maybeSingle();
+    if (error || !data?.value || typeof data.value !== "object") {
+      return fallback;
+    }
+    const value = data.value as Record<string, unknown>;
+    const rolloutMode: AnalysisPipelineRolloutMode = value.rollout_mode === "on"
+      ? "on"
+      : value.rollout_mode === "allowlist"
+      ? "allowlist"
+      : "off";
+    const enabledHashes = Array.isArray(value.enabled_user_hashes)
+      ? value.enabled_user_hashes.map((item) => String(item))
+      : [];
+    const userHash = rolloutMode === "allowlist" ? await hashedID(userID) : "";
+    return {
+      enabled: rolloutMode === "on" ||
+        (rolloutMode === "allowlist" && enabledHashes.includes(userHash)),
+      rolloutMode,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+async function loadExactCoverageSchemaFlag(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userID: string,
+): Promise<ExactCoverageSchemaFlag> {
+  const fallback: ExactCoverageSchemaFlag = {
+    enabled: false,
+    rolloutMode: "off",
+    schemaVersion: 2,
+    killSwitch: false,
+  };
+  try {
+    const { data, error } = await supabase
+      .from("app_feature_flags")
+      .select("value")
+      .eq("key", MULTI_PHOTO_EXACT_COVERAGE_SCHEMA_FLAG_KEY)
+      .maybeSingle();
+    if (error || !data?.value || typeof data.value !== "object") {
+      return fallback;
+    }
+    const value = data.value as Record<string, unknown>;
+    if (Number(value.schema_version) !== 2) return fallback;
+    const rolloutMode: AnalysisPipelineRolloutMode = value.rollout_mode === "on"
+      ? "on"
+      : value.rollout_mode === "allowlist"
+      ? "allowlist"
+      : "off";
+    const killSwitch = value.kill_switch === true;
+    const enabledHashes = Array.isArray(value.enabled_user_hashes)
+      ? value.enabled_user_hashes.map((item) => String(item))
+      : [];
+    const userHash = rolloutMode === "allowlist" ? await hashedID(userID) : "";
+    return {
+      enabled: !killSwitch && (rolloutMode === "on" ||
+        (rolloutMode === "allowlist" && enabledHashes.includes(userHash))),
+      rolloutMode,
+      schemaVersion: 2,
+      killSwitch,
+    };
+  } catch {
+    return fallback;
   }
 }
 
@@ -3092,6 +4065,8 @@ async function callGeminiWithFallback(
 ) {
   let lastError: unknown = null;
   let attempt = 0;
+  let previousKeyAlias: string | null = null;
+  let previousModel: string | null = null;
   const attemptFailures: GeminiAttemptFailure[] = [];
   for (
     const { keyConfig, model } of attemptSequence ?? geminiAttemptSequence(
@@ -3100,6 +4075,15 @@ async function callGeminiWithFallback(
     )
   ) {
     attempt += 1;
+    const attemptReason: ProviderAttemptReason = attempt === 1
+      ? options.providerAttemptReason ?? "initial"
+      : lastError instanceof SyntaxError
+      ? "invalid_json_fallback"
+      : previousKeyAlias !== keyConfig.alias
+      ? "key_fallback"
+      : previousModel !== model
+      ? "model_fallback"
+      : "key_fallback";
     try {
       const out = await callGemini(
         keyConfig.key,
@@ -3112,7 +4096,11 @@ async function callGeminiWithFallback(
         tier,
         simulation,
         coveragePolicy,
-        options,
+        {
+          ...options,
+          apiKeyAlias: keyConfig.alias,
+          providerAttemptReason: attemptReason,
+        },
       );
       return {
         ...out,
@@ -3123,6 +4111,8 @@ async function callGeminiWithFallback(
       };
     } catch (err) {
       lastError = err;
+      previousKeyAlias = keyConfig.alias;
+      previousModel = model;
       const retryable = isRetryableAIError(err);
       const failure: GeminiAttemptFailure = {
         apiKeyAlias: keyConfig.alias,
@@ -3211,7 +4201,11 @@ async function callAIWithFreeProviderPool(
       outputTier,
       simulation,
       coveragePolicy,
-      options,
+      {
+        ...options,
+        apiKeyAlias: groqKey.alias,
+        providerAttemptReason: "provider_fallback",
+      },
     );
     return {
       ...out,
@@ -3287,7 +4281,11 @@ async function callPaidAIWithFallback(
       tier,
       simulation,
       coveragePolicy,
-      options,
+      {
+        ...options,
+        apiKeyAlias: groqKey.alias,
+        providerAttemptReason: "provider_fallback",
+      },
     );
     return {
       ...out,
@@ -3365,7 +4363,10 @@ async function callFreePaidTrialAIWithFallback(
         trace,
         undefined,
         coveragePolicy,
-        options,
+        {
+          ...options,
+          providerAttemptReason: "provider_fallback",
+        },
       );
       const fallbackDetails = [
         out.modelUsed !== MODEL_FREE ? out.modelUsed : null,
@@ -3407,7 +4408,11 @@ async function callFreePaidTrialAIWithFallback(
         outputTier,
         simulation,
         coveragePolicy,
-        options,
+        {
+          ...options,
+          apiKeyAlias: groqKey.alias,
+          providerAttemptReason: "provider_fallback",
+        },
       );
       return {
         ...out,
@@ -3718,19 +4723,8 @@ async function persistInlinePhotosForQueue(params: {
     ? params.inlinePhotoParts
     : [];
   if (inlinePhotoParts.length === 0) return persistedPhotoPaths;
-  const uploadedPhotoPaths: string[] = [];
 
   try {
-    const { error: deletePhotoErr } = await params.supabase.from("photos")
-      .delete()
-      .eq("analysis_id", params.analysisID)
-      .eq("user_id", params.userID);
-    if (deletePhotoErr) {
-      throw new Error(
-        `photo_cleanup_failed:${safeLogText(JSON.stringify(deletePhotoErr))}`,
-      );
-    }
-
     for (let i = 0; i < inlinePhotoParts.length; i++) {
       const part = inlinePhotoParts[i];
       if (!part?.data) continue;
@@ -3762,26 +4756,27 @@ async function persistInlinePhotosForQueue(params: {
           }`,
         );
       }
-      uploadedPhotoPaths.push(storagePath);
-
-      const { error: photoErr } = await params.supabase.from("photos").insert({
-        analysis_id: params.analysisID,
-        user_id: params.userID,
-        storage_path: storagePath,
-        width: sanitizedDimension(part.width),
-        height: sanitizedDimension(part.height),
-        size_bytes: bytes.byteLength,
-        byte_size: bytes.byteLength,
-        mime_type: mimeType,
-        sequence_index: i + 1,
-        client_photo_id:
-          safeText(part.client_photo_id ?? part.clientPhotoID).slice(0, 80) ||
-          null,
-        is_primary: i === 0,
-        upload_payload_version: inlinePhotoParts.length > 1
-          ? "photo-batch-v2"
-          : "photo-single-v1",
-      });
+      const { error: photoErr } = await params.supabase.from("photos").upsert(
+        {
+          analysis_id: params.analysisID,
+          user_id: params.userID,
+          storage_path: storagePath,
+          width: sanitizedDimension(part.width),
+          height: sanitizedDimension(part.height),
+          size_bytes: bytes.byteLength,
+          byte_size: bytes.byteLength,
+          mime_type: mimeType,
+          sequence_index: i + 1,
+          client_photo_id:
+            safeText(part.client_photo_id ?? part.clientPhotoID).slice(0, 80) ||
+            null,
+          is_primary: i === 0,
+          upload_payload_version: inlinePhotoParts.length > 1
+            ? "photo-batch-v2"
+            : "photo-single-v1",
+        },
+        { onConflict: "analysis_id,sequence_index" },
+      );
 
       if (photoErr) {
         throw new Error(
@@ -3792,13 +4787,8 @@ async function persistInlinePhotosForQueue(params: {
       persistedPhotoPaths.push(storagePath);
     }
   } catch (error) {
-    if (uploadedPhotoPaths.length > 0) {
-      await params.supabase.storage.from("photos").remove(uploadedPhotoPaths);
-    }
-    await params.supabase.from("photos")
-      .delete()
-      .eq("analysis_id", params.analysisID)
-      .eq("user_id", params.userID);
+    // Storage paths and metadata rows are deterministic. A concurrent retry may
+    // already be using them, so cleanup here would recreate the original race.
     throw error;
   }
 
@@ -3816,7 +4806,14 @@ async function enqueueAnalysisJob(params: {
   analysisID: string;
   requestID: string;
   supportID: string;
-}): Promise<{ queuedPhotoPaths: string[] }> {
+  usePipelineV2: boolean;
+  claimGuardVersion: 1 | 2;
+  coverageSchemaVersion: 1 | 2;
+}): Promise<{
+  queuedPhotoPaths: string[];
+  enqueued: boolean;
+  state: string;
+}> {
   const requestedPhotoPaths = Array.isArray(params.body.photo_paths)
     ? params.body.photo_paths
       .map((path: unknown) => typeof path === "string" ? path.trim() : "")
@@ -3849,7 +4846,35 @@ async function enqueueAnalysisJob(params: {
     support_id: params.supportID,
     photo_paths: queuedPhotoPaths,
     photo_base64_parts: [],
+    claim_guard_version: params.claimGuardVersion,
+    coverage_schema_version: params.coverageSchemaVersion,
+    queued_status_message:
+      `Analiz kuyruğa alındı. Destek kodu: ${params.supportID}`,
   };
+
+  if (params.usePipelineV2) {
+    const { data, error } = await params.supabase.rpc(
+      "submit_analysis_job_v2",
+      {
+        p_user_id: params.userID,
+        p_analysis_id: params.analysisID,
+        p_message: jobBody,
+      },
+    );
+    if (error) {
+      throw new Error(`analysis_v2_submit_failed:${safeLogError(error)}`);
+    }
+    if (data?.ok !== true) {
+      throw new Error(
+        `analysis_v2_submit_rejected:${safeText(data?.code ?? data?.state)}`,
+      );
+    }
+    return {
+      queuedPhotoPaths,
+      enqueued: data?.enqueued === true,
+      state: safeText(data?.state ?? "queued").slice(0, 40),
+    };
+  }
 
   const { error: updateErr } = await params.supabase
     .from("analyses")
@@ -3876,6 +4901,8 @@ async function enqueueAnalysisJob(params: {
       .from("analyses")
       .update({
         status: "failed",
+        failure_category: "technical",
+        failure_code: "analysis_queue_send_failed",
         status_message:
           `Analiz kuyruğa alınamadı. Destek kodu: ${params.supportID}`,
         last_worker_error: safeLogText(JSON.stringify(queueErr)),
@@ -3885,7 +4912,7 @@ async function enqueueAnalysisJob(params: {
     throw new Error(`analysis_queue_send_failed:${safeLogError(queueErr)}`);
   }
 
-  return { queuedPhotoPaths };
+  return { queuedPhotoPaths, enqueued: true, state: "queued" };
 }
 
 async function enqueueCoverageRepairJob(params: {
@@ -3898,6 +4925,14 @@ async function enqueueCoverageRepairJob(params: {
   requestID: string;
   supportID: string;
   repairPhotoIndices: number[];
+  coverageSchemaVersion: 1 | 2;
+  pipelineV2: {
+    enabled: boolean;
+    msgID: number | null;
+    generation: number | null;
+    claimToken: string | null;
+  };
+  intermediateRawResponse: Record<string, unknown>;
 }) {
   const jobBody = {
     ...params.body,
@@ -3909,7 +4944,35 @@ async function enqueueCoverageRepairJob(params: {
     support_id: params.supportID,
     repair_photo_indices: params.repairPhotoIndices,
     photo_base64_parts: [],
+    claim_guard_version: Number(params.body.claim_guard_version) === 2 ? 2 : 1,
+    coverage_schema_version: params.coverageSchemaVersion,
+    queued_status_message:
+      `Analiz kapsamı ikinci taramaya alındı. Destek kodu: ${params.supportID}`,
   };
+
+  if (params.pipelineV2.enabled) {
+    const { data, error } = await params.supabase.rpc(
+      "transition_analysis_to_repair_v2",
+      {
+        p_user_id: params.userID,
+        p_analysis_id: params.analysisID,
+        p_msg_id: params.pipelineV2.msgID,
+        p_generation: params.pipelineV2.generation,
+        p_claim_token: params.pipelineV2.claimToken,
+        p_message: jobBody,
+        p_intermediate_raw_response: params.intermediateRawResponse,
+      },
+    );
+    if (error) {
+      throw new Error(`coverage_repair_v2_failed:${safeLogError(error)}`);
+    }
+    if (data?.ok !== true) {
+      throw new Error(
+        `coverage_repair_v2_rejected:${safeText(data?.state ?? "unknown")}`,
+      );
+    }
+    return data;
+  }
 
   const { error: updateErr } = await params.supabase
     .from("analyses")
@@ -3918,6 +4981,7 @@ async function enqueueCoverageRepairJob(params: {
       status_message:
         `Analiz kapsamı ikinci taramaya alındı. Destek kodu: ${params.supportID}`,
       last_worker_error: null,
+      raw_ai_response: params.intermediateRawResponse,
     })
     .eq("id", params.analysisID)
     .eq("user_id", params.userID);
@@ -3934,6 +4998,7 @@ async function enqueueCoverageRepairJob(params: {
   if (queueErr) {
     throw new Error(`coverage_repair_queue_failed:${safeLogError(queueErr)}`);
   }
+  return { ok: true, state: "repair_queued" };
 }
 
 function triggerAnalysisWorker(params: {
@@ -4058,11 +5123,109 @@ async function sendAnalysisCompletePush(params: {
 }
 
 // deno-lint-ignore no-explicit-any
-async function logUsage(supabase: any, data: any) {
+async function logUsage(supabase: any, data: any): Promise<string | null> {
   try {
-    await supabase.from("ai_usage_logs").insert(data);
+    const { data: inserted, error } = await supabase.from("ai_usage_logs")
+      .insert(data)
+      .select("id")
+      .maybeSingle();
+    if (error) {
+      console.error(
+        "Usage log insert failed",
+        JSON.stringify(safeLogError(error)),
+      );
+      return null;
+    }
+    return typeof inserted?.id === "string" ? inserted.id : null;
   } catch (e) {
     console.error("Usage log insert failed", JSON.stringify(safeLogError(e)));
+    return null;
+  }
+}
+
+async function updateUsagePersistence(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  usageLogID: string | null,
+  outcome: "persisted" | "failed" | "discarded",
+  errorCode: string | null = null,
+) {
+  if (!usageLogID) return;
+  try {
+    const { error } = await supabase.from("ai_usage_logs")
+      .update({
+        persistence_outcome: outcome,
+        persistence_error_code: errorCode,
+        persistence_updated_at: new Date().toISOString(),
+      })
+      .eq("id", usageLogID);
+    if (error) {
+      console.error(
+        "Usage persistence update failed",
+        JSON.stringify(safeLogError(error)),
+      );
+    }
+  } catch (error) {
+    console.error(
+      "Usage persistence update failed",
+      JSON.stringify(safeLogError(error)),
+    );
+  }
+}
+
+async function recordAnalysisJobEventV2(params: {
+  // deno-lint-ignore no-explicit-any
+  supabase: any;
+  userID: string;
+  analysisID: string;
+  msgID: number;
+  generation: number;
+  workerAttempt: number;
+  jobMode: "analysis" | "repair";
+  eventType: string;
+  httpStatus?: number | null;
+  responseCode?: string | null;
+  claimAction?: string | null;
+  errorText?: string | null;
+}): Promise<void> {
+  try {
+    const { error } = await params.supabase.rpc(
+      "record_analysis_job_event_v2",
+      {
+        p_user_id: params.userID,
+        p_analysis_id: params.analysisID,
+        p_msg_id: params.msgID,
+        p_generation: params.generation,
+        p_worker_attempt: Math.max(1, Math.round(params.workerAttempt)),
+        p_job_mode: params.jobMode,
+        p_event_type: params.eventType,
+        p_http_status: params.httpStatus ?? null,
+        p_response_code: params.responseCode ?? null,
+        p_claim_action: params.claimAction ?? null,
+        p_safe_error_text: params.errorText
+          ? safeLogText(params.errorText, 500)
+          : null,
+      },
+    );
+    if (error) {
+      console.warn(
+        "Analysis job event write skipped",
+        JSON.stringify({
+          analysis_id: params.analysisID,
+          event_type: params.eventType,
+          error: safeLogError(error),
+        }),
+      );
+    }
+  } catch (error) {
+    console.warn(
+      "Analysis job event write failed",
+      JSON.stringify({
+        analysis_id: params.analysisID,
+        event_type: params.eventType,
+        error: safeLogError(error),
+      }),
+    );
   }
 }
 
@@ -4246,6 +5409,27 @@ serve(async (req: Request) => {
     });
   }
   const analysisID = String(analysis_id);
+  const pipelineVersion = Number(body.pipeline_version ?? 1);
+  const workerQueueMsgID = Number(body.__queue_msg_id);
+  const workerJobGeneration = Number(
+    body.__job_generation ?? body.job_generation,
+  );
+  const workerClaimToken = typeof body.__worker_claim_token === "string"
+    ? body.__worker_claim_token
+    : null;
+  const workerClaimGuardVersion = Number(body.claim_guard_version) === 2
+    ? 2
+    : 1;
+  const workerAttemptNumber = Math.max(
+    1,
+    Math.round(Number(body.__worker_attempt ?? 1) || 1),
+  );
+  const isPipelineV2Worker = isWorkerInvocation && pipelineVersion === 2 &&
+    Number.isFinite(workerQueueMsgID) && workerQueueMsgID > 0 &&
+    Number.isInteger(workerJobGeneration) && workerJobGeneration > 0 &&
+    Boolean(workerClaimToken);
+  const isGuardedPipelineV2Worker = isPipelineV2Worker &&
+    workerClaimGuardVersion === 2;
   const requestedPhotoPaths = Array.isArray(photo_paths)
     ? photo_paths
       .map((path) => typeof path === "string" ? path.trim() : "")
@@ -4256,6 +5440,37 @@ serve(async (req: Request) => {
     requestedPhotoPaths,
   );
   if (!inlinePhotoValidation.ok) {
+    if (isGuardedPipelineV2Worker) {
+      const { data: terminalResult } = await supabase.rpc(
+        "record_analysis_job_failure_v2",
+        {
+          p_user_id: user.id,
+          p_analysis_id: analysisID,
+          p_msg_id: workerQueueMsgID,
+          p_generation: workerJobGeneration,
+          p_claim_token: workerClaimToken,
+          p_error: inlinePhotoValidation.code,
+          p_failure_code: inlinePhotoValidation.code,
+          p_status_message: inlinePhotoValidation.message,
+          p_terminal: true,
+          p_raw_ai_response: null,
+        },
+      );
+      if (terminalResult?.ok === true) {
+        await recordAnalysisJobEventV2({
+          supabase,
+          userID: user.id,
+          analysisID,
+          msgID: workerQueueMsgID,
+          generation: workerJobGeneration,
+          workerAttempt: workerAttemptNumber,
+          jobMode,
+          eventType: "terminal_failed",
+          responseCode: inlinePhotoValidation.code,
+          claimAction: "terminal_failed",
+        });
+      }
+    }
     return errorResponse(400, inlinePhotoValidation.message, {
       code: inlinePhotoValidation.code,
       requestID,
@@ -4319,12 +5534,224 @@ serve(async (req: Request) => {
     );
   }
 
+  if (
+    !isWorkerInvocation && ["queued", "analyzing"].includes(
+      ownedAnalysis.status,
+    )
+  ) {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        status: ownedAnalysis.status,
+        analysis_id: analysisID,
+        request_id: requestID,
+        support_id: supportID,
+      }),
+      {
+        status: 202,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  if (!isWorkerInvocation && ownedAnalysis.status === "completed") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        status: "completed",
+        analysis_id: analysisID,
+        request_id: requestID,
+        support_id: supportID,
+      }),
+      { headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  if (!isWorkerInvocation && ownedAnalysis.status === "failed") {
+    return errorResponse(409, "Bu analiz tamamlanamadı. Lütfen yeniden dene.", {
+      code: "analysis_already_failed",
+      requestID,
+      supportID,
+    });
+  }
+
+  if (isWorkerInvocation && pipelineVersion === 2 && !isPipelineV2Worker) {
+    return errorResponse(401, "Worker claim bilgisi eksik.", {
+      code: "worker_claim_required",
+      requestID,
+      supportID,
+    });
+  }
+
+  if (isPipelineV2Worker) {
+    const { data: claimValidation, error: claimValidationError } =
+      await supabase
+        .rpc("validate_analysis_job_claim_v2", {
+          p_user_id: user.id,
+          p_analysis_id: analysisID,
+          p_msg_id: workerQueueMsgID,
+          p_generation: workerJobGeneration,
+          p_claim_token: workerClaimToken,
+        });
+    if (claimValidationError || claimValidation?.ok !== true) {
+      return errorResponse(409, "Worker claim artık geçerli değil.", {
+        code: safeText(claimValidation?.state ?? "worker_claim_invalid").slice(
+          0,
+          80,
+        ),
+        requestID,
+        supportID,
+      });
+    }
+  }
+
+  const pipelineV2Flag = isPipelineV2Worker
+    ? {
+      enabled: true,
+      rolloutMode: "on" as AnalysisPipelineRolloutMode,
+      leaseSeconds: 300,
+      maxWorkerAttempts: 3,
+    }
+    : isWorkerInvocation
+    ? {
+      enabled: false,
+      rolloutMode: "off" as AnalysisPipelineRolloutMode,
+      leaseSeconds: 300,
+      maxWorkerAttempts: 3,
+    }
+    : await loadAnalysisPipelineV2Flag(supabase, user.id);
+  const ambiguousDispatchGuardFlag: AnalysisAmbiguousDispatchGuardFlag =
+    isWorkerInvocation
+      ? {
+        enabled: isGuardedPipelineV2Worker,
+        rolloutMode: isGuardedPipelineV2Worker ? "on" : "off",
+      }
+      : pipelineV2Flag.enabled
+      ? await loadAnalysisAmbiguousDispatchGuardFlag(supabase, user.id)
+      : { enabled: false, rolloutMode: "off" };
+  const exactCoverageSchemaFlag = await loadExactCoverageSchemaFlag(
+    supabase,
+    user.id,
+  );
+  const queuedCoverageSchemaVersion = Number(body.coverage_schema_version) === 2
+    ? 2 as const
+    : 1 as const;
+  // rollout_mode controls only newly submitted messages. The explicit kill
+  // switch is the only setting allowed to downgrade an already queued v2 job.
+  const effectiveCoverageSchemaVersion: 1 | 2 = isWorkerInvocation
+    ? queuedCoverageSchemaVersion === 2 && !exactCoverageSchemaFlag.killSwitch
+      ? 2
+      : 1
+    : exactCoverageSchemaFlag.enabled
+    ? 2
+    : 1;
+
+  const recordWorkerEvent = async (
+    eventType: string,
+    options: {
+      httpStatus?: number | null;
+      responseCode?: string | null;
+      claimAction?: string | null;
+      errorText?: string | null;
+    } = {},
+  ) => {
+    if (!isGuardedPipelineV2Worker) return;
+    await recordAnalysisJobEventV2({
+      supabase,
+      userID: user.id,
+      analysisID,
+      msgID: workerQueueMsgID,
+      generation: workerJobGeneration,
+      workerAttempt: workerAttemptNumber,
+      jobMode,
+      eventType,
+      ...options,
+    });
+  };
+
+  const releaseWorkerClaimForRetry = async (params: {
+    errorText: string;
+    failureCode: string;
+    statusMessage: string;
+    rawAIResponse?: Record<string, unknown> | null;
+  }): Promise<boolean> => {
+    if (!isPipelineV2Worker) return false;
+    const { data, error } = await supabase.rpc(
+      "record_analysis_job_failure_v2",
+      {
+        p_user_id: user.id,
+        p_analysis_id: analysisID,
+        p_msg_id: workerQueueMsgID,
+        p_generation: workerJobGeneration,
+        p_claim_token: workerClaimToken,
+        p_error: safeLogText(params.errorText, 2000),
+        p_failure_code: safeLogText(params.failureCode, 120),
+        p_status_message: params.statusMessage,
+        p_terminal: false,
+        p_raw_ai_response: params.rawAIResponse ?? null,
+      },
+    );
+    const released = !error && data?.ok === true &&
+      data?.state === "retry_pending";
+    if (released) {
+      await recordWorkerEvent("claim_released_for_retry", {
+        responseCode: params.failureCode,
+        claimAction: "retry_released",
+        errorText: params.errorText,
+      });
+    } else {
+      await recordWorkerEvent("claim_kept", {
+        responseCode: safeText(data?.state ?? params.failureCode).slice(0, 120),
+        claimAction: "lease_preserved",
+        errorText: error ? safeLogText(error.message, 500) : params.errorText,
+      });
+    }
+    return released;
+  };
+
   // deno-lint-ignore no-explicit-any
-  const updateOwnedAnalysis = (patch: Record<string, any>) =>
-    supabase.from("analyses")
+  const updateOwnedAnalysis = async (patch: Record<string, any>) => {
+    if (isPipelineV2Worker && patch.status === "completed") {
+      return {
+        data: null,
+        error: new Error("v2_completed_write_requires_finalization_rpc"),
+      };
+    }
+    if (isPipelineV2Worker && patch.status === "failed") {
+      const result = await supabase.rpc("record_analysis_job_failure_v2", {
+        p_user_id: user.id,
+        p_analysis_id: analysisID,
+        p_msg_id: workerQueueMsgID,
+        p_generation: workerJobGeneration,
+        p_claim_token: workerClaimToken,
+        p_error: safeText(
+          patch.last_worker_error ?? patch.status_message ?? "analyze_failed",
+        ).slice(0, 2000),
+        p_failure_code: safeText(
+          patch.failure_code ?? "analyze_worker_failed",
+        ).slice(0, 120),
+        p_status_message: patch.status_message ?? "Analiz tamamlanamadı.",
+        p_terminal: true,
+        p_raw_ai_response: patch.raw_ai_response ?? null,
+      });
+      if (!result.error && result.data?.ok === true) {
+        await recordWorkerEvent("terminal_failed", {
+          responseCode: safeText(
+            patch.failure_code ?? "analyze_worker_failed",
+          ).slice(0, 120),
+          claimAction: "terminal_failed",
+          errorText: safeText(
+            patch.last_worker_error ?? patch.status_message ?? "analyze_failed",
+          ).slice(0, 500),
+        });
+      }
+      return result;
+    }
+    return await supabase.from("analyses")
       .update(patch)
       .eq("id", analysisID)
       .eq("user_id", user.id);
+  };
 
   const requestedPhotoCount = requestedPhotoPaths.length +
     (Array.isArray(photo_base64_parts) ? photo_base64_parts.length : 0);
@@ -4335,6 +5762,8 @@ serve(async (req: Request) => {
   if (hasLegacyTextInput) {
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "business",
+      failure_code: "text_analysis_removed",
       status_message:
         `Metin analizi kaldırıldı. Lütfen uygulamayı güncelle ve fotoğrafla analiz başlat. Destek kodu: ${supportID}`,
       input_payload_version: requestedPhotoCount > 0
@@ -4368,6 +5797,8 @@ serve(async (req: Request) => {
   if (requestedPhotoCount <= 0) {
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "business",
+      failure_code: "photo_required",
       status_message:
         `Analiz için en az bir fotoğraf gerekli. Destek kodu: ${supportID}`,
       input_payload_version: "photo-required-v1",
@@ -4403,6 +5834,12 @@ serve(async (req: Request) => {
   });
 
   if (!activeSectorState.ok) {
+    await updateOwnedAnalysis({
+      status: "failed",
+      failure_category: "business",
+      failure_code: activeSectorState.code,
+      status_message: `${activeSectorState.message} Destek kodu: ${supportID}`,
+    });
     return errorResponse(activeSectorState.status, activeSectorState.message, {
       code: activeSectorState.code,
       requestID,
@@ -4426,6 +5863,8 @@ serve(async (req: Request) => {
       );
       await updateOwnedAnalysis({
         status: "failed",
+        failure_category: "technical",
+        failure_code: "sector_backfill_failed",
         status_message:
           `Analiz kapsamı kaydedilemedi. Destek kodu: ${supportID}`,
       });
@@ -4465,6 +5904,8 @@ serve(async (req: Request) => {
     );
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "technical",
+      failure_code: "subscription_lookup_failed",
       status_message:
         `Abonelik bilgisi doğrulanamadı. Destek kodu: ${supportID}`,
     });
@@ -4497,6 +5938,8 @@ serve(async (req: Request) => {
   if (requestedPhotoCount > photoCapabilities.maxPhotosPerAnalysis) {
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "business",
+      failure_code: "photo_limit_exceeded",
       status_message:
         `Bu plan için fotoğraf limiti aşıldı. Destek kodu: ${supportID}`,
       plan_at_creation: planTier,
@@ -4578,6 +6021,8 @@ serve(async (req: Request) => {
     );
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "technical",
+      failure_code: "missing_ai_secret",
       status_message:
         `AI servis anahtarı yapılandırılmamış. Destek kodu: ${supportID}`,
     });
@@ -4597,6 +6042,8 @@ serve(async (req: Request) => {
     if (planTier === "free") {
       await updateOwnedAnalysis({
         status: "failed",
+        failure_category: "business",
+        failure_code: "plan_required",
         status_message:
           `Firma bazlı analiz Plus veya Pro üyelik gerektirir. Destek kodu: ${supportID}`,
       });
@@ -4624,6 +6071,8 @@ serve(async (req: Request) => {
     if (companyError || !companyRow) {
       await updateOwnedAnalysis({
         status: "failed",
+        failure_category: "business",
+        failure_code: "company_not_authorized",
         status_message: `Firma doğrulanamadı. Destek kodu: ${supportID}`,
       });
       return errorResponse(403, "Firma doğrulanamadı.", {
@@ -4640,6 +6089,8 @@ serve(async (req: Request) => {
   if (planTier === "free" && requestedCanvases.length > 1) {
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "business",
+      failure_code: "single_canvas_required",
       status_message:
         `Free planda tek analiz odağı seçebilirsin. Destek kodu: ${supportID}`,
     });
@@ -4658,6 +6109,8 @@ serve(async (req: Request) => {
   if (requestedCanvases.some((id) => !canUseCanvas(planTier, String(id)))) {
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "business",
+      failure_code: "plan_required",
       status_message:
         `Bu analiz odağı daha yüksek üyelik gerektirir. Destek kodu: ${supportID}`,
     });
@@ -4675,6 +6128,8 @@ serve(async (req: Request) => {
   if (analysisMode === "detailed" && planTier === "free") {
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "business",
+      failure_code: "plan_required",
       status_message:
         `Detaylı analiz Plus veya Pro üyelik gerektirir. Destek kodu: ${supportID}`,
     });
@@ -4692,6 +6147,8 @@ serve(async (req: Request) => {
   if (analysisMode === "emergency" && planTier === "free") {
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "business",
+      failure_code: "plan_required",
       status_message:
         `Acil risk modülü Plus veya Pro üyelik gerektirir. Destek kodu: ${supportID}`,
     });
@@ -4709,6 +6166,8 @@ serve(async (req: Request) => {
   if (analysisMode === "procedure" && planTier !== "pro") {
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "business",
+      failure_code: "plan_required",
       status_message:
         `Prosedür uygunluk kontrolü Pro üyelik gerektirir. Destek kodu: ${supportID}`,
     });
@@ -4760,6 +6219,8 @@ serve(async (req: Request) => {
     );
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "technical",
+      failure_code: "quota_check_failed",
       status_message:
         `Analiz kotası kontrol edilemedi. Destek kodu: ${supportID}`,
     });
@@ -4773,6 +6234,8 @@ serve(async (req: Request) => {
   if (quotaReservation?.ok !== true) {
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "business",
+      failure_code: quotaReservation?.code ?? "quota_exceeded",
       status_message: `${
         quotaReservation?.message ?? "Analiz kotası doldu."
       } Destek kodu: ${supportID}`,
@@ -4794,7 +6257,7 @@ serve(async (req: Request) => {
 
   if (!isWorkerInvocation) {
     try {
-      const { queuedPhotoPaths } = await enqueueAnalysisJob({
+      const { queuedPhotoPaths, enqueued, state } = await enqueueAnalysisJob({
         supabase,
         supabaseUrl,
         serviceRoleKey,
@@ -4803,17 +6266,25 @@ serve(async (req: Request) => {
         analysisID,
         requestID,
         supportID,
+        usePipelineV2: pipelineV2Flag.enabled,
+        claimGuardVersion: pipelineV2Flag.enabled &&
+            ambiguousDispatchGuardFlag.enabled
+          ? 2
+          : 1,
+        coverageSchemaVersion: effectiveCoverageSchemaVersion,
       });
-      triggerAnalysisWorker({
-        supabaseUrl,
-        serviceRoleKey,
-        requestID,
-        supportID,
-      });
+      if (enqueued) {
+        triggerAnalysisWorker({
+          supabaseUrl,
+          serviceRoleKey,
+          requestID,
+          supportID,
+        });
+      }
       return new Response(
         JSON.stringify({
           ok: true,
-          status: "queued",
+          status: state,
           analysis_id: analysisID,
           queued_photo_count: queuedPhotoPaths.length,
           request_id: requestID,
@@ -4825,9 +6296,10 @@ serve(async (req: Request) => {
         },
       );
     } catch (error) {
-      await releaseAnalysisQuota(supabase, analysisID, user.id);
-      await updateOwnedAnalysis({
+      const enqueueFailurePatch = {
         status: "failed",
+        failure_category: "technical",
+        failure_code: "analysis_enqueue_failed",
         status_message:
           `Fotoğraf kaydı tamamlanamadı. Destek kodu: ${supportID}`,
         raw_ai_response: {
@@ -4845,7 +6317,73 @@ serve(async (req: Request) => {
             enqueue_error: safeLogError(error),
           },
         },
-      });
+      };
+
+      // A concurrent retry may have won submit_analysis_job_v2 while this
+      // request was still uploading photos or waiting for the RPC response.
+      // Only the request that still owns a pending row may fail it or release
+      // the shared, analysis-idempotent quota reservation.
+      const { data: failedPending, error: failPendingError } = await supabase
+        .from("analyses")
+        .update(enqueueFailurePatch)
+        .eq("id", analysisID)
+        .eq("user_id", user.id)
+        .eq("status", "pending")
+        .select("id")
+        .maybeSingle();
+
+      if (failPendingError) {
+        console.error(
+          "Pending enqueue failure persistence failed",
+          JSON.stringify({
+            request_id: requestID,
+            support_id: supportID,
+            analysis_id: analysisID,
+            error: safeLogError(failPendingError),
+          }),
+        );
+      }
+
+      if (failedPending?.id) {
+        await releaseAnalysisQuota(supabase, analysisID, user.id);
+      } else {
+        const { data: concurrentAnalysis } = await supabase
+          .from("analyses")
+          .select("status")
+          .eq("id", analysisID)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const concurrentStatus = safeText(concurrentAnalysis?.status);
+        if (["queued", "analyzing", "completed"].includes(concurrentStatus)) {
+          console.warn(
+            "Analyze enqueue error ignored after concurrent submit won",
+            JSON.stringify({
+              request_id: requestID,
+              support_id: supportID,
+              analysis_id: analysisID,
+              status: concurrentStatus,
+              error: safeLogError(error),
+            }),
+          );
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              status: concurrentStatus,
+              analysis_id: analysisID,
+              queued_photo_count: requestedPhotoCount,
+              request_id: requestID,
+              support_id: supportID,
+            }),
+            {
+              status: concurrentStatus === "completed" ? 200 : 202,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        if (concurrentStatus === "failed") {
+          await releaseAnalysisQuota(supabase, analysisID, user.id);
+        }
+      }
       console.error(
         "Analyze enqueue failed",
         JSON.stringify({
@@ -4863,15 +6401,20 @@ serve(async (req: Request) => {
     }
   }
 
-  // Status → analyzing
-  await updateOwnedAnalysis({
-    status: "analyzing",
-    analysis_mode: analysisMode,
-    started_at: new Date().toISOString(),
-    worker_started_at: new Date().toISOString(),
-    worker_attempt_count: (ownedAnalysis.worker_attempt_count ?? 0) + 1,
-    last_worker_error: null,
-  });
+  // V2 claim already moved the row to analyzing and incremented the real
+  // attempt count atomically. Legacy jobs keep the old behavior.
+  if (!isPipelineV2Worker) {
+    await updateOwnedAnalysis({
+      status: "analyzing",
+      analysis_mode: analysisMode,
+      started_at: new Date().toISOString(),
+      worker_started_at: new Date().toISOString(),
+      worker_attempt_count: (ownedAnalysis.worker_attempt_count ?? 0) + 1,
+      last_worker_error: null,
+    });
+  } else {
+    await updateOwnedAnalysis({ analysis_mode: analysisMode });
+  }
 
   const model = primaryModelForRoute(aiExecutionRoute);
 
@@ -4976,6 +6519,8 @@ serve(async (req: Request) => {
 
     await updateOwnedAnalysis({
       status: "failed",
+      failure_category: "technical",
+      failure_code: code,
       status_message: `${message} Destek kodu: ${supportID}`,
       raw_ai_response: {
         _input_audit: {
@@ -4992,7 +6537,9 @@ serve(async (req: Request) => {
         },
       },
     });
-    await releaseAnalysisQuota(supabase, analysisID, user.id);
+    if (!isPipelineV2Worker) {
+      await releaseAnalysisQuota(supabase, analysisID, user.id);
+    }
     return errorResponse(httpStatus, message, {
       code,
       requestID,
@@ -5165,10 +6712,14 @@ serve(async (req: Request) => {
       );
       await updateOwnedAnalysis({
         status: "failed",
+        failure_category: "business",
+        failure_code: "photo_not_authorized",
         status_message:
           `Fotoğraf bu analiz için doğrulanamadı. Destek kodu: ${supportID}`,
       });
-      await releaseAnalysisQuota(supabase, analysisID, user.id);
+      if (!isPipelineV2Worker) {
+        await releaseAnalysisQuota(supabase, analysisID, user.id);
+      }
       return errorResponse(403, "Fotoğraf bu analiz için doğrulanamadı.", {
         code: "photo_not_authorized",
         requestID,
@@ -5195,9 +6746,13 @@ serve(async (req: Request) => {
       );
       await updateOwnedAnalysis({
         status: "failed",
+        failure_category: "technical",
+        failure_code: "photo_download_failed",
         status_message: `Fotoğraf indirilemedi. Destek kodu: ${supportID}`,
       });
-      await releaseAnalysisQuota(supabase, analysisID, user.id);
+      if (!isPipelineV2Worker) {
+        await releaseAnalysisQuota(supabase, analysisID, user.id);
+      }
       return errorResponse(500, "Fotoğraf indirilemedi.", {
         code: "photo_download_failed",
         requestID,
@@ -5264,10 +6819,18 @@ serve(async (req: Request) => {
         ),
       }
       : null;
-  const multiPhotoCoveragePolicy = coveragePolicyFor(
+  const configuredCoveragePolicy = coveragePolicyFor(
     photoCapabilities,
     imageBase64Parts.length,
   );
+  const multiPhotoCoveragePolicy = configuredCoveragePolicy &&
+      jobMode === "repair"
+    ? {
+      ...configuredCoveragePolicy,
+      compactLayerSchemaEnabled: false,
+      evidenceGuardEnabled: false,
+    }
+    : configuredCoveragePolicy;
   const requestedRepairPhotoIndices = normalizeRepairPhotoIndices(
     body.repair_photo_indices,
     imageBase64Parts.length,
@@ -5279,6 +6842,10 @@ serve(async (req: Request) => {
         multiPhotoCoveragePolicy,
       )
       : null;
+  const previousCoverageAudit = ownedAnalysis.raw_ai_response?._coverage_v2 &&
+      typeof ownedAnalysis.raw_ai_response._coverage_v2 === "object"
+    ? ownedAnalysis.raw_ai_response._coverage_v2 as Record<string, unknown>
+    : null;
   const analysisFindingPolicy = multiPhotoCoveragePolicy && photoFindingPolicy
     ? {
       ...photoFindingPolicy,
@@ -5288,6 +6855,12 @@ serve(async (req: Request) => {
       targetFindingsPerPhotoMin: multiPhotoCoveragePolicy.targetMin,
       targetFindingsPerPhotoMax: multiPhotoCoveragePolicy.targetMax,
       coverageRepairEnabled: multiPhotoCoveragePolicy.repairEnabled,
+      layerAuditEnabled: jobMode === "analysis" &&
+        multiPhotoCoveragePolicy.layerAuditEnabled,
+      compactLayerSchemaEnabled: jobMode === "analysis" &&
+        multiPhotoCoveragePolicy.compactLayerSchemaEnabled,
+      evidenceGuardEnabled: jobMode === "analysis" &&
+        multiPhotoCoveragePolicy.evidenceGuardEnabled,
     }
     : photoFindingPolicy;
   const analysisContext = buildAnalysisContext({
@@ -5319,6 +6892,11 @@ serve(async (req: Request) => {
     sector_context_applied: Boolean(resolvedActiveSector),
     context_hash: contextHash,
     job_mode: jobMode,
+    pipeline_version: isPipelineV2Worker ? 2 : 1,
+    job_generation: isPipelineV2Worker ? workerJobGeneration : null,
+    worker_attempt: isPipelineV2Worker
+      ? Number(body.__worker_attempt ?? 0) || null
+      : ownedAnalysis.worker_attempt_count ?? null,
     requested_repair_photo_indices: requestedRepairPhotoIndices,
     input_mode: requestedPhotoCount > 0 ? "photo" : "none",
     inline_photo_count: inlinePhotoCount,
@@ -5376,6 +6954,15 @@ serve(async (req: Request) => {
     target_findings_total_max: multiPhotoCoveragePolicy?.totalMax ?? null,
     photo_policy_version: multiPhotoCoveragePolicy?.policyVersion ?? null,
     coverage_policy_version: multiPhotoCoveragePolicy?.policyVersion ?? null,
+    coverage_schema_version: effectiveCoverageSchemaVersion,
+    coverage_schema_rollout_mode: exactCoverageSchemaFlag.rolloutMode,
+    coverage_schema_kill_switch: exactCoverageSchemaFlag.killSwitch,
+    layer_audit_enabled: jobMode === "analysis" &&
+      (multiPhotoCoveragePolicy?.layerAuditEnabled ?? false),
+    compact_layer_schema_enabled: jobMode === "analysis" &&
+      (multiPhotoCoveragePolicy?.compactLayerSchemaEnabled ?? false),
+    evidence_guard_enabled: jobMode === "analysis" &&
+      (multiPhotoCoveragePolicy?.evidenceGuardEnabled ?? false),
     repair_job_used: jobMode === "repair",
     repair_photo_indices: jobMode === "repair"
       ? requestedRepairPhotoIndices
@@ -5422,6 +7009,9 @@ serve(async (req: Request) => {
   let apiKeyAlias: string | null = null;
   let attemptCount = 0;
   let aiFallbackSource: string | null = null;
+  let successUsageLogID: string | null = null;
+  let coverageContractReport: PhotoCoverageContract | null = null;
+  const providerAttemptTracker = new ProviderAttemptTracker();
   const primaryGeminiAlias = geminiKeys[0]?.alias ?? null;
   const callAIForAnalysis = async (
     context: string,
@@ -5499,9 +7089,29 @@ serve(async (req: Request) => {
         effectiveRepairPhotoIndices.includes(part.photoIndex)
       )
       : imageBase64Parts;
+  const expectedCoveragePhotoIndices = aiImageParts.map((part) =>
+    part.photoIndex
+  );
+  const exactCoverageContractEnabled = effectiveCoverageSchemaVersion === 2 &&
+    (multiPhotoCoveragePolicy?.photoCount ?? 0) > 1;
+  const configuredThinkingBudget = imageBase64Parts.length === 1
+    ? photoCapabilities.featureFlags.single_photo_thinking_budget
+    : photoCapabilities.featureFlags.multi_photo_thinking_budget;
   const aiRequestOptions: AIRequestOptions = jobMode === "repair"
-    ? { isRepairPass: true }
-    : {};
+    ? {
+      isRepairPass: true,
+      expectedPhotoIndices: expectedCoveragePhotoIndices,
+      coverageSchemaVersion: exactCoverageContractEnabled ? 2 : 1,
+      providerAttemptTracker,
+    }
+    : {
+      layerAuditEnabled: multiPhotoCoveragePolicy?.layerAuditEnabled ?? false,
+      expectedPhotoCount: imageBase64Parts.length,
+      expectedPhotoIndices: expectedCoveragePhotoIndices,
+      coverageSchemaVersion: exactCoverageContractEnabled ? 2 : 1,
+      providerAttemptTracker,
+      thinkingBudget: configuredThinkingBudget,
+    };
   const repairFallbackOnly = jobMode === "repair" &&
     body.coverage_repair_fallback_only === true &&
     ownedAnalysis.raw_ai_response &&
@@ -5542,6 +7152,12 @@ serve(async (req: Request) => {
         aiRequestOptions,
       );
       geminiResult = out.result;
+      coverageContractReport = exactCoverageContractEnabled
+        ? inspectPhotoCoverageContract(
+          geminiResult?.photo_findings,
+          expectedCoveragePhotoIndices,
+        )
+        : null;
       inputTokens = out.inputTokens;
       outputTokens = out.outputTokens;
       cachedTokens = out.cachedTokens;
@@ -5555,6 +7171,7 @@ serve(async (req: Request) => {
           out.modelUsed,
           expectedGeminiPool,
           jobMode === "repair",
+          aiRequestOptions.thinkingBudget,
         )
         : null;
       apiKeyAlias = out.apiKeyAlias;
@@ -5565,6 +7182,18 @@ serve(async (req: Request) => {
       inputAudit.json_parse_retry_count = out.jsonParseRetryCount;
       inputAudit.thinking_budget = out.thinkingBudget;
       inputAudit.max_output_tokens = out.maxOutputTokens;
+      inputAudit.layer_audit_schema_fallback_used =
+        out.layerAuditSchemaFallbackUsed ?? false;
+      inputAudit.layer_audit_schema_fallback_error =
+        out.layerAuditSchemaFallbackError ?? null;
+      inputAudit.coverage_schema_fallback_used =
+        out.coverageSchemaFallbackUsed ?? false;
+      inputAudit.coverage_schema_fallback_error =
+        out.coverageSchemaFallbackError ?? null;
+      inputAudit.coverage_contract = coverageContractReport;
+      inputAudit.provider_request_count = providerAttemptTracker.requestCount;
+      inputAudit.provider_attempt_total_tokens =
+        providerAttemptTracker.totalTokens;
       inputAudit.repair_job_used = jobMode === "repair";
       inputAudit.repair_photo_indices = jobMode === "repair"
         ? requestedRepairPhotoIndices
@@ -5586,15 +7215,109 @@ serve(async (req: Request) => {
       } else {
         inputAudit.groq_fallback_used = true;
       }
+      successUsageLogID = await logUsage(supabase, {
+        analysis_id: analysisID,
+        user_id: user.id,
+        provider: providerUsed,
+        model: modelUsed,
+        tokens_in: inputTokens,
+        tokens_out: outputTokens,
+        duration_ms: Date.now() - startMs,
+        error: null,
+        user_plan: planTier,
+        quality_tier: qualityTier,
+        ai_execution_route: aiExecutionRoute,
+        request_id: requestID,
+        support_id: supportID,
+        error_code: null,
+        http_status: 200,
+        fallback_source: aiFallbackSource ?? ([
+          modelUsed !== model ? modelUsed : null,
+          apiKeyAlias && apiKeyAlias !== primaryGeminiAlias
+            ? apiKeyAlias
+            : null,
+        ].filter(Boolean).join(" -> ") || null),
+        api_key_alias: apiKeyAlias,
+        attempt_count: attemptCount || null,
+        prompt_version: PROMPT_VERSION,
+        personalization_version: PERSONALIZATION_VERSION,
+        context_hash: contextHash,
+        cached_tokens: cachedTokens,
+        thoughts_tokens: thoughtsTokens,
+        total_tokens: totalTokens,
+        job_mode: jobMode,
+        job_generation: isPipelineV2Worker ? workerJobGeneration : null,
+        worker_attempt: isPipelineV2Worker
+          ? Number(body.__worker_attempt ?? 0) || null
+          : ownedAnalysis.worker_attempt_count ?? null,
+        persistence_outcome: "pending",
+        persistence_updated_at: new Date().toISOString(),
+        coverage_schema_version: exactCoverageContractEnabled ? 2 : null,
+        coverage_contract_outcome: coverageContractReport?.outcome ?? null,
+        coverage_expected_records: coverageContractReport?.expected_records ??
+          null,
+        coverage_returned_records: coverageContractReport?.returned_records ??
+          null,
+        coverage_schema_fallback_used: out.coverageSchemaFallbackUsed ?? false,
+        provider_request_count: providerAttemptTracker.requestCount,
+        provider_attempt_total_tokens: providerAttemptTracker.totalTokens,
+        provider_attempts: providerAttemptTracker.snapshot(),
+      });
     } catch (err) {
       aiError = String(err);
+      const cleanError = userFacingAIError(err);
+      await logUsage(supabase, {
+        analysis_id: analysisID,
+        user_id: user.id,
+        provider: providerUsed,
+        model,
+        tokens_in: 0,
+        tokens_out: 0,
+        duration_ms: Date.now() - startMs,
+        error: aiError,
+        user_plan: planTier,
+        quality_tier: qualityTier,
+        ai_execution_route: aiExecutionRoute,
+        request_id: requestID,
+        support_id: supportID,
+        error_code: cleanError.code,
+        http_status: cleanError.status,
+        fallback_source: aiFallbackSource ??
+          (modelUsed === model ? null : modelUsed),
+        api_key_alias: apiKeyAlias,
+        attempt_count: attemptCount || null,
+        prompt_version: PROMPT_VERSION,
+        personalization_version: PERSONALIZATION_VERSION,
+        context_hash: contextHash,
+        cached_tokens: null,
+        thoughts_tokens: null,
+        total_tokens: null,
+        job_mode: jobMode,
+        job_generation: isPipelineV2Worker ? workerJobGeneration : null,
+        worker_attempt: isPipelineV2Worker
+          ? Number(body.__worker_attempt ?? 0) || null
+          : ownedAnalysis.worker_attempt_count ?? null,
+        persistence_outcome: "not_started",
+        persistence_updated_at: new Date().toISOString(),
+        coverage_schema_version: exactCoverageContractEnabled ? 2 : null,
+        coverage_contract_outcome: null,
+        coverage_expected_records: exactCoverageContractEnabled
+          ? expectedCoveragePhotoIndices.length
+          : null,
+        coverage_returned_records: null,
+        coverage_schema_fallback_used: providerAttemptTracker.snapshot().some(
+          (attempt) => attempt.reason === "coverage_schema_fallback",
+        ),
+        provider_request_count: providerAttemptTracker.requestCount,
+        provider_attempt_total_tokens: providerAttemptTracker.totalTokens,
+        provider_attempts: providerAttemptTracker.snapshot(),
+      });
       if (
         jobMode === "repair" &&
         previousCoverageRecords &&
         ownedAnalysis.raw_ai_response &&
         typeof ownedAnalysis.raw_ai_response === "object"
       ) {
-        const cleanError = userFacingAIError(err);
         geminiResult = {
           ...(ownedAnalysis.raw_ai_response as Record<string, unknown>),
           _repair_error: {
@@ -5614,48 +7337,43 @@ serve(async (req: Request) => {
           planTier,
         );
       } else {
-        const cleanError = userFacingAIError(err);
-        await releaseAnalysisQuota(supabase, analysisID, user.id);
-        await updateOwnedAnalysis({
-          status: "failed",
-          status_message: `${cleanError.message} Destek kodu: ${supportID}`,
-          raw_ai_response: {
-            _input_audit: inputAudit,
-            _error: {
-              message: aiError,
-              code: cleanError.code,
-              support_id: supportID,
-              request_id: requestID,
+        const retryableProviderFailure = cleanError.status === 429 ||
+          cleanError.status >= 500;
+        if (isGuardedPipelineV2Worker && retryableProviderFailure) {
+          await releaseWorkerClaimForRetry({
+            errorText: aiError,
+            failureCode: cleanError.code,
+            statusMessage: `${cleanError.message} Destek kodu: ${supportID}`,
+            rawAIResponse: {
+              _input_audit: inputAudit,
+              _error: {
+                message: aiError,
+                code: cleanError.code,
+                support_id: supportID,
+                request_id: requestID,
+              },
             },
-          },
-        });
-        await logUsage(supabase, {
-          analysis_id: analysisID,
-          user_id: user.id,
-          provider: providerUsed,
-          model,
-          tokens_in: 0,
-          tokens_out: 0,
-          duration_ms: Date.now() - startMs,
-          error: aiError,
-          user_plan: planTier,
-          quality_tier: qualityTier,
-          ai_execution_route: aiExecutionRoute,
-          request_id: requestID,
-          support_id: supportID,
-          error_code: cleanError.code,
-          http_status: cleanError.status,
-          fallback_source: aiFallbackSource ??
-            (modelUsed === model ? null : modelUsed),
-          api_key_alias: apiKeyAlias,
-          attempt_count: attemptCount || null,
-          prompt_version: PROMPT_VERSION,
-          personalization_version: PERSONALIZATION_VERSION,
-          context_hash: contextHash,
-          cached_tokens: null,
-          thoughts_tokens: null,
-          total_tokens: null,
-        });
+          });
+        } else if (!(isPipelineV2Worker && retryableProviderFailure)) {
+          if (!isPipelineV2Worker) {
+            await releaseAnalysisQuota(supabase, analysisID, user.id);
+          }
+          await updateOwnedAnalysis({
+            status: "failed",
+            failure_category: "technical",
+            status_message: `${cleanError.message} Destek kodu: ${supportID}`,
+            failure_code: cleanError.code,
+            raw_ai_response: {
+              _input_audit: inputAudit,
+              _error: {
+                message: aiError,
+                code: cleanError.code,
+                support_id: supportID,
+                request_id: requestID,
+              },
+            },
+          });
+        }
         return errorResponse(cleanError.status, cleanError.message, {
           code: cleanError.code,
           requestID,
@@ -5734,6 +7452,17 @@ serve(async (req: Request) => {
             },
             _coverage_v2: {
               enabled: true,
+              schema_version: exactCoverageContractEnabled ? 2 : 1,
+              initial_contract: coverageContractReport,
+              repair_contract: null,
+              schema_fallback_used:
+                inputAudit.coverage_schema_fallback_used === true,
+              normalization_result: coverageRecords.map((record) => ({
+                photo_index: record.photo_index,
+                finding_count: record.findings.length,
+                record_missing: record.record_missing,
+                coverage_status: record.coverage_status,
+              })),
               policy_version: multiPhotoCoveragePolicy.policyVersion,
               target_findings_per_photo_min: multiPhotoCoveragePolicy.targetMin,
               target_findings_per_photo_max: multiPhotoCoveragePolicy.targetMax,
@@ -5747,15 +7476,10 @@ serve(async (req: Request) => {
           inputAudit.repair_job_used = false;
           inputAudit.coverage_target_met = firstPassShortfalls.length === 0;
           inputAudit.shortfall_photo_indices = firstPassShortfalls;
-          await updateOwnedAnalysis({
-            status: "queued",
-            status_message:
-              `Analiz kapsamı ikinci taramaya alındı. Destek kodu: ${supportID}`,
-            raw_ai_response: {
-              ...interimResult,
-              _input_audit: inputAudit,
-            },
-          });
+          const intermediateRawResponse = {
+            ...interimResult,
+            _input_audit: inputAudit,
+          };
           await enqueueCoverageRepairJob({
             supabase,
             body,
@@ -5764,7 +7488,20 @@ serve(async (req: Request) => {
             requestID,
             supportID,
             repairPhotoIndices: repairCandidates,
+            coverageSchemaVersion: effectiveCoverageSchemaVersion,
+            pipelineV2: {
+              enabled: isPipelineV2Worker,
+              msgID: isPipelineV2Worker ? workerQueueMsgID : null,
+              generation: isPipelineV2Worker ? workerJobGeneration : null,
+              claimToken: isPipelineV2Worker ? workerClaimToken : null,
+            },
+            intermediateRawResponse,
           });
+          await updateUsagePersistence(
+            supabase,
+            successUsageLogID,
+            "persisted",
+          );
           triggerAnalysisWorker({
             supabaseUrl,
             serviceRoleKey,
@@ -5836,6 +7573,20 @@ serve(async (req: Request) => {
         },
         _coverage_v2: {
           enabled: true,
+          schema_version: exactCoverageContractEnabled ? 2 : 1,
+          initial_contract: jobMode === "repair"
+            ? previousCoverageAudit?.initial_contract ??
+              previousCoverageAudit?.contract ?? null
+            : coverageContractReport,
+          repair_contract: jobMode === "repair" ? coverageContractReport : null,
+          schema_fallback_used:
+            inputAudit.coverage_schema_fallback_used === true,
+          normalization_result: coverageRecords.map((record) => ({
+            photo_index: record.photo_index,
+            finding_count: record.findings.length,
+            record_missing: record.record_missing,
+            coverage_status: record.coverage_status,
+          })),
           policy_version: multiPhotoCoveragePolicy.policyVersion,
           target_findings_per_photo_min: multiPhotoCoveragePolicy.targetMin,
           target_findings_per_photo_max: multiPhotoCoveragePolicy.targetMax,
@@ -5895,6 +7646,34 @@ serve(async (req: Request) => {
       Record<string, unknown>
     >
     : confidenceFilteredHazards as Array<Record<string, unknown>>;
+  if (
+    jobMode === "analysis" && multiPhotoCoveragePolicy?.layerAuditEnabled &&
+    Array.isArray(geminiResult.photo_findings)
+  ) {
+    const layerAuditRecords = normalizePhotoFindingCoverage(
+      geminiResult.photo_findings,
+      multiPhotoCoveragePolicy,
+    );
+    if (layerAuditRecords) {
+      const layerAuditSummary = buildLayerAuditSummary(
+        layerAuditRecords,
+        hazards,
+        providerUsed,
+        inputAudit.layer_audit_schema_fallback_used === true,
+      );
+      inputAudit.layer_audit = layerAuditSummary;
+      geminiResult = {
+        ...geminiResult,
+        analysis_quality: {
+          ...(geminiResult.analysis_quality &&
+              typeof geminiResult.analysis_quality === "object"
+            ? geminiResult.analysis_quality as Record<string, unknown>
+            : {}),
+          layer_audit: layerAuditSummary,
+        },
+      };
+    }
+  }
   const hiddenOrRejectedFindingsCount = Math.max(
     0,
     reportLanguageSafeHazards.length - hazards.length,
@@ -5961,7 +7740,7 @@ serve(async (req: Request) => {
     };
   });
 
-  if (findingRows.length > 0) {
+  if (!isPipelineV2Worker && findingRows.length > 0) {
     const { error: findingsErr } = await supabase.from("findings").insert(
       findingRows,
     );
@@ -5976,8 +7755,16 @@ serve(async (req: Request) => {
         }),
       );
       await releaseAnalysisQuota(supabase, analysisID, user.id);
+      await updateUsagePersistence(
+        supabase,
+        successUsageLogID,
+        "failed",
+        "findings_insert_failed",
+      );
       await updateOwnedAnalysis({
         status: "failed",
+        failure_category: "technical",
+        failure_code: "findings_insert_failed",
         status_message: `Findings DB hatası. Destek kodu: ${supportID}`,
       });
       return errorResponse(500, "Bulgular kaydedilemedi.", {
@@ -5988,6 +7775,7 @@ serve(async (req: Request) => {
     }
   }
 
+  let photoSummaryRows: Record<string, unknown>[] = [];
   if (imageBase64Parts.length > 0) {
     try {
       const rawPhotoSummaries: unknown[] =
@@ -6063,7 +7851,8 @@ serve(async (req: Request) => {
           };
         })
         .filter((item): item is Record<string, unknown> => item !== null);
-      if (summaries.length > 0) {
+      photoSummaryRows = summaries;
+      if (!isPipelineV2Worker && summaries.length > 0) {
         await supabase
           .from("analysis_photo_summaries")
           .upsert(summaries, {
@@ -6086,21 +7875,15 @@ serve(async (req: Request) => {
   const safeAISummary = imageBase64Parts.length > 0
     ? stripPhotoMarkerReferences(geminiResult.ai_summary)
     : geminiResult.ai_summary;
-
-  await updateOwnedAnalysis({
-    status: "completed",
+  const completedAnalysisResult = {
     status_message: `${
       providerDisplayName(providerUsed)
     } ${modelUsed} · ${imageBase64Parts.length} foto · ${supportID}`,
-    completed_at: new Date().toISOString(),
     ai_summary: safeAISummary,
     total_score_fk: totalScoreFK,
     total_score_m5: totalScoreM5,
     highest_band_fk: highestBandFK,
     highest_band_m5: highestBandM5,
-    finding_count: findingRows.length,
-    generated_findings_count: findingRows.length,
-    visible_findings_count: findingRows.length,
     hidden_or_rejected_findings_count: hiddenOrRejectedFindingsCount,
     max_findings_per_photo: analysisFindingPolicy?.maxFindingsPerPhoto ??
       photoCapabilities.maxFindingsPerPhoto,
@@ -6112,51 +7895,123 @@ serve(async (req: Request) => {
       _input_audit: inputAudit,
     },
     ai_models_used: [modelUsed],
-  });
+  };
 
-  await completeAnalysisQuota(supabase, analysisID, user.id);
-
-  if (isWorkerInvocation) {
-    await sendAnalysisCompletePush({
-      supabase,
-      supabaseUrl,
-      serviceRoleKey,
-      userID: user.id,
-      analysisID,
-      requestID,
-      supportID,
+  if (isPipelineV2Worker) {
+    const { data: finalization, error: finalizationError } = await supabase.rpc(
+      "finalize_analysis_result_v2",
+      {
+        p_user_id: user.id,
+        p_analysis_id: analysisID,
+        p_msg_id: workerQueueMsgID,
+        p_generation: workerJobGeneration,
+        p_claim_token: workerClaimToken,
+        p_findings: findingRows,
+        p_analysis_result: completedAnalysisResult,
+        p_photo_summaries: photoSummaryRows,
+      },
+    );
+    if (finalizationError) {
+      await updateUsagePersistence(
+        supabase,
+        successUsageLogID,
+        "failed",
+        "analysis_finalization_failed",
+      );
+      console.error(
+        "Analysis v2 finalization failed",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogError(finalizationError),
+        }),
+      );
+      if (isGuardedPipelineV2Worker) {
+        await releaseWorkerClaimForRetry({
+          errorText: safeLogText(finalizationError.message, 500),
+          failureCode: "analysis_finalization_failed",
+          statusMessage:
+            `Analiz sonucu kaydedilemedi. Destek kodu: ${supportID}`,
+          rawAIResponse: completedAnalysisResult.raw_ai_response,
+        });
+      }
+      return errorResponse(500, "Analiz sonucu kaydedilemedi.", {
+        code: "analysis_finalization_failed",
+        requestID,
+        supportID,
+      });
+    }
+    if (finalization?.ok !== true) {
+      const finalizationState = safeText(
+        finalization?.state ?? "finalization_rejected",
+      ).slice(0, 80);
+      await updateUsagePersistence(
+        supabase,
+        successUsageLogID,
+        finalizationState === "lost_claim" ? "discarded" : "failed",
+        finalizationState,
+      );
+      return errorResponse(409, "Analiz sonucu güncel worker'a ait değil.", {
+        code: finalizationState,
+        requestID,
+        supportID,
+      });
+    }
+    await recordWorkerEvent("finalized", {
+      responseCode: safeText(finalization?.state ?? "completed").slice(0, 120),
+      claimAction: "completed",
     });
+  } else {
+    const { error: completionUpdateError } = await updateOwnedAnalysis({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      finding_count: findingRows.length,
+      generated_findings_count: findingRows.length,
+      visible_findings_count: findingRows.length,
+      ...completedAnalysisResult,
+    });
+    if (completionUpdateError) {
+      await updateUsagePersistence(
+        supabase,
+        successUsageLogID,
+        "failed",
+        "analysis_completion_update_failed",
+      );
+      return errorResponse(500, "Analiz sonucu kaydedilemedi.", {
+        code: "analysis_completion_update_failed",
+        requestID,
+        supportID,
+      });
+    }
+    await completeAnalysisQuota(supabase, analysisID, user.id);
   }
 
-  await logUsage(supabase, {
-    analysis_id: analysisID,
-    user_id: user.id,
-    provider: providerUsed,
-    model: modelUsed,
-    tokens_in: inputTokens,
-    tokens_out: outputTokens,
-    duration_ms: Date.now() - startMs,
-    error: null,
-    user_plan: planTier,
-    quality_tier: qualityTier,
-    ai_execution_route: aiExecutionRoute,
-    request_id: requestID,
-    support_id: supportID,
-    error_code: null,
-    http_status: 200,
-    fallback_source: aiFallbackSource ?? ([
-      modelUsed !== model ? modelUsed : null,
-      apiKeyAlias && apiKeyAlias !== primaryGeminiAlias ? apiKeyAlias : null,
-    ].filter(Boolean).join(" -> ") || null),
-    api_key_alias: apiKeyAlias,
-    attempt_count: attemptCount || null,
-    prompt_version: PROMPT_VERSION,
-    personalization_version: PERSONALIZATION_VERSION,
-    context_hash: contextHash,
-    cached_tokens: cachedTokens,
-    thoughts_tokens: thoughtsTokens,
-    total_tokens: totalTokens,
-  });
+  await updateUsagePersistence(supabase, successUsageLogID, "persisted");
+
+  if (isWorkerInvocation) {
+    try {
+      await sendAnalysisCompletePush({
+        supabase,
+        supabaseUrl,
+        serviceRoleKey,
+        userID: user.id,
+        analysisID,
+        requestID,
+        supportID,
+      });
+    } catch (pushError) {
+      console.warn(
+        "Analysis completion push dispatch threw after finalization",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogError(pushError),
+        }),
+      );
+    }
+  }
 
   return new Response(
     JSON.stringify({

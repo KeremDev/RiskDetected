@@ -190,7 +190,6 @@ enum AppClientMetadata {
 final class AnalysisService {
     static let shared = AnalysisService()
     static let freeDailyLimit = 1
-    nonisolated static let maxTextInputCharacters = 200
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AnalysisService")
     private static let analysisRecordCreationTimeoutNanoseconds: UInt64 = 25_000_000_000
     private static let analysisPhotoUploadTimeoutNanoseconds: UInt64 = 45_000_000_000
@@ -355,83 +354,58 @@ final class AnalysisService {
         return try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
     }
 
-    /// Metin bazlı analiz akışı.
-    func runTextAnalysis(
-        userID: UUID,
-        text: String,
-        canvases: [AnalysisCanvas],
-        analysisSector: AnalysisSectorID? = nil,
-        companyID: UUID? = nil,
-        onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
-    ) async throws -> AnalysisResultBundle {
-        guard !canvases.isEmpty else {
-            throw AnalysisError.invalidInput("En az bir analiz odağı seçmelisin.")
-        }
-        let trimmedText = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.maxTextInputCharacters))
-
-        guard trimmedText.count >= 10 else {
-            throw AnalysisError.invalidInput("Analiz için en az 10 karakterlik açıklama girmelisin.")
-        }
-
-        onProgress?(.preparingInput)
-        onProgress?(.creatingAnalysis)
-        let analysisID = try await createAnalysis(
-            userID: userID,
-            kind: "text",
-            canvases: canvases,
-            title: defaultTitle(for: canvases),
-            textInput: trimmedText,
-            companyID: companyID,
-            analysisSector: analysisSector
-        )
-
-        let requestID = UUID().uuidString
-        let supportID = AppErrorMessage.newSupportID()
-        onProgress?(.submitting)
-        do {
-            try await invokeAnalyze(
-                analysisID: analysisID, canvases: canvases,
-                textInput: trimmedText, companyID: companyID,
-                analysisSector: analysisSector,
-                photoPaths: [], photoBase64Parts: [],
-                requestID: requestID, supportID: supportID,
-                onProgress: onProgress
-            )
-        } catch {
-            await markAnalysisSubmissionFailedIfStillPending(
-                analysisID: analysisID,
-                supportID: supportID,
-                error: error
-            )
-            throw error
-        }
-
-        return try await waitForCompletedResult(analysisID: analysisID, onProgress: onProgress)
-    }
-
     /// Geçmiş analizleri listeler.
-    func listRecent(limit: Int = 20, companyID: UUID? = nil) async throws -> [AnalysisRow] {
+    func listRecent(
+        limit: Int = 20,
+        companyID: UUID? = nil,
+        includeHiddenTextAnalyses: Bool = false
+    ) async throws -> [AnalysisRow] {
         do {
             let rows: [AnalysisRow]
             if let companyID {
-                rows = try await supabase.client
-                    .from("analyses")
-                    .select()
-                    .eq("status", value: "completed")
-                    .eq("company_id", value: companyID.uuidString)
-                    .order("created_at", ascending: false)
-                    .limit(limit)
-                    .execute()
-                    .value
+                if includeHiddenTextAnalyses {
+                    rows = try await supabase.client
+                        .from("analyses")
+                        .select()
+                        .eq("status", value: "completed")
+                        .eq("company_id", value: companyID.uuidString)
+                        .order("created_at", ascending: false)
+                        .limit(limit)
+                        .execute()
+                        .value
+                } else {
+                    rows = try await supabase.client
+                        .from("analyses")
+                        .select()
+                        .eq("status", value: "completed")
+                        .eq("kind", value: "photo")
+                        .eq("company_id", value: companyID.uuidString)
+                        .order("created_at", ascending: false)
+                        .limit(limit)
+                        .execute()
+                        .value
+                }
             } else {
-                rows = try await supabase.client
-                    .from("analyses")
-                    .select()
-                    .eq("status", value: "completed")
-                    .order("created_at", ascending: false)
-                    .limit(limit)
-                    .execute()
-                    .value
+                if includeHiddenTextAnalyses {
+                    rows = try await supabase.client
+                        .from("analyses")
+                        .select()
+                        .eq("status", value: "completed")
+                        .order("created_at", ascending: false)
+                        .limit(limit)
+                        .execute()
+                        .value
+                } else {
+                    rows = try await supabase.client
+                        .from("analyses")
+                        .select()
+                        .eq("status", value: "completed")
+                        .eq("kind", value: "photo")
+                        .order("created_at", ascending: false)
+                        .limit(limit)
+                        .execute()
+                        .value
+                }
             }
             return rows
         } catch {
@@ -629,29 +603,58 @@ final class AnalysisService {
     }
 
     /// Kullanıcının kayıtlı PDF raporlarını listeler.
-    func listReports(limit: Int = 20, offset: Int = 0, companyID: UUID? = nil) async throws -> [ReportRow] {
+    func listReports(
+        limit: Int = 20,
+        offset: Int = 0,
+        companyID: UUID? = nil,
+        photoAnalysesOnly: Bool = false
+    ) async throws -> [ReportRow] {
         do {
             let start = max(offset, 0)
             let end = start + max(limit, 1) - 1
-            let select = "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,request_id,support_id,created_at"
+            let baseSelect = "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,request_id,support_id,created_at"
+            let select = photoAnalysesOnly ? "\(baseSelect),analyses!inner(kind)" : baseSelect
             let rows: [ReportRow]
             if let companyID {
-                rows = try await supabase.client
-                    .from("reports")
-                    .select(select)
-                    .eq("company_id", value: companyID.uuidString)
-                    .order("created_at", ascending: false)
-                    .range(from: start, to: end)
-                    .execute()
-                    .value
+                if photoAnalysesOnly {
+                    rows = try await supabase.client
+                        .from("reports")
+                        .select(select)
+                        .eq("company_id", value: companyID.uuidString)
+                        .eq("analyses.kind", value: "photo")
+                        .order("created_at", ascending: false)
+                        .range(from: start, to: end)
+                        .execute()
+                        .value
+                } else {
+                    rows = try await supabase.client
+                        .from("reports")
+                        .select(select)
+                        .eq("company_id", value: companyID.uuidString)
+                        .order("created_at", ascending: false)
+                        .range(from: start, to: end)
+                        .execute()
+                        .value
+                }
             } else {
-                rows = try await supabase.client
-                    .from("reports")
-                    .select(select)
-                    .order("created_at", ascending: false)
-                    .range(from: start, to: end)
-                    .execute()
-                    .value
+                if photoAnalysesOnly {
+                    rows = try await supabase.client
+                        .from("reports")
+                        .select(select)
+                        .eq("analyses.kind", value: "photo")
+                        .order("created_at", ascending: false)
+                        .range(from: start, to: end)
+                        .execute()
+                        .value
+                } else {
+                    rows = try await supabase.client
+                        .from("reports")
+                        .select(select)
+                        .order("created_at", ascending: false)
+                        .range(from: start, to: end)
+                        .execute()
+                        .value
+                }
             }
             return rows
         } catch {
@@ -2578,9 +2581,9 @@ final class AnalysisService {
             let defaultSourcePhotoIndices: [Int]
             switch finding.id {
             case 1:
-                defaultSourcePhotoIndices = [4]
+                defaultSourcePhotoIndices = [3]
             case 2:
-                defaultSourcePhotoIndices = [2, 4]
+                defaultSourcePhotoIndices = [2, 3]
             case 3:
                 defaultSourcePhotoIndices = []
             default:
@@ -2635,7 +2638,7 @@ final class AnalysisService {
             analysisSectorSource: "user_selected",
             analysisSectorPromptVersion: AnalysisSectorID.activeAnalysisPromptVersion
         )
-        let photos = (1...5).map { index in
+        let photos = (1...3).map { index in
             AnalysisPhotoRow(
                 analysisID: analysisID,
                 storagePath: "ui-tests/analysis-\(analysisID.uuidString)/p\(index).jpg",

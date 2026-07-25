@@ -2892,18 +2892,31 @@ serve(async (req: Request) => {
     }
   }
 
-  await sendReportReadyPush({
-    supabase,
-    supabaseUrl,
-    serviceRoleKey,
-    userID: user.id,
-    reportID: report.id,
-    analysisID,
-    format: "xlsx",
-    kind: "risk_analysis",
-    requestID,
-    supportID,
-  });
+  try {
+    await sendReportReadyPush({
+      supabase,
+      supabaseUrl,
+      serviceRoleKey,
+      userID: user.id,
+      reportID: report.id,
+      analysisID,
+      format: "xlsx",
+      kind: "risk_analysis",
+      requestID,
+      supportID,
+    });
+  } catch (pushError) {
+    console.warn(
+      "Report ready push dispatch threw after Excel persistence",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        report_id: report.id,
+        analysis_id: analysisID,
+        error: safeLogError(pushError),
+      }),
+    );
+  }
 
   return json(200, {
     report,

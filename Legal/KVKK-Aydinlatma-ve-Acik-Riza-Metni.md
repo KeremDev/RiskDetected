@@ -1,7 +1,7 @@
 # RiskDetected KVKK Aydınlatma Metni
 
-Yürürlük tarihi: 10 Haziran 2026
-Belge sürümü: kvkk-2026-06-10
+Yürürlük tarihi: 8 Temmuz 2026
+Belge sürümü: kvkk-2026-07-08
 
 Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında
 RiskDetected mobil uygulaması ve bağlantılı hizmetlerde kişisel verilerin nasıl
@@ -19,10 +19,14 @@ Veri sorumlusu ve iletişim bilgileri:
 
 ## 1. Kapsam
 
-RiskDetected; fotoğraf veya metin üzerinden iş sağlığı ve güvenliği odaklı yapay zeka
-analizi, risk/bulgu üretimi, raporlama, firma takibi, mesleki ilerleme ve abonelik
-yönetimi sunar. Uygulama resmi denetim, hukuki uygunluk garantisi veya iş güvenliği
-uzmanı yerine geçen bir karar mekanizması değildir.
+RiskDetected; fotoğraf üzerinden iş sağlığı ve güvenliği odaklı yapay zeka analizi,
+risk/bulgu üretimi, raporlama, firma takibi, mesleki ilerleme ve abonelik yönetimi
+sunar. Uygulama resmi denetim, hukuki uygunluk garantisi veya iş güvenliği uzmanı
+yerine geçen bir karar mekanizması değildir.
+
+Yeni analizler fotoğraf yükleme veya kamera ile çekim üzerinden başlatılır. Önceki
+sürümlerde oluşturulmuş metin girdileri, yalnızca geçmiş analiz kaydı, veri dışa
+aktarma, hesap silme ve hukuki saklama süreçleri kapsamında işlenebilir.
 
 ## 2. İşlenen kişisel veriler
 
@@ -31,7 +35,7 @@ RiskDetected kapsamında aşağıdaki veri kategorileri işlenebilir:
 - Hesap ve kimlik verileri: kullanıcı ID, ad-soyad, profil adı, avatar, giriş yöntemi, hesap durumu.
 - İletişim verileri: e-posta, destek mesajları, isteğe bağlı telefon veya firma iletişim bilgileri.
 - Onboarding ve mesleki bağlam verileri: uzmanlık sınıfı, tehlike sınıfı, sektörler, çalışma alanı, analiz sıklığı, kullanım amacı ve benzeri yanıtlar.
-- Analiz verileri: fotoğraflar, metin girdileri, seçilen canvas/analiz odağı, analiz modu, AI çıktıları, bulgular, risk seviyeleri, kök neden, önerilen aksiyon, referans bilgileri, skorlar ve analiz durumu.
+- Analiz verileri: fotoğraflar, önceki sürümlerde oluşturulmuş metin girdileri, seçilen canvas/analiz odağı, analiz modu, AI çıktıları, bulgular, risk seviyeleri, kök neden, önerilen aksiyon, referans bilgileri, skorlar ve analiz durumu.
 - Görsel içerik verileri: çalışan/ziyaretçi görüntüsü, yüz, iş kıyafeti, KKD, ekipman, makine, tabela, logo, plaka, tesis, fabrika, maden, inşaat alanı veya görselde bulunan diğer bilgiler.
 - Rapor verileri: PDF/XLSX çıktıları, rapor başlığı, rapor türü, risk tablosu, firma bilgisi, firma logosu, hazırlayan bilgisi, belge numarası ve paylaşım/indirme kayıtları.
 - Firma yönetimi verileri: firma adı, tehlike sınıfı, logo, adres, ilgili kişi, departman, varsayılan sorumlu, termin günü, arşiv durumu.
@@ -54,7 +58,7 @@ teşhis etme amacıyla hizmet sunmaz.
 Kişisel veriler şu amaçlarla işlenir:
 
 - Hesap oluşturmak, oturum güvenliğini sağlamak ve kullanıcıyı tanımak.
-- Fotoğraf/metin üzerinden AI destekli risk, tehlike, önlem ve rapor çıktısı üretmek.
+- Fotoğraf üzerinden AI destekli risk, tehlike, önlem ve rapor çıktısı üretmek.
 - Analizleri, bulguları, firma bilgilerini, PDF/XLSX raporlarını ve arşivleri kullanıcı hesabına bağlamak.
 - Free/Plus/Pro kota, abonelik, deneme hakkı ve özellik erişimini yönetmek.
 - Profil avatarı, firma logosu, rapor şablonu ve rapor firması gibi isteğe bağlı içerikleri göstermek.
@@ -79,11 +83,11 @@ Kişisel veriler KVKK'nın 5. maddesi kapsamında aşağıdaki hukuki sebeplerle
 
 ## 5. Toplama yöntemi
 
-Veriler; uygulamaya kayıt/giriş, onboarding, fotoğraf çekme veya galeriden seçme, metin
-girme, analiz başlatma, canvas/rapor/firma seçimi, rapor oluşturma/indirme, profil
-fotoğrafı veya firma logosu yükleme, bildirim izni verme, abonelik satın alma, destek
-talebi ve uygulama içi teknik loglar yoluyla otomatik veya kısmen otomatik olarak
-elektronik ortamda toplanır.
+Veriler; uygulamaya kayıt/giriş, onboarding, fotoğraf çekme veya galeriden seçme,
+analiz başlatma, canvas/rapor/firma seçimi, rapor oluşturma/indirme, profil fotoğrafı
+veya firma logosu yükleme, bildirim izni verme, abonelik satın alma, destek talebi ve
+uygulama içi teknik loglar yoluyla otomatik veya kısmen otomatik olarak elektronik
+ortamda toplanır.
 
 ## 6. Aktarım yapılan taraflar
 

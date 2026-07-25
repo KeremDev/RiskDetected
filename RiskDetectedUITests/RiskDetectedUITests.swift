@@ -50,6 +50,7 @@ final class RiskDetectedUITests: XCTestCase {
 
         XCTAssertTrue(waitFor("onboarding.notification_permission", timeout: 8).exists)
         XCTAssertTrue(waitFor("Şimdi ödeme alınmayacak").exists)
+        XCTAssertTrue(waitFor("Deneme süresi ve uygulama hatırlatmaları için bildirimleri aç.").exists)
         tap("onboarding.notification_permission.cta")
 
         XCTAssertTrue(waitFor("Yıllık", timeout: 8).exists)
@@ -171,6 +172,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("home.photo_tray").exists)
         XCTAssertTrue(waitFor("home.photo_slot.1").exists)
         XCTAssertTrue(waitFor("home.photo_slot.3").exists)
+        XCTAssertFalse(exists("home.photo_slot.4", timeout: 1))
     }
 
     func testQuickScanButtonOpensPhotoTray() throws {
@@ -303,8 +305,8 @@ final class RiskDetectedUITests: XCTestCase {
 
         XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 8).exists)
         tapScrolling("result.finding.1.card", timeout: 10)
-        XCTAssertTrue(waitFor("result.detail.photo_index.4", timeout: 8).exists)
-        XCTAssertTrue(waitFor("Foto 4", timeout: 4).exists)
+        XCTAssertTrue(waitFor("result.detail.photo_index.3", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Foto 3", timeout: 4).exists)
         XCTAssertTrue(waitFor("result.detail.close", timeout: 4).exists)
     }
 
@@ -525,7 +527,7 @@ final class RiskDetectedUITests: XCTestCase {
         tapScrolling("profile.row.notifications")
 
         XCTAssertTrue(waitFor("Bildirimler kapalı").exists)
-        XCTAssertTrue(waitFor("Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini alabilirsin.").exists)
+        XCTAssertTrue(waitFor("Açtığında analiz sonuçları, raporlar, deneme süresi ve uygulama hatırlatmalarını alabilirsin.").exists)
         XCTAssertTrue(waitFor("Bildirimleri aç").exists)
         XCTAssertFalse(exists("Supabase", timeout: 1))
     }
@@ -589,13 +591,20 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertFalse(exists("app_release.soft_update", timeout: 2))
     }
 
-    func testActiveAnalysisSectorPickerRequiresSelectionBeforeCanvas() throws {
+    func testHomeTextAnalysisEntryPointsAreRemoved() throws {
         launchMainApp()
 
         XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
-        tap("home.mode.text")
-        typeInto("home.text_input", text: "Korkuluk eksik, işçi emniyet kemeri kullanmıyor.")
-        tap("home.start_scan")
+        XCTAssertTrue(waitFor("Saha fotoğrafları").exists)
+        XCTAssertFalse(exists("home.mode.text", timeout: 1))
+        XCTAssertFalse(exists("home.text_input", timeout: 1))
+    }
+
+    func testActiveAnalysisSectorPickerRequiresSelectionBeforeCanvas() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"])
+
+        XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
+        tap("Analize geç")
 
         XCTAssertTrue(waitFor("Analiz kapsamını seç", timeout: 8).exists)
         XCTAssertFalse(isEnabled("Devam et"))
@@ -609,12 +618,10 @@ final class RiskDetectedUITests: XCTestCase {
     }
 
     func testActiveAnalysisSectorSingleSelectionReplacesPreviousChoice() throws {
-        launchMainApp()
+        launchMainApp(extraArguments: ["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"])
 
-        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
-        tap("home.mode.text")
-        typeInto("home.text_input", text: "Forklift yaya yoluna girdi, raf istifi yüksek.")
-        tap("home.start_scan")
+        XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
+        tap("Analize geç")
 
         XCTAssertTrue(waitFor("Analiz kapsamını seç", timeout: 8).exists)
         tap("analysis_sector_chip_construction")
@@ -625,12 +632,10 @@ final class RiskDetectedUITests: XCTestCase {
     }
 
     func testActiveAnalysisSectorFullGridShowsLogisticsWarehouseChip() throws {
-        launchMainApp()
+        launchMainApp(extraArguments: ["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"])
 
-        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
-        tap("home.mode.text")
-        typeInto("home.text_input", text: "Depo rampasında zemin kaygan ve forklift trafiği yoğun.")
-        tap("home.start_scan")
+        XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
+        tap("Analize geç")
 
         XCTAssertTrue(waitFor("Analiz kapsamını seç", timeout: 8).exists)
         XCTAssertTrue(waitFor("analysis_sector_chip_logistics_warehouse", timeout: 8).exists)

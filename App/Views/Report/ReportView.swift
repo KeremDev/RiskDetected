@@ -708,7 +708,7 @@ struct ReportView: View {
                     Text("Henüz raporlanacak analiz yok")
                         .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("Fotoğraf veya metin analizi tamamlandığında rapor önizlemesi burada gerçek bulgularla oluşacak.")
+                    Text("Fotoğraf analizi tamamlandığında rapor önizlemesi burada gerçek bulgularla oluşacak.")
                         .font(.system(size: RDFontScale.size(13), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
@@ -797,7 +797,8 @@ struct ReportView: View {
             do {
                 let moreReports = try await AnalysisService.shared.listReports(
                     limit: reportArchiveFetchPageSize,
-                    offset: offset
+                    offset: offset,
+                    photoAnalysesOnly: true
                 )
                 await MainActor.run {
                     appendStoredReports(moreReports)
@@ -884,7 +885,10 @@ struct ReportView: View {
         do {
             let archiveStartedAt = Date()
             async let analysisRows = AnalysisService.shared.listRecent(limit: 12)
-            async let reportRows = AnalysisService.shared.listReports(limit: reportArchiveFetchPageSize)
+            async let reportRows = AnalysisService.shared.listReports(
+                limit: reportArchiveFetchPageSize,
+                photoAnalysesOnly: true
+            )
             async let companyRows: [Company] = app.currentTier.isPaid
                 ? CompanyService.shared.listCompanies(includeArchived: true)
                 : []
@@ -987,7 +991,7 @@ struct ReportView: View {
             userID: Self.uiTestUserID,
             companyID: Self.uiTestCompany.id,
             title: "UI Test Rapor Kaynağı",
-            kind: "text",
+            kind: "photo",
             canvas: "general",
             status: "completed",
             statusMessage: nil,
@@ -1845,7 +1849,7 @@ private struct ReportAnalysisRow: View {
     var body: some View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: row.kind == "text" ? "text.alignleft" : "camera.viewfinder")
+                Image(systemName: "camera.viewfinder")
                     .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(level.textColor)
                     .frame(width: 44, height: 44)

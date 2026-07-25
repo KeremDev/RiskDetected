@@ -40,7 +40,6 @@ extension HistoryItem {
         .init(id: UUID(), title: "3. Kat şantiye girişi",  date: "Bugün 14:22",  kind: "KKD Bazlı", level: .critical, count: 5, status: .open, companyID: nil, createdAt: Date(), photoPath: nil, isTextAnalysis: false),
         .init(id: UUID(), title: "Elektrik panosu çevresi", date: "Bugün 09:14",  kind: "Genel",     level: .high,     count: 3, status: .reviewed, companyID: nil, createdAt: Date(), photoPath: nil, isTextAnalysis: false),
         .init(id: UUID(), title: "Depo yangın çıkışı",      date: "Dün 16:42",     kind: "Acil risk", level: .medium,   count: 2, status: .closed, companyID: nil, createdAt: Date(), photoPath: nil, isTextAnalysis: false),
-        .init(id: UUID(), title: "Kazan dairesi prosedür kontrol", date: "Dün 11:08", kind: "Prosedür", level: .low,    count: 1, status: .closed, companyID: nil, createdAt: Date(), photoPath: nil, isTextAnalysis: true),
         .init(id: UUID(), title: "Forklift trafik alanı",   date: "30 Nis · 14:55", kind: "Sektör",   level: .high,     count: 4, status: .reviewed, companyID: nil, createdAt: Date(), photoPath: nil, isTextAnalysis: false),
         .init(id: UUID(), title: "Yüksekte çalışma platformu", date: "29 Nis · 08:30", kind: "KKD Bazlı", level: .critical, count: 6, status: .open, companyID: nil, createdAt: Date(), photoPath: nil, isTextAnalysis: false),
     ]

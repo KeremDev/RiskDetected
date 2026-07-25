@@ -706,7 +706,7 @@ struct ResultView: View {
                         .foregroundStyle(Color.rdBlack)
                 }
 
-                Text("Bu analiz için raporlanabilir bir uygunsuzluk bulunmadı. Görsel veya metin yeterince açık değilse farklı bir açıdan tekrar tarama yapılabilir.")
+                    Text("Bu analiz için raporlanabilir bir uygunsuzluk bulunmadı. Fotoğraf yeterince açık değilse farklı bir açıdan tekrar tarama yapılabilir.")
                     .font(.system(size: RDFontScale.size(13), design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)

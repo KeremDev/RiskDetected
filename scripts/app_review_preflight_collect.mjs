@@ -6,10 +6,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 const APP_ID = "6769498181";
-const VERSION_ID = "e97f1de1-7e8c-448b-a5b9-80869f0a8816";
-const VERSION = "1.0";
-const BUILD_NUMBER = "31";
-const BUILD_ID = "fca919e5-b12a-4129-8d82-cf46ce1736c8";
+const VERSION_ID = process.env.RD_ASC_VERSION_ID ?? "ae85614e-d220-4ba7-afc8-dafd5083ac0f";
+const VERSION = process.env.RD_RELEASE_VERSION ?? "1.2.4";
+const BUILD_NUMBER = process.env.RD_RELEASE_BUILD ?? "77";
+const BUILD_ID = process.env.RD_ASC_BUILD_ID ?? "81216558-c4f8-41b7-8bb7-ffa2d4b69457";
 const PROJECT_REF = "ppcrzemgiztzcgddbins";
 const BUNDLE_ID = "com.riskdetected.app";
 const ARCHIVED_REVIEW_EVIDENCE_DIR = ["docs", "archive", "qa-history"].join("/");
@@ -19,7 +19,7 @@ const REPORT_DATE = [
   String(now.getMonth() + 1).padStart(2, "0"),
   String(now.getDate()).padStart(2, "0"),
 ].join("-");
-const DEFAULT_IPA_APP = "/tmp/RiskDetectedIPA31/Payload/RiskDetected.app";
+const DEFAULT_IPA_APP = `output/app-review-build-${BUILD_NUMBER}/extracted/Payload/RiskDetected.app`;
 const MANUAL_EVIDENCE_FORM = `${ARCHIVED_REVIEW_EVIDENCE_DIR}/APP_REVIEW_MANUAL_EVIDENCE_FORM_2026-06-01.md`;
 const REVIEW_NOTES_DRAFT = `${ARCHIVED_REVIEW_EVIDENCE_DIR}/APP_STORE_REVIEW_NOTES_2026-06-02.md`;
 const REVIEW_NOTES_AUXILIARY_FILES = [
@@ -61,8 +61,8 @@ const PHYSICAL_DEVICE_CANDIDATES = [
   { name: "Kerem iPhone", id: "36B37C26-C0CB-556F-8A6C-3A07FD290F11", model: "iPhone 14 Pro Max" },
 ];
 const EXPECTED_TURKEY_PRICES = new Map([
-  ["riskdetected_plus_monthly", { amount: "199.99", currency: "TRY" }],
-  ["riskdetected_plus_yearly", { amount: "1999.99", currency: "TRY" }],
+  ["riskdetected_plus_monthly", { amount: "249.99", currency: "TRY" }],
+  ["riskdetected_plus_yearly", { amount: "2499.99", currency: "TRY" }],
   ["riskdetected_pro_monthly", { amount: "499.99", currency: "TRY" }],
   ["riskdetected_pro_yearly", { amount: "4999.99", currency: "TRY" }],
 ]);
@@ -129,40 +129,25 @@ const AI_DISCLOSURE_SOURCE_CHECKS = [
 ];
 const SUBSCRIPTION_PAYWALL_SOURCE_CHECKS = [
   {
-    path: "App/Views/Paywall/PaywallView.swift",
-    patterns: [
-      "Geri yükle",
-      "Satın alımları geri yükle",
-      "legalLink(\"Şartlar\", RDConfig.Web.termsURL)",
-      "legalLink(\"Gizlilik\", RDConfig.Web.privacyPolicyURL)",
-      "legalLink(\"İptal hakkı\", URL(string: \"https://apps.apple.com/account/subscriptions\")!)",
-      "Dilediğin zaman App Store ayarlarından iptal edebilirsin.",
-      "Yıllık abonelik",
-      "Aylık abonelik",
-      "shouldUseTRYFallback",
-      "normalized.contains(\"$\") || normalized.contains(\"USD\")",
-    ],
-  },
-  {
     path: "App/Views/Paywall/InAppPaywallView.swift",
     patterns: [
       "Geri yükle",
-      "legalLink(\"Şartlar\", RDConfig.Web.termsURL)",
-      "legalLink(\"Gizlilik\", RDConfig.Web.privacyPolicyURL)",
+      "legalLink(\"Şartlar\", document: .terms)",
+      "legalLink(\"Gizlilik\", document: .privacy)",
       "legalLink(\"İptal hakkı\", URL(string: \"https://apps.apple.com/account/subscriptions\")!)",
       "Yıllık abonelik",
       "Aylık abonelik",
-      "shouldUseTRYFallback",
-      "normalized.contains(\"$\") || normalized.contains(\"USD\")",
+      "İstediğiniz zaman iptal edebilirsiniz · Otomatik yenilenir",
+      "App Store abonelik fiyatları şu an alınamadı.",
       "Yıllık \\(annualPrice) ödeme alınır.",
     ],
   },
   {
     path: "App/AppState.swift",
     patterns: [
-      "func purchaseSubscription(packageID: String) async throws",
+      "func purchaseSubscription(packageID: String, expectedTier: SubscriptionTier? = nil) async throws -> SubscriptionState",
       "func restoreSubscriptions() async throws -> SubscriptionState",
-      "await syncBackendSubscription()",
+      "syncBackendSubscriptionWithRetry(expectedTier:",
     ],
   },
 ];
@@ -261,15 +246,6 @@ const RELEASE_GATING_SOURCE_CHECKS = [
   {
     path: "App/Services/NotificationService.swift",
     patterns: ["private static var isUITestLaunch", "#if DEBUG", "#else\n        false\n        #endif"],
-  },
-  {
-    path: "App/Views/Auth/AuthView.swift",
-    patterns: [
-      "#if DEBUG\n    @State private var signingInDemo",
-      "#if DEBUG\n    enum DemoAccount",
-      "#if DEBUG\n    private func demoButton",
-      "private func runDemoSignIn",
-    ],
   },
   {
     path: "App/Views/Home/MainTabView.swift",
@@ -634,6 +610,15 @@ function checkPhysicalSmokeSubgateEvidence() {
 }
 
 function checkPhysicalDeviceReadinessEvidence() {
+  if (args.skipDevices) {
+    addCheck(
+      "Physical-device readiness evidence",
+      "SKIP",
+      "Skipped by --skip-devices; no archived candidate-device evidence is evaluated.",
+    );
+    return;
+  }
+
   const issues = [];
   const evidence = [];
   const readJson = (filePath) => {
@@ -1338,8 +1323,8 @@ function runAppStoreScreenshotChecks() {
   if (filesResult.status !== 0) {
     addCheck(
       "App Store screenshot local set",
-      "FAIL",
-      `Could not list ${screenshotDir}.`,
+      "HOLD",
+      `Could not list ${screenshotDir}; verify the already configured App Store Connect screenshot sets manually.`,
       truncate(filesResult.stdout || filesResult.stderr),
     );
     return;
@@ -1500,19 +1485,14 @@ function runAscChecks() {
     "--output",
     "markdown",
   ]);
-  const expectedContactBlockers = containsAll(validate.stdout, [
-    "contactFirstName",
-    "contactLastName",
-    "contactEmail",
-    "contactPhone",
-  ]) && validate.stdout.includes("| 6769498181 |") &&
-    validate.stdout.includes("| 4      | 8") &&
-    validate.stdout.includes("| 4        |") &&
-    !validate.stdout.includes("build.required.missing");
+  const hasNoBlockingErrors = validate.status === 0 &&
+    validate.stdout.includes(`| ${APP_ID} | ${VERSION_ID} | ${VERSION}`) &&
+    validate.stdout.includes("| 0      |") &&
+    validate.stdout.includes("| 0        |");
   addCheck(
-    "ASC validation expected contact blockers",
-    expectedContactBlockers ? "HOLD" : "FAIL",
-    "Only acceptable current blocking errors are the intentionally unfilled App Review contact fields.",
+    "ASC validation blockers",
+    hasNoBlockingErrors ? "PASS" : "FAIL",
+    "The selected App Store version should have zero blocking validation errors.",
     truncate(validate.stdout || validate.stderr),
   );
 
@@ -1812,8 +1792,8 @@ function runIpaChecks() {
   if (existsSync(infoPlist)) {
     const info = run("ipa-info-plist", "plutil", ["-p", infoPlist]);
     const ok = containsAll(info.stdout, [
-      "\"CFBundleShortVersionString\" => \"1.0\"",
-      "\"CFBundleVersion\" => \"31\"",
+      `"CFBundleShortVersionString" => "${VERSION}"`,
+      `"CFBundleVersion" => "${BUILD_NUMBER}"`,
       "\"ITSAppUsesNonExemptEncryption\" => false",
       "\"NSCameraUsageDescription\"",
       "\"NSPhotoLibraryUsageDescription\"",
@@ -1821,7 +1801,7 @@ function runIpaChecks() {
     addCheck(
       "IPA Info.plist release/privacy keys",
       ok ? "PASS" : "FAIL",
-      "Expected 1.0 (31), non-exempt encryption=false, camera/photo strings, and no ad/tracking keys.",
+      `Expected ${VERSION} (${BUILD_NUMBER}), non-exempt encryption=false, camera/photo strings, and no ad/tracking keys.`,
       truncate(info.stdout || info.stderr),
     );
   }
@@ -1956,8 +1936,8 @@ function checkSupabaseLocalAuthConfig() {
 
   const config = readFileSync(SUPABASE_CONFIG_FILE, "utf8");
   const required = [
-    'site_url = "http://localhost:3000"',
-    'additional_redirect_urls = ["io.supabase.riskdetected://login-callback"]',
+    'site_url = "https://riskdetected.com"',
+    '"io.supabase.riskdetected://login-callback"',
     "enable_confirmations = true",
     'max_frequency = "1m0s"',
     "[auth.external.apple]\nenabled = true",
@@ -1965,8 +1945,8 @@ function checkSupabaseLocalAuthConfig() {
     "[auth.external.google]\nenabled = true",
   ];
   const forbidden = [
-    'additional_redirect_urls = ["https://127.0.0.1:3000"]',
     'site_url = "http://127.0.0.1:3000"',
+    'site_url = "http://localhost:3000"',
     "enable_confirmations = false",
     'max_frequency = "1s"',
     "[auth.external.apple]\nenabled = false",

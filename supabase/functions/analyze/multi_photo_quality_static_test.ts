@@ -111,7 +111,7 @@ Deno.test("legacy text analysis is rejected before quota and queue", async () =>
   );
   assert(
     source.indexOf("TEXT_ANALYSIS_REMOVED") <
-      source.indexOf("const { queuedPhotoPaths } = await enqueueAnalysisJob"),
+      source.indexOf("await enqueueAnalysisJob({"),
   );
 });
 
@@ -203,8 +203,12 @@ Deno.test("photo persistence failures stop analysis before AI call", async () =>
     "await releaseAnalysisQuota(supabase, analysisID, user.id);",
   );
   assertStringIncludes(source, 'code: "photo_download_failed"');
-  assertStringIncludes(source, "uploadedPhotoPaths.length > 0");
-  assertStringIncludes(source, ".remove(uploadedPhotoPaths)");
+  assertStringIncludes(source, ".upsert(\n        {");
+  assertStringIncludes(source, 'onConflict: "analysis_id,sequence_index"');
+  assertStringIncludes(
+    source,
+    "cleanup here would recreate the original race",
+  );
 });
 
 Deno.test("AI input audit records photo quality metrics without base64", async () => {
@@ -374,7 +378,11 @@ Deno.test("analysis schema and policy use single and multi photo targets", async
 
   assertStringIncludes(
     source,
-    'const PHOTO_POLICY_VERSION = "evidence-first-soft-min-v2"',
+    'const LEGACY_PHOTO_POLICY_VERSION = "evidence-first-soft-min-v2"',
+  );
+  assertStringIncludes(
+    source,
+    'const LAYER_AUDIT_POLICY_VERSION = "single-pass-12-layer-audit-v4"',
   );
   assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MIN = 1");
   assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MAX = 14");
@@ -401,7 +409,7 @@ Deno.test("AI timeout and token budgets are explicit", async () => {
   assertStringIncludes(analyzeSource, "const REPAIR_AI_TIMEOUT_MS = 45_000");
   assertStringIncludes(
     analyzeSource,
-    "thinkingBudget: isRepairPass ? 1024 : 3072",
+    "thinkingBudget: isRepairPass ? 1024 : normalizeThinkingBudget(",
   );
   assertStringIncludes(analyzeSource, "return 14_000");
   assertStringIncludes(analyzeSource, "return 16_000");
@@ -423,6 +431,102 @@ Deno.test("AI timeout and token budgets are explicit", async () => {
     workerSource,
     "p_visibility_timeout: ANALYSIS_JOB_VISIBILITY_TIMEOUT_SECONDS",
   );
+});
+
+Deno.test("single-pass layer audit is flag gated and schema bounded", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  const auditSource = await readTextIfAllowed(
+    new URL("./inspection-layer-audit.ts", import.meta.url),
+  );
+  if (source == null || auditSource == null) return;
+
+  assertStringIncludes(source, "single_photo_layer_audit_enabled: false");
+  assertStringIncludes(source, "multi_photo_layer_audit_enabled: false");
+  assertStringIncludes(
+    source,
+    "single_photo_compact_layer_schema_enabled: false",
+  );
+  assertStringIncludes(source, "single_photo_evidence_guard_enabled: false");
+  assertStringIncludes(source, "single_photo_thinking_budget: 3072");
+  assertStringIncludes(source, "multi_photo_thinking_budget: 3072");
+  assertStringIncludes(source, "INSPECTION_LAYER_KEYS,");
+  assertStringIncludes(
+    auditSource,
+    '"environment_emergency_signage_competence"',
+  );
+  assertStringIncludes(source, "minItems: 12");
+  assertStringIncludes(source, "maxItems: 12");
+  assertStringIncludes(source, "inspection_layer_keys");
+  assertStringIncludes(source, "coverage_conclusion");
+  assertStringIncludes(source, "compactLayerSchemaEnabled");
+  assertStringIncludes(source, "evidenceGuardEnabled");
+  assertStringIncludes(source, "expectedPhotoCount");
+  assertStringIncludes(source, "options.isRepairPass !== true");
+});
+
+Deno.test("layer audit degrades to legacy schema and audits malformed coverage", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, "res.status === 400 && schemaAuditEnabled");
+  assertStringIncludes(source, "layerAuditSchemaFallbackUsed = true");
+  assertStringIncludes(source, "layerAuditSchemaFallbackError");
+  assertStringIncludes(source, "applyInspectionLayerEvidenceGuard(");
+  assertStringIncludes(source, "normalizeInspectionLayers(");
+  assertStringIncludes(source, "missing_layer_keys");
+  assertStringIncludes(source, "duplicate_layer_keys");
+  assertStringIncludes(source, "invalid_layer_statuses_count");
+  assertStringIncludes(source, "unrepresented_actionable_layers");
+  assertStringIncludes(source, "unlinked_finding_count");
+  assertStringIncludes(source, "invalid_finding_layer_keys_count");
+  assertStringIncludes(source, 'provider === "groq" ? "prompt_only_groq"');
+  assertStringIncludes(
+    source,
+    "repairEnabled: layerAuditEnabled\n      ? false",
+  );
+});
+
+Deno.test("compact layer quality rollout is single-photo and backend gated", async () => {
+  const migration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260714170000_enable_single_photo_compact_layer_quality.sql",
+      import.meta.url,
+    ),
+  );
+  if (migration == null) return;
+  const normalizedSQL = migration.toLowerCase().replace(/\s+/g, " ");
+
+  assertStringIncludes(
+    normalizedSQL,
+    "single_photo_compact_layer_schema_enabled",
+  );
+  assertStringIncludes(normalizedSQL, "single_photo_evidence_guard_enabled");
+  assert(!normalizedSQL.includes("multi_photo_layer_audit_enabled"));
+  assert(!normalizedSQL.includes("single_photo_thinking_budget"));
+  assert(!normalizedSQL.includes("multi_photo_thinking_budget"));
+});
+
+Deno.test("single-photo layer audit rollout leaves multi-photo disabled", async () => {
+  const migration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260712193000_enable_single_photo_layer_audit.sql",
+      import.meta.url,
+    ),
+  );
+  if (migration == null) return;
+  const normalizedSQL = migration.toLowerCase().replace(/\s+/g, " ");
+
+  assertStringIncludes(normalizedSQL, "single_photo_layer_audit_enabled");
+  assertStringIncludes(normalizedSQL, "multi_photo_layer_audit_enabled");
+  assertStringIncludes(normalizedSQL, "single_photo_thinking_budget");
+  assertStringIncludes(normalizedSQL, "multi_photo_thinking_budget");
+  assertStringIncludes(normalizedSQL, "'6144'::jsonb");
+  assertStringIncludes(normalizedSQL, "'3072'::jsonb");
+  assertStringIncludes(normalizedSQL, "'false'::jsonb");
 });
 
 Deno.test("coverage repair is queued as a separate job", async () => {

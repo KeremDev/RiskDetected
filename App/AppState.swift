@@ -945,6 +945,19 @@ final class AppState: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+
+        NotificationService.shared.$pendingOpenNewAnalysis
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] shouldOpen in
+                guard let self, shouldOpen else { return }
+                self.activeTab = .home
+                if self.flow == .main, self.auth.isAuthenticated {
+                    self.requestQuickScan(source: .chooser)
+                    NotificationService.shared.pendingOpenNewAnalysis = false
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func routePendingNotificationIfReady(defaultTab: RDTab? = nil) {
@@ -952,6 +965,12 @@ final class AppState: ObservableObject {
             if let defaultTab, pendingNotificationAnalysisID == nil {
                 activeTab = defaultTab
             }
+            return
+        }
+        if NotificationService.shared.pendingOpenNewAnalysis {
+            activeTab = .home
+            requestQuickScan(source: .chooser)
+            NotificationService.shared.pendingOpenNewAnalysis = false
             return
         }
         if let analysisID = pendingNotificationAnalysisID {

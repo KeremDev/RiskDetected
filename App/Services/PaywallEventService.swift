@@ -10,6 +10,7 @@ enum PaywallEventName: String, Codable {
     case purchaseStarted = "purchase_started"
     case purchaseSucceeded = "purchase_succeeded"
     case purchaseFailed = "purchase_failed"
+    case paymentPending = "payment_pending"
     case restoreTap = "restore_tap"
     case personalPlanView = "personal_plan_view"
     case personalPlanContinue = "personal_plan_continue"

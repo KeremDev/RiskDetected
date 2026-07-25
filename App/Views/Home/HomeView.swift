@@ -32,7 +32,6 @@ private struct AnalysisPhotoDraft: Identifiable {
     }
 }
 
-private let maxTextInputCharacters = AnalysisService.maxTextInputCharacters
 private let freeQuotaCachePrefix = "rd.home.freeQuota"
 private let analysisSectorSheetHeight: CGFloat = 600
 
@@ -41,8 +40,6 @@ struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var mode: HomeMode = .photo
-    @State private var text: String = ""
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
     @State private var showCanvasSheet = false
     @State private var showSectorSheet = false
@@ -81,21 +78,12 @@ struct HomeView: View {
     @State private var restoreCanvasSheetAfterPaywall = false
     @State private var reportPreviewItem: ShareItem?
 
-    enum HomeMode: String, CaseIterable {
-        case photo, text
-        var label: String { self == .photo ? "Fotoğraf" : "Metin" }
-        var icon: String { self == .photo ? "camera.fill" : "text.alignleft" }
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             HomeHeader()
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    modeSegment
-                        .padding(.bottom, 10)
-
                     if RDConfig.Features.professionalProgressEnabled,
                        let professionalProgressSummary {
                         ProfessionalProgressWeeklyTrackingCard(
@@ -105,11 +93,7 @@ struct HomeView: View {
                         .padding(.bottom, 12)
                     }
 
-                    if mode == .photo {
-                        photoUploadCard
-                    } else {
-                        textInputArea
-                    }
+                    photoUploadCard
 
                     if !app.currentTier.isPaid {
                         freeQuotaHint
@@ -465,20 +449,10 @@ struct HomeView: View {
     }
 
     private var maxSelectablePhotos: Int {
-        #if DEBUG
-        if Self.isUITestMainLaunch {
-            return app.currentTier.isPaid ? 5 : 1
-        }
-        #endif
         return app.planCapabilities.safeMaxPhotosPerAnalysis
     }
 
     private var visiblePhotoSlotCount: Int {
-        #if DEBUG
-        if Self.isUITestMainLaunch {
-            return 5
-        }
-        #endif
         return app.planCapabilities.safeVisiblePhotoSlotsInUI
     }
 
@@ -489,7 +463,7 @@ struct HomeView: View {
     private var annotatePresentationBinding: Binding<Bool> {
         Binding(
             get: {
-                showAnnotate && mode == .photo && annotatingPhoto != nil
+                showAnnotate && annotatingPhoto != nil
             },
             set: { newValue in
                 if !newValue {
@@ -507,50 +481,6 @@ struct HomeView: View {
 
     private var annotatePrimaryActionIcon: String {
         returnToPhotoTrayAfterAnnotation ? "checkmark" : "sparkles"
-    }
-
-    private var modeSegment: some View {
-        HStack(spacing: 0) {
-            ForEach(HomeMode.allCases, id: \.self) { m in
-                let active = mode == m
-                Button {
-                    if m == .text {
-                        pendingAnnotateRequestID = nil
-                        showAnnotate = false
-                    }
-                    withAnimation(.easeInOut(duration: 0.16)) { mode = m }
-                    UISelectionFeedbackGenerator().selectionChanged()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: m.icon)
-                            .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
-                        Text(m.label)
-                            .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 36)
-                    .foregroundStyle(active ? Color.rdBlack : Color.rdSlate)
-                    .background(
-                        RoundedRectangle(cornerRadius: 9)
-                            .fill(active ? Color.rdWhite : Color.clear)
-                            .shadow(color: active ? Color.black.opacity(0.08) : .clear,
-                                    radius: 3, x: 0, y: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier(m == .photo ? "home.mode.photo" : "home.mode.text")
-            }
-        }
-        .padding(4)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.rdFog)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.rdLine, lineWidth: 1)
-                )
-        )
-        .homeCardDepth(colorScheme: colorScheme, radius: 12, y: 5)
     }
 
     private var photoUploadCard: some View {
@@ -878,73 +808,6 @@ struct HomeView: View {
         isDarkMode ? Color.black.opacity(0.28) : Color.rdCritical.opacity(0.10)
     }
 
-    private var textInputArea: some View {
-        Group {
-            if isFreeQuotaExhausted {
-                Button {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    showQuotaPaywall()
-                } label: {
-                    lockedInputContent(
-                        title: "Ücretsiz hak doldu",
-                        subtitle: "Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et.",
-                        icon: "text.badge.xmark"
-                    )
-                }
-                .buttonStyle(RDPressableButtonStyle())
-            } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    ZStack(alignment: .topLeading) {
-                        if text.isEmpty {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Saha gözlemini kısa yaz...")
-                                Text("Örn: \"Korkuluk eksik, işçi emniyet kemeri kullanmıyor.\"")
-                                    .padding(.top, 4)
-                            }
-                            .font(.system(size: RDFontScale.size(15), design: .rounded))
-                            .foregroundStyle(Color.rdSlate)
-                            .padding(.horizontal, 14)
-                            .padding(.top, 14)
-                            .allowsHitTesting(false)
-                        }
-                        TextEditor(text: $text)
-                            .font(.system(size: RDFontScale.size(15), design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                            .scrollContentBackground(.hidden)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 8)
-                            .frame(minHeight: 160)
-                            .accessibilityIdentifier("home.text_input")
-                            .onChange(of: text) { new in
-                                if new.count > maxTextInputCharacters {
-                                    text = String(new.prefix(maxTextInputCharacters))
-                                }
-                            }
-                    }
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(Color.rdWhite)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(Color.rdLine, lineWidth: 1)
-                            )
-                    )
-                    .homeCardDepth(colorScheme: colorScheme, radius: 14, y: 6)
-
-                    HStack {
-                        Text("Maks. \(maxTextInputCharacters) karakter")
-                            .font(.system(size: RDFontScale.size(12), design: .rounded))
-                        Spacer()
-                        Text("\(text.count)/\(maxTextInputCharacters)")
-                            .rdMono(size: 12, weight: .medium)
-                    }
-                    .foregroundStyle(Color.rdSlate)
-                    .padding(.horizontal, 2)
-                }
-            }
-        }
-    }
-
     private var freeQuotaHint: some View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -1007,63 +870,6 @@ struct HomeView: View {
         return "Günde 1 ücretsiz analiz hakkın hazır."
     }
 
-    private func lockedInputContent(title: String, subtitle: String, icon: String) -> some View {
-        VStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .fill(lockedPhotoIconBackground)
-                    .frame(width: 68, height: 68)
-                    .shadow(color: lockedPhotoIconShadow, radius: 16, x: 0, y: 8)
-
-                Circle()
-                    .stroke(lockedPhotoCriticalColor, lineWidth: 5)
-                    .frame(width: 52, height: 52)
-
-                Image(systemName: icon)
-                    .font(.system(size: RDFontScale.size(19), weight: .bold, design: .rounded))
-                    .foregroundStyle(lockedPhotoCriticalColor)
-            }
-
-            Text(title)
-                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
-                .foregroundStyle(lockedPhotoTitleColor)
-
-            Text(subtitle)
-                .font(.system(size: RDFontScale.size(13), design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(lockedPhotoSubtitleColor)
-                .frame(maxWidth: 290)
-
-            HStack(spacing: 5) {
-                Text("PRO'ya geç")
-                    .font(.system(size: RDFontScale.size(12), weight: .heavy, design: .rounded))
-                Image(systemName: "chevron.right")
-                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
-            }
-            .foregroundStyle(lockedPhotoActionColor)
-            .padding(.top, 4)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 190)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(
-                    LinearGradient(
-                        colors: lockedPhotoBackgroundColors,
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(
-                            style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
-                        )
-                        .foregroundStyle(lockedPhotoBorderColor)
-                )
-        )
-        .shadow(color: lockedPhotoCardShadow, radius: 14, x: 0, y: 6)
-    }
 
     private var recentSection: some View {
         homeSectionCard {
@@ -1244,16 +1050,8 @@ struct HomeView: View {
             showQuotaPaywall()
             return
         }
-        if mode == .photo && selectedPhotos.isEmpty {
+        if selectedPhotos.isEmpty {
             showSourceDialog = true
-            return
-        }
-        if mode == .text && text.trimmingCharacters(in: .whitespacesAndNewlines).count < 10 {
-            presentAnalysisError(AppErrorMessage.make(
-                AnalysisService.AnalysisError.invalidInput("Analiz için en az 10 karakterlik bir açıklama yazmalısın."),
-                context: "Eksik metin",
-                fallbackTitle: "Eksik metin"
-            ))
             return
         }
         beginPreAnalysisSelection()
@@ -1288,7 +1086,6 @@ struct HomeView: View {
     }
 
     private func resetAnalysisDraft() {
-        text = ""
         selectedPhotos = []
         annotatingPhotoID = nil
         pendingAnnotateRequestID = nil
@@ -1297,7 +1094,6 @@ struct HomeView: View {
     }
 
     private func handleQuickScanRequest() {
-        mode = .photo
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             app.quickScanSource = .chooser
@@ -1335,7 +1131,7 @@ struct HomeView: View {
 
     /// Tray dışından başlatılan anotasyon sonrası sektör veya canvas seçimine geçer.
     private func continueFromAnnotatedPhoto() {
-        guard mode == .photo, !selectedPhotos.isEmpty else { return }
+        guard !selectedPhotos.isEmpty else { return }
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             return
@@ -1350,7 +1146,6 @@ struct HomeView: View {
         if returnToPhotoTrayAfterAnnotation {
             returnToPhotoTrayAfterAnnotation = false
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-                guard mode == .photo else { return }
                 showSourceDialog = true
             }
             return
@@ -1385,14 +1180,14 @@ struct HomeView: View {
     }
 
     private func continueFromPhotoTrayToAnalysis() {
-        guard mode == .photo, !selectedPhotos.isEmpty else {
+        guard !selectedPhotos.isEmpty else {
             showSourceDialog = true
             return
         }
         continueFromAnnotatedPhoto()
     }
 
-    /// Foto/metin hazır olduktan sonra ilk seçim adımı.
+    /// Fotoğraf hazır olduktan sonra ilk seçim adımı.
     private func beginPreAnalysisSelection() {
         if RDConfig.Features.activeAnalysisSectorEnabled {
             selectedAnalysisSector = nil
@@ -1435,7 +1230,6 @@ struct HomeView: View {
         }
         let canvases = selectedCanvasesForCurrentTier()
         let capturedImages = selectedImages
-        let capturedText = text
         let analysisSector: AnalysisSectorID?
         if RDConfig.Features.activeAnalysisSectorEnabled {
             guard let selected = selectedAnalysisSector else { return }
@@ -1445,44 +1239,22 @@ struct HomeView: View {
             analysisSector = nil
         }
 
-        switch mode {
-        case .photo:
-            guard let previewImage = capturedImages.first else {
-                return
+        guard let previewImage = capturedImages.first else {
+            return
+        }
+        pendingJob = AnalysisJob(previewImage: previewImage, presentationMode: .photo, photoCount: capturedImages.count) {
+            progress in
+            if app.currentTier.isPaid {
+                await app.refreshPlanState()
             }
-            pendingJob = AnalysisJob(previewImage: previewImage, presentationMode: .photo, photoCount: capturedImages.count) {
-                progress in
-                if app.currentTier.isPaid {
-                    await app.refreshPlanState()
-                }
-                return try await AnalysisService.shared.runPhotoAnalysis(
-                    userID: userID,
-                    images: capturedImages,
-                    canvases: canvases,
-                    analysisSector: analysisSector,
-                    companyID: nil,
-                    onProgress: progress
-                )
-            }
-        case .text:
-            let trimmed = capturedText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else {
-                return
-            }
-            pendingJob = AnalysisJob(previewImage: nil, presentationMode: .text, photoCount: 0) {
-                progress in
-                if app.currentTier.isPaid {
-                    await app.refreshPlanState()
-                }
-                return try await AnalysisService.shared.runTextAnalysis(
-                    userID: userID,
-                    text: trimmed,
-                    canvases: canvases,
-                    analysisSector: analysisSector,
-                    companyID: nil,
-                    onProgress: progress
-                )
-            }
+            return try await AnalysisService.shared.runPhotoAnalysis(
+                userID: userID,
+                images: capturedImages,
+                canvases: canvases,
+                analysisSector: analysisSector,
+                companyID: nil,
+                onProgress: progress
+            )
         }
     }
 
@@ -1688,7 +1460,6 @@ struct HomeView: View {
         pendingAnnotateRequestID = requestID
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             guard pendingAnnotateRequestID == requestID,
-                  mode == .photo,
                   annotatingPhotoID == photoID,
                   selectedPhotos.contains(where: { $0.id == photoID })
             else { return }
@@ -1737,7 +1508,7 @@ struct HomeView: View {
             return
         }
         do {
-            recentReports = try await AnalysisService.shared.listReports(limit: 5)
+            recentReports = try await AnalysisService.shared.listReports(limit: 5, photoAnalysesOnly: true)
         } catch {
             recentReports = []
         }
@@ -2189,10 +1960,17 @@ struct HomeView: View {
             return
         }
 
+        if inFlight.kind == "text" {
+            InFlightAnalysisStore.shared.clear(analysisID: inFlight.analysisID)
+            analysisErrorTitle = "Metin analizi kaldırıldı"
+            analysisError = "Metin analizi artık desteklenmiyor. Lütfen fotoğraf yükleyerek yeni analiz başlatın."
+            return
+        }
+
         resumingInFlightID = inFlight.analysisID
         pendingJob = AnalysisJob(
             previewImage: nil,
-            presentationMode: inFlight.kind == "text" ? .text : .photo,
+            presentationMode: .photo,
             photoCount: inFlight.photoCount
         ) { progress in
             try await AnalysisService.shared.resumeAnalysis(

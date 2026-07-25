@@ -625,18 +625,33 @@ serve(async (req) => {
     });
   }
 
-  await sendReportReadyPush({
-    supabase,
-    supabaseUrl,
-    serviceRoleKey,
-    userID: user.id,
-    reportID: report.id,
-    analysisID,
-    format: "pdf",
-    kind,
-    requestID,
-    supportID,
-  });
+  try {
+    await sendReportReadyPush({
+      supabase,
+      supabaseUrl,
+      serviceRoleKey,
+      userID: user.id,
+      reportID: report.id,
+      analysisID,
+      format: "pdf",
+      kind,
+      requestID,
+      supportID,
+    });
+  } catch (pushError) {
+    console.warn(
+      "Report ready push dispatch threw after PDF persistence",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        report_id: report.id,
+        analysis_id: analysisID,
+        error: safeLogText(
+          pushError instanceof Error ? pushError.message : pushError,
+        ),
+      }),
+    );
+  }
 
   return json(200, report);
 });

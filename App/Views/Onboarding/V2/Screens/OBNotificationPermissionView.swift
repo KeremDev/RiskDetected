@@ -52,7 +52,7 @@ struct OBNotificationPermissionView: View {
     }
 
     private var subcopy: some View {
-        Text("Deneme süreniz bitmeden önce bir hatırlatma göndereceğiz. Sürpriz ücret yok.")
+        Text("Deneme süresi ve uygulama hatırlatmaları için bildirimleri aç.")
             .font(.system(size: RDFontScale.size(16)))
             .lineSpacing(3)
             .foregroundStyle(Color.rdSlate)

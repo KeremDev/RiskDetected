@@ -66,6 +66,12 @@ assertKind(
 )
 
 assertKind(
+    revenueCatError(code: 20, codeName: "PAYMENT_PENDING"),
+    .paymentPending,
+    "payment pending code"
+)
+
+assertKind(
     NSError(
         domain: "RiskDetected.OnboardingPurchase",
         code: 404,

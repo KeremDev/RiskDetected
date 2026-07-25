@@ -3,7 +3,6 @@ import UIKit
 
 enum AnalysisWaitingPresentationMode {
     case photo
-    case text
 }
 
 @MainActor
@@ -427,9 +426,7 @@ struct AnalyzingView: View {
     private var heroSubtitle: String {
         switch progressController.phase {
         case .preparingInput:
-            return presentationMode == .photo
-                ? "Fotoğraflar analiz için hazırlanıyor."
-                : "Metin girdisi analiz için hazırlanıyor."
+            return "Fotoğraflar analiz için hazırlanıyor."
         case .creatingAnalysis:
             return "Analiz kaydı oluşturuluyor."
         case .uploadingPhotos:
@@ -464,22 +461,12 @@ struct AnalyzingView: View {
     }
 
     private var steps: [String] {
-        switch presentationMode {
-        case .photo:
-            return [
-                "Görüntü kalitesi okunuyor",
-                "Risk sinyalleri tanımlanıyor",
-                "KKD ve çevresel kontroller",
-                "Bulgular yapılandırılıyor",
-            ]
-        case .text:
-            return [
-                "Kullanıcı metni okunuyor",
-                "Risk sinyalleri tanımlanıyor",
-                "KKD ve saha kontrolleri",
-                "Bulgular yapılandırılıyor",
-            ]
-        }
+        [
+            "Görüntü kalitesi okunuyor",
+            "Risk sinyalleri tanımlanıyor",
+            "KKD ve çevresel kontroller",
+            "Bulgular yapılandırılıyor",
+        ]
     }
 
     private var stepRanges: [(start: Double, end: Double)] {
@@ -673,8 +660,4 @@ struct AnalyzingView: View {
 
 #Preview {
     AnalyzingView(isPresented: .constant(true), photoCount: 3)
-}
-
-#Preview("Text Analysis") {
-    AnalyzingView(isPresented: .constant(true), presentationMode: .text)
 }

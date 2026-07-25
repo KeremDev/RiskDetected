@@ -1689,7 +1689,7 @@ private struct NotificationSettingsSheet: View {
 
     private var sheetHeight: CGFloat {
         if isEnabled {
-            return notificationService.lastError == nil ? 540 : 580
+            return notificationService.lastError == nil ? 590 : 630
         }
         if notificationService.lastError != nil {
             return 330
@@ -1707,6 +1707,16 @@ private struct NotificationSettingsSheet: View {
                 NotificationInfoRow(icon: "sparkles", title: "Analiz tamamlandı")
                 NotificationInfoRow(icon: "doc.text.fill", title: "Rapor hazır")
                 NotificationInfoRow(icon: "shield.checkered", title: "Hesap güvenliği")
+
+                Divider()
+
+                NotificationPreferenceToggle(
+                    title: "Uygulama bildirimleri",
+                    icon: "app.badge.fill",
+                    isOn: notificationService.appRemindersEnabled
+                ) { isOn in
+                    notificationService.setAppRemindersPreference(enabled: isOn)
+                }
             }
         }
     }
@@ -1767,15 +1777,15 @@ private struct NotificationSettingsSheet: View {
 
     private var statusMessage: String {
         if notificationService.notificationsEnabled {
-            return "Analiz tamamlandığında, rapor hazır olduğunda ve önemli hesap güvenliği durumlarında bildirim alırsın."
+            return "Analiz sonuçları, raporlar, deneme süresi ve açık uygulama hatırlatmaları için bildirim alırsın."
         }
         switch notificationService.authorizationStatus {
         case .authorized, .provisional, .ephemeral:
-            return "Bildirimler uygulama içinde kapalı. Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini tekrar alırsın."
+            return "Bildirimler uygulama içinde kapalı. Açtığında analiz sonuçları, raporlar, deneme süresi ve uygulama hatırlatmalarını tekrar alırsın."
         case .denied:
-            return "Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini alabilirsin."
+            return "Açtığında analiz sonuçları, raporlar, deneme süresi ve uygulama hatırlatmalarını alabilirsin."
         case .notDetermined:
-            return "Açtığında analiz sonucu, rapor hazır olma ve önemli hesap güvenliği bildirimlerini alabilirsin."
+            return "Açtığında analiz sonuçları, raporlar, deneme süresi ve uygulama hatırlatmalarını alabilirsin."
         @unknown default:
             return "Bildirim ayarlarını yenileyip tekrar dene."
         }

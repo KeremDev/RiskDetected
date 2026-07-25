@@ -27,7 +27,7 @@ Deno.test("app-release-policy returns sanitized public release policy", async ()
   assertStringIncludes(source, "hard_update_required");
   assertStringIncludes(source, "soft_update_available");
   assertStringIncludes(source, "cleanURL(");
-  assertStringIncludes(source, "latest_build: 74");
+  assertStringIncludes(source, "latest_build: 76");
   assert(!source.includes("service_role_key:"));
 });
 

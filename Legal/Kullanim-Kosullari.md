@@ -1,11 +1,11 @@
 # RiskDetected Kullanım Koşulları
 
-Yürürlük tarihi: 10 Haziran 2026
-Belge sürümü: terms-2026-06-10
+Yürürlük tarihi: 8 Temmuz 2026
+Belge sürümü: terms-2026-07-08
 
 Bu Kullanım Koşulları ("Koşullar"), RiskDetected mobil uygulaması, analiz, rapor, firma,
 abonelik, mesleki ilerleme ve destek hizmetlerini ("Hizmet") kullanımınızı düzenler.
-Uygulamaya üye olarak, giriş yaparak, fotoğraf/metin yükleyerek, analiz başlatarak veya
+Uygulamaya üye olarak, giriş yaparak, fotoğraf yükleyerek, analiz başlatarak veya
 Hizmeti kullanarak bu Koşulları kabul etmiş olursunuz.
 
 Hizmet sağlayıcı:
@@ -18,9 +18,13 @@ Hizmet sağlayıcı:
 
 ## 1. Hizmetin amacı
 
-RiskDetected, fotoğraf ve/veya metin üzerinden yapay zeka destekli iş güvenliği
-risk/bulgu analizi, önerilen önlem, rapor, risk tablosu, firma takibi ve mesleki
-ilerleme özellikleri sunar.
+RiskDetected, fotoğraf üzerinden yapay zeka destekli iş güvenliği risk/bulgu analizi,
+önerilen önlem, rapor, risk tablosu, firma takibi ve mesleki ilerleme özellikleri
+sunar.
+
+Yeni analizler fotoğraf yükleme veya kamera ile çekim üzerinden başlatılır. Önceki
+sürümlerde oluşturulmuş metin girdileri, yalnızca geçmiş kayıt, veri dışa aktarma,
+hesap silme ve hukuki saklama süreçleri kapsamında işlenebilir.
 
 RiskDetected:
 
@@ -39,7 +43,7 @@ kullandıramaz veya yanıltıcı kimlik/iletişim bilgisi paylaşamazsınız.
 ## 3. İçerik yükleme kuralları
 
 Yalnızca yükleme, işleme, analiz ettirme ve raporlama hakkına sahip olduğunuz içerikleri
-gönderebilirsiniz. Fotoğraf/metin/firma/logo/rapor verilerinde çalışan, ziyaretçi,
+gönderebilirsiniz. Fotoğraf/firma/logo/rapor verilerinde çalışan, ziyaretçi,
 firma, marka, tesis, plaka, ticari sır, özel mülk veya özel nitelikli veri bulunabilir.
 
 Kullanıcı olarak şunları kabul edersiniz:
@@ -53,7 +57,7 @@ Kullanıcı olarak şunları kabul edersiniz:
 
 AI çıktıları eksik, hatalı, bağlamdan kopuk, güncel olmayan veya sahadaki gerçek riski
 tam yansıtmayan sonuçlar içerebilir. Fotoğraf açısı, ışık, çözünürlük, kadraj, kapalı
-alanlar, yanlış/eksik kullanıcı girdisi ve model sınırlamaları sonucu etkileyebilir.
+alanlar, eksik görsel bağlam ve model sınırlamaları sonucu etkileyebilir.
 
 Kullanıcı şunları kabul eder:
 
