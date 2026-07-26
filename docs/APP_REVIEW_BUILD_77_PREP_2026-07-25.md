@@ -41,14 +41,18 @@ incelemesinden geçmiş ve Türkiye App Store'da yayınlanmıştır.
 
 ### Notification otomasyonu
 
-- `engagement_notification_automation.rollout_mode=off`
-- `rollout_percentage=0`
+- `engagement_notification_automation.rollout_mode=on`
+- `rollout_percentage=100`
 - `kill_switch=false`
-- Başlangıç kuralları `shadow`
-- Aktif notification job/delivery yok
-- Cron 15 dakikada bir çalışıyor ancak rollout kapalı olduğu için kullanıcıya otomatik engagement bildirimi göndermiyor
+- Başlangıç kurallarının ikisi de `shadow`
+- Production shadow değerlendirmesi 26 Temmuz 2026'da başlatıldı
+- Cron 15 dakikada bir adayları değerlendiriyor; yalnız `shadow` job üretebilir
+- Kural statüleri `allowlist` veya `active` yapılmadığı için kullanıcıya otomatik
+  engagement bildirimi gönderilemez
 
-Bu ayar App Store build'inin notification izin, tercih, heartbeat ve açılma takibi parçalarını güvenli biçimde yayınlar. Otomatik gönderimler ayrı production gözlemi ve kontrollü rollout sonrasında açılmalıdır.
+Bu ayar build `77` heartbeat verisi geldikçe gerçek aday sayısını, saat dilimi ve
+izin filtrelerini APNs çağrısı yapmadan ölçer. Gerçek gönderimler ancak shadow
+sonuçları değerlendirildikten sonra ayrı bir allowlist kararıyla açılmalıdır.
 
 ### Analiz ve çoklu fotoğraf
 
@@ -88,6 +92,7 @@ Uygulanan release migration'ları:
 
 - `20260725192642_notification_automation_operations_center.sql`
 - `20260725192933_harden_admin_recent_sign_ins_access.sql`
+- `20260726153737_enable_notification_shadow_evaluation.sql`
 - `20260725193327_allow_multi_photo_build_77.sql`
 - `20260726152710_publish_ios_build_77_release_policy.sql`
 
@@ -119,6 +124,7 @@ Tam UI paketinin ilk çalışması 300 saniyelik araç timeout'una ulaştı; bu 
 
 - İlk 24–48 saatte analiz, rapor, abonelik ve push hata oranlarını izle.
 - Build 77 foreground heartbeat/adoption verisinin oluşmasını bekle.
-- Notification otomasyonunu doğrudan `on` yapma; önce internal allowlist/shadow metriklerini değerlendir.
+- Notification kurallarını doğrudan `active` yapma; önce shadow metriklerini
+  değerlendir, ardından internal allowlist kullan.
 - Notification rollout açılırken transactional analiz/rapor/trial bildirimlerinin izole kaldığını delivery tablolarından doğrula.
 - Abonelik tanıtım görselleri isteğe bağlıdır; App Review gönderimini engellemez.

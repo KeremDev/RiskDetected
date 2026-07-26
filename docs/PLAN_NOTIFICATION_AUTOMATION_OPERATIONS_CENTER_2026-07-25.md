@@ -1,7 +1,7 @@
 # Uygulama Bildirimleri Otomasyonu ve Operasyon Merkezi Entegrasyonu
 
 Tarih: 25 Temmuz 2026
-Durum: Uygulandı; production rollout kapalı
+Durum: Uygulandı; production shadow değerlendirmesi aktif, gerçek gönderim kapalı
 Feature flag: `engagement_notification_automation`
 
 ## Amaç
@@ -131,12 +131,28 @@ Migration flag’i şu değerle oluşturur:
 }
 ```
 
-Sıra:
+İlk migration bu kapalı değerlerle yayınlandı. 26 Temmuz 2026'da
+`20260726153737_enable_notification_shadow_evaluation.sql` ile yalnız shadow
+değerlendirmesi açıldı:
+
+```json
+{
+  "rollout_mode": "on",
+  "enabled_user_hashes": [],
+  "rollout_percentage": 100,
+  "kill_switch": false
+}
+```
+
+Her iki başlangıç kuralı `shadow` kaldığı için cron adayları ölçebilir fakat APNs
+gönderimi oluşturamaz.
+
+Rollout sırası:
 
 1. Migration ve functions deploy; flag `off`.
 2. Minimum iOS build yayınla.
-3. Kuralları `shadow`, feature flag’i internal allowlist yap.
-4. Yedi gün aday, timezone, skip ve APNs metriklerini değerlendir.
+3. Kurallar `shadow` kalırken feature flag’i aç; gerçek adayları gönderimsiz ölç.
+4. Yedi gün aday, timezone ve skip metriklerini değerlendir.
 5. Internal production APNs smoke.
 6. Kuralları allowlist/active yap.
 7. Deterministik kullanıcı hash bucket’ıyla rollout `%5 → %25 → %100`.
@@ -179,9 +195,10 @@ Minimum iOS build:
 Backend:
 
 - `20260725192642_notification_automation_operations_center.sql`
+- `20260726153737_enable_notification_shadow_evaluation.sql`
 - `send-push-notification`
 - `process-notification-automation`
 - `manage-notification-automation`
 
-Production rollout; migration, secrets, function deploy, App Store build ve shadow
-değerlendirme tamamlanmadan açılmaz.
+Gerçek production gönderimi; shadow değerlendirmesi tamamlanmadan, internal
+allowlist APNs smoke yapılmadan ve delivery metrikleri doğrulanmadan açılmaz.
