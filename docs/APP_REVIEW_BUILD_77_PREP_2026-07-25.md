@@ -1,18 +1,21 @@
-# RiskDetected 1.2.4 (77) — App Review Hazırlık Teslimi
+# RiskDetected 1.2.4 (77) — App Review ve Yayın Teslimi
 
-Tarih: 25 Temmuz 2026
+Hazırlık tarihi: 25 Temmuz 2026
+Yayın doğrulama tarihi: 26 Temmuz 2026
 
 ## Durum
 
 - App Store Connect sürümü: `1.2.4`
 - Build: `77`
-- App Store Connect durumu: `PREPARE_FOR_SUBMISSION`
-- Review durumu: `NOT_SUBMITTED`
+- App Store Connect durumu: `READY_FOR_DISTRIBUTION`
+- App Store durumu: `READY_FOR_SALE`
+- Review durumu: `COMPLETE`
 - Build işleme durumu: `VALID`
 - App Review engeli: `0`
 - Zorunlu olmayan uyarı: Dört abonelik için opsiyonel tanıtım görseli
 
-Build App Store Connect'e yüklenmiş ve `1.2.4` sürümüne bağlanmıştır. Review submission oluşturulmamış ve Apple incelemesine gönderilmemiştir.
+Build App Store Connect'e yüklenmiş, `1.2.4` sürümüne bağlanmış, Apple
+incelemesinden geçmiş ve Türkiye App Store'da yayınlanmıştır.
 
 ## Release dosyaları
 
@@ -60,13 +63,16 @@ Notification rollout ayarları analiz route'u, AI anahtar yönlendirmesi, bulgu 
 
 ### iOS release policy
 
-`ios_release_policy.latest_build` şimdilik `76` olarak tutulmuştur. Build 77 henüz App Store'da canlı olmadığı için bunu erken yükseltmek mevcut kullanıcılara yanlış güncelleme bildirimi gösterebilir.
+Yayın doğrulandıktan sonra release policy production'da güncellenmiştir:
 
-`1.2.4 (77)` App Store'da yayınlandıktan sonra:
+- `latest_build=77`
+- `policy_version=build-77-appstore`
+- `soft_update_enabled=true`
+- `hard_update_enabled=false`
+- `minimum_supported_build=62`
 
-1. `latest_build=77` yapılmalı.
-2. Policy version build 77'yi ifade edecek şekilde güncellenmeli.
-3. `minimum_supported_build`, `hard_update` ve mevcut destek politikası ayrıca değişiklik talep edilmedikçe korunmalı.
+Bu yapı eski kullanıcılara yumuşak güncelleme uyarısı gösterebilir ancak zorunlu
+güncelleme uygulamaz.
 
 ## Deploy edilen backend bileşenleri
 
@@ -83,6 +89,7 @@ Uygulanan release migration'ları:
 - `20260725192642_notification_automation_operations_center.sql`
 - `20260725192933_harden_admin_recent_sign_ins_access.sql`
 - `20260725193327_allow_multi_photo_build_77.sql`
+- `20260726152710_publish_ios_build_77_release_policy.sql`
 
 ## Test özeti
 
@@ -100,19 +107,18 @@ Uygulanan release migration'ları:
 
 Tam UI paketinin ilk çalışması 300 saniyelik araç timeout'una ulaştı; bu bir test assertion hatası değildi. Release ile doğrudan ilişkili üç UI senaryosu ayrıca izole edilerek başarıyla çalıştırıldı.
 
-## Göndermeden önce sahibi tarafından yapılacak son kontroller
+## Tamamlanan App Store kontrolleri
 
-1. App Store Connect'te `1.2.4` sayfasını ve seçili build `77` bilgisini görsel olarak doğrula.
-2. Ekran görüntülerinin doğru cihaz setleri ve güncel metinlerle göründüğünü kontrol et.
-3. App Privacy cevaplarının yayınlanmış olduğunu App Store Connect arayüzünden doğrula. API bu yayın durumunu kesin olarak raporlamıyor.
-4. Türkçe açıklama, What's New ve Review Notes alanlarını son kez oku.
-5. Review demo hesabını ve notlarda anlatılan giriş/abonelik akışını özel olarak doğrula.
-6. İstersen build 77'yi gerçek cihaz/TestFlight üzerinden son kez smoke et.
-7. Kontroller tamamlanınca App Store Connect arayüzünden review'e ekleme ve gönderme işlemini kullanıcı olarak yap.
+- Build `77`, sürüm `1.2.4` ve public Türkiye storefront doğrulandı.
+- Review submission `COMPLETE`.
+- Public mağaza sürümü `1.2.4`.
+- Yaş derecelendirmesi sosyal medya soruları cevaplandı.
+- Türkçe subtitle değişikliği bilinçli shared App Information değişikliği olarak gönderildi.
 
 ## Yayın sonrası
 
-- Build canlı olduktan sonra `ios_release_policy.latest_build=77` güncellemesini uygula.
+- İlk 24–48 saatte analiz, rapor, abonelik ve push hata oranlarını izle.
+- Build 77 foreground heartbeat/adoption verisinin oluşmasını bekle.
 - Notification otomasyonunu doğrudan `on` yapma; önce internal allowlist/shadow metriklerini değerlendir.
 - Notification rollout açılırken transactional analiz/rapor/trial bildirimlerinin izole kaldığını delivery tablolarından doğrula.
 - Abonelik tanıtım görselleri isteğe bağlıdır; App Review gönderimini engellemez.
