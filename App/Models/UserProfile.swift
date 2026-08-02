@@ -21,6 +21,8 @@ struct UserProfile: Codable, Identifiable, Equatable {
     let dailyQuotaResetAt: String?
     let subscriptionPeriod: String?
     let subscriptionRenewalAt: String?
+    let firstSeenDeviceRegionCode: String?
+    let firstSeenDeviceRegionAt: String?
     let createdAt: String?
 
     enum CodingKeys: String, CodingKey {
@@ -40,6 +42,8 @@ struct UserProfile: Codable, Identifiable, Equatable {
         case dailyQuotaResetAt     = "daily_quota_reset_at"
         case subscriptionPeriod    = "subscription_period"
         case subscriptionRenewalAt = "subscription_renewal_at"
+        case firstSeenDeviceRegionCode = "first_seen_device_region_code"
+        case firstSeenDeviceRegionAt = "first_seen_device_region_at"
         case createdAt             = "created_at"
     }
 

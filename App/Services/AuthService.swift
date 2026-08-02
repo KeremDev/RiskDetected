@@ -14,6 +14,8 @@ final class AuthService: ObservableObject {
     private static let installMarkerKey = "rd.install.marker.v1"
     private let supabase = SupabaseService.shared
     private var stateTask: Task<Void, Never>?
+    private var deviceRegionCaptureInFlightUserIDs = Set<UUID>()
+    private var deviceRegionCaptureCompletedUserIDs = Set<UUID>()
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AuthService")
 
     init() {
@@ -290,6 +292,8 @@ final class AuthService: ObservableObject {
                 fullNameFallback: fullNameFallback
             )
         }
+
+        await recordFirstSeenDeviceRegionIfNeeded(userID: user.id)
     }
 
     @discardableResult
@@ -404,6 +408,56 @@ final class AuthService: ObservableObject {
         } catch {
             Self.logger.warning("Profile provider identity backfill failed: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    private func recordFirstSeenDeviceRegionIfNeeded(userID: UUID) async {
+        guard supabase.currentUserID == userID else { return }
+        guard profile?.id == userID else { return }
+        if profile?.firstSeenDeviceRegionCode != nil {
+            deviceRegionCaptureCompletedUserIDs.insert(userID)
+            return
+        }
+        guard !deviceRegionCaptureCompletedUserIDs.contains(userID) else { return }
+        guard deviceRegionCaptureInFlightUserIDs.insert(userID).inserted else { return }
+        defer { deviceRegionCaptureInFlightUserIDs.remove(userID) }
+        guard let regionCode = Self.normalizedDeviceRegionCode(
+            from: Locale.current.region?.identifier
+        ) else {
+            Self.logger.info("First device region capture skipped reason=invalid_or_missing_region")
+            return
+        }
+
+        do {
+            let recordedRegionCode: String = try await supabase.client
+                .rpc(
+                    "record_first_seen_device_region_v1",
+                    params: FirstSeenDeviceRegionPayload(regionCode: regionCode)
+                )
+                .execute()
+                .value
+            deviceRegionCaptureCompletedUserIDs.insert(userID)
+            Self.logger.info(
+                "First device region recorded code=\(recordedRegionCode, privacy: .public)"
+            )
+        } catch {
+            Self.logger.warning(
+                "First device region capture failed error=\(error.localizedDescription, privacy: .public)"
+            )
+        }
+    }
+
+    private static func normalizedDeviceRegionCode(from identifier: String?) -> String? {
+        guard let identifier else { return nil }
+        let candidate = identifier
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+        guard candidate.range(
+            of: #"^[A-Z]{2}$"#,
+            options: .regularExpression
+        ) != nil else {
+            return nil
+        }
+        return candidate
     }
 
     private func startObservingAuthChanges(discardInitialLocalSession: Bool = false) {
@@ -639,6 +693,14 @@ private struct ProfileAvatarPatchPayload: Encodable {
 
     enum CodingKeys: String, CodingKey {
         case avatarURL = "avatar_url"
+    }
+}
+
+private struct FirstSeenDeviceRegionPayload: Encodable {
+    let regionCode: String
+
+    enum CodingKeys: String, CodingKey {
+        case regionCode = "p_region_code"
     }
 }
 

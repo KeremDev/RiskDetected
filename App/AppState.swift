@@ -857,6 +857,8 @@ final class AppState: ObservableObject {
             dailyQuotaResetAt: nil,
             subscriptionPeriod: "monthly",
             subscriptionRenewalAt: nil,
+            firstSeenDeviceRegionCode: nil,
+            firstSeenDeviceRegionAt: nil,
             createdAt: nil
         )
     }
