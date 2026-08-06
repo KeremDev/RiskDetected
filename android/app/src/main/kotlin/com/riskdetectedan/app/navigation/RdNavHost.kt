@@ -35,7 +35,9 @@ fun RdNavHost() {
         composable<Auth> {
             AuthScreen(onAuthenticated = { navController.navigate(Home) })
         }
-        composable<Home> { HomeScreen() }
+        composable<Home> {
+            HomeScreen(onCapture = { navController.navigate(Capture) })
+        }
         composable<Capture> { CaptureScreen() }
         composable<Analysis> { AnalysisScreen() }
         composable<Reports> { ReportsScreen() }
@@ -45,8 +47,13 @@ fun RdNavHost() {
 }
 
 @Composable
-private fun HomeScreen() {
+private fun HomeScreen(onCapture: () -> Unit = {}) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Home — Faz 3 root-state routing")
+        androidx.compose.foundation.layout.Column {
+            Text("Home — Faz 3 root-state routing")
+            androidx.compose.material3.Button(onClick = onCapture) {
+                Text("Fotoğraf çek (Faz 5 skeleton)")
+            }
+        }
     }
 }
