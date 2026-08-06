@@ -21,9 +21,9 @@ import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.designsystem.RdSpacing
 
 /**
- * Sector picker + "create analysis" — proves the `analyses` insert path (RLS as the
- * authenticated user) end to end. Photo capture/upload and the actual `analyze` call (the rest
- * of App/Services/AnalysisService.swift's submit flow) are separate, larger, not built yet.
+ * Sector picker + full submit flow: create `analyses` row -> upload photo -> call `analyze`
+ * -> poll for a terminal status. Findings/result display (the actual AI output) is separate,
+ * unbuilt work — this screen only proves the pipeline reaches "completed" or "failed".
  */
 @Composable
 fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hiltViewModel()) {
@@ -32,7 +32,7 @@ fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hil
 
     Column(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg)) {
         if (photoPath != null) {
-            Text("Fotoğraf hazır — sektör seçince yüklenecek")
+            Text("Fotoğraf hazır — sektör seçince analiz başlatılacak")
         }
         Text("Sektör seç")
         LazyColumn(modifier = Modifier.padding(top = RdSpacing.sm)) {
@@ -52,17 +52,24 @@ fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hil
 
         when (val current = state) {
             is CreateAnalysisUiState.Idle -> Unit
-            is CreateAnalysisUiState.Creating -> CircularProgressIndicator()
-            is CreateAnalysisUiState.UploadingPhoto -> CircularProgressIndicator()
-            is CreateAnalysisUiState.Created -> Text(
-                if (current.photoUploaded) {
-                    "Analiz + fotoğraf yüklendi: ${current.analysisId}"
-                } else {
-                    "Analiz oluşturuldu (fotoğrafsız): ${current.analysisId}"
-                },
-            )
+            is CreateAnalysisUiState.Creating -> LabeledProgress("Analiz kaydı oluşturuluyor...")
+            is CreateAnalysisUiState.UploadingPhoto -> LabeledProgress("Fotoğraf yükleniyor...")
+            is CreateAnalysisUiState.Submitting -> LabeledProgress("Analiz gönderiliyor...")
+            is CreateAnalysisUiState.Polling -> LabeledProgress("AI analiz ediyor...")
+            is CreateAnalysisUiState.Completed ->
+                Text("Analiz tamamlandı: ${current.analysisId}")
+            is CreateAnalysisUiState.CreatedWithoutPhoto ->
+                Text("Analiz oluşturuldu (fotoğrafsız): ${current.analysisId}")
             is CreateAnalysisUiState.Failed ->
-                Text("Analiz oluşturulamadı: ${current.message}")
+                Text("Analiz başarısız: ${current.message}")
         }
+    }
+}
+
+@Composable
+private fun LabeledProgress(label: String) {
+    Column {
+        CircularProgressIndicator()
+        Text(label)
     }
 }

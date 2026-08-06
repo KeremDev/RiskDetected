@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.analysis.AnalysisRepository
 import com.riskdetectedan.core.data.analysis.AnalysisSector
+import com.riskdetectedan.core.data.analysis.AnalysisStatus
 import com.riskdetectedan.core.data.analysis.CreateAnalysisRequest
 import com.riskdetectedan.core.data.analysis.PhotoRepository
 import com.riskdetectedan.core.data.auth.AuthRepository
@@ -20,7 +21,10 @@ sealed interface CreateAnalysisUiState {
     data object Idle : CreateAnalysisUiState
     data object Creating : CreateAnalysisUiState
     data object UploadingPhoto : CreateAnalysisUiState
-    data class Created(val analysisId: String, val photoUploaded: Boolean) : CreateAnalysisUiState
+    data object Submitting : CreateAnalysisUiState
+    data class Polling(val analysisId: String) : CreateAnalysisUiState
+    data class Completed(val analysisId: String) : CreateAnalysisUiState
+    data class CreatedWithoutPhoto(val analysisId: String) : CreateAnalysisUiState
     data class Failed(val message: String) : CreateAnalysisUiState
 }
 
@@ -35,8 +39,10 @@ class AnalysisViewModel @Inject constructor(
     val state: StateFlow<CreateAnalysisUiState> = _state.asStateFlow()
 
     /**
-     * Creates the `analyses` row and, if a captured photo is available, uploads it. Does NOT
-     * call `analyze` yet — that's still separate, larger, unbuilt work (AI routing, polling).
+     * Full submit flow, mirroring AnalysisService.swift's sequence: create -> upload photo(s)
+     * -> invoke `analyze` -> poll for a terminal status. Without a photo, stops after create
+     * (matches the backend requiring at least one photo before `analyze` will do anything
+     * useful — no point invoking it with an empty photo_paths array).
      */
     fun createAnalysis(sector: AnalysisSector?, photoPath: String?) {
         val userId = authRepository.currentUserId
@@ -44,35 +50,67 @@ class AnalysisViewModel @Inject constructor(
             _state.value = CreateAnalysisUiState.Failed("Önce giriş yapmalısın.")
             return
         }
+        val canvas = "general" // only canvas wired so far; matches AnalysisRepository's default
         _state.value = CreateAnalysisUiState.Creating
         viewModelScope.launch {
             val request = CreateAnalysisRequest(
                 userId = userId,
                 title = sector?.titleTr ?: "Adsız analiz",
+                canvas = canvas,
                 sector = sector,
             )
-            when (val created = analysisRepository.createAnalysis(request)) {
+            val analysisId = when (val created = analysisRepository.createAnalysis(request)) {
                 is RdResult.Failure -> {
                     _state.value = CreateAnalysisUiState.Failed(created.message)
                     return@launch
                 }
-                is RdResult.Success -> {
-                    val analysisId = created.value
-                    val file = photoPath?.let { File(it) }
-                    if (file == null || !file.exists()) {
-                        _state.value = CreateAnalysisUiState.Created(analysisId, photoUploaded = false)
-                        return@launch
-                    }
-                    _state.value = CreateAnalysisUiState.UploadingPhoto
-                    val jpegBytes = file.readBytes()
-                    _state.value = when (
-                        val uploadResult =
-                            photoRepository.uploadPhoto(userId, analysisId, sequenceIndex = 1, jpegBytes)
-                    ) {
-                        is RdResult.Success -> CreateAnalysisUiState.Created(analysisId, photoUploaded = true)
-                        is RdResult.Failure -> CreateAnalysisUiState.Failed(uploadResult.message)
-                    }
+                is RdResult.Success -> created.value
+            }
+
+            val file = photoPath?.let { File(it) }
+            if (file == null || !file.exists()) {
+                _state.value = CreateAnalysisUiState.CreatedWithoutPhoto(analysisId)
+                return@launch
+            }
+
+            _state.value = CreateAnalysisUiState.UploadingPhoto
+            val jpegBytes = file.readBytes()
+            val uploadedPath = when (
+                val uploadResult =
+                    photoRepository.uploadPhoto(userId, analysisId, sequenceIndex = 1, jpegBytes)
+            ) {
+                is RdResult.Success -> uploadResult.value
+                is RdResult.Failure -> {
+                    _state.value = CreateAnalysisUiState.Failed(uploadResult.message)
+                    return@launch
                 }
+            }
+
+            _state.value = CreateAnalysisUiState.Submitting
+            when (
+                val submitResult = analysisRepository.submitAnalyze(
+                    analysisId = analysisId,
+                    canvas = canvas,
+                    sector = sector,
+                    photoPaths = listOf(uploadedPath),
+                )
+            ) {
+                is RdResult.Failure -> {
+                    _state.value = CreateAnalysisUiState.Failed(submitResult.message)
+                    return@launch
+                }
+                is RdResult.Success -> Unit
+            }
+
+            _state.value = CreateAnalysisUiState.Polling(analysisId)
+            _state.value = when (val status = analysisRepository.pollAnalysisStatus(analysisId)) {
+                is AnalysisStatus.Completed -> CreateAnalysisUiState.Completed(analysisId)
+                is AnalysisStatus.Failed ->
+                    CreateAnalysisUiState.Failed(status.message ?: "Analiz başarısız oldu.")
+                is AnalysisStatus.TimedOut ->
+                    CreateAnalysisUiState.Failed("Analiz zaman aşımına uğradı.")
+                is AnalysisStatus.InProgress ->
+                    CreateAnalysisUiState.Failed("Analiz beklenmedik şekilde durdu: ${status.status}")
             }
         }
     }
