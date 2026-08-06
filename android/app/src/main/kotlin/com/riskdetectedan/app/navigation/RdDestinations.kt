@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
  * with typed args here as real flows replace the Faz-1 placeholders.
  */
 @Serializable object Onboarding
+@Serializable object Auth
 @Serializable object Home
 @Serializable object Capture
 @Serializable object Analysis

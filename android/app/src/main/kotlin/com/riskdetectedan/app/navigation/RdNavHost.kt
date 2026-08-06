@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.riskdetectedan.feature.analysis.AnalysisScreen
 import com.riskdetectedan.feature.capture.CaptureScreen
+import com.riskdetectedan.feature.onboarding.AuthScreen
 import com.riskdetectedan.feature.onboarding.OnboardingScreen
 import com.riskdetectedan.feature.paywall.PaywallScreen
 import com.riskdetectedan.feature.profile.ProfileScreen
@@ -20,6 +21,8 @@ import com.riskdetectedan.feature.reports.ReportsScreen
  * Faz 1 skeleton graph — proves the 6 feature modules resolve through `:app`'s type-safe nav
  * host. Faz 3 replaces the start destination with the real root-state routing that
  * `App/AppState.swift` / `App/RootView.swift` do on iOS (auth/onboarding/legal/paywall gating).
+ * Interim ordering (Faz 3, in progress): Onboarding placeholder -> real Auth screen -> Home.
+ * The full onboarding step sequence (App/Views/Onboarding/V2/Screens/) isn't ported yet.
  */
 @Composable
 fun RdNavHost() {
@@ -27,7 +30,10 @@ fun RdNavHost() {
 
     NavHost(navController = navController, startDestination = Onboarding) {
         composable<Onboarding> {
-            OnboardingScreen(onFinished = { navController.navigate(Home) })
+            OnboardingScreen(onFinished = { navController.navigate(Auth) })
+        }
+        composable<Auth> {
+            AuthScreen(onAuthenticated = { navController.navigate(Home) })
         }
         composable<Home> { HomeScreen() }
         composable<Capture> { CaptureScreen() }
