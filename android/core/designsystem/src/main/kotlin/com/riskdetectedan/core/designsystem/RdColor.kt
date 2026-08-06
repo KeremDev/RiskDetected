@@ -110,6 +110,17 @@ object RdTheme {
 
 enum class RiskLevel { Critical, High, Medium, Low, Unknown }
 
+/** Maps the DB's `risk_level` enum ("critical"/"high"/"medium"/"low"/"unknown", lowercase) to
+ * this token type — kept here (not in core:data) so core:data doesn't need to depend on
+ * core:designsystem just for this lookup. */
+fun riskLevelFromRaw(value: String?): RiskLevel = when (value) {
+    "critical" -> RiskLevel.Critical
+    "high" -> RiskLevel.High
+    "medium" -> RiskLevel.Medium
+    "low" -> RiskLevel.Low
+    else -> RiskLevel.Unknown
+}
+
 @Composable
 fun RiskLevel.color(): Color = when (this) {
     RiskLevel.Critical -> RdTheme.colors.critical

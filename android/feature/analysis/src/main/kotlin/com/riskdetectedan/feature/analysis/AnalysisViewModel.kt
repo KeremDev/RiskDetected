@@ -7,6 +7,8 @@ import com.riskdetectedan.core.data.analysis.AnalysisRepository
 import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.data.analysis.AnalysisStatus
 import com.riskdetectedan.core.data.analysis.CreateAnalysisRequest
+import com.riskdetectedan.core.data.analysis.Finding
+import com.riskdetectedan.core.data.analysis.FindingsRepository
 import com.riskdetectedan.core.data.analysis.PhotoRepository
 import com.riskdetectedan.core.data.auth.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,7 +25,7 @@ sealed interface CreateAnalysisUiState {
     data object UploadingPhoto : CreateAnalysisUiState
     data object Submitting : CreateAnalysisUiState
     data class Polling(val analysisId: String) : CreateAnalysisUiState
-    data class Completed(val analysisId: String) : CreateAnalysisUiState
+    data class Completed(val analysisId: String, val findings: List<Finding>) : CreateAnalysisUiState
     data class CreatedWithoutPhoto(val analysisId: String) : CreateAnalysisUiState
     data class Failed(val message: String) : CreateAnalysisUiState
 }
@@ -33,6 +35,7 @@ class AnalysisViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val analysisRepository: AnalysisRepository,
     private val photoRepository: PhotoRepository,
+    private val findingsRepository: FindingsRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<CreateAnalysisUiState>(CreateAnalysisUiState.Idle)
@@ -104,7 +107,16 @@ class AnalysisViewModel @Inject constructor(
 
             _state.value = CreateAnalysisUiState.Polling(analysisId)
             _state.value = when (val status = analysisRepository.pollAnalysisStatus(analysisId)) {
-                is AnalysisStatus.Completed -> CreateAnalysisUiState.Completed(analysisId)
+                is AnalysisStatus.Completed -> {
+                    val findings = when (val result = findingsRepository.fetchFindings(analysisId)) {
+                        is RdResult.Success -> result.value
+                        // A completed analysis with an unreadable findings list is still worth
+                        // showing as completed — surface an empty list rather than fail the
+                        // whole screen over what's likely a transient read error.
+                        is RdResult.Failure -> emptyList()
+                    }
+                    CreateAnalysisUiState.Completed(analysisId, findings)
+                }
                 is AnalysisStatus.Failed ->
                     CreateAnalysisUiState.Failed(status.message ?: "Analiz başarısız oldu.")
                 is AnalysisStatus.TimedOut ->
