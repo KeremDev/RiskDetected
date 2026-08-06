@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Pure platform theme (no Material Components library dependency) — Compose owns all real
+      UI via RiskDetectedTheme (core:designsystem). This only sets window chrome defaults.
+      rdPaper light = #FAFBFA (App/DesignSystem/RDColor.swift).
+    -->
+    <style name="Theme.RiskDetected" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FAFBFA</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

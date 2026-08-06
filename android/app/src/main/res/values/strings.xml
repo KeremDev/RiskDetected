@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Real localized strings land in Faz 3 via the same codegen approach as iOS
+         (App/Localization/*.xcstrings -> Generated/) — see master §23.1. This is a
+         placeholder so the app has a label before that pipeline exists. -->
+    <string name="app_name">RiskDetected</string>
+</resources>
