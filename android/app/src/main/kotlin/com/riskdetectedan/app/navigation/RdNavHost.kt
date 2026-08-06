@@ -39,7 +39,11 @@ fun RdNavHost() {
             AuthScreen(onAuthenticated = { navController.navigate(Home) })
         }
         composable<Home> {
-            HomeScreen(onCapture = { navController.navigate(Capture) })
+            HomeScreen(
+                onCapture = { navController.navigate(Capture) },
+                onHistory = { navController.navigate(Reports) },
+                onProfile = { navController.navigate(Profile) },
+            )
         }
         composable<Capture> {
             CaptureScreen(
@@ -61,13 +65,30 @@ fun RdNavHost() {
     }
 }
 
+/**
+ * Not a port of App/Views/Home/HomeView.swift's layout — a functional hub reaching the 3
+ * screens actually built so far (Capture/History/Profile), standing in for
+ * App/Views/Home/MainTabView.swift's 4-tab bar (home/analyses/reports/profile). The "reports"
+ * tab (generated PDF/XLSX report list — distinct from the analyses/history list, which is what
+ * this app's `Reports` nav route actually renders) isn't built.
+ */
 @Composable
-private fun HomeScreen(onCapture: () -> Unit = {}) {
+private fun HomeScreen(
+    onCapture: () -> Unit = {},
+    onHistory: () -> Unit = {},
+    onProfile: () -> Unit = {},
+) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         androidx.compose.foundation.layout.Column {
-            Text("Home — Faz 3 root-state routing")
+            Text("RiskDetected")
             androidx.compose.material3.Button(onClick = onCapture) {
-                Text("Fotoğraf çek (Faz 5 skeleton)")
+                Text("Fotoğraf çek")
+            }
+            androidx.compose.material3.Button(onClick = onHistory) {
+                Text("Geçmiş analizler")
+            }
+            androidx.compose.material3.Button(onClick = onProfile) {
+                Text("Profil")
             }
         }
     }
