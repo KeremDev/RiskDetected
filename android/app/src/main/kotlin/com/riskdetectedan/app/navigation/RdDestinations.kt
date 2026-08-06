@@ -11,7 +11,10 @@ import kotlinx.serialization.Serializable
 @Serializable object Auth
 @Serializable object Home
 @Serializable object Capture
-@Serializable object Analysis
+
+/** photoPath null until Capture hands off a file — matches Analysis being reachable directly
+ * from Home too (sector-first flow) as well as from Capture (photo-first flow). */
+@Serializable data class Analysis(val photoPath: String? = null)
 @Serializable object Reports
 @Serializable object Profile
 @Serializable object Paywall

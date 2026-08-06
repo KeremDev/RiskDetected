@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.riskdetectedan.feature.analysis.AnalysisScreen
 import com.riskdetectedan.feature.capture.CaptureScreen
 import com.riskdetectedan.feature.onboarding.AuthScreen
@@ -38,8 +39,17 @@ fun RdNavHost() {
         composable<Home> {
             HomeScreen(onCapture = { navController.navigate(Capture) })
         }
-        composable<Capture> { CaptureScreen() }
-        composable<Analysis> { AnalysisScreen() }
+        composable<Capture> {
+            CaptureScreen(
+                onPhotoCaptured = { file ->
+                    navController.navigate(Analysis(photoPath = file.absolutePath))
+                },
+            )
+        }
+        composable<Analysis> { backStackEntry ->
+            val args: Analysis = backStackEntry.toRoute()
+            AnalysisScreen(photoPath = args.photoPath)
+        }
         composable<Reports> { ReportsScreen() }
         composable<Profile> { ProfileScreen() }
         composable<Paywall> { PaywallScreen() }

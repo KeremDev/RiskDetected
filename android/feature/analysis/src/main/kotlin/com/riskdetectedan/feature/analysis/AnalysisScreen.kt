@@ -26,11 +26,14 @@ import com.riskdetectedan.core.designsystem.RdSpacing
  * of App/Services/AnalysisService.swift's submit flow) are separate, larger, not built yet.
  */
 @Composable
-fun AnalysisScreen(viewModel: AnalysisViewModel = hiltViewModel()) {
+fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     var selectedSector by remember { mutableStateOf<AnalysisSector?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg)) {
+        if (photoPath != null) {
+            Text("Fotoğraf hazır — sektör seçince yüklenecek")
+        }
         Text("Sektör seç")
         LazyColumn(modifier = Modifier.padding(top = RdSpacing.sm)) {
             items(AnalysisSector.entries) { sector ->
@@ -41,7 +44,7 @@ fun AnalysisScreen(viewModel: AnalysisViewModel = hiltViewModel()) {
                     },
                     modifier = Modifier.clickable {
                         selectedSector = sector
-                        viewModel.createAnalysis(sector)
+                        viewModel.createAnalysis(sector, photoPath)
                     },
                 )
             }
@@ -50,8 +53,14 @@ fun AnalysisScreen(viewModel: AnalysisViewModel = hiltViewModel()) {
         when (val current = state) {
             is CreateAnalysisUiState.Idle -> Unit
             is CreateAnalysisUiState.Creating -> CircularProgressIndicator()
-            is CreateAnalysisUiState.Created ->
-                Text("Analiz oluşturuldu: ${current.analysisId}")
+            is CreateAnalysisUiState.UploadingPhoto -> CircularProgressIndicator()
+            is CreateAnalysisUiState.Created -> Text(
+                if (current.photoUploaded) {
+                    "Analiz + fotoğraf yüklendi: ${current.analysisId}"
+                } else {
+                    "Analiz oluşturuldu (fotoğrafsız): ${current.analysisId}"
+                },
+            )
             is CreateAnalysisUiState.Failed ->
                 Text("Analiz oluşturulamadı: ${current.message}")
         }
