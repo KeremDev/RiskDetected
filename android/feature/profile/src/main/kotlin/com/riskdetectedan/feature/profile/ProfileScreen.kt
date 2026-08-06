@@ -1,16 +1,42 @@
 package com.riskdetectedan.feature.profile
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.riskdetectedan.core.designsystem.RdSpacing
 
-/** Placeholder — Faz 3/6 replaces this with profile fields + company + progress (§13.4/§21). */
+/**
+ * First real (non-placeholder) render in feature:profile — reads the actual `profiles` row
+ * for the signed-in user via [ProfileViewModel]/`ProfileRepository`. Layout/fields still far
+ * short of App/Views/Profile/ProfileView.swift; this proves the read path end to end first.
+ */
 @Composable
-fun ProfileScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Profile — Faz 3/6")
+fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(RdSpacing.lg),
+        contentAlignment = Alignment.Center,
+    ) {
+        when (val current = state) {
+            is ProfileUiState.Loading -> CircularProgressIndicator()
+            is ProfileUiState.SignedOut -> Text("Oturum yok")
+            is ProfileUiState.Failed -> Text("Profil yüklenemedi: ${current.message}")
+            is ProfileUiState.Loaded -> Column {
+                Text(current.profile.displayName)
+                Text(current.profile.tier.name)
+            }
+        }
     }
 }
