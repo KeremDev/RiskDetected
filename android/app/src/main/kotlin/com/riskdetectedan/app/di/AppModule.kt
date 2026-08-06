@@ -1,6 +1,7 @@
 package com.riskdetectedan.app.di
 
 import com.riskdetectedan.app.BuildConfig
+import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdEnvironment
 import com.riskdetectedan.core.common.RdEnvironmentConfig
 import dagger.Module
@@ -32,5 +33,7 @@ object AppModule {
         appVersionName = BuildConfig.VERSION_NAME,
         appVersionCode = BuildConfig.VERSION_CODE,
         applicationId = BuildConfig.APPLICATION_ID,
+        clientPlatform = RdClientMetadata.PLATFORM,
+        clientCapabilities = RdClientMetadata.capabilities,
     )
 }
