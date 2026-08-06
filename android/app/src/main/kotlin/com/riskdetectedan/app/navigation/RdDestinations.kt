@@ -19,4 +19,5 @@ import kotlinx.serialization.Serializable
 @Serializable object Profile
 @Serializable object Companies
 @Serializable object Support
+@Serializable object NotificationSettings
 @Serializable object Paywall

@@ -16,6 +16,7 @@ import com.riskdetectedan.feature.onboarding.AuthScreen
 import com.riskdetectedan.feature.onboarding.OnboardingFlow
 import com.riskdetectedan.feature.paywall.PaywallScreen
 import com.riskdetectedan.feature.profile.CompanyListScreen
+import com.riskdetectedan.feature.profile.NotificationSettingsScreen
 import com.riskdetectedan.feature.profile.ProfileScreen
 import com.riskdetectedan.feature.profile.SupportScreen
 import com.riskdetectedan.feature.reports.ReportsScreen
@@ -62,10 +63,12 @@ fun RdNavHost() {
             ProfileScreen(
                 onManageCompanies = { navController.navigate(Companies) },
                 onSupport = { navController.navigate(Support) },
+                onNotificationSettings = { navController.navigate(NotificationSettings) },
             )
         }
         composable<Companies> { CompanyListScreen() }
         composable<Support> { SupportScreen() }
+        composable<NotificationSettings> { NotificationSettingsScreen() }
         composable<Paywall> { PaywallScreen() }
     }
 }

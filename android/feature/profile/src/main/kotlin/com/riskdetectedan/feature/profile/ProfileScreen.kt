@@ -24,6 +24,7 @@ import com.riskdetectedan.core.designsystem.RdSpacing
 fun ProfileScreen(
     onManageCompanies: () -> Unit = {},
     onSupport: () -> Unit = {},
+    onNotificationSettings: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -43,6 +44,7 @@ fun ProfileScreen(
                 Text(current.profile.tier.name)
                 Button(onClick = onManageCompanies) { Text("Firmalarım") }
                 Button(onClick = onSupport) { Text("Destek") }
+                Button(onClick = onNotificationSettings) { Text("Bildirim ayarları") }
             }
         }
     }
