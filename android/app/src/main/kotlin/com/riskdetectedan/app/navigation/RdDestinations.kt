@@ -17,4 +17,5 @@ import kotlinx.serialization.Serializable
 @Serializable data class Analysis(val photoPath: String? = null)
 @Serializable object Reports
 @Serializable object Profile
+@Serializable object Companies
 @Serializable object Paywall

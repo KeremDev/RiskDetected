@@ -15,6 +15,7 @@ import com.riskdetectedan.feature.capture.CaptureScreen
 import com.riskdetectedan.feature.onboarding.AuthScreen
 import com.riskdetectedan.feature.onboarding.OnboardingFlow
 import com.riskdetectedan.feature.paywall.PaywallScreen
+import com.riskdetectedan.feature.profile.CompanyListScreen
 import com.riskdetectedan.feature.profile.ProfileScreen
 import com.riskdetectedan.feature.reports.ReportsScreen
 
@@ -52,7 +53,10 @@ fun RdNavHost() {
             AnalysisScreen(photoPath = args.photoPath)
         }
         composable<Reports> { ReportsScreen() }
-        composable<Profile> { ProfileScreen() }
+        composable<Profile> {
+            ProfileScreen(onManageCompanies = { navController.navigate(Companies) })
+        }
+        composable<Companies> { CompanyListScreen() }
         composable<Paywall> { PaywallScreen() }
     }
 }
