@@ -18,4 +18,5 @@ import kotlinx.serialization.Serializable
 @Serializable object Reports
 @Serializable object Profile
 @Serializable object Companies
+@Serializable object Support
 @Serializable object Paywall

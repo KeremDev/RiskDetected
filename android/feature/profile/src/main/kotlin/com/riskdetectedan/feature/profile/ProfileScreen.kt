@@ -23,6 +23,7 @@ import com.riskdetectedan.core.designsystem.RdSpacing
 @Composable
 fun ProfileScreen(
     onManageCompanies: () -> Unit = {},
+    onSupport: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -41,6 +42,7 @@ fun ProfileScreen(
                 Text(current.profile.displayName)
                 Text(current.profile.tier.name)
                 Button(onClick = onManageCompanies) { Text("Firmalarım") }
+                Button(onClick = onSupport) { Text("Destek") }
             }
         }
     }
