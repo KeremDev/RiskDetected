@@ -7581,6 +7581,7 @@ serve(async (req: Request) => {
   const inputAudit: Record<string, unknown> = {
     app_language: appLanguage,
     client_build: clientRelease.appBuild,
+    client_platform: clientRelease.platform, // E8
     output_language: localizationSnapshot.output_language,
     output_locale: localizationSnapshot.output_locale,
     work_jurisdiction_country: localizationSnapshot.work_jurisdiction_country,
@@ -8252,6 +8253,7 @@ serve(async (req: Request) => {
         prompt_profile_version: localizationSnapshot.prompt_profile_version,
         app_language: appLanguage,
         client_build: clientRelease.appBuild,
+        client_platform: clientRelease.platform, // E8
         language_validation_status: languageValidationStatus,
         language_validation_attempts: languageValidationAttempts,
         language_validation_code: languageValidationCode,
@@ -8290,6 +8292,7 @@ serve(async (req: Request) => {
         prompt_profile_version: localizationSnapshot.prompt_profile_version,
         app_language: appLanguage,
         client_build: clientRelease.appBuild,
+        client_platform: clientRelease.platform, // E8
         language_validation_status: languageValidationStatus,
         language_validation_attempts: languageValidationAttempts,
         language_validation_code: languageValidationCode,
@@ -8927,6 +8930,7 @@ serve(async (req: Request) => {
     forbidden_claim_validation_status: forbiddenClaimValidationStatus,
     app_language: appLanguage,
     client_build: clientRelease.appBuild,
+    client_platform: clientRelease.platform, // E8 — see finalize_analysis_result_v2 note below
   };
 
   if (isPipelineV2Worker) {
