@@ -363,6 +363,12 @@ type FlagValue = {
 export type LocalizationRolloutContext = {
   userHash: string;
   clientBuild: string | null;
+  // F3 (Android review, 2026-08-06): build_allowlist/min_build flag values below are
+  // *_ios_builds/min_ios_build — platform-specific by name. Without this field an Android
+  // client whose versionCode collides with a historical iOS build number would silently
+  // unlock these flags. Defaults to "ios" only at call sites written before this field
+  // existed would be wrong — every caller must now pass the real client platform explicitly.
+  platform: string;
   globalLocalizationCapability: boolean;
   approvedSafetyProfileSourceSHA256: string | null;
 };
@@ -398,6 +404,9 @@ export function localizationFlagEnabled(
       value.enabled_user_hashes.includes(context.userHash);
   }
   if (mode === "build_allowlist") {
+    // F3: enabled_ios_builds is ios-only by name — fail closed for every other platform,
+    // including "android" and "unknown", rather than matching on build number alone.
+    if (context.platform !== "ios") return false;
     const clientBuild = normalizedBuild(context.clientBuild);
     if (
       clientBuild == null ||
@@ -410,6 +419,8 @@ export function localizationFlagEnabled(
       .some((build) => build === clientBuild);
   }
   if (mode === "min_build") {
+    // F3: min_ios_build is ios-only by name — same fail-closed rule as build_allowlist above.
+    if (context.platform !== "ios") return false;
     const clientBuild = normalizedBuildNumber(context.clientBuild);
     const minimumBuild = normalizedBuildNumber(value?.min_ios_build);
     return clientBuild != null &&

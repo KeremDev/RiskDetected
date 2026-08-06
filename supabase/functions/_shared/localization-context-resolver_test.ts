@@ -359,6 +359,7 @@ Deno.test("localization rollout supports candidate build allowlists and fails cl
   const candidate = {
     userHash: "user-hash",
     clientBuild: "78",
+    platform: "ios",
     globalLocalizationCapability: true,
     approvedSafetyProfileSourceSHA256: safetyProfileSourceSHA256,
   };
@@ -405,6 +406,55 @@ Deno.test("localization rollout supports candidate build allowlists and fails cl
   );
 });
 
+Deno.test("localization rollout F3: non-ios platform never matches an *_ios_builds/min_ios_build flag", () => {
+  // Regression test for the Android review finding (F3): an Android versionCode that numerically
+  // collides with a historical iOS build must not unlock ios-scoped flags. Both rollout modes
+  // must fail closed for platform="android" even though the build number itself matches.
+  const androidCandidate = {
+    userHash: "user-hash",
+    clientBuild: "78",
+    platform: "android",
+    globalLocalizationCapability: true,
+    approvedSafetyProfileSourceSHA256: safetyProfileSourceSHA256,
+  };
+  assertEquals(
+    localizationFlagEnabled(
+      { rollout_mode: "build_allowlist", enabled_ios_builds: ["78"] },
+      androidCandidate,
+    ),
+    false,
+    "platform=android, build=78 must not match enabled_ios_builds=[78]",
+  );
+  assertEquals(
+    localizationFlagEnabled(
+      { rollout_mode: "min_build", min_ios_build: 1 },
+      androidCandidate,
+    ),
+    false,
+    "platform=android must not satisfy min_ios_build regardless of build number",
+  );
+  // Sanity check the same build number under platform="ios" still matches — proves this is a
+  // platform gate, not an accidental break of the build_allowlist logic itself.
+  assertEquals(
+    localizationFlagEnabled(
+      { rollout_mode: "build_allowlist", enabled_ios_builds: ["78"] },
+      { ...androidCandidate, platform: "ios" },
+    ),
+    true,
+    "the same build under platform=ios must still match (control case)",
+  );
+  // "unknown" (the parser's default when client_platform is absent/non-string) must also fail
+  // closed — this is the exact fail-closed-for-unrecognized-platform rule the plan requires.
+  assertEquals(
+    localizationFlagEnabled(
+      { rollout_mode: "build_allowlist", enabled_ios_builds: ["78"] },
+      { ...androidCandidate, platform: "unknown" },
+    ),
+    false,
+    "platform=unknown must fail closed too",
+  );
+});
+
 Deno.test("localization rollout requires compiled capability and all global gates", async () => {
   const rows = [
     "localization_v2",
@@ -430,6 +480,7 @@ Deno.test("localization rollout requires compiled capability and all global gate
   const baseContext = {
     userHash: "user-hash",
     clientBuild: "78",
+    platform: "ios",
     globalLocalizationCapability: true,
     approvedSafetyProfileSourceSHA256: safetyProfileSourceSHA256,
   };
@@ -467,4 +518,14 @@ Deno.test("localization rollout requires compiled capability and all global gate
   });
   assertEquals([...disabled.enabledProfileIDs], []);
   assertEquals(disabled.queueSnapshotAuthorityEnabled, false);
+
+  // F3 end-to-end: platform=android with the exact same build+user hash that unlocks
+  // everything under baseContext must come back fully closed through the real loader,
+  // not just the leaf localizationFlagEnabled() check above.
+  const androidSameBuildAndHash = await loadLocalizationRolloutPolicy(supabase, {
+    ...baseContext,
+    platform: "android",
+  });
+  assertEquals([...androidSameBuildAndHash.enabledProfileIDs], []);
+  assertEquals(androidSameBuildAndHash.queueSnapshotAuthorityEnabled, false);
 });

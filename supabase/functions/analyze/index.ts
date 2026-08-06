@@ -942,10 +942,17 @@ function parseClientReleaseContext(
   };
 }
 
+// F3 (Android review, 2026-08-06): this used to be platform-blind — an Android client whose
+// versionCode happened to collide with a historical iOS build number in `builds` would match
+// here. Both current callers (releaseGateDecision/applyReleaseGateToFlags) already independently
+// gate on client.platform === "ios" before reaching this function, but the check lives here too
+// so any future ios-only build-allowlist caller fails closed by construction rather than by
+// caller discipline. `builds` here is always an *_ios_builds array — non-ios never matches.
 function clientBuildMatches(
   builds: string[],
   client: ClientReleaseContext,
 ): boolean {
+  if (client.platform !== "ios") return false;
   if (!client.appBuild) return false;
   if (builds.includes(client.appBuild)) return true;
   if (client.appBuildNumber == null) return false;
@@ -971,11 +978,13 @@ function thinkingBudgetOverrideForBuild(
   return null;
 }
 
+// Same F3 hardening as clientBuildMatches above — min_ios_build is an ios-only threshold.
 function clientBuildAtLeast(
   minimumBuild: number | null,
   client: ClientReleaseContext,
 ): boolean {
-  return minimumBuild != null &&
+  return client.platform === "ios" &&
+    minimumBuild != null &&
     client.appBuildNumber != null &&
     client.appBuildNumber >= minimumBuild;
 }
@@ -6419,6 +6428,7 @@ serve(async (req: Request) => {
     : await loadLocalizationRolloutPolicy(supabase, {
       userHash,
       clientBuild: clientRelease.appBuild,
+      platform: clientRelease.platform,
       globalLocalizationCapability:
         clientRelease.capabilities.global_localization_wave1 === true,
       approvedSafetyProfileSourceSHA256: approvedSafetyProfileSourceSHA256(),
