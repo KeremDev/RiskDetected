@@ -5,6 +5,10 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- required=false: System Photo Picker (master §15.3) is a valid capture path without a
+         camera, so this must stay installable on camera-less devices (e.g. Chrome OS). -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <application
         android:name=".RiskDetectedApplication"
         android:allowBackup="false"
