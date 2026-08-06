@@ -233,6 +233,15 @@ async function createEvent(params: {
   throw new Error(`notification_event_insert_failed:${error.code}`);
 }
 
+// F4: calls record_notification_delivery_attempt_v2 directly (provider-agnostic) instead of
+// v1. Row shape/behavior for provider="apns" is proven identical to the old v1 call by the
+// pgTAP suite (android_notification_delivery_attempt_v2_test.sql) — v1 itself now just
+// delegates to v2 with these same arguments, so this is a same-behavior, different-entrypoint
+// change. This is the seam a Faz 7 FCM sender calls into with provider="fcm" instead — the
+// full providers/apns.ts + providers/fcm.ts + dispatch() file split from the review doc's F4
+// write-up is deferred to Faz 7, where a second real provider actually exists to justify it;
+// doing that reorg now on a live, unstaged push path for zero near-term benefit isn't worth
+// the blast radius (no separate staging Supabase project yet — DEC-12).
 async function recordDeliveryAttempt(params: {
   supabase: SupabaseAdminClient;
   eventID: string;
@@ -242,7 +251,7 @@ async function recordDeliveryAttempt(params: {
   attempt: APNsAttempt;
 }) {
   const { error } = await params.supabase.rpc(
-    "record_notification_delivery_attempt_v1",
+    "record_notification_delivery_attempt_v2",
     {
       p_notification_event_id: params.eventID,
       p_job_id: params.jobID,
@@ -250,8 +259,9 @@ async function recordDeliveryAttempt(params: {
       p_environment: params.environment,
       p_attempt_number: params.attempt.attemptNumber,
       p_outcome: params.attempt.outcome,
+      p_provider: "apns",
       p_http_status: params.attempt.httpStatus,
-      p_apns_id: params.attempt.apnsID,
+      p_provider_message_id: params.attempt.apnsID,
       p_reason: params.attempt.reason,
       p_duration_ms: params.attempt.durationMs,
     },
