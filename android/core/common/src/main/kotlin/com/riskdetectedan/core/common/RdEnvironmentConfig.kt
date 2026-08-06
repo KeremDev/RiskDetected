@@ -21,6 +21,11 @@ data class RdEnvironmentConfig(
     val appVersionName: String,
     val appVersionCode: Int,
     val applicationId: String,
+    // supabase/config.toml's auth.external.google.client_id — a *web* OAuth client id, not
+    // Android-specific; this is the exact value Credential Manager's GetGoogleIdOption needs
+    // to hand Supabase a verifiable ID token. It's already public (committed in config.toml,
+    // not a secret) so defaulting production to the real value here is fine.
+    val googleWebClientId: String = "200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com",
     val clientPlatform: String = "android",
     val clientCapabilities: Map<String, Boolean> = emptyMap(),
 )

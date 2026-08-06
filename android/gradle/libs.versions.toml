@@ -20,6 +20,8 @@ workManager = "2.11.2"
 securityCrypto = "1.1.0"
 coilCompose = "3.5.0"
 supabaseKt = "3.7.0"
+credentials = "1.6.0"
+googleid = "1.2.0"
 ktor = "3.1.1"
 revenuecat = "10.16.1"
 firebaseBom = "34.17.0"
@@ -74,6 +76,10 @@ supabase-functions = { module = "io.github.jan-tennert.supabase:functions-kt", v
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 
 revenuecat-purchases = { module = "com.revenuecat.purchases:purchases", version.ref = "revenuecat" }
+
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
+google-id = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging-ktx = { module = "com.google.firebase:firebase-messaging-ktx" }
