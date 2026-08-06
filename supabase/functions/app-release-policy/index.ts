@@ -15,7 +15,9 @@ type ReleasePolicyBody = {
   api_contract_version?: unknown;
 };
 
-type IOSReleasePolicy = {
+// F9 (Android review, 2026-08-06): renamed from IOSReleasePolicy — the shape itself was
+// always platform-agnostic, only the naming and single-flag-key lookup were iOS-only.
+type ReleasePolicy = {
   minimum_supported_build: number;
   latest_build: number;
   hard_update_enabled: boolean;
@@ -33,7 +35,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-const DEFAULT_POLICY: IOSReleasePolicy = {
+const DEFAULT_IOS_POLICY: ReleasePolicy = {
   minimum_supported_build: 62,
   latest_build: 76,
   hard_update_enabled: false,
@@ -43,6 +45,34 @@ const DEFAULT_POLICY: IOSReleasePolicy = {
   message_tr: "Yeni sürüm mevcut. Devam etmek için uygulamayı güncelleyin.",
   message_en: "A new version is available. Please update the app to continue.",
   policy_version: "fallback",
+};
+
+// F9: Android has no shipped build yet — this fallback can never signal an update is needed
+// (both *_update_enabled stay false) no matter what a caller sends, matching the DB row
+// android_release_policy inserted alongside the android_*_enabled kill switches.
+const DEFAULT_ANDROID_POLICY: ReleasePolicy = {
+  minimum_supported_build: 1,
+  latest_build: 1,
+  hard_update_enabled: false,
+  soft_update_enabled: false,
+  app_store_url: "",
+  message_tr: "Yeni sürüm mevcut. Devam etmek için uygulamayı güncelleyin.",
+  message_en: "A new version is available. Please update the app to continue.",
+  policy_version: "pending-play-listing",
+};
+
+// F9: an unrecognized platform gets a policy that can never force/soft-update it — the safe
+// direction for a client we don't recognize is "don't pressure it to update", not "apply iOS's
+// build numbers to it" (which is what this endpoint silently did before this fix).
+const DEFAULT_UNKNOWN_PLATFORM_POLICY: ReleasePolicy = {
+  minimum_supported_build: 1,
+  latest_build: 999_999,
+  hard_update_enabled: false,
+  soft_update_enabled: false,
+  app_store_url: "",
+  message_tr: "",
+  message_en: "",
+  policy_version: "unrecognized-platform",
 };
 
 function json(status: number, body: Record<string, unknown>) {
@@ -81,39 +111,39 @@ function parseBuild(value: unknown): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
-function sanitizePolicy(raw: unknown): IOSReleasePolicy {
+function sanitizePolicy(raw: unknown, fallback: ReleasePolicy): ReleasePolicy {
   const value = raw && typeof raw === "object"
     ? raw as Record<string, unknown>
     : {};
 
   const minimum = positiveInt(
     value.minimum_supported_build,
-    DEFAULT_POLICY.minimum_supported_build,
+    fallback.minimum_supported_build,
   );
-  const latest = positiveInt(value.latest_build, DEFAULT_POLICY.latest_build);
+  const latest = positiveInt(value.latest_build, fallback.latest_build);
 
   return {
     minimum_supported_build: Math.min(minimum, 999_999),
     latest_build: Math.max(Math.min(latest, 999_999), minimum),
     hard_update_enabled: bool(
       value.hard_update_enabled,
-      DEFAULT_POLICY.hard_update_enabled,
+      fallback.hard_update_enabled,
     ),
     soft_update_enabled: bool(
       value.soft_update_enabled,
-      DEFAULT_POLICY.soft_update_enabled,
+      fallback.soft_update_enabled,
     ),
     app_store_url: cleanURL(
       value.app_store_url,
-      DEFAULT_POLICY.app_store_url,
+      fallback.app_store_url,
     ),
-    message_tr: text(value.message_tr, DEFAULT_POLICY.message_tr, 220),
-    message_en: text(value.message_en, DEFAULT_POLICY.message_en, 220),
-    policy_version: text(value.policy_version, "v1", 80),
+    message_tr: text(value.message_tr, fallback.message_tr, 220),
+    message_en: text(value.message_en, fallback.message_en, 220),
+    policy_version: text(value.policy_version, fallback.policy_version, 80),
   };
 }
 
-function decisionFor(policy: IOSReleasePolicy, build: number | null) {
+function decisionFor(policy: ReleasePolicy, build: number | null) {
   const hardUpdateRequired = build != null &&
     policy.hard_update_enabled &&
     build < policy.minimum_supported_build;
@@ -133,10 +163,29 @@ function decisionFor(policy: IOSReleasePolicy, build: number | null) {
   };
 }
 
-async function readPolicy(): Promise<IOSReleasePolicy> {
+// F9: platform picks both the app_feature_flags row AND the closed-by-default fallback.
+// "unknown"/anything else never reads ios_release_policy — that was the actual bug: this
+// endpoint used to serve iOS build numbers to any caller regardless of what platform it
+// claimed, silently. Now an unrecognized platform gets a policy that never pressures it.
+function policyKeyAndFallback(
+  platform: string,
+): { key: string; fallback: ReleasePolicy } {
+  if (platform === "ios") {
+    return { key: "ios_release_policy", fallback: DEFAULT_IOS_POLICY };
+  }
+  if (platform === "android") {
+    return { key: "android_release_policy", fallback: DEFAULT_ANDROID_POLICY };
+  }
+  return { key: "", fallback: DEFAULT_UNKNOWN_PLATFORM_POLICY };
+}
+
+async function readPolicy(platform: string): Promise<ReleasePolicy> {
+  const { key, fallback } = policyKeyAndFallback(platform);
+  if (!key) return fallback;
+
   const supabaseURL = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseURL || !serviceRoleKey) return DEFAULT_POLICY;
+  if (!supabaseURL || !serviceRoleKey) return fallback;
 
   const supabase = createClient(supabaseURL, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -144,11 +193,11 @@ async function readPolicy(): Promise<IOSReleasePolicy> {
   const { data, error } = await supabase
     .from("app_feature_flags")
     .select("value")
-    .eq("key", "ios_release_policy")
+    .eq("key", key)
     .maybeSingle();
 
-  if (error || !data?.value) return DEFAULT_POLICY;
-  return sanitizePolicy(data.value);
+  if (error || !data?.value) return fallback;
+  return sanitizePolicy(data.value, fallback);
 }
 
 serve(async (req) => {
@@ -174,7 +223,7 @@ serve(async (req) => {
 
   const platform = text(body.client_platform, "unknown", 40).toLowerCase();
   const build = parseBuild(body.client_app_build);
-  const policy = await readPolicy();
+  const policy = await readPolicy(platform);
 
   return json(200, {
     ok: true,

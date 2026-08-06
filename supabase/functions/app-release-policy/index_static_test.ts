@@ -21,14 +21,34 @@ Deno.test("app-release-policy returns sanitized public release policy", async ()
   );
   if (source == null) return;
 
-  assertStringIncludes(source, '.eq("key", "ios_release_policy")');
-  assertStringIncludes(source, "sanitizePolicy(data.value)");
+  // F9 (2026-08-06): the flag key is now resolved per-platform instead of hardcoded inline,
+  // so the ios_release_policy literal moved into policyKeyAndFallback() — assert both halves.
+  assertStringIncludes(source, '.eq("key", key)');
+  assertStringIncludes(source, 'key: "ios_release_policy"');
+  assertStringIncludes(source, 'key: "android_release_policy"');
+  assertStringIncludes(source, "sanitizePolicy(data.value, fallback)");
   assertStringIncludes(source, "decisionFor(policy, build)");
   assertStringIncludes(source, "hard_update_required");
   assertStringIncludes(source, "soft_update_available");
   assertStringIncludes(source, "cleanURL(");
   assertStringIncludes(source, "latest_build: 76");
   assert(!source.includes("service_role_key:"));
+});
+
+Deno.test("app-release-policy resolves android and unrecognized platforms without touching iOS's flag row", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  // F9 regression guard: an android or unrecognized-platform request must never fall through
+  // to ios_release_policy — that was the actual bug (any platform silently got iOS's build
+  // numbers). Each platform branch now has its own key and its own closed-by-default fallback.
+  assertStringIncludes(source, 'if (platform === "ios")');
+  assertStringIncludes(source, 'if (platform === "android")');
+  assertStringIncludes(source, "DEFAULT_ANDROID_POLICY");
+  assertStringIncludes(source, "DEFAULT_UNKNOWN_PLATFORM_POLICY");
+  assertStringIncludes(source, "readPolicy(platform)");
 });
 
 Deno.test("attested iOS release policy stays safe for build 62 and App Review", async () => {
