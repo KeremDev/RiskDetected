@@ -29,12 +29,15 @@ select has_table(
 
 select ok(
   (
-    select value->>'rollout_mode' = 'off'
+    select value->>'rollout_mode' = 'on'
       and value->>'kill_switch' = 'false'
+      and value->>'rollout_percentage' = '100'
+      and jsonb_typeof(value->'enabled_user_hashes') = 'array'
+      and value->>'shadow_observation_started_at' is not null
     from public.app_feature_flags
     where key = 'engagement_notification_automation'
   ),
-  '9 automation is safely off by default'
+  '9 current migration head enables bounded shadow evaluation'
 );
 
 select ok(
@@ -130,7 +133,10 @@ select ok(
 
 update public.notification_preferences
 set app_reminders = false,
-    progress_weekly_summary = false
+    progress_weekly_summary = false,
+    analysis_complete = false,
+    report_ready = false,
+    account_updates = false
 where user_id = '00000000-0000-4000-8000-000000000801'::uuid;
 
 select public.set_notification_master_preference_v1(false);
@@ -138,11 +144,16 @@ select public.set_notification_master_preference_v1(true);
 
 select ok(
   (
-    select enabled and not app_reminders and not progress_weekly_summary
+    select enabled
+      and analysis_complete
+      and report_ready
+      and account_updates
+      and not app_reminders
+      and not progress_weekly_summary
     from public.notification_preferences
     where user_id = '00000000-0000-4000-8000-000000000801'::uuid
   ),
-  '20 master re-enable preserves category opt-outs'
+  '20 master re-enable restores core categories and preserves user-managed opt-outs'
 );
 
 update public.notification_preferences

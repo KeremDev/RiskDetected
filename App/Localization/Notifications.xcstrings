@@ -1,0 +1,132 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "notifications.notification.service.bildirim.cihaz.kaydi.alinamadi.simulatorde.veya..dc4985f5": {
+      "comment": "swift_user_copy; App/Services/NotificationService.swift:302; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification device registration could not be obtained. APNs may not be supported in the simulator or signature settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim cihaz kaydı alınamadı. Simülatörde veya imza ayarlarında APNs desteklenmeyebilir."
+          }
+        }
+      }
+    },
+    "notifications.notification.service.bildirim.cihaz.kaydi.tamamlanamadi.cfa13bd9": {
+      "comment": "swift_user_copy; App/Services/NotificationService.swift:293; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification device registration could not be completed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim cihaz kaydı tamamlanamadı."
+          }
+        }
+      }
+    },
+    "notifications.notification.service.bildirim.izni.alinamadi.lutfen.cihaz.ayarlarinda.acfcc568": {
+      "comment": "swift_user_copy; App/Services/NotificationService.swift:95; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification permission could not be obtained. Please try again from device settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim izni alınamadı. Lütfen cihaz ayarlarından tekrar dene."
+          }
+        }
+      }
+    },
+    "notifications.notification.service.bildirim.tercihi.acilmadi.lutfen.tekrar.dene.f4d3fae0": {
+      "comment": "swift_user_copy; App/Services/NotificationService.swift:206; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification preference could not be enabled. Please try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim tercihi açılmadı. Lütfen tekrar dene."
+          }
+        }
+      }
+    },
+    "notifications.notification.service.bildirim.tercihi.kaydedilemedi.0a3438da": {
+      "comment": "swift_user_copy; App/Services/NotificationService.swift:161; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to save notification preference."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim tercihi kaydedilemedi."
+          }
+        }
+      }
+    },
+    "notifications.notification.service.mesleki.bildirim.tercihi.kaydedilemedi.9b5fbbd3": {
+      "comment": "swift_user_copy; App/Services/NotificationService.swift:365; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to save professional notification preference."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesleki bildirim tercihi kaydedilemedi."
+          }
+        }
+      }
+    },
+    "notifications.notification.service.uygulama.bildirimi.tercihi.kaydedilemedi.2bfbb347": {
+      "comment": "swift_user_copy; App/Services/NotificationService.swift:385; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to save app notification preference."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama bildirimi tercihi kaydedilemedi."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

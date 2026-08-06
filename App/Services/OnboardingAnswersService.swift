@@ -63,6 +63,12 @@ final class OnboardingAnswersService {
             return true
         }
 
+        guard RDGlobalLocalizationBuildGate.isEnabled
+                || draft.appLanguage != RDLanguage.english.rawValue
+        else {
+            return false
+        }
+
         guard draft.hasProfileAnswers else {
             clearPendingDraft()
             return true
@@ -83,8 +89,57 @@ final class OnboardingAnswersService {
     }
 
     func upsert(_ draft: OnboardingAnswersDraft) async throws {
+        guard RDGlobalLocalizationBuildGate.isEnabled
+                || draft.appLanguage != RDLanguage.english.rawValue
+        else {
+            throw NSError(
+                domain: "RiskDetected.GlobalLocalizationBuildGate",
+                code: 1,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Global localization is disabled for this build."
+                ]
+            )
+        }
+
         try await supabase.client
             .rpc("upsert_onboarding_v2_answers", params: draft.rpcPayload)
+            .execute()
+
+        guard
+            draft.appLanguage == RDLanguage.english.rawValue,
+            let profileRaw = draft.safetyProfileID,
+            let profileID = RDSafetyProfileID(rawValue: profileRaw),
+            let userID = supabase.currentUserID
+        else {
+            return
+        }
+
+        let definition = RDSafetyProfileCatalog.profile(id: profileID)
+        struct LocalizationPayload: Encodable {
+            let app_language: String
+            let preferred_content_locale: String
+            let work_jurisdiction_country: String
+            let safety_profile_id: String
+            let safety_profile_version: Int
+            let legal_document_set: String
+            let title: String?
+        }
+
+        try await supabase.client
+            .from("profiles")
+            .update(
+                LocalizationPayload(
+                    app_language: RDAppLanguage.english.rawValue,
+                    preferred_content_locale: definition.contentLocale.rawValue,
+                    work_jurisdiction_country: definition.jurisdictionCountry.rawValue,
+                    safety_profile_id: definition.id.rawValue,
+                    safety_profile_version: definition.profileVersion,
+                    legal_document_set: RDLegalDocumentSetID.englishGlobalV1.rawValue,
+                    title: draft.professionalRole?.label
+                )
+            )
+            .eq("id", value: userID.uuidString)
             .execute()
     }
 }

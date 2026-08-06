@@ -164,7 +164,7 @@ struct RDButton: View {
 }
 
 struct RDModalCloseButton: View {
-    var accessibilityLabel: String = "Pencereyi kapat"
+    var accessibilityLabel: String = RDLocalization.string("localizable.rdbutton.pencereyi.kapat.947e31c3", table: .localizable, fallback: "Pencereyi kapat")
     let action: () -> Void
 
     var body: some View {
@@ -193,10 +193,10 @@ struct RDPressableButtonStyle: ButtonStyle {
 
 #Preview {
     VStack(spacing: 12) {
-        RDButton(title: "PDF Rapor", style: .primary, icon: "arrow.down.to.line") {}
-        RDButton(title: "Taramayı Başlat", style: .detect, icon: "sparkles") {}
-        RDButton(title: "Excel", style: .secondary, icon: "doc.fill") {}
-        RDButton(title: "Sil", style: .destructive, icon: "trash") {}
+        RDButton(title: RDLocalization.string("localizable.rdbutton.pdf.rapor.7aded467", table: .localizable, fallback: "PDF Rapor"), style: .primary, icon: "arrow.down.to.line") {}
+        RDButton(title: RDLocalization.string("localizable.rdbutton.taramayi.baslat.4948deaa", table: .localizable, fallback: "Taramayı Başlat"), style: .detect, icon: "sparkles") {}
+        RDButton(title: RDLocalization.string("localizable.rdbutton.excel.59cf92fc", table: .localizable, fallback: "excel"), style: .secondary, icon: "doc.fill") {}
+        RDButton(title: RDLocalization.string("localizable.rdbutton.sil.683f0e22", table: .localizable, fallback: "Sil"), style: .destructive, icon: "trash") {}
     }
     .padding()
     .background(Color.rdPaper)

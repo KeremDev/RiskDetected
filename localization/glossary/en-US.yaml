@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "locale": "en-US",
+  "review_status": "machine_draft",
+  "preferred_terms": [
+    "occupational safety and health",
+    "safety inspection",
+    "hazard identification",
+    "hazard assessment",
+    "corrective action",
+    "workplace inspection",
+    "likelihood and severity"
+  ],
+  "spelling_examples": {
+    "prioritise": "prioritize",
+    "organised": "organized"
+  },
+  "restricted_workflow_terms": [
+    "Job Hazard Analysis",
+    "JHA",
+    "Job Safety Analysis",
+    "JSA"
+  ]
+}

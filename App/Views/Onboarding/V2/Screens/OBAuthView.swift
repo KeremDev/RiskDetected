@@ -71,6 +71,7 @@ struct OBAuthView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .animation(.obSpring, value: emailPhase)
         .animation(.easeOut(duration: keyboard.animationDuration), value: keyboard.visibleHeight)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.auth")
         .onChange(of: emailPhase) { newPhase in
             if newPhase == .email {
@@ -103,7 +104,7 @@ struct OBAuthView: View {
                         .padding(.top, 16)
                         .obStage(delay: 0.04)
 
-                    Text("Son adım.")
+                    Text(RDLocalization.string("auth.obauth.view.son.adim.7bc70890", table: .auth, fallback: "Son adım."))
                         .font(.system(size: RDFontScale.size(28), weight: .semibold))
                         .tracking(-0.8)
                         .foregroundStyle(Color.rdOnyx)
@@ -111,7 +112,7 @@ struct OBAuthView: View {
                         .padding(.top, 24)
                         .obStage(delay: 0.08)
 
-                    Text("Hazırladığın planı kaydedebilmen için hesabını oluşturalım.")
+                    Text(RDLocalization.string("auth.obauth.view.hazirladigin.plani.kaydedebilmen.icin.hesabini.o.aab9969d", table: .auth, fallback: "Hazırladığın planı kaydedebilmen için hesabını oluşturalım."))
                         .font(.system(size: RDFontScale.size(15)))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
@@ -134,7 +135,7 @@ struct OBAuthView: View {
                         Image(systemName: "lock.fill")
                             .font(.system(size: RDFontScale.size(11), weight: .semibold))
                             .foregroundStyle(Color.rdGreenDark)
-                        Text("Planın hesabına kilitlensin diye 10 saniyeni alacağız")
+                        Text(RDLocalization.string("auth.obauth.view.planin.hesabina.kilitlensin.diye.10.saniyeni.ala.dd40087d", table: .auth, fallback: "Planın hesabına kilitlensin diye 10 saniyeni alacağız"))
                             .font(.system(size: RDFontScale.size(12), weight: .medium))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.leading)
@@ -153,7 +154,7 @@ struct OBAuthView: View {
 
                     VStack(spacing: 10) {
                         authButton(
-                            title: isSigningInWithApple ? "Apple ile bağlanıyor..." : "Apple ile devam et",
+                            title: isSigningInWithApple ? RDLocalization.string("auth.obauth.view.apple.ile.baglaniyor.2a373fb3", table: .auth, fallback: "Apple ile bağlanıyor...") : RDLocalization.string("auth.obauth.view.apple.ile.devam.et.891fa08e", table: .auth, fallback: "Apple ile devam et"),
                             icon: { Image(systemName: isSigningInWithApple ? "hourglass" : "apple.logo").font(.system(size: RDFontScale.size(18), weight: .medium)) },
                             bg: .black, fg: .white, bordered: false
                         ) {
@@ -176,7 +177,7 @@ struct OBAuthView: View {
                                     Image(systemName: "hourglass")
                                         .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                                         .foregroundStyle(Color.rdOnyx)
-                                    Text("Google ile bağlanıyor...")
+                                    Text(RDLocalization.string("auth.obauth.view.google.ile.baglaniyor.365debda", table: .auth, fallback: "Google ile bağlanıyor..."))
                                         .font(.system(size: RDFontScale.size(16), weight: .semibold))
                                         .foregroundStyle(Color.rdOnyx)
                                 } else {
@@ -204,7 +205,7 @@ struct OBAuthView: View {
                             } label: {
                                 HStack(spacing: 10) {
                                     Image(systemName: "envelope").font(.system(size: RDFontScale.size(16)))
-                                    Text("E-posta ile devam et").font(.system(size: RDFontScale.size(16), weight: .semibold))
+                                    Text(RDLocalization.string("auth.obauth.view.e.posta.ile.devam.et.55c15dd1", table: .auth, fallback: "E-posta ile devam et")).font(.system(size: RDFontScale.size(16), weight: .semibold))
                                 }
                                 .foregroundStyle(Color.rdOnyx)
                                 .frame(maxWidth: .infinity).frame(height: 56)
@@ -245,10 +246,10 @@ struct OBAuthView: View {
                             Image(systemName: "person.crop.circle")
                                 .font(.system(size: RDFontScale.size(13), weight: .medium))
                                 .foregroundStyle(Color.rdSlate)
-                            Text("Zaten hesabım var · ")
+                            Text(RDLocalization.string("auth.obauth.view.zaten.hesabim.var.36115df5", table: .auth, fallback: "Zaten hesabım var ·"))
                                 .font(.system(size: RDFontScale.size(13)))
                                 .foregroundColor(Color.rdSlate)
-                            + Text("Giriş Yap")
+                            + Text(RDLocalization.string("auth.obauth.view.giris.yap.58e1b061", table: .auth, fallback: "Giriş Yap"))
                                 .font(.system(size: RDFontScale.size(13), weight: .semibold))
                                 .foregroundColor(Color.rdOnyx)
                         }
@@ -293,10 +294,10 @@ struct OBAuthView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(emailPhase == .otp ? "Kod doğrulama açık" : "E-posta ile devam")
+                    Text(emailPhase == .otp ? RDLocalization.string("auth.obauth.view.kod.dogrulama.acik.a3979975", table: .auth, fallback: "Kod doğrulama açık") : RDLocalization.string("auth.obauth.view.e.posta.ile.devam.6878ce15", table: .auth, fallback: "E-posta ile devam"))
                         .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdOnyx)
-                    Text(emailPhase == .otp ? normalizedEmail : "E-posta adresini gir")
+                    Text(emailPhase == .otp ? normalizedEmail : RDLocalization.string("auth.obauth.view.e.posta.adresini.gir.b2e37c77", table: .auth, fallback: "E-posta adresini gir"))
                         .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
@@ -330,7 +331,7 @@ struct OBAuthView: View {
                     sendEmailCode()
                 } label: {
                     HStack(spacing: 8) {
-                        Text(isSendingEmailCode ? "Kod gönderiliyor..." : "Kod gönder")
+                        Text(isSendingEmailCode ? RDLocalization.string("auth.obauth.view.kod.gonderiliyor.a71cc123", table: .auth, fallback: "Kod gönderiliyor...") : RDLocalization.string("auth.obauth.view.kod.gonder.57ce42d7", table: .auth, fallback: "Kod gönder"))
                         Image(systemName: isSendingEmailCode ? "hourglass" : "arrow.right")
                     }
                     .font(.system(size: RDFontScale.size(15), weight: .semibold))
@@ -350,7 +351,7 @@ struct OBAuthView: View {
                     verifyEmailCode()
                 } label: {
                     HStack(spacing: 8) {
-                        Text(isVerifyingEmailCode ? "Doğrulanıyor..." : "Doğrula ve devam et")
+                        Text(isVerifyingEmailCode ? RDLocalization.string("auth.obauth.view.dogrulaniyor.d63b1354", table: .auth, fallback: "Doğrulanıyor...") : RDLocalization.string("auth.obauth.view.dogrula.ve.devam.et.cf4af808", table: .auth, fallback: "Doğrula ve devam et"))
                         Image(systemName: isVerifyingEmailCode ? "hourglass" : "arrow.right")
                     }
                     .font(.system(size: RDFontScale.size(15), weight: .semibold))
@@ -365,12 +366,12 @@ struct OBAuthView: View {
                 .accessibilityIdentifier("onboarding.auth.email.verify_code")
 
                 HStack {
-                    Button("Yeni kod gönder") {
+                    Button(RDLocalization.string("auth.obauth.view.yeni.kod.gonder.085cf53a", table: .auth, fallback: "Yeni kod gönder")) {
                         resendEmailCode()
                     }
                     .disabled(isSendingEmailCode)
                     Spacer()
-                    Button("E-postayı değiştir") {
+                    Button(RDLocalization.string("auth.obauth.view.e.postayi.degistir.ec49de1d", table: .auth, fallback: "E-postayı değiştir")) {
                         withAnimation(.obSpring) { emailPhase = .email }
                         otpInput = ""
                         autoVerifiedCode = nil
@@ -414,10 +415,10 @@ struct OBAuthView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 11))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(emailPhase == .otp ? "Doğrulama kodu" : "E-posta adresinizi giriniz")
+                Text(emailPhase == .otp ? RDLocalization.string("auth.obauth.view.dogrulama.kodu.2178a0be", table: .auth, fallback: "Doğrulama kodu") : RDLocalization.string("auth.obauth.view.e.posta.adresinizi.giriniz.da5d336b", table: .auth, fallback: "E-posta adresinizi giriniz"))
                     .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdOnyx)
-                Text(emailPhase == .otp ? "\(normalizedEmail) adresine gönderildi" : "Kod göndermek için e-posta adresini yaz.")
+                Text(emailPhase == .otp ? RDLocalization.format("auth.obauth.view.1.adresine.gonderildi.c6eb060c", table: .auth, fallback: "%1$@ adresine gönderildi", arguments: [String(describing: normalizedEmail)]) : RDLocalization.string("auth.obauth.view.kod.gondermek.icin.e.posta.adresini.yaz.6a8d2849", table: .auth, fallback: "Kod göndermek için e-posta adresini yaz."))
                     .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
@@ -460,7 +461,7 @@ struct OBAuthView: View {
 
             OBFirstResponderTextField(
                 text: $email,
-                placeholder: "Mailinizi yazınız...",
+                placeholder: RDLocalization.string("auth.obauth.view.mailinizi.yaziniz.03d0e7cf", table: .auth, fallback: "Mailinizi yazınız..."),
                 keyboardType: .emailAddress,
                 textContentType: .emailAddress,
                 isFirstResponder: emailPhase == .email,
@@ -515,7 +516,7 @@ struct OBAuthView: View {
             .frame(width: 1, height: 1)
             .opacity(0.01)
             .allowsHitTesting(false)
-            .accessibilityLabel("Doğrulama kodu")
+            .accessibilityLabel(RDLocalization.string("auth.obauth.view.dogrulama.kodu.49151fab", table: .auth, fallback: "Doğrulama kodu"))
             .accessibilityIdentifier("onboarding.auth.otp_input")
         }
         .frame(maxWidth: .infinity)
@@ -542,7 +543,7 @@ struct OBAuthView: View {
                 withAnimation(.obSpring) { emailPhase = .otp }
                 focusOTPField()
             } catch {
-                setAuthError(error, context: "Kod gönderilemedi", fallbackTitle: "Kod gönderilemedi", operation: "onboarding_send_email_otp")
+                setAuthError(error, context: RDLocalization.string("auth.obauth.view.kod.gonderilemedi.aa3d6ffb", table: .auth, fallback: "Kod gönderilemedi"), fallbackTitle: RDLocalization.string("auth.obauth.view.kod.gonderilemedi.aa3d6ffb", table: .auth, fallback: "Kod gönderilemedi"), operation: "onboarding_send_email_otp")
             }
             isSendingEmailCode = false
         }
@@ -564,7 +565,7 @@ struct OBAuthView: View {
                 authErrorMessage = nil
                 onAuthenticated()
             } catch {
-                setAuthError(error, context: "Kod doğrulanamadı", fallbackTitle: "Kod doğrulanamadı", operation: "onboarding_verify_email_otp")
+                setAuthError(error, context: RDLocalization.string("auth.obauth.view.kod.dogrulanamadi.48256645", table: .auth, fallback: "Kod doğrulanamadı"), fallbackTitle: RDLocalization.string("auth.obauth.view.kod.dogrulanamadi.48256645", table: .auth, fallback: "Kod doğrulanamadı"), operation: "onboarding_verify_email_otp")
             }
             isVerifyingEmailCode = false
         }
@@ -589,7 +590,7 @@ struct OBAuthView: View {
                 onAuthenticated()
             } catch {
                 if !isUserCancelledAuth(error) {
-                    setAuthError(error, context: "Apple ile giriş yapılamadı", fallbackTitle: "Apple ile giriş yapılamadı", operation: "onboarding_apple_sign_in")
+                    setAuthError(error, context: RDLocalization.string("auth.obauth.view.apple.ile.giris.yapilamadi.8e2ae282", table: .auth, fallback: "Apple ile giriş yapılamadı"), fallbackTitle: RDLocalization.string("auth.obauth.view.apple.ile.giris.yapilamadi.8e2ae282", table: .auth, fallback: "Apple ile giriş yapılamadı"), operation: "onboarding_apple_sign_in")
                 }
             }
             isSigningInWithApple = false
@@ -616,7 +617,7 @@ struct OBAuthView: View {
                 onAuthenticated()
             } catch {
                 if !isUserCancelledAuth(error) {
-                    setAuthError(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı", operation: "onboarding_google_sign_in")
+                    setAuthError(error, context: RDLocalization.string("auth.obauth.view.google.ile.giris.yapilamadi.4654faac", table: .auth, fallback: "Google ile giriş yapılamadı"), fallbackTitle: RDLocalization.string("auth.obauth.view.google.ile.giris.yapilamadi.4654faac", table: .auth, fallback: "Google ile giriş yapılamadı"), operation: "onboarding_google_sign_in")
                 }
             }
             isSigningInWithGoogle = false
@@ -635,7 +636,7 @@ struct OBAuthView: View {
 
     private func isUserCancelledAuth(_ error: Error) -> Bool {
         let nsError = error as NSError
-        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        let lower = error.localizedDescription.lowercased(with: .autoupdatingCurrent)
         return nsError.code == 1 && nsError.domain.contains("WebAuthenticationSession") ||
             lower.contains("cancel") ||
             lower.contains("vazgeç") ||
@@ -743,7 +744,7 @@ struct OBAuthView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "sparkles")
                         .font(.system(size: RDFontScale.size(9), weight: .bold))
-                    Text("SANA ÖZEL")
+                    Text(RDLocalization.string("auth.obauth.view.sana.ozel.76ff23c3", table: .auth, fallback: "SANA ÖZEL"))
                         .font(.system(size: RDFontScale.size(9), weight: .bold))
                         .tracking(0.6)
                 }
@@ -753,10 +754,10 @@ struct OBAuthView: View {
                 .overlay(Capsule().stroke(Color.rdGreen.opacity(0.22), lineWidth: 1))
                 .clipShape(Capsule())
 
-                Text("Planın hazır, seni bekliyor")
+                Text(RDLocalization.string("auth.obauth.view.planin.hazir.seni.bekliyor.150275ab", table: .auth, fallback: "Planın hazır, seni bekliyor"))
                     .font(.system(size: RDFontScale.size(13), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
-                Text("47 şablon · \(state.primarySectorLabel) · \(state.certificateLabel)")
+                Text(RDLocalization.format("auth.obauth.view.47.sablon.1.2.443461d9", table: .auth, fallback: "47 şablon · %1$@ · %2$@", arguments: [String(describing: state.primarySectorLabel), String(describing: state.certificateLabel)]))
                     .font(.system(size: RDFontScale.size(12)))
                     .foregroundStyle(Color.rdSlate)
             }
@@ -836,16 +837,14 @@ struct OBAuthView: View {
     }
 
     private var googleTextColored: some View {
-        // "Google" with Google brand colors per letter
-        HStack(spacing: 0) {
-            Text("G").foregroundStyle(Color(hex: "#4285F4"))
-            Text("o").foregroundStyle(Color(hex: "#EA4335"))
-            Text("o").foregroundStyle(Color(hex: "#FBBC05"))
-            Text("g").foregroundStyle(Color(hex: "#4285F4"))
-            Text("l").foregroundStyle(Color(hex: "#34A853"))
-            Text("e").foregroundStyle(Color(hex: "#EA4335"))
-            Text(" ile devam et").foregroundStyle(Color.rdOnyx)
-        }
+        Text(
+            RDLocalization.string(
+                "auth.google.continue",
+                table: .auth,
+                fallback: "Google ile devam et"
+            )
+        )
+        .foregroundStyle(Color.rdOnyx)
         .font(.system(size: RDFontScale.size(16), weight: .semibold))
     }
 }

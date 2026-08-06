@@ -1,0 +1,126 @@
+{
+  "phase": 4,
+  "date": "2026-07-28",
+  "last_updated": "2026-07-30",
+  "status": "completed_with_operator_waiver",
+  "implementation": {
+    "prompt_layers": 6,
+    "safety_profiles": 6,
+    "validator_layers": 6,
+    "max_language_repair_requests": 1,
+    "same_provider_model_key_route": true,
+    "second_user_quota_consumption": false,
+    "stable_failure_code": "OUTPUT_LANGUAGE_CONTRACT_FAILED",
+    "non_tr_structured_references": false,
+    "prompt_or_user_content_logging": false,
+    "native_review_identity_and_date_required": true,
+    "canary_result_manifest_hash_required": true,
+    "canary_result_pair_uniqueness_required": true,
+    "canary_result_content_fields_forbidden": true,
+    "shared_production_gemini_transport": true,
+    "shared_production_source_photo_normalization": true,
+    "shared_production_confidence_normalization": true
+  },
+  "ai_requirement_matrix": {
+    "scope": "AI-001..AI-025",
+    "implemented": 25,
+    "locally_verified": 25,
+    "failed": 0,
+    "evidence": "docs/localization/phase-4/PHASE_4_AI_REQUIREMENT_MATRIX_2026-07-29.md"
+  },
+  "tests": {
+    "phase_4": {
+      "passed": 60,
+      "failed": 0
+    },
+    "edge_functions": {
+      "passed": 248,
+      "failed": 0
+    },
+    "safety_profiles": {
+      "passed": 17,
+      "failed": 0
+    },
+    "localization_catalog": {
+      "passed": 16,
+      "failed": 0
+    },
+    "canary_asset_integrity": {
+      "passed": 13,
+      "failed": 0
+    },
+    "canary_scenarios": {
+      "present": 14,
+      "required": 14
+    },
+    "live_canary": {
+      "status": "passed_with_operator_waiver",
+      "linked_supabase_project_ref": "ppcrzemgiztzcgddbins",
+      "remote_gemini_secret_names_verified": [
+        "GEMINI_API_KEY",
+        "GEMINI_API_KEY_PAID",
+        "GEMINI_API_KEY_SECONDARY"
+      ],
+      "remote_secret_values_retrieved": false,
+      "local_runner_provider_key_available": true,
+      "local_runner_provider_key_source": "macos_keychain",
+      "local_runner_provider_key_keychain_service": "riskdetected_gemini_api_key_canary",
+      "native_review": {
+        "decision": "approved",
+        "reviewer_name": "Kerem",
+        "reviewer_role": "native English workplace-safety reviewer",
+        "reviewed_at": "2026-07-30T15:30:52Z"
+      },
+      "smoke_profile_scenario_pairs": 12,
+      "full_profile_scenario_pairs": 84,
+      "smoke_max_provider_requests": 60,
+      "full_max_provider_requests": 420,
+      "exact_source_photo_coverage_validation": true,
+      "smoke": {
+        "status": "passed",
+        "passed": 12,
+        "failed": 0,
+        "provider_requests": 12,
+        "transient_retries": 0,
+        "validation_attempts": 12,
+        "verifier": "passed",
+        "evidence": "docs/localization/phase-4/canary/results/smoke-result.json"
+      },
+      "full": {
+        "status": "accepted_with_operator_waiver",
+        "passed": 81,
+        "failed": 3,
+        "provider_requests": 89,
+        "transient_retries": 2,
+        "validation_attempts": 87,
+        "canonical_full_result_written": false,
+        "evidence": "docs/localization/phase-4/canary/results/full-attempt-failed-2026-07-30T20-16-50.181Z.json"
+      },
+      "waiver": {
+        "approved_by": "Kerem",
+        "approved_at": "2026-07-30",
+        "reason": "Gemini API consumption limit; close Phase 4 by the shortest path without further live calls.",
+        "residual_failures": [
+          "tr-tr-current-v1/single_forklift_pedestrian:PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY",
+          "en-gb-generic-v1/single_clean:CANARY_UNSUPPORTED_ACTIONABLE_FINDING",
+          "en-ca-generic-v1/single_clean:CANARY_UNSUPPORTED_ACTIONABLE_FINDING"
+        ]
+      }
+    }
+  },
+  "builds": {
+    "debug": {
+      "status": "passed",
+      "warnings": 0,
+      "errors": 0,
+      "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-07-28T22-02-37-886Z_pid73592_86f91890.log"
+    },
+    "release": {
+      "status": "passed",
+      "warnings": 0,
+      "errors": 0,
+      "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_run_sim_2026-07-28T22-26-52-569Z_pid73592_06094a0e.log"
+    }
+  },
+  "phase_5_started": false
+}

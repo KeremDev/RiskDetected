@@ -233,7 +233,16 @@ serve(async (req) => {
     });
   }
 
-  if (!["pending", "processing"].includes(request.status)) {
+  if (request.status === "processing") {
+    return json(409, {
+      error: "request_already_processing",
+      status: request.status,
+      request_id: request.id,
+      support_id: supportID,
+    });
+  }
+
+  if (request.status !== "pending") {
     return json(409, {
       error: "request_not_processable",
       status: request.status,
@@ -271,6 +280,17 @@ serve(async (req) => {
   const targetEmail = request.target_email ?? request.email ?? null;
   const targetHash = await sha256Hex(targetUserID);
 
+  if (body.dry_run === true) {
+    return json(200, {
+      ok: true,
+      dry_run: true,
+      request_id: request.id,
+      target_user_id: targetUserID,
+      buckets: BUCKETS,
+      support_id: supportID,
+    });
+  }
+
   const processingPatch: Record<string, unknown> = {
     status: "processing",
     processed_by: processedBy,
@@ -279,18 +299,17 @@ serve(async (req) => {
     target_user_id: targetUserID,
     target_email: targetEmail,
     target_user_hash: targetHash,
+    processing_started_at: now,
     updated_at: now,
   };
 
-  if (request.status !== "processing") {
-    processingPatch.processing_started_at = now;
-  }
-
-  const { error: processingError } = await supabase
+  const { data: claimedRequest, error: processingError } = await supabase
     .from("account_deletion_requests")
     .update(processingPatch)
     .eq("id", request.id)
-    .in("status", ["pending", "processing"]);
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
 
   if (processingError) {
     return json(500, {
@@ -300,14 +319,10 @@ serve(async (req) => {
       support_id: supportID,
     });
   }
-
-  if (body.dry_run === true) {
-    return json(200, {
-      ok: true,
-      dry_run: true,
+  if (!claimedRequest) {
+    return json(409, {
+      error: "request_claim_conflict",
       request_id: request.id,
-      target_user_id: targetUserID,
-      buckets: BUCKETS,
       support_id: supportID,
     });
   }
@@ -331,7 +346,7 @@ serve(async (req) => {
     }
 
     const completedAt = new Date().toISOString();
-    const { error: completeError } = await supabase
+    const { data: completedRequest, error: completeError } = await supabase
       .from("account_deletion_requests")
       .update({
         status: "completed",
@@ -345,11 +360,17 @@ serve(async (req) => {
         auth_user_deleted: true,
         updated_at: completedAt,
       })
-      .eq("id", request.id);
+      .eq("id", request.id)
+      .eq("status", "processing")
+      .eq("completion_support_id", supportID)
+      .select("id")
+      .maybeSingle();
 
-    if (completeError) {
+    if (completeError || !completedRequest) {
       throw new Error(
-        `request_complete_update_failed:${completeError.message}`,
+        `request_complete_update_failed:${
+          completeError?.message ?? "claim_lost"
+        }`,
       );
     }
 
@@ -372,7 +393,9 @@ serve(async (req) => {
         completion_support_id: supportID,
         updated_at: failedAt,
       })
-      .eq("id", request.id);
+      .eq("id", request.id)
+      .eq("status", "processing")
+      .eq("completion_support_id", supportID);
 
     return json(500, {
       error: "account_deletion_failed",

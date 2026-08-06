@@ -4,6 +4,7 @@ import SwiftUI
 struct CanvasSheet: View {
     @Binding var selected: Set<AnalysisCanvas>
     var userTier: SubscriptionTier = .free
+    var legislationCanvasEnabled: Bool = true
     var onConfirm: () -> Void
     var onUpgradeRequested: () -> Void = {}
 
@@ -19,12 +20,12 @@ struct CanvasSheet: View {
             // Başlık
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Odaklı Analiz")
+                    Text(RDLocalization.string("analysis.canvas.sheet.odakli.analiz.f10a71ae", table: .analysis, fallback: "Odaklı Analiz"))
                         .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
                         .padding(.top, 6)
-                    Text(userTier.isPaid ? "Bir veya birden fazla analiz odağı seçebilirsin." : "Bir analiz odağı seçebilirsin.")
+                    Text(userTier.isPaid ? RDLocalization.string("analysis.canvas.sheet.bir.veya.birden.fazla.analiz.odagi.secebilirsin.08ec6102", table: .analysis, fallback: "Bir veya birden fazla analiz odağı seçebilirsin.") : RDLocalization.string("analysis.canvas.sheet.bir.analiz.odagi.secebilirsin.3a840e94", table: .analysis, fallback: "Bir analiz odağı seçebilirsin."))
                         .font(.system(size: RDFontScale.size(14), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
@@ -44,7 +45,7 @@ struct CanvasSheet: View {
                         .shadow(color: Color.rdOnyx.opacity(0.10), radius: 8, x: 0, y: 4)
                 }
                 .buttonStyle(RDPressableButtonStyle())
-                .accessibilityLabel("Kapat")
+                .accessibilityLabel(RDLocalization.string("analysis.canvas.sheet.kapat.3bb9ffb8", table: .analysis, fallback: "Kapat"))
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 16)
@@ -52,7 +53,7 @@ struct CanvasSheet: View {
             // Yatay seçim rayı: ilk bakışta 6 kart görünür, sağda diğer seçeneklerden iz kalır.
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHGrid(rows: rows, spacing: 8) {
-                    ForEach(AnalysisCanvas.all) { canvas in
+                    ForEach(availableCanvases) { canvas in
                         CanvasCard(
                             canvas: canvas,
                             isActive: selected.contains(canvas),
@@ -69,7 +70,7 @@ struct CanvasSheet: View {
             .padding(.bottom, 12)
 
             // Onay butonu
-            RDButton(title: "Onayla ve devam et", style: .detect) {
+            RDButton(title: RDLocalization.string("analysis.canvas.sheet.onayla.ve.devam.et.8d924a02", table: .analysis, fallback: "Onayla ve devam et"), style: .detect) {
                 onConfirm()
                 dismiss()
             }
@@ -82,6 +83,12 @@ struct CanvasSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color.rdPaper.ignoresSafeArea())
         .accessibilityIdentifier("canvas_sheet")
+    }
+
+    private var availableCanvases: [AnalysisCanvas] {
+        AnalysisCanvas.all.filter {
+            $0.id != AnalysisCanvas.legislation.id || legislationCanvasEnabled
+        }
     }
 
     private func select(_ canvas: AnalysisCanvas) {
@@ -152,6 +159,7 @@ private struct CanvasCard: View {
             .opacity(isLocked ? 0.86 : 1)
         }
         .buttonStyle(RDPressableButtonStyle())
+        .accessibilityIdentifier("canvas.\(canvas.id)")
     }
 
     private var iconBadge: some View {
@@ -184,7 +192,7 @@ private struct CanvasCard: View {
         HStack(spacing: 2) {
             Image(systemName: "lock.fill")
                 .font(.system(size: RDFontScale.size(6.5), design: .rounded))
-            Text("KİLİTLİ")
+            Text(RDLocalization.string("analysis.canvas.sheet.kilitli.28a4e14e", table: .analysis, fallback: "KİLİTLİ"))
                 .font(.system(size: RDFontScale.size(6.8), weight: .heavy, design: .rounded))
                 .tracking(0.35)
         }

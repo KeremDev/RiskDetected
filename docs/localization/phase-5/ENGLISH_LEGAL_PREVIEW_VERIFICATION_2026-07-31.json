@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-07-31T07:47:29Z",
+  "hosting_provider": "vercel",
+  "project": {
+    "name": "riskdetected-landing",
+    "project_id": "prj_nYn4THG1v6K7GtqwSaldZalhICL7",
+    "team_id": "team_tABp5TSkJ3ifkDllhcZYK9A5"
+  },
+  "deployment": {
+    "target": "preview",
+    "id": "dpl_4dP69Q7pt8gYACY3JFb8xkr8gxRa",
+    "url": "https://riskdetected-landing-nizb16lm8-kerem-kayalars-projects.vercel.app",
+    "inspector_url": "https://vercel.com/kerem-kayalars-projects/riskdetected-landing/4dP69Q7pt8gYACY3JFb8xkr8gxRa",
+    "ready": true,
+    "production_alias_assigned": false,
+    "promoted_to_production": false,
+    "x_robots_tag": "noindex"
+  },
+  "production_safety": {
+    "production_deployment_before": "dpl_CWUwmf5tsE2yDzjxdYkR6KpU8sRY",
+    "production_deployment_after": "dpl_CWUwmf5tsE2yDzjxdYkR6KpU8sRY",
+    "production_deployment_unchanged": true,
+    "production_domain_or_alias_mutation": false,
+    "production_deploy_or_promotion": false,
+    "production_database_write": false
+  },
+  "documents": {
+    "terms_of_use": {
+      "path": "/legal-documents/en/Terms-of-Use.md",
+      "status": 200,
+      "content_type": "text/markdown; charset=utf-8",
+      "bytes": 3074,
+      "sha256": "948d41501aa654e56ce97730decc2f70b0ea4ee0e70b357f867ad6f4dcc68d5b",
+      "exact_approved_source_hash_match": true,
+      "english_content_marker_verified": true
+    },
+    "privacy_policy": {
+      "path": "/legal-documents/en/Privacy-Policy.md",
+      "status": 200,
+      "content_type": "text/markdown; charset=utf-8",
+      "bytes": 3112,
+      "sha256": "d5e4f6def1860fe5642b8fd8fde5d2ac8b3bcaa3cc6d99b8add4f6f5496082e9",
+      "exact_approved_source_hash_match": true,
+      "english_content_marker_verified": true
+    },
+    "ai_and_data_processing_notice": {
+      "path": "/legal-documents/en/AI-and-Data-Processing-Notice.md",
+      "status": 200,
+      "content_type": "text/markdown; charset=utf-8",
+      "bytes": 2005,
+      "sha256": "61f91a4e0ceaf7d983d9a6441c7095be69ce131beef75898a2c615d63ced6be6",
+      "exact_approved_source_hash_match": true,
+      "english_content_marker_verified": true
+    }
+  },
+  "release_readiness": {
+    "preview_verified": true,
+    "public_production_urls_verified": false,
+    "documents_contain_draft_not_approved_for_release_marker": true,
+    "documents_contain_unresolved_legal_placeholders": true,
+    "production_release_allowed": false,
+    "blocking_reason": "The exact approved source documents visibly declare DRAFT — NOT APPROVED FOR RELEASE and state that provider/transfer disclosures, controller and privacy details, retention, consent, liability, governing-law and jurisdiction terms still require final review. Preview verification does not authorize production publication."
+  },
+  "privacy": {
+    "credentials_recorded": false,
+    "vercel_bypass_token_recorded": false,
+    "personal_data_recorded": false
+  }
+}

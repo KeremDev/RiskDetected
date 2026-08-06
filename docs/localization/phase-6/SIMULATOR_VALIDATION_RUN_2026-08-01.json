@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "kind": "accelerated_simulator_validation_run",
+  "policy_id": "rd-owner-approved-device-simulator-validation-2026-08-01",
+  "contract_id": "rd-global-localization-testflight-rollout-v1",
+  "candidate_build": "78",
+  "status": "passed",
+  "simulator": {
+    "suite": "RiskDetectedUITests",
+    "selected": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "duration_ms": 155895,
+    "tests": [
+      "testEnglishInternationalMainHidesTurkishJurisdictionUI",
+      "testEnglishMainAccessibilityLayoutAtLargestDynamicType",
+      "testEnglishOnboardingUsesRoleAndRequiresExplicitSafetyProfile",
+      "testEnglishPDFReportExtractionHasNoTurkishRegulatoryTemplateLeak",
+      "testEnglishPseudolocalizationKeepsPrimaryNavigationReachable",
+      "testSafetyProfilePairwiseReleaseMatrix"
+    ],
+    "xcresult_tree_sha256": "3b55721040d1e45ce531f6f3d6a45f0900327f648c2cc5cd1161d195658b57f3",
+    "build_log_sha256": "552e98a3dc89113c378771a04b42ac191031959f82fc536bc41fea3d6794676b"
+  },
+  "backend_contract_suite": {
+    "status": "passed",
+    "node": {
+      "passed": 35,
+      "failed": 0
+    },
+    "deno": {
+      "passed": 73,
+      "failed": 0
+    },
+    "pgtap": {
+      "passed": 45,
+      "failed": 0,
+      "migration_transaction_rolled_back": true
+    }
+  },
+  "profiles": [
+    "tr-tr-current-v1",
+    "en-intl-generic-v1",
+    "en-gb-generic-v1",
+    "en-us-generic-v1",
+    "en-au-generic-v1",
+    "en-ca-generic-v1"
+  ],
+  "checks": [
+    "review_path",
+    "profile_matrix",
+    "report_language",
+    "onboarding",
+    "jurisdiction_isolation",
+    "accessibility",
+    "pseudolocalization",
+    "backend_contract_suite"
+  ],
+  "privacy": {
+    "aggregate_only": true,
+    "device_identifiers_included": false,
+    "user_or_account_data_included": false,
+    "user_content_included": false
+  }
+}

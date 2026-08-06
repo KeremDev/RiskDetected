@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-30T21:33:04Z",
+  "project_ref": "ppcrzemgiztzcgddbins",
+  "mutation_performed": false,
+  "sources": [
+    "Supabase CLI 2.105.0 functions list",
+    "Supabase CLI 2.105.0 secrets list, names only",
+    "HTTPS GET probes against riskdetected.com"
+  ],
+  "auth_email_hook": {
+    "function_present": false,
+    "send_email_hook_secret_name_present": false,
+    "resend_configuration_names_present": [
+      "RESEND_API_KEY",
+      "RESEND_FROM_EMAIL"
+    ],
+    "secret_values_or_digests_captured": false
+  },
+  "english_legal_endpoints": {
+    "root": {
+      "url": "https://riskdetected.com/",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "html_language": "tr",
+      "title": "RiskDetected — Saha fotoğrafından, denetime hazır iş güvenliği raporu"
+    },
+    "candidate_routes": [
+      {
+        "url": "https://riskdetected.com/terms",
+        "status": 200,
+        "html_language": "tr",
+        "english_document_marker_present": false,
+        "result": "turkish_spa_fallback"
+      },
+      {
+        "url": "https://riskdetected.com/privacy",
+        "status": 200,
+        "html_language": "tr",
+        "english_document_marker_present": false,
+        "result": "turkish_spa_fallback"
+      },
+      {
+        "url": "https://riskdetected.com/ai-data-processing-notice",
+        "status": 200,
+        "html_language": "tr",
+        "english_document_marker_present": false,
+        "result": "turkish_spa_fallback"
+      },
+      {
+        "url": "https://riskdetected.com/terms-of-use",
+        "status": 200,
+        "html_language": "tr",
+        "english_document_marker_present": false,
+        "result": "turkish_spa_fallback"
+      },
+      {
+        "url": "https://riskdetected.com/privacy-policy",
+        "status": 200,
+        "html_language": "tr",
+        "english_document_marker_present": false,
+        "result": "turkish_spa_fallback"
+      },
+      {
+        "url": "https://riskdetected.com/ai-and-data-processing-notice",
+        "status": 200,
+        "html_language": "tr",
+        "english_document_marker_present": false,
+        "result": "turkish_spa_fallback"
+      }
+    ],
+    "remote_manifest": {
+      "url": "https://riskdetected.com/legal-documents/manifest.json",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "locale": "tr",
+      "english_document_marker_present": false
+    },
+    "english_public_urls_verified": false
+  }
+}

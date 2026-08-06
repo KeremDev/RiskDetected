@@ -50,7 +50,7 @@ enum PurchaseErrorClassifier {
 
     static func classify(rawMessage: String) -> PurchaseErrorClassification {
         let raw = rawMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-        let lower = raw.lowercased(with: Locale(identifier: "tr_TR"))
+        let lower = raw.lowercased(with: .autoupdatingCurrent)
         let kind: PurchaseErrorClassification.Kind
 
         if lower.contains("bu öğeye abonesiniz") ||

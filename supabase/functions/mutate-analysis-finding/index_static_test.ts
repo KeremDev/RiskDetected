@@ -49,9 +49,6 @@ Deno.test("mutate-analysis-finding lets generated score columns recalculate", as
     "const m5Score = resolvedM5P * resolvedM5S;",
   );
   assertStringIncludes(source, "update.m5_band = m5Band(m5Score);");
-  assertStringIncludes(source, "function withDerivedRiskSnapshot");
-  assertStringIncludes(source, "snapshot.fk_score = score;");
-  assertStringIncludes(source, "snapshot.m5_score = score;");
   assertStringIncludes(source, 'if (score <= 70) return "low";');
   assertStringIncludes(source, 'if (score <= 200) return "medium";');
   assertStringIncludes(source, 'if (score <= 400) return "high";');
@@ -65,13 +62,32 @@ Deno.test("mutate-analysis-finding hard delete removes row after audit", async (
   );
   if (source == null) return;
 
-  assertStringIncludes(source, 'event_type: "hard_delete"');
-  assertStringIncludes(source, 'changed_fields: ["__deleted__"]');
-  assertStringIncludes(source, '.from("findings")');
-  assertStringIncludes(source, ".delete()");
-  assertStringIncludes(source, '.eq("id", findingID)');
-  assertStringIncludes(source, '.eq("analysis_id", analysisID)');
-  assertStringIncludes(source, '.eq("user_id", user.id)');
+  assertStringIncludes(source, '"apply_finding_mutation_atomic"');
+  assertStringIncludes(source, 'p_action: "delete"');
+  assertStringIncludes(source, 'p_changed_fields: ["__deleted__"]');
+  assertStringIncludes(source, "p_expected_version: beforeVersion");
+  assertStringIncludes(source, "finding_version_conflict");
+});
+
+Deno.test("finding update and audit are committed in one database transaction", async () => {
+  const migration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260801170000_client_field_authority_hardening.sql",
+      import.meta.url,
+    ),
+  );
+  if (migration == null) return;
+  const sql = migration.toLowerCase().replace(/\s+/g, " ");
+
+  assertStringIncludes(sql, "create function public.apply_finding_mutation_atomic");
+  assertStringIncludes(sql, "for update;");
+  assertStringIncludes(sql, "and finding_version = p_expected_version");
+  assertStringIncludes(sql, "insert into public.finding_edit_events");
+  assertStringIncludes(sql, "raise exception 'finding_version_conflict'");
+  assertStringIncludes(
+    sql,
+    "grant execute on function public.apply_finding_mutation_atomic",
+  );
 });
 
 Deno.test("finding edit audit table grants service_role access explicitly", async () => {

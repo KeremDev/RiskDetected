@@ -165,21 +165,23 @@ enum RiskLevel: String, CaseIterable {
 
     var label: String {
         switch self {
-        case .critical: return "Kritik"
-        case .high:     return "Yüksek"
-        case .medium:   return "Orta"
-        case .low:      return "Düşük"
-        case .unknown:  return "Bilinmiyor"
+        case .critical: return RDLocalization.string("localizable.rdcolor.kritik.7e9236f2", table: .localizable, fallback: "Kritik")
+        case .high:     return RDLocalization.string("localizable.rdcolor.yuksek.a9622121", table: .localizable, fallback: "Yüksek")
+        case .medium:   return RDLocalization.string("localizable.rdcolor.orta.176aca81", table: .localizable, fallback: "Orta")
+        case .low:      return RDLocalization.string("localizable.rdcolor.dusuk.41464c0c", table: .localizable, fallback: "Düşük")
+        case .unknown:  return RDLocalization.string("localizable.rdcolor.bilinmiyor.9c217d6e", table: .localizable, fallback: "Bilinmiyor")
         }
     }
 
     var shortLabel: String {
         switch self {
-        case .critical: return "KRT"
-        case .high:     return "YÜK"
-        case .medium:   return "ORT"
-        case .low:      return "DÜŞ"
-        case .unknown:  return "?"
+        case .critical:
+            return RDLanguage.current == .english ? "CRIT" : "KRT"
+        case .high:     return RDLocalization.string("localizable.rdcolor.yuk.d70f8614", table: .localizable, fallback: "YÜK")
+        case .medium:
+            return RDLanguage.current == .english ? "MED" : "ORT"
+        case .low:      return RDLocalization.string("localizable.rdcolor.dus.3e9b9792", table: .localizable, fallback: "DÜŞ")
+        case .unknown:  return RDLocalization.string("localizable.rdcolor.copy.19ccae13", table: .localizable, fallback: "?")
         }
     }
 }

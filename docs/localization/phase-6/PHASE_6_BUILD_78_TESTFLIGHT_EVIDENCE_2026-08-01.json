@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-01T12:19:31Z",
+  "phase": 6,
+  "status": "phase_6_exit_green_candidate_valid_rollout_off",
+  "app": {
+    "app_store_connect_app_id": "6769498181",
+    "bundle_id": "com.riskdetected.app",
+    "candidate_version": "1.3.0",
+    "candidate_build": "78"
+  },
+  "release_artifacts": {
+    "archive_path": ".asc/artifacts/RiskDetected-1.3.0-78.xcarchive",
+    "ipa_path": ".asc/artifacts/RiskDetected-1.3.0-78.ipa",
+    "ipa_size_bytes": 27869364,
+    "ipa_sha256": "427b06f4ea8b88c7ce15d4fa2c6bbbd31e49818429723a9510dd6788fdff37fb",
+    "exported_app_binary_sha256": "34ca82571cc93ce89db15a30edc188afc70a8e902033dcf4bcddd472d06830c8",
+    "signing": {
+      "authority_type": "Apple Distribution",
+      "team_id": "68CU98HAY3",
+      "aps_environment": "production",
+      "get_task_allow": false,
+      "sign_in_with_apple": true,
+      "beta_reports_active": true
+    },
+    "privacy": {
+      "uses_non_exempt_encryption": false,
+      "privacy_manifest_count": 12,
+      "tracking": false,
+      "tracking_domains": 0
+    }
+  },
+  "app_store_connect": {
+    "build_id": "6710ace3-c967-43fc-9186-b005b1a4a83c",
+    "pre_release_version_id": "c130d07f-c8ec-4611-a6c0-634a70528437",
+    "processing_state": "VALID",
+    "uploaded_date": "2026-08-01T04:48:48-07:00",
+    "expiration_date": "2026-10-30T04:48:48-07:00",
+    "minimum_ios_version": "16.0",
+    "uses_non_exempt_encryption": false,
+    "internal_build_state": "IN_BETA_TESTING",
+    "external_build_state": "READY_FOR_BETA_SUBMISSION",
+    "external_beta_submission_performed": false,
+    "app_store_version_1_3_0_created": false,
+    "app_review_submission_performed": false,
+    "release_performed": false
+  },
+  "testflight_isolation": {
+    "internal_group_count": 1,
+    "internal_group_has_access_to_all_builds": true,
+    "internal_tester_account_count": 1,
+    "direct_build_tester_count": 0,
+    "external_group_count": 0,
+    "cohort_scope": "Kerem-only internal Turkish regression",
+    "public_user_access": false
+  },
+  "live_user_isolation": {
+    "current_production_version": "1.2.4",
+    "current_production_build": "77",
+    "current_production_state": "READY_FOR_DISTRIBUTION",
+    "checked_localization_flag_count": 13,
+    "all_localization_rollout_modes_off": true,
+    "enabled_user_hash_count": 0,
+    "enabled_ios_build_count": 0,
+    "production_user_behavior_changed": false
+  },
+  "verification": {
+    "release_catalog_gate": "19/19 passed",
+    "phase_5_external_release_gate": "passed",
+    "phase_6_deno": "73/73 passed",
+    "phase_6_pgtap": "39/39 passed",
+    "testflight_rollout_gate_unit_tests": "4/4 passed",
+    "supported_iphone_size_matrix": {
+      "iphone_13_6_1_inch": {
+        "profile_pairwise": "passed",
+        "english_accessibility_xxxl": "passed",
+        "english_onboarding": "passed",
+        "xcresults": [
+          "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-08-01T12-12-16-884Z_pid4783_1a4206f4.xcresult",
+          "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-08-01T12-15-55-831Z_pid4783_750cd4ff.xcresult"
+        ]
+      },
+      "iphone_14_pro_max_6_7_inch": {
+        "profile_pairwise": "passed",
+        "english_accessibility_xxxl": "passed",
+        "english_onboarding": "passed",
+        "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-08-01T12-17-15-303Z_pid4783_6d1f5529.xcresult"
+      }
+    },
+    "archive": "succeeded",
+    "export": "succeeded",
+    "apple_processing": "VALID",
+    "app_review_preflight": {
+      "report_path": "output/app-review-preflight/App_Review_Preflight_Evidence_1.3.0_78_2026-08-01.md",
+      "pass": 32,
+      "warn": 2,
+      "hold": 4,
+      "fail": 0,
+      "skip": 4
+    }
+  },
+  "safety_profile_approval": {
+    "status": "approved",
+    "source_sha256": "3a68229b1860572ff70600287412d3dadf890597698acfc3edb23afc8b9c6932",
+    "internal_review_id": "RD-SPR-20260801-3A68229B",
+    "approval_record_path": "docs/localization/phase-6/SAFETY_PROFILE_APPROVAL_2026-08-01.json",
+    "approval_record_sha256": "64b4a4ffb9ac852926448cb89c51188efcd5d846c236a510d8f35bb71aed5b5d",
+    "language": "approved",
+    "safety": "approved",
+    "product": "approved",
+    "production_analyze_version": 140,
+    "production_bundle_verified": true
+  },
+  "rollout_control": {
+    "threshold_contract_path": "docs/localization/phase-6/TESTFLIGHT_ROLLOUT_THRESHOLDS_2026-08-01.json",
+    "threshold_contract_sha256": "af567e87b78154d0ade11f7f5555fab5d5e0888024beb36b5effa7824eaa3fb4",
+    "nine_stage_sequence_prepared": true,
+    "activation_state": "off_by_owner_instruction_until_apple_approval",
+    "candidate_testflight_installs": 0,
+    "candidate_testflight_sessions": 0,
+    "candidate_testflight_crashes": 0,
+    "public_rollout_can_activate_without_owner_instruction": false
+  }
+}

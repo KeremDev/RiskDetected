@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "record_type": "safety_profile_exact_hash_approval",
+  "internal_review_id": "RD-SPR-20260801-3A68229B",
+  "approved_at": "2026-08-01T11:58:34Z",
+  "source_sha256": "3a68229b1860572ff70600287412d3dadf890597698acfc3edb23afc8b9c6932",
+  "decisions": {
+    "language": "approved",
+    "safety": "approved",
+    "product": "approved"
+  },
+  "approval_sha256": {
+    "language": "bcc921a5e9c2872ed9f8ec59568319584d3c5c6b97f2e69b08984e1f51d788b5",
+    "safety": "53c686b04331abebf2e4b466d1f4a70403f652a2808b63c35b01c0cdd0e220e8",
+    "product": "9d340c9e2b7c9969825ca7c8b13dba36d846ff978d29f79e867a90a0f8f0f3a3"
+  },
+  "canonical_payload_contract": {
+    "algorithm": "sha256",
+    "encoding": "utf-8",
+    "line_ending": "lf",
+    "trailing_newline": true,
+    "field_order": [
+      "contract_name",
+      "internal_review_id",
+      "source_sha256",
+      "scope",
+      "decision",
+      "approved_at",
+      "reviewer_identity_verified_out_of_band",
+      "reviewer_qualification_verified_out_of_band"
+    ],
+    "contract_name": "riskdetected-safety-profile-approval-v1"
+  },
+  "reviewer_attestation": {
+    "identity_verified_out_of_band": true,
+    "qualification_verified_out_of_band": true,
+    "raw_identity_or_contact_data_stored": false,
+    "raw_conversation_text_stored": false
+  }
+}

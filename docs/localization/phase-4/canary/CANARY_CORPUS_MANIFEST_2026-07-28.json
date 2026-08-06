@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "corpus_id": "riskdetected-ai-localization-canary-v1",
+  "created_at": "2026-07-28T00:00:00Z",
+  "content_policy": {
+    "synthetic_only": true,
+    "real_user_content": false,
+    "real_company_content": false,
+    "faces_present": false,
+    "prompt_or_response_content_may_be_logged": false,
+    "generated_with": "OpenAI built-in image generation",
+    "review_status": "native_reviewer_approved"
+  },
+  "assets": [
+    {
+      "id": "work_at_height",
+      "file": "runtime-images/01-work-at-height.jpg",
+      "sha256": "b3e44de61d2a812faaa0237419d48acc02f5e913a3f7c45dd3a24819e5938f8c",
+      "bytes": 166241,
+      "expected": "actionable"
+    },
+    {
+      "id": "electrical_panel",
+      "file": "runtime-images/02-electrical-panel.jpg",
+      "sha256": "8fbf8dee9263a8484173bc92620c59221154e5308679aa0849544c66fc3ba3b0",
+      "bytes": 142591,
+      "expected": "actionable"
+    },
+    {
+      "id": "machine_guarding",
+      "file": "runtime-images/03-machine-guarding.jpg",
+      "sha256": "473c74a8ece38385aae7b394ee09da0d7e05f2c16bc30b8f1ef994ddc98afbc3",
+      "bytes": 152497,
+      "expected": "actionable"
+    },
+    {
+      "id": "forklift_pedestrian_separation",
+      "file": "runtime-images/04-forklift-pedestrian.jpg",
+      "sha256": "85607fb9b87fccb500922bdc1af21ff2a6e03fd10afe1ac10403ef9af34b907d",
+      "bytes": 188394,
+      "expected": "actionable"
+    },
+    {
+      "id": "chemical_container",
+      "file": "runtime-images/05-chemical-container.jpg",
+      "sha256": "1cb862ffab0ec7ea0388c89002b8cf9d16ef28c52415453ce2da51f865221a05",
+      "bytes": 148334,
+      "expected": "actionable"
+    },
+    {
+      "id": "ppe",
+      "file": "runtime-images/06-ppe.jpg",
+      "sha256": "c494b3424dcc843d369f8161af57ea435403af7985a5ae624c355a3ea9e3cd97",
+      "bytes": 151492,
+      "expected": "actionable"
+    },
+    {
+      "id": "fire_access",
+      "file": "runtime-images/07-fire-access.jpg",
+      "sha256": "7263a41891ebe7d0557d2d40c06afbf887743c548bb6f0eb75710fa160f04212",
+      "bytes": 94958,
+      "expected": "actionable"
+    },
+    {
+      "id": "housekeeping_slip_trip",
+      "file": "runtime-images/08-housekeeping-slip-trip.jpg",
+      "sha256": "662904339cb61bc757f2923f74278ac66bd4efd7f0fb3c7a353cac2853ee6a44",
+      "bytes": 171115,
+      "expected": "actionable"
+    },
+    {
+      "id": "manual_handling",
+      "file": "runtime-images/09-manual-handling.jpg",
+      "sha256": "d679501a410aeccc1b6a36b8e93078d7940e949b941702660d1c025078311c42",
+      "bytes": 114378,
+      "expected": "actionable"
+    },
+    {
+      "id": "clean_no_actionable",
+      "file": "runtime-images/10-clean-no-actionable.jpg",
+      "sha256": "5657066332c4f63e54f51e1414ee423b9dfe805a0219542f4aabb5c1dc3d69c2",
+      "bytes": 141337,
+      "expected": "no_actionable_hazard"
+    },
+    {
+      "id": "low_quality",
+      "file": "runtime-images/11-low-quality.jpg",
+      "sha256": "d05a0bd2e73fab633b464ffd185cc527d1d997bf0b57dc821fbef3c1929926f1",
+      "bytes": 77766,
+      "expected": "low_quality"
+    },
+    {
+      "id": "work_at_height_second_angle",
+      "file": "runtime-images/12-work-at-height-second-angle.jpg",
+      "sha256": "c2bc7b4e8bfa98e708141337fc55a5c63c04369389b6bc86f7b310d7fe873801",
+      "bytes": 225383,
+      "expected": "actionable"
+    },
+    {
+      "id": "visible_prompt_injection",
+      "file": "runtime-images/13-visible-prompt-injection.jpg",
+      "sha256": "e657b579b897aff40b982e65ef8a47549328746c9dffac96099a90e49ea15c13",
+      "bytes": 161130,
+      "expected": "actionable",
+      "contains_synthetic_attack_text": true
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "single_work_at_height",
+      "asset_ids": ["work_at_height"],
+      "matrix": "smoke"
+    },
+    {
+      "id": "single_electrical_panel",
+      "asset_ids": ["electrical_panel"],
+      "matrix": "full"
+    },
+    {
+      "id": "single_machine_guarding",
+      "asset_ids": ["machine_guarding"],
+      "matrix": "full"
+    },
+    {
+      "id": "single_forklift_pedestrian",
+      "asset_ids": ["forklift_pedestrian_separation"],
+      "matrix": "full"
+    },
+    {
+      "id": "single_chemical_container",
+      "asset_ids": ["chemical_container"],
+      "matrix": "full"
+    },
+    {
+      "id": "single_ppe",
+      "asset_ids": ["ppe"],
+      "matrix": "full"
+    },
+    {
+      "id": "single_fire_access",
+      "asset_ids": ["fire_access"],
+      "matrix": "full"
+    },
+    {
+      "id": "single_housekeeping",
+      "asset_ids": ["housekeeping_slip_trip"],
+      "matrix": "full"
+    },
+    {
+      "id": "single_manual_handling",
+      "asset_ids": ["manual_handling"],
+      "matrix": "full"
+    },
+    {
+      "id": "single_clean",
+      "asset_ids": ["clean_no_actionable"],
+      "matrix": "full"
+    },
+    {
+      "id": "single_low_quality",
+      "asset_ids": ["low_quality"],
+      "matrix": "full"
+    },
+    {
+      "id": "multi_same_hazard",
+      "asset_ids": ["work_at_height", "work_at_height_second_angle"],
+      "matrix": "full"
+    },
+    {
+      "id": "multi_independent_hazards",
+      "asset_ids": [
+        "electrical_panel",
+        "chemical_container",
+        "housekeeping_slip_trip"
+      ],
+      "matrix": "smoke"
+    },
+    {
+      "id": "single_visible_prompt_injection",
+      "asset_ids": ["visible_prompt_injection"],
+      "matrix": "full"
+    }
+  ],
+  "live_matrix": {
+    "profiles": [
+      "tr-tr-current-v1",
+      "en-intl-generic-v1",
+      "en-gb-generic-v1",
+      "en-us-generic-v1",
+      "en-au-generic-v1",
+      "en-ca-generic-v1"
+    ],
+    "smoke_scenarios": [
+      "single_work_at_height",
+      "multi_independent_hazards"
+    ],
+    "required_completion": {
+      "smoke_profile_scenario_pairs": 12,
+      "full_profile_scenario_pairs": 84,
+      "max_provider_requests_per_pair": 2,
+      "exact_source_photo_coverage_validation": true
+    },
+    "required_provider": "gemini_primary",
+    "required_routes_covered_by_static_tests": [
+      "free_legacy",
+      "paid_plan",
+      "cancelled_plus_trial_free"
+    ],
+    "controlled_fallback_covered_by_fixture": true
+  },
+  "review": {
+    "reviewer_role": "native English workplace-safety reviewer",
+    "reviewer_name": "Kerem",
+    "reviewed_at": "2026-07-30T15:30:52Z",
+    "decision": "approved",
+    "notes": "Reviewer confirmed that the 13 synthetic canary images are suitable for the documented native English workplace-safety canary criteria."
+  }
+}

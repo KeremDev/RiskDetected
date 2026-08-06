@@ -6,11 +6,11 @@ struct OBCertificateView: View {
     let onNext: () -> Void
 
     private let helmetItems: [(cert: OBCertificate, title: String, sub: String, hatColor: Color, brimColor: Color)] = [
-        (.A, "A Sınıfı İSG Uzmanı", "Çok tehlikeli sınıfta yetkili.",
+        (.A, RDLocalization.string("onboarding.obcertificate.view.a.sinifi.isg.uzmani.4ac7f66b", table: .onboarding, fallback: "A Sınıfı İSG Uzmanı"), RDLocalization.string("onboarding.obcertificate.view.cok.tehlikeli.sinifta.yetkili.aaaf50c7", table: .onboarding, fallback: "Çok tehlikeli sınıfta yetkili."),
          Color(hex: "#FFB300"), Color(hex: "#D9A012")),
-        (.B, "B Sınıfı İSG Uzmanı", "Tehlikeli sınıflarda yetkili.",
+        (.B, RDLocalization.string("onboarding.obcertificate.view.b.sinifi.isg.uzmani.86c483dc", table: .onboarding, fallback: "B Sınıfı İSG Uzmanı"), RDLocalization.string("onboarding.obcertificate.view.tehlikeli.siniflarda.yetkili.a91575b7", table: .onboarding, fallback: "Tehlikeli sınıflarda yetkili."),
          Color(hex: "#4F86E0"), Color(hex: "#2A5A99")),
-        (.C, "C Sınıfı İSG Uzmanı", "Az tehlikeli sınıfta yetkili.",
+        (.C, RDLocalization.string("onboarding.obcertificate.view.c.sinifi.isg.uzmani.4785e611", table: .onboarding, fallback: "C Sınıfı İSG Uzmanı"), RDLocalization.string("onboarding.obcertificate.view.az.tehlikeli.sinifta.yetkili.23a20492", table: .onboarding, fallback: "Az tehlikeli sınıfta yetkili."),
          Color(hex: "#00B82E"), Color(hex: "#008F24")),
     ]
 
@@ -23,13 +23,13 @@ struct OBCertificateView: View {
                     VStack(spacing: 14) {
                         OBHeroTile(tint: .warm) { OBHeroCertificate() }
                             .obStage(delay: 0.08)
-                        Text("Hangi sertifika sınıfındasın?")
+                        Text(RDLocalization.string("onboarding.obcertificate.view.hangi.sertifika.sinifindasin.dd146c19", table: .onboarding, fallback: "Hangi sertifika sınıfındasın?"))
                             .font(.system(size: RDFontScale.size(28), weight: .semibold))
                             .tracking(-0.8)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
-                        Text("Sana özel risk şablonları hazırlayacağız.")
+                        Text(RDLocalization.string("onboarding.obcertificate.view.sana.ozel.risk.sablonlari.hazirlayacagiz.671e73ee", table: .onboarding, fallback: "Sana özel risk şablonları hazırlayacağız."))
                             .font(.system(size: RDFontScale.size(15)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
@@ -70,11 +70,12 @@ struct OBCertificateView: View {
             }
 
             OBFooter {
-                OBPrimaryButton(title: "Devam", enabled: state.certificate != nil, accessibilityID: "onboarding.certificate.continue") { onNext() }
+                OBPrimaryButton(title: RDLocalization.string("onboarding.obcertificate.view.devam.ed81eccf", table: .onboarding, fallback: "Devam"), enabled: state.certificate != nil, accessibilityID: "onboarding.certificate.continue") { onNext() }
                     .obStage(delay: 0.7)
             }
         }
         .background(Color.rdPaper)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.certificate")
     }
 }

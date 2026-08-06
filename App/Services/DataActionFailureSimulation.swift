@@ -29,7 +29,7 @@ enum DataActionFailureSimulation {
             domain: "RiskDetected.DataActionFailureSimulation",
             code: -1,
             userInfo: [
-                NSLocalizedDescriptionKey: "Simulated data failure: \(mode.rawValue)"
+                NSLocalizedDescriptionKey: RDLocalization.format("localizable.data.action.failure.simulation.simulated.data.failure.1.ef8df3ff", table: .localizable, fallback: "Simüle edilmiş veri hatası: %1$@", arguments: [String(describing: mode.rawValue)])
             ]
         )
     }

@@ -43,7 +43,7 @@ struct OBNotificationPermissionView: View {
     }
 
     private var headline: some View {
-        Text("Ücretsiz denemeniz bitmeden önce size hatırlatacağız")
+        Text(RDLocalization.string("onboarding.obnotification.permission.view.ucretsiz.denemeniz.bitmeden.once.size.hatirlatac.21ab39bb", table: .onboarding, fallback: "Plan ve teklif bilgilerini bildirimlerden takip edebilirsin"))
             .font(.system(size: RDFontScale.size(28), weight: .bold))
             .lineSpacing(2)
             .foregroundStyle(Color.rdOnyx)
@@ -52,7 +52,7 @@ struct OBNotificationPermissionView: View {
     }
 
     private var subcopy: some View {
-        Text("Deneme süresi ve uygulama hatırlatmaları için bildirimleri aç.")
+        Text(RDLocalization.string("onboarding.obnotification.permission.view.deneme.suresi.ve.uygulama.hatirlatmalari.icin.bi.8fffda58", table: .onboarding, fallback: "Plan, teklif ve uygulama hatırlatmaları için bildirimleri aç."))
             .font(.system(size: RDFontScale.size(16)))
             .lineSpacing(3)
             .foregroundStyle(Color.rdSlate)
@@ -73,7 +73,7 @@ struct OBNotificationPermissionView: View {
                 }
                 .frame(width: 20, height: 20)
 
-                Text("Şimdi ödeme alınmayacak")
+                Text(RDLocalization.string("onboarding.obnotification.permission.view.simdi.odeme.alinmayacak.39364ad1", table: .onboarding, fallback: "Bu adımda satın alma yapılmaz"))
                     .font(.system(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(Color.rdGraphite)
             }
@@ -81,7 +81,7 @@ struct OBNotificationPermissionView: View {
             Button {
                 Task { await continueAfterPermissionRequest() }
             } label: {
-                Text("Ücretsiz devam et")
+                Text(RDLocalization.string("onboarding.obnotification.permission.view.ucretsiz.devam.et.c00788c5", table: .onboarding, fallback: "Ücretsiz devam et"))
                     .font(.system(size: RDFontScale.size(18), weight: .bold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
@@ -94,10 +94,6 @@ struct OBNotificationPermissionView: View {
             .disabled(isContinuing)
             .accessibilityIdentifier("onboarding.notification_permission.cta")
 
-            Text(OBTrialPriceCopy.yearlyFineprint)
-                .font(.system(size: RDFontScale.size(13)))
-                .foregroundStyle(Color.rdSlate)
-                .multilineTextAlignment(.center)
         }
     }
 

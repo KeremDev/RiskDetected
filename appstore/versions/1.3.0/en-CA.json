@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "version": "1.3.0",
+  "locale": "en-CA",
+  "market": "Canada",
+  "app_info": {
+    "name": "RiskDetected: Safety Audit",
+    "subtitle": "OHS Inspections & Risk Reports",
+    "privacy_policy_url": "https://riskdetected.com/en/privacy"
+  },
+  "version_info": {
+    "promotional_text": "Review workplace hazards with OHS terminology, evidence-grounded findings, risk scoring, and professional PDF and Excel reports.",
+    "description": "Review workplace hazards from field photos and turn observations into structured, evidence-grounded findings with RiskDetected.\n\nDesigned for safety professionals, site managers, consultants and operations teams, RiskDetected helps you organize a consistent hazard assessment and workplace inspection workflow from initial review to report export.\n\nKey features:\n• Review a field photo with AI-assisted analysis\n• Plus and Pro plans can combine up to three photos in one assessment\n• Connect findings to their source photo for field verification\n• Prioritize risk using Fine-Kinney or a 5×5 matrix\n• Record likely contributing factors, controls and recommended actions\n• Create professional PDF and Excel reports\n• Add company, preparer and logo details to reports\n• Keep assessments and reports organized in the archive\n• Choose International or Canadian OHS terminology for future analyses\n\nRiskDetected provides decision support. AI-generated findings may be incomplete or inaccurate and must be checked against the workplace. The app does not replace a qualified safety professional, a workplace inspection or legal review.\n\nSome features and higher usage limits require a Plus or Pro subscription. Subscriptions are managed by Apple and purchases can be restored in the app.\n\nTerms of Use: https://riskdetected.com/en/terms\nPrivacy Policy: https://riskdetected.com/en/privacy\nApple Standard EULA: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+    "keywords": "workplace,hazard,assessment,checklist,field,photo,controls,Fine-Kinney,PDF,Excel",
+    "marketing_url": "https://riskdetected.com/en",
+    "support_url": "https://riskdetected.com/en/support",
+    "whats_new": "• Full English support across the app, notifications and reports.\n• Added International and Canadian OHS terminology profiles.\n• Added English PDF and Excel report workflows.\n• Improved the multi-photo workflow, accessibility and reliability.\n\nAI output remains decision support and does not replace a qualified safety professional or legal review."
+  },
+  "screenshots": {
+    "source_theme": "light",
+    "captions": [
+      "Spot workplace hazards from a photo",
+      "Turn evidence into clear findings",
+      "Prioritize risk with Fine-Kinney or 5×5",
+      "Create professional PDF & Excel reports",
+      "Work with Canadian OHS terminology"
+    ]
+  }
+}

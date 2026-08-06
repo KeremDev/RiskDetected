@@ -39,7 +39,7 @@ struct OBTimelinePaywallView: View {
     @State private var isReloadingPackages = false
     @State private var timelineFlow: Bool = false
     @State private var processingOverlayTitle: String?
-    @State private var processingOverlayMessage = "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+    @State private var processingOverlayMessage = RDLocalization.string("onboarding.obtimeline.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.70a7c29c", table: .onboarding, fallback: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor.")
     @State private var processingOverlayToken = UUID()
 
     private var priceLine: String {
@@ -103,6 +103,7 @@ struct OBTimelinePaywallView: View {
                 stopProcessingOverlay()
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.timeline_paywall")
     }
 
@@ -123,8 +124,8 @@ struct OBTimelinePaywallView: View {
 
     private var paywallTitle: String {
         selectedPlan == .yearly
-            ? "Ücretsiz Deneme Nasıl Çalışır"
-            : "Plus Aboneliğin Gücünü Hemen Kullanın"
+            ? RDLocalization.string("onboarding.obtimeline.paywall.view.ucretsiz.deneme.nasil.calisir.030529b1", table: .onboarding, fallback: "Yıllık Plan Nasıl Çalışır")
+            : RDLocalization.string("onboarding.obtimeline.paywall.view.plus.aboneligin.gucunu.hemen.kullanin.655cca4a", table: .onboarding, fallback: "Plus Aboneliğin Gücünü Hemen Kullanın")
     }
 
     private var bottomBar: some View {
@@ -133,7 +134,7 @@ struct OBTimelinePaywallView: View {
                 title: primaryButtonTitle,
                 trailingIcon: "arrow.right",
                 isLoading: isWorking || isReloadingPackages || isWaitingForPrice,
-                loadingTitle: isWaitingForPrice || isReloadingPackages ? "Fiyat yükleniyor..." : "Satın alma hazırlanıyor...",
+                loadingTitle: isWaitingForPrice || isReloadingPackages ? RDLocalization.string("onboarding.obtimeline.paywall.view.fiyat.yukleniyor.23a52d93", table: .onboarding, fallback: "Fiyat yükleniyor...") : RDLocalization.string("onboarding.obtimeline.paywall.view.satin.alma.hazirlaniyor.7e2cfcb3", table: .onboarding, fallback: "Satın alma hazırlanıyor..."),
                 style: .onyx,
                 accessibilityID: "onboarding.timeline_paywall.cta"
             ) {
@@ -146,7 +147,7 @@ struct OBTimelinePaywallView: View {
                 OBHaptic.soft()
                 onDismiss()
             } label: {
-                Text("Şimdilik ücretsiz devam et")
+                Text(RDLocalization.string("onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.b59d7d99", table: .onboarding, fallback: "Şimdilik ücretsiz devam et"))
                     .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .underline(true, color: Color.rdSlate.opacity(0.75))
@@ -156,7 +157,7 @@ struct OBTimelinePaywallView: View {
             .buttonStyle(.plain)
             .disabled(isWorking)
             .opacity(isWorking ? 0.45 : 1)
-            .accessibilityLabel("Şimdilik ücretsiz devam et")
+            .accessibilityLabel(RDLocalization.string("onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.0aa7a4dc", table: .onboarding, fallback: "Şimdilik ücretsiz devam et"))
             .accessibilityIdentifier("onboarding.timeline_paywall.continue_free")
 
             if isWorking || isReloadingPackages || noticeMessage != nil {
@@ -168,7 +169,7 @@ struct OBTimelinePaywallView: View {
                 Button {
                     OBHaptic.light(); onRestore()
                 } label: {
-                    Text("Geri yükle")
+                    Text(RDLocalization.string("onboarding.obtimeline.paywall.view.geri.yukle.1fe47fe9", table: .onboarding, fallback: "Geri yükle"))
                         .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                 }
@@ -181,7 +182,7 @@ struct OBTimelinePaywallView: View {
                 Button {
                     OBHaptic.soft(); onTerms()
                 } label: {
-                    Text("Kullanım Şartları")
+                    Text(RDLocalization.string("onboarding.obtimeline.paywall.view.kullanim.sartlari.4d6e5995", table: .onboarding, fallback: "Kullanım Şartları"))
                         .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
@@ -193,7 +194,7 @@ struct OBTimelinePaywallView: View {
                 Button {
                     OBHaptic.soft(); onPrivacy()
                 } label: {
-                    Text("Gizlilik Politikası")
+                    Text(RDLocalization.string("onboarding.obtimeline.paywall.view.gizlilik.politikasi.54f451ed", table: .onboarding, fallback: "Gizlilik Politikası"))
                         .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
@@ -250,7 +251,7 @@ struct OBTimelinePaywallView: View {
         .buttonStyle(.plain)
         .disabled(isWorking)
         .opacity(isWorking ? 0.45 : 1)
-        .accessibilityLabel("Şimdilik ücretsiz devam et")
+        .accessibilityLabel(RDLocalization.string("onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.871ae28f", table: .onboarding, fallback: "Şimdilik ücretsiz devam et"))
         .accessibilityIdentifier("onboarding.timeline_paywall.dismiss")
     }
 
@@ -289,14 +290,14 @@ struct OBTimelinePaywallView: View {
     private func startProcessingOverlay() {
         let token = UUID()
         processingOverlayToken = token
-        processingOverlayTitle = "App Store ödeme ekranı açılıyor..."
-        processingOverlayMessage = "Onay penceresi açıldığında işlemi App Store üzerinden tamamlayabilirsin."
+        processingOverlayTitle = RDLocalization.string("onboarding.obtimeline.paywall.view.app.store.odeme.ekrani.aciliyor.af128c75", table: .onboarding, fallback: "App Store ödeme ekranı açılıyor...")
+        processingOverlayMessage = RDLocalization.string("onboarding.obtimeline.paywall.view.onay.penceresi.acildiginda.islemi.app.store.uzer.195dca6a", table: .onboarding, fallback: "Onay penceresi açıldığında işlemi App Store üzerinden tamamlayabilirsin.")
 
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 900_000_000)
             guard isWorking, processingOverlayToken == token, processingOverlayTitle != nil else { return }
-            processingOverlayTitle = "Satın alma doğrulanıyor"
-            processingOverlayMessage = "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+            processingOverlayTitle = RDLocalization.string("onboarding.obtimeline.paywall.view.satin.alma.dogrulaniyor.4ccbcf49", table: .onboarding, fallback: "Satın alma doğrulanıyor")
+            processingOverlayMessage = RDLocalization.string("onboarding.obtimeline.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.34bd6c86", table: .onboarding, fallback: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor.")
         }
     }
 
@@ -307,9 +308,9 @@ struct OBTimelinePaywallView: View {
 
     private var primaryButtonTitle: String {
         guard selectedPackage != nil else {
-            return priceLoadError == nil ? "Fiyat yükleniyor..." : "Tekrar dene"
+            return priceLoadError == nil ? RDLocalization.string("onboarding.obtimeline.paywall.view.fiyat.yukleniyor.31966e06", table: .onboarding, fallback: "Fiyat yükleniyor...") : RDLocalization.string("onboarding.obtimeline.paywall.view.tekrar.dene.f8ced812", table: .onboarding, fallback: "Tekrar dene")
         }
-        return selectedPlan == .yearly ? "Ücretsiz denemeyi başlat" : "Aboneliği başlat"
+        return selectedPlan == .yearly ? RDLocalization.string("onboarding.obtimeline.paywall.view.ucretsiz.denemeyi.baslat.dc125184", table: .onboarding, fallback: "Devam et") : RDLocalization.string("onboarding.obtimeline.paywall.view.aboneligi.baslat.79fd5050", table: .onboarding, fallback: "Aboneliği başlat")
     }
 
     private var primaryButtonDisabled: Bool {
@@ -321,8 +322,8 @@ struct OBTimelinePaywallView: View {
     }
 
     private var noticeText: String {
-        if isWorking { return "App Store satın alma ekranı hazırlanıyor..." }
-        if isReloadingPackages { return "App Store fiyatları yükleniyor..." }
+        if isWorking { return RDLocalization.string("onboarding.obtimeline.paywall.view.app.store.satin.alma.ekrani.hazirlaniyor.b11a0512", table: .onboarding, fallback: "App Store satın alma ekranı hazırlanıyor...") }
+        if isReloadingPackages { return RDLocalization.string("onboarding.obtimeline.paywall.view.app.store.fiyatlari.yukleniyor.4a75e8db", table: .onboarding, fallback: "App Store fiyatları yükleniyor...") }
         return noticeMessage ?? ""
     }
 
@@ -332,11 +333,11 @@ struct OBTimelinePaywallView: View {
         case .loading, .retryingOnce:
             return nil
         case .loaded:
-            return "App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+            return RDLocalization.string("onboarding.obtimeline.paywall.view.app.store.fiyati.su.an.alinamadi.internet.baglan.d59116a9", table: .onboarding, fallback: "App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene.")
         case let .failed(message):
             let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty
-                ? "App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+                ? RDLocalization.string("onboarding.obtimeline.paywall.view.app.store.fiyati.su.an.alinamadi.internet.baglan.3beb566f", table: .onboarding, fallback: "App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene.")
                 : trimmed
         }
     }
@@ -376,8 +377,8 @@ struct OBTimelinePaywallView: View {
     private var planToggle: some View {
         VStack(spacing: 7) {
             HStack(spacing: 0) {
-                planPill(.yearly, label: "Yıllık")
-                planPill(.monthly, label: "Aylık")
+                planPill(.yearly, label: RDLocalization.string("onboarding.obtimeline.paywall.view.yillik.889fc7f2", table: .onboarding, fallback: "Yıllık"))
+                planPill(.monthly, label: RDLocalization.string("onboarding.obtimeline.paywall.view.aylik.311fbe87", table: .onboarding, fallback: "Aylık"))
             }
             .padding(4)
             .background(Color.rdFog)
@@ -386,7 +387,7 @@ struct OBTimelinePaywallView: View {
             .frame(width: 210)
 
             if selectedPlan == .yearly {
-                Text("%17 İndirim")
+                Text(RDLocalization.string("onboarding.obtimeline.paywall.view.17.indirim.16d1d18a", table: .onboarding, fallback: "%17 İndirim"))
                     .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .lineLimit(1)
@@ -435,12 +436,12 @@ struct OBTimelinePaywallView: View {
 
     private var plusFeatureItems: [TimelineFeatureItem] {
         [
-            TimelineFeatureItem("Detaylı Analiz"),
-            TimelineFeatureItem("Risk Analizi (Fine-Kinney ve 5*5)"),
-            TimelineFeatureItem("PDF/Excel Rapor"),
-            TimelineFeatureItem("Firma Yönetimi"),
-            TimelineFeatureItem("Çoklu Fotoğraf Analizi", badge: "Yeni"),
-            TimelineFeatureItem("Sektör Bazlı Analiz")
+            TimelineFeatureItem(RDLocalization.string("onboarding.obtimeline.paywall.view.detayli.analiz.24351d3b", table: .onboarding, fallback: "Detaylı Analiz")),
+            TimelineFeatureItem(RDLocalization.string("onboarding.obtimeline.paywall.view.risk.analizi.fine.kinney.ve.5.5.b43a3cfb", table: .onboarding, fallback: "Risk Analizi (Fine-Kinney ve 5*5)")),
+            TimelineFeatureItem(RDLocalization.string("onboarding.obtimeline.paywall.view.pdf.excel.rapor.95bfded2", table: .onboarding, fallback: "PDF/Excel Rapor")),
+            TimelineFeatureItem(RDLocalization.string("onboarding.obtimeline.paywall.view.firma.yonetimi.3eeadbe7", table: .onboarding, fallback: "Firma Yönetimi")),
+            TimelineFeatureItem(RDLocalization.string("onboarding.obtimeline.paywall.view.coklu.fotograf.analizi.3c6f6a3d", table: .onboarding, fallback: "Çoklu Fotoğraf Analizi"), badge: "Yeni"),
+            TimelineFeatureItem(RDLocalization.string("onboarding.obtimeline.paywall.view.sektor.bazli.analiz.f645149d", table: .onboarding, fallback: "Sektör Bazlı Analiz"))
         ]
     }
 
@@ -450,8 +451,8 @@ struct OBTimelinePaywallView: View {
                 index: 0,
                 icon: "lock.shield.fill",
                 accent: Color.rdGreen,
-                day: "Bugün",
-                detail: "Plus özellikleri açılır, ücret alınmaz.",
+                day: RDLocalization.string("onboarding.obtimeline.paywall.view.bugun.48c76375", table: .onboarding, fallback: "Bugün"),
+                detail: RDLocalization.string("onboarding.obtimeline.paywall.view.plus.ozellikleri.acilir.ucret.alinmaz.c93f0f8d", table: .onboarding, fallback: "Yıllık Plus özelliklerini ve App Store fiyatını incele."),
                 featureItems: plusFeatureItems,
                 isLast: false
             )
@@ -459,16 +460,16 @@ struct OBTimelinePaywallView: View {
                 index: 1,
                 icon: "bell.fill",
                 accent: Color(hex: "#F0A400"),
-                day: "5. Gün",
-                detail: "Denemen bitmeden sana hatırlatma göndeririz.",
+                day: RDLocalization.string("onboarding.obtimeline.paywall.view.5.gun.a1306735", table: .onboarding, fallback: "App Store"),
+                detail: RDLocalization.string("onboarding.obtimeline.paywall.view.denemen.bitmeden.sana.hatirlatma.gondeririz.cc0144c2", table: .onboarding, fallback: "Fiyatı ve varsa uygun teklifi App Store onay ekranında doğrula."),
                 isLast: false
             )
             timelineStep(
                 index: 2,
                 icon: "crown.fill",
                 accent: Color(hex: "#F0A400"),
-                day: "7. Gün",
-                detail: "Devam edersen yıllık plan başlar. İstediğin zaman iptal edebilirsin.",
+                day: RDLocalization.string("onboarding.obtimeline.paywall.view.7.gun.5bf94fa7", table: .onboarding, fallback: "Yenileme"),
+                detail: RDLocalization.string("onboarding.obtimeline.paywall.view.devam.edersen.yillik.plan.baslar.istedigin.zaman.68e836a8", table: .onboarding, fallback: "Onaylanan plan App Store şartlarıyla yenilenir; istediğin zaman iptal edebilirsin."),
                 isLast: true
             )
         }
@@ -488,8 +489,8 @@ struct OBTimelinePaywallView: View {
                 index: 0,
                 icon: "lock.shield.fill",
                 accent: Color(hex: "#F0A400"),
-                day: "Bugün",
-                detail: "Tüm özellikler hemen aktif olur, ödeme başlar.",
+                day: RDLocalization.string("onboarding.obtimeline.paywall.view.bugun.21298096", table: .onboarding, fallback: "Bugün"),
+                detail: RDLocalization.string("onboarding.obtimeline.paywall.view.tum.ozellikler.hemen.aktif.olur.odeme.baslar.b6ba3101", table: .onboarding, fallback: "Tüm özellikler hemen aktif olur, ödeme başlar."),
                 featureItems: plusFeatureItems,
                 isLast: false
             )
@@ -497,7 +498,7 @@ struct OBTimelinePaywallView: View {
                 index: 1,
                 icon: "calendar.badge.checkmark",
                 accent: Color.rdGreen,
-                day: "Her ay",
+                day: RDLocalization.string("onboarding.obtimeline.paywall.view.her.ay.e9db7612", table: .onboarding, fallback: "Her ay"),
                 detail: monthlyRenewalLine,
                 isLast: true
             )
@@ -527,18 +528,18 @@ struct OBTimelinePaywallView: View {
 
     private var yearlyPaywallLine: String {
         guard let price = displayPrice(for: .yearly) else { return priceStatusLine }
-        guard let yearlyMonthlyEquivalent else { return "7 gün ücretsiz, sonra \(price)" }
-        return "7 gün ücretsiz, sonra \(price) (\(yearlyMonthlyEquivalent))"
+        guard let yearlyMonthlyEquivalent else { return RDLocalization.format("onboarding.obtimeline.paywall.view.7.gun.ucretsiz.sonra.1.1c216e89", table: .onboarding, fallback: "Yıllık %1$@ · varsa teklif App Store'da uygulanır", arguments: [String(describing: price)]) }
+        return RDLocalization.format("onboarding.obtimeline.paywall.view.7.gun.ucretsiz.sonra.1.2.55ea6bc2", table: .onboarding, fallback: "Yıllık %1$@ (%2$@) · varsa teklif App Store'da uygulanır", arguments: [String(describing: price), String(describing: yearlyMonthlyEquivalent)])
     }
 
     private var monthlyPaywallLine: String {
         guard let price = displayPrice(for: .monthly) else { return priceStatusLine }
-        return "\(price)/ay — istediğin zaman iptal"
+        return RDLocalization.format("onboarding.obtimeline.paywall.view.1.ay.istedigin.zaman.iptal.b6b0b4af", table: .onboarding, fallback: "%1$@/ay — istediğin zaman iptal", arguments: [String(describing: price)])
     }
 
     private var monthlyRenewalLine: String {
-        guard let price = displayPrice(for: .monthly) else { return "Aylık fiyat App Store üzerinden yüklenecek." }
-        return "\(price) otomatik yenilenir. İstediğin zaman iptal edebilirsin."
+        guard let price = displayPrice(for: .monthly) else { return RDLocalization.string("onboarding.obtimeline.paywall.view.aylik.fiyat.app.store.uzerinden.yuklenecek.1c047937", table: .onboarding, fallback: "Aylık fiyat App Store üzerinden yüklenecek.") }
+        return RDLocalization.format("onboarding.obtimeline.paywall.view.1.otomatik.yenilenir.istedigin.zaman.iptal.edebi.14f7048e", table: .onboarding, fallback: "%1$@ otomatik yenilenir. İstediğin zaman iptal edebilirsin.", arguments: [String(describing: price)])
     }
 
     private func displayPrice(for plan: OBPlan) -> String? {

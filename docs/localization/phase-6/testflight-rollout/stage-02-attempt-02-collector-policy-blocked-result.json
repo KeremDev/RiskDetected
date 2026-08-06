@@ -1,0 +1,22 @@
+{
+  "_archive_reason": "Accelerated validation collector initially compared a deliberately uncollected ASC usage value against the Stage 2 legacy baseline. Product and device checks passed; this collector-only attempt is preserved.",
+  "status": "passed",
+  "stage": 2,
+  "stage_key": "turkish_contract_dogfood",
+  "contract_issues": [],
+  "metric_issues": [],
+  "insufficient_samples": [],
+  "threshold_violations": [],
+  "rates": {
+    "analysis_failure_rate": 0,
+    "wrong_language_rate": 0,
+    "language_repair_rate": 0,
+    "report_failure_rate": 0,
+    "notification_template_miss_rate": 0,
+    "queue_retry_rate": 0
+  },
+  "applied_waivers": [],
+  "integrity_status": "blocked",
+  "snapshot_sha256": "b3b4344165b5e34dc9a73d47d69e65417569089df91c344bcb98a978fba4440e",
+  "effective_status": "blocked"
+}

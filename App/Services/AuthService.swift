@@ -51,6 +51,7 @@ final class AuthService: ObservableObject {
     /// signIn'in döndürdüğü Session'dan user ID'yi alıyor — currentSession race condition yok.
     func signInWithPassword(email: String, password: String) async throws {
         lastError = nil
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
         let signedInSession = try await supabase.auth.signIn(email: email, password: password)
         await finishSignIn(with: signedInSession)
     }
@@ -58,12 +59,25 @@ final class AuthService: ObservableObject {
     /// E-posta adresine tek kullanımlık doğrulama kodu gönderir.
     func sendEmailOTP(email: String) async throws {
         lastError = nil
-        try await supabase.auth.signInWithOTP(email: email, redirectTo: deepLinkURL())
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
+        let language = RDLanguage.current
+        let contentLocale: RDContentLocale = language == .english
+            ? .englishInternational
+            : .turkishTurkey
+        try await supabase.auth.signInWithOTP(
+            email: email,
+            redirectTo: deepLinkURL(),
+            data: [
+                "app_language": .string(language.rawValue),
+                "content_locale": .string(contentLocale.rawValue),
+            ]
+        )
     }
 
     /// E-posta doğrulama kodunu onaylar ve Supabase oturumu açar.
     func verifyEmailOTP(email: String, token: String) async throws {
         lastError = nil
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
         let response = try await verifyEmailOTPWithSupportedTypes(email: email, token: token)
         if let verifiedSession = response.session {
             await finishSignIn(with: verifiedSession)
@@ -78,7 +92,7 @@ final class AuthService: ObservableObject {
         throw NSError(
             domain: "RiskDetected.AuthService",
             code: -2,
-            userInfo: [NSLocalizedDescriptionKey: "Doğrulama tamamlandı ama oturum oluşturulamadı. Lütfen yeni kod gönderip tekrar deneyin."]
+            userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.auth.service.dogrulama.tamamlandi.ama.oturum.olusturulamadi.l.2a5e70fd", table: .auth, fallback: "Doğrulama tamamlandı ama oturum oluşturulamadı. Lütfen yeni kod gönderip tekrar deneyin.")]
         )
     }
 
@@ -86,6 +100,7 @@ final class AuthService: ObservableObject {
     /// `idToken` ve nonce buraya iletilir.
     func signInWithApple(idToken: String, nonce: String, email: String? = nil, fullName: String? = nil) async throws {
         lastError = nil
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
         let signedInSession = try await supabase.auth.signInWithIdToken(
             credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
         )
@@ -101,6 +116,7 @@ final class AuthService: ObservableObject {
         fullNameFallback: String? = nil
     ) async throws {
         lastError = nil
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
         let signedInSession = try await supabase.auth.signInWithIdToken(
             credentials: .init(provider: .google, idToken: idToken, accessToken: accessToken, nonce: nonce)
         )
@@ -114,6 +130,7 @@ final class AuthService: ObservableObject {
     /// Google OAuth web flow — GoogleSignIn SDK olmadan Supabase PKCE/OAuth akışını kullanır.
     func signInWithGoogleOAuth() async throws {
         lastError = nil
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
         let signedInSession = try await supabase.auth.signInWithOAuth(
             provider: .google,
             redirectTo: RDConfig.Auth.redirectURL
@@ -160,7 +177,7 @@ final class AuthService: ObservableObject {
             throw NSError(
                 domain: "RiskDetected.AuthService",
                 code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Oturum bulunamadı."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.auth.service.oturum.bulunamadi.6c4f2e88", table: .auth, fallback: "Oturum bulunamadı.")]
             )
         }
 
@@ -174,7 +191,20 @@ final class AuthService: ObservableObject {
             companyName: input.companyName.nilIfBlank,
             companyLogoURL: input.companyLogoPath,
             phone: input.phone.nilIfBlank,
-            preferredMethod: input.preferredMethod?.rawValue
+            preferredMethod: input.preferredMethod?.rawValue,
+            appLanguage: (input.appLanguage ?? profile?.appLanguage)?.rawValue,
+            preferredContentLocale:
+                (input.preferredContentLocale ?? profile?.preferredContentLocale)?.rawValue,
+            workJurisdictionCountry:
+                (input.workJurisdictionCountry ?? profile?.workJurisdictionCountry)?.rawValue,
+            workJurisdictionRegion:
+                input.workJurisdictionRegion ?? profile?.workJurisdictionRegion,
+            safetyProfileID:
+                (input.safetyProfileID ?? profile?.safetyProfileID)?.rawValue,
+            safetyProfileVersion:
+                input.safetyProfileVersion ?? profile?.safetyProfileVersion,
+            legalDocumentSetID:
+                (input.legalDocumentSetID ?? profile?.legalDocumentSetID)?.rawValue
         )
 
         try await supabase.client
@@ -185,19 +215,86 @@ final class AuthService: ObservableObject {
         await fetchProfile(userID: user.id)
     }
 
+    /// Synchronizes iOS-owned UI language and the user-owned safety profile.
+    /// The two values are intentionally independent.
+    func updateLocalizationPreferences(
+        appLanguage: RDAppLanguage,
+        safetyProfileID: RDSafetyProfileID?,
+        workJurisdictionRegion: String? = nil
+    ) async throws {
+        guard let user = supabase.auth.currentUser else {
+            throw NSError(
+                domain: "RiskDetected.AuthService",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.auth.service.oturum.bulunamadi.3535b0a0", table: .auth, fallback: "Oturum bulunamadı.")]
+            )
+        }
+
+        struct LanguageOnlyPayload: Encodable {
+            let app_language: String
+            let legal_document_set: String
+        }
+
+        struct FullPayload: Encodable {
+            let app_language: String
+            let preferred_content_locale: String
+            let work_jurisdiction_country: String
+            let work_jurisdiction_region: String?
+            let safety_profile_id: String
+            let safety_profile_version: Int
+            let legal_document_set: String
+        }
+
+        let legalSet = appLanguage == .turkish
+            ? RDLegalDocumentSetID.turkeyCurrent.rawValue
+            : RDLegalDocumentSetID.englishGlobalV1.rawValue
+
+        if let safetyProfileID {
+            let definition = RDSafetyProfileCatalog.profile(id: safetyProfileID)
+            try await supabase.client
+                .from("profiles")
+                .update(
+                    FullPayload(
+                        app_language: appLanguage.rawValue,
+                        preferred_content_locale: definition.contentLocale.rawValue,
+                        work_jurisdiction_country: definition.jurisdictionCountry.rawValue,
+                        work_jurisdiction_region: workJurisdictionRegion,
+                        safety_profile_id: definition.id.rawValue,
+                        safety_profile_version: definition.profileVersion,
+                        legal_document_set: legalSet
+                    )
+                )
+                .eq("id", value: user.id.uuidString)
+                .execute()
+        } else {
+            try await supabase.client
+                .from("profiles")
+                .update(
+                    LanguageOnlyPayload(
+                        app_language: appLanguage.rawValue,
+                        legal_document_set: legalSet
+                    )
+                )
+                .eq("id", value: user.id.uuidString)
+                .execute()
+        }
+
+        await fetchProfile(userID: user.id)
+    }
+
     func uploadProfileLogo(_ image: UIImage) async throws -> String {
         guard let userID = supabase.currentUserID else {
             throw NSError(
                 domain: "RiskDetected.AuthService",
                 code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Oturum bulunamadı."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.auth.service.oturum.bulunamadi.7bbdc1d0", table: .auth, fallback: "Oturum bulunamadı.")]
             )
         }
         guard let data = image.normalizedJPEG(maxDimension: 900, compressionQuality: 0.82) else {
             throw NSError(
                 domain: "RiskDetected.AuthService",
                 code: -2,
-                userInfo: [NSLocalizedDescriptionKey: "Logo dosyası hazırlanamadı."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.auth.service.logo.dosyasi.hazirlanamadi.dd6d4780", table: .auth, fallback: "Logo dosyası hazırlanamadı.")]
             )
         }
 
@@ -224,14 +321,14 @@ final class AuthService: ObservableObject {
             throw NSError(
                 domain: "RiskDetected.AuthService",
                 code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Oturum bulunamadı."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.auth.service.oturum.bulunamadi.a73b798d", table: .auth, fallback: "Oturum bulunamadı.")]
             )
         }
         guard let data = image.centeredSquareJPEG(side: 512, compressionQuality: 0.86) else {
             throw NSError(
                 domain: "RiskDetected.AuthService",
                 code: -2,
-                userInfo: [NSLocalizedDescriptionKey: "Profil fotoğrafı hazırlanamadı."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.auth.service.profil.fotografi.hazirlanamadi.caff0171", table: .auth, fallback: "Profil fotoğrafı hazırlanamadı.")]
             )
         }
 
@@ -311,23 +408,23 @@ final class AuthService: ObservableObject {
             self.lastError = nil
             return .found(row)
         } catch let DecodingError.keyNotFound(key, context) {
-            let msg = "missing key '\(key.stringValue)' at \(context.codingPath.map(\.stringValue))"
-            self.lastError = "Profile decode (key): \(msg)"
+            let msg = RDLocalization.format("auth.auth.service.missing.key.1.at.2.2013762e", table: .auth, fallback: "eksik anahtar'%1$@' de %2$@", arguments: [String(describing: key.stringValue), String(describing: context.codingPath.map(\.stringValue))])
+            self.lastError = RDLocalization.format("auth.auth.service.profile.decode.key.1.a5da62ed", table: .auth, fallback: "Profil kod çözme (anahtar): %1$@", arguments: [String(describing: msg)])
         } catch let DecodingError.typeMismatch(type, context) {
-            let msg = "type \(type) mismatch at \(context.codingPath.map(\.stringValue))"
-            self.lastError = "Profile decode (type): \(msg)"
+            let msg = RDLocalization.format("auth.auth.service.type.1.mismatch.at.2.e583e0a0", table: .auth, fallback: "tip %1$@ uyumsuzluk %2$@", arguments: [String(describing: type), String(describing: context.codingPath.map(\.stringValue))])
+            self.lastError = RDLocalization.format("auth.auth.service.profile.decode.type.1.fb611674", table: .auth, fallback: "Profil kod çözme (tür): %1$@", arguments: [String(describing: msg)])
         } catch let DecodingError.valueNotFound(type, context) {
-            let msg = "value \(type) not found at \(context.codingPath.map(\.stringValue))"
-            self.lastError = "Profile decode (val): \(msg)"
+            let msg = RDLocalization.format("auth.auth.service.value.1.not.found.at.2.8e8b5537", table: .auth, fallback: "değer %1$@ bulunamadı %2$@", arguments: [String(describing: type), String(describing: context.codingPath.map(\.stringValue))])
+            self.lastError = RDLocalization.format("auth.auth.service.profile.decode.val.1.a6e0a1d8", table: .auth, fallback: "Profil kodu çözme (val): %1$@", arguments: [String(describing: msg)])
         } catch let DecodingError.dataCorrupted(context) {
-            let msg = "data corrupted at \(context.codingPath.map(\.stringValue)): \(context.debugDescription)"
-            self.lastError = "Profile decode (corrupt): \(msg)"
+            let msg = RDLocalization.format("auth.auth.service.data.corrupted.at.1.2.75b648bd", table: .auth, fallback: "veriler bozuk %1$@: %2$@", arguments: [String(describing: context.codingPath.map(\.stringValue)), String(describing: context.debugDescription)])
+            self.lastError = RDLocalization.format("auth.auth.service.profile.decode.corrupt.1.0c05431f", table: .auth, fallback: "Profil kodu çözme (bozuk): %1$@", arguments: [String(describing: msg)])
         } catch let error as PostgrestError where Self.isMissingProfileError(error) {
             self.profile = nil
             self.lastError = nil
             return .missing
         } catch {
-            self.lastError = "Profile fetch: \(error.localizedDescription)"
+            self.lastError = RDLocalization.format("auth.auth.service.profile.fetch.1.3d557476", table: .auth, fallback: "Profil getirme: %1$@", arguments: [String(describing: error.localizedDescription)])
         }
         return .failed
     }
@@ -364,7 +461,7 @@ final class AuthService: ObservableObject {
                 )
                 return
             }
-            self.lastError = "Profile bootstrap: \(error.localizedDescription)"
+            self.lastError = RDLocalization.format("auth.auth.service.profile.bootstrap.1.86cceeb4", table: .auth, fallback: "Profil önyüklemesi: %1$@", arguments: [String(describing: error.localizedDescription)])
         }
     }
 
@@ -539,12 +636,12 @@ final class AuthService: ObservableObject {
         throw lastError ?? NSError(
             domain: "RiskDetected.AuthService",
             code: -1,
-            userInfo: [NSLocalizedDescriptionKey: "E-posta doğrulama kodu doğrulanamadı."]
+            userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.auth.service.e.posta.dogrulama.kodu.dogrulanamadi.f2487e20", table: .auth, fallback: "E-posta doğrulama kodu doğrulanamadı.")]
         )
     }
 
     private static func canRetryEmailOTPType(after error: Error) -> Bool {
-        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        let lower = error.localizedDescription.lowercased(with: .autoupdatingCurrent)
         if lower.contains("rate") ||
             lower.contains("too many") ||
             lower.contains("429") ||
@@ -654,6 +751,13 @@ struct ProfileUpdateInput {
     var phone: String
     var preferredMethod: RiskMethodWire?
     var companyLogoPath: String?
+    var appLanguage: RDAppLanguage? = nil
+    var preferredContentLocale: RDContentLocale? = nil
+    var workJurisdictionCountry: RDWorkJurisdictionCountry? = nil
+    var workJurisdictionRegion: String? = nil
+    var safetyProfileID: RDSafetyProfileID? = nil
+    var safetyProfileVersion: Int? = nil
+    var legalDocumentSetID: RDLegalDocumentSetID? = nil
 }
 
 private enum ProfileFetchResult {
@@ -673,6 +777,13 @@ private struct ProfileUpdatePayload: Encodable {
     let companyLogoURL: String?
     let phone: String?
     let preferredMethod: String?
+    let appLanguage: String?
+    let preferredContentLocale: String?
+    let workJurisdictionCountry: String?
+    let workJurisdictionRegion: String?
+    let safetyProfileID: String?
+    let safetyProfileVersion: Int?
+    let legalDocumentSetID: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -685,6 +796,13 @@ private struct ProfileUpdatePayload: Encodable {
         case companyLogoURL = "company_logo_url"
         case phone
         case preferredMethod = "preferred_method"
+        case appLanguage = "app_language"
+        case preferredContentLocale = "preferred_content_locale"
+        case workJurisdictionCountry = "work_jurisdiction_country"
+        case workJurisdictionRegion = "work_jurisdiction_region"
+        case safetyProfileID = "safety_profile_id"
+        case safetyProfileVersion = "safety_profile_version"
+        case legalDocumentSetID = "legal_document_set"
     }
 }
 

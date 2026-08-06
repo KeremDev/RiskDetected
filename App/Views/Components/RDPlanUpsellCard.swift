@@ -30,15 +30,15 @@ struct RDPlanUpsellCard: View {
                             .foregroundStyle(arrowColor)
                     }
 
-                    Text("Plus veya Pro'ya yükselt")
+                    Text(RDLocalization.string("localizable.rdplan.upsell.card.plus.veya.pro.ya.yukselt.e876bb04", table: .localizable, fallback: "Plus veya Pro'ya yükselt"))
                         .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                         .foregroundStyle(titleColor)
 
                     VStack(alignment: .leading, spacing: 7) {
-                        benefit("Daha fazla günlük analiz")
-                        benefit("Detaylı risk raporları")
-                        benefit("Fine-Kinney + 5x5 matris")
-                        benefit("PDF ve Excel dışa aktarım")
+                        benefit(RDLocalization.string("localizable.rdplan.upsell.card.daha.fazla.gunluk.analiz.0ca99c4a", table: .localizable, fallback: "Daha fazla günlük analiz"))
+                        benefit(RDLocalization.string("localizable.rdplan.upsell.card.detayli.risk.raporlari.3eb225a9", table: .localizable, fallback: "Detaylı risk raporları"))
+                        benefit(RDLocalization.string("localizable.rdplan.upsell.card.fine.kinney.5x5.matris.1e70bf1b", table: .localizable, fallback: "Fine-Kinney + 5x5 matris"))
+                        benefit(RDLocalization.string("localizable.rdplan.upsell.card.pdf.ve.excel.disa.aktarim.6dd65472", table: .localizable, fallback: "PDF ve Excel dışa aktarım"))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

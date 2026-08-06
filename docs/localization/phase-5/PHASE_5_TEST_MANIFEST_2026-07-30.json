@@ -1,0 +1,253 @@
+{
+  "phase": 5,
+  "date": "2026-07-30",
+  "last_updated": "2026-07-31",
+  "status": "completed",
+  "technical_scope_status": "completed",
+  "phase_exit_criteria_satisfied": true,
+  "phase_6_started": false,
+  "production_mutations": {
+    "edge_function_deploy": true,
+    "database_migration": true,
+    "database_write": true,
+    "auth_hook_activation": true,
+    "app_store_connect_metadata": false,
+    "subscription_offer": false,
+    "legal_publication": true,
+    "localization_runtime_activation": false,
+    "new_mutation_after_live_safety_instruction": true,
+    "live_user_behavior_changed": false
+  },
+  "implementation": {
+    "reports": {
+      "snapshot_language_authoritative": true,
+      "request_snapshot_mismatch_rejected": true,
+      "reports_localization_snapshot_persisted": true,
+      "localized_pdf": true,
+      "localized_xlsx": true,
+      "non_tr_regulatory_content_suppressed": true,
+      "turkish_behavior_preserved": true
+    },
+    "notifications": {
+      "additive_child_localization_table": true,
+      "exact_locale_resolution": true,
+      "immutable_job_snapshot": true,
+      "cross_locale_fallback": false,
+      "missing_template_fail_closed": true,
+      "failure_telemetry": true,
+      "english_automation_review_status": "approved_production_verified_shadow",
+      "approved_exact_locale_seed_rows": 10,
+      "reviewer_name": "Kerem",
+      "reviewer_qualification": "İngilizce iş güvenliği metinlerini değerlendirme niteliğine sahip.",
+      "reviewed_at": "2026-07-31T06:31:04Z",
+      "reviewed_pack_sha256": "5660f3a69595a0d8b80057fe2a5a0fb97c9393a003ff2bd72ad8208646955c87",
+      "approval_record_sha256": "abfbf34bbfcd59e72ac06658ab84970d0429cc1d2020102d866ae48544921158",
+      "production_rows_verified": true,
+      "production_rows_verified_at": "2026-07-31T07:25:37Z",
+      "production_verification_path": "docs/localization/phase-5/NOTIFICATION_COPY_PRODUCTION_VERIFICATION_2026-07-31.json",
+      "production_verification_sha256": "c3a885c795debba5785d22662789025805b10b90322b91a13fc033c59ffe35a4",
+      "active_automation_rules": 0,
+      "pending_delivery_jobs": 0,
+      "automation_mode": "shadow"
+    },
+    "transactional_push": {
+      "stable_event_keys": 10,
+      "exact_locale_templates": true,
+      "free_title_body_restricted_to_controlled_manual_flow": true
+    },
+    "email": {
+      "welcome_english_template": true,
+      "auth_exact_locale_hook_implemented": true,
+      "standard_webhooks_signature_required": true,
+      "secure_email_change_supported": true,
+      "cross_locale_fallback": false,
+      "secret_in_repository_or_logs": false,
+      "production_hook_status": "active_smoke_verified",
+      "production_hook_version": 7,
+      "production_hook_deployed_at": "2026-07-31T07:15:06.815Z",
+      "production_hook_bundle_sha256": "3cffc99745e2b247a0b4bbf96b2b9762d3bfde37e9ae5d10179d922af0afbdf2",
+      "production_hook_activated_at": "2026-07-31T07:08:03Z",
+      "production_smoke_completed_at": "2026-07-31T07:16:48Z",
+      "production_verification_path": "docs/localization/phase-5/AUTH_EMAIL_HOOK_PRODUCTION_VERIFICATION_2026-07-31.json",
+      "production_verification_sha256": "268196598db212fd3dfae5cd79a4f6db031f43528a35e691d8d69c0c30fb13f5"
+    },
+    "support": {
+      "language_fields_persisted": true,
+      "user_message_translated": false,
+      "preferred_reply_language_visible": true,
+      "same_language_acknowledgement": true
+    },
+    "legal": {
+      "english_bundle_documents": 3,
+      "manifest_status": "approved",
+      "english_auth_gate_closed": true,
+      "english_purchase_gate_closed": true,
+      "acceptance_set_version_checksum_audit": true,
+      "real_public_urls_verified": true,
+      "isolated_preview_verified": true,
+      "preview_target": "preview",
+      "preview_deployment_id": "dpl_4dP69Q7pt8gYACY3JFb8xkr8gxRa",
+      "preview_production_alias_assigned": false,
+      "preview_evidence_path": "docs/localization/phase-5/ENGLISH_LEGAL_PREVIEW_VERIFICATION_2026-07-31.json",
+      "preview_evidence_sha256": "9b8080a833023fa79da8507cf0ff3d2760378b6a31241f6bcf16d1182affee8e",
+      "production_deployment_id": "dpl_9HvH32vh8YTTmmLFdJY9d9SSaxqS",
+      "production_verification_path": "docs/localization/phase-5/ENGLISH_LEGAL_PRODUCTION_VERIFICATION_2026-07-31.json",
+      "production_verification_sha256": "5440c9d1fcb982ebacf854dc35b69c78cc511c61b9c4ffb6cc124c93e3b9e178",
+      "documents_contain_draft_not_approved_for_release_marker": false,
+      "documents_contain_unresolved_legal_placeholders": false,
+      "production_release_allowed": true,
+      "counsel_reviewed": true,
+      "counsel_decision": "approved",
+      "reviewer_name": "Kerem",
+      "reviewer_qualification": "Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.",
+      "reviewed_at": "2026-07-31T08:02:40Z",
+      "approval_record_path": "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-07-31_V2.json",
+      "approval_record_sha256": "54ade7d6aae5615bcd5a1ce2f3191c1fecb77d9080ff61edf88b948afe129161",
+      "document_hashes": {
+        "terms_of_use": "49a9b3f164b9dc8048453be930509aa334a854834c2abfa0cd8b11fd67ef6efa",
+        "privacy_policy": "ef3d7e01b2b3c09603ff79c7f14bac631493feece7c1a0d6b0bd9a5f0e76ece4",
+        "ai_and_data_processing_notice": "a8c9873f57228a36a4ede597e33648ff9251f9c814f1d1afc3e912c82ae08e1b",
+        "manifest": "008108dcb03fcc6db4955dbdc97c4e8f2091d78c8807832713de3ca9c051ad07"
+      }
+    },
+    "paywall_and_subscriptions": {
+      "product_ids_changed": false,
+      "prices_changed": false,
+      "limits_changed": false,
+      "offers_changed": false,
+      "localized_storekit_price": true,
+      "non_tr_regulatory_claims_removed": true,
+      "metadata_locales_drafted": [
+        "en-GB",
+        "en-US",
+        "en-AU",
+        "en-CA"
+      ],
+      "metadata_status": "draft_not_applied"
+    }
+  },
+  "tests": {
+    "edge_functions": {
+      "passed": 267,
+      "failed": 0
+    },
+    "phase_5_contract": {
+      "passed": 12,
+      "failed": 0
+    },
+    "phase_5_external_gate": {
+      "passed": 5,
+      "failed": 0,
+      "current_state_integrity_errors": 0,
+      "release_mode_live_passed": true,
+      "all_external_gates_passed": true
+    },
+    "localization_catalog": {
+      "passed": 16,
+      "failed": 0
+    },
+    "safety_profiles": {
+      "passed": 17,
+      "failed": 0
+    },
+    "hardcoded_localization_gate": {
+      "current": 1852,
+      "baseline": 1852,
+      "new_violations": 0
+    },
+    "content_inventory": {
+      "entries": 1852,
+      "unowned_p0_p1": 0
+    },
+    "postgres_pgtap": {
+      "passed": 25,
+      "failed": 0,
+      "validation_method": "local_single_transaction_rollback",
+      "local_persistent_mutation": false,
+      "temporary_validation_database_remaining": false,
+      "production_database_mutated": false
+    },
+    "english_pdf_extraction_ui": {
+      "passed": 1,
+      "failed": 0,
+      "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-07-30T20-48-38-914Z_pid36679_85ab92a9.log"
+    },
+    "migration_repository": {
+      "active": 114,
+      "canonical": 110,
+      "forward": 4,
+      "verified": true
+    }
+  },
+  "migration": {
+    "file": "supabase/migrations/20260730213000_global_localization_delivery_wave1.sql",
+    "sha256": "064322087cc97d709e59cdd5ae2ad0edc654fbac0b2723e30f8e4b0a2c03c324"
+  },
+  "builds": {
+    "global_localization_build_gate": {
+      "compile_condition": "RD_GLOBAL_LOCALIZATION_WAVE1",
+      "release_default": "disabled",
+      "current_release_compiled_in": false,
+      "legacy_turkish_path_when_disabled": true,
+      "runtime_persisted_override": false,
+      "activation_requires_new_reviewed_build": true,
+      "runbook": "docs/localization/phase-5/GLOBAL_LOCALIZATION_BUILD_FLAG_RUNBOOK_2026-07-31.md"
+    },
+    "ios_simulator": {
+      "status": "passed",
+      "warnings": 0,
+      "errors": 0,
+      "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-07-31T07-33-50-088Z_pid88054_85244790.log"
+    },
+    "ios_simulator_release": {
+      "status": "passed",
+      "warnings": 0,
+      "errors": 0,
+      "localization_build_gate_executed": true,
+      "global_localization_compiled_in": false,
+      "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-07-31T07-39-18-080Z_pid88054_ef3f8036.log"
+    }
+  },
+  "app_store_connect_read_only": {
+    "captured_at": "2026-07-30T23:58:00+03:00",
+    "plus_yearly_offer_territories": 175,
+    "required_wave_1_territories_present": [
+      "AU",
+      "CA",
+      "GB",
+      "US"
+    ],
+    "offer_duration": "ONE_WEEK",
+    "offer_mode": "FREE_TRIAL",
+    "other_product_offer_count": 0,
+    "mutation_performed": false
+  },
+  "phase_5_production_read_only": {
+    "snapshot_is_historical_before_approved_phase_5_mutations": true,
+    "captured_at": "2026-07-30T21:33:04Z",
+    "auth_send_email_hook_present": false,
+    "send_email_hook_secret_name_present": false,
+    "english_public_legal_urls_verified": true,
+    "secret_values_or_digests_captured": false,
+    "mutation_performed": false,
+    "evidence": "docs/localization/phase-5/PHASE_5_PRODUCTION_READONLY_2026-07-31.json",
+    "sha256": "856e32db49114b783336b00493c4367c7237569391943effb4c101e62d306fd6"
+  },
+  "external_gates": [
+    {
+      "id": "LEGAL-EN",
+      "status": "passed",
+      "requires": []
+    },
+    {
+      "id": "AUTH-EMAIL-HOOK",
+      "status": "passed",
+      "requires": []
+    },
+    {
+      "id": "NOTIFICATION-COPY",
+      "status": "passed",
+      "requires": []
+    }
+  ]
+}

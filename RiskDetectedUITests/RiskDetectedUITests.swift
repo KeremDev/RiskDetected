@@ -15,6 +15,25 @@ final class RiskDetectedUITests: XCTestCase {
         app = nil
     }
 
+    func testEnglishPDFReportExtractionHasNoTurkishRegulatoryTemplateLeak() throws {
+        app = XCUIApplication()
+        app.launchArguments = [
+            "RD_UI_TEST_PDF_REPORT_LOCALIZATION",
+            "RD_UI_TEST_GLOBAL_LOCALIZATION_ENABLED",
+            "-AppleLanguages", "(en)",
+            "-AppleLocale", "en_GB",
+            "-UIViewAnimationEnabled", "NO",
+            "-ApplePersistenceIgnoreState", "YES",
+        ]
+        app.launchEnvironment["RD_UI_TEST_PDF_REPORT_LOCALIZATION"] = "1"
+        app.launchEnvironment["RD_UI_TEST_GLOBAL_LOCALIZATION_ENABLED"] = "1"
+        launchPreparedApp()
+
+        let status = app.staticTexts["pdf_report_localization.status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 20))
+        XCTAssertEqual(status.label, "PDF_REPORT_LOCALIZATION_OK")
+    }
+
     func testFreeTierPaywallUsesRetryWhenStorePriceUnavailable() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
 
@@ -32,9 +51,9 @@ final class RiskDetectedUITests: XCTestCase {
         launchApp()
 
         completeQuestionsToPersonalPlan()
-        XCTAssertTrue(waitFor("Hesabımı Oluştur").exists)
+        XCTAssertTrue(waitFor("onboarding.personal_plan.create_account").exists)
 
-        tap("Hesabımı Oluştur")
+        tap("onboarding.personal_plan.create_account")
         XCTAssertTrue(waitFor("Apple ile devam et").exists)
         XCTAssertTrue(waitForOne(["onboarding.auth.google", "Google"]).exists)
         XCTAssertTrue(waitFor("E-posta ile devam et").exists)
@@ -44,13 +63,13 @@ final class RiskDetectedUITests: XCTestCase {
         launchApp(extraArguments: ["RD_UI_TEST_BYPASS_AUTH"])
 
         completeQuestionsToPersonalPlan()
-        tap("Hesabımı Oluştur")
+        tap("onboarding.personal_plan.create_account")
 
-        tapScrolling("₺0,00'ye dene", timeout: 10)
+        tapScrolling("onboarding.trial_invite.cta", timeout: 10)
 
         XCTAssertTrue(waitFor("onboarding.notification_permission", timeout: 8).exists)
-        XCTAssertTrue(waitFor("Şimdi ödeme alınmayacak").exists)
-        XCTAssertTrue(waitFor("Deneme süresi ve uygulama hatırlatmaları için bildirimleri aç.").exists)
+        XCTAssertTrue(waitFor("Plan ve teklif bilgilerini bildirimlerden takip edebilirsin").exists)
+        XCTAssertTrue(waitFor("Plan, teklif ve uygulama hatırlatmaları için bildirimleri aç.").exists)
         tap("onboarding.notification_permission.cta")
 
         XCTAssertTrue(waitFor("Yıllık", timeout: 8).exists)
@@ -108,13 +127,232 @@ final class RiskDetectedUITests: XCTestCase {
 
         XCTAssertTrue(waitFor("onboarding.loading", timeout: 8).exists)
         XCTAssertTrue(waitFor("onboarding.personal_plan", timeout: 12).exists)
-        tap("Hesabımı Oluştur")
+        tap("onboarding.personal_plan.create_account")
 
         XCTAssertTrue(waitFor("onboarding.auth", timeout: 8).exists)
         XCTAssertTrue(waitFor("onboarding.auth.apple").exists)
         XCTAssertTrue(waitFor("onboarding.auth.google").exists)
         XCTAssertTrue(waitFor("E-posta ile devam et").exists)
         XCTAssertTrue(waitFor("onboarding.auth.sign_in_existing").exists)
+    }
+
+    func testEnglishOnboardingUsesRoleAndRequiresExplicitSafetyProfile() throws {
+        launchApp(extraArguments: englishLaunchArguments)
+
+        XCTAssertTrue(waitFor("onboarding.splash", timeout: 12).exists)
+        tap("onboarding.splash.start")
+        XCTAssertTrue(waitFor("onboarding.pain_point", timeout: 12).exists)
+        tap("onboarding.pain.continue")
+
+        XCTAssertTrue(waitFor("onboarding.role", timeout: 8).exists)
+        XCTAssertFalse(exists("A Sınıfı İSG Uzmanı", timeout: 1))
+        XCTAssertFalse(exists("OSGB", timeout: 1))
+        XCTAssertFalse(isEnabled("onboarding.role.continue"))
+
+        tap("onboarding.role.safety_professional")
+        XCTAssertTrue(isEnabled("onboarding.role.continue"))
+        tap("onboarding.role.continue")
+
+        XCTAssertTrue(waitFor("onboarding.safety_profile", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Choose your safety terminology").exists)
+        XCTAssertTrue(waitFor("Select the terminology used for your work. This changes wording in analyses and reports; it does not certify legal compliance.").exists)
+        XCTAssertTrue(waitFor("You can change this for future analyses in Profile.").exists)
+        XCTAssertTrue(waitFor("International").exists)
+        XCTAssertTrue(waitFor("UK").exists)
+        XCTAssertTrue(waitFor("US").exists)
+        XCTAssertTrue(waitFor("AU").exists)
+        XCTAssertTrue(waitFor("CA").exists)
+        XCTAssertFalse(isEnabled("onboarding.safety_profile.continue"))
+
+        tap("onboarding.safety_profile.en-intl-generic-v1")
+        XCTAssertTrue(isEnabled("onboarding.safety_profile.continue"))
+    }
+
+    func testEnglishInternationalMainHidesTurkishJurisdictionUI() throws {
+        launchMainApp(
+            extraArguments: [
+                "RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS",
+            ] + englishLaunchArguments
+        )
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        XCTAssertFalse(exists("OSGB", timeout: 1))
+        XCTAssertFalse(exists("A Sınıfı", timeout: 1))
+
+        tap("home.photo_tray.primary")
+        XCTAssertTrue(waitFor("analysis_sector_picker", timeout: 8).exists)
+        let continueButton = waitFor("analysis_sector_continue_button")
+        XCTAssertEqual(continueButton.label, "Continue")
+        XCTAssertFalse(exists("Deva and", timeout: 1))
+        XCTAssertFalse(exists("Quarter", timeout: 1))
+        tap("analysis_sector_chip_construction")
+        tap("analysis_sector_continue_button")
+
+        XCTAssertTrue(waitFor("canvas_sheet", timeout: 8).exists)
+        XCTAssertFalse(exists("canvas.legislation", timeout: 1))
+    }
+
+    func testEnglishMainAccessibilityLayoutAtLargestDynamicType() throws {
+        launchMainApp(
+            extraArguments: englishLaunchArguments + [
+                "-UIPreferredContentSizeCategoryName",
+                "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+            ]
+        )
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        XCTAssertTrue(waitFor("tab.quick_scan").isHittable)
+        tapTab(.profile)
+        XCTAssertTrue(waitFor("profile.root", timeout: 8).exists)
+        XCTAssertTrue(waitFor("profile.row.preferences").isHittable)
+    }
+
+    func testEnglishPseudolocalizationKeepsPrimaryNavigationReachable() throws {
+        launchMainApp(
+            extraArguments: englishLaunchArguments + [
+                "-NSDoubleLocalizedStrings", "YES",
+                "-UIPreferredContentSizeCategoryName",
+                "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+            ]
+        )
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        XCTAssertTrue(waitFor("tab.quick_scan").isHittable)
+        tapTab(.profile)
+        XCTAssertTrue(waitFor("profile.root", timeout: 8).exists)
+        XCTAssertTrue(waitFor("profile.row.preferences").isHittable)
+    }
+
+    func testSafetyProfilePairwiseReleaseMatrix() throws {
+        struct Scenario {
+            let profileID: String
+            let title: String
+            let language: String
+            let locale: String
+            let tierArgument: String?
+            let tierTitle: String
+            let dark: Bool
+            let accessibilityText: Bool
+        }
+
+        let scenarios = [
+            Scenario(
+                profileID: "tr-tr-current-v1",
+                title: "Türkiye",
+                language: "tr",
+                locale: "tr_TR",
+                tierArgument: "RD_UI_TEST_FREE_TIER",
+                tierTitle: "FREE",
+                dark: false,
+                accessibilityText: false
+            ),
+            Scenario(
+                profileID: "en-intl-generic-v1",
+                title: "International",
+                language: "en",
+                locale: "en_GB",
+                tierArgument: nil,
+                tierTitle: "Plus",
+                dark: false,
+                accessibilityText: false
+            ),
+            Scenario(
+                profileID: "en-gb-generic-v1",
+                title: "UK",
+                language: "en",
+                locale: "en_GB",
+                tierArgument: "RD_UI_TEST_PRO_TIER",
+                tierTitle: "Pro",
+                dark: true,
+                accessibilityText: true
+            ),
+            Scenario(
+                profileID: "en-us-generic-v1",
+                title: "US",
+                language: "en",
+                locale: "en_US",
+                tierArgument: "RD_UI_TEST_FREE_TIER",
+                tierTitle: "Free",
+                dark: false,
+                accessibilityText: true
+            ),
+            Scenario(
+                profileID: "en-au-generic-v1",
+                title: "AU",
+                language: "en",
+                locale: "en_AU",
+                tierArgument: nil,
+                tierTitle: "Plus",
+                dark: true,
+                accessibilityText: false
+            ),
+            Scenario(
+                profileID: "en-ca-generic-v1",
+                title: "CA",
+                language: "en",
+                locale: "en_CA",
+                tierArgument: "RD_UI_TEST_PRO_TIER",
+                tierTitle: "Pro",
+                dark: false,
+                accessibilityText: true
+            ),
+        ]
+
+        for scenario in scenarios {
+            var arguments = [
+                "-AppleLanguages", "(\(scenario.language))",
+                "-AppleLocale", scenario.locale,
+            ]
+            if scenario.language == "en" {
+                arguments.append("RD_UI_TEST_GLOBAL_LOCALIZATION_ENABLED")
+            }
+            if let tierArgument = scenario.tierArgument {
+                arguments.append(tierArgument)
+            }
+            if scenario.dark {
+                arguments.append("RD_UI_TEST_DARK_MODE")
+            }
+            if scenario.accessibilityText {
+                arguments += [
+                    "-UIPreferredContentSizeCategoryName",
+                    "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+                ]
+            }
+
+            launchMainApp(
+                extraArguments: arguments,
+                environment: [
+                    "RD_UI_TEST_SAFETY_PROFILE_ID": scenario.profileID,
+                ]
+            )
+
+            XCTAssertTrue(
+                waitFor("root.main", timeout: 10).exists,
+                scenario.profileID
+            )
+            tapTab(.profile)
+            XCTAssertTrue(waitFor("profile.root", timeout: 8).exists)
+            XCTAssertTrue(
+                exists(scenario.tierTitle, timeout: 3),
+                "\(scenario.profileID) tier \(scenario.tierTitle)"
+            )
+
+            if scenario.language == "en" {
+                tapScrolling("profile.row.preferences", timeout: 8)
+                let selected = waitFor(
+                    "profile.preference.\(scenario.title)",
+                    timeout: 8
+                )
+                XCTAssertEqual(
+                    (selected.value as? String)?.lowercased(),
+                    "selected",
+                    scenario.profileID
+                )
+            } else {
+                XCTAssertTrue(exists("İSG Uzmanı · A Sınıfı", timeout: 3))
+                XCTAssertFalse(exists("Choose your safety terminology", timeout: 1))
+            }
+        }
     }
 
     func testOnboardingSplashClassicDesignRenderAndStart() throws {
@@ -173,6 +411,41 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("home.photo_slot.1").exists)
         XCTAssertTrue(waitFor("home.photo_slot.3").exists)
         XCTAssertFalse(exists("home.photo_slot.4", timeout: 1))
+    }
+
+    func testEnglishPaidPhotoTrayShowsThreeSlotsAndTwoPhotos() throws {
+        launchMainApp(
+            extraArguments: englishLaunchArguments + [
+                "RD_UI_TEST_LIGHT_MODE",
+                "RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS",
+            ]
+        )
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        XCTAssertTrue(waitFor("Field photos").exists)
+        XCTAssertTrue(waitFor("2/3").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.1").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.2").exists)
+        XCTAssertTrue(waitFor("home.photo_slot.3").exists)
+        XCTAssertFalse(exists("home.photo_slot.4", timeout: 1))
+        XCTAssertTrue(waitFor("Continue to analysis").exists)
+        XCTAssertFalse(exists("Saha fotoğrafları", timeout: 1))
+        XCTAssertFalse(exists("Analize geç", timeout: 1))
+    }
+
+    func testEnglishProfileLogoActionDoesNotLeakTurkish() throws {
+        launchMainApp(
+            extraArguments: englishLaunchArguments + ["RD_UI_TEST_LIGHT_MODE"]
+        )
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tapTab(.profile)
+        tapScrolling("profile.row.info", timeout: 8)
+        XCTAssertTrue(waitFor("Profile Information", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Add logo").exists)
+        XCTAssertTrue(waitFor("Select logo").exists)
+        XCTAssertFalse(exists("Logo ekle", timeout: 1))
+        XCTAssertFalse(exists("Logo seç", timeout: 1))
     }
 
     func testQuickScanButtonOpensPhotoTray() throws {
@@ -490,7 +763,7 @@ final class RiskDetectedUITests: XCTestCase {
 
         typeInto("report.archive.search", text: "Test Firma")
         XCTAssertTrue(waitFor("Test Firma Raporu").exists)
-        tap("report.archive.filter.Standart")
+        tap("report.archive.filter.standard")
         XCTAssertTrue(waitFor("Test Firma Raporu").exists)
 
         longPress("report.archive.row.00000000-0000-0000-0000-00000000A101")
@@ -514,8 +787,8 @@ final class RiskDetectedUITests: XCTestCase {
         tap("report.settings.kind.standard")
         tap("Rapor oluştur")
 
-        XCTAssertTrue(waitFor("Önizlemeyi kapat", timeout: 20).exists)
-        tap("Önizlemeyi kapat")
+        XCTAssertTrue(waitFor("document_preview.close", timeout: 20).exists)
+        tap("document_preview.close")
         XCTAssertTrue(waitFor("UI Test Rapor Kaynağı", timeout: 8).exists)
     }
 
@@ -551,8 +824,8 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Bugünkü standart rapor hakkın doldu. Hakların yarın yenilenir."].exists)
 
         tap("Risk analizi PDF oluştur")
-        XCTAssertTrue(waitFor("Önizlemeyi kapat", timeout: 12).exists)
-        tap("Önizlemeyi kapat")
+        XCTAssertTrue(waitFor("document_preview.close", timeout: 12).exists)
+        tap("document_preview.close")
 
         tapScrolling("Rapor Oluştur", timeout: 10)
         XCTAssertTrue(waitFor("report.settings", timeout: 8).exists)
@@ -677,7 +950,18 @@ final class RiskDetectedUITests: XCTestCase {
         launchPreparedApp()
     }
 
-    private func launchMainApp(extraArguments: [String] = []) {
+    private var englishLaunchArguments: [String] {
+        [
+            "RD_UI_TEST_GLOBAL_LOCALIZATION_ENABLED",
+            "-AppleLanguages", "(en)",
+            "-AppleLocale", "en_US",
+        ]
+    }
+
+    private func launchMainApp(
+        extraArguments: [String] = [],
+        environment: [String: String] = [:]
+    ) {
         app = XCUIApplication()
         app.launchArguments = [
             "RD_UI_TEST_MAIN",
@@ -697,6 +981,9 @@ final class RiskDetectedUITests: XCTestCase {
         }
         if extraArguments.contains("RD_UI_TEST_DEVICE_INTEGRITY_WARNING") {
             app.launchEnvironment["RD_UI_TEST_DEVICE_INTEGRITY_WARNING"] = "1"
+        }
+        for (key, value) in environment {
+            app.launchEnvironment[key] = value
         }
         launchPreparedApp()
     }
@@ -725,7 +1012,7 @@ final class RiskDetectedUITests: XCTestCase {
         tap("6-15")
         tap("Planımı Hazırla")
 
-        XCTAssertTrue(waitFor("Hesabımı Oluştur", timeout: 12).exists)
+        XCTAssertTrue(waitFor("onboarding.personal_plan.create_account", timeout: 12).exists)
     }
 
     @discardableResult
@@ -738,7 +1025,7 @@ final class RiskDetectedUITests: XCTestCase {
                 for index in 0..<query.count {
                     let element = query.element(boundBy: index)
                     guard element.exists else { continue }
-                    if element.isHittable { return element }
+                    if hasUsableHitFrame(element), element.isHittable { return element }
                     if firstExisting == nil { firstExisting = element }
                 }
             }
@@ -760,7 +1047,7 @@ final class RiskDetectedUITests: XCTestCase {
                     for index in 0..<query.count {
                         let element = query.element(boundBy: index)
                         guard element.exists else { continue }
-                        if element.isHittable { return element }
+                        if hasUsableHitFrame(element), element.isHittable { return element }
                         return element
                     }
                 }
@@ -790,10 +1077,33 @@ final class RiskDetectedUITests: XCTestCase {
         ]
     }
 
+    private func hasUsableHitFrame(_ element: XCUIElement) -> Bool {
+        let frame = element.frame
+        let appFrame = app.frame
+        guard !frame.isNull,
+              !frame.isInfinite,
+              !frame.isEmpty,
+              frame.midX.isFinite,
+              frame.midY.isFinite,
+              !appFrame.isEmpty
+        else {
+            return false
+        }
+        return appFrame.contains(CGPoint(x: frame.midX, y: frame.midY))
+    }
+
     private func tap(_ identifier: String, timeout: TimeInterval = 6) {
         let element = waitFor(identifier, timeout: timeout)
         XCTAssertTrue(element.isHittable, "Element is not hittable: \(identifier)")
         element.tap()
+    }
+
+    private func tapButton(_ label: String, timeout: TimeInterval = 8) {
+        let predicate = NSPredicate(format: "identifier == %@ OR label == %@", label, label)
+        let button = app.buttons.matching(predicate).firstMatch
+        XCTAssertTrue(button.waitForExistence(timeout: timeout), "Missing button: \(label)")
+        XCTAssertTrue(button.isHittable, "Button is not hittable: \(label)")
+        button.tap()
     }
 
     private func isEnabled(_ identifier: String, timeout: TimeInterval = 3) -> Bool {
@@ -858,7 +1168,7 @@ final class RiskDetectedUITests: XCTestCase {
                 for index in 0..<query.count {
                     let element = query.element(boundBy: index)
                     guard element.exists else { continue }
-                    if element.isHittable {
+                    if hasUsableHitFrame(element), element.isHittable {
                         element.tap()
                         return
                     }

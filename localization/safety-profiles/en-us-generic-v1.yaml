@@ -1,0 +1,31 @@
+{
+  "id": "en-us-generic-v1",
+  "language": "en",
+  "content_locale": "en-US",
+  "jurisdiction_country": "US",
+  "jurisdiction_region": null,
+  "status": "terminology_only",
+  "review_status": "machine_draft",
+  "display_name_key": "safety_profile.united_states",
+  "primary_product_term": "safety inspection",
+  "primary_domain_term": "occupational safety and health",
+  "finding_term": "finding",
+  "hazard_term": "hazard",
+  "risk_assessment_term": "hazard assessment",
+  "control_term": "control",
+  "corrective_action_term": "corrective action",
+  "default_risk_method": "matrix_5x5",
+  "allowed_risk_methods": ["matrix_5x5", "fine_kinney"],
+  "legislation_canvas_enabled": false,
+  "structured_regulatory_references_enabled": false,
+  "regulatory_reference_policy": "none",
+  "legal_compliance_claims_allowed": false,
+  "spelling_style": "american",
+  "prompt_directives": [
+    "Use U.S. occupational safety and health, hazard assessment and corrective-action terminology.",
+    "Use American spelling such as prioritize and organized.",
+    "Do not call a photo inspection a JHA or JSA without a separate task-based workflow."
+  ],
+  "forbidden_claims_key": "en-us-generic-v1",
+  "profile_version": 1
+}

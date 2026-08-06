@@ -60,10 +60,22 @@ function revenueCatDelete(appUserID) {
     console.error("Usage: node scripts/rd_ops_env.mjs revenuecat-delete-user <app_user_id>");
     return 1;
   }
+  if (/[\r\n]/.test(key)) {
+    console.error("RevenueCat Keychain credential contains invalid line breaks.");
+    return 1;
+  }
+
+  const curlConfigEscapedKey = key
+    .replaceAll("\\", "\\\\")
+    .replaceAll('"', '\\"');
+  const curlConfig =
+    `header = "Authorization: Bearer ${curlConfigEscapedKey}"\n`;
 
   const response = spawnSync(
     "curl",
     [
+      "--config",
+      "-",
       "--silent",
       "--show-error",
       "--fail-with-body",
@@ -72,13 +84,14 @@ function revenueCatDelete(appUserID) {
       "--url",
       `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(appUserID)}`,
       "--header",
-      `Authorization: Bearer ${key}`,
-      "--header",
       "Accept: application/json",
       "--header",
       "Content-Type: application/json",
     ],
-    { encoding: "utf8" },
+    {
+      encoding: "utf8",
+      input: curlConfig,
+    },
   );
 
   if (response.status === 0) {

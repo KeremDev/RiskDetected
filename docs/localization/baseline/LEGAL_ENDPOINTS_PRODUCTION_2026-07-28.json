@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-28T19:32:00+03:00",
+  "checks": [
+    {
+      "requested_url": "https://riskdetected.com/gizlilik",
+      "status": 200,
+      "final_url": "https://riskdetected.com/gizlilik",
+      "redirects": [],
+      "content_type": "text/html; charset=utf-8",
+      "html_lang": "tr",
+      "title": "RiskDetected — Saha fotoğrafından, denetime hazır iş güvenliği raporu",
+      "body_sha256": "87d4d18b4f8fdf581cfe92a9d3d8f71d83f975cf36d3136c9be66ba894c00f96"
+    },
+    {
+      "requested_url": "https://riskdetected.com/kullanim-kosullari",
+      "status": 200,
+      "final_url": "https://riskdetected.com/kullanim-kosullari",
+      "redirects": [],
+      "content_type": "text/html; charset=utf-8",
+      "html_lang": "tr",
+      "title": "RiskDetected — Saha fotoğrafından, denetime hazır iş güvenliği raporu",
+      "body_sha256": "87d4d18b4f8fdf581cfe92a9d3d8f71d83f975cf36d3136c9be66ba894c00f96"
+    },
+    {
+      "requested_url": "https://riskdetected.com/kvkk",
+      "status": 200,
+      "final_url": "https://riskdetected.com/kvkk",
+      "redirects": [],
+      "content_type": "text/html; charset=utf-8",
+      "html_lang": "tr",
+      "title": "RiskDetected — Saha fotoğrafından, denetime hazır iş güvenliği raporu",
+      "body_sha256": "87d4d18b4f8fdf581cfe92a9d3d8f71d83f975cf36d3136c9be66ba894c00f96"
+    },
+    {
+      "requested_url": "https://riskdetected.com/acik-riza-beyani",
+      "status": 200,
+      "final_url": "https://riskdetected.com/acik-riza-beyani",
+      "redirects": [],
+      "content_type": "text/html; charset=utf-8",
+      "html_lang": "tr",
+      "title": "RiskDetected — Saha fotoğrafından, denetime hazır iş güvenliği raporu",
+      "body_sha256": "87d4d18b4f8fdf581cfe92a9d3d8f71d83f975cf36d3136c9be66ba894c00f96"
+    },
+    {
+      "requested_url": "https://riskdetected.com/legal-documents/manifest.json",
+      "status": 200,
+      "final_url": "https://riskdetected.com/legal-documents/manifest.json",
+      "redirects": [],
+      "content_type": "application/json; charset=utf-8",
+      "body_sha256": "5a2119aea4c5710c317bfb57d621a34390fc4c9296f91446d8632b73a075eb12",
+      "manifest_locale": "tr",
+      "document_count": 4,
+      "document_kinds": [
+        "terms",
+        "privacy",
+        "kvkk",
+        "consent"
+      ],
+      "document_versions": [
+        "terms-2026-07-08",
+        "privacy-2026-07-08",
+        "kvkk-2026-07-08",
+        "consent-2026-07-08"
+      ]
+    }
+  ],
+  "conclusion": {
+    "configured_urls_reachable": true,
+    "configured_urls_redirect": false,
+    "configured_html_language": "tr",
+    "english_legal_manifest_present": false
+  }
+}

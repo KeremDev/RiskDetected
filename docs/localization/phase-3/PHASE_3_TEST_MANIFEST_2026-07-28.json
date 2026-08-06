@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-07-29T00:05:21+03:00",
+  "branch": "codex/global-localization-wave1",
+  "base_commit": "740d5513c3d2500820908b52a6957647f12576a5",
+  "phase": 3,
+  "production_mutation_performed": false,
+  "production_deploy_performed": false,
+  "app_store_connect_mutation_performed": false,
+  "phase_4_changes_started": false,
+  "catalogs": {
+    "status": "passed",
+    "source_language": "tr",
+    "languages": [
+      "tr",
+      "en"
+    ],
+    "catalog_count": 11,
+    "total_keys": 2068,
+    "counts": {
+      "Analysis.xcstrings": 555,
+      "Auth.xcstrings": 96,
+      "InfoPlist.xcstrings": 3,
+      "Legal.xcstrings": 32,
+      "Localizable.xcstrings": 676,
+      "Notifications.xcstrings": 7,
+      "Onboarding.xcstrings": 294,
+      "Paywall.xcstrings": 101,
+      "ProfessionalProgress.xcstrings": 115,
+      "Reports.xcstrings": 174,
+      "SafetyTerminology.xcstrings": 15
+    },
+    "tr_en_key_parity": true,
+    "placeholder_parity": true,
+    "native_plural_variations": true,
+    "context_comments_present": true,
+    "swift_fallback_matches_turkish": true,
+    "combined_catalog_hashes": {
+      "Analysis.xcstrings": "6e568536e910e200c13e539913eb79b76f51a0ef53a6bf536a2d96ab77766c84",
+      "Auth.xcstrings": "7987f9891094032b419da5766560d16950b8e2759ebc2a565f4545f55770c99c",
+      "InfoPlist.xcstrings": "93cff30c9dec25be1e3f5d06553854a02f70be7c7868f23dce239589a7b17252",
+      "Legal.xcstrings": "1b00cd9a4dcc751ecb98d545506026a3a62a1c405d0ef9d271e76c36254317e4",
+      "Localizable.xcstrings": "e9eb259ce1f90b74f60bfec00ab989d2076bd23a9e9087c3f70ee4e0de577979",
+      "Notifications.xcstrings": "6d60e9f8fd9a9dc1d1c34877f0392aa7e56ced2c32eaa661495d7ae915f7186d",
+      "Onboarding.xcstrings": "2b482011726731614f9b2115e1c4b7e5ada27e1d51850edd7c05d05b77210e43",
+      "Paywall.xcstrings": "f8c97ad732775a71b43997ad9a90e8ab19f99b5c072e479ba11c28b2d19c4dfb",
+      "ProfessionalProgress.xcstrings": "41f9cf2f680ba732a191efc6e54ac2deb6375c48ef6cd497a7a9d846c6d773b8",
+      "Reports.xcstrings": "c85726dfe10e9971bc5666df5e069264fd839d5414a7386af2a500dfea542bae",
+      "SafetyTerminology.xcstrings": "2c83c92624864fc5d98a6b7b957428d06fde601ef060502753924f4ebde4dfd6"
+    }
+  },
+  "native_language_architecture": {
+    "status": "passed",
+    "bundle_preferred_localizations_authoritative": true,
+    "apple_languages_write_absent": true,
+    "bundle_swizzle_absent": true,
+    "development_region": "tr",
+    "known_regions": [
+      "tr",
+      "en",
+      "Base"
+    ],
+    "profile_language_opens_native_settings": true,
+    "ui_language_and_safety_profile_independent": true,
+    "active_scene_refreshes_backend_language_context": true,
+    "cold_launch_english_ui_verified": true
+  },
+  "shipping_review_gates": {
+    "professional_progress_english_shipping_approved": false,
+    "professional_progress_keys_review_gated": 115,
+    "english_legal_documents_available": false,
+    "english_legal_safe_unavailable_surface": true,
+    "human_language_review_fabricated": false,
+    "human_safety_review_fabricated": false,
+    "legal_approval_fabricated": false
+  },
+  "content_inventory": {
+    "status": "passed",
+    "entries": 1583,
+    "p0": 1569,
+    "p1": 14,
+    "unowned_p0_p1": 0,
+    "ios_ui_entries": 0,
+    "remaining_surfaces": {
+      "asc_metadata": 5,
+      "asc_subscription": 9,
+      "backend": 218,
+      "email": 25,
+      "legal": 1026,
+      "pdf": 106,
+      "plist": 3,
+      "push": 12,
+      "xlsx": 179
+    },
+    "hardcoded_baseline": 1619,
+    "hardcoded_current": 1583,
+    "hardcoded_additions": 0,
+    "inventory_sha256": "2ccfaa17b91a0b9bfadeb1af8f4ec22c7c45d583c943e01386a30240d7e259a9",
+    "summary_sha256": "8e662092ea6e6113eb3eb2ce4f4c297022593aa354318a2f982b536eb4d57931"
+  },
+  "release_build_gate": {
+    "status": "passed",
+    "xcode_build_phase": "Localization release gate",
+    "configuration": "Release",
+    "user_script_sandboxing_preserved": true,
+    "input_file_count": 209,
+    "input_file_list": "Config/LocalizationReleaseGateInputs.xcfilelist",
+    "input_file_list_sha256": "2d5d42fc156d3ac3df45ee7f803c6999fe11f1fd43b32a88338bd39c90c8e9da",
+    "script": "scripts/localization_release_build_gate.sh",
+    "script_sha256": "ceeea6eda61dd0677ca3de75d4b95b03eb62882e542271b7aa214ddb075dcd9d",
+    "catalog_gate_count": 16
+  },
+  "results": {
+    "localization_profile_contract": {
+      "status": "passed",
+      "passed": 17,
+      "failed": 0
+    },
+    "localization_catalog_gates": {
+      "status": "passed",
+      "passed": 16,
+      "failed": 0
+    },
+    "swift_parse": {
+      "status": "passed",
+      "scope": "all App Swift sources and modified UI test source"
+    },
+    "ios_debug_build": {
+      "status": "passed",
+      "simulator": "RD QA iPhone 16 Pro",
+      "warnings": 0,
+      "errors": 0,
+      "build_log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-07-28T21-04-37-538Z_pid73592_6577a4d3.log",
+      "build_log_sha256": "5027070fdba24f5dae5388a2cdf075e3d569be5cb863c35901ca298432612085"
+    },
+    "ios_release_build": {
+      "status": "passed",
+      "simulator": "RD QA iPhone 16 Pro",
+      "warnings": 0,
+      "errors": 0,
+      "localization_release_gate_executed": true,
+      "build_log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-07-28T21-03-13-066Z_pid73592_6162b156.log",
+      "build_log_sha256": "bb6b5233078c543509264de8fb26513015d144f53e9a8b07526c549efcd0cca6"
+    },
+    "phase_3_targeted_ui": {
+      "status": "passed",
+      "passed": 4,
+      "failed": 0,
+      "coverage": [
+        "English onboarding explicit safety profile",
+        "English non-TR legislation gate",
+        "largest Dynamic Type",
+        "pseudolocalization"
+      ],
+      "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-07-28T20-13-05-915Z_pid73592_0e0319d9.xcresult",
+      "xcresult_info_sha256": "ba89832ced98bd0550c2200c5df248a15b86139f94752df4b5f68d771dfc8f14"
+    },
+    "regression_targeted_ui": {
+      "status": "passed",
+      "passed": 4,
+      "failed": 0,
+      "coverage": [
+        "Pro localized monthly/yearly price copy",
+        "report archive filter stable identifier",
+        "report analysis row stable identifier",
+        "report archive row stable identifier"
+      ],
+      "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-07-28T20-24-54-789Z_pid73592_e41bf845.xcresult",
+      "xcresult_info_sha256": "d078899469b5a7c88facb0b459061f9d9d14cf15149142300a46d80cc5dc4d03"
+    },
+    "onboarding_transition_repeated_ui": {
+      "status": "passed",
+      "tests": 2,
+      "iterations_per_test": 3,
+      "passed_iterations": 6,
+      "failed_iterations": 0,
+      "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-07-28T20-47-09-928Z_pid73592_96e6a794.xcresult",
+      "xcresult_info_sha256": "5e4130e32f0a9b9f14547b29b1677ca8951a2cd2ce75b7c4c72984322894ed83"
+    },
+    "ios_full_ui_suite": {
+      "status": "passed",
+      "total": 43,
+      "passed": 42,
+      "skipped": 1,
+      "failed": 0,
+      "expected_failures": 0,
+      "duration_seconds": 464.105,
+      "skipped_test": "testE2ERealThreePhotoAnalysisCompletes()",
+      "skip_reason": "real provider E2E requires RD_E2E_REAL_3_PHOTO_ANALYSIS=1 and an explicit external test environment",
+      "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-07-28T20-49-25-330Z_pid73592_71ac5bd6.xcresult",
+      "xcresult_info_sha256": "764eb329091bc86e1d63cdd5c33331ff908d0ded93975e4a1261b432f7a54e44"
+    },
+    "git_diff_check": {
+      "status": "passed"
+    }
+  },
+  "commands": {
+    "inventory": "node scripts/localization_inventory.mjs --write",
+    "static_suite": "make localization-test",
+    "swift_parse": "find App -name '*.swift' -print0 | xargs -0 -n 1 xcrun swiftc -frontend -parse",
+    "release_gate_direct": "CONFIGURATION=Release SRCROOT=$PWD /bin/sh scripts/localization_release_build_gate.sh",
+    "ios_debug_build": "XcodeBuildMCP build_sim with Debug configuration",
+    "ios_release_build": "XcodeBuildMCP build_sim with Release configuration",
+    "ios_full_ui": "XcodeBuildMCP test_sim on RD QA iPhone 16 Pro",
+    "diff_check": "git diff --check"
+  }
+}

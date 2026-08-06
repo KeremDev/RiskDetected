@@ -25,15 +25,15 @@ enum InAppPaywallBilling: String, Equatable {
 
     var title: String {
         switch self {
-        case .monthly: return "Aylık"
-        case .yearly: return "Yıllık"
+        case .monthly: return RDLocalization.string("paywall.in.app.paywall.view.aylik.aaed1eef", table: .paywall, fallback: "Aylık")
+        case .yearly: return RDLocalization.string("paywall.in.app.paywall.view.yillik.ba990912", table: .paywall, fallback: "Yıllık")
         }
     }
 
     var accessibilityLabel: String {
         switch self {
-        case .monthly: return "Aylık abonelik"
-        case .yearly: return "Yıllık abonelik"
+        case .monthly: return RDLocalization.string("paywall.in.app.paywall.view.aylik.abonelik.c8bbf382", table: .paywall, fallback: "Aylık abonelik")
+        case .yearly: return RDLocalization.string("paywall.in.app.paywall.view.yillik.abonelik.502c943c", table: .paywall, fallback: "Yıllık abonelik")
         }
     }
 }
@@ -56,7 +56,7 @@ struct InAppPaywallView: View {
     @State private var didLogView = false
     @State private var selectedLegalDocument: LegalDocumentKind?
     @State private var processingOverlayTitle: String?
-    @State private var processingOverlayMessage = "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+    @State private var processingOverlayMessage = RDLocalization.string("paywall.in.app.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.1e66715b", table: .paywall, fallback: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor.")
     @State private var processingOverlayToken = UUID()
 
     private let variantID = "claude_plus_pro_paywall_v1"
@@ -146,7 +146,7 @@ struct InAppPaywallView: View {
                 .padding(.bottom, 6)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(plusBilling == .yearly ? "İlk haftanız bizden." : "Plus’a abone olun.")
+                Text(plusBilling == .yearly ? RDLocalization.string("paywall.in.app.paywall.view.ilk.haftaniz.bizden.5545e4d4", table: .paywall, fallback: "İlk haftanız bizden.") : RDLocalization.string("paywall.in.app.paywall.view.plus.a.abone.olun.6c6e9c29", table: .paywall, fallback: "Plus’a abone olun."))
                     .font(.system(size: RDFontScale.size(23.5), weight: .black, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .lineLimit(2)
@@ -193,7 +193,7 @@ struct InAppPaywallView: View {
                 .padding(.bottom, 4)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Limitsiz Özellikler")
+                Text(RDLocalization.string("paywall.in.app.paywall.view.limitsiz.ozellikler.694562c5", table: .paywall, fallback: "Limitsiz Özellikler"))
                     .font(.system(size: RDFontScale.size(28), weight: .black, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .lineLimit(2)
@@ -234,13 +234,13 @@ struct InAppPaywallView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Plus aboneliğini incele")
+                        Text(RDLocalization.string("paywall.in.app.paywall.view.plus.aboneligini.incele.847e9604", table: .paywall, fallback: "Plus aboneliğini incele"))
                             .font(.system(size: RDFontScale.size(13.5), weight: .bold, design: .rounded))
                             .foregroundStyle(InAppPaywallColor.onyx)
                             .lineLimit(1)
                             .minimumScaleFactor(0.82)
 
-                        Text("Daha uygun fiyatlı başlangıç paketi")
+                        Text(RDLocalization.string("paywall.in.app.paywall.view.daha.uygun.fiyatli.baslangic.paketi.751d7f54", table: .paywall, fallback: "Daha uygun fiyatlı başlangıç paketi"))
                             .font(.system(size: RDFontScale.size(11.5), weight: .medium, design: .rounded))
                             .foregroundStyle(InAppPaywallColor.goldDeep)
                             .lineLimit(1)
@@ -272,24 +272,44 @@ struct InAppPaywallView: View {
 
     private var plusSubtitle: Text {
         if plusBilling == .yearly {
-            return Text("7 gün ücretsiz Plus, sonrasında yıllık ")
-                + Text(annualPriceText(for: .plus)).fontWeight(.bold).foregroundColor(InAppPaywallColor.onyx)
-                + Text(".")
+            return Text(
+                RDLocalization.format(
+                    "paywall.plus.yearly.subtitle",
+                    table: .paywall,
+                    fallback: "Yıllık Plus %1$@. Varsa uygun teklif App Store'da uygulanır.",
+                    arguments: [annualPriceText(for: .plus)]
+                )
+            )
         }
-        return Text("Tüm Plus özellikleri aylık ")
-            + Text(monthlyPriceText(for: .plus)).fontWeight(.bold).foregroundColor(InAppPaywallColor.onyx)
-            + Text(" ile.")
+        return Text(
+            RDLocalization.format(
+                "paywall.plus.monthly.subtitle",
+                table: .paywall,
+                fallback: "Tüm Plus özellikleri aylık %1$@.",
+                arguments: [monthlyPriceText(for: .plus)]
+            )
+        )
     }
 
     private var proSubtitle: Text {
         if proBilling == .yearly {
-            return Text("Yıllık ")
-                + Text(annualPriceText(for: .pro)).fontWeight(.bold).foregroundColor(InAppPaywallColor.onyx)
-                + Text(" ile tüm Pro özellikleri.")
+            return Text(
+                RDLocalization.format(
+                    "paywall.pro.yearly.subtitle",
+                    table: .paywall,
+                    fallback: "Yıllık %1$@ ile tüm Pro özellikleri.",
+                    arguments: [annualPriceText(for: .pro)]
+                )
+            )
         }
-        return Text("Tüm Pro özellikleri aylık ")
-            + Text(monthlyPriceText(for: .pro)).fontWeight(.bold).foregroundColor(InAppPaywallColor.onyx)
-            + Text(" ile.")
+        return Text(
+            RDLocalization.format(
+                "paywall.pro.monthly.subtitle",
+                table: .paywall,
+                fallback: "Tüm Pro özellikleri aylık %1$@ ile.",
+                arguments: [monthlyPriceText(for: .pro)]
+            )
+        )
     }
 
     private func topBar(topInset: CGFloat) -> some View {
@@ -307,12 +327,12 @@ struct InAppPaywallView: View {
                 .buttonStyle(.plain)
                 .disabled(isWorking)
                 .opacity(isWorking ? 0.55 : 1)
-                .accessibilityLabel("Paywall ekranını kapat")
+                .accessibilityLabel(RDLocalization.string("paywall.in.app.paywall.view.paywall.ekranini.kapat.92144bcc", table: .paywall, fallback: "Paywall ekranını kapat"))
 
                 Spacer()
 
                 Button(action: restore) {
-                    Text(isWorking ? "Bekle" : "Geri yükle")
+                    Text(isWorking ? RDLocalization.string("paywall.in.app.paywall.view.bekle.c1475169", table: .paywall, fallback: "Bekle") : RDLocalization.string("paywall.in.app.paywall.view.geri.yukle.848d560c", table: .paywall, fallback: "Geri yükle"))
                         .font(.system(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.onyx)
                         .padding(.horizontal, 4)
@@ -322,7 +342,7 @@ struct InAppPaywallView: View {
                 .buttonStyle(.plain)
                 .disabled(isWorking)
                 .opacity(isWorking ? 0.55 : 1)
-                .accessibilityLabel("Satın alımları geri yükle")
+                .accessibilityLabel(RDLocalization.string("paywall.in.app.paywall.view.satin.alimlari.geri.yukle.aece5480", table: .paywall, fallback: "Satın alımları geri yükle"))
             }
             .frame(maxWidth: 430)
             .padding(.horizontal, 20)
@@ -359,7 +379,7 @@ struct InAppPaywallView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark")
                         .font(.system(size: RDFontScale.size(11), weight: .black, design: .rounded))
-                    Text("Şu an ödeme yok")
+                    Text(RDLocalization.string("paywall.in.app.paywall.view.su.an.odeme.yok.52dc209d", table: .paywall, fallback: "Fiyat ve uygun teklifler App Store'da doğrulanır"))
                         .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(InAppPaywallColor.onyx)
@@ -402,16 +422,16 @@ struct InAppPaywallView: View {
                 .lineSpacing(2)
                 .padding(.top, 7)
 
-            Text("İstediğiniz zaman iptal edebilirsiniz · Otomatik yenilenir")
+            Text(RDLocalization.string("paywall.in.app.paywall.view.istediginiz.zaman.iptal.edebilirsiniz.otomatik.y.287937e3", table: .paywall, fallback: "İstediğiniz zaman iptal edebilirsiniz · Otomatik yenilenir"))
                 .font(.system(size: RDFontScale.size(10), weight: .regular, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.slate)
                 .multilineTextAlignment(.center)
                 .padding(.top, activeScreen == .plus && billing(for: .plus) == .yearly ? 2 : 6)
 
             HStack(spacing: 16) {
-                legalLink("Şartlar", document: .terms)
+                legalLink(RDLocalization.string("paywall.in.app.paywall.view.sartlar.f0fe46a2", table: .paywall, fallback: "Şartlar"), document: .terms)
                 legalLink("Gizlilik", document: .privacy)
-                legalLink("İptal hakkı", URL(string: "https://apps.apple.com/account/subscriptions")!)
+                legalLink(RDLocalization.string("paywall.in.app.paywall.view.iptal.hakki.fd1920ba", table: .paywall, fallback: "İptal hakkı"), URL(string: "https://apps.apple.com/account/subscriptions")!)
             }
             .padding(.top, 6)
         }
@@ -450,13 +470,13 @@ struct InAppPaywallView: View {
     }
 
     private var primaryButtonTitle: String {
-        if isWorking { return "Satın alma hazırlanıyor..." }
-        if currentPlanIncludesActiveScreen { return "Planın aktif" }
+        if isWorking { return RDLocalization.string("paywall.in.app.paywall.view.satin.alma.hazirlaniyor.7db69bb8", table: .paywall, fallback: "Satın alma hazırlanıyor...") }
+        if currentPlanIncludesActiveScreen { return RDLocalization.string("paywall.in.app.paywall.view.planin.aktif.a449054e", table: .paywall, fallback: "Planın aktif") }
         if selectedPackage == nil {
-            return packageLoadError == nil ? "Fiyat yükleniyor..." : "Tekrar dene"
+            return packageLoadError == nil ? RDLocalization.string("paywall.in.app.paywall.view.fiyat.yukleniyor.9767cab5", table: .paywall, fallback: "Fiyat yükleniyor...") : RDLocalization.string("paywall.in.app.paywall.view.tekrar.dene.a5447e51", table: .paywall, fallback: "Tekrar dene")
         }
-        if activeScreen == .plus && billing(for: .plus) == .yearly { return "Ücretsiz denemeyi başlat" }
-        return "Aboneliği Başlat"
+        if activeScreen == .plus && billing(for: .plus) == .yearly { return RDLocalization.string("paywall.in.app.paywall.view.ucretsiz.denemeyi.baslat.8b61966d", table: .paywall, fallback: "Devam et") }
+        return RDLocalization.string("paywall.in.app.paywall.view.aboneligi.baslat.229585df", table: .paywall, fallback: "Aboneliği Başlat")
     }
 
     private var primaryButtonDisabled: Bool {
@@ -472,13 +492,13 @@ struct InAppPaywallView: View {
     private var legalLine: String {
         switch (activeScreen, billing(for: activeScreen)) {
         case (.plus, .yearly):
-            return "7 gün ücretsiz, sonra yıllık \(annualPriceText(for: .plus))."
+            return RDLocalization.format("paywall.in.app.paywall.view.7.gun.ucretsiz.sonra.yillik.1.7e510489", table: .paywall, fallback: "Yıllık %1$@. Varsa uygun teklif App Store'da uygulanır.", arguments: [String(describing: annualPriceText(for: .plus))])
         case (.plus, .monthly):
-            return "Aylık \(monthlyPriceText(for: .plus))."
+            return RDLocalization.format("paywall.in.app.paywall.view.aylik.1.2ef43160", table: .paywall, fallback: "Aylık %1$@.", arguments: [String(describing: monthlyPriceText(for: .plus))])
         case (.pro, .yearly):
-            return "Yıllık \(annualPriceText(for: .pro))."
+            return RDLocalization.format("paywall.in.app.paywall.view.yillik.1.f014f98c", table: .paywall, fallback: "Yıllık %1$@.", arguments: [String(describing: annualPriceText(for: .pro))])
         case (.pro, .monthly):
-            return "Aylık \(monthlyPriceText(for: .pro))."
+            return RDLocalization.format("paywall.in.app.paywall.view.aylik.1.aa596d91", table: .paywall, fallback: "Aylık %1$@.", arguments: [String(describing: monthlyPriceText(for: .pro))])
         }
     }
 
@@ -496,11 +516,11 @@ struct InAppPaywallView: View {
         case .loading, .retryingOnce:
             return nil
         case .loaded:
-            return "Seçili abonelik paketi veya App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+            return RDLocalization.string("paywall.in.app.paywall.view.secili.abonelik.paketi.veya.app.store.fiyati.su..8fe2c5f0", table: .paywall, fallback: "Seçili abonelik paketi veya App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene.")
         case let .failed(message):
             let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty
-                ? "App Store abonelik fiyatları şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+                ? RDLocalization.string("paywall.in.app.paywall.view.app.store.abonelik.fiyatlari.su.an.alinamadi.int.7a4731b3", table: .paywall, fallback: "App Store abonelik fiyatları şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene.")
                 : trimmed
         }
     }
@@ -601,7 +621,7 @@ struct InAppPaywallView: View {
         guard !isWorking else { return }
         isWorking = true
         stopProcessingOverlay()
-        workingMessage = "App Store abonelik paketleri yükleniyor..."
+        workingMessage = RDLocalization.string("paywall.in.app.paywall.view.app.store.abonelik.paketleri.yukleniyor.a764aab2", table: .paywall, fallback: "App Store abonelik paketleri yükleniyor...")
         errorMessage = nil
         Task {
             await app.refreshSubscriptionOfferings()
@@ -620,19 +640,19 @@ struct InAppPaywallView: View {
         let purchaseBilling = billing(for: purchaseScreen)
 
         guard let package = selectedPackage(for: purchaseScreen, billing: purchaseBilling) else {
-            errorMessage = "Bu plan için App Store paketi henüz yüklenmedi."
+            errorMessage = RDLocalization.string("paywall.in.app.paywall.view.bu.plan.icin.app.store.paketi.henuz.yuklenmedi.3c3253d4", table: .paywall, fallback: "Bu plan için App Store paketi henüz yüklenmedi.")
             return
         }
 
         isWorking = true
         startProcessingOverlay(
-            initialTitle: "App Store ödeme ekranı açılıyor...",
-            initialMessage: "Onay penceresi açıldığında işlemi App Store üzerinden tamamlayabilirsin.",
-            delayedTitle: "Satın alma doğrulanıyor",
-            delayedMessage: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor.",
-            delayedWorkingMessage: "Satın alma doğrulanıyor..."
+            initialTitle: RDLocalization.string("paywall.in.app.paywall.view.app.store.odeme.ekrani.aciliyor.2017db3c", table: .paywall, fallback: "App Store ödeme ekranı açılıyor..."),
+            initialMessage: RDLocalization.string("paywall.in.app.paywall.view.onay.penceresi.acildiginda.islemi.app.store.uzer.9eb4daac", table: .paywall, fallback: "Onay penceresi açıldığında işlemi App Store üzerinden tamamlayabilirsin."),
+            delayedTitle: RDLocalization.string("paywall.in.app.paywall.view.satin.alma.dogrulaniyor.88f1450c", table: .paywall, fallback: "Satın alma doğrulanıyor"),
+            delayedMessage: RDLocalization.string("paywall.in.app.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.a404ac62", table: .paywall, fallback: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."),
+            delayedWorkingMessage: RDLocalization.string("paywall.in.app.paywall.view.satin.alma.dogrulaniyor.167f9bd5", table: .paywall, fallback: "Satın alma doğrulanıyor...")
         )
-        workingMessage = "App Store ödeme ekranı açılıyor..."
+        workingMessage = RDLocalization.string("paywall.in.app.paywall.view.app.store.odeme.ekrani.aciliyor.ea863cb0", table: .paywall, fallback: "App Store ödeme ekranı açılıyor...")
         errorMessage = nil
         logPaywallEvent(.purchaseStarted, screen: purchaseScreen, billing: purchaseBilling)
 
@@ -651,7 +671,7 @@ struct InAppPaywallView: View {
                     logPaywallEvent(.purchaseSucceeded, screen: purchaseScreen, billing: purchaseBilling)
                     onSubscribe()
                 } else {
-                    errorMessage = "Abonelik doğrulanamadı. Seçilen plan \(purchaseScreen.tier.title), doğrulanan plan \(purchasedState.tier.title)."
+                    errorMessage = RDLocalization.format("paywall.in.app.paywall.view.abonelik.dogrulanamadi.secilen.plan.1.dogrulanan.715caf2d", table: .paywall, fallback: "Abonelik doğrulanamadı. Seçilen plan %1$@, doğrulanan plan %2$@.", arguments: [String(describing: purchaseScreen.tier.title), String(describing: purchasedState.tier.title)])
                     logPaywallEvent(
                         .purchaseFailed,
                         screen: purchaseScreen,
@@ -670,8 +690,8 @@ struct InAppPaywallView: View {
                 let classification = PurchaseErrorClassifier.classify(error)
                 errorMessage = AppErrorMessage.makePurchase(
                     classification: classification,
-                    context: "Satın alma doğrulanamadı",
-                    fallbackTitle: "Satın alma doğrulanamadı"
+                    context: RDLocalization.string("paywall.in.app.paywall.view.satin.alma.dogrulanamadi.f72c702f", table: .paywall, fallback: "Satın alma doğrulanamadı"),
+                    fallbackTitle: RDLocalization.string("paywall.in.app.paywall.view.satin.alma.dogrulanamadi.2601825b", table: .paywall, fallback: "Satın alma doğrulanamadı")
                 ).message
                 logPaywallEvent(
                     paymentPendingPaywallEventEnabled && classification.kind == .paymentPending
@@ -689,13 +709,13 @@ struct InAppPaywallView: View {
         guard !isWorking else { return }
         isWorking = true
         startProcessingOverlay(
-            initialTitle: "Satın alımlar kontrol ediliyor...",
-            initialMessage: "App Store hesabındaki abonelik kayıtları kontrol ediliyor.",
-            delayedTitle: "Satın alma doğrulanıyor",
-            delayedMessage: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor.",
-            delayedWorkingMessage: "Satın alma doğrulanıyor..."
+            initialTitle: RDLocalization.string("paywall.in.app.paywall.view.satin.alimlar.kontrol.ediliyor.74b29de4", table: .paywall, fallback: "Satın alımlar kontrol ediliyor..."),
+            initialMessage: RDLocalization.string("paywall.in.app.paywall.view.app.store.hesabindaki.abonelik.kayitlari.kontrol.33625ca8", table: .paywall, fallback: "App Store hesabındaki abonelik kayıtları kontrol ediliyor."),
+            delayedTitle: RDLocalization.string("paywall.in.app.paywall.view.satin.alma.dogrulaniyor.4b3902cb", table: .paywall, fallback: "Satın alma doğrulanıyor"),
+            delayedMessage: RDLocalization.string("paywall.in.app.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.ddd7a8ea", table: .paywall, fallback: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."),
+            delayedWorkingMessage: RDLocalization.string("paywall.in.app.paywall.view.satin.alma.dogrulaniyor.f4be1a8a", table: .paywall, fallback: "Satın alma doğrulanıyor...")
         )
-        workingMessage = "App Store satın alımların kontrol ediliyor..."
+        workingMessage = RDLocalization.string("paywall.in.app.paywall.view.app.store.satin.alimlarin.kontrol.ediliyor.cd3aaf32", table: .paywall, fallback: "App Store satın alımların kontrol ediliyor...")
         errorMessage = nil
         logPaywallEvent(.restoreTap)
 
@@ -708,7 +728,7 @@ struct InAppPaywallView: View {
                 if restoredState.tier.isPaid {
                     onSubscribe()
                 } else {
-                    errorMessage = "Geri yüklenecek aktif abonelik bulunamadı."
+                    errorMessage = RDLocalization.string("paywall.in.app.paywall.view.geri.yuklenecek.aktif.abonelik.bulunamadi.ebe10a3d", table: .paywall, fallback: "Geri yüklenecek aktif abonelik bulunamadı.")
                 }
             } catch {
                 stopProcessingOverlay()
@@ -716,8 +736,8 @@ struct InAppPaywallView: View {
                 isWorking = false
                 errorMessage = AppErrorMessage.makePurchase(
                     error,
-                    context: "Satın alma doğrulanamadı",
-                    fallbackTitle: "Satın alma doğrulanamadı"
+                    context: RDLocalization.string("paywall.in.app.paywall.view.satin.alma.dogrulanamadi.08b97e50", table: .paywall, fallback: "Satın alma doğrulanamadı"),
+                    fallbackTitle: RDLocalization.string("paywall.in.app.paywall.view.satin.alma.dogrulanamadi.e9d10258", table: .paywall, fallback: "Satın alma doğrulanamadı")
                 ).message
             }
         }
@@ -794,7 +814,7 @@ struct InAppPaywallView: View {
     }
 
     private var unavailablePriceText: String {
-        packageLoadError == nil ? "fiyat yükleniyor" : "fiyat alınamadı"
+        packageLoadError == nil ? RDLocalization.string("paywall.in.app.paywall.view.fiyat.yukleniyor.91a8a0da", table: .paywall, fallback: "fiyat yükleniyor") : RDLocalization.string("paywall.in.app.paywall.view.fiyat.alinamadi.50d6ae8c", table: .paywall, fallback: "fiyat alınamadı")
     }
 
     #if DEBUG
@@ -994,7 +1014,7 @@ private struct InAppBillingToggle: View {
                     .foregroundStyle(value == option ? InAppPaywallColor.onyx : InAppPaywallColor.slate)
 
                 if option == .yearly {
-                    Text("%17")
+                    Text(RDLocalization.string("paywall.in.app.paywall.view.17.468b19d3", table: .paywall, fallback: "%17"))
                         .font(.system(size: RDFontScale.size(9), weight: .black, design: .rounded))
                         .foregroundStyle(tagForeground(selected: value == option))
                         .padding(.horizontal, 5)
@@ -1055,9 +1075,9 @@ private struct PlusTimeline: View {
             .padding(.vertical, 13)
 
             VStack(alignment: .leading, spacing: 7) {
-                TimelineRow(icon: "lock.open.fill", label: "Bugün", detail: "Tüm Plus özelliklerinin kilidini açın.", tone: .green)
-                TimelineRow(icon: "bell.fill", label: "5. gün", detail: "Denemenizin bittiğine dair hatırlatma alın.", tone: .green)
-                TimelineRow(icon: "crown.fill", label: "7. gün", detail: "Yıllık \(annualPrice) ödeme alınır.", tone: .gold)
+                TimelineRow(icon: "lock.open.fill", label: RDLocalization.string("paywall.in.app.paywall.view.bugun.936ba16e", table: .paywall, fallback: "Bugün"), detail: RDLocalization.string("paywall.in.app.paywall.view.tum.plus.ozelliklerinin.kilidini.acin.ba20643f", table: .paywall, fallback: "Tüm Plus özelliklerinin kilidini açın."), tone: .green)
+                TimelineRow(icon: "checkmark.seal.fill", label: RDLocalization.string("paywall.in.app.paywall.view.5.gun.d7dc9e6f", table: .paywall, fallback: "App Store"), detail: RDLocalization.string("paywall.in.app.paywall.view.denemenizin.bittigine.dair.hatirlatma.alin.6eea147c", table: .paywall, fallback: "Fiyatı ve varsa uygun teklifi App Store onay ekranında doğrulayın."), tone: .green)
+                TimelineRow(icon: "crown.fill", label: RDLocalization.string("paywall.in.app.paywall.view.7.gun.ec8fc3fe", table: .paywall, fallback: "Yıllık plan"), detail: RDLocalization.format("paywall.in.app.paywall.view.yillik.1.odeme.alinir.10a000c7", table: .paywall, fallback: "Yıllık fiyat %1$@; App Store şartları geçerlidir.", arguments: [String(describing: annualPrice)]), tone: .gold)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1144,18 +1164,18 @@ private struct PlusComparison: View {
     var onPro: () -> Void
 
     private let features = [
-        PlusComparisonFeature(label: "Günlük analiz", free: .text("1 / gün"), plus: .text("10 / gün"), badge: nil),
-        PlusComparisonFeature(label: "Risk Analizi", free: .notIncluded, plus: .included, badge: nil),
-        PlusComparisonFeature(label: "Detaylı analiz", free: .notIncluded, plus: .included, badge: nil),
-        PlusComparisonFeature(label: "Derin Araştırma", free: .notIncluded, plus: .included, badge: nil),
-        PlusComparisonFeature(label: "Firma yönetimi", free: .notIncluded, plus: .included, badge: nil),
-        PlusComparisonFeature(label: "Çoklu Fotoğraf Analizi", free: .notIncluded, plus: .included, badge: "YENİ")
+        PlusComparisonFeature(label: RDLocalization.string("paywall.in.app.paywall.view.gunluk.analiz.924d4a67", table: .paywall, fallback: "Günlük analiz"), free: .text(RDLocalization.string("paywall.in.app.paywall.view.1.gun.48502c81", table: .paywall, fallback: "1 / gün")), plus: .text(RDLocalization.string("paywall.in.app.paywall.view.10.gun.f71707af", table: .paywall, fallback: "10 / gün")), badge: nil),
+        PlusComparisonFeature(label: RDLocalization.string("paywall.in.app.paywall.view.risk.analizi.61b95913", table: .paywall, fallback: "Risk Analizi"), free: .notIncluded, plus: .included, badge: nil),
+        PlusComparisonFeature(label: RDLocalization.string("paywall.in.app.paywall.view.detayli.analiz.e955c96b", table: .paywall, fallback: "Detaylı analiz"), free: .notIncluded, plus: .included, badge: nil),
+        PlusComparisonFeature(label: RDLocalization.string("paywall.in.app.paywall.view.derin.arastirma.20ba0421", table: .paywall, fallback: "Derin Araştırma"), free: .notIncluded, plus: .included, badge: nil),
+        PlusComparisonFeature(label: RDLocalization.string("paywall.in.app.paywall.view.firma.yonetimi.0c7cc244", table: .paywall, fallback: "Firma yönetimi"), free: .notIncluded, plus: .included, badge: nil),
+        PlusComparisonFeature(label: RDLocalization.string("paywall.in.app.paywall.view.coklu.fotograf.analizi.c5d7318b", table: .paywall, fallback: "Çoklu Fotoğraf Analizi"), free: .notIncluded, plus: .included, badge: RDLocalization.string("paywall.in.app.paywall.view.yeni.0a06228d", table: .paywall, fallback: "YENİ"))
     ]
 
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
-                Text("Neler dahil?")
+                Text(RDLocalization.string("paywall.in.app.paywall.view.neler.dahil.36a09b8b", table: .paywall, fallback: "Neler dahil?"))
                     .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
                     .accessibilityIdentifier("in_app_paywall.plus.included_title")
@@ -1192,10 +1212,10 @@ private struct PlusComparison: View {
                         .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.green)
 
-                    Text("Limitsiz özellikler için ")
+                    Text(RDLocalization.string("paywall.in.app.paywall.view.limitsiz.ozellikler.icin.6733cee8", table: .paywall, fallback: "Limitsiz özellikler için"))
                         .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .foregroundColor(InAppPaywallColor.onyx)
-                    + Text("PRO’yu incele")
+                    + Text(RDLocalization.string("paywall.in.app.paywall.view.pro.yu.incele.8f867e6b", table: .paywall, fallback: "PRO’yu incele"))
                         .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                         .underline()
                         .foregroundColor(InAppPaywallColor.onyx)
@@ -1217,13 +1237,13 @@ private struct PlusComparison: View {
         HStack(spacing: 8) {
             Spacer(minLength: 0)
 
-            Text("Ücretsiz")
+            Text(RDLocalization.string("paywall.in.app.paywall.view.ucretsiz.61d66735", table: .paywall, fallback: "FREE"))
                 .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 .foregroundStyle(InAppPaywallColor.slate)
                 .frame(width: 56)
 
             VStack(spacing: 2) {
-                Text("POPÜLER")
+                Text(RDLocalization.string("paywall.in.app.paywall.view.populer.1df05921", table: .paywall, fallback: "POPÜLER"))
                     .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                     .foregroundStyle(Color.white)
                     .padding(.horizontal, 6)
@@ -1236,7 +1256,7 @@ private struct PlusComparison: View {
                     Image(systemName: "crown.fill")
                         .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.goldBase)
-                    Text("PLUS")
+                    Text(RDLocalization.string("paywall.in.app.paywall.view.plus.6c6df3b6", table: .paywall, fallback: "PLUS"))
                         .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                         .foregroundStyle(InAppPaywallColor.goldDeep)
                 }
@@ -1312,12 +1332,12 @@ private struct ComparisonCell: View {
 
 private struct ProFeatureCard: View {
     private let items: [(label: String, strong: Bool)] = [
-        ("Tüm Plus özellikleri dahil", true),
-        ("Limitsiz günlük analiz", false),
-        ("Limitsiz risk analizi", false),
-        ("Limitsiz detaylı analiz", false),
-        ("Limitsiz derin araştırma", false),
-        ("Öncelikli destek", false)
+        (RDLocalization.string("paywall.in.app.paywall.view.tum.plus.ozellikleri.dahil.7a0cdd58", table: .paywall, fallback: "Tüm Plus özellikleri dahil"), true),
+        (RDLocalization.string("paywall.in.app.paywall.view.limitsiz.gunluk.analiz.117c9b5e", table: .paywall, fallback: "Limitsiz günlük analiz"), false),
+        (RDLocalization.string("paywall.in.app.paywall.view.limitsiz.risk.analizi.0208fc64", table: .paywall, fallback: "Limitsiz risk analizi"), false),
+        (RDLocalization.string("paywall.in.app.paywall.view.limitsiz.detayli.analiz.2806a268", table: .paywall, fallback: "Limitsiz detaylı analiz"), false),
+        (RDLocalization.string("paywall.in.app.paywall.view.limitsiz.derin.arastirma.74201aad", table: .paywall, fallback: "Limitsiz derin araştırma"), false),
+        (RDLocalization.string("paywall.in.app.paywall.view.oncelikli.destek.d8c6c44d", table: .paywall, fallback: "Öncelikli destek"), false)
     ]
 
     var body: some View {
@@ -1330,7 +1350,7 @@ private struct ProFeatureCard: View {
                     .background(InAppPaywallColor.onyx)
                     .clipShape(Circle())
 
-                Text("Pro üyelik")
+                Text(RDLocalization.string("paywall.in.app.paywall.view.pro.uyelik.74a41cf4", table: .paywall, fallback: "Pro üyelik"))
                     .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(InAppPaywallColor.onyx)
             }
@@ -1465,8 +1485,8 @@ private extension SubscriptionPlanPackage {
             subtitle
         ]
         .joined(separator: " ")
-        .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "tr_TR"))
-        .lowercased(with: Locale(identifier: "tr_TR"))
+        .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .autoupdatingCurrent)
+        .lowercased(with: .autoupdatingCurrent)
 
         switch billing {
         case .yearly:

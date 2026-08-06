@@ -24,13 +24,13 @@ select ok(
 
 select ok(
   (
-    select value->>'rollout_mode' = 'off'
+    select value->>'rollout_mode' = 'on'
       and value->>'schema_version' = '2'
       and value->>'kill_switch' = 'false'
     from public.app_feature_flags
     where key = 'multi_photo_exact_coverage_schema'
   ),
-  'exact coverage feature flag is safely off by default'
+  'exact coverage feature flag matches the attested production rollout'
 );
 
 insert into auth.users (id, email, aud, role, created_at, updated_at)

@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "stage": 1,
+  "stage_key": "internal_tr_regression_flags_off",
+  "contract_issues": [],
+  "metric_issues": [],
+  "insufficient_samples": [],
+  "threshold_violations": [],
+  "rates": {
+    "analysis_failure_rate": 0,
+    "wrong_language_rate": 0,
+    "language_repair_rate": 0,
+    "report_failure_rate": 0,
+    "notification_template_miss_rate": 0,
+    "queue_retry_rate": 0
+  },
+  "applied_waivers": [
+    {
+      "waiver_id": "stage1_asc_session_propagation_owner_waiver_2026-08-01",
+      "metric": "sessions",
+      "actual": 0,
+      "required": 1
+    }
+  ],
+  "integrity_status": "passed",
+  "snapshot_sha256": "017b95e50dc66dd18139602ed51cc1bb8041e91b886f86cea6f010d91e2c8af8",
+  "effective_status": "passed"
+}

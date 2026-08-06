@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "contract_id": "rd-global-localization-testflight-rollout-v1",
+  "effective_at": "2026-08-01T21:00:00Z",
+  "source_plan": "docs/RISKDETECTED_GLOBAL_LOCALIZATION_COUNTRY_SAFETY_INTEGRATION_EXECUTION_PLAN_2026-07-28.md#65-testflight-rollout",
+  "fail_closed": true,
+  "rate_thresholds": {
+    "analysis_failure_rate_max": 0.05,
+    "wrong_language_rate_max": 0,
+    "language_repair_rate_max": 0.1,
+    "report_failure_rate_max": 0.02,
+    "notification_template_miss_rate_max": 0,
+    "queue_retry_rate_max": 0.1
+  },
+  "count_thresholds": {
+    "crash_count_max": 0,
+    "ambiguous_dispatch_count_max": 0
+  },
+  "waiver_policy": {
+    "stage1_asc_session_propagation": {
+      "allowed": true,
+      "stage": 1,
+      "metric": "sessions",
+      "owner_authorization_required": true,
+      "physical_candidate_install_required": true,
+      "physical_launch_required": true,
+      "installed_tester_state_required": true,
+      "maximum_documented_latency_hours": 24,
+      "zero_tolerance_thresholds_remain_enforced": true,
+      "later_stages_affected": false
+    }
+  },
+  "accelerated_validation_policy": {
+    "policy_id": "rd-owner-approved-device-simulator-validation-2026-08-01",
+    "owner_authorized": true,
+    "authorization_source": "Owner instruction on 2026-08-01: do not wait for delayed App Store Connect measurements in later stages; use physical-device or simulator tests and avoid repeated operations.",
+    "applies_to_stages": [2, 3, 4, 5, 6, 7, 8, 9],
+    "app_store_connect_usage_is_gate_input": false,
+    "app_store_connect_usage_collection_required": false,
+    "production_ai_repetition_required": false,
+    "strict_stage_order_remains_required": true,
+    "zero_tolerance_thresholds_remain_enforced": true,
+    "live_build_77_unchanged": true,
+    "public_rollout_forbidden": true,
+    "turkish_store_content_unchanged": true
+  },
+  "stages": [
+    {
+      "stage": 1,
+      "key": "internal_tr_regression_flags_off",
+      "minimums": {
+        "analyses": 1,
+        "report_requests": 1,
+        "notification_attempts": 1,
+        "sessions": 1,
+        "queue_jobs": 1
+      }
+    },
+    {
+      "stage": 2,
+      "key": "turkish_contract_dogfood",
+      "minimums": {
+        "analyses": 3,
+        "report_requests": 1,
+        "notification_attempts": 1,
+        "sessions": 0,
+        "queue_jobs": 3
+      },
+      "validation": {
+        "mode": "physical_device",
+        "minimum_launches": 3,
+        "required_profiles": ["tr-tr-current-v1"],
+        "required_checks": [
+          "cold_launch",
+          "analysis_pipeline",
+          "standard_report",
+          "linked_notification",
+          "queue_terminal"
+        ]
+      }
+    },
+    {
+      "stage": 3,
+      "key": "english_international_allowlist",
+      "minimums": {
+        "analyses": 0,
+        "report_requests": 0,
+        "notification_attempts": 0,
+        "sessions": 0,
+        "queue_jobs": 0
+      },
+      "validation": {
+        "mode": "simulator",
+        "minimum_launches": 1,
+        "required_profiles": ["en-intl-generic-v1"],
+        "required_checks": ["profile_matrix", "report_language", "onboarding"]
+      }
+    },
+    {
+      "stage": 4,
+      "key": "english_uk_allowlist",
+      "minimums": {
+        "analyses": 0,
+        "report_requests": 0,
+        "notification_attempts": 0,
+        "sessions": 0,
+        "queue_jobs": 0
+      },
+      "validation": {
+        "mode": "simulator",
+        "minimum_launches": 1,
+        "required_profiles": ["en-gb-generic-v1"],
+        "required_checks": ["profile_matrix", "report_language"]
+      }
+    },
+    {
+      "stage": 5,
+      "key": "english_us_allowlist",
+      "minimums": {
+        "analyses": 0,
+        "report_requests": 0,
+        "notification_attempts": 0,
+        "sessions": 0,
+        "queue_jobs": 0
+      },
+      "validation": {
+        "mode": "simulator",
+        "minimum_launches": 1,
+        "required_profiles": ["en-us-generic-v1"],
+        "required_checks": ["profile_matrix", "report_language"]
+      }
+    },
+    {
+      "stage": 6,
+      "key": "english_au_allowlist",
+      "minimums": {
+        "analyses": 0,
+        "report_requests": 0,
+        "notification_attempts": 0,
+        "sessions": 0,
+        "queue_jobs": 0
+      },
+      "validation": {
+        "mode": "simulator",
+        "minimum_launches": 1,
+        "required_profiles": ["en-au-generic-v1"],
+        "required_checks": ["profile_matrix", "report_language"]
+      }
+    },
+    {
+      "stage": 7,
+      "key": "english_ca_allowlist",
+      "minimums": {
+        "analyses": 0,
+        "report_requests": 0,
+        "notification_attempts": 0,
+        "sessions": 0,
+        "queue_jobs": 0
+      },
+      "validation": {
+        "mode": "simulator",
+        "minimum_launches": 1,
+        "required_profiles": ["en-ca-generic-v1"],
+        "required_checks": ["profile_matrix", "report_language"]
+      }
+    },
+    {
+      "stage": 8,
+      "key": "full_internal_group",
+      "minimums": {
+        "analyses": 0,
+        "report_requests": 0,
+        "notification_attempts": 0,
+        "sessions": 0,
+        "queue_jobs": 0
+      },
+      "validation": {
+        "mode": "simulator",
+        "minimum_launches": 1,
+        "required_profiles": [
+          "tr-tr-current-v1",
+          "en-intl-generic-v1",
+          "en-gb-generic-v1",
+          "en-us-generic-v1",
+          "en-au-generic-v1",
+          "en-ca-generic-v1"
+        ],
+        "required_checks": [
+          "profile_matrix",
+          "report_language",
+          "onboarding",
+          "jurisdiction_isolation",
+          "accessibility",
+          "pseudolocalization",
+          "backend_contract_suite"
+        ]
+      }
+    },
+    {
+      "stage": 9,
+      "key": "external_testflight_review_candidate",
+      "minimums": {
+        "analyses": 0,
+        "report_requests": 0,
+        "notification_attempts": 0,
+        "sessions": 0,
+        "queue_jobs": 0
+      },
+      "validation": {
+        "mode": "simulator",
+        "minimum_launches": 1,
+        "required_profiles": ["en-intl-generic-v1"],
+        "required_checks": [
+          "review_path",
+          "profile_matrix",
+          "report_language",
+          "onboarding",
+          "jurisdiction_isolation",
+          "accessibility",
+          "pseudolocalization",
+          "backend_contract_suite"
+        ]
+      }
+    }
+  ],
+  "metric_definitions": {
+    "analysis_failure_rate": "failed analyses / analyses",
+    "wrong_language_rate": "failed language-contract outcomes / analyses",
+    "language_repair_rate": "analyses using the single bounded language repair / analyses",
+    "report_failure_rate": "failed report requests / report requests",
+    "notification_template_miss_rate": "exact-locale template misses / notification attempts",
+    "queue_retry_rate": "queue jobs with worker attempt greater than one / queue jobs",
+    "crash_count": "Stage 1 uses TestFlight diagnostics. Stages 2-9 use digest-bound physical-device or simulator validation evidence and do not wait for App Store Connect propagation.",
+    "ambiguous_dispatch_count": "queue dispatches ending without an unambiguous terminal outcome"
+  },
+  "privacy": {
+    "aggregate_only": true,
+    "user_ids_allowed": false,
+    "contact_data_allowed": false,
+    "user_content_allowed": false
+  }
+}

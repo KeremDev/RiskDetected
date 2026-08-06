@@ -15,7 +15,7 @@ struct OBSectorView: View {
                 VStack(spacing: 10) {
                     OBHeroTile { OBHeroSector() }
                         .obStage(delay: 0.08)
-                    Text("Hangi sektörlerde çalışıyorsun?")
+                    Text(RDLocalization.string("onboarding.obsector.view.hangi.sektorlerde.calisiyorsun.bab57f6f", table: .onboarding, fallback: "Hangi sektörlerde çalışıyorsun?"))
                         .font(.system(size: RDFontScale.size(24), weight: .semibold))
                         .tracking(-0.6)
                         .foregroundStyle(Color.rdOnyx)
@@ -23,7 +23,7 @@ struct OBSectorView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity)
                         .obStage(delay: 0.14)
-                    Text("Birden fazla seçebilirsin. Her analiz öncesinde, o fotoğrafı hangi sektör kapsamında değerlendirmek istediğini ayrıca soracağız.")
+                    Text(RDLocalization.string("onboarding.obsector.view.birden.fazla.secebilirsin.her.analiz.oncesinde.o.1577398e", table: .onboarding, fallback: "Birden fazla seçebilirsin. Her analiz öncesinde, o fotoğrafı hangi sektör kapsamında değerlendirmek istediğini ayrıca soracağız."))
                         .font(.system(size: RDFontScale.size(14)))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
@@ -57,10 +57,10 @@ struct OBSectorView: View {
                         .padding(.bottom, 2)
                 }
                 .frame(maxWidth: .infinity)
-                .accessibilityHint("Aşağı kaydırarak diğer sektörleri görebilirsin.")
+                .accessibilityHint(RDLocalization.string("onboarding.obsector.view.asagi.kaydirarak.diger.sektorleri.gorebilirsin.2f853e1f", table: .onboarding, fallback: "Aşağı kaydırarak diğer sektörleri görebilirsin."))
                 .accessibilityIdentifier("onboarding.sector.scroll_area")
 
-                OBSelectionCounter(count: state.sectors.count, suffix: "sektör seçildi")
+                OBSelectionCounter(count: state.sectors.count, suffix: RDLocalization.string("onboarding.obsector.view.sektor.secildi.69792ff7", table: .onboarding, fallback: "sektör seçildi"))
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 24)
@@ -68,11 +68,12 @@ struct OBSectorView: View {
             Spacer(minLength: 8)
 
             OBFooter {
-                OBPrimaryButton(title: "Devam", enabled: !state.sectors.isEmpty, accessibilityID: "onboarding.sector.continue") { onNext() }
+                OBPrimaryButton(title: RDLocalization.string("onboarding.obsector.view.devam.586e262c", table: .onboarding, fallback: "Devam"), enabled: !state.sectors.isEmpty, accessibilityID: "onboarding.sector.continue") { onNext() }
                     .obStage(delay: 0.7)
             }
         }
         .background(Color.rdPaper)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.sector")
     }
 
@@ -80,7 +81,7 @@ struct OBSectorView: View {
         HStack(spacing: 5) {
             Image(systemName: "chevron.down")
                 .font(.system(size: RDFontScale.size(11), weight: .bold))
-            Text("Daha fazla sektör")
+            Text(RDLocalization.string("onboarding.obsector.view.daha.fazla.sektor.7386ba43", table: .onboarding, fallback: "Daha fazla sektör"))
                 .font(.system(size: RDFontScale.size(11), weight: .semibold))
         }
         .foregroundStyle(Color.rdSlate)

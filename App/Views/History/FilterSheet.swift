@@ -4,12 +4,12 @@ struct FilterSheet: View {
     var onConfirm: () -> Void
     @Environment(\.dismiss) private var dismiss
 
-    @State private var dateFilter: String = "Bu hafta"
+    @State private var dateFilter: String = RDLocalization.string("localizable.filter.sheet.bu.hafta.bd342175", table: .localizable, fallback: "Bu hafta")
     @State private var selectedLevels: Set<RiskLevel> = [.critical, .high]
     @State private var selectedKinds: Set<String> = []
 
-    private let dateOptions = ["Bugün", "Bu hafta", "Bu ay", "Son 90 gün", "Tümü"]
-    private let kindOptions = ["Genel", "KKD", "İşaretleme", "Sektör", "Acil", "Prosedür"]
+    private let dateOptions = [RDLocalization.string("localizable.filter.sheet.bugun.5e78d032", table: .localizable, fallback: "Bugün"), RDLocalization.string("localizable.filter.sheet.bu.hafta.6ef21499", table: .localizable, fallback: "Bu hafta"), RDLocalization.string("localizable.filter.sheet.bu.ay.3e4f935f", table: .localizable, fallback: "Bu ay"), RDLocalization.string("localizable.filter.sheet.son.90.gun.d5e15064", table: .localizable, fallback: "Son 90 gün"), RDLocalization.string("localizable.filter.sheet.tumu.de3dc3ab", table: .localizable, fallback: "Tümü")]
+    private let kindOptions = [RDLocalization.string("localizable.filter.sheet.genel.ca283d14", table: .localizable, fallback: "Genel"), "KKD", RDLocalization.string("localizable.filter.sheet.isaretleme.81bc8740", table: .localizable, fallback: "İşaretleme"), RDLocalization.string("localizable.filter.sheet.sektor.0d1f5675", table: .localizable, fallback: "Sektör"), RDLocalization.string("localizable.filter.sheet.acil.eb5edb91", table: .localizable, fallback: "Acil"), RDLocalization.string("localizable.filter.sheet.prosedur.3d2127b9", table: .localizable, fallback: "Prosedür")]
 
     var body: some View {
         ScrollView {
@@ -23,10 +23,10 @@ struct FilterSheet: View {
                         .clipShape(RoundedRectangle(cornerRadius: 13))
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Analizleri filtrele")
+                        Text(RDLocalization.string("localizable.filter.sheet.analizleri.filtrele.a9296aa3", table: .localizable, fallback: "Analizleri filtrele"))
                             .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
-                        Text("Tarih, risk seviyesi ve odak alanına göre daralt.")
+                        Text(RDLocalization.string("localizable.filter.sheet.tarih.risk.seviyesi.ve.odak.alanina.gore.daralt.8b8a317e", table: .localizable, fallback: "Tarih, risk seviyesi ve odak alanına göre daralt."))
                             .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                     }
@@ -44,7 +44,7 @@ struct FilterSheet: View {
                             .shadow(color: Color.rdOnyx.opacity(0.10), radius: 8, x: 0, y: 4)
                     }
                     .buttonStyle(RDPressableButtonStyle())
-                    .accessibilityLabel("Filtre penceresini kapat")
+                    .accessibilityLabel(RDLocalization.string("localizable.filter.sheet.filtre.penceresini.kapat.23394e9a", table: .localizable, fallback: "Filtre penceresini kapat"))
                 }
                 .padding(.top, 6)
 
@@ -54,7 +54,7 @@ struct FilterSheet: View {
                     }
                 }
 
-                section("Risk seviyesi") {
+                section(RDLocalization.string("localizable.filter.sheet.risk.seviyesi.be00fbef", table: .localizable, fallback: "Risk seviyesi")) {
                     HStack(spacing: 6) {
                         ForEach([RiskLevel.critical, .high, .medium, .low], id: \.self) { lvl in
                             riskChip(level: lvl)
@@ -62,7 +62,7 @@ struct FilterSheet: View {
                     }
                 }
 
-                section("Analiz türü") {
+                section(RDLocalization.string("localizable.filter.sheet.analiz.turu.ebbe9acb", table: .localizable, fallback: "Analiz türü")) {
                     chipRow(options: kindOptions, isSelected: { selectedKinds.contains($0) }) { kind in
                         if selectedKinds.contains(kind) { selectedKinds.remove(kind) }
                         else { selectedKinds.insert(kind) }
@@ -71,11 +71,11 @@ struct FilterSheet: View {
 
                 HStack(spacing: 8) {
                     Button {
-                        dateFilter = "Tümü"
+                        dateFilter = RDLocalization.string("localizable.filter.sheet.tumu.8f51a7df", table: .localizable, fallback: "Tümü")
                         selectedLevels = []
                         selectedKinds = []
                     } label: {
-                        Text("Sıfırla")
+                        Text(RDLocalization.string("localizable.filter.sheet.sifirla.77de5bea", table: .localizable, fallback: "Sıfırla"))
                             .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .frame(width: 92, height: 48)
@@ -88,7 +88,7 @@ struct FilterSheet: View {
                     }
                     .buttonStyle(RDPressableButtonStyle())
 
-                    RDButton(title: "12 sonucu göster", style: .primary) {
+                    RDButton(title: RDLocalization.string("localizable.filter.sheet.12.sonucu.goster.d4e56bf2", table: .localizable, fallback: "12 sonucu göster"), style: .primary) {
                         onConfirm()
                         dismiss()
                     }

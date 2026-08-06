@@ -129,8 +129,7 @@ serve(async (req) => {
       body: JSON.stringify({
         user_id: user.id,
         kind: "report_ready",
-        title: "Rapor Hazır",
-        body: "Risk raporun oluşturuldu, raporlar bölümünden inceleyebilirsin.",
+        event_key: "report_ready",
         data: {
           report_id: report.id,
           analysis_id: report.analysis_id,

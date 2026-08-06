@@ -5,6 +5,12 @@ import UserNotifications
 import Supabase
 import OSLog
 
+enum NotificationSettingsLoadState: Equatable {
+    case loading
+    case loaded
+    case failed
+}
+
 @MainActor
 final class NotificationService: NSObject, ObservableObject {
     static let shared = NotificationService()
@@ -13,10 +19,19 @@ final class NotificationService: NSObject, ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var lastDeviceToken: String?
     @Published private(set) var isRegistering = false
+    @Published private(set) var settingsLoadState: NotificationSettingsLoadState = .loading
     @Published private var notificationPreferences: NotificationPreferencesRow?
     @Published var pendingAnalysisHistoryID: UUID?
     @Published var pendingDestinationTab: RDTab?
     @Published var pendingOpenNewAnalysis = false
+
+    var isLoadingSettings: Bool {
+        settingsLoadState == .loading
+    }
+
+    var settingsLoadFailed: Bool {
+        settingsLoadState == .failed
+    }
 
     var systemAuthorizationGranted: Bool {
         authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral
@@ -46,6 +61,8 @@ final class NotificationService: NSObject, ObservableObject {
 
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "NotificationService")
     private let supabase = SupabaseService.shared
+    private var settingsRefreshGeneration = 0
+    private var preferencesUserID: UUID?
 
     private override init() {
         super.init()
@@ -64,9 +81,23 @@ final class NotificationService: NSObject, ObservableObject {
     }
 
     func refreshSettings() async {
+        settingsRefreshGeneration &+= 1
+        let generation = settingsRefreshGeneration
+        settingsLoadState = .loading
+
         let settings = await UNUserNotificationCenter.current().notificationSettings()
+        guard generation == settingsRefreshGeneration else { return }
         authorizationStatus = settings.authorizationStatus
-        await refreshPreferences()
+        let preferencesLoaded = await refreshPreferences()
+        guard generation == settingsRefreshGeneration else { return }
+        settingsLoadState = preferencesLoaded ? .loaded : .failed
+    }
+
+    func prepareForAuthenticatedUser(_ userID: UUID) {
+        guard preferencesUserID != userID else { return }
+        settingsRefreshGeneration &+= 1
+        notificationPreferences = nil
+        settingsLoadState = .loading
     }
 
     func requestPermissionAndRegister() {
@@ -92,7 +123,7 @@ final class NotificationService: NSObject, ObservableObject {
                 UIApplication.shared.registerForRemoteNotifications()
             } catch {
                 Self.logger.error("Notification authorization failed error=\(error.localizedDescription, privacy: .public)")
-                lastError = "Bildirim izni alınamadı. Lütfen cihaz ayarlarından tekrar dene."
+                lastError = RDLocalization.string("notifications.notification.service.bildirim.izni.alinamadi.lutfen.cihaz.ayarlarinda.acfcc568", table: .notifications, fallback: "Bildirim izni alınamadı. Lütfen cihaz ayarlarından tekrar dene.")
                 isRegistering = false
             }
         }
@@ -158,7 +189,7 @@ final class NotificationService: NSObject, ObservableObject {
                 await refreshSettings()
             } catch {
                 Self.logger.error("Notification preference disable failed error=\(error.localizedDescription, privacy: .public)")
-                lastError = "Bildirim tercihi kaydedilemedi."
+                lastError = RDLocalization.string("notifications.notification.service.bildirim.tercihi.kaydedilemedi.0a3438da", table: .notifications, fallback: "Bildirim tercihi kaydedilemedi.")
             }
         }
     }
@@ -203,7 +234,7 @@ final class NotificationService: NSObject, ObservableObject {
                 isRegistering = false
             } catch {
                 Self.logger.error("Notification preference enable failed error=\(error.localizedDescription, privacy: .public)")
-                lastError = "Bildirim tercihi açılmadı. Lütfen tekrar dene."
+                lastError = RDLocalization.string("notifications.notification.service.bildirim.tercihi.acilmadi.lutfen.tekrar.dene.f4d3fae0", table: .notifications, fallback: "Bildirim tercihi açılmadı. Lütfen tekrar dene.")
                 await refreshSettings()
                 isRegistering = false
             }
@@ -290,7 +321,7 @@ final class NotificationService: NSObject, ObservableObject {
                 isRegistering = false
             } catch {
                 Self.logger.error("Device token save failed error=\(error.localizedDescription, privacy: .public)")
-                lastError = "Bildirim cihaz kaydı tamamlanamadı."
+                lastError = RDLocalization.string("notifications.notification.service.bildirim.cihaz.kaydi.tamamlanamadi.cfa13bd9", table: .notifications, fallback: "Bildirim cihaz kaydı tamamlanamadı.")
                 isRegistering = false
             }
         }
@@ -299,7 +330,7 @@ final class NotificationService: NSObject, ObservableObject {
     nonisolated func didFailToRegisterForRemoteNotifications(error: Error) {
         Task { @MainActor in
             Self.logger.error("APNs registration failed error=\(error.localizedDescription, privacy: .public)")
-            lastError = "Bildirim cihaz kaydı alınamadı. Simülatörde veya imza ayarlarında APNs desteklenmeyebilir."
+            lastError = RDLocalization.string("notifications.notification.service.bildirim.cihaz.kaydi.alinamadi.simulatorde.veya..dc4985f5", table: .notifications, fallback: "Bildirim cihaz kaydı alınamadı. Simülatörde veya imza ayarlarında APNs desteklenmeyebilir.")
             isRegistering = false
         }
     }
@@ -362,7 +393,7 @@ final class NotificationService: NSObject, ObservableObject {
                 await refreshPreferences()
             } catch {
                 Self.logger.error("Progress notification preference update failed column=\(preference.columnName, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                lastError = "Mesleki bildirim tercihi kaydedilemedi."
+                lastError = RDLocalization.string("notifications.notification.service.mesleki.bildirim.tercihi.kaydedilemedi.9b5fbbd3", table: .notifications, fallback: "Mesleki bildirim tercihi kaydedilemedi.")
             }
         }
     }
@@ -382,15 +413,17 @@ final class NotificationService: NSObject, ObservableObject {
                 await refreshPreferences()
             } catch {
                 Self.logger.error("App reminder preference update failed error=\(error.localizedDescription, privacy: .public)")
-                lastError = "Uygulama bildirimi tercihi kaydedilemedi."
+                lastError = RDLocalization.string("notifications.notification.service.uygulama.bildirimi.tercihi.kaydedilemedi.2bfbb347", table: .notifications, fallback: "Uygulama bildirimi tercihi kaydedilemedi.")
             }
         }
     }
 
-    private func refreshPreferences() async {
+    @discardableResult
+    private func refreshPreferences() async -> Bool {
         guard let userID = supabase.currentUserID else {
             notificationPreferences = nil
-            return
+            preferencesUserID = nil
+            return true
         }
         do {
             let rows: [NotificationPreferencesRow] = try await supabase.client
@@ -401,8 +434,11 @@ final class NotificationService: NSObject, ObservableObject {
                 .execute()
                 .value
             notificationPreferences = rows.first
+            preferencesUserID = userID
+            return true
         } catch {
             Self.logger.error("Notification preferences fetch failed error=\(error.localizedDescription, privacy: .public)")
+            return false
         }
     }
 

@@ -64,7 +64,7 @@ struct RDUpgradeCTA: View {
             .shadow(color: tier.accentColor.opacity(0.24), radius: 8, x: 0, y: 3)
         }
         .buttonStyle(RDPressableButtonStyle())
-        .accessibilityLabel(isActive ? "\(tier.title) aktif" : (title ?? "\(tier.title)'a geç"))
+        .accessibilityLabel(isActive ? "\(tier.title) aktif" : (title ?? RDLocalization.format("localizable.rdupgrade.cta.1.a.gec.9c575241", table: .localizable, fallback: "%1$@'a geç", arguments: [String(describing: tier.title)])))
     }
 }
 
@@ -79,7 +79,7 @@ struct RDHeaderAccountCTA: View {
             if !app.isPro {
                 RDUpgradeCTA(
                     tier: app.currentTier == .plus ? .pro : .plus,
-                    title: "Yükselt",
+                    title: RDLocalization.string("localizable.rdupgrade.cta.yukselt.72b0d588", table: .localizable, fallback: "Yükselt"),
                     icon: "arrow.up.circle.fill",
                     action: onUpgrade
                 )
@@ -189,18 +189,18 @@ private struct RDHeaderProfileMenu: View {
     var body: some View {
         VStack(spacing: 6) {
             VStack(spacing: 0) {
-                menuButton(icon: "square.dashed", title: "Analizlerim", action: onAnalyses)
+                menuButton(icon: "square.dashed", title: RDLocalization.string("localizable.rdupgrade.cta.analizlerim.51ca6988", table: .localizable, fallback: "Analizlerim"), action: onAnalyses)
                 Divider().background(Color.rdLine).padding(.leading, 40)
-                menuButton(icon: "doc.text", title: "Raporlarım", action: onReports)
+                menuButton(icon: "doc.text", title: RDLocalization.string("localizable.rdupgrade.cta.raporlarim.1115ba4f", table: .localizable, fallback: "Raporlarım"), action: onReports)
                 Divider().background(Color.rdLine).padding(.leading, 40)
                 if currentTier.isPaid {
                     menuInfo(
                         icon: currentTier.badgeIcon,
-                        title: "\(currentTier.title) üyesiniz",
+                        title: RDLocalization.format("localizable.rdupgrade.cta.1.uyesiniz.d6d4c039", table: .localizable, fallback: "%1$@ üyesiniz", arguments: [String(describing: currentTier.title)]),
                         tint: currentTier.accentColor
                     )
                 } else {
-                    menuButton(icon: SubscriptionTier.plus.badgeIcon, title: "Plan Yükselt", tint: .rdPlanPlus, action: onUpgrade)
+                    menuButton(icon: SubscriptionTier.plus.badgeIcon, title: RDLocalization.string("localizable.rdupgrade.cta.plan.yukselt.023472ba", table: .localizable, fallback: "Plan Yükselt"), tint: .rdPlanPlus, action: onUpgrade)
                 }
             }
 
@@ -211,21 +211,21 @@ private struct RDHeaderProfileMenu: View {
                     icon: "rectangle.portrait.and.arrow.right",
                     tint: .rdCriticalText,
                     background: .rdCriticalBg,
-                    label: "Çıkış yap",
+                    label: RDLocalization.string("localizable.rdupgrade.cta.cikis.yap.7bffbf5f", table: .localizable, fallback: "Çıkış yap"),
                     action: onSignOut
                 )
                 iconButton(
                     icon: "gearshape.fill",
                     tint: .rdCharcoal,
                     background: .rdFog,
-                    label: "Ayarlar",
+                    label: RDLocalization.string("localizable.rdupgrade.cta.ayarlar.97d7daa0", table: .localizable, fallback: "Ayarlar"),
                     action: onSettings
                 )
                 iconButton(
                     icon: isDarkMode ? "sun.max.fill" : "moon.fill",
                     tint: .rdGreen,
                     background: .rdGreenSoft,
-                    label: isDarkMode ? "Aydınlık mod" : "Karanlık mod",
+                    label: isDarkMode ? RDLocalization.string("localizable.rdupgrade.cta.aydinlik.mod.fe8c009c", table: .localizable, fallback: "Aydınlık mod") : RDLocalization.string("localizable.rdupgrade.cta.karanlik.mod.07170435", table: .localizable, fallback: "Karanlık mod"),
                     action: onToggleTheme
                 )
             }

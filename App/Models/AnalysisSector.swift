@@ -33,46 +33,83 @@ enum AnalysisSectorID: String, Codable, CaseIterable, Identifiable, Hashable, Se
         AnalysisSectorID(rawValue: raw)
     }
 
-    func label(language: RDLanguage = .turkish) -> String {
+    func label(language: RDLanguage = .current) -> String {
         switch language {
         case .turkish:
             switch self {
-            case .general: return "Genel İSG"
-            case .construction: return "İnşaat"
-            case .manufacturing: return "İmalat / Fabrika"
-            case .mining: return "Maden"
-            case .energy: return "Enerji"
-            case .office: return "Ofis"
-            case .logisticsWarehouse: return "Depo / Lojistik"
-            case .chemicalLaboratory: return "Kimya / Laboratuvar"
-            case .healthcare: return "Sağlık / Hastane"
-            case .foodProduction: return "Gıda Üretimi"
-            case .agricultureLivestock: return "Tarım / Hayvancılık"
-            case .retail: return "Perakende / Mağaza"
-            case .municipalFieldServices: return "Belediye / Kamu Saha İşleri"
-            case .education: return "Eğitim Kurumu"
-            case .hospitality: return "Otel / Konaklama"
+            case .general: return RDLocalization.string("analysis.analysis.sector.genel.isg.23c52d29", table: .analysis, fallback: "Genel İSG")
+            case .construction: return RDLocalization.string("analysis.analysis.sector.insaat.d202ed82", table: .analysis, fallback: "İnşaat")
+            case .manufacturing: return RDLocalization.string("analysis.analysis.sector.imalat.fabrika.edfbcadc", table: .analysis, fallback: "İmalat / Fabrika")
+            case .mining: return RDLocalization.string("analysis.analysis.sector.maden.87eb5434", table: .analysis, fallback: "Maden")
+            case .energy: return RDLocalization.string("analysis.analysis.sector.enerji.4d4a959b", table: .analysis, fallback: "Enerji")
+            case .office: return RDLocalization.string("analysis.analysis.sector.ofis.e6332822", table: .analysis, fallback: "Ofis")
+            case .logisticsWarehouse: return RDLocalization.string("analysis.analysis.sector.depo.lojistik.73ea166e", table: .analysis, fallback: "Depo / Lojistik")
+            case .chemicalLaboratory: return RDLocalization.string("analysis.analysis.sector.kimya.laboratuvar.ee199171", table: .analysis, fallback: "Kimya / Laboratuvar")
+            case .healthcare: return RDLocalization.string("analysis.analysis.sector.saglik.hastane.8ba8ae32", table: .analysis, fallback: "Sağlık / Hastane")
+            case .foodProduction: return RDLocalization.string("analysis.analysis.sector.gida.uretimi.d021b3dd", table: .analysis, fallback: "Gıda Üretimi")
+            case .agricultureLivestock: return RDLocalization.string("analysis.analysis.sector.tarim.hayvancilik.e1cc42ab", table: .analysis, fallback: "Tarım / Hayvancılık")
+            case .retail: return RDLocalization.string("analysis.analysis.sector.perakende.magaza.36c2c14a", table: .analysis, fallback: "Perakende / Mağaza")
+            case .municipalFieldServices: return RDLocalization.string("analysis.analysis.sector.belediye.kamu.saha.isleri.1f419a6e", table: .analysis, fallback: "Belediye / Kamu Saha İşleri")
+            case .education: return RDLocalization.string("analysis.analysis.sector.egitim.kurumu.2645201b", table: .analysis, fallback: "Eğitim Kurumu")
+            case .hospitality: return RDLocalization.string("analysis.analysis.sector.otel.konaklama.ee928560", table: .analysis, fallback: "Otel / Konaklama")
+            }
+        case .english:
+            switch self {
+            case .general: return RDLocalization.string("analysis.analysis.sector.general.safety.323a9be1", table: .analysis, fallback: "Genel güvenlik")
+            case .construction: return RDLocalization.string("analysis.analysis.sector.construction.0885ea76", table: .analysis, fallback: "Yapı")
+            case .manufacturing: return RDLocalization.string("analysis.analysis.sector.manufacturing.factory.94ff249b", table: .analysis, fallback: "İmalat / Fabrika")
+            case .mining: return RDLocalization.string("analysis.analysis.sector.mining.83e0ebbd", table: .analysis, fallback: "madencilik")
+            case .energy: return RDLocalization.string("analysis.analysis.sector.energy.63d2863a", table: .analysis, fallback: "Enerji")
+            case .office: return RDLocalization.string("analysis.analysis.sector.office.d52e96bf", table: .analysis, fallback: "Ofis")
+            case .logisticsWarehouse: return RDLocalization.string("analysis.analysis.sector.warehouse.logistics.fd7f0984", table: .analysis, fallback: "Depo / Lojistik")
+            case .chemicalLaboratory: return RDLocalization.string("analysis.analysis.sector.chemical.laboratory.91024d51", table: .analysis, fallback: "Kimya / Laboratuvar")
+            case .healthcare: return RDLocalization.string("analysis.analysis.sector.healthcare.hospital.cbfbe937", table: .analysis, fallback: "Sağlık / Hastane")
+            case .foodProduction: return RDLocalization.string("analysis.analysis.sector.food.production.8fd609e6", table: .analysis, fallback: "Gıda üretimi")
+            case .agricultureLivestock: return RDLocalization.string("analysis.analysis.sector.agriculture.livestock.de4d4a05", table: .analysis, fallback: "Tarım / Hayvancılık")
+            case .retail: return RDLocalization.string("analysis.analysis.sector.retail.store.18b90293", table: .analysis, fallback: "Perakende / Mağaza")
+            case .municipalFieldServices: return RDLocalization.string("analysis.analysis.sector.municipal.public.field.services.7350b553", table: .analysis, fallback: "Belediye / Kamu saha hizmetleri")
+            case .education: return RDLocalization.string("analysis.analysis.sector.education.fd63834d", table: .analysis, fallback: "Eğitim")
+            case .hospitality: return RDLocalization.string("analysis.analysis.sector.hotel.hospitality.cde7f6ca", table: .analysis, fallback: "Otel / Konaklama")
             }
         }
     }
 
     var subtitle: String {
+        if RDLanguage.current == .english {
+            switch self {
+            case .general: return RDLocalization.string("analysis.analysis.sector.general.site.inspection.without.a.specific.secto.7597b0cf", table: .analysis, fallback: "Belirli bir sektör bağlamı olmaksızın genel saha denetimi")
+            case .construction: return RDLocalization.string("analysis.analysis.sector.construction.sites.structures.and.earthworks.7a38db83", table: .analysis, fallback: "İnşaat sahaları, yapılar ve hafriyat işleri")
+            case .manufacturing: return RDLocalization.string("analysis.analysis.sector.factories.workshops.and.production.lines.f4a5f7d5", table: .analysis, fallback: "Fabrikalar, atölyeler ve üretim hatları")
+            case .mining: return RDLocalization.string("analysis.analysis.sector.underground.surface.and.quarry.operations.d77067a3", table: .analysis, fallback: "Yeraltı, yer üstü ve taş ocağı operasyonları")
+            case .energy: return RDLocalization.string("analysis.analysis.sector.power.plants.refineries.and.energy.facilities.26dc5afa", table: .analysis, fallback: "Enerji santralleri, rafineriler ve enerji tesisleri")
+            case .office: return RDLocalization.string("analysis.analysis.sector.offices.banks.malls.and.administrative.buildings.4b5a2af2", table: .analysis, fallback: "Ofisler, bankalar, alışveriş merkezleri ve idari binalar")
+            case .logisticsWarehouse: return RDLocalization.string("analysis.analysis.sector.warehouses.logistics.and.loading.areas.846bb96e", table: .analysis, fallback: "Depolar, lojistik ve yükleme alanları")
+            case .chemicalLaboratory: return RDLocalization.string("analysis.analysis.sector.chemical.processes.and.laboratories.34664e78", table: .analysis, fallback: "Kimyasal prosesler ve laboratuvarlar")
+            case .healthcare: return RDLocalization.string("analysis.analysis.sector.hospitals.clinics.and.healthcare.facilities.42c39001", table: .analysis, fallback: "Hastaneler, klinikler ve sağlık tesisleri")
+            case .foodProduction: return RDLocalization.string("analysis.analysis.sector.food.production.kitchens.and.hygiene.areas.28af7507", table: .analysis, fallback: "Gıda üretimi, mutfaklar ve hijyen alanları")
+            case .agricultureLivestock: return RDLocalization.string("analysis.analysis.sector.agriculture.livestock.and.outdoor.work.5f9ba368", table: .analysis, fallback: "Tarım, hayvancılık ve açık havada çalışma")
+            case .retail: return RDLocalization.string("analysis.analysis.sector.stores.retail.and.customer.areas.f5b6c157", table: .analysis, fallback: "Mağazalar, perakende ve müşteri alanları")
+            case .municipalFieldServices: return RDLocalization.string("analysis.analysis.sector.municipal.and.public.field.services.05566b87", table: .analysis, fallback: "Belediye ve kamu saha hizmetleri")
+            case .education: return RDLocalization.string("analysis.analysis.sector.schools.universities.and.workshops.1b9a7960", table: .analysis, fallback: "Okullar, üniversiteler ve atölyeler")
+            case .hospitality: return RDLocalization.string("analysis.analysis.sector.hotels.accommodation.and.guest.areas.5387dc5d", table: .analysis, fallback: "Oteller, konaklama ve misafir alanları")
+            }
+        }
         switch self {
-        case .general: return "Sektör bağlamı net olmayan genel saha taraması"
-        case .construction: return "Şantiye, yapı, hafriyat"
-        case .manufacturing: return "Fabrika, atölye, üretim hattı"
-        case .mining: return "Yeraltı, açık ocak, taşocağı"
-        case .energy: return "Santral, rafineri, enerji tesisleri"
-        case .office: return "Banka, AVM, idari bina"
-        case .logisticsWarehouse: return "Depo, lojistik, yükleme alanları"
-        case .chemicalLaboratory: return "Kimyasal işlem, laboratuvar"
-        case .healthcare: return "Hastane, klinik, sağlık tesisi"
-        case .foodProduction: return "Gıda üretimi, mutfak, hijyen alanları"
-        case .agricultureLivestock: return "Tarım, hayvancılık, açık alan"
-        case .retail: return "Mağaza, perakende, müşteri alanı"
-        case .municipalFieldServices: return "Belediye, kamu saha işleri"
-        case .education: return "Okul, üniversite, atölye"
-        case .hospitality: return "Otel, konaklama, misafir alanları"
+        case .general: return RDLocalization.string("analysis.analysis.sector.sektor.baglami.net.olmayan.genel.saha.taramasi.e57050cb", table: .analysis, fallback: "Sektör bağlamı net olmayan genel saha taraması")
+        case .construction: return RDLocalization.string("analysis.analysis.sector.santiye.yapi.hafriyat.d1850901", table: .analysis, fallback: "Şantiye, yapı, hafriyat")
+        case .manufacturing: return RDLocalization.string("analysis.analysis.sector.fabrika.atolye.uretim.hatti.2fe0f2ea", table: .analysis, fallback: "Fabrika, atölye, üretim hattı")
+        case .mining: return RDLocalization.string("analysis.analysis.sector.yeralti.acik.ocak.tasocagi.206b7a23", table: .analysis, fallback: "Yeraltı, açık ocak, taşocağı")
+        case .energy: return RDLocalization.string("analysis.analysis.sector.santral.rafineri.enerji.tesisleri.27902a52", table: .analysis, fallback: "Santral, rafineri, enerji tesisleri")
+        case .office: return RDLocalization.string("analysis.analysis.sector.banka.avm.idari.bina.47c81a63", table: .analysis, fallback: "Banka, AVM, idari bina")
+        case .logisticsWarehouse: return RDLocalization.string("analysis.analysis.sector.depo.lojistik.yukleme.alanlari.4ec3c322", table: .analysis, fallback: "Depo, lojistik, yükleme alanları")
+        case .chemicalLaboratory: return RDLocalization.string("analysis.analysis.sector.kimyasal.islem.laboratuvar.e2dc0d6c", table: .analysis, fallback: "Kimyasal işlem, laboratuvar")
+        case .healthcare: return RDLocalization.string("analysis.analysis.sector.hastane.klinik.saglik.tesisi.aee8044f", table: .analysis, fallback: "Hastane, klinik, sağlık tesisi")
+        case .foodProduction: return RDLocalization.string("analysis.analysis.sector.gida.uretimi.mutfak.hijyen.alanlari.c7b33ab9", table: .analysis, fallback: "Gıda üretimi, mutfak, hijyen alanları")
+        case .agricultureLivestock: return RDLocalization.string("analysis.analysis.sector.tarim.hayvancilik.acik.alan.7f0c34df", table: .analysis, fallback: "Tarım, hayvancılık, açık alan")
+        case .retail: return RDLocalization.string("analysis.analysis.sector.magaza.perakende.musteri.alani.b94be9f4", table: .analysis, fallback: "Mağaza, perakende, müşteri alanı")
+        case .municipalFieldServices: return RDLocalization.string("analysis.analysis.sector.belediye.kamu.saha.isleri.3b5527ec", table: .analysis, fallback: "Belediye, kamu saha işleri")
+        case .education: return RDLocalization.string("analysis.analysis.sector.okul.universite.atolye.c6b52c7b", table: .analysis, fallback: "Okul, üniversite, atölye")
+        case .hospitality: return RDLocalization.string("analysis.analysis.sector.otel.konaklama.misafir.alanlari.bfff587f", table: .analysis, fallback: "Otel, konaklama, misafir alanları")
         }
     }
 
@@ -127,16 +164,16 @@ enum AnalysisSectorBadge: String, Hashable, Sendable {
 
     var label: String {
         switch self {
-        case .recommended: return "Önerilen"
-        case .lastUsed: return "Son kullanılan"
+        case .recommended: return RDLocalization.string("analysis.analysis.sector.onerilen.f13796a3", table: .analysis, fallback: "Önerilen")
+        case .lastUsed: return RDLocalization.string("analysis.analysis.sector.son.kullanilan.e4c2b96c", table: .analysis, fallback: "Son kullanılan")
         }
     }
 
     /// Compact chip badge copy for the 3-column inline grid.
     var compactLabel: String {
         switch self {
-        case .recommended: return "Önerilen"
-        case .lastUsed: return "Son"
+        case .recommended: return RDLocalization.string("analysis.analysis.sector.onerilen.64ee05f3", table: .analysis, fallback: "Önerilen")
+        case .lastUsed: return RDLocalization.string("analysis.analysis.sector.son.36d6b5b2", table: .analysis, fallback: "Son")
         }
     }
 }

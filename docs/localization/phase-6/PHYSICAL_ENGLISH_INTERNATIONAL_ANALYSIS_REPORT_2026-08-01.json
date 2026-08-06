@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "kind": "physical_english_international_analysis_report_validation",
+  "candidate_build": "78",
+  "status": "passed",
+  "execution": {
+    "app_language": "en",
+    "safety_profile_id": "en-intl-generic-v1",
+    "sector": "manufacturing_factory",
+    "analysis_focus": "general",
+    "physical_launch_succeeded": true,
+    "real_field_photo_used": true,
+    "completed_analyses": 1,
+    "finding_count": 2,
+    "highest_fine_kinney_risk": 1800,
+    "secondary_fine_kinney_risk": 42,
+    "report_type": "standard",
+    "report_pages": 2,
+    "report_preview_succeeded": true,
+    "english_ui_and_result_verified": true,
+    "turkish_template_leak_observed": false,
+    "country_specific_regulatory_claim_observed": false
+  },
+  "backend_aggregate": {
+    "analyses_total": 1,
+    "analyses_completed": 1,
+    "analyses_failed": 0,
+    "exact_en_001_intl_contract": 1,
+    "language_validation_passed": 1,
+    "language_validation_one_attempt": 1,
+    "wrong_language": 0,
+    "language_repairs": 0,
+    "english_international_reports": 1,
+    "linked_notification_attempts": 2,
+    "exact_locale_notification_attempts": 2,
+    "notification_template_misses": 0
+  },
+  "fail_closed_probe": {
+    "initial_code": "SAFETY_PROFILE_NOT_ENABLED",
+    "support_code": "RD-E4F7BF9C",
+    "cause": "The physical-device account was outside the reviewer-only allowlist.",
+    "provider_result_created": false,
+    "resolution": "Temporarily added only the freshly selected International-profile account hash to the 13 localization allowlists, completed one bounded test, then removed it."
+  },
+  "production_restoration": {
+    "flag_count": 13,
+    "allowlist_mode_count": 13,
+    "one_authorized_hash_count": 13,
+    "enabled_build_count": 0,
+    "kill_switch_count": 0,
+    "public_rollout": false,
+    "live_build_77_unchanged": true
+  },
+  "ui_defect_repaired": {
+    "observed_english_text": "Deva and",
+    "corrected_text": "Continue",
+    "incorrect_close_translation_corrected": true,
+    "catalog_gate_result": "19/19 passed"
+  },
+  "privacy": {
+    "aggregate_only": true,
+    "photo_included": false,
+    "device_identifiers_included": false,
+    "user_or_account_data_included": false,
+    "credentials_included": false
+  }
+}

@@ -247,7 +247,7 @@ struct AnalyzingView: View {
                     .padding(.bottom, 22)
 
                 VStack(spacing: 6) {
-                    Text("Analiz devam ediyor")
+                    Text(RDLocalization.string("localizable.analyzing.view.analiz.devam.ediyor.e37a9f96", table: .localizable, fallback: "Analiz devam ediyor"))
                         .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
@@ -309,7 +309,7 @@ struct AnalyzingView: View {
                         .clipped()
                         .overlay(Color.black.opacity(0.24))
                 } else {
-                    RDPlaceholderPhoto(label: "Analiz ediliyor", cornerRadius: 24)
+                    RDPlaceholderPhoto(label: RDLocalization.string("localizable.analyzing.view.analiz.ediliyor.0f05c1de", table: .localizable, fallback: "Analiz ediliyor"), cornerRadius: 24)
                         .overlay(Color.black.opacity(0.10))
                 }
 
@@ -339,11 +339,11 @@ struct AnalyzingView: View {
             .clipShape(RoundedRectangle(cornerRadius: 24))
             .shadow(color: .black.opacity(0.12), radius: 20, x: 0, y: 18)
 
-            aiSignal(icon: "shield.lefthalf.filled", label: "KKD", alignment: .topLeading)
+            aiSignal(icon: "shield.lefthalf.filled", label: RDLocalization.string("localizable.analyzing.view.kkd.c193486a", table: .localizable, fallback: "KKD"), alignment: .topLeading)
                 .offset(x: -18, y: -12)
-            aiSignal(icon: "waveform.path.ecg", label: "Risk", alignment: .topTrailing)
+            aiSignal(icon: "waveform.path.ecg", label: RDLocalization.string("localizable.analyzing.view.risk.ca6b7fba", table: .localizable, fallback: "Risk"), alignment: .topTrailing)
                 .offset(x: 18, y: 26)
-            aiSignal(icon: "checklist.checked", label: "Kontrol", alignment: .bottomLeading)
+            aiSignal(icon: "checklist.checked", label: RDLocalization.string("localizable.analyzing.view.kontrol.c7a07363", table: .localizable, fallback: "Kontrol"), alignment: .bottomLeading)
                 .offset(x: -16, y: 16)
         }
         .frame(width: 296, height: 286)
@@ -357,17 +357,17 @@ struct AnalyzingView: View {
                     .monospacedDigit()
                     .foregroundStyle(.white)
                     .accessibilityIdentifier("analysis.progress.percent")
-                Text("%")
+                Text(RDLocalization.string("localizable.analyzing.view.copy.e242ae58", table: .localizable, fallback: "%"))
                     .font(.system(size: RDFontScale.size(28), weight: .heavy, design: .rounded))
                     .foregroundStyle(.white.opacity(0.92))
             }
             .shadow(color: .black.opacity(0.26), radius: 8, x: 0, y: 3)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Analiz ilerleme")
-            .accessibilityValue("\(percentValue) yüzde")
+            .accessibilityLabel(RDLocalization.string("localizable.analyzing.view.analiz.ilerleme.38fdc176", table: .localizable, fallback: "Analiz ilerleme"))
+            .accessibilityValue(RDLocalization.format("localizable.analyzing.view.1.yuzde.b8176445", table: .localizable, fallback: "%1$@ yüzde", arguments: [String(describing: percentValue)]))
 
             if resolvedPhotoCount > 1 {
-                Label("\(resolvedPhotoCount) fotoğraf", systemImage: "photo.stack.fill")
+                Label(RDLocalization.format("localizable.analyzing.view.1.fotograf.79ece311", table: .localizable, fallback: "%1$@ fotoğraf", arguments: [String(describing: resolvedPhotoCount)]), systemImage: "photo.stack.fill")
                     .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 10)
@@ -426,27 +426,27 @@ struct AnalyzingView: View {
     private var heroSubtitle: String {
         switch progressController.phase {
         case .preparingInput:
-            return "Fotoğraflar analiz için hazırlanıyor."
+            return RDLocalization.string("localizable.analyzing.view.fotograflar.analiz.icin.hazirlaniyor.837cec1d", table: .localizable, fallback: "Fotoğraflar analiz için hazırlanıyor.")
         case .creatingAnalysis:
-            return "Analiz kaydı oluşturuluyor."
+            return RDLocalization.string("localizable.analyzing.view.analiz.kaydi.olusturuluyor.e596706a", table: .localizable, fallback: "Analiz kaydı oluşturuluyor.")
         case .uploadingPhotos:
             return resolvedPhotoCount > 1
-                ? "Fotoğraflar güvenli depoya yükleniyor."
-                : "Fotoğraf güvenli depoya yükleniyor."
+                ? RDLocalization.string("localizable.analyzing.view.fotograflar.guvenli.depoya.yukleniyor.5014defb", table: .localizable, fallback: "Fotoğraflar güvenli depoya yükleniyor.")
+                : RDLocalization.string("localizable.analyzing.view.fotograf.guvenli.depoya.yukleniyor.efcdecc3", table: .localizable, fallback: "Fotoğraf güvenli depoya yükleniyor.")
         case .submitting:
-            return "İstek güvenli şekilde sunucuya gönderiliyor."
+            return RDLocalization.string("localizable.analyzing.view.istek.guvenli.sekilde.sunucuya.gonderiliyor.648ee33b", table: .localizable, fallback: "İstek güvenli şekilde sunucuya gönderiliyor.")
         case .queued:
-            return "Analiz kuyruğa alındı, sonuç düzenli olarak kontrol ediliyor."
+            return RDLocalization.string("localizable.analyzing.view.analiz.kuyruga.alindi.sonuc.duzenli.olarak.kontr.4db902f5", table: .localizable, fallback: "Analiz kuyruğa alındı, sonuç düzenli olarak kontrol ediliyor.")
         case .analyzing:
-            return "AI, iş güvenliği bulgularını ve risk seviyelerini çıkarıyor."
+            return RDLocalization.string("localizable.analyzing.view.ai.is.guvenligi.bulgularini.ve.risk.seviyelerini.9d183abc", table: .localizable, fallback: "AI, iş güvenliği bulgularını ve risk seviyelerini çıkarıyor.")
         case .finalizingResult:
-            return "Analiz tamamlandı, sonuç ekrana hazırlanıyor."
+            return RDLocalization.string("localizable.analyzing.view.analiz.tamamlandi.sonuc.ekrana.hazirlaniyor.538b7572", table: .localizable, fallback: "Analiz tamamlandı, sonuç ekrana hazırlanıyor.")
         case .retryingNetwork:
-            return "Bağlantı toparlanırken aynı analiz korunuyor."
+            return RDLocalization.string("localizable.analyzing.view.baglanti.toparlanirken.ayni.analiz.korunuyor.14f90e08", table: .localizable, fallback: "Bağlantı toparlanırken aynı analiz korunuyor.")
         case .retryingAI:
-            return "AI servisi yoğun; analiz otomatik tekrar deneniyor."
+            return RDLocalization.string("localizable.analyzing.view.ai.servisi.yogun.analiz.otomatik.tekrar.deneniyo.a2e67967", table: .localizable, fallback: "AI servisi yoğun; analiz otomatik tekrar deneniyor.")
         case .fallbackModel:
-            return "Analizi tamamlamak için yedek model devrede."
+            return RDLocalization.string("localizable.analyzing.view.analizi.tamamlamak.icin.yedek.model.devrede.746f2d37", table: .localizable, fallback: "Analizi tamamlamak için yedek model devrede.")
         }
     }
 
@@ -462,10 +462,10 @@ struct AnalyzingView: View {
 
     private var steps: [String] {
         [
-            "Görüntü kalitesi okunuyor",
-            "Risk sinyalleri tanımlanıyor",
-            "KKD ve çevresel kontroller",
-            "Bulgular yapılandırılıyor",
+            RDLocalization.string("localizable.analyzing.view.goruntu.kalitesi.okunuyor.3ec81981", table: .localizable, fallback: "Görüntü kalitesi okunuyor"),
+            RDLocalization.string("localizable.analyzing.view.risk.sinyalleri.tanimlaniyor.0d952689", table: .localizable, fallback: "Risk sinyalleri tanımlanıyor"),
+            RDLocalization.string("localizable.analyzing.view.kkd.ve.cevresel.kontroller.77cbd607", table: .localizable, fallback: "KKD ve çevresel kontroller"),
+            RDLocalization.string("localizable.analyzing.view.bulgular.yapilandiriliyor.c027e804", table: .localizable, fallback: "Bulgular yapılandırılıyor"),
         ]
     }
 

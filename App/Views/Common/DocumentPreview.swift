@@ -37,8 +37,8 @@ struct DocumentPreview: View {
             .background(Color.rdWhite.opacity(0.001))
             .contentShape(Rectangle())
             .gesture(closeDragGesture)
-            .accessibilityLabel("Önizleme kapatma tutamacı")
-            .accessibilityHint("Önizlemeyi kapatmak için aşağı sürükle.")
+            .accessibilityLabel(RDLocalization.string("localizable.document.preview.onizleme.kapatma.tutamaci.9f7dd420", table: .localizable, fallback: "Önizleme kapatma tutamacı"))
+            .accessibilityHint(RDLocalization.string("localizable.document.preview.onizlemeyi.kapatmak.icin.asagi.surukle.bfaf70c5", table: .localizable, fallback: "Önizlemeyi kapatmak için aşağı sürükle."))
     }
 
     private var headerControls: some View {
@@ -55,7 +55,8 @@ struct DocumentPreview: View {
                     .shadow(color: Color.rdOnyx.opacity(0.16), radius: 12, x: 0, y: 6)
             }
             .buttonStyle(RDPressableButtonStyle())
-            .accessibilityLabel("Önizlemeyi kapat")
+            .accessibilityLabel(RDLocalization.string("localizable.document.preview.onizlemeyi.kapat.206e4722", table: .localizable, fallback: "Önizlemeyi kapat"))
+            .accessibilityIdentifier("document_preview.close")
 
             Spacer()
 
@@ -71,7 +72,7 @@ struct DocumentPreview: View {
                     .shadow(color: Color.rdOnyx.opacity(0.16), radius: 12, x: 0, y: 6)
             }
             .buttonStyle(RDPressableButtonStyle())
-            .accessibilityLabel("Dosyayı indir veya paylaş")
+            .accessibilityLabel(RDLocalization.string("localizable.document.preview.dosyayi.indir.veya.paylas.e6aa8811", table: .localizable, fallback: "Dosyayı indir veya paylaş"))
         }
         .padding(.horizontal, 18)
     }

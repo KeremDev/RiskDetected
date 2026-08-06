@@ -1,0 +1,2076 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "professionalprogress.professional.progress.badges.view.10.rapor.94e59118": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressBadgesView.swift:175; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 Reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 Rapor"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.badges.view.30.aktif.gun.8eba4217": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressBadgesView.swift:210; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 Active Days"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 Aktif Gün"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.badges.view.5.alan.a1a0b74f": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 Areas"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 Alan"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.badges.view.50.rapor.5af979c6": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressBadgesView.swift:182; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "50 Reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "50 Rapor"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.badges.view.basarilarim.6622e74c": {
+      "comment": "swiftui_modifier; App/Features/ProfessionalProgress/ProfessionalProgressBadgesView.swift:37; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Achievements"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başarılarım"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.badges.view.yuksek.risk.e92fc805": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressBadgesView.swift:203; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High Risk"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksek Risk"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.badges.view.yuz.rapor.a212662d": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressBadgesView.swift:189; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One Hundred Reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüz Rapor"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.celebration.sheet.ilk.adim.9f3b5469": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCelebrationSheet.swift:143; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First step"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk Adım"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.celebration.sheet.ilk.raporunu.olusturdun.mesleki.takip.izin.basla.6d73be4e": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCelebrationSheet.swift:144; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You created your first report. Your Professional Progress journey has started."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk raporunu oluşturdun. Mesleki takip izin başladı."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.celebration.sheet.tamam.76cd1dbd": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCelebrationSheet.swift:50; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamam"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.celebration.sheet.tebrikler.b7a58ea5": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressCelebrationSheet.swift:29; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Congratulations"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tebrikler"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.1.bulgu.2.rapor.be98faf5": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:219; placeholders: %1$@|%2$@; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ finding · %2$@ report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ bulgu · %2$@ rapor"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.1.yuzde.2.fb547122": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:188; placeholders: %1$@|%2$@; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ percentage %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ yüzde %2$@"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.alan.dffbc276": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "area"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "alan"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.beyan.edilen.alan.3907d53e": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:210; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Declared area"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beyan edilen alan"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.dusuk.cdee3361": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:247; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düşük"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.elektrik.2a8a5498": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:160; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Electricity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elektrik"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.ergonomi.0068fe0f": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:159; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ergonomics"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ergonomi"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.fabrika.e2d5d71d": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:163; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Factory"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fabrika"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.insaat.9d956dcf": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:158; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Construction"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnşaat"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.kimyasal.7a9e8eb7": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:161; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chemical"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kimyasal"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.kritik.5681ba04": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:244; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Critical"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kritik"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.maden.cba516d8": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:165; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mining"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maden"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.mekanik.03fb4ae4": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:162; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mechanical"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mekanik"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.orta.01370256": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:246; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orta"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.psikososyal.2eadcac8": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:157; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Psychosocial"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Psikososyal"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.yangin.05333baf": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:164; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fire"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yangın"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.yetkinlik.dagilimi.1.8d7c80e2": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:190; placeholders: %1$@; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Competency distribution. %1$@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yetkinlik dağılımı. %1$@."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.yetkinlik.dagilimi.2ebc434c": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:68; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Competency distribution"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yetkinlik dağılımı"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.yetkinlik.haritasi.b803796a": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:10; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Competency Map"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yetkinlik Haritası"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.yuksek.85fb2f35": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:245; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksek"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.competency.map.view.yuksekte.ab77d7f0": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressCompetencyMapView.swift:156; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Work at Height"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksekte"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.1.mdp.f5de89f8": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressHomeCard.swift:58; placeholders: %1$@; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/ %1$@ MDP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/ %1$@ MDP"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.aday.d654b3d8": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressHomeCard.swift:394; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Candidate"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aday"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.analiz.eb0963b1": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressHomeCard.swift:397; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.en.ust.riskdetected.unvanindasin.7c85a239": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressHomeCard.swift:284; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have reached the highest RiskDetected title"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En üst RiskDetected ünvanındasın"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.hedef.1.2.mdp.kaldi.2439b9e9": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressHomeCard.swift:282; placeholders: %1$@|%2$@; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Goal: %1$@ · %2$@ MDP remaining"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hedef: %1$@ · %2$@ MDP kaldı"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.kid.acd3b4c6": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressHomeCard.swift:398; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senior"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kıd."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.kidemini.yukselt.6f180187": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressHomeCard.swift:99; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Advance your rank"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kıdemini yükselt"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.risk.3847ca2d": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressHomeCard.swift:396; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.saha.fd1acd53": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Site"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.str.4e8cc96c": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressHomeCard.swift:399; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Str."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Str."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.home.card.usta.0e4c515a": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Master"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usta"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.1.analiz.tamamladin.simdi.rapora.donustur.2ba431b2": {
+      "comment": "swift_user_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:412; placeholders: %1$@; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You completed %1$@ analyses. Now turn one into a report."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ analiz tamamladın. Şimdi rapora dönüştür."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.aday.uzman.80c60806": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:17; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Candidate Expert"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aday Uzman"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.bu.hafta.1.rapor.tamamladin.ea8ca37d": {
+      "comment": "swift_user_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:416; placeholders: %1$@; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You completed %1$@ reports this week. 💪"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu hafta %1$@ rapor tamamladın. 💪"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.bu.hafta.ilk.analizini.baslat.6f6b8e2e": {
+      "comment": "swift_user_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:410; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start your first analysis this week. 😔"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu hafta ilk analizini başlat. 😔"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.elektrik.fbb087fa": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:82; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Electricity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elektrik"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.ergonomi.47cb2b71": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:84; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ergonomics"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ergonomi"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.fabrika.4b480755": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:90; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Factory"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fabrika"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.guvenlik.stratejisti.be6b9332": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:22; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Safety Strategist"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güvenlik Stratejisti"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.haftalik.takip.00850983": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:334; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly Tracking"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haftalık Takip"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.haftalik.takip.192ca0ad": {
+      "comment": "swift_user_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:350; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly Tracking"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haftalık Takip"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.ilk.rapor.tamam.devam.et.663e1cfb": {
+      "comment": "swift_user_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:414; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First report complete. Keep going."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk rapor tamam. Devam et."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.insaat.d9446df6": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:89; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Construction"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnşaat"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.kidemli.risk.uzmani.b252366f": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:21; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senior Risk Specialist"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kıdemli Risk Uzmanı"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.kimyasal.58ad8545": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:81; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chemical"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kimyasal"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.maden.653693ae": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:88; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mining"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maden"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.mekanik.6824d368": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:83; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mechanical"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mekanik"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.psikososyal.404024f2": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:85; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Psychosocial"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Psikososyal"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.risk.avcisi.743f242e": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:19; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Hunter"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Avcısı"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.saha.gozlemcisi.2eea7f98": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:18; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Field Observer"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha Gözlemcisi"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.tehlike.analisti.cccb6405": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:20; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazard Analyst"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlike Analisti"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.usta.isg.uzmani.f2c16a87": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:23; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Master OHS Specialist"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usta İSG Uzmanı"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.yangin.653d5ecb": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:80; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fire"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yangın"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.models.yuksekte.calisma.97ec4e45": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressModels.swift:86; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working at Height"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksekte Çalışma"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.profile.section.analiz.ve.raporlarin.arttikca.yetkinlik.alanlari.b5934c21": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressProfileSection.swift:118; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your competency areas will appear here as you complete more analyses and reports."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz ve raporların arttıkça yetkinlik alanların burada görünür olacak."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.profile.section.tumu.5dadc5f6": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressProfileSection.swift:83; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümü"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.profile.section.yetkinlik.haritasi.ab36b62e": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressProfileSection.swift:79; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Competency Map"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yetkinlik Haritası"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.profile.section.yetkinlik.haritasi.e9397520": {
+      "comment": "swiftui_modifier; App/Features/ProfessionalProgress/ProfessionalProgressProfileSection.swift:31; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Competency Map"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yetkinlik Haritası"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.1.analiz.tamamlandi.birini.rapora.donusturerek.6.8619c6e0": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:514; placeholders: %1$@; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ analyses completed. Turn one into a report to earn +60 MDP."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ analiz tamamlandı. Birini rapora dönüştürerek +60 MDP kazanabilirsin."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.1.icin.2.mdp.kaldi.7f112857": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:509; placeholders: %1$@|%2$@; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$@ MDP remaining for %1$@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ için %2$@ MDP kaldı."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.1.mdp.0657733e": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:180; placeholders: %1$@; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ MDP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ MDP"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.120.mdp.7316b2eb": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:421; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+120 MDP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+120 MDP"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.20.mdp.aa9eb553": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:423; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+20 MDP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+20 MDP"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.25.mdp.c7974c89": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:424; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+25 MDP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+25 MDP"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.60.mdp.1f989881": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:419; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+60 MDP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+60 MDP"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.70.mdp.6acf724a": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:422; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+70 MDP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+70 MDP"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.90.mdp.96c72589": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:420; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+90 MDP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+90 MDP"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.bu.hafta.ilk.raporunu.olusturursan.60.mdp.ve.25..7a69d212": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:497; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you create your first report this week, you will receive +60 MDP and +25 weekly bonus."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu hafta ilk raporunu oluşturursan +60 MDP ve +25 haftalık bonus kazanırsın."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.bu.hafta.ilk.raporunu.olusturursan.60.mdp.ve.25..d8302300": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:517; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you create your first report this week, you will receive +60 MDP and +25 weekly bonus."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu hafta ilk raporunu oluşturursan +60 MDP ve +25 haftalık bonus kazanırsın."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.detayli.analiz.7a12c895": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:402; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detailed analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detaylı analiz"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.en.ust.rutbedesin.birikimin.profilinde.korunur.32f9a051": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:507; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are at the highest rank. Your progress is preserved in your profile."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En üst rütbedesin. Birikimin profilinde korunur."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.en.ust.rutbedesin.birikimin.profilinde.korunur.82263343": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:487; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are at the highest rank. Your progress is preserved in your profile."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En üst rütbedesin. Birikimin profilinde korunur."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.haftada.bir.kez.takip.disiplini.bonusu.e4efaa1c": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once per week as a consistency bonus."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haftada bir kez takip disiplini bonusu."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.haftanin.ilk.raporu.dce7285a": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:404; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First report of the week"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haftanın ilk raporu"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.her.alan.icin.yalnizca.ilk.kez.verilir.c2b98db3": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awarded only the first time for each competency area."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her alan için yalnızca ilk kez verilir."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.her.yeni.rapor.bir.kez.puan.verir.e2c8fe15": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each new report earns points once."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her yeni rapor bir kez puan verir."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.ilk.yetkinlik.alani.42920cb0": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:403; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First competency area"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk yetkinlik alanı"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.kalan.mdp.f71caff4": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:346; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remaining MDP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalan MDP"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.mdp.nasil.kazanilir.6d3aeefc": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:394; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do I earn MDP?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MDP nasıl kazanılır?"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.mesleki.unvanlar.20cd00f4": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:59; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Professional Titles"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesleki Ünvanlar"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.nasil.rutbe.alirim.9a8647bb": {
+      "comment": "swiftui_modifier; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:119; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do I rank up?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nasıl rütbe alırım"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.nasil.rutbe.alirim.ba68ce6d": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:99; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do I get ranked?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nasıl rütbe alırım?"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.puanlar.gercek.is.ciktisindan.gelir.f2b509b4": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:422; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Points come from actual work output."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puanlar gerçek iş çıktısından gelir."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.rapor.olustur.5f96ad63": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:399; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor oluştur"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.risk.analizi.pdf.xlsx.910caae2": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk assessment PDF/XLSX"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analizi PDF/XLSX"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.rutbe.puanlama.7bbebefb": {
+      "comment": "swiftui_modifier; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:310; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rank Scoring"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rütbe Puanlama"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.sana.en.yakin.adim.996c4c7d": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:368; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The closest step to you"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana en yakın adım"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.standart.disi.detayli.analizlerde.isler.2aa4f581": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies to non-standard detailed analyses."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standart dışı detaylı analizlerde işler."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.standart.rapor.puanina.eklenir.2fbe2c93": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to the standard report score."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standart rapor puanına eklenir."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.tehlikeyi.gorunur.kildiginda.kazanilir.8c66d951": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earned when you identify a hazard."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlikeyi görünür kıldığında kazanılır."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.temel.rutbeler.ae685d59": {
+      "comment": "swift_user_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:32; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basic Ranks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temel Rütbeler"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.toplam.mdp.f0ea764d": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:345; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total MDP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toplam MDP"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.ustalik.0d958d48": {
+      "comment": "swift_user_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:36; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mastery"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustalık"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.uygulamaya.giris.yapmak.puan.vermez.ayni.analiz..3eefe37a": {
+      "comment": "swiftui_text; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:427; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signing in does not earn points. Reprocessing the same analysis or report does not award MDP again. Analyses and reports from the same site visit are capped to keep progress fair."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulamaya giriş yapmak puan vermez. Aynı analiz veya rapor tekrar işlense bile yeniden MDP yazılmaz. Aynı saha çalışmasından gelen analiz ve raporlar adil ilerleme için sınırlı hesaplanır."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.uzmanlik.rutbeleri.adc7d11a": {
+      "comment": "swift_user_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:34; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expertise Ranks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzmanlık Rütbeleri"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.yeni.raporlar.ve.farkli.yetkinlik.alanlari.rutbe.5588f414": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:502; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New reports and different competency areas accelerate your rank progression."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni raporlar ve farklı yetkinlik alanları rütbe ilerlemeni hızlandırır."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.yeni.raporlar.ve.farkli.yetkinlik.alanlari.rutbe.5c547b24": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:522; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New reports and different competency areas accelerate your rank progression."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni raporlar ve farklı yetkinlik alanları rütbe ilerlemeni hızlandırır."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.yuksek.kritik.riskli.analiz.c31153a6": {
+      "comment": "custom_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:401; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High/critical risk analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksek/kritik riskli analiz"
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.yuksek.veya.kritik.riskleri.dogru.siniflandirmak.6a36f4fc": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:500; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correctly classifying high or critical risks contributes +120 MDP."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksek veya kritik riskleri doğru sınıflandırmak +120 MDP katkı sağlar."
+          }
+        }
+      }
+    },
+    "professionalprogress.professional.progress.titles.sheet.yuksek.veya.kritik.riskleri.dogru.siniflandirmak.9485e6fa": {
+      "comment": "computed_ui_copy; App/Features/ProfessionalProgress/ProfessionalProgressTitlesSheet.swift:520; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correctly classifying high or critical risks contributes +120 MDP."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksek veya kritik riskleri doğru sınıflandırmak +120 MDP katkı sağlar."
+          }
+        }
+      }
+    },
+    "progress.accessibility.earned": {
+      "comment": "Professional Progress draft; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "earned"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kazanıldı"
+          }
+        }
+      }
+    },
+    "progress.accessibility.not_earned": {
+      "comment": "Professional Progress draft; placeholders: none; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "not yet earned"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "henüz kazanılmadı"
+          }
+        }
+      }
+    },
+    "progress.accessibility.title_status": {
+      "comment": "Professional Progress draft; placeholders: %1$@|%2$@; review: machine_draft; shipping: native_language_and_safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$@"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

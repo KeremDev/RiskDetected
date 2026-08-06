@@ -40,7 +40,7 @@ Deno.test("sync-revenuecat-subscription preserves active test overrides before R
 Deno.test("subscription test override migration is service-role only and time bounded", async () => {
   const migration = await readTextIfAllowed(
     new URL(
-      "../../migrations/20260625052249_subscription_test_overrides.sql",
+      "../../migrations/20260728201500_reconcile_untracked_production_schema_state.sql",
       import.meta.url,
     ),
   );

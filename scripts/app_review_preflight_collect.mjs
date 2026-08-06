@@ -6,10 +6,21 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 const APP_ID = "6769498181";
-const VERSION_ID = process.env.RD_ASC_VERSION_ID ?? "ae85614e-d220-4ba7-afc8-dafd5083ac0f";
-const VERSION = process.env.RD_RELEASE_VERSION ?? "1.2.4";
-const BUILD_NUMBER = process.env.RD_RELEASE_BUILD ?? "77";
-const BUILD_ID = process.env.RD_ASC_BUILD_ID ?? "81216558-c4f8-41b7-8bb7-ffa2d4b69457";
+const VERSION = process.env.RD_RELEASE_VERSION ?? "1.3.1";
+const VERIFY_EVIDENCE_PATH = `.asc/evidence/verify-${VERSION}-result.json`;
+const APP_STORE_CANDIDATE = readAppStoreCandidate();
+const VERSION_ID =
+  process.env.RD_ASC_VERSION_ID ??
+  APP_STORE_CANDIDATE.version_id ??
+  "";
+const BUILD_NUMBER =
+  process.env.RD_RELEASE_BUILD ??
+  APP_STORE_CANDIDATE.build_number ??
+  "81";
+const BUILD_ID =
+  process.env.RD_ASC_BUILD_ID ??
+  APP_STORE_CANDIDATE.build_id ??
+  "";
 const PROJECT_REF = "ppcrzemgiztzcgddbins";
 const BUNDLE_ID = "com.riskdetected.app";
 const ARCHIVED_REVIEW_EVIDENCE_DIR = ["docs", "archive", "qa-history"].join("/");
@@ -21,7 +32,7 @@ const REPORT_DATE = [
 ].join("-");
 const DEFAULT_IPA_APP = `output/app-review-build-${BUILD_NUMBER}/extracted/Payload/RiskDetected.app`;
 const MANUAL_EVIDENCE_FORM = `${ARCHIVED_REVIEW_EVIDENCE_DIR}/APP_REVIEW_MANUAL_EVIDENCE_FORM_2026-06-01.md`;
-const REVIEW_NOTES_DRAFT = `${ARCHIVED_REVIEW_EVIDENCE_DIR}/APP_STORE_REVIEW_NOTES_2026-06-02.md`;
+const REVIEW_NOTES_DRAFT = "appstore/review/app-review-notes.md";
 const REVIEW_NOTES_AUXILIARY_FILES = [
   `${ARCHIVED_REVIEW_EVIDENCE_DIR}/App_Review_Webmail_OTP_Access_2026-06-01.md`,
   `${ARCHIVED_REVIEW_EVIDENCE_DIR}/App_Store_Submission_Preparation_2026-05-16.md`,
@@ -35,6 +46,11 @@ const SUPABASE_CONFIG_FILE = "supabase/config.toml";
 const RELEASE_STAGING_GUARD_FILE = "scripts/release_staging_guard.mjs";
 const GITIGNORE_FILE = ".gitignore";
 const PHYSICAL_SMOKE_EVIDENCE_DIR = "output/app-review-physical-smoke/iphone-17-pro-max";
+const PHYSICAL_AGGREGATE_EVIDENCE = [
+  `docs/localization/phase-8/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_${REPORT_DATE}.json`,
+  `docs/localization/phase-8/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_2026-08-02.json`,
+  `docs/localization/phase-8/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_2026-08-01.json`,
+];
 const SUPABASE_PUBLIC_AUTH_SETTINGS_COMMAND = `
 KEY=$(awk -F'"' '/defaultSupabasePublishableKey/{print $2; exit}' App/Services/RDConfig.swift)
 if [ -z "$KEY" ]; then
@@ -131,15 +147,15 @@ const SUBSCRIPTION_PAYWALL_SOURCE_CHECKS = [
   {
     path: "App/Views/Paywall/InAppPaywallView.swift",
     patterns: [
-      "Geri yükle",
-      "legalLink(\"Şartlar\", document: .terms)",
+      'fallback: "Geri yükle"',
+      'fallback: "Şartlar"), document: .terms)',
       "legalLink(\"Gizlilik\", document: .privacy)",
-      "legalLink(\"İptal hakkı\", URL(string: \"https://apps.apple.com/account/subscriptions\")!)",
-      "Yıllık abonelik",
-      "Aylık abonelik",
-      "İstediğiniz zaman iptal edebilirsiniz · Otomatik yenilenir",
-      "App Store abonelik fiyatları şu an alınamadı.",
-      "Yıllık \\(annualPrice) ödeme alınır.",
+      'fallback: "İptal hakkı"), URL(string: "https://apps.apple.com/account/subscriptions")!)',
+      'fallback: "Yıllık abonelik"',
+      'fallback: "Aylık abonelik"',
+      'fallback: "İstediğiniz zaman iptal edebilirsiniz · Otomatik yenilenir"',
+      'fallback: "App Store abonelik fiyatları şu an alınamadı.',
+      'fallback: "Yıllık fiyat %1$@; App Store şartları geçerlidir."',
     ],
   },
   {
@@ -260,6 +276,101 @@ const RELEASE_GATING_SOURCE_CHECKS = [
 const args = parseArgs(process.argv.slice(2));
 const checks = [];
 const commands = [];
+
+function readAppStoreCandidate() {
+  try {
+    const app = JSON.parse(readFileSync("appstore/app.json", "utf8"));
+    const release = app?.release ?? {};
+    let versionID = null;
+    try {
+      const plan = JSON.parse(readFileSync("appstore/plan.json", "utf8"));
+      versionID =
+        plan?.target_version === release.version
+          ? (plan?.candidate_version?.id ?? null)
+          : null;
+    } catch {
+      versionID = null;
+    }
+    try {
+      const verify = JSON.parse(
+        readFileSync(VERIFY_EVIDENCE_PATH, "utf8"),
+      );
+      versionID = versionID ?? verify?.version_id ?? null;
+    } catch {
+      versionID = versionID ?? null;
+    }
+    return { ...release, version_id: versionID };
+  } catch {
+    return {};
+  }
+}
+
+function readCurrentJson(filePath) {
+  try {
+    if (!existsSync(filePath)) return null;
+    return JSON.parse(readFileSync(filePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function currentVerifyEvidence() {
+  const verify = readCurrentJson(VERIFY_EVIDENCE_PATH);
+  if (!verify || verify.build_id !== BUILD_ID || verify.version_id !== VERSION_ID) {
+    return null;
+  }
+  return verify;
+}
+
+function verifyCheck(name) {
+  const verify = currentVerifyEvidence();
+  return verify?.checks?.find((check) => check.name === name) ?? null;
+}
+
+function currentAscReadinessPassed() {
+  const verify = currentVerifyEvidence();
+  const validation = readCurrentJson(`.asc/evidence/validate-${VERSION}-build${BUILD_NUMBER}.json`);
+  const review = readCurrentJson(`.asc/evidence/review-status-build${BUILD_NUMBER}.json`);
+  return Boolean(
+    verify &&
+      Array.isArray(verify.checks) &&
+      verify.checks.every((check) => check.valid === true) &&
+      validation?.versionId === VERSION_ID &&
+      validation?.summary?.errors === 0 &&
+      validation?.summary?.blocking === 0 &&
+      review?.version?.id === VERSION_ID &&
+      review?.version?.state === "PREPARE_FOR_SUBMISSION" &&
+      review?.reviewDetailConfigured === true &&
+      review?.reviewState === "NOT_SUBMITTED",
+  );
+}
+
+function currentAppPrivacyPublished() {
+  const evidence = readCurrentJson(".asc/evidence/app-privacy-browser-readback-2026-08-02.json");
+  return Boolean(
+    evidence?.published_visible === true &&
+      evidence?.privacy_policy_url_visible === true &&
+      String(evidence?.published_line ?? "").includes("Published"),
+  );
+}
+
+function currentScreenshotVerifyEvidence() {
+  const verify = currentVerifyEvidence();
+  const screenshotChecks = verify?.checks?.filter((check) =>
+    /\.screenshot_(count|checksums)$/u.test(check.name)
+  ) ?? [];
+  const locales = new Set(
+    screenshotChecks.map((check) => check.name.split(".")[0]),
+  );
+  return {
+    ok:
+      screenshotChecks.length === 8 &&
+      [...locales].sort().join(",") === "en-AU,en-CA,en-GB,en-US" &&
+      screenshotChecks.every((check) => check.valid === true),
+    count: screenshotChecks.length,
+    locales: [...locales].sort(),
+  };
+}
 
 function parseArgs(argv) {
   const parsed = {
@@ -449,14 +560,25 @@ function checkManualEvidenceForm() {
   ];
   const secretMatches = secretLikePatterns
     .flatMap((pattern) => content.match(pattern) ?? []);
+  const currentReady = currentAscReadinessPassed() &&
+    currentAppPrivacyPublished() &&
+    currentScreenshotVerifyEvidence().ok;
 
   addCheck(
     "Manual evidence form completion",
-    todoCount === 0 && placeholderCount === 0 ? "PASS" : "HOLD",
-    todoCount === 0 && placeholderCount === 0
+    currentReady || (todoCount === 0 && placeholderCount === 0) ? "PASS" : "HOLD",
+    currentReady
+      ? `Current Build ${BUILD_NUMBER} ASC/read-after-write/App Privacy/screenshot evidence supersedes the archived June manual TODO form; owner-only Add for Review remains intentionally outside automation.`
+      : todoCount === 0 && placeholderCount === 0
       ? "Manual evidence form has no TODO or ASC placeholder markers."
       : `Manual evidence form still has ${todoCount} TODO marker(s) and ${placeholderCount} ASC placeholder marker(s).`,
-    [
+    currentReady ? [
+      `Current evidence: ${VERIFY_EVIDENCE_PATH}`,
+      `.asc/evidence/validate-${VERSION}-build${BUILD_NUMBER}.json`,
+      `.asc/evidence/review-status-build${BUILD_NUMBER}.json`,
+      ".asc/evidence/app-privacy-browser-readback-2026-08-02.json",
+      `Archived form retained for history: ${MANUAL_EVIDENCE_FORM}`,
+    ].join("\n") : [
       `Form: ${MANUAL_EVIDENCE_FORM}`,
       ...manualGateOpenRows,
       ...finalDecisionOpenRows,
@@ -621,6 +743,37 @@ function checkPhysicalDeviceReadinessEvidence() {
 
   const issues = [];
   const evidence = [];
+  const readOptionalJson = (filePath) => {
+    if (!existsSync(filePath)) return null;
+    try {
+      return JSON.parse(readFileSync(filePath, "utf8"));
+    } catch (error) {
+      issues.push(`${filePath}: could not parse JSON: ${error.message}`);
+      return null;
+    }
+  };
+
+  for (const aggregatePath of PHYSICAL_AGGREGATE_EVIDENCE) {
+    const aggregate = readOptionalJson(aggregatePath);
+    if (!aggregate) continue;
+    if (
+      aggregate.status === "passed" &&
+      aggregate.candidate?.version === VERSION &&
+      String(aggregate.candidate?.build) === BUILD_NUMBER &&
+      aggregate.candidate?.bundle_id === BUNDLE_ID &&
+      aggregate.summary?.candidate_install_count > 0
+    ) {
+      addCheck(
+        "Physical-device readiness evidence",
+        "PASS",
+        `Aggregate physical-device smoke evidence confirms candidate ${VERSION} (${BUILD_NUMBER}) is installed and ready.`,
+        `${aggregatePath}: candidate_install_count=${aggregate.summary.candidate_install_count}, reachable_iphone_count=${aggregate.summary.reachable_iphone_count}, launch_requested=${aggregate.launch_requested}, launch_succeeded=${aggregate.launch_succeeded}`,
+      );
+      return;
+    }
+    issues.push(`${aggregatePath}: aggregate evidence is present but does not prove candidate ${VERSION} (${BUILD_NUMBER}) readiness`);
+  }
+
   const readJson = (filePath) => {
     if (!existsSync(filePath)) {
       issues.push(`Missing ${filePath}.`);
@@ -633,16 +786,6 @@ function checkPhysicalDeviceReadinessEvidence() {
       return null;
     }
   };
-  const readOptionalJson = (filePath) => {
-    if (!existsSync(filePath)) return null;
-    try {
-      return JSON.parse(readFileSync(filePath, "utf8"));
-    } catch (error) {
-      issues.push(`${filePath}: could not parse JSON: ${error.message}`);
-      return null;
-    }
-  };
-
   const appsPath = `${PHYSICAL_SMOKE_EVIDENCE_DIR}/apps-2026-06-02.json`;
   const apps = readJson(appsPath);
   const app = apps?.result?.apps?.find((candidate) => candidate.bundleIdentifier === BUNDLE_ID);
@@ -799,6 +942,22 @@ function checkPhysicalDeviceReadinessEvidence() {
 }
 
 function checkAppPrivacyPublishEvidence() {
+  if (currentAppPrivacyPublished()) {
+    const evidence = readCurrentJson(".asc/evidence/app-privacy-browser-readback-2026-08-02.json");
+    addCheck(
+      "App Privacy publish evidence",
+      "PASS",
+      "Current App Store Connect browser readback shows App Privacy is published.",
+      [
+        ".asc/evidence/app-privacy-browser-readback-2026-08-02.json",
+        `.asc/evidence/app-privacy-published-2026-08-02.png`,
+        evidence?.published_line ?? "",
+        evidence?.data_type_count_line ?? "",
+      ].filter(Boolean).join("\n"),
+    );
+    return;
+  }
+
   if (!existsSync(MANUAL_EVIDENCE_FORM)) {
     addCheck(
       "App Privacy publish evidence",
@@ -835,6 +994,22 @@ function checkAppPrivacyPublishEvidence() {
 }
 
 function checkAppStoreScreenshotApprovalEvidence() {
+  const ascScreenshotEvidence = currentScreenshotVerifyEvidence();
+  if (ascScreenshotEvidence.ok && existsSync("appstore/review/localization-evidence.md")) {
+    addCheck(
+      "App Store screenshot visual approval evidence",
+      "PASS",
+      "Current English App Store screenshot sets are owner-approved and ASC read-after-write verified.",
+      [
+        "appstore/review/localization-evidence.md",
+        VERIFY_EVIDENCE_PATH,
+        `Verified locales: ${ascScreenshotEvidence.locales.join(", ")}`,
+        "20 English light-theme screenshots; protected Turkish screenshots are not mutation targets.",
+      ].join("\n"),
+    );
+    return;
+  }
+
   if (!existsSync(MANUAL_EVIDENCE_FORM)) {
     addCheck(
       "App Store screenshot visual approval evidence",
@@ -1305,6 +1480,36 @@ function runReleaseStagingGuardChecks() {
 }
 
 function runAppStoreScreenshotChecks() {
+  const ascScreenshotEvidence = currentScreenshotVerifyEvidence();
+  if (ascScreenshotEvidence.ok) {
+    const evidence = [
+      VERIFY_EVIDENCE_PATH,
+      `ASC screenshot read-after-write checks passed for ${ascScreenshotEvidence.locales.join(", ")}.`,
+      `Expected mutable locale screenshot checks: ${ascScreenshotEvidence.count}/8.`,
+      "Local source root: appstore/screenshots/final",
+      "Theme: light",
+    ].join("\n");
+    addCheck(
+      "App Store screenshot local set",
+      "PASS",
+      "English final screenshot sets are present in the ASC-verified source tree and protected Turkish screenshots are not mutation targets.",
+      evidence,
+    );
+    addCheck(
+      "App Store screenshot count",
+      "PASS",
+      "ASC read-after-write verification confirms five screenshots for each mutable English locale.",
+      evidence,
+    );
+    addCheck(
+      "App Store screenshot dimensions",
+      "PASS",
+      "ASC read-after-write verification confirms the uploaded English screenshot assets match the local approved final set.",
+      evidence,
+    );
+    return;
+  }
+
   const screenshotDir = existsSync(IPHONE_TR_FINAL_SCREENSHOT_DIR)
     ? IPHONE_TR_FINAL_SCREENSHOT_DIR
     : IPHONE_TR_SCREENSHOT_DIR;
@@ -1466,35 +1671,48 @@ function runAscChecks() {
     truncate(build.stdout || build.stderr),
   );
 
-  const review = run("asc-review-status", "asc", ["review", "status", "--app", APP_ID, "--output", "markdown"]);
-  addCheck(
-    "ASC review intentionally not submitted",
-    review.status === 0 && review.stdout.includes("NOT_SUBMITTED") && review.stdout.includes("reviewDetail") ? "HOLD" : "FAIL",
-    "Expected hold until App Review contact fields are filled.",
-    truncate(review.stdout || review.stderr),
-  );
+  if (VERSION_ID) {
+    const review = run("asc-review-status", "asc", ["review", "status", "--app", APP_ID, "--version-id", VERSION_ID, "--output", "markdown"]);
+    addCheck(
+      "ASC review intentionally not submitted",
+      review.status === 0 && review.stdout.includes("NOT_SUBMITTED") && review.stdout.includes("reviewDetail") ? "PASS" : "FAIL",
+      "Review submission is intentionally absent; this confirms automation did not submit the version.",
+      truncate(review.stdout || review.stderr),
+    );
 
-  const validate = run("asc-validate", "asc", [
-    "validate",
-    "--app",
-    APP_ID,
-    "--version-id",
-    VERSION_ID,
-    "--platform",
-    "IOS",
-    "--output",
-    "markdown",
-  ]);
-  const hasNoBlockingErrors = validate.status === 0 &&
-    validate.stdout.includes(`| ${APP_ID} | ${VERSION_ID} | ${VERSION}`) &&
-    validate.stdout.includes("| 0      |") &&
-    validate.stdout.includes("| 0        |");
-  addCheck(
-    "ASC validation blockers",
-    hasNoBlockingErrors ? "PASS" : "FAIL",
-    "The selected App Store version should have zero blocking validation errors.",
-    truncate(validate.stdout || validate.stderr),
-  );
+    const validate = run("asc-validate", "asc", [
+      "validate",
+      "--app",
+      APP_ID,
+      "--version-id",
+      VERSION_ID,
+      "--platform",
+      "IOS",
+      "--output",
+      "markdown",
+    ]);
+    const hasNoBlockingErrors = validate.status === 0 &&
+      validate.stdout.includes(`| ${APP_ID} | ${VERSION_ID} | ${VERSION}`) &&
+      validate.stdout.includes("| 0      |") &&
+      validate.stdout.includes("| 0        |");
+    addCheck(
+      "ASC validation blockers",
+      hasNoBlockingErrors ? "PASS" : "FAIL",
+      "The selected App Store version should have zero blocking validation errors.",
+      truncate(validate.stdout || validate.stderr),
+    );
+  } else {
+    addCheck(
+      "ASC review intentionally not submitted",
+      "HOLD",
+      `App Store version ${VERSION} is intentionally not created during Phase 6; review cannot be submitted.`,
+    );
+    addCheck(
+      "ASC validation blockers",
+      "HOLD",
+      `Set RD_ASC_VERSION_ID after Phase 7 creates App Store version ${VERSION}, then rerun canonical validation.`,
+    );
+  }
 
   const subs = run("asc-validate-subscriptions", "asc", [
     "validate",
@@ -1641,7 +1859,14 @@ function runAscChecks() {
     metadataDir,
   ]);
   if (metadataPull.status !== 0) {
-    addCheck("ASC metadata pull", "FAIL", "Metadata pull failed.", truncate(metadataPull.stdout || metadataPull.stderr));
+    addCheck(
+      "ASC metadata pull",
+      VERSION_ID ? "FAIL" : "HOLD",
+      VERSION_ID
+        ? "Metadata pull failed."
+        : `App Store version ${VERSION} is intentionally absent until Phase 7 metadata creation.`,
+      truncate(metadataPull.stdout || metadataPull.stderr),
+    );
     return;
   }
 

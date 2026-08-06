@@ -14,9 +14,9 @@ struct ResultView: View {
         var compactText: String { "F\(index) \(findingCount)" }
         var accessibilityText: String {
             if let detail {
-                return "Foto \(index), \(findingCount) bulgu, \(detail)"
+                return RDLocalization.format("analysis.result.view.foto.1.2.bulgu.3.9327888e", table: .analysis, fallback: "Foto %1$@, %2$@ bulgu, %3$@", arguments: [String(describing: index), String(describing: findingCount), String(describing: detail)])
             }
-            return "Foto \(index), \(findingCount) bulgu"
+            return RDLocalization.format("analysis.result.view.foto.1.2.bulgu.829f60c1", table: .analysis, fallback: "Foto %1$@, %2$@ bulgu", arguments: [String(describing: index), String(describing: findingCount)])
         }
     }
     private struct SelectedFindingDetail: Identifiable {
@@ -69,7 +69,7 @@ struct ResultView: View {
         sortedFindingRows.map { $0.asFinding }
     }
     private var analysisTitle: String {
-        currentBundle?.analysis.title ?? "Analiz Sonucu"
+        currentBundle?.analysis.title ?? RDLocalization.string("analysis.result.view.analiz.sonucu.beed71fd", table: .analysis, fallback: "Analiz Sonucu")
     }
     private var canvasLabel: String {
         let id = currentBundle?.analysis.canvas ?? "general"
@@ -77,6 +77,15 @@ struct ResultView: View {
     }
     private var analysisSectorLabel: String? {
         currentBundle?.analysis.analysisSectorLabel
+    }
+    private var analysisOutputLanguage: RDLanguage {
+        currentBundle?.analysis.resolvedOutputLanguage ?? .turkish
+    }
+    private var showsRegulatoryReferences: Bool {
+        currentBundle?.analysis.supportsStructuredRegulatoryReferences ?? true
+    }
+    private var showsHistoricalLanguageBadge: Bool {
+        app.languagePreference == .english && analysisOutputLanguage == .turkish
     }
     private var photoPath: String? {
         currentBundle?.photos.first?.storagePath
@@ -167,6 +176,9 @@ struct ResultView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
+                    if showsHistoricalLanguageBadge {
+                        historicalLanguageBadge
+                    }
                     photoMetaCard
                     methodSelector
                     methodologySummary
@@ -202,7 +214,8 @@ struct ResultView: View {
                 method: method,
                 photoPath: selection.photoPath,
                 localPreviewImage: selection.localPreviewImage,
-                photoIndex: selection.photoIndex
+                photoIndex: selection.photoIndex,
+                showsRegulatoryReferences: showsRegulatoryReferences
             )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
@@ -214,6 +227,8 @@ struct ResultView: View {
                 method: method,
                 photoCount: currentBundle?.analysis.photoCount ?? max(currentBundle?.photos.count ?? 0, 1),
                 isSaving: isFindingMutationInFlight,
+                showsRegulatoryReferences: showsRegulatoryReferences,
+                showsLanguageMismatchWarning: showsHistoricalLanguageBadge,
                 onSave: { patch in
                     mutateFinding(row: row, action: .update(patch))
                 },
@@ -267,34 +282,34 @@ struct ResultView: View {
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .alert("Rapor Hatası", isPresented: Binding(
+        .alert(RDLocalization.string("analysis.result.view.rapor.hatasi.399e4dae", table: .analysis, fallback: "Rapor Hatası"), isPresented: Binding(
             get: { pdfError != nil },
             set: { if !$0 { pdfError = nil } }
         )) {
-            Button("Tamam", role: .cancel) { pdfError = nil }
+            Button(RDLocalization.string("analysis.result.view.tamam.408b59a7", table: .analysis, fallback: "Tamam"), role: .cancel) { pdfError = nil }
         } message: {
             Text(pdfError ?? "")
         }
-        .alert("Bulgu Güncellenemedi", isPresented: Binding(
+        .alert(RDLocalization.string("analysis.result.view.bulgu.guncellenemedi.ed17861e", table: .analysis, fallback: "Bulgu Güncellenemedi"), isPresented: Binding(
             get: { findingMutationError != nil },
             set: { if !$0 { findingMutationError = nil } }
         )) {
-            Button("Tamam", role: .cancel) { findingMutationError = nil }
+            Button(RDLocalization.string("analysis.result.view.tamam.ccfef1dc", table: .analysis, fallback: "Tamam"), role: .cancel) { findingMutationError = nil }
         } message: {
             Text(findingMutationError ?? "")
         }
-        .alert("Bulgu silinsin mi?", isPresented: Binding(
+        .alert(RDLocalization.string("analysis.result.view.bulgu.silinsin.mi.88025a71", table: .analysis, fallback: "Bulgu silinsin mi?"), isPresented: Binding(
             get: { pendingDeleteFindingRow != nil },
             set: { if !$0 { pendingDeleteFindingRow = nil } }
         )) {
-            Button("Vazgeç", role: .cancel) { pendingDeleteFindingRow = nil }
-            Button("Sil", role: .destructive) {
+            Button(RDLocalization.string("analysis.result.view.vazgec.b562b873", table: .analysis, fallback: "Vazgeç"), role: .cancel) { pendingDeleteFindingRow = nil }
+            Button(RDLocalization.string("analysis.result.view.sil.aa01ae25", table: .analysis, fallback: "Sil"), role: .destructive) {
                 guard let row = pendingDeleteFindingRow else { return }
                 pendingDeleteFindingRow = nil
                 mutateFinding(row: row, action: .delete)
             }
         } message: {
-            Text("Bu bulgu yeni raporlara dahil edilmeyecek. Eski rapor snapshotları ve audit kaydı korunur.")
+            Text(RDLocalization.string("analysis.result.view.bu.bulgu.yeni.raporlara.dahil.edilmeyecek.eski.r.74c5aa32", table: .analysis, fallback: "Bu bulgu yeni raporlara dahil edilmeyecek. Eski rapor snapshotları ve audit kaydı korunur."))
         }
         .fullScreenCover(isPresented: $showPaywall) {
             FreeAwarePaywallView(onClose: { showPaywall = false },
@@ -349,7 +364,7 @@ struct ResultView: View {
 
             Spacer()
 
-            Text("Analiz Sonucu")
+            Text(RDLocalization.string("analysis.result.view.analiz.sonucu.0c18bbb7", table: .analysis, fallback: "Analiz Sonucu"))
                 .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
 
             Spacer()
@@ -358,12 +373,12 @@ struct ResultView: View {
                 roundIconButton(systemName: "arrow.down.to.line") {
                     generateAndSharePDF()
                 }
-                .accessibilityLabel("Raporu indir")
+                .accessibilityLabel(RDLocalization.string("analysis.result.view.raporu.indir.7bf3cb89", table: .analysis, fallback: "Raporu indir"))
 
                 roundIconButton(systemName: "square.and.arrow.up") {
                     generateAndSharePDF(presentShareSheet: true)
                 }
-                .accessibilityLabel("Raporu paylaş")
+                .accessibilityLabel(RDLocalization.string("analysis.result.view.raporu.paylas.44d5f7cf", table: .analysis, fallback: "Raporu paylaş"))
             }
             .frame(width: 84, alignment: .trailing)
         }
@@ -392,6 +407,32 @@ struct ResultView: View {
 
     // MARK: - Photo + meta
 
+    private var historicalLanguageBadge: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "character.book.closed.fill")
+                .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                .foregroundStyle(Color.rdCharcoal)
+                .frame(width: 34, height: 34)
+                .background(Color.rdFog)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(RDLocalization.string("analysis.result.view.original.content.turkish.fd88a097", table: .analysis, fallback: "Orijinal içerik: Türkçe"))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text(RDLocalization.string("analysis.result.view.system.and.user.entered.fields.remain.in.their.o.a1568a6b", table: .analysis, fallback: "Sistem ve kullanıcı tarafından girilen alanlar orijinal dillerinde kalır. Bu analiz için İngilizce dışa aktarma mevcut değildir."))
+                    .font(.system(size: RDFontScale.size(11.5), design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Color.rdWhite)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdLine, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .accessibilityIdentifier("result.original_language_badge")
+    }
+
     private var photoMetaCard: some View {
         RDCard {
             HStack(alignment: .top, spacing: 14) {
@@ -414,20 +455,30 @@ struct ResultView: View {
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
                     if let analysisSectorLabel {
-                        Text("Analiz kapsamı: \(analysisSectorLabel)")
+                        Text(RDLocalization.format("analysis.result.view.analiz.kapsami.1.70e4127a", table: .analysis, fallback: "Analiz kapsamı: %1$@", arguments: [String(describing: analysisSectorLabel)]))
                             .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdCharcoal)
                             .lineLimit(1)
                             .accessibilityIdentifier("result.analysis_sector")
                     }
-                    Text("Analiz odağı: \(canvasLabel)")
+                    Text(RDLocalization.format("analysis.result.view.analiz.odagi.1.0db5521f", table: .analysis, fallback: "Analiz odağı: %1$@", arguments: [String(describing: canvasLabel)]))
                         .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
                         .padding(.bottom, 4)
 
                     HStack(spacing: 6) {
-                        metaChip("\(findings.count) bulgu", bg: .rdFog, fg: .rdCharcoal)
+                        metaChip(
+                            RDLocalization.plural(
+                                "analysis.count.findings",
+                                table: .analysis,
+                                value: findings.count,
+                                fallbackOne: "%lld bulgu",
+                                fallbackOther: "%lld bulgu"
+                            ),
+                            bg: .rdFog,
+                            fg: .rdCharcoal
+                        )
                         confidenceChip
                     }
                     .fixedSize(horizontal: false, vertical: true)
@@ -450,8 +501,8 @@ struct ResultView: View {
     private var proResultHint: some View {
         let tier: SubscriptionTier = app.currentTier == .plus ? .pro : .plus
         let title = tier == .plus
-            ? "Plus ile daha detaylı analiz ve rapor seçenekleri"
-            : "Pro ile daha yüksek kapasite ve gelişmiş analiz"
+            ? RDLocalization.string("analysis.result.view.plus.ile.daha.detayli.analiz.ve.rapor.secenekler.15e34b16", table: .analysis, fallback: "Plus ile daha detaylı analiz ve rapor seçenekleri")
+            : RDLocalization.string("analysis.result.view.pro.ile.daha.yuksek.kapasite.ve.gelismis.analiz.a07cb655", table: .analysis, fallback: "Pro ile daha yüksek kapasite ve gelişmiş analiz")
         return Button {
             showPaywall = true
         } label: {
@@ -481,7 +532,7 @@ struct ResultView: View {
 
     private var confidenceChip: some View {
         let value = Int(averageConfidence * 100)
-        let text = app.isPro ? "Pro AI güveni %\(value)" : "AI güveni %\(value)"
+        let text = app.isPro ? RDLocalization.format("analysis.result.view.pro.ai.guveni.1.8a8860ad", table: .analysis, fallback: "Pro AI güveni %%%1$@", arguments: [String(describing: value)]) : RDLocalization.format("analysis.result.view.ai.guveni.1.39308927", table: .analysis, fallback: "AI güveni %%%1$@", arguments: [String(describing: value)])
         let icon = app.isPro ? "sparkles" : "arrow.up.circle.fill"
 
         return Button {
@@ -502,7 +553,7 @@ struct ResultView: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain)
-        .accessibilityHint(app.isPro ? "Pro analiz güven göstergesi" : "Plus ile daha kapsamlı analiz bilgisi")
+        .accessibilityHint(app.isPro ? RDLocalization.string("analysis.result.view.pro.analiz.guven.gostergesi.8a9d8f12", table: .analysis, fallback: "Pro analiz güven göstergesi") : RDLocalization.string("analysis.result.view.plus.ile.daha.kapsamli.analiz.bilgisi.e2daa600", table: .analysis, fallback: "Plus ile daha kapsamlı analiz bilgisi"))
     }
 
     private func metaChip(_ text: String, bg: Color, fg: Color) -> some View {
@@ -532,15 +583,15 @@ struct ResultView: View {
         .clipShape(RoundedRectangle(cornerRadius: 5))
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityIdentifier("result.photo_coverage")
-        .accessibilityLabel("Fotoğraf dağılımı: \(photoCoverageAccessibilityText)")
+        .accessibilityLabel(RDLocalization.format("analysis.result.view.fotograf.dagilimi.1.8a40049c", table: .analysis, fallback: "Fotoğraf dağılımı: %1$@", arguments: [String(describing: photoCoverageAccessibilityText)]))
     }
 
     private func photoCoverageDetail(summary: AnalysisPhotoSummaryRow?, count: Int) -> String? {
         let status = summary?.coverageStatus?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if status == "low_quality" { return "kalite yetersiz" }
-        if status == "no_actionable_hazard" { return "kanıt yok" }
+        if status == "low_quality" { return RDLocalization.string("analysis.result.view.kalite.yetersiz.d821fea1", table: .analysis, fallback: "kalite yetersiz") }
+        if status == "no_actionable_hazard" { return RDLocalization.string("analysis.result.view.kanit.yok.fc6e975a", table: .analysis, fallback: "kanıt yok") }
         if let targetMin = summary?.targetFindingsMin, count < targetMin {
-            return "gerekçeli düşük"
+            return RDLocalization.string("analysis.result.view.gerekceli.dusuk.9f519630", table: .analysis, fallback: "gerekçeli düşük")
         }
         return nil
     }
@@ -556,8 +607,10 @@ struct ResultView: View {
         isoFmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let date = isoFmt.date(from: raw) ?? Date()
         let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "tr_TR")
-        fmt.dateFormat = "d MMM · HH:mm"
+        fmt.locale = currentBundle?.analysis.resolvedOutputLanguage.locale
+            ?? .autoupdatingCurrent
+        fmt.dateStyle = .medium
+        fmt.timeStyle = .short
         return fmt.string(from: date)
     }
 
@@ -576,7 +629,7 @@ struct ResultView: View {
                             Text(m.label)
                                 .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                                 .foregroundStyle(active ? Color.rdBlack : Color.rdSlate)
-                            Text("R = \(m.formula)")
+                            Text(RDLocalization.format("analysis.result.view.r.1.303ca83a", table: .analysis, fallback: "r = %1$@", arguments: [String(describing: m.formula)]))
                                 .rdMono(size: 10, weight: .medium)
                                 .foregroundStyle(Color.rdSlate)
                         }
@@ -621,7 +674,7 @@ struct ResultView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(method.fullName.uppercased())
+                        Text(RDLocalization.uppercased(method.fullName))
                             .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                             .tracking(0.8)
                             .foregroundStyle(Color.rdSlate)
@@ -633,7 +686,7 @@ struct ResultView: View {
                                 .tracking(-0.5)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.72)
-                            Text("en yüksek risk")
+                            Text(RDLocalization.string("analysis.result.view.en.yuksek.risk.3729eaec", table: .analysis, fallback: "en yüksek risk"))
                                 .rdMono(size: 11, weight: .semibold)
                                 .foregroundStyle(Color.rdSlate)
                                 .lineLimit(1)
@@ -654,7 +707,7 @@ struct ResultView: View {
                     Spacer(minLength: 8)
 
                     VStack(spacing: 5) {
-                        Text("Dağılım")
+                        Text(RDLocalization.string("analysis.result.view.dagilim.44d73442", table: .analysis, fallback: "Dağılım"))
                             .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
                             .tracking(0.45)
                             .foregroundStyle(Color.rdSlate)
@@ -701,12 +754,12 @@ struct ResultView: View {
                     Image(systemName: "checkmark.shield.fill")
                         .font(.system(size: RDFontScale.size(18), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdGreenDark)
-                    Text("Tehlike tespit edilmedi")
+                    Text(RDLocalization.string("analysis.result.view.tehlike.tespit.edilmedi.6e805751", table: .analysis, fallback: "Tehlike tespit edilmedi"))
                         .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                 }
 
-                    Text("Bu analiz için raporlanabilir bir uygunsuzluk bulunmadı. Fotoğraf yeterince açık değilse farklı bir açıdan tekrar tarama yapılabilir.")
+                    Text(RDLocalization.string("analysis.result.view.bu.analiz.icin.raporlanabilir.bir.uygunsuzluk.bu.760e01da", table: .analysis, fallback: "Bu analiz için raporlanabilir bir uygunsuzluk bulunmadı. Fotoğraf yeterince açık değilse farklı bir açıdan tekrar tarama yapılabilir."))
                     .font(.system(size: RDFontScale.size(13), design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
@@ -716,7 +769,7 @@ struct ResultView: View {
 
     private var findingsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Tespit edilen tehlikeler · risk hesaplaması".uppercased())
+            Text(RDLocalization.uppercased(RDLocalization.string("analysis.result.view.tespit.edilen.tehlikeler.risk.hesaplamasi.f60bde3e", table: .analysis, fallback: "Tespit edilen tehlikeler · risk hesaplaması")))
                 .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .tracking(0.6)
                 .foregroundStyle(Color.rdSlate)
@@ -729,6 +782,7 @@ struct ResultView: View {
                     index: index + 1,
                     method: method,
                     currentTier: app.currentTier,
+                    showsRegulatoryReferences: showsRegulatoryReferences,
                     sourcePhotoIndices: row.sourcePhotoIndices ?? [],
                     canEdit: app.planCapabilities.canEditAIFindings,
                     onEdit: {
@@ -795,16 +849,16 @@ struct ResultView: View {
         let start = sortedFindings.count + 1
         let total = min(2, max(0, 5 - sortedFindings.count))
         let templates: [(String, RiskLevel, String)] = [
-            ("Ek kritik bulgu", .critical, "Detaylı açıklama Pro ile açılır."),
-            ("Tolerans dışı durum", .high, "Fine-Kinney ve 5×5 hesabı kilitli."),
-            ("Önemli risk alanı", .high, "Kanıt ve aksiyon planı Pro'da görünür."),
-            ("Gizli uygunsuzluk", .medium, "Önlem / kontrol tedbirleri Plus ile görünür."),
-            ("Olası risk", .low, "Ek bulgu detayları Plus ile görünür."),
-            ("Önemli risk", .high, "PDF/Excel risk tablosuna eklenir."),
-            ("Ek saha riski", .medium, "Standart referansları Plus'ta açılır."),
-            ("Kritik kontrol noktası", .critical, "Detaylı risk hesabı Pro ile açılır."),
-            ("Düzeltici aksiyon", .medium, "Aksiyon takibi Plus raporunda görünür."),
-            ("Mevzuat referansı", .low, "Kaynak ve standart bilgisi Plus'ta açılır.")
+            (RDLocalization.string("analysis.result.view.ek.kritik.bulgu.76ee31cc", table: .analysis, fallback: "Ek kritik bulgu"), .critical, RDLocalization.string("analysis.result.view.detayli.aciklama.pro.ile.acilir.c1b2f22a", table: .analysis, fallback: "Detaylı açıklama Pro ile açılır.")),
+            (RDLocalization.string("analysis.result.view.tolerans.disi.durum.56bc92b4", table: .analysis, fallback: "Tolerans dışı durum"), .high, RDLocalization.string("analysis.result.view.fine.kinney.ve.5.5.hesabi.kilitli.7d4314a9", table: .analysis, fallback: "Fine-Kinney ve 5×5 hesabı kilitli.")),
+            (RDLocalization.string("analysis.result.view.onemli.risk.alani.0b5f41fd", table: .analysis, fallback: "Önemli risk alanı"), .high, RDLocalization.string("analysis.result.view.kanit.ve.aksiyon.plani.pro.da.gorunur.2d4854a9", table: .analysis, fallback: "Kanıt ve aksiyon planı Pro'da görünür.")),
+            (RDLocalization.string("analysis.result.view.gizli.uygunsuzluk.6e754476", table: .analysis, fallback: "Gizli uygunsuzluk"), .medium, RDLocalization.string("analysis.result.view.onlem.kontrol.tedbirleri.plus.ile.gorunur.3e1afdc7", table: .analysis, fallback: "Önlem / kontrol tedbirleri Plus ile görünür.")),
+            (RDLocalization.string("analysis.result.view.olasi.risk.81cc9f0e", table: .analysis, fallback: "Olası risk"), .low, RDLocalization.string("analysis.result.view.ek.bulgu.detaylari.plus.ile.gorunur.f4cebc70", table: .analysis, fallback: "Ek bulgu detayları Plus ile görünür.")),
+            (RDLocalization.string("analysis.result.view.onemli.risk.4386778a", table: .analysis, fallback: "Önemli risk"), .high, RDLocalization.string("analysis.result.view.pdf.excel.risk.tablosuna.eklenir.ce18b102", table: .analysis, fallback: "PDF/Excel risk tablosuna eklenir.")),
+            (RDLocalization.string("analysis.result.view.ek.saha.riski.9d2c5e65", table: .analysis, fallback: "Ek saha riski"), .medium, RDLocalization.string("analysis.result.view.standart.referanslari.plus.ta.acilir.5b564dd0", table: .analysis, fallback: "Standart referansları Plus'ta açılır.")),
+            (RDLocalization.string("analysis.result.view.kritik.kontrol.noktasi.c6c57356", table: .analysis, fallback: "Kritik kontrol noktası"), .critical, RDLocalization.string("analysis.result.view.detayli.risk.hesabi.pro.ile.acilir.41cbd0fa", table: .analysis, fallback: "Detaylı risk hesabı Pro ile açılır.")),
+            (RDLocalization.string("analysis.result.view.duzeltici.aksiyon.0fd9d02e", table: .analysis, fallback: "Düzeltici aksiyon"), .medium, RDLocalization.string("analysis.result.view.aksiyon.takibi.plus.raporunda.gorunur.03405c54", table: .analysis, fallback: "Aksiyon takibi Plus raporunda görünür.")),
+            (RDLocalization.string("analysis.result.view.mevzuat.referansi.2d84caed", table: .analysis, fallback: "Mevzuat referansı"), .low, RDLocalization.string("analysis.result.view.kaynak.ve.standart.bilgisi.plus.ta.acilir.dc29b69f", table: .analysis, fallback: "Kaynak ve standart bilgisi Plus'ta açılır."))
         ]
         return (0..<total).map { offset in
             let template = templates[offset % templates.count]
@@ -854,7 +908,7 @@ struct ResultView: View {
                 HStack(spacing: 8) {
                     Image(systemName: pdfGeneration.isActive || isExcelGenerating ? "hourglass" : "slider.horizontal.3")
                         .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
-                    Text(pdfGeneration.isActive ? "Rapor hazırlanıyor..." : isExcelGenerating ? "Excel hazırlanıyor..." : "Rapor Oluştur")
+                    Text(pdfGeneration.isActive ? RDLocalization.string("analysis.result.view.rapor.hazirlaniyor.499cdc47", table: .analysis, fallback: "Rapor hazırlanıyor...") : isExcelGenerating ? RDLocalization.string("analysis.result.view.excel.hazirlaniyor.1331d227", table: .analysis, fallback: "Excel hazırlanıyor...") : RDLocalization.string("analysis.result.view.rapor.olustur.7a730998", table: .analysis, fallback: "Rapor Oluştur"))
                         .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
@@ -927,8 +981,8 @@ struct ResultView: View {
             } catch {
                 findingMutationError = AppErrorMessage.make(
                     error,
-                    context: "Bulgu güncellenemedi",
-                    fallbackTitle: "Bulgu güncellenemedi"
+                    context: RDLocalization.string("analysis.result.view.bulgu.guncellenemedi.7b83eafd", table: .analysis, fallback: "Bulgu güncellenemedi"),
+                    fallbackTitle: RDLocalization.string("analysis.result.view.bulgu.guncellenemedi.ab0af7df", table: .analysis, fallback: "Bulgu güncellenemedi")
                 ).fullText
             }
             isFindingMutationInFlight = false
@@ -939,10 +993,9 @@ struct ResultView: View {
 
     private func scoreText(_ value: Double, method: RiskMethod) -> String {
         let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.locale = .autoupdatingCurrent
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
-        formatter.groupingSeparator = "."
         return formatter.string(from: NSNumber(value: Int(value))) ?? "\(Int(value))"
     }
 
@@ -969,9 +1022,9 @@ struct ResultView: View {
         guard !pdfGeneration.isActive else { return }
         guard let bundle = currentBundle else {
             pdfError = AppErrorMessage.make(
-                AnalysisService.AnalysisError.invalidInput("PDF oluşturmak için tamamlanmış bir analiz bulunamadı."),
-                context: "PDF oluşturulamadı",
-                fallbackTitle: "PDF oluşturulamadı"
+                AnalysisService.AnalysisError.invalidInput(RDLocalization.string("analysis.result.view.pdf.olusturmak.icin.tamamlanmis.bir.analiz.bulun.2b704269", table: .analysis, fallback: "PDF oluşturmak için tamamlanmış bir analiz bulunamadı.")),
+                context: RDLocalization.string("analysis.result.view.pdf.olusturulamadi.7ed9501b", table: .analysis, fallback: "PDF oluşturulamadı"),
+                fallbackTitle: RDLocalization.string("analysis.result.view.pdf.olusturulamadi.755d4e72", table: .analysis, fallback: "PDF oluşturulamadı")
             ).fullText
             return
         }
@@ -1038,9 +1091,9 @@ struct ResultView: View {
                             throw error
                         } else {
                             archiveWarning = AppErrorMessage.make(
-                                rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
-                                context: "Rapor arşive kaydedilemedi",
-                                fallbackTitle: "Rapor arşive kaydedilemedi"
+                                rawMessage: RDLocalization.format("analysis.result.view.1.destek.kodu.2.21ba10f0", table: .analysis, fallback: "%1$@\nDestek kodu: %2$@", arguments: [String(describing: error.localizedDescription), String(describing: supportID)]),
+                                context: RDLocalization.string("analysis.result.view.rapor.arsive.kaydedilemedi.28685444", table: .analysis, fallback: "Rapor arşive kaydedilemedi"),
+                                fallbackTitle: RDLocalization.string("analysis.result.view.rapor.arsive.kaydedilemedi.97e2f790", table: .analysis, fallback: "Rapor arşive kaydedilemedi")
                             ).fullText
                         }
                         pdfGeneration.advance(to: 0.92)
@@ -1062,9 +1115,9 @@ struct ResultView: View {
                     return
                 }
                 pdfError = AppErrorMessage.make(
-                    rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
-                    context: "PDF oluşturulamadı",
-                    fallbackTitle: "PDF oluşturulamadı"
+                    rawMessage: RDLocalization.format("analysis.result.view.1.destek.kodu.2.21ba10f0", table: .analysis, fallback: "%1$@\nDestek kodu: %2$@", arguments: [String(describing: error.localizedDescription), String(describing: supportID)]),
+                    context: RDLocalization.string("analysis.result.view.pdf.olusturulamadi.28e8e3d0", table: .analysis, fallback: "PDF oluşturulamadı"),
+                    fallbackTitle: RDLocalization.string("analysis.result.view.pdf.olusturulamadi.a047c5cd", table: .analysis, fallback: "PDF oluşturulamadı")
                 ).fullText
             }
         }
@@ -1074,9 +1127,9 @@ struct ResultView: View {
         guard !isExcelGenerating else { return }
         guard let bundle = currentBundle else {
             pdfError = AppErrorMessage.make(
-                AnalysisService.AnalysisError.invalidInput("Excel oluşturmak için tamamlanmış bir analiz bulunamadı."),
-                context: "Excel oluşturulamadı",
-                fallbackTitle: "Excel oluşturulamadı"
+                AnalysisService.AnalysisError.invalidInput(RDLocalization.string("analysis.result.view.excel.olusturmak.icin.tamamlanmis.bir.analiz.bul.525775b4", table: .analysis, fallback: "Excel oluşturmak için tamamlanmış bir analiz bulunamadı.")),
+                context: RDLocalization.string("analysis.result.view.excel.olusturulamadi.0cba7af9", table: .analysis, fallback: "Excel oluşturulamadı"),
+                fallbackTitle: RDLocalization.string("analysis.result.view.excel.olusturulamadi.87a9fedc", table: .analysis, fallback: "Excel oluşturulamadı")
             ).fullText
             return
         }
@@ -1122,8 +1175,8 @@ struct ResultView: View {
                 }
                 pdfError = AppErrorMessage.make(
                     error,
-                    context: "Excel oluşturulamadı",
-                    fallbackTitle: "Excel oluşturulamadı"
+                    context: RDLocalization.string("analysis.result.view.excel.olusturulamadi.ba810a12", table: .analysis, fallback: "Excel oluşturulamadı"),
+                    fallbackTitle: RDLocalization.string("analysis.result.view.excel.olusturulamadi.ce20aba4", table: .analysis, fallback: "Excel oluşturulamadı")
                 ).fullText
             }
             isExcelGenerating = false
@@ -1191,8 +1244,8 @@ struct ResultView: View {
         showReportSettings = true
         pdfError = AppErrorMessage.make(
             rawMessage: "free_risk_analysis_trial_exhausted:1/1",
-            context: "Risk analizi tablosu oluşturulamadı",
-            fallbackTitle: "Risk analizi tablosu oluşturulamadı"
+            context: RDLocalization.string("analysis.result.view.risk.analizi.tablosu.olusturulamadi.d300562f", table: .analysis, fallback: "Risk analizi tablosu oluşturulamadı"),
+            fallbackTitle: RDLocalization.string("analysis.result.view.risk.analizi.tablosu.olusturulamadi.76f88124", table: .analysis, fallback: "Risk analizi tablosu oluşturulamadı")
         ).fullText
         return true
     }
@@ -1284,7 +1337,7 @@ struct ResultView: View {
         for path in paths {
             let data = try await AnalysisService.shared.photoData(path: path)
             guard let image = UIImage(data: data) else {
-                throw AnalysisService.AnalysisError.storageFailed("Analiz fotoğrafı indirildi ancak görüntü formatı açılamadı.")
+                throw AnalysisService.AnalysisError.storageFailed(RDLocalization.string("analysis.result.view.analiz.fotografi.indirildi.ancak.goruntu.formati.07d68420", table: .analysis, fallback: "Analiz fotoğrafı indirildi ancak görüntü formatı açılamadı."))
             }
             images.append(image)
         }
@@ -1317,7 +1370,7 @@ struct ResultView: View {
             companyName: app.profile?.companyName ?? "",
             companyInfo: app.profile?.phone ?? "",
             companyID: nil,
-            language: app.languagePreference
+            language: analysisOutputLanguage
         )
         #if DEBUG
         if Self.usesUITestLongReportFields {
@@ -1436,15 +1489,15 @@ private enum ReportOutputFormat: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .pdf: return "PDF rapor"
-        case .excel: return "Excel tablo"
+        case .pdf: return RDLocalization.string("analysis.result.view.pdf.rapor.09e48cb8", table: .analysis, fallback: "PDF rapor")
+        case .excel: return RDLocalization.string("analysis.result.view.excel.tablo.eb8142ee", table: .analysis, fallback: "Excel tablo")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .pdf: return "PDF olarak rapor oluşturulur."
-        case .excel: return "Excel tablo olarak oluşturulur."
+        case .pdf: return RDLocalization.string("analysis.result.view.pdf.olarak.rapor.olusturulur.4bef01b3", table: .analysis, fallback: "PDF olarak rapor oluşturulur.")
+        case .excel: return RDLocalization.string("analysis.result.view.excel.tablo.olarak.olusturulur.62c9dafe", table: .analysis, fallback: "Excel tablo olarak oluşturulur.")
         }
     }
 
@@ -1560,7 +1613,7 @@ struct ReportSettingsSheet: View {
         }
         .sheet(isPresented: $showCompanyPicker) {
             CompanyPickerSheet(
-                title: "Rapor firması",
+                title: RDLocalization.string("analysis.result.view.rapor.firmasi.1e7269c7", table: .analysis, fallback: "Rapor firması"),
                 accessTier: accessTier,
                 selectedCompanyID: selectedCompany?.id,
                 allowNoCompany: true,
@@ -1579,13 +1632,13 @@ struct ReportSettingsSheet: View {
     private var primaryButtonTitle: String {
         if reportQuotaExhausted && !(options.kind == .riskAnalysis && hasFreeRiskAnalysisTrial) {
             switch accessTier {
-            case .free: return "Yükselt"
-            case .plus: return "Pro'ya yükselt"
-            case .pro: return "Tamam"
+            case .free: return RDLocalization.string("analysis.result.view.yukselt.069b8203", table: .analysis, fallback: "Yükselt")
+            case .plus: return RDLocalization.string("analysis.result.view.pro.ya.yukselt.dfffee87", table: .analysis, fallback: "Pro'ya yükselt")
+            case .pro: return RDLocalization.string("analysis.result.view.tamam.00f850c4", table: .analysis, fallback: "Tamam")
             }
         }
-        if options.kind == .standard { return "Rapor oluştur" }
-        return outputFormat == .excel ? "Excel risk tablosu oluştur" : "Risk analizi PDF oluştur"
+        if options.kind == .standard { return RDLocalization.string("analysis.result.view.rapor.olustur.0e1a28b8", table: .analysis, fallback: "Rapor oluştur") }
+        return outputFormat == .excel ? RDLocalization.string("analysis.result.view.excel.risk.tablosu.olustur.0d3ce32a", table: .analysis, fallback: "Excel risk tablosu oluştur") : RDLocalization.string("analysis.result.view.risk.analizi.pdf.olustur.fbeecf61", table: .analysis, fallback: "Risk analizi PDF oluştur")
     }
 
     private var primaryButtonIcon: String {
@@ -1645,7 +1698,7 @@ struct ReportSettingsSheet: View {
         VStack(spacing: 10) {
             reportKindRow(
                 kind: .standard,
-                title: "Standart Rapor",
+                title: RDLocalization.string("analysis.result.view.standart.rapor.dc521092", table: .analysis, fallback: "Standart Rapor"),
                 subtitle: standardReportSubtitle,
                 icon: "doc.richtext",
                 locked: options.kind == .standard && standardReportLocked
@@ -1657,7 +1710,7 @@ struct ReportSettingsSheet: View {
                 }
                 reportKindRow(
                     kind: .riskAnalysis,
-                    title: "Risk Analizi Tablosu",
+                    title: RDLocalization.string("analysis.result.view.risk.analizi.tablosu.c703c40f", table: .analysis, fallback: "Risk Analizi Tablosu"),
                     subtitle: riskAnalysisSubtitle,
                     icon: "tablecells",
                     locked: riskAnalysisLocked
@@ -1670,28 +1723,28 @@ struct ReportSettingsSheet: View {
         if options.kind == .standard, reportQuotaExhausted {
             return quotaExceededSubtitle
         }
-        return "Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur."
+        return RDLocalization.string("analysis.result.view.hizli.uygunsuzluk.raporu.ek.bilgi.girmeden.olust.f73e2cb1", table: .analysis, fallback: "Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur.")
     }
 
     private var riskAnalysisSubtitle: String {
         if hasFreeRiskAnalysisTrial {
-            return "Tebrikler! Bir tane risk analizi oluşturma hakkı tanımlandı. Hemen deneyebilirsin."
+            return RDLocalization.string("analysis.result.view.tebrikler.bir.tane.risk.analizi.olusturma.hakki..3802b18c", table: .analysis, fallback: "Tebrikler! Bir tane risk analizi oluşturma hakkı tanımlandı. Hemen deneyebilirsin.")
         }
         if accessTier == .free {
-            return "Bir kez tanımlanan hakkını kullandın. Risk analizi tabloları Plus ile devam eder."
+            return RDLocalization.string("analysis.result.view.bir.kez.tanimlanan.hakkini.kullandin.risk.analiz.493c362c", table: .analysis, fallback: "Bir kez tanımlanan hakkını kullandın. Risk analizi tabloları Plus ile devam eder.")
         }
         if reportQuotaExhausted { return quotaExceededSubtitle }
-        return "Fine-Kinney veya 5×5 Matris Metodu PDF ve Excel çıktısı, ayrıca özelleştirilebilir alanlar."
+        return RDLocalization.string("analysis.result.view.fine.kinney.veya.5.5.matris.metodu.pdf.ve.excel..4dfa1cec", table: .analysis, fallback: "Fine-Kinney veya 5×5 Matris Metodu PDF ve Excel çıktısı, ayrıca özelleştirilebilir alanlar.")
     }
 
     private var quotaExceededSubtitle: String {
         switch accessTier {
         case .free:
-            return "Bugünkü standart rapor hakkın doldu. Hakların yarın yenilenir."
+            return RDLocalization.string("analysis.result.view.bugunku.standart.rapor.hakkin.doldu.haklarin.yar.07b11a93", table: .analysis, fallback: "Bugünkü standart rapor hakkın doldu. Hakların yarın yenilenir.")
         case .plus:
-            return "Plus aylık rapor limitin doldu. Pro ile limiti artırabilirsin."
+            return RDLocalization.string("analysis.result.view.plus.aylik.rapor.limitin.doldu.pro.ile.limiti.ar.ede0156d", table: .analysis, fallback: "Plus aylık rapor limitin doldu. Pro ile limiti artırabilirsin.")
         case .pro:
-            return "Pro aylık rapor limitin doldu. Yeni rapor için gelecek ayı beklemelisin."
+            return RDLocalization.string("analysis.result.view.pro.aylik.rapor.limitin.doldu.yeni.rapor.icin.ge.dfd92951", table: .analysis, fallback: "Pro aylık rapor limitin doldu. Yeni rapor için gelecek ayı beklemelisin.")
         }
     }
 
@@ -1779,7 +1832,7 @@ struct ReportSettingsSheet: View {
             HStack(spacing: 3) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: RDFontScale.size(8), weight: .bold, design: .rounded))
-                Text("LİMİT DOLDU")
+                Text(RDLocalization.string("analysis.result.view.limit.doldu.8438e873", table: .analysis, fallback: "LİMİT DOLDU"))
                     .font(.system(size: RDFontScale.size(8), weight: .heavy, design: .rounded))
                     .tracking(0.3)
             }
@@ -1800,7 +1853,7 @@ struct ReportSettingsSheet: View {
                 .background(Color.rdWhite.opacity(0.72))
                 .clipShape(RoundedRectangle(cornerRadius: 9))
 
-            Text("Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!")
+            Text(RDLocalization.string("analysis.result.view.hos.geldin.1.risk.analizi.olusturma.hakkini.heme.6a359f2c", table: .analysis, fallback: "Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!"))
                 .font(.system(size: RDFontScale.size(13.5), weight: .bold, design: .rounded))
                 .foregroundStyle(SubscriptionTier.plus.accentTextColor)
                 .lineLimit(2)
@@ -1827,22 +1880,22 @@ struct ReportSettingsSheet: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan.")
+        .accessibilityLabel(RDLocalization.string("analysis.result.view.hos.geldin.1.risk.analizi.olusturma.hakkini.heme.128fb1d2", table: .analysis, fallback: "Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan."))
     }
 
     private var riskAnalysisPreview: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                lockedPreviewPill("Fine-Kinney", detail: "R = O × F × Ş", icon: "function")
-                lockedPreviewPill("5×5 Matris", detail: "R = O × Ş", icon: "square.grid.2x2")
+                lockedPreviewPill("Fine-Kinney", detail: RDLocalization.string("analysis.result.view.r.o.f.s.07ef9b6f", table: .analysis, fallback: "R = O × F × Ş"), icon: "function")
+                lockedPreviewPill(RDLocalization.string("analysis.result.view.5.5.matris.b2347e08", table: .analysis, fallback: "5×5 Matris"), detail: RDLocalization.string("analysis.result.view.r.o.s.cb33905c", table: .analysis, fallback: "R = O × Ş"), icon: "square.grid.2x2")
             }
             HStack(spacing: 10) {
-                lockedPreviewPill("PDF", detail: "Denetim raporu", icon: "doc.richtext")
-                lockedPreviewPill("Excel", detail: "Risk tablosu", icon: "tablecells")
+                lockedPreviewPill("PDF", detail: RDLocalization.string("analysis.result.view.denetim.raporu.6422a4a1", table: .analysis, fallback: "Denetim raporu"), icon: "doc.richtext")
+                lockedPreviewPill("Excel", detail: RDLocalization.string("analysis.result.view.risk.tablosu.cf73cb0f", table: .analysis, fallback: "Risk tablosu"), icon: "tablecells")
             }
             HStack(spacing: 10) {
-                lockedPreviewField("Hazırlayan")
-                lockedPreviewField("Firma / logo")
+                lockedPreviewField(RDLocalization.string("analysis.result.view.hazirlayan.5725b9e7", table: .analysis, fallback: "Hazırlayan"))
+                lockedPreviewField(RDLocalization.string("analysis.result.view.firma.logo.2d2446f5", table: .analysis, fallback: "Firma / logo"))
             }
         }
         .padding(12)
@@ -1908,7 +1961,7 @@ struct ReportSettingsSheet: View {
     @ViewBuilder
     private var outputFormatSection: some View {
         if onGenerateExcel != nil {
-            settingsCardSection(title: "Dosya türü", icon: "doc.on.doc.fill") {
+            settingsCardSection(title: RDLocalization.string("analysis.result.view.dosya.turu.89fdc7a7", table: .analysis, fallback: "Dosya türü"), icon: "doc.on.doc.fill") {
                 HStack(spacing: 8) {
                     ForEach(ReportOutputFormat.allCases) { format in
                         let active = outputFormat == format
@@ -1954,7 +2007,7 @@ struct ReportSettingsSheet: View {
     }
 
     private var methodSection: some View {
-        settingsCardSection(title: "Risk analiz metodu", icon: "function") {
+        settingsCardSection(title: RDLocalization.string("analysis.result.view.risk.analiz.metodu.c6bc951b", table: .analysis, fallback: "Risk analiz metodu"), icon: "function") {
             HStack(spacing: 8) {
                 ForEach(RiskMethod.allCases) { method in
                     let active = options.method == method
@@ -1965,7 +2018,7 @@ struct ReportSettingsSheet: View {
                         VStack(spacing: 4) {
                             Text(method.label)
                                 .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
-                            Text("R = \(method.formula)")
+                            Text(RDLocalization.format("analysis.result.view.r.1.42f69442", table: .analysis, fallback: "r = %1$@", arguments: [String(describing: method.formula)]))
                                 .rdMono(size: 10)
                         }
                         .frame(maxWidth: .infinity)
@@ -1993,7 +2046,7 @@ struct ReportSettingsSheet: View {
     private var languageSection: some View {
         settingsSection(title: RDLocalization.shared.text(.reportLanguageSection, language: options.language)) {
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(RDLanguage.supportedCases) { language in
+                ForEach([options.language]) { language in
                     optionRow(
                         title: language.title,
                         subtitle: RDLocalization.shared.text(.reportLanguageTurkishSubtitle, language: language),
@@ -2014,7 +2067,7 @@ struct ReportSettingsSheet: View {
     }
 
     private var companySelectionSection: some View {
-        settingsSection(title: "RAPOR FİRMASI") {
+        settingsSection(title: RDLocalization.string("analysis.result.view.rapor.firmasi.1aa36447", table: .analysis, fallback: "RAPOR FİRMASI")) {
             if accessTier.isPaid {
                 Button {
                     showCompanyPicker = true
@@ -2028,18 +2081,18 @@ struct ReportSettingsSheet: View {
                             .background(selectedCompany == nil ? Color.rdFog : Color.rdGreenSoft)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(selectedCompany?.name ?? "Firma seçmeden devam et")
+                            Text(selectedCompany?.name ?? RDLocalization.string("analysis.result.view.firma.secmeden.devam.et.d20c6423", table: .analysis, fallback: "Firma seçmeden devam et"))
                                 .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                                 .lineLimit(1)
-                            Text(selectedCompany?.listSubtitle ?? "Arşiv, filtre ve firma bazlı rapor için firma seçebilir veya hızlıca ekleyebilirsin.")
+                            Text(selectedCompany?.listSubtitle ?? RDLocalization.string("analysis.result.view.arsiv.filtre.ve.firma.bazli.rapor.icin.firma.sec.86283415", table: .analysis, fallback: "Arşiv, filtre ve firma bazlı rapor için firma seçebilir veya hızlıca ekleyebilirsin."))
                                 .font(.system(size: RDFontScale.size(12), design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                                 .lineLimit(2)
                         }
                         Spacer()
                         if selectedCompany != nil {
-                            Text("Değiştir")
+                            Text(RDLocalization.string("analysis.result.view.degistir.159bab62", table: .analysis, fallback: "Değiştir"))
                                 .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdGreenDark)
                         }
@@ -2066,10 +2119,10 @@ struct ReportSettingsSheet: View {
                             .background(SubscriptionTier.plus.accentSoftColor)
                             .clipShape(RoundedRectangle(cornerRadius: 11))
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Firma bazlı rapor Plus ve Pro’da")
+                            Text(RDLocalization.string("analysis.result.view.firma.bazli.rapor.plus.ve.pro.da.c873ee2c", table: .analysis, fallback: "Firma bazlı rapor Plus ve Pro’da"))
                                 .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
-                            Text("Logo, tehlike sınıfı ve firma arşivi için yükselt.")
+                            Text(RDLocalization.string("analysis.result.view.logo.tehlike.sinifi.ve.firma.arsivi.icin.yukselt.dc6e2ae3", table: .analysis, fallback: "Logo, tehlike sınıfı ve firma arşivi için yükselt."))
                                 .font(.system(size: RDFontScale.size(12), design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                         }
@@ -2106,17 +2159,17 @@ struct ReportSettingsSheet: View {
     }
 
     private var identitySection: some View {
-        settingsCardSection(title: "Hazırlayan bilgileri", icon: "person.text.rectangle.fill") {
+        settingsCardSection(title: RDLocalization.string("analysis.result.view.hazirlayan.bilgileri.22c0d76a", table: .analysis, fallback: "Hazırlayan bilgileri"), icon: "person.text.rectangle.fill") {
             VStack(spacing: 10) {
-                labeledField("Hazırlayan", text: $options.preparedBy, placeholder: profile?.displayName ?? "Ad Soyad", identifier: "report.settings.prepared_by")
-                labeledField("Unvan", text: $options.preparedTitle, placeholder: profile?.title ?? "İSG Uzmanı", identifier: "report.settings.prepared_title")
-                labeledField("Belge no", text: $options.certificateNumber, placeholder: profile?.certificateNumber ?? "Sertifika / belge no", identifier: "report.settings.certificate")
+                labeledField(RDLocalization.string("analysis.result.view.hazirlayan.1c7ba036", table: .analysis, fallback: "Hazırlayan"), text: $options.preparedBy, placeholder: profile?.displayName ?? RDLocalization.string("analysis.result.view.ad.soyad.77272696", table: .analysis, fallback: "Ad Soyad"), identifier: "report.settings.prepared_by")
+                labeledField("Unvan", text: $options.preparedTitle, placeholder: profile?.title ?? RDLocalization.string("analysis.result.view.isg.uzmani.b5f5b26f", table: .analysis, fallback: "İSG Uzmanı"), identifier: "report.settings.prepared_title")
+                labeledField(RDLocalization.string("analysis.result.view.belge.no.12de966a", table: .analysis, fallback: "Belge no"), text: $options.certificateNumber, placeholder: profile?.certificateNumber ?? RDLocalization.string("analysis.result.view.sertifika.belge.no.fa41035f", table: .analysis, fallback: "Sertifika / belge no"), identifier: "report.settings.certificate")
             }
         }
     }
 
     private var reportOverridesSection: some View {
-        settingsSection(title: "BU RAPORA ÖZEL DÜZENLE") {
+        settingsSection(title: RDLocalization.string("analysis.result.view.bu.rapora.ozel.duzenle.731b3c76", table: .analysis, fallback: "BU RAPORA ÖZEL DÜZENLE")) {
             VStack(spacing: 10) {
                 Button {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.88)) {
@@ -2133,7 +2186,7 @@ struct ReportSettingsSheet: View {
                             .clipShape(RoundedRectangle(cornerRadius: 11))
 
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Tek seferlik firma bilgisi veya logo")
+                            Text(RDLocalization.string("analysis.result.view.tek.seferlik.firma.bilgisi.veya.logo.4101db41", table: .analysis, fallback: "Tek seferlik firma bilgisi veya logo"))
                                 .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             Text(overrideSummaryText)
@@ -2158,8 +2211,8 @@ struct ReportSettingsSheet: View {
 
                 if showReportOverrides {
                     VStack(spacing: 10) {
-                        labeledField("Firma adı", text: $options.companyName, placeholder: selectedCompany?.name ?? profile?.companyName ?? "Firma adı", identifier: "report.settings.company_name")
-                        labeledField("Firma bilgisi", text: $options.companyInfo, placeholder: selectedCompany?.reportInfoText ?? profile?.phone ?? "Telefon veya kısa bilgi", identifier: "report.settings.company_info")
+                        labeledField(RDLocalization.string("analysis.result.view.firma.adi.6fca9f3b", table: .analysis, fallback: "Firma adı"), text: $options.companyName, placeholder: selectedCompany?.name ?? profile?.companyName ?? RDLocalization.string("analysis.result.view.firma.adi.6fca9f3b", table: .analysis, fallback: "Firma adı"), identifier: "report.settings.company_name")
+                        labeledField(RDLocalization.string("analysis.result.view.firma.bilgisi.f003e386", table: .analysis, fallback: "Firma bilgisi"), text: $options.companyInfo, placeholder: selectedCompany?.reportInfoText ?? profile?.phone ?? RDLocalization.string("analysis.result.view.telefon.veya.kisa.bilgi.55626fc4", table: .analysis, fallback: "Telefon veya kısa bilgi"), identifier: "report.settings.company_info")
                         companyLogoOverrideCard
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -2170,9 +2223,9 @@ struct ReportSettingsSheet: View {
 
     private var overrideSummaryText: String {
         if selectedCompany != nil {
-            return "Seçili firma korunur; sadece bu raporun görünen metinlerini veya logosunu değiştirebilirsin."
+            return RDLocalization.string("analysis.result.view.secili.firma.korunur.sadece.bu.raporun.gorunen.m.8425069a", table: .analysis, fallback: "Seçili firma korunur; sadece bu raporun görünen metinlerini veya logosunu değiştirebilirsin.")
         }
-        return "Firma eklemeden yalnızca bu raporda görünecek firma adı, bilgi veya logo girebilirsin."
+        return RDLocalization.string("analysis.result.view.firma.eklemeden.yalnizca.bu.raporda.gorunecek.fi.26e346fa", table: .analysis, fallback: "Firma eklemeden yalnızca bu raporda görünecek firma adı, bilgi veya logo girebilirsin.")
     }
 
     private var companyLogoOverrideCard: some View {
@@ -2198,10 +2251,10 @@ struct ReportSettingsSheet: View {
             .frame(width: 68, height: 58)
 
             VStack(alignment: .leading, spacing: 5) {
-                Text(companyLogo == nil ? "Logo seçilmedi" : "Logo rapora eklenecek")
+                Text(companyLogo == nil ? RDLocalization.string("analysis.result.view.logo.secilmedi.1f417690", table: .analysis, fallback: "Logo seçilmedi") : RDLocalization.string("analysis.result.view.logo.rapora.eklenecek.5131c085", table: .analysis, fallback: "Logo rapora eklenecek"))
                     .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
-                Text(selectedCompany == nil ? "Firma eklemeden bu rapora özel logo seçebilirsin." : "Seçili firma logosu korunur; istersen bu rapor için farklı logo seçebilirsin.")
+                Text(selectedCompany == nil ? RDLocalization.string("analysis.result.view.firma.eklemeden.bu.rapora.ozel.logo.secebilirsin.11718b49", table: .analysis, fallback: "Firma eklemeden bu rapora özel logo seçebilirsin.") : RDLocalization.string("analysis.result.view.secili.firma.logosu.korunur.istersen.bu.rapor.ic.0972eb5b", table: .analysis, fallback: "Seçili firma logosu korunur; istersen bu rapor için farklı logo seçebilirsin."))
                     .font(.system(size: RDFontScale.size(12), design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
@@ -2438,6 +2491,8 @@ private struct FindingEditorSheet: View {
     let method: RiskMethod
     let photoCount: Int
     let isSaving: Bool
+    let showsRegulatoryReferences: Bool
+    let showsLanguageMismatchWarning: Bool
     let onSave: (FindingMutationPatch) -> Void
     let onDelete: () -> Void
     let onClose: () -> Void
@@ -2463,6 +2518,8 @@ private struct FindingEditorSheet: View {
         method: RiskMethod,
         photoCount: Int,
         isSaving: Bool,
+        showsRegulatoryReferences: Bool = true,
+        showsLanguageMismatchWarning: Bool = false,
         onSave: @escaping (FindingMutationPatch) -> Void,
         onDelete: @escaping () -> Void,
         onClose: @escaping () -> Void
@@ -2471,6 +2528,8 @@ private struct FindingEditorSheet: View {
         self.method = method
         self.photoCount = max(photoCount, 1)
         self.isSaving = isSaving
+        self.showsRegulatoryReferences = showsRegulatoryReferences
+        self.showsLanguageMismatchWarning = showsLanguageMismatchWarning
         self.onSave = onSave
         self.onDelete = onDelete
         self.onClose = onClose
@@ -2503,9 +2562,9 @@ private struct FindingEditorSheet: View {
     private var activeFormula: String {
         switch method {
         case .fineKinney:
-            return "O \(formattedFK(fkProbability)) × F \(formattedFK(fkFrequency)) × Ş \(Int(fkSeverity))"
+            return RDLocalization.format("analysis.result.view.o.1.f.2.s.3.f40a6d85", table: .analysis, fallback: "O %1$@ × F %2$@ × Ş %3$@", arguments: [String(describing: formattedFK(fkProbability)), String(describing: formattedFK(fkFrequency)), String(describing: Int(fkSeverity))])
         case .matrix5x5:
-            return "O \(m5Probability) × Ş \(m5Severity)"
+            return RDLocalization.format("analysis.result.view.o.1.s.2.91be1266", table: .analysis, fallback: "O %1$@ × Ş %2$@", arguments: [String(describing: m5Probability), String(describing: m5Severity)])
         }
     }
     private var canSave: Bool {
@@ -2529,18 +2588,32 @@ private struct FindingEditorSheet: View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 12) {
+                    if showsLanguageMismatchWarning {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "info.circle.fill")
+                            Text(RDLocalization.string("analysis.result.view.this.analysis.was.created.in.turkish.edit.only.t.d3eac822", table: .analysis, fallback: "Bu analiz Türkçe olarak oluşturulmuştur. Yalnızca değiştirmeyi düşündüğünüz alanları düzenleyin; değişmeyen içerik orijinal dilinde kalır."))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .font(.system(size: RDFontScale.size(11.5), weight: .medium, design: .rounded))
+                        .foregroundStyle(editorSecondaryText)
+                        .padding(12)
+                        .background(editorControlSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
                     riskScoreEditor
 
-                    editorField(title: "Bulgu", icon: "exclamationmark.triangle.fill", text: $title, lineLimit: 2)
-                    editorTextArea(title: "Açıklama", icon: "text.alignleft", text: $description, minLines: 2, maxLines: 4)
-                    editorTextArea(title: "Düzeltici önlem", icon: "wrench.adjustable.fill", text: $correctiveText, minLines: 2, maxLines: 4)
-                    editorTextArea(title: "Önleyici kontrol", icon: "shield.checkered", text: $preventiveText, minLines: 2, maxLines: 4)
-                    editorTextArea(title: "Referans", icon: "book.closed.fill", text: $referencesText, minLines: 1, maxLines: 2)
-                    editorTextArea(title: "Kök neden", icon: "point.3.connected.trianglepath.dotted", text: $rootCauseText, minLines: 1, maxLines: 2)
+                    editorField(title: RDLocalization.string("analysis.result.view.bulgu.938e4cbc", table: .analysis, fallback: "Bulgu"), icon: "exclamationmark.triangle.fill", text: $title, lineLimit: 2)
+                    editorTextArea(title: RDLocalization.string("analysis.result.view.aciklama.dff7dc0e", table: .analysis, fallback: "Açıklama"), icon: "text.alignleft", text: $description, minLines: 2, maxLines: 4)
+                    editorTextArea(title: RDLocalization.string("analysis.result.view.duzeltici.onlem.b722e77e", table: .analysis, fallback: "Düzeltici önlem"), icon: "wrench.adjustable.fill", text: $correctiveText, minLines: 2, maxLines: 4)
+                    editorTextArea(title: RDLocalization.string("analysis.result.view.onleyici.kontrol.068f9d1f", table: .analysis, fallback: "Önleyici kontrol"), icon: "shield.checkered", text: $preventiveText, minLines: 2, maxLines: 4)
+                    if showsRegulatoryReferences {
+                        editorTextArea(title: RDLocalization.string("analysis.result.view.referans.6be8b248", table: .analysis, fallback: "Referans"), icon: "book.closed.fill", text: $referencesText, minLines: 1, maxLines: 2)
+                    }
+                    editorTextArea(title: RDLocalization.string("analysis.result.view.kok.neden.233903bd", table: .analysis, fallback: "Kök neden"), icon: "point.3.connected.trianglepath.dotted", text: $rootCauseText, minLines: 1, maxLines: 2)
 
                     if photoCount > 1 {
                         VStack(alignment: .leading, spacing: 9) {
-                            editorLabel(title: "Kaynak fotoğraf", icon: "photo.stack.fill")
+                            editorLabel(title: RDLocalization.string("analysis.result.view.kaynak.fotograf.a4e89df5", table: .analysis, fallback: "Kaynak fotoğraf"), icon: "photo.stack.fill")
                             HStack(spacing: 8) {
                                 ForEach(1...photoCount, id: \.self) { index in
                                     let selected = selectedPhotoIndices.contains(index)
@@ -2588,7 +2661,7 @@ private struct FindingEditorSheet: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 18))
                     .buttonStyle(RDPressableButtonStyle())
-                    .accessibilityLabel("Bulgu sil")
+                    .accessibilityLabel(RDLocalization.string("analysis.result.view.bulgu.sil.adf79f0d", table: .analysis, fallback: "Bulgu sil"))
                     .accessibilityIdentifier("finding_editor.delete")
                     .disabled(isSaving)
 
@@ -2605,7 +2678,7 @@ private struct FindingEditorSheet: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 18))
                     .buttonStyle(RDPressableButtonStyle())
-                    .accessibilityLabel("Vazgeç")
+                    .accessibilityLabel(RDLocalization.string("analysis.result.view.vazgec.10f1e09e", table: .analysis, fallback: "Vazgeç"))
                     .accessibilityIdentifier("finding_editor.cancel")
 
                     Button {
@@ -2618,7 +2691,7 @@ private struct FindingEditorSheet: View {
                             } else {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
-                                Text("Kaydet")
+                                Text(RDLocalization.string("analysis.result.view.kaydet.44c32e12", table: .analysis, fallback: "Kaydet"))
                                     .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                                     .tracking(0)
                                     .lineLimit(1)
@@ -2641,20 +2714,20 @@ private struct FindingEditorSheet: View {
                 .padding(.vertical, 12)
                 .background(.ultraThinMaterial)
             }
-            .navigationTitle("Bulguyu Düzenle")
+            .navigationTitle(RDLocalization.string("analysis.result.view.bulguyu.duzenle.53281dda", table: .analysis, fallback: "Bulguyu Düzenle"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     RDModalCloseButton(action: onClose)
                 }
             }
-            .alert("Bulgu silinsin mi?", isPresented: $showDeleteConfirmation) {
-                Button("Vazgeç", role: .cancel) {}
-                Button("Sil", role: .destructive) {
+            .alert(RDLocalization.string("analysis.result.view.bulgu.silinsin.mi.7fc7bb17", table: .analysis, fallback: "Bulgu silinsin mi?"), isPresented: $showDeleteConfirmation) {
+                Button(RDLocalization.string("analysis.result.view.vazgec.2e03dd89", table: .analysis, fallback: "Vazgeç"), role: .cancel) {}
+                Button(RDLocalization.string("analysis.result.view.sil.18b17908", table: .analysis, fallback: "Sil"), role: .destructive) {
                     onDelete()
                 }
             } message: {
-                Text("Bu bulgu yeni raporlara dahil edilmeyecek. Eski rapor snapshotları ve audit kaydı korunur.")
+                Text(RDLocalization.string("analysis.result.view.bu.bulgu.yeni.raporlara.dahil.edilmeyecek.eski.r.e7e25f06", table: .analysis, fallback: "Bu bulgu yeni raporlara dahil edilmeyecek. Eski rapor snapshotları ve audit kaydı korunur."))
             }
         }
     }
@@ -2663,8 +2736,8 @@ private struct FindingEditorSheet: View {
         let cleanCorrective = correctiveText.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanPreventive = preventiveText.trimmingCharacters(in: .whitespacesAndNewlines)
         let measures = [
-            FindingMeasure(kind: .corrective, title: "Düzeltici Önlem", text: cleanCorrective),
-            FindingMeasure(kind: .preventive, title: "Önleyici Kontrol", text: cleanPreventive)
+            FindingMeasure(kind: .corrective, title: RDLocalization.string("analysis.result.view.duzeltici.onlem.f93bb22e", table: .analysis, fallback: "Düzeltici Önlem"), text: cleanCorrective),
+            FindingMeasure(kind: .preventive, title: RDLocalization.string("analysis.result.view.onleyici.kontrol.480c3433", table: .analysis, fallback: "Önleyici Kontrol"), text: cleanPreventive)
         ]
         return FindingMutationPatch(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -2689,10 +2762,10 @@ private struct FindingEditorSheet: View {
                 riskLevelPill
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text("Aktif yöntem")
+                    Text(RDLocalization.string("analysis.result.view.aktif.yontem.1addeb33", table: .analysis, fallback: "Aktif yöntem"))
                         .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
                         .foregroundStyle(editorSecondaryText)
-                    Text("\(method.label) · R \(scoreText)")
+                    Text(RDLocalization.format("analysis.result.view.1.r.2.18d41d52", table: .analysis, fallback: "%1$@ · R %2$@", arguments: [String(describing: method.label), String(describing: scoreText)]))
                         .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(editorPrimaryText)
                         .lineLimit(1)
@@ -2701,33 +2774,33 @@ private struct FindingEditorSheet: View {
             }
 
             riskScoreGroup(
-                title: "Fine-Kinney",
+                title: RDLocalization.string("analysis.result.view.fine.kinney.2823b5bc", table: .analysis, fallback: "İnce Kinney"),
                 score: formattedScore(fkScore),
-                formula: "O \(formattedFK(fkProbability)) × F \(formattedFK(fkFrequency)) × Ş \(formattedFK(fkSeverity))"
+                formula: RDLocalization.format("analysis.result.view.o.1.f.2.s.3.846b0b14", table: .analysis, fallback: "O %1$@ × F %2$@ × Ş %3$@", arguments: [String(describing: formattedFK(fkProbability)), String(describing: formattedFK(fkFrequency)), String(describing: formattedFK(fkSeverity))])
             ) {
                 HStack(spacing: 8) {
-                    scoreMenu(title: "Olasılık", value: formattedFK(fkProbability), values: [0.2, 0.5, 1, 3, 6, 10].map(formattedFK), identifier: "finding_editor.fk_probability") { selected in
+                    scoreMenu(title: RDLocalization.string("analysis.result.view.olasilik.cca9d55c", table: .analysis, fallback: "Olasılık"), value: formattedFK(fkProbability), values: [0.2, 0.5, 1, 3, 6, 10].map(formattedFK), identifier: "finding_editor.fk_probability") { selected in
                         fkProbability = Double(selected) ?? fkProbability
                     }
-                    scoreMenu(title: "Frekans", value: formattedFK(fkFrequency), values: [0.5, 1, 2, 3, 6, 10].map(formattedFK), identifier: "finding_editor.fk_frequency") { selected in
+                    scoreMenu(title: RDLocalization.string("analysis.result.view.frekans.9755775c", table: .analysis, fallback: "Frekans"), value: formattedFK(fkFrequency), values: [0.5, 1, 2, 3, 6, 10].map(formattedFK), identifier: "finding_editor.fk_frequency") { selected in
                         fkFrequency = Double(selected) ?? fkFrequency
                     }
-                    scoreMenu(title: "Şiddet", value: formattedFK(fkSeverity), values: [1, 3, 7, 15, 40, 100].map(formattedFK), identifier: "finding_editor.fk_severity") { selected in
+                    scoreMenu(title: RDLocalization.string("analysis.result.view.siddet.833f9fd6", table: .analysis, fallback: "Şiddet"), value: formattedFK(fkSeverity), values: [1, 3, 7, 15, 40, 100].map(formattedFK), identifier: "finding_editor.fk_severity") { selected in
                         fkSeverity = Double(selected) ?? fkSeverity
                     }
                 }
             }
 
             riskScoreGroup(
-                title: "5x5 Matris",
+                title: RDLocalization.string("analysis.result.view.5x5.matris.9e1e0b52", table: .analysis, fallback: "5x5 Matris"),
                 score: "\(m5Score)",
-                formula: "O \(m5Probability) × Ş \(m5Severity)"
+                formula: RDLocalization.format("analysis.result.view.o.1.s.2.e16b73b6", table: .analysis, fallback: "O %1$@ × Ş %2$@", arguments: [String(describing: m5Probability), String(describing: m5Severity)])
             ) {
                 HStack(spacing: 8) {
-                    scoreMenu(title: "Olasılık", value: "\(m5Probability)", values: [1, 2, 3, 4, 5].map(String.init), identifier: "finding_editor.m5_probability") { selected in
+                    scoreMenu(title: RDLocalization.string("analysis.result.view.olasilik.1a6488cd", table: .analysis, fallback: "Olasılık"), value: "\(m5Probability)", values: [1, 2, 3, 4, 5].map(String.init), identifier: "finding_editor.m5_probability") { selected in
                         m5Probability = Int(selected) ?? m5Probability
                     }
-                    scoreMenu(title: "Şiddet", value: "\(m5Severity)", values: [1, 2, 3, 4, 5].map(String.init), identifier: "finding_editor.m5_severity") { selected in
+                    scoreMenu(title: RDLocalization.string("analysis.result.view.siddet.909c47dd", table: .analysis, fallback: "Şiddet"), value: "\(m5Severity)", values: [1, 2, 3, 4, 5].map(String.init), identifier: "finding_editor.m5_severity") { selected in
                         m5Severity = Int(selected) ?? m5Severity
                     }
                     scoreResultPill("Risk", value: "\(m5Score)")
@@ -2747,7 +2820,7 @@ private struct FindingEditorSheet: View {
                 Text(title)
                     .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(editorPrimaryText)
-                Text("R = \(score)")
+                Text(RDLocalization.format("analysis.result.view.r.1.669eca07", table: .analysis, fallback: "r = %1$@", arguments: [String(describing: score)]))
                     .rdMono(size: 14, weight: .black)
                     .foregroundStyle(editorPrimaryText)
                 Spacer(minLength: 0)
@@ -2914,6 +2987,7 @@ struct FindingCard: View {
     let index: Int
     let method: RiskMethod
     let currentTier: SubscriptionTier
+    var showsRegulatoryReferences: Bool = true
     var sourcePhotoIndices: [Int] = []
     var canEdit: Bool = false
     var onEdit: () -> Void = {}
@@ -2964,7 +3038,7 @@ struct FindingCard: View {
                                 HStack(spacing: 5) {
                                     Image(systemName: "checkmark.shield")
                                         .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
-                                    Text("Saha teyidi")
+                                    Text(RDLocalization.string("analysis.result.view.saha.teyidi.826f9a97", table: .analysis, fallback: "Saha teyidi"))
                                         .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
                                 }
                                 .foregroundStyle(cardSecondaryText)
@@ -2986,7 +3060,7 @@ struct FindingCard: View {
                                 .padding(.vertical, 3)
                                 .background(cardSubtleSurface)
                                 .clipShape(RoundedRectangle(cornerRadius: 6))
-                                .accessibilityLabel("Kaynak fotoğraf \(sourcePhotoIndices.map { String($0) }.joined(separator: ", "))")
+                                .accessibilityLabel(RDLocalization.format("analysis.result.view.kaynak.fotograf.1.b82cc5fd", table: .analysis, fallback: "Kaynak fotoğraf %1$@", arguments: [String(describing: sourcePhotoIndices.map { String($0) }.joined(separator: ", "))]))
                             }
                         }
                     }
@@ -3007,7 +3081,7 @@ struct FindingCard: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("Bulguyu düzenle")
+                            .accessibilityLabel(RDLocalization.string("analysis.result.view.bulguyu.duzenle.da53ceb5", table: .analysis, fallback: "Bulguyu düzenle"))
                             .accessibilityIdentifier("result.finding.\(index).edit")
                             Button(action: onDelete) {
                                 Image(systemName: "trash")
@@ -3022,7 +3096,7 @@ struct FindingCard: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("Bulguyu sil")
+                            .accessibilityLabel(RDLocalization.string("analysis.result.view.bulguyu.sil.c2bef2d5", table: .analysis, fallback: "Bulguyu sil"))
                             .accessibilityIdentifier("result.finding.\(index).delete")
                         }
                     }
@@ -3079,7 +3153,7 @@ struct FindingCard: View {
                 Text(band.label)
                     .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(band.color)
-                Text("R = \(finding.formula(for: method))")
+                Text(RDLocalization.format("analysis.result.view.r.1.947edb3d", table: .analysis, fallback: "r = %1$@", arguments: [String(describing: finding.formula(for: method))]))
                     .rdMono(size: 11)
                     .foregroundStyle(cardSecondaryText)
 
@@ -3110,7 +3184,7 @@ struct FindingCard: View {
             HStack(spacing: 7) {
                 Image(systemName: "shield.lefthalf.filled")
                     .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                Text("Önlem / Kontrol tedbirleri")
+                Text(RDLocalization.string("analysis.result.view.onlem.kontrol.tedbirleri.fe8af1fb", table: .analysis, fallback: "Önlem / Kontrol tedbirleri"))
                     .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
             }
             .foregroundStyle(actionAccent)
@@ -3143,7 +3217,7 @@ struct FindingCard: View {
                     .foregroundStyle(isDarkMode ? Color.rdPlanPlus : SubscriptionTier.plus.accentTextColor)
                     .padding(.top, 2)
                 (
-                    Text("Kök neden · ").font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded)) +
+                    Text(RDLocalization.string("analysis.result.view.kok.neden.8a8eece8", table: .analysis, fallback: "Kök neden ·")).font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded)) +
                     Text(finding.rootCause).font(.system(size: RDFontScale.size(12), design: .rounded))
                 )
                 .foregroundStyle(controlBlockText)
@@ -3162,17 +3236,19 @@ struct FindingCard: View {
         return HStack(alignment: .top, spacing: 8) {
             infoCard(
                 icon: "checkmark.seal.fill",
-                title: "Plan",
+                title: RDLocalization.string("analysis.result.view.plan.ee33f820", table: .analysis, fallback: "Planı"),
                 value: band.action,
                 tint: band.color
             )
-            infoCard(
-                icon: referencesUnlocked ? "books.vertical.fill" : "lock.fill",
-                title: "Mevzuat",
-                value: referencesUnlocked ? (finding.references.isEmpty ? "Kontrol edilmeli" : finding.references) : "\(referencesTier.title)'ta açık",
-                tint: referencesUnlocked ? Color.rdGreenDark : referencesTier.accentTextColor,
-                action: referencesUnlocked ? nil : onPaywall
-            )
+            if showsRegulatoryReferences {
+                infoCard(
+                    icon: referencesUnlocked ? "books.vertical.fill" : "lock.fill",
+                    title: RDLocalization.string("analysis.result.view.mevzuat.9a07bc57", table: .analysis, fallback: "Mevzuat"),
+                    value: referencesUnlocked ? (finding.references.isEmpty ? RDLocalization.string("analysis.result.view.kontrol.edilmeli.a7e9256b", table: .analysis, fallback: "Kontrol edilmeli") : finding.references) : RDLocalization.format("analysis.result.view.1.ta.acik.0b59a603", table: .analysis, fallback: "%1$@'ta açık", arguments: [String(describing: referencesTier.title)]),
+                    tint: referencesUnlocked ? Color.rdGreenDark : referencesTier.accentTextColor,
+                    action: referencesUnlocked ? nil : onPaywall
+                )
+            }
         }
     }
 
@@ -3193,7 +3269,7 @@ struct FindingCard: View {
                 infoCardContent(icon: icon, title: title, value: value, tint: tint)
             }
             .buttonStyle(RDPressableButtonStyle())
-            .accessibilityHint("Plus plan ekranını açar")
+            .accessibilityHint(RDLocalization.string("analysis.result.view.plus.plan.ekranini.acar.9547fb4f", table: .analysis, fallback: "Plus plan ekranını açar"))
         } else {
             infoCardContent(icon: icon, title: title, value: value, tint: tint)
         }
@@ -3209,7 +3285,7 @@ struct FindingCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 5))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(title.uppercased())
+                Text(RDLocalization.uppercased(title))
                     .font(.system(size: RDFontScale.size(8), weight: .heavy, design: .rounded))
                     .tracking(0.5)
                     .foregroundStyle(Color.rdSlate)
@@ -3300,7 +3376,15 @@ private struct ResultPhotoMosaic: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(items.count <= 1 ? "Analiz fotoğrafı" : "\(items.count) analiz fotoğrafı")
+        .accessibilityLabel(
+            RDLocalization.plural(
+                "analysis.count.analysis_photos",
+                table: .analysis,
+                value: items.count,
+                fallbackOne: "%lld analiz fotoğrafı",
+                fallbackOther: "%lld analiz fotoğrafı"
+            )
+        )
     }
 }
 
@@ -3343,7 +3427,7 @@ private struct ResultPhotoThumbnail: View {
                 onTap?(previewImage)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(previewImage == nil ? "Analiz görseli" : "Analiz görselini büyüt")
+            .accessibilityLabel(previewImage == nil ? RDLocalization.string("analysis.result.view.analiz.gorseli.5f4a007d", table: .analysis, fallback: "Analiz görseli") : RDLocalization.string("analysis.result.view.analiz.gorselini.buyut.d8e4e70e", table: .analysis, fallback: "Analiz görselini büyüt"))
             .accessibilityAddTraits(previewImage == nil ? [] : .isButton)
         }
         .task(id: path) {
@@ -3399,7 +3483,7 @@ private struct ResultPhotoPreviewView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(RDPressableButtonStyle())
-            .accessibilityLabel("Fotoğrafı kapat")
+            .accessibilityLabel(RDLocalization.string("analysis.result.view.fotografi.kapat.806656a8", table: .analysis, fallback: "Fotoğrafı kapat"))
             .padding(.top, 18)
             .padding(.trailing, 18)
         }
@@ -3422,7 +3506,7 @@ struct RiskMatrix: View {
         ]
 
         return HStack(alignment: .top, spacing: 8) {
-            Text("ETKİ →")
+            Text(RDLocalization.string("analysis.result.view.etki.b0df52ac", table: .analysis, fallback: "ETKİ →"))
                 .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
                 .tracking(1.0)
                 .foregroundStyle(Color.rdSlate)
@@ -3455,7 +3539,7 @@ struct RiskMatrix: View {
                     }
                 }
 
-                Text("OLASILIK →")
+                Text(RDLocalization.string("analysis.result.view.olasilik.d9d3070a", table: .analysis, fallback: "OLASILIK →"))
                     .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
                     .tracking(1.0)
                     .foregroundStyle(Color.rdSlate)

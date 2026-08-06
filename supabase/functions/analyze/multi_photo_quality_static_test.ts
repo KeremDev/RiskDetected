@@ -58,6 +58,7 @@ Deno.test("iOS remote capability resolver applies release gate", async () => {
 
   assertStringIncludes(source, "isReleaseGateOpenForCurrentBuild");
   assertStringIncludes(source, 'case "build_allowlist"');
+  assertStringIncludes(source, "minIOSBuild.map { buildNumber >= $0 } == true");
   assertStringIncludes(source, 'case "min_build"');
   assertStringIncludes(source, "flags.effectiveEnableMultiPhotoAnalysis");
   assertStringIncludes(source, "flags.effectiveEnableEditableFindings");
@@ -71,9 +72,11 @@ Deno.test("AI payload labels every image before the image part", async () => {
 
   assertStringIncludes(
     source,
-    "function imagePartMarkerText(part: AIImagePart)",
+    "function imagePartMarkerText(",
   );
+  assertStringIncludes(source, 'outputLanguage: "tr" | "en" = "tr"');
   assertStringIncludes(source, 'label="FOTO_${part.photoIndex}"');
+  assertStringIncludes(source, 'label="PHOTO_${part.photoIndex}"');
   assertStringIncludes(
     source,
     "Bu marker yalnızca makine-okunur kaynak eşleştirme içindir",
@@ -84,13 +87,16 @@ Deno.test("AI payload labels every image before the image part", async () => {
   );
   assertStringIncludes(
     source,
-    "parts.push({ text: imagePartMarkerText(img) });",
+    'text: imagePartMarkerText(img, options.outputLanguage ?? "tr")',
   );
   assertStringIncludes(
     source,
     "parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });",
   );
-  assertStringIncludes(source, "text: imagePartMarkerText(img),");
+  assertStringIncludes(
+    source,
+    'text: imagePartMarkerText(img, options.outputLanguage ?? "tr"),',
+  );
   assertStringIncludes(source, 'type: "image_url"');
 });
 
@@ -227,6 +233,25 @@ Deno.test("AI input audit records photo quality metrics without base64", async (
   assert(!source.includes("data: part.data"));
 });
 
+Deno.test("storage-backed photos use the inline byte budgets before base64", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(
+    source,
+    "bytes.byteLength > MAX_INLINE_PHOTO_DECODED_BYTES",
+  );
+  assertStringIncludes(
+    source,
+    "totalAnalysisEncodedBytes + projectedEncodedBytes",
+  );
+  assertStringIncludes(source, "MAX_INLINE_PHOTO_TOTAL_BASE64_BYTES");
+  assertStringIncludes(source, "const base64 = bytesToBase64(bytes)");
+  assertStringIncludes(source, "return errorResponse(413, message");
+});
+
 Deno.test("AI telemetry persists usage and audit for multi-photo success", async () => {
   const source = await readTextIfAllowed(
     new URL("./index.ts", import.meta.url),
@@ -267,6 +292,7 @@ Deno.test("multi-photo features require build gated API contract", async () => {
   assertStringIncludes(source, "client.apiContractVersion < 2");
   assertStringIncludes(source, "flags.rollout_mode");
   assertStringIncludes(source, 'case "build_allowlist"');
+  assertStringIncludes(source, '"build_min_allowlist_floor"');
   assertStringIncludes(source, 'case "min_build"');
   assertStringIncludes(
     source,
@@ -277,50 +303,87 @@ Deno.test("multi-photo features require build gated API contract", async () => {
   assertStringIncludes(source, "coveragePolicyFor(");
 });
 
-Deno.test("expand migration keeps build 62 safe", async () => {
-  const migration = await readTextIfAllowed(
+Deno.test("canonical expand and current attestation keep build 62 safe", async () => {
+  const expandMigration = await readTextIfAllowed(
     new URL(
       "../../migrations/20260622195418_multi_photo_editable_findings.sql",
       import.meta.url,
     ),
   );
-  if (migration == null) return;
-  const normalizedSQL = migration.toLowerCase().replace(/\s+/g, " ");
-
-  assertStringIncludes(normalizedSQL, "'rollout_mode', 'build_allowlist'");
-  assertStringIncludes(normalizedSQL, "'kill_switch', true");
-  assertStringIncludes(
-    normalizedSQL,
-    "'enabled_ios_builds', jsonb_build_array('63', '64', '65', '66')",
-  );
-  assert(!normalizedSQL.includes("jsonb_build_array('62'"));
-  assertStringIncludes(normalizedSQL, "'enable_multi_photo_analysis', false");
-  assertStringIncludes(normalizedSQL, "'ios_release_policy'");
-  assert(
-    !normalizedSQL.includes("drop trigger if exists findings_after_change"),
-  );
-  assert(!normalizedSQL.includes("update public.photos set byte_size"));
-});
-
-Deno.test("analysis prompt limit migration raises coverage targets", async () => {
-  const migration = await readTextIfAllowed(
+  const attestationMigration = await readTextIfAllowed(
     new URL(
-      "../../migrations/20260630115105_analysis_prompt_limit_integration.sql",
+      "../../migrations/20260728202000_attest_current_runtime_configuration_state.sql",
       import.meta.url,
     ),
   );
-  if (migration == null) return;
-  const normalizedSQL = migration.toLowerCase().replace(/\s+/g, " ");
+  if (expandMigration == null || attestationMigration == null) return;
+  const normalizedExpand = expandMigration.toLowerCase().replace(/\s+/g, " ");
+  const normalizedAttestation = attestationMigration.toLowerCase().replace(
+    /\s+/g,
+    " ",
+  );
 
-  assertStringIncludes(normalizedSQL, "needs_field_verification boolean");
-  assertStringIncludes(normalizedSQL, "max_findings_per_photo = 13");
-  assertStringIncludes(normalizedSQL, "max_findings_per_analysis = 65");
-  assertStringIncludes(normalizedSQL, "target_findings_per_photo_min");
-  assertStringIncludes(normalizedSQL, "'9'::jsonb");
-  assertStringIncludes(normalizedSQL, "target_findings_per_photo_max");
-  assertStringIncludes(normalizedSQL, "'13'::jsonb");
-  assertStringIncludes(normalizedSQL, "target_findings_total_max");
-  assertStringIncludes(normalizedSQL, "'65'::jsonb");
+  assertStringIncludes(normalizedExpand, "'rollout_mode', 'build_allowlist'");
+  assertStringIncludes(normalizedExpand, "'kill_switch', true");
+  assertStringIncludes(
+    normalizedExpand,
+    "'enabled_ios_builds', jsonb_build_array('63')",
+  );
+  assert(!normalizedExpand.includes("jsonb_build_array('62'"));
+  assertStringIncludes(
+    normalizedExpand,
+    "'enable_multi_photo_analysis', false",
+  );
+  assertStringIncludes(normalizedExpand, "'ios_release_policy'");
+  assert(
+    !normalizedExpand.includes("drop trigger if exists findings_after_change"),
+  );
+  assert(!normalizedExpand.includes("update public.photos set byte_size"));
+  assertStringIncludes(
+    normalizedAttestation,
+    '"enabled_ios_builds":["63","64","65","66","67","68","69","70","71","72","73","74","75","76","77"]',
+  );
+  assert(!normalizedAttestation.includes('"enabled_ios_builds":["62"'));
+});
+
+Deno.test("reconciled schema and current attestation preserve coverage targets", async () => {
+  const schemaMigration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260728201500_reconcile_untracked_production_schema_state.sql",
+      import.meta.url,
+    ),
+  );
+  const attestationMigration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260728202000_attest_current_runtime_configuration_state.sql",
+      import.meta.url,
+    ),
+  );
+  if (schemaMigration == null || attestationMigration == null) return;
+  const normalizedSchema = schemaMigration.toLowerCase().replace(/\s+/g, " ");
+  const normalizedAttestation = attestationMigration.toLowerCase().replace(
+    /\s+/g,
+    " ",
+  );
+
+  assertStringIncludes(normalizedSchema, "needs_field_verification boolean");
+  assertStringIncludes(normalizedAttestation, '"max_findings_per_photo":13');
+  assertStringIncludes(
+    normalizedAttestation,
+    '"target_findings_per_photo_min":1',
+  );
+  assertStringIncludes(
+    normalizedAttestation,
+    '"target_findings_per_photo_max":13',
+  );
+  assertStringIncludes(
+    normalizedAttestation,
+    '"target_findings_total_max":39',
+  );
+  assertStringIncludes(
+    normalizedAttestation,
+    "('plus', 3, 3, 13, 39, true, true, false)",
+  );
 });
 
 Deno.test("coverage v2 pipeline normalizes repair and summaries", async () => {
@@ -334,6 +397,13 @@ Deno.test("coverage v2 pipeline normalizes repair and summaries", async () => {
   assertStringIncludes(source, "function coverageRepairCandidates");
   assertStringIncludes(source, "function buildCoverageRepairContext");
   assertStringIncludes(source, "mergeDuplicateCoverageHazards(");
+  assertStringIncludes(source, "function effectiveCoverageTargetMinForRecord");
+  assertStringIncludes(
+    source,
+    "function representedActionableInspectionLayerCount",
+  );
+  assertStringIncludes(source, "function coverageProgressCountForRecord");
+  assertStringIncludes(source, "function areMergeableCoverageFindings");
   assertStringIncludes(source, "buildPhotoSummariesFromCoverage(");
   assertStringIncludes(
     source,
@@ -446,11 +516,28 @@ Deno.test("single-pass layer audit is flag gated and schema bounded", async () =
   assertStringIncludes(source, "multi_photo_layer_audit_enabled: false");
   assertStringIncludes(
     source,
+    "multi_photo_layer_audit_enabled_ios_builds: []",
+  );
+  assertStringIncludes(source, "multi_photo_layer_audit_min_ios_build: null");
+  assertStringIncludes(
+    source,
     "single_photo_compact_layer_schema_enabled: false",
   );
   assertStringIncludes(source, "single_photo_evidence_guard_enabled: false");
   assertStringIncludes(source, "single_photo_thinking_budget: 3072");
   assertStringIncludes(source, "multi_photo_thinking_budget: 3072");
+  assertStringIncludes(
+    source,
+    "multi_photo_thinking_budget_min_ios_build: null",
+  );
+  assertStringIncludes(
+    source,
+    "multi_photo_thinking_budget_min_ios_build_value: null",
+  );
+  assertStringIncludes(
+    source,
+    "clientBuildAtLeast(\n      flags.multi_photo_layer_audit_min_ios_build",
+  );
   assertStringIncludes(source, "INSPECTION_LAYER_KEYS,");
   assertStringIncludes(
     auditSource,
@@ -461,6 +548,10 @@ Deno.test("single-pass layer audit is flag gated and schema bounded", async () =
   assertStringIncludes(source, "inspection_layer_keys");
   assertStringIncludes(source, "coverage_conclusion");
   assertStringIncludes(source, "compactLayerSchemaEnabled");
+  assertStringIncludes(
+    source,
+    "photoCount > 1 ||\n        capabilities.featureFlags.single_photo_compact_layer_schema_enabled",
+  );
   assertStringIncludes(source, "evidenceGuardEnabled");
   assertStringIncludes(source, "expectedPhotoCount");
   assertStringIncludes(source, "options.isRepairPass !== true");
@@ -480,9 +571,16 @@ Deno.test("layer audit degrades to legacy schema and audits malformed coverage",
   assertStringIncludes(source, "missing_layer_keys");
   assertStringIncludes(source, "duplicate_layer_keys");
   assertStringIncludes(source, "invalid_layer_statuses_count");
+  assertStringIncludes(source, "actionable_layer_count");
+  assertStringIncludes(source, "effective_target_findings_min");
   assertStringIncludes(source, "unrepresented_actionable_layers");
+  assertStringIncludes(source, "unrepresented_uncertain_layers");
   assertStringIncludes(source, "unlinked_finding_count");
   assertStringIncludes(source, "invalid_finding_layer_keys_count");
+  assertStringIncludes(
+    source,
+    "Do not merge distinct physical hazards into one finding",
+  );
   assertStringIncludes(source, 'provider === "groq" ? "prompt_only_groq"');
   assertStringIncludes(
     source,
@@ -490,10 +588,52 @@ Deno.test("layer audit degrades to legacy schema and audits malformed coverage",
   );
 });
 
-Deno.test("compact layer quality rollout is single-photo and backend gated", async () => {
+Deno.test("build 80 and later keep multi-photo layer audit and 6144 thinking budget", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
   const migration = await readTextIfAllowed(
     new URL(
-      "../../migrations/20260714170000_enable_single_photo_compact_layer_quality.sql",
+      "../../migrations/20260801220000_build80_multi_photo_layer_audit.sql",
+      import.meta.url,
+    ),
+  );
+  if (source == null || migration == null) return;
+  const normalizedSQL = migration.toLowerCase().replace(/\s+/g, " ");
+
+  assertStringIncludes(
+    source,
+    "multi_photo_layer_audit_enabled: flags.multi_photo_layer_audit_enabled ||\n      buildScopedMultiPhotoLayerAuditEnabled",
+  );
+  assertStringIncludes(
+    source,
+    "multi_photo_thinking_budget: buildScopedMultiPhotoThinkingBudget ??",
+  );
+  assertStringIncludes(
+    normalizedSQL,
+    "'{multi_photo_layer_audit_min_ios_build}'",
+  );
+  assertStringIncludes(normalizedSQL, "'{min_ios_build}'");
+  assertStringIncludes(
+    normalizedSQL,
+    "'{multi_photo_thinking_budget_min_ios_build}'",
+  );
+  assertStringIncludes(
+    normalizedSQL,
+    "'{multi_photo_thinking_budget_min_ios_build_value}'",
+  );
+  assertStringIncludes(normalizedSQL, "'80'::jsonb");
+  assertStringIncludes(normalizedSQL, "'6144'::jsonb");
+  assertStringIncludes(
+    normalizedSQL,
+    "global multi_photo_layer_audit_enabled must remain false",
+  );
+});
+
+Deno.test("attested compact layer quality remains single-photo gated", async () => {
+  const migration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260728202000_attest_current_runtime_configuration_state.sql",
       import.meta.url,
     ),
   );
@@ -502,31 +642,38 @@ Deno.test("compact layer quality rollout is single-photo and backend gated", asy
 
   assertStringIncludes(
     normalizedSQL,
-    "single_photo_compact_layer_schema_enabled",
+    '"single_photo_compact_layer_schema_enabled":true',
   );
-  assertStringIncludes(normalizedSQL, "single_photo_evidence_guard_enabled");
-  assert(!normalizedSQL.includes("multi_photo_layer_audit_enabled"));
-  assert(!normalizedSQL.includes("single_photo_thinking_budget"));
-  assert(!normalizedSQL.includes("multi_photo_thinking_budget"));
+  assertStringIncludes(
+    normalizedSQL,
+    '"single_photo_evidence_guard_enabled":true',
+  );
+  assertStringIncludes(
+    normalizedSQL,
+    '"multi_photo_layer_audit_enabled":false',
+  );
 });
 
-Deno.test("single-photo layer audit rollout leaves multi-photo disabled", async () => {
+Deno.test("attested layer audit budgets leave multi-photo audit disabled", async () => {
   const migration = await readTextIfAllowed(
     new URL(
-      "../../migrations/20260712193000_enable_single_photo_layer_audit.sql",
+      "../../migrations/20260728202000_attest_current_runtime_configuration_state.sql",
       import.meta.url,
     ),
   );
   if (migration == null) return;
   const normalizedSQL = migration.toLowerCase().replace(/\s+/g, " ");
 
-  assertStringIncludes(normalizedSQL, "single_photo_layer_audit_enabled");
-  assertStringIncludes(normalizedSQL, "multi_photo_layer_audit_enabled");
-  assertStringIncludes(normalizedSQL, "single_photo_thinking_budget");
-  assertStringIncludes(normalizedSQL, "multi_photo_thinking_budget");
-  assertStringIncludes(normalizedSQL, "'6144'::jsonb");
-  assertStringIncludes(normalizedSQL, "'3072'::jsonb");
-  assertStringIncludes(normalizedSQL, "'false'::jsonb");
+  assertStringIncludes(
+    normalizedSQL,
+    '"single_photo_layer_audit_enabled":true',
+  );
+  assertStringIncludes(
+    normalizedSQL,
+    '"multi_photo_layer_audit_enabled":false',
+  );
+  assertStringIncludes(normalizedSQL, '"single_photo_thinking_budget":6144');
+  assertStringIncludes(normalizedSQL, '"multi_photo_thinking_budget":3072');
 });
 
 Deno.test("coverage repair is queued as a separate job", async () => {

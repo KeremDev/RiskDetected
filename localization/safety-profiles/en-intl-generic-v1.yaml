@@ -1,0 +1,31 @@
+{
+  "id": "en-intl-generic-v1",
+  "language": "en",
+  "content_locale": "en-001",
+  "jurisdiction_country": "INTL",
+  "jurisdiction_region": null,
+  "status": "terminology_only",
+  "review_status": "machine_draft",
+  "display_name_key": "safety_profile.international",
+  "primary_product_term": "safety inspection",
+  "primary_domain_term": "workplace safety",
+  "finding_term": "finding",
+  "hazard_term": "hazard",
+  "risk_assessment_term": "risk assessment",
+  "control_term": "control measure",
+  "corrective_action_term": "corrective action",
+  "default_risk_method": "matrix_5x5",
+  "allowed_risk_methods": ["matrix_5x5", "fine_kinney"],
+  "legislation_canvas_enabled": false,
+  "structured_regulatory_references_enabled": false,
+  "regulatory_reference_policy": "none",
+  "legal_compliance_claims_allowed": false,
+  "spelling_style": "international",
+  "prompt_directives": [
+    "Use neutral international workplace-safety terminology.",
+    "Prefer the hierarchy of controls and on-site verification language.",
+    "Do not name a regulator or infer legal compliance from a photograph."
+  ],
+  "forbidden_claims_key": "en-intl-generic-v1",
+  "profile_version": 1
+}

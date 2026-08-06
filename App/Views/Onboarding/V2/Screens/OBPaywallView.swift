@@ -9,10 +9,10 @@ struct OBPaywallView: View {
     let onDismiss: () -> Void
 
     private let benefits: [(icon: String, title: String, sub: String)] = [
-        ("photo.fill", "Sınırsız fotoğraf analizi", "Fine-Kinney · 5×5 · L×Ş"),
-        ("doc.text.fill", "PDF + Excel dışa aktarım", "Mevzuat referansları ile"),
-        ("person.2.fill", "Ekip ile paylaş ve yorumla", "5 kullanıcıya kadar"),
-        ("bubble.left.fill", "Öncelikli destek", "Türkçe · 24 saat içinde yanıt")
+        ("photo.fill", RDLocalization.string("onboarding.obpaywall.view.sinirsiz.fotograf.analizi.d14fa9d7", table: .onboarding, fallback: "Sınırsız fotoğraf analizi"), RDLocalization.string("onboarding.obpaywall.view.fine.kinney.5.5.l.s.4ac3cf81", table: .onboarding, fallback: "Fine-Kinney · 5×5 · L×Ş")),
+        ("doc.text.fill", RDLocalization.string("onboarding.obpaywall.view.pdf.excel.disa.aktarim.893fa0e6", table: .onboarding, fallback: "PDF + Excel dışa aktarım"), RDLocalization.string("onboarding.obpaywall.view.mevzuat.referanslari.ile.927c6758", table: .onboarding, fallback: "Mevzuat referansları ile")),
+        ("person.2.fill", RDLocalization.string("onboarding.obpaywall.view.ekip.ile.paylas.ve.yorumla.3d615ff3", table: .onboarding, fallback: "Ekip ile paylaş ve yorumla"), RDLocalization.string("onboarding.obpaywall.view.5.kullaniciya.kadar.52755363", table: .onboarding, fallback: "5 kullanıcıya kadar")),
+        ("bubble.left.fill", RDLocalization.string("onboarding.obpaywall.view.oncelikli.destek.d923fb48", table: .onboarding, fallback: "Öncelikli destek"), RDLocalization.string("onboarding.obpaywall.view.turkce.24.saat.icinde.yanit.b7483600", table: .onboarding, fallback: "Türkçe · 24 saat içinde yanıt"))
     ]
 
     var body: some View {
@@ -61,7 +61,7 @@ struct OBPaywallView: View {
                         OBHaptic.medium(); onStartTrial()
                     } label: {
                         HStack(spacing: 8) {
-                            Text("Ücretsiz denemeyi başlat")
+                            Text(RDLocalization.string("onboarding.obpaywall.view.ucretsiz.denemeyi.baslat.a308f2c3", table: .onboarding, fallback: "Devam et"))
                                 .font(.system(size: RDFontScale.size(16), weight: .semibold))
                             Image(systemName: "arrow.right")
                                 .font(.system(size: RDFontScale.size(15), weight: .bold))
@@ -104,11 +104,11 @@ struct OBPaywallView: View {
     }
 
     private var titleAttr: AttributedString {
-        var s = AttributedString("Sahadaki her gözlemi ")
+        var s = AttributedString(RDLocalization.string("onboarding.obpaywall.view.sahadaki.her.gozlemi.74e61cb3", table: .onboarding, fallback: "Sahadaki her gözlemi"))
         var accent = AttributedString("rapora")
         accent.foregroundColor = Color(hex: "#4FE07E")
         s.append(accent)
-        s.append(AttributedString(" dönüştür."))
+        s.append(AttributedString(RDLocalization.string("onboarding.obpaywall.view.donustur.569f5956", table: .onboarding, fallback: "dönüştür.")))
         s.foregroundColor = .white
         return s
     }
@@ -116,7 +116,7 @@ struct OBPaywallView: View {
     private var pill: some View {
         HStack(spacing: 6) {
             Circle().fill(Color(hex: "#00E03A")).frame(width: 5, height: 5)
-            Text("\(state.primarySectorLabel.uppercased()) UZMANLARI İÇİN HAZIRLANDI")
+            Text(RDLocalization.format("onboarding.obpaywall.view.1.uzmanlari.icin.hazirlandi.1895b300", table: .onboarding, fallback: "%1$@ UZMANLARI İÇİN HAZIRLANDI", arguments: [String(describing: state.primarySectorLabel.uppercased())]))
                 .font(.system(size: RDFontScale.size(11), weight: .semibold))
                 .tracking(0.8)
         }
@@ -131,7 +131,7 @@ struct OBPaywallView: View {
         HStack(spacing: 6) {
             Circle().fill(Color(hex: "#4FE07E")).frame(width: 5, height: 5)
                 .shadow(color: Color(hex: "#4FE07E"), radius: 4)
-            Text("Planın hazır · 7 gün ücretsiz dene")
+            Text(RDLocalization.string("onboarding.obpaywall.view.planin.hazir.7.gun.ucretsiz.dene.77c5ffa7", table: .onboarding, fallback: "Fiyat ve uygun teklifler App Store'da doğrulanır"))
                 .font(.system(size: RDFontScale.size(12), weight: .medium))
                 .foregroundStyle(.white.opacity(0.78))
         }
@@ -194,11 +194,11 @@ struct OBPaywallView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 8) {
-                        Text(isYearly ? "Yıllık" : "Aylık")
+                        Text(isYearly ? RDLocalization.string("onboarding.obpaywall.view.yillik.5e3176f4", table: .onboarding, fallback: "Yıllık") : RDLocalization.string("onboarding.obpaywall.view.aylik.c58200cd", table: .onboarding, fallback: "Aylık"))
                             .font(.system(size: RDFontScale.size(14), weight: .semibold))
                             .foregroundStyle(.white)
                         if isYearly {
-                            Text("%17 İNDİRİM")
+                            Text(RDLocalization.string("onboarding.obpaywall.view.17.indirim.acd00702", table: .onboarding, fallback: "%17 İNDİRİM"))
                                 .font(.system(size: RDFontScale.size(10), weight: .semibold))
                                 .tracking(0.4)
                                 .foregroundStyle(Color.rdOnyx)
@@ -216,7 +216,7 @@ struct OBPaywallView: View {
                     Text(displayPrice(for: plan))
                         .font(.system(size: RDFontScale.size(17), weight: .bold, design: .monospaced))
                         .foregroundStyle(.white)
-                    Text(isYearly ? "/yıl" : "/ay")
+                    Text(isYearly ? RDLocalization.string("onboarding.obpaywall.view.yil.a344c127", table: .onboarding, fallback: "/yıl") : "/ay")
                         .font(.system(size: RDFontScale.size(11)))
                         .foregroundStyle(.white.opacity(0.55))
                 }
@@ -237,11 +237,11 @@ struct OBPaywallView: View {
         switch plan {
         case .yearly:
             guard let price = displayPriceValue(for: .yearly) else {
-                return "İlk 7 gün ücretsiz · fiyat App Store üzerinden yüklenecek"
+                return RDLocalization.string("onboarding.obpaywall.view.ilk.7.gun.ucretsiz.fiyat.app.store.uzerinden.yuk.7d822ee9", table: .onboarding, fallback: "Fiyat ve uygun teklifler App Store'da gösterilir")
             }
-            return "İlk 7 gün ücretsiz · sonra \(price)/yıl"
+            return RDLocalization.format("onboarding.obpaywall.view.ilk.7.gun.ucretsiz.sonra.1.yil.92cf2208", table: .onboarding, fallback: "Yıllık %1$@ · varsa teklif App Store'da uygulanır", arguments: [String(describing: price)])
         case .monthly:
-            return "Hemen başlar · istediğin zaman iptal"
+            return RDLocalization.string("onboarding.obpaywall.view.hemen.baslar.istedigin.zaman.iptal.bda70860", table: .onboarding, fallback: "Hemen başlar · istediğin zaman iptal")
         }
     }
 
@@ -261,13 +261,13 @@ struct OBPaywallView: View {
 
     private var finePrint: some View {
         VStack(spacing: 4) {
-            Text("İstediğin zaman iptal · App Store üzerinden faturalandırılır")
+            Text(RDLocalization.string("onboarding.obpaywall.view.istedigin.zaman.iptal.app.store.uzerinden.fatura.34352096", table: .onboarding, fallback: "İstediğin zaman iptal · App Store üzerinden faturalandırılır"))
             HStack(spacing: 0) {
-                Text("Şartlar").underline()
+                Text(RDLocalization.string("onboarding.obpaywall.view.sartlar.9a992598", table: .onboarding, fallback: "Şartlar")).underline()
                 dot
-                Text("Gizlilik").underline()
+                Text(RDLocalization.string("onboarding.obpaywall.view.gizlilik.120a8da1", table: .onboarding, fallback: "Gizlilik")).underline()
                 dot
-                Text("Satın alımları geri yükle").underline()
+                Text(RDLocalization.string("onboarding.obpaywall.view.satin.alimlari.geri.yukle.b9e04822", table: .onboarding, fallback: "Satın alımları geri yükle")).underline()
             }
         }
         .font(.system(size: RDFontScale.size(11)))

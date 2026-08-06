@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "kind": "testflight_rollout_stage_begin",
+  "contract_id": "rd-global-localization-testflight-rollout-v1",
+  "stage": 1,
+  "stage_key": "internal_tr_regression_flags_off",
+  "candidate_build": "78",
+  "asc_build_id": "6710ace3-c967-43fc-9186-b005b1a4a83c",
+  "window_start": "2026-08-01T16:02:05.920Z",
+  "baseline": {
+    "stability": {
+      "install_count": 0,
+      "crash_count": 0,
+      "session_count": 0,
+      "invite_count": 1,
+      "feedback_count": 0
+    },
+    "runtime_config": {
+      "flag_count": 13,
+      "enabled_user_hash_count": 0,
+      "non_off_flag_count": 0,
+      "kill_switch_count": 0,
+      "flags": [
+        {
+          "key": "ai_country_term_guard_enabled",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "ai_language_guard_enabled",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "english_notifications_enabled",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "english_product_enabled",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "english_report_enabled",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "global_localization_wave1",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "localization_queue_payload_v1",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "localization_v2",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "safety_profile_en_au_enabled",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "safety_profile_en_ca_enabled",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "safety_profile_en_gb_enabled",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "safety_profile_en_intl_enabled",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "safety_profile_en_us_enabled",
+          "rollout_mode": "off",
+          "enabled_user_hash_count": 0,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        }
+      ],
+      "sha256": "d1845ee1e5ef5e8abae698ba234dd2c1ec2521c19850933b7879b1ac17eb3e43"
+    }
+  },
+  "privacy": {
+    "aggregate_only": true,
+    "disallowed_data_present": false
+  }
+}

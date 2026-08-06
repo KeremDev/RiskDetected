@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "review_status": "machine_draft",
+  "global": [
+    "guarantees legal compliance",
+    "certifies legal compliance",
+    "replaces a professional inspection",
+    "officially approved",
+    "zero risk guaranteed"
+  ],
+  "by_profile": {
+    "tr-tr-current-v1": [
+      "kesin uyumluluk",
+      "kesin mevzuata uygundur",
+      "hukukî uygunluğu garanti eder",
+      "resmî denetim yerine geçer"
+    ],
+    "en-intl-generic-v1": [
+      "global compliance",
+      "OSHA compliant",
+      "HSE compliant",
+      "WHS compliant",
+      "Canadian OHS compliant",
+      "6331 compliant"
+    ],
+    "en-gb-generic-v1": [
+      "HSE compliant",
+      "HSENI compliant",
+      "OSHA compliant",
+      "WHS Act compliant",
+      "6331 compliant"
+    ],
+    "en-us-generic-v1": [
+      "OSHA compliant",
+      "OSHA violation",
+      "citation-ready",
+      "JHA completed",
+      "JSA completed",
+      "HSE compliant",
+      "WHS Act compliant",
+      "6331 compliant"
+    ],
+    "en-au-generic-v1": [
+      "Australian law compliant",
+      "WHS compliant",
+      "model WHS law compliant",
+      "OSHA compliant",
+      "HSE compliant",
+      "6331 compliant"
+    ],
+    "en-ca-generic-v1": [
+      "Canadian compliance",
+      "Canadian OHS compliant",
+      "Canada-wide OHS compliant",
+      "OSHA compliant",
+      "HSE compliant",
+      "WHS Act compliant",
+      "6331 compliant"
+    ]
+  }
+}

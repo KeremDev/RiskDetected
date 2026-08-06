@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "decision": "approved",
+  "reviewer_name": "Kerem",
+  "reviewer_qualification": "Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.",
+  "reviewed_at": "2026-07-31T06:40:30Z",
+  "reviewed_preapproval_manifest_path": "App/LegalDocuments/en/manifest.json",
+  "reviewed_preapproval_manifest_sha256": "d1e566dd06f7175d310ba25253609304619f253b773e4a1cc97e149aefd17306",
+  "document_set_id": "en-global-v1",
+  "locale": "en",
+  "reviewed_documents": [
+    {
+      "kind": "terms",
+      "path": "en/Terms-of-Use.md",
+      "sha256": "948d41501aa654e56ce97730decc2f70b0ea4ee0e70b357f867ad6f4dcc68d5b"
+    },
+    {
+      "kind": "privacy",
+      "path": "en/Privacy-Policy.md",
+      "sha256": "d5e4f6def1860fe5642b8fd8fde5d2ac8b3bcaa3cc6d99b8add4f6f5496082e9"
+    },
+    {
+      "kind": "consent",
+      "path": "en/AI-and-Data-Processing-Notice.md",
+      "sha256": "61f91a4e0ceaf7d983d9a6441c7095be69ce131beef75898a2c615d63ced6be6"
+    }
+  ],
+  "release_conditions": [
+    "Publish the exact reviewed English documents at the three required HTTPS riskdetected.com URLs.",
+    "Verify that the public URLs do not serve a Turkish SPA fallback or redirect away from riskdetected.com.",
+    "Record public_urls and public_urls_verified_at in the legal manifest.",
+    "Keep English authentication and purchase access gated until every release condition passes."
+  ],
+  "notes": "Approved by the qualified reviewer in the Codex task. This approval covers only the exact document hashes above and does not attest that public English URLs are live."
+}

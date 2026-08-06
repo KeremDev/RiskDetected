@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-02T22:10:03.908Z",
+  "mutation_performed": false,
+  "app_id": "6769498181",
+  "target_version": "1.3.1",
+  "live_version": {
+    "id": "9a2f5061-8992-4957-a9e8-7b8a96747323",
+    "version": "1.3.0",
+    "state": "READY_FOR_SALE"
+  },
+  "candidate_version": {
+    "id": "9b304afe-4245-480d-8442-be03f9878407",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "release_type": "MANUAL"
+  },
+  "metadata_validation": {
+    "valid": true,
+    "limits": {
+      "name": 30,
+      "subtitle": 30,
+      "promotional_text": 170,
+      "description": 4000,
+      "keywords_bytes": 100,
+      "whats_new": 4000
+    },
+    "metrics": [
+      {
+        "locale": "en-GB",
+        "name": 29,
+        "subtitle": 28,
+        "promotional_text": 138,
+        "description": 1430,
+        "keywords_bytes": 91,
+        "whats_new": 108,
+        "screenshot_count": 5,
+        "screenshot_theme": "light"
+      },
+      {
+        "locale": "en-AU",
+        "name": 26,
+        "subtitle": 30,
+        "promotional_text": 128,
+        "description": 1447,
+        "keywords_bytes": 94,
+        "whats_new": 108,
+        "screenshot_count": 5,
+        "screenshot_theme": "light"
+      },
+      {
+        "locale": "en-US",
+        "name": 26,
+        "subtitle": 29,
+        "promotional_text": 136,
+        "description": 1474,
+        "keywords_bytes": 90,
+        "whats_new": 108,
+        "screenshot_count": 5,
+        "screenshot_theme": "light"
+      },
+      {
+        "locale": "en-CA",
+        "name": 26,
+        "subtitle": 30,
+        "promotional_text": 128,
+        "description": 1467,
+        "keywords_bytes": 90,
+        "whats_new": 108,
+        "screenshot_count": 5,
+        "screenshot_theme": "light"
+      }
+    ],
+    "errors": [],
+    "warnings": []
+  },
+  "screenshot_files": [
+    {
+      "locale": "en-GB",
+      "directory": "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-GB",
+      "files": [
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-GB/01.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-GB/02.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-GB/03.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-GB/04.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-GB/05.png"
+      ],
+      "complete": true
+    },
+    {
+      "locale": "en-AU",
+      "directory": "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-AU",
+      "files": [
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-AU/01.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-AU/02.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-AU/03.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-AU/04.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-AU/05.png"
+      ],
+      "complete": true
+    },
+    {
+      "locale": "en-US",
+      "directory": "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-US",
+      "files": [
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-US/01.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-US/02.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-US/03.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-US/04.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-US/05.png"
+      ],
+      "complete": true
+    },
+    {
+      "locale": "en-CA",
+      "directory": "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-CA",
+      "files": [
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-CA/01.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-CA/02.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-CA/03.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-CA/04.png",
+        "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/appstore/screenshots/final/en-CA/05.png"
+      ],
+      "complete": true
+    }
+  ],
+  "operations": [
+    {
+      "kind": "upsert_version_localization",
+      "locale": "en-GB",
+      "current_id": "ff2adaa1-572a-45b8-89a2-8c5c1a2e9e1a"
+    },
+    {
+      "kind": "update_app_info_localization",
+      "locale": "en-GB",
+      "current_id": "c751a7bc-cc45-4321-96b4-ee061ffe2dc2"
+    },
+    {
+      "kind": "upsert_version_localization",
+      "locale": "en-AU",
+      "current_id": "0771f8f8-4340-4aaf-857c-7dcf120acfae"
+    },
+    {
+      "kind": "update_app_info_localization",
+      "locale": "en-AU",
+      "current_id": "d41d57ac-b83f-44a1-b3dc-cb8271fbe0ab"
+    },
+    {
+      "kind": "upsert_version_localization",
+      "locale": "en-US",
+      "current_id": "12f3abc4-9e58-43b8-98a8-9630e1023033"
+    },
+    {
+      "kind": "update_app_info_localization",
+      "locale": "en-US",
+      "current_id": "009c7ff0-e1e1-4372-87ae-6336fbf3ebe2"
+    },
+    {
+      "kind": "upsert_version_localization",
+      "locale": "en-CA",
+      "current_id": "dd407199-2eb5-4dae-bb74-ed4ef3533a19"
+    },
+    {
+      "kind": "update_app_info_localization",
+      "locale": "en-CA",
+      "current_id": "83f85e78-4420-4973-9c41-1861e47fa5d4"
+    },
+    {
+      "kind": "upsert_subscription_localizations",
+      "locale_count": 4
+    },
+    {
+      "kind": "attach_existing_build",
+      "build_id": "4790ee2d-48df-4fe6-8fbf-6f5fa5591db2"
+    },
+    {
+      "kind": "upsert_review_details_without_submission"
+    },
+    {
+      "kind": "upload_screenshots_when_complete",
+      "complete_locale_count": 4,
+      "expected_locale_count": 4,
+      "device_type": "IPHONE_69"
+    }
+  ],
+  "safety": {
+    "release_type": "MANUAL",
+    "review_submission_planned": false,
+    "final_release_implemented": false,
+    "production_rollout_change_planned": false,
+    "protected_locales": [
+      "tr"
+    ],
+    "protected_locale_mutations_planned": false
+  }
+}

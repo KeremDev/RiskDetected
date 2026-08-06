@@ -1,5 +1,8 @@
 import Foundation
 import UIKit
+#if DEBUG
+import PDFKit
+#endif
 
 enum PDFReportKind: String, CaseIterable, Identifiable {
     case standard
@@ -88,6 +91,20 @@ final class PDFReportService: @unchecked Sendable {
 
     private init() {}
 
+    enum ReportError: LocalizedError {
+        case localizationSnapshotMissing
+        case reportLanguageMismatch
+
+        var errorDescription: String? {
+            switch self {
+            case .localizationSnapshotMissing:
+                return "REPORT_LOCALIZATION_SNAPSHOT_MISSING"
+            case .reportLanguageMismatch:
+                return "REPORT_LANGUAGE_MISMATCH"
+            }
+        }
+    }
+
     struct ReportInput {
         let bundle: AnalysisResultBundle
         let findings: [Finding]
@@ -151,8 +168,17 @@ final class PDFReportService: @unchecked Sendable {
         if ReportFailureSimulation.isEnabled(.pdfRender) {
             throw ReportFailureSimulation.simulatedError(.pdfRender)
         }
+        guard input.bundle.analysis.hasCompleteLocalizationSnapshot else {
+            throw ReportError.localizationSnapshotMissing
+        }
+        guard input.options.language == input.bundle.analysis.resolvedOutputLanguage else {
+            throw ReportError.reportLanguageMismatch
+        }
 
-        let fileURL = outputURL(for: input.bundle.analysis)
+        let fileURL = outputURL(
+            for: input.bundle.analysis,
+            language: input.options.language
+        )
         let pageRect = CGRect(x: 0, y: 0, width: 842, height: 595) // A4 landscape @ 72 dpi
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
 
@@ -173,13 +199,14 @@ final class PDFReportService: @unchecked Sendable {
         return fileURL
     }
 
-    private func outputURL(for analysis: AnalysisRow) -> URL {
+    private func outputURL(for analysis: AnalysisRow, language: RDLanguage) -> URL {
         let safeTitle = analysis.title
             .replacingOccurrences(of: " ", with: "_")
             .replacingOccurrences(of: "·", with: "-")
             .filter { $0.isLetter || $0.isNumber || $0 == "_" || $0 == "-" }
         let shortID = String(analysis.id.uuidString.prefix(8)).uppercased()
-        let fileName = "RiskDetected_\(safeTitle)_\(shortID).pdf"
+        let reportKind = language == .english ? "Risk_Assessment" : "Risk_Analizi"
+        let fileName = "RiskDetected_\(safeTitle)_\(reportKind)_\(shortID).pdf"
         return FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
     }
 
@@ -199,9 +226,12 @@ final class PDFReportService: @unchecked Sendable {
             color: .rdPDFBlack
         )
 
-        let sectorPart = analysis.analysisSectorLabel.map { "Analiz kapsamı: \($0) · " } ?? ""
+        let language = input.options.language
+        let sectorPart = analysis.analysisSectorID.map {
+            "\(copy(language: language, tr: "Analiz kapsamı", en: "Analysis scope")): \($0.label(language: language)) · "
+        } ?? ""
         drawText(
-            "\(formattedDate(analysis.createdAt, language: input.options.language)) · \(sectorPart)Analiz odağı: \(canvasLabel(analysis.canvas)) · \(input.findings.count) bulgu",
+            "\(formattedDate(analysis.createdAt, language: language)) · \(sectorPart)\(copy(language: language, tr: "Analiz odağı", en: "Analysis focus")): \(canvasLabel(analysis.canvas, language: language)) · \(findingCountText(input.findings.count, language: language))",
             in: CGRect(x: margin, y: contentTop + 38, width: 520, height: 22),
             font: .systemFont(ofSize: 12, weight: .medium),
             color: .rdPDFSlate
@@ -212,40 +242,54 @@ final class PDFReportService: @unchecked Sendable {
         if !input.images.isEmpty {
             drawCoverImages(input.images, in: CGRect(x: 548, y: contentTop, width: 252, height: 178))
         } else if analysis.kind == "text" {
-            drawPlaceholder(in: CGRect(x: 548, y: contentTop, width: 252, height: 178), text: "Metin Analizi")
+            drawPlaceholder(
+                in: CGRect(x: 548, y: contentTop, width: 252, height: 178),
+                text: copy(language: language, tr: "Metin Analizi", en: "Text Analysis")
+            )
         } else {
-            drawPlaceholder(in: CGRect(x: 548, y: contentTop, width: 252, height: 178), text: "Fotoğraf")
+            drawPlaceholder(
+                in: CGRect(x: 548, y: contentTop, width: 252, height: 178),
+                text: copy(language: language, tr: "Fotoğraf", en: "Photo")
+            )
         }
 
         let summary = analysis.aiSummary?.trimmingCharacters(in: .whitespacesAndNewlines)
         drawInfoBox(
-            title: "Uygunsuzluk Özeti",
-            body: summary?.isEmpty == false ? summary! : "\(input.findings.count) bulgu tespit edildi. Bulgular \(input.options.method.label) metoduna göre önceliklendirilmiştir.",
+            title: copy(language: language, tr: "Uygunsuzluk Özeti", en: "Finding Summary"),
+            body: summary?.isEmpty == false
+                ? summary!
+                : copy(
+                    language: language,
+                    tr: "\(input.findings.count) bulgu tespit edildi. Bulgular \(methodName(input.options.method, language: language)) metoduna göre önceliklendirilmiştir.",
+                    en: "\(input.findings.count) findings were identified and prioritised using the \(methodName(input.options.method, language: language)) method."
+                ),
             rect: CGRect(x: margin, y: 340, width: 758, height: 86)
         )
 
-        let expert = input.options.preparedBy.nonEmpty ?? profile?.displayName ?? "Kullanıcı"
+        let expert = input.options.preparedBy.nonEmpty
+            ?? profile?.displayName
+            ?? copy(language: language, tr: "Kullanıcı", en: "User")
         let title = input.options.preparedTitle.nonEmpty ?? profile?.title
         let certificate = input.options.certificateNumber.nonEmpty ?? profile?.certificateNumber
         let companyName = input.options.companyName.nonEmpty ?? profile?.companyName
         let companyInfo = input.options.companyInfo.nonEmpty ?? profile?.phone
         let credential = [
             title,
-            certificate.map { "Belge no: \($0)" }
+            certificate.map { "\(copy(language: language, tr: "Belge no", en: "Certificate no.")): \($0)" }
         ]
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty }
             .joined(separator: " · ")
         let companyParts = [
-            companyName.map { "Firma: \($0)" },
+            companyName.map { "\(copy(language: language, tr: "Firma", en: "Company")): \($0)" },
             companyInfo
         ]
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty }
             .joined(separator: " · ")
         let footerParts = [
-            "Hazırlayan: \(expert)",
-            credential.nonEmpty ?? "İSG Uzmanı",
+            "\(copy(language: language, tr: "Hazırlayan", en: "Prepared by")): \(expert)",
+            credential.nonEmpty ?? copy(language: language, tr: "İSG Uzmanı", en: "Safety professional"),
             companyParts.nonEmpty,
-            "Doküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())"
+            "\(copy(language: language, tr: "Doküman No", en: "Document no.")): #\(String(analysis.id.uuidString.prefix(8)).uppercased())"
         ].compactMap { $0 }
         let footer = footerParts.joined(separator: " · ")
         drawFittingText(
@@ -256,7 +300,14 @@ final class PDFReportService: @unchecked Sendable {
             color: .rdPDFSlate
         )
 
-        drawMethodLegend(input: input, rect: CGRect(x: margin, y: 482, width: 758, height: 54))
+        drawText(
+            reportDisclaimer(language: language),
+            in: CGRect(x: margin, y: 472, width: 758, height: 18),
+            font: .systemFont(ofSize: 7.2, weight: .regular),
+            color: .rdPDFSlate,
+            alignment: .center
+        )
+        drawMethodLegend(input: input, rect: CGRect(x: margin, y: 496, width: 758, height: 48))
     }
 
     private func drawFindingPages(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect, totalPages: Int) {
@@ -272,7 +323,7 @@ final class PDFReportService: @unchecked Sendable {
         func beginFindingPage() {
             context.beginPage()
             drawPageChrome(input: input, pageRect: pageRect, title: input.options.kind.localizedDetailTitle(language: input.options.language), page: page, totalPages: totalPages)
-            drawTableHeader(y: 92)
+            drawTableHeader(y: 92, language: input.options.language)
             y = topY
             page += 1
         }
@@ -280,7 +331,7 @@ final class PDFReportService: @unchecked Sendable {
         beginFindingPage()
 
         for (index, finding) in input.findings.enumerated() {
-            let rowHeight = min(standardFindingRowHeight(for: finding), maxRowHeight)
+            let rowHeight = min(standardFindingRowHeight(for: finding, language: input.options.language), maxRowHeight)
             if y > topY, y + rowHeight > bottomY {
                 beginFindingPage()
             }
@@ -289,6 +340,7 @@ final class PDFReportService: @unchecked Sendable {
                 ordinal: index + 1,
                 finding: finding,
                 method: input.options.method,
+                language: input.options.language,
                 y: y,
                 height: rowHeight
             )
@@ -308,7 +360,7 @@ final class PDFReportService: @unchecked Sendable {
         var hasFindingPage = false
 
         for finding in input.findings {
-            let rowHeight = min(standardFindingRowHeight(for: finding), maxRowHeight)
+            let rowHeight = min(standardFindingRowHeight(for: finding, language: input.options.language), maxRowHeight)
             if !hasFindingPage {
                 pages += 1
                 hasFindingPage = true
@@ -355,13 +407,17 @@ final class PDFReportService: @unchecked Sendable {
 
     private func drawRiskMethodReferencePage(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect, totalPages: Int) {
         context.beginPage()
-        drawRiskAnalysisChrome(input: input, pageRect: pageRect, title: input.options.method == .fineKinney ? "FINE-KINNEY METODU REFERANS TABLOSU" : "5x5 L-TİPİ MATRİS REFERANS TABLOSU", page: 1, totalPages: totalPages)
+        let language = input.options.language
+        let title = input.options.method == .fineKinney
+            ? copy(language: language, tr: "FINE-KINNEY METODU REFERANS TABLOSU", en: "FINE-KINNEY METHOD REFERENCE TABLE")
+            : copy(language: language, tr: "5x5 L-TİPİ MATRİS REFERANS TABLOSU", en: "5×5 L-TYPE MATRIX REFERENCE TABLE")
+        drawRiskAnalysisChrome(input: input, pageRect: pageRect, title: title, page: 1, totalPages: totalPages)
 
         let margin: CGFloat = 32
         if input.options.method == .fineKinney {
-            drawFineKinneyReference(origin: CGPoint(x: margin, y: 82))
+            drawFineKinneyReference(origin: CGPoint(x: margin, y: 82), language: language)
         } else {
-            drawMatrix5Reference(origin: CGPoint(x: margin, y: 82))
+            drawMatrix5Reference(origin: CGPoint(x: margin, y: 82), language: language)
         }
 
         drawRiskAnalysisInfoStrip(input: input, rect: CGRect(x: margin, y: 520, width: pageRect.width - margin * 2, height: 42))
@@ -372,7 +428,10 @@ final class PDFReportService: @unchecked Sendable {
 
         for (pageIndex, rows) in pages.enumerated() {
             context.beginPage()
-            drawRiskAnalysisChrome(input: input, pageRect: pageRect, title: input.options.method == .fineKinney ? "TEHLİKE VE RİSK DEĞERLENDİRME FORMU (FINE-KINNEY)" : "TEHLİKE VE RİSK DEĞERLENDİRME FORMU (5x5 L-TİPİ)", page: pageIndex + 2, totalPages: totalPages)
+            let title = input.options.method == .fineKinney
+                ? copy(language: input.options.language, tr: "TEHLİKE VE RİSK DEĞERLENDİRME FORMU (FINE-KINNEY)", en: "HAZARD AND RISK ASSESSMENT FORM (FINE-KINNEY)")
+                : copy(language: input.options.language, tr: "TEHLİKE VE RİSK DEĞERLENDİRME FORMU (5x5 L-TİPİ)", en: "HAZARD AND RISK ASSESSMENT FORM (5×5 L-TYPE)")
+            drawRiskAnalysisChrome(input: input, pageRect: pageRect, title: title, page: pageIndex + 2, totalPages: totalPages)
 
             if input.options.method == .fineKinney {
                 drawFineKinneyAssessmentTable(input: input, rows: rows)
@@ -401,7 +460,7 @@ final class PDFReportService: @unchecked Sendable {
         )
 
         drawText(
-            "Sayfa \(page)/\(totalPages)",
+            "\(copy(language: input.options.language, tr: "Sayfa", en: "Page")) \(page)/\(totalPages)",
             in: CGRect(x: pageRect.width - 118, y: 31, width: 76, height: 18),
             font: .monospacedSystemFont(ofSize: 10, weight: .medium),
             color: .rdPDFSlate,
@@ -421,7 +480,13 @@ final class PDFReportService: @unchecked Sendable {
         drawText(title, in: CGRect(x: margin + 12, y: 36, width: pageRect.width - margin * 2 - 24, height: 16), font: .systemFont(ofSize: 13, weight: .bold), color: .rdPDFBlack, alignment: .center)
 
         drawReportLogo(input: input, in: CGRect(x: margin + 8, y: 29, width: 104, height: 28), fallbackTextRect: CGRect(x: margin + 8, y: 29, width: 104, height: 18), companyCornerRadius: 4)
-        drawText("Sayfa \(page)/\(totalPages)", in: CGRect(x: pageRect.width - margin - 54, y: 38, width: 50, height: 12), font: .monospacedSystemFont(ofSize: 8, weight: .medium), color: .rdPDFSlate, alignment: .right)
+        drawText(
+            "\(copy(language: input.options.language, tr: "Sayfa", en: "Page")) \(page)/\(totalPages)",
+            in: CGRect(x: pageRect.width - margin - 62, y: 38, width: 58, height: 12),
+            font: .monospacedSystemFont(ofSize: 8, weight: .medium),
+            color: .rdPDFSlate,
+            alignment: .right
+        )
     }
 
     private func drawReportLogo(input: ReportInput, in rect: CGRect, fallbackTextRect: CGRect, companyCornerRadius: CGFloat) {
@@ -444,97 +509,181 @@ final class PDFReportService: @unchecked Sendable {
             let rect = CGRect(x: origin.x + CGFloat(index) * (width + gap), y: origin.y, width: width, height: 72)
             roundedFill(rect, radius: 12, color: level.pdfBackground)
             drawText("\(count)", in: CGRect(x: rect.minX + 12, y: rect.minY + 10, width: 60, height: 26), font: .monospacedSystemFont(ofSize: 24, weight: .bold), color: level.pdfColor)
-            drawText(level.label.uppercased(), in: CGRect(x: rect.minX + 12, y: rect.minY + 42, width: rect.width - 24, height: 16), font: .systemFont(ofSize: 10, weight: .bold), color: level.pdfColor)
+            drawText(riskLevelLabel(level, language: input.options.language).uppercased(), in: CGRect(x: rect.minX + 12, y: rect.minY + 42, width: rect.width - 24, height: 16), font: .systemFont(ofSize: 10, weight: .bold), color: level.pdfColor)
         }
     }
 
-    private func drawFineKinneyReference(origin: CGPoint) {
+    private func drawFineKinneyReference(origin: CGPoint, language: RDLanguage) {
         let tableWidth: CGFloat = 246
         let gap: CGFloat = 18
-        drawReferenceTable(
-            title: "OLASILIK (O)",
-            columns: ["Değer", "Zararın gerçekleşme olasılığı"],
-            rows: [
+        let probabilityRows = language == .english
+            ? [
+                ["10", "Expected; near certain"],
+                ["6", "High; quite possible"],
+                ["3", "Possible"],
+                ["1", "Possible but unlikely"],
+                ["0.5", "Unexpected but possible"],
+                ["0.2", "Not expected"],
+            ]
+            : [
                 ["10", "Beklenir, kesin"],
                 ["6", "Yüksek, oldukça mümkün"],
                 ["3", "Olası"],
                 ["1", "Mümkün fakat düşük"],
                 ["0.5", "Beklenmez fakat mümkün"],
                 ["0.2", "Beklenmez"],
+            ]
+        drawReferenceTable(
+            title: copy(language: language, tr: "OLASILIK (O)", en: "PROBABILITY (P)"),
+            columns: [
+                copy(language: language, tr: "Değer", en: "Value"),
+                copy(language: language, tr: "Zararın gerçekleşme olasılığı", en: "Likelihood of harm"),
             ],
+            rows: probabilityRows,
             rect: CGRect(x: origin.x, y: origin.y, width: tableWidth, height: 212)
         )
-        drawReferenceTable(
-            title: "FREKANS (F)",
-            columns: ["Değer", "Tehlikeye maruz kalma tekrarı"],
-            rows: [
+        let frequencyRows = language == .english
+            ? [
+                ["10", "Almost continuous / several times per hour"],
+                ["6", "Frequent / once or several times per day"],
+                ["3", "Occasional / several times per week"],
+                ["2", "Infrequent / several times per month"],
+                ["1", "Rare / several times per year"],
+                ["0.5", "Very rare / once per year or less"],
+            ]
+            : [
                 ["10", "Hemen hemen sürekli / saatte birkaç defa"],
                 ["6", "Sık / günde bir veya birkaç defa"],
                 ["3", "Ara sıra / haftada birkaç defa"],
                 ["2", "Sık değil / ayda birkaç defa"],
                 ["1", "Seyrek / yılda birkaç defa"],
                 ["0.5", "Çok seyrek / yılda bir veya daha az"],
+            ]
+        drawReferenceTable(
+            title: copy(language: language, tr: "FREKANS (F)", en: "FREQUENCY (F)"),
+            columns: [
+                copy(language: language, tr: "Değer", en: "Value"),
+                copy(language: language, tr: "Tehlikeye maruz kalma tekrarı", en: "Exposure frequency"),
             ],
+            rows: frequencyRows,
             rect: CGRect(x: origin.x + tableWidth + gap, y: origin.y, width: tableWidth, height: 212)
         )
-        drawReferenceTable(
-            title: "ŞİDDET (Ş)",
-            columns: ["Değer", "İnsan/çevre üzerinde tahmini zarar"],
-            rows: [
+        let severityRows = language == .english
+            ? [
+                ["100", "Multiple fatalities / environmental disaster"],
+                ["40", "Fatality / serious environmental harm"],
+                ["15", "Permanent injury or work loss"],
+                ["7", "Significant injury / external first aid"],
+                ["3", "Minor injury / on-site first aid"],
+                ["1", "Near miss / no environmental harm"],
+            ]
+            : [
                 ["100", "Birden fazla ölümlü kaza / çevresel felaket"],
                 ["40", "Ölümlü kaza / ciddi çevresel zarar"],
                 ["15", "Kalıcı hasar veya iş kaybı"],
                 ["7", "Önemli yaralanma / dış ilk yardım"],
                 ["3", "Küçük yaralanma / iç ilk yardım"],
                 ["1", "Ucuz atlatma / çevresel zarar yok"],
+            ]
+        drawReferenceTable(
+            title: copy(language: language, tr: "ŞİDDET (Ş)", en: "SEVERITY (S)"),
+            columns: [
+                copy(language: language, tr: "Değer", en: "Value"),
+                copy(language: language, tr: "İnsan/çevre üzerinde tahmini zarar", en: "Estimated harm to people/environment"),
             ],
+            rows: severityRows,
             rect: CGRect(x: origin.x + (tableWidth + gap) * 2, y: origin.y, width: tableWidth, height: 212)
         )
 
-        drawReferenceTable(
-            title: "RİSK DEĞERİ (R = O x F x Ş)",
-            columns: ["Risk değeri", "Risk adı", "Eylem", "Termin"],
-            rows: [
+        let riskRows = language == .english
+            ? [
+                ["1801 ≤ R", "Intolerable", "Stop work immediately; consider isolating the area.", "Immediate / 1 week"],
+                ["401 ≤ R < 1801", "Act as soon as possible", "Restrict activity until risk is reduced.", "Less than 1 month"],
+                ["201 ≤ R < 401", "Substantial risk", "Take urgent action and monitor the activity.", "1–3 months"],
+                ["71 ≤ R < 201", "Significant risk", "Start a corrective action plan.", "6 months"],
+                ["21 ≤ R < 71", "Possible risk", "Maintain and monitor controls.", "1 year"],
+                ["R < 21", "Minor risk", "Additional controls may not be required.", "Review"],
+            ]
+            : [
                 ["1801 ≤ R", "Tolerans gösterilemez", "İş derhal durdurulur; tesis/çevre kapatılması düşünülebilir.", "Hemen / 1 hafta"],
                 ["401 ≤ R < 1801", "En kısa sürede giderilecek", "Risk kabul edilebilir seviyeye düşene kadar faaliyet kısıtlanır.", "1 aydan kısa"],
                 ["201 ≤ R < 401", "Esaslı risk", "Acil önlem alınır ve faaliyet izlenir.", "1-3 ay"],
                 ["71 ≤ R < 201", "Önemli risk", "Düzeltici faaliyet planı başlatılır.", "6 ay"],
                 ["21 ≤ R < 71", "Olası risk", "Kontroller sürdürülür ve izlenir.", "1 yıl"],
                 ["R < 21", "Önemsiz risk", "İlave kontrole gerek olmayabilir.", "Kontrol"],
+            ]
+        drawReferenceTable(
+            title: copy(language: language, tr: "RİSK DEĞERİ (R = O x F x Ş)", en: "RISK VALUE (R = P × F × S)"),
+            columns: [
+                copy(language: language, tr: "Risk değeri", en: "Risk value"),
+                copy(language: language, tr: "Risk adı", en: "Risk band"),
+                copy(language: language, tr: "Eylem", en: "Action"),
+                copy(language: language, tr: "Termin", en: "Due"),
             ],
+            rows: riskRows,
             rect: CGRect(x: origin.x, y: origin.y + 244, width: 774, height: 178),
             rowColors: [.rdPDFCritical, .rdPDFCritical, .rdPDFHigh, .rdPDFMedium, .rdPDFLow, .rdPDFGreen]
         )
     }
 
-    private func drawMatrix5Reference(origin: CGPoint) {
-        drawReferenceTable(
-            title: "OLASILIK (O)",
-            columns: ["Derece", "Tanım"],
-            rows: [
+    private func drawMatrix5Reference(origin: CGPoint, language: RDLanguage) {
+        let probabilityRows = language == .english
+            ? [
+                ["1", "Very unlikely"],
+                ["2", "Unlikely"],
+                ["3", "Possible"],
+                ["4", "Likely"],
+                ["5", "Very likely"],
+            ]
+            : [
                 ["1", "Gerçekleşme ihtimali çok az"],
                 ["2", "Gerçekleşme ihtimali az"],
                 ["3", "Gerçekleşme ihtimali var"],
                 ["4", "Gerçekleşme ihtimali yüksek"],
                 ["5", "Gerçekleşme ihtimali çok yüksek"],
+            ]
+        drawReferenceTable(
+            title: copy(language: language, tr: "OLASILIK (O)", en: "PROBABILITY (P)"),
+            columns: [
+                copy(language: language, tr: "Derece", en: "Rating"),
+                copy(language: language, tr: "Tanım", en: "Description"),
             ],
+            rows: probabilityRows,
             rect: CGRect(x: origin.x, y: origin.y, width: 360, height: 162)
         )
-        drawReferenceTable(
-            title: "ŞİDDET (Ş)",
-            columns: ["Derece", "Tanım"],
-            rows: [
+        let severityRows = language == .english
+            ? [
+                ["1", "Minor injury / no lost time"],
+                ["2", "Minor injury requiring first aid"],
+                ["3", "Lost time or treatment required"],
+                ["4", "Long-term absence / serious injury"],
+                ["5", "Permanent disability or fatality"],
+            ]
+            : [
                 ["1", "Hafif yaralanmalar / iş günü kaybı yok"],
                 ["2", "İlk yardım gerektiren küçük yaralanma"],
                 ["3", "İş günü kaybı veya tedavi gerektiren yaralanma"],
                 ["4", "Uzun süreli kayıp / ağır yaralanma"],
                 ["5", "Kalıcı iş göremezlik veya ölüm"],
+            ]
+        drawReferenceTable(
+            title: copy(language: language, tr: "ŞİDDET (Ş)", en: "SEVERITY (S)"),
+            columns: [
+                copy(language: language, tr: "Derece", en: "Rating"),
+                copy(language: language, tr: "Tanım", en: "Description"),
             ],
+            rows: severityRows,
             rect: CGRect(x: origin.x + 392, y: origin.y, width: 382, height: 162)
         )
 
         let matrixRect = CGRect(x: origin.x + 74, y: origin.y + 214, width: 620, height: 232)
-        drawText("5x5 Risk Matrisi - R = O x Ş", in: CGRect(x: matrixRect.minX, y: matrixRect.minY - 28, width: matrixRect.width, height: 18), font: .systemFont(ofSize: 12, weight: .bold), color: .rdPDFBlack, alignment: .center)
+        drawText(
+            copy(language: language, tr: "5x5 Risk Matrisi - R = O x Ş", en: "5×5 Risk Matrix — R = P × S"),
+            in: CGRect(x: matrixRect.minX, y: matrixRect.minY - 28, width: matrixRect.width, height: 18),
+            font: .systemFont(ofSize: 12, weight: .bold),
+            color: .rdPDFBlack,
+            alignment: .center
+        )
         let cellW = matrixRect.width / 6
         let cellH = matrixRect.height / 6
         for row in 0..<6 {
@@ -542,7 +691,13 @@ final class PDFReportService: @unchecked Sendable {
                 let rect = CGRect(x: matrixRect.minX + CGFloat(col) * cellW, y: matrixRect.minY + CGFloat(row) * cellH, width: cellW, height: cellH)
                 if row == 0 && col == 0 {
                     roundedStroke(rect, radius: 0, stroke: .rdPDFLine, fill: .rdPDFFog)
-                    drawText("O / Ş", in: rect.insetBy(dx: 4, dy: 10), font: .systemFont(ofSize: 8, weight: .bold), color: .rdPDFSlate, alignment: .center)
+                    drawText(
+                        copy(language: language, tr: "O / Ş", en: "P / S"),
+                        in: rect.insetBy(dx: 4, dy: 10),
+                        font: .systemFont(ofSize: 8, weight: .bold),
+                        color: .rdPDFSlate,
+                        alignment: .center
+                    )
                 } else if row == 0 {
                     roundedStroke(rect, radius: 0, stroke: .rdPDFLine, fill: .rdPDFFog)
                     drawText("\(col)", in: rect.insetBy(dx: 4, dy: 10), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFBlack, alignment: .center)
@@ -562,37 +717,46 @@ final class PDFReportService: @unchecked Sendable {
         roundedStroke(rect, radius: 10, stroke: .rdPDFLine, fill: .white)
         let total = input.findings.reduce(0) { $0 + $1.score(for: input.options.method) }
         let top = input.findings.map { $0.score(for: input.options.method) }.max() ?? 0
-        drawText("Metodoloji", in: CGRect(x: rect.minX + 14, y: rect.minY + 10, width: 120, height: 16), font: .systemFont(ofSize: 11, weight: .bold), color: .rdPDFSlate)
-        drawText("\(input.options.method.fullName) · R = \(input.options.method.formula)", in: CGRect(x: rect.minX + 14, y: rect.minY + 29, width: 250, height: 16), font: .systemFont(ofSize: 11, weight: .medium), color: .rdPDFBlack)
-        drawText("En yüksek: \(scoreText(top))", in: CGRect(x: rect.minX + 340, y: rect.minY + 18, width: 140, height: 18), font: .monospacedSystemFont(ofSize: 12, weight: .bold), color: .rdPDFBlack)
-        drawText("Toplam: \(scoreText(total))", in: CGRect(x: rect.minX + 520, y: rect.minY + 18, width: 140, height: 18), font: .monospacedSystemFont(ofSize: 12, weight: .bold), color: .rdPDFBlack)
+        let language = input.options.language
+        drawText(copy(language: language, tr: "Metodoloji", en: "Methodology"), in: CGRect(x: rect.minX + 14, y: rect.minY + 7, width: 120, height: 16), font: .systemFont(ofSize: 11, weight: .bold), color: .rdPDFSlate)
+        drawText("\(methodName(input.options.method, language: language)) · R = \(methodFormula(input.options.method, language: language))", in: CGRect(x: rect.minX + 14, y: rect.minY + 25, width: 250, height: 16), font: .systemFont(ofSize: 11, weight: .medium), color: .rdPDFBlack)
+        drawText("\(copy(language: language, tr: "En yüksek", en: "Highest")): \(scoreText(top, language: language))", in: CGRect(x: rect.minX + 340, y: rect.minY + 15, width: 140, height: 18), font: .monospacedSystemFont(ofSize: 12, weight: .bold), color: .rdPDFBlack)
+        drawText("\(copy(language: language, tr: "Toplam", en: "Total")): \(scoreText(total, language: language))", in: CGRect(x: rect.minX + 520, y: rect.minY + 15, width: 140, height: 18), font: .monospacedSystemFont(ofSize: 12, weight: .bold), color: .rdPDFBlack)
     }
 
     private func drawRiskAnalysisInfoStrip(input: ReportInput, rect: CGRect) {
         roundedStroke(rect, radius: 0, stroke: .rdPDFBlack, fill: .rdPDFFog, lineWidth: 1)
         let analysis = input.bundle.analysis
-        let prepared = input.options.preparedBy.nonEmpty ?? input.profile?.displayName ?? "Kullanıcı"
-        let company = input.options.companyName.nonEmpty ?? input.profile?.companyName ?? "Firma belirtilmedi"
-        let title = input.options.preparedTitle.nonEmpty ?? input.profile?.title ?? "Belirtilmedi"
-        let certificate = input.options.certificateNumber.nonEmpty ?? input.profile?.certificateNumber ?? "Belirtilmedi"
+        let language = input.options.language
+        let unspecified = copy(language: language, tr: "Belirtilmedi", en: "Not provided")
+        let prepared = input.options.preparedBy.nonEmpty
+            ?? input.profile?.displayName
+            ?? copy(language: language, tr: "Kullanıcı", en: "User")
+        let company = input.options.companyName.nonEmpty
+            ?? input.profile?.companyName
+            ?? copy(language: language, tr: "Firma belirtilmedi", en: "Company not provided")
+        let title = input.options.preparedTitle.nonEmpty ?? input.profile?.title ?? unspecified
+        let certificate = input.options.certificateNumber.nonEmpty ?? input.profile?.certificateNumber ?? unspecified
         let companyInfo = input.options.companyInfo.nonEmpty ?? input.profile?.phone
-        let sectorLine = analysis.analysisSectorLabel.map { "Analiz kapsamı: \($0)\n" } ?? ""
+        let sectorLine = analysis.analysisSectorID.map {
+            "\(copy(language: language, tr: "Analiz kapsamı", en: "Analysis scope")): \($0.label(language: language))\n"
+        } ?? ""
         drawFittingText(
-            "\(sectorLine)Analiz: \(analysis.title)\nFirma: \(company)\nFirma bilgisi: \(companyInfo ?? "Belirtilmedi")",
+            "\(sectorLine)\(copy(language: language, tr: "Analiz", en: "Analysis")): \(analysis.title)\n\(copy(language: language, tr: "Firma", en: "Company")): \(company)\n\(copy(language: language, tr: "Firma bilgisi", en: "Company details")): \(companyInfo ?? unspecified)",
             in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 260, height: 37),
             baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
             minimumFontSize: 5.8,
             color: .rdPDFSlate
         )
         drawFittingText(
-            "Hazırlayan: \(prepared)\nÜnvan: \(title)\nBelge No: \(certificate)",
+            "\(copy(language: language, tr: "Hazırlayan", en: "Prepared by")): \(prepared)\n\(copy(language: language, tr: "Ünvan", en: "Title")): \(title)\n\(copy(language: language, tr: "Belge No", en: "Certificate no.")): \(certificate)",
             in: CGRect(x: rect.minX + 294, y: rect.minY + 5, width: 220, height: 37),
             baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
             minimumFontSize: 5.8,
             color: .rdPDFSlate
         )
         drawFittingText(
-            "Tarih: \(formattedDate(analysis.createdAt, language: input.options.language))\nDoküman No: #\(String(analysis.id.uuidString.prefix(8)).uppercased())",
+            "\(copy(language: language, tr: "Tarih", en: "Date")): \(formattedDate(analysis.createdAt, language: language))\n\(copy(language: language, tr: "Doküman No", en: "Document no.")): #\(String(analysis.id.uuidString.prefix(8)).uppercased())",
             in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: 24),
             baseFont: .monospacedSystemFont(ofSize: 7.4, weight: .semibold),
             minimumFontSize: 5.8,
@@ -605,8 +769,18 @@ final class PDFReportService: @unchecked Sendable {
         let x: CGFloat = 32
         let y: CGFloat = 82
         let headerH: CGFloat = 44
-        let widths: [CGFloat] = [22, 54, 130, 62, 24, 24, 24, 38, 58, 168, 140, 58]
-        let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "F", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Mevzuat", "Termin"]
+        let includesRegulatory = reportIncludesRegulatory(input)
+        let widths: [CGFloat] = includesRegulatory
+            ? [22, 54, 130, 62, 24, 24, 24, 38, 58, 168, 140, 58]
+            : [22, 54, 130, 62, 24, 24, 24, 38, 58, 308, 58]
+        let headers: [String]
+        if input.options.language == .english {
+            headers = ["No.", "Activity\narea", "Hazardous condition / behaviour", "Risk", "P", "F", "S", "R", "Risk\nband", "Control measures", "Due"]
+        } else {
+            headers = includesRegulatory
+                ? ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "F", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Mevzuat", "Termin"]
+                : ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "F", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Termin"]
+        }
 
         drawGridHeader(x: x, y: y, widths: widths, height: headerH, headers: headers, fill: .rdPDFTableBlue)
 
@@ -624,8 +798,18 @@ final class PDFReportService: @unchecked Sendable {
         let x: CGFloat = 32
         let y: CGFloat = 82
         let headerH: CGFloat = 44
-        let widths: [CGFloat] = [22, 58, 132, 66, 26, 26, 38, 56, 170, 130, 54]
-        let headers = ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Mevzuat", "Termin"]
+        let includesRegulatory = reportIncludesRegulatory(input)
+        let widths: [CGFloat] = includesRegulatory
+            ? [22, 58, 132, 66, 26, 26, 38, 56, 170, 130, 54]
+            : [22, 58, 132, 66, 26, 26, 38, 56, 300, 54]
+        let headers: [String]
+        if input.options.language == .english {
+            headers = ["No.", "Activity\narea", "Hazardous condition / behaviour", "Risk", "P", "S", "R", "Risk\nband", "Control measures", "Due"]
+        } else {
+            headers = includesRegulatory
+                ? ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Mevzuat", "Termin"]
+                : ["No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri", "Termin"]
+        }
 
         drawGridHeader(x: x, y: y, widths: widths, height: headerH, headers: headers, fill: .rdPDFTableBlue)
 
@@ -640,43 +824,57 @@ final class PDFReportService: @unchecked Sendable {
     }
 
     private func fineKinneyAssessmentValues(input: ReportInput, finding: Finding, ordinal: Int) -> [String] {
-        [
+        var values = [
             "\(ordinal)",
-            canvasLabel(input.bundle.analysis.canvas),
+            canvasLabel(input.bundle.analysis.canvas, language: input.options.language),
             finding.displayTitle + "\n" + finding.description,
             finding.category,
-            scoreText(finding.fk.probability),
-            scoreText(finding.fk.frequency),
-            scoreText(finding.fk.severity),
-            scoreText(finding.fkScore),
-            finding.fkBand.label,
-            actionTextWithRootCause(for: finding),
-            finding.references,
-            suggestedTerm(for: finding.fkBand.level),
+            scoreText(finding.fk.probability, language: input.options.language),
+            scoreText(finding.fk.frequency, language: input.options.language),
+            scoreText(finding.fk.severity, language: input.options.language),
+            scoreText(finding.fkScore, language: input.options.language),
+            riskBandLabel(finding.fkBand.level, method: .fineKinney, score: finding.fkScore, language: input.options.language),
+            actionTextWithRootCause(for: finding, language: input.options.language),
         ]
+        if reportIncludesRegulatory(input) {
+            values.append(finding.references)
+        }
+        values.append(suggestedTerm(for: finding.fkBand.level, language: input.options.language))
+        return values
     }
 
     private func matrixAssessmentValues(input: ReportInput, finding: Finding, ordinal: Int) -> [String] {
-        [
+        var values = [
             "\(ordinal)",
-            canvasLabel(input.bundle.analysis.canvas),
+            canvasLabel(input.bundle.analysis.canvas, language: input.options.language),
             finding.displayTitle + "\n" + finding.description,
             finding.category,
             "\(finding.m5.probability)",
             "\(finding.m5.severity)",
             "\(finding.m5Score)",
-            finding.m5Band.label,
-            actionTextWithRootCause(for: finding),
-            finding.references,
-            suggestedTerm(for: finding.m5Band.level),
+            riskBandLabel(finding.m5Band.level, method: .matrix5x5, score: Double(finding.m5Score), language: input.options.language),
+            actionTextWithRootCause(for: finding, language: input.options.language),
         ]
+        if reportIncludesRegulatory(input) {
+            values.append(finding.references)
+        }
+        values.append(suggestedTerm(for: finding.m5Band.level, language: input.options.language))
+        return values
     }
 
     private func assessmentRowHeight(input: ReportInput, finding: Finding, ordinal: Int) -> CGFloat {
         let isFineKinney = input.options.method == .fineKinney
-        let widths: [CGFloat] = isFineKinney
-            ? [22, 54, 130, 62, 24, 24, 24, 38, 58, 168, 140, 58]
-            : [22, 58, 132, 66, 26, 26, 38, 56, 170, 130, 54]
+        let includesRegulatory = reportIncludesRegulatory(input)
+        let widths: [CGFloat]
+        if isFineKinney {
+            widths = includesRegulatory
+                ? [22, 54, 130, 62, 24, 24, 24, 38, 58, 168, 140, 58]
+                : [22, 54, 130, 62, 24, 24, 24, 38, 58, 308, 58]
+        } else {
+            widths = includesRegulatory
+                ? [22, 58, 132, 66, 26, 26, 38, 56, 170, 130, 54]
+                : [22, 58, 132, 66, 26, 26, 38, 56, 300, 54]
+        }
         let values = isFineKinney
             ? fineKinneyAssessmentValues(input: input, finding: finding, ordinal: ordinal)
             : matrixAssessmentValues(input: input, finding: finding, ordinal: ordinal)
@@ -790,24 +988,47 @@ final class PDFReportService: @unchecked Sendable {
         }
     }
 
-    private func drawTableHeader(y: CGFloat) {
+    private func drawTableHeader(y: CGFloat, language: RDLanguage) {
         let x: CGFloat = 42
         drawText("#", in: CGRect(x: x, y: y, width: 28, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
-        drawText("RİSK / KANIT", in: CGRect(x: x + 36, y: y, width: 300, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
-        drawText("SKOR", in: CGRect(x: x + 372, y: y, width: 70, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
-        drawText("ÖNLEM / KONTROL TEDBİRLERİ", in: CGRect(x: x + 462, y: y, width: 290, height: 18), font: .systemFont(ofSize: 8.2, weight: .bold), color: .rdPDFSlate)
+        drawText(copy(language: language, tr: "RİSK / KANIT", en: "RISK / EVIDENCE"), in: CGRect(x: x + 36, y: y, width: 300, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
+        drawText(copy(language: language, tr: "SKOR", en: "SCORE"), in: CGRect(x: x + 372, y: y, width: 70, height: 18), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate)
+        drawText(copy(language: language, tr: "ÖNLEM / KONTROL TEDBİRLERİ", en: "ACTION / CONTROL MEASURES"), in: CGRect(x: x + 462, y: y, width: 290, height: 18), font: .systemFont(ofSize: 8.2, weight: .bold), color: .rdPDFSlate)
         UIColor.rdPDFLine.setFill()
         UIBezierPath(rect: CGRect(x: 42, y: y + 22, width: 758, height: 1)).fill()
     }
 
-    private func actionTextWithRootCause(for finding: Finding) -> String {
+    private func actionTextWithRootCause(for finding: Finding, language: RDLanguage) -> String {
         let rootCause = finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines)
-        let measuresText = finding.controlMeasuresText
+        let measures = finding.measures.filter {
+            !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        let measuresText: String
+        if measures.isEmpty {
+            let action = finding.action.trimmingCharacters(in: .whitespacesAndNewlines)
+            measuresText = action.isEmpty
+                ? ""
+                : "\(copy(language: language, tr: "Düzeltici Önlem", en: "Corrective action")): \(action)"
+        } else {
+            measuresText = measures.map { measure in
+                let title: String
+                switch measure.kind {
+                case .corrective:
+                    title = copy(language: language, tr: "Düzeltici Önlem", en: "Corrective action")
+                case .preventive:
+                    title = copy(language: language, tr: "Önleyici Kontrol", en: "Preventive control")
+                case .unknown:
+                    title = measure.title.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+                        ?? copy(language: language, tr: "Kontrol Tedbiri", en: "Control measure")
+                }
+                return "\(title): \(measure.text)"
+            }.joined(separator: "\n")
+        }
         guard !rootCause.isEmpty else { return measuresText }
-        return "\(measuresText)\n\nKök neden: \(rootCause)"
+        return "\(measuresText)\n\n\(copy(language: language, tr: "Kök neden", en: "Root cause")): \(rootCause)"
     }
 
-    private func standardFindingRowHeight(for finding: Finding) -> CGFloat {
+    private func standardFindingRowHeight(for finding: Finding, language: RDLanguage) -> CGFloat {
         let minHeight: CGFloat = 82
         let titleHeight = max(
             18,
@@ -825,7 +1046,7 @@ final class PDFReportService: @unchecked Sendable {
             alignment: .left
         )
         let actionHeight = measuredTextHeight(
-            actionTextWithRootCause(for: finding),
+            actionTextWithRootCause(for: finding, language: language),
             width: 296,
             font: .systemFont(ofSize: 10),
             alignment: .left
@@ -836,7 +1057,14 @@ final class PDFReportService: @unchecked Sendable {
         return ceil(max(minHeight, riskColumnHeight, actionColumnHeight))
     }
 
-    private func drawFindingRow(ordinal: Int, finding: Finding, method: RiskMethod, y: CGFloat, height: CGFloat) {
+    private func drawFindingRow(
+        ordinal: Int,
+        finding: Finding,
+        method: RiskMethod,
+        language: RDLanguage,
+        y: CGFloat,
+        height: CGFloat
+    ) {
         let x: CGFloat = 42
         let rowRect = CGRect(x: x, y: y, width: 758, height: height)
         roundedStroke(rowRect, radius: 10, stroke: .rdPDFLine, fill: .white)
@@ -870,11 +1098,12 @@ final class PDFReportService: @unchecked Sendable {
 
         let band = finding.band(for: method)
         roundedFill(CGRect(x: x + 370, y: y + 14, width: 70, height: 34), radius: 8, color: band.level.pdfColor)
-        drawText(scoreText(finding.score(for: method)), in: CGRect(x: x + 370, y: y + 19, width: 70, height: 20), font: .monospacedSystemFont(ofSize: 16, weight: .bold), color: .white, alignment: .center)
-        drawText(band.label, in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
+        let score = finding.score(for: method)
+        drawText(scoreText(score, language: language), in: CGRect(x: x + 370, y: y + 19, width: 70, height: 20), font: .monospacedSystemFont(ofSize: 16, weight: .bold), color: .white, alignment: .center)
+        drawText(riskBandLabel(band.level, method: method, score: score, language: language), in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
 
         drawFittingText(
-            actionTextWithRootCause(for: finding),
+            actionTextWithRootCause(for: finding, language: language),
             in: CGRect(x: x + 462, y: y + 12, width: 296, height: max(18, height - 24)),
             baseFont: .systemFont(ofSize: 10),
             minimumFontSize: 7.5,
@@ -1024,22 +1253,52 @@ final class PDFReportService: @unchecked Sendable {
     }
 
     private func formattedDate(_ raw: String?, language: RDLanguage = .turkish) -> String {
-        guard let raw else { return "Tarih yok" }
+        guard let raw else {
+            return copy(language: language, tr: "Tarih yok", en: "Date unavailable")
+        }
         let fractional = ISO8601DateFormatter()
         fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let date = fractional.date(from: raw) ?? ISO8601DateFormatter().date(from: raw) ?? Date()
         let formatter = DateFormatter()
         formatter.locale = language.locale
-        formatter.dateFormat = "d MMMM yyyy · HH:mm"
+        formatter.dateStyle = .long
+        formatter.timeStyle = .short
         return formatter.string(from: date)
     }
 
-    private func canvasLabel(_ id: String) -> String {
-        AnalysisCanvas.all.first(where: { $0.id == id })?.title ?? id.capitalized
+    private func canvasLabel(_ id: String, language: RDLanguage) -> String {
+        if language == .turkish {
+            return AnalysisCanvas.all.first(where: { $0.id == id })?.title ?? id.capitalized
+        }
+        let englishLabels: [String: String] = [
+            "general": "General",
+            "ppe": "PPE",
+            "machine": "Machinery",
+            "warning_signs": "Warning signs",
+            "electrical": "Electrical",
+            "sector": "Sector-specific",
+            "fire": "Fire",
+            "ergonomics": "Special equipment",
+            "environment_measurement": "Workplace measurements",
+            "explosion": "Explosion",
+            "environment": "Environment",
+            "legislation": "Regulatory review",
+            "working_at_height": "Working at height",
+            "mobile_equipment": "Mobile equipment",
+            "general_premium": "General premium",
+            "construction_machinery": "Construction machinery",
+        ]
+        return englishLabels[id] ?? id.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
-    private func scoreText(_ value: Double) -> String {
-        value == floor(value) ? "\(Int(value))" : String(format: "%.1f", value)
+    private func scoreText(_ value: Double, language: RDLanguage) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = language.locale
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = value == floor(value) ? 0 : 1
+        formatter.usesGroupingSeparator = false
+        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 
     private func matrixColor(_ score: Int) -> UIColor {
@@ -1051,16 +1310,240 @@ final class PDFReportService: @unchecked Sendable {
         }
     }
 
-    private func suggestedTerm(for level: RiskLevel) -> String {
+    private func suggestedTerm(for level: RiskLevel, language: RDLanguage) -> String {
+        switch (language, level) {
+        case (.turkish, .critical): return "Acil / 1-3 gün"
+        case (.turkish, .high): return "7 gün"
+        case (.turkish, .medium): return "15 gün"
+        case (.turkish, .low): return "30 gün"
+        case (.turkish, .unknown): return "Değerlendirilecek"
+        case (.english, .critical): return "Urgent / 1–3 days"
+        case (.english, .high): return "7 days"
+        case (.english, .medium): return "15 days"
+        case (.english, .low): return "30 days"
+        case (.english, .unknown): return "To be assessed"
+        }
+    }
+
+    private func reportIncludesRegulatory(_ input: ReportInput) -> Bool {
+        input.options.language == .turkish
+            && input.bundle.analysis.supportsStructuredRegulatoryReferences
+    }
+
+    private func copy(language: RDLanguage, tr: String, en: String) -> String {
+        language == .english ? en : tr
+    }
+
+    private func findingCountText(_ count: Int, language: RDLanguage) -> String {
+        if language == .english {
+            return count == 1 ? "1 finding" : "\(count) findings"
+        }
+        return "\(count) bulgu"
+    }
+
+    private func methodName(_ method: RiskMethod, language: RDLanguage) -> String {
+        switch (language, method) {
+        case (.english, .fineKinney): return "Fine-Kinney"
+        case (.english, .matrix5x5): return "5×5 L-Type Matrix"
+        case (.turkish, .fineKinney): return "Fine-Kinney"
+        case (.turkish, .matrix5x5): return "5×5 L-Tipi Matris"
+        }
+    }
+
+    private func methodFormula(_ method: RiskMethod, language: RDLanguage) -> String {
+        switch (language, method) {
+        case (.english, .fineKinney): return "P × F × S"
+        case (.english, .matrix5x5): return "P × S"
+        case (.turkish, .fineKinney): return "O × F × Ş"
+        case (.turkish, .matrix5x5): return "O × Ş"
+        }
+    }
+
+    private func riskLevelLabel(_ level: RiskLevel, language: RDLanguage) -> String {
+        guard language == .english else { return level.label }
         switch level {
-        case .critical: return "Acil / 1-3 gün"
-        case .high: return "7 gün"
-        case .medium: return "15 gün"
-        case .low: return "30 gün"
-        case .unknown: return "Değerlendirilecek"
+        case .critical: return "Critical"
+        case .high: return "High"
+        case .medium: return "Medium"
+        case .low: return "Low"
+        case .unknown: return "Unknown"
+        }
+    }
+
+    private func riskBandLabel(
+        _ level: RiskLevel,
+        method: RiskMethod,
+        score: Double,
+        language: RDLanguage
+    ) -> String {
+        guard language == .english else {
+            return method == .fineKinney
+                ? RiskBands.fineKinney(score).label
+                : RiskBands.matrix5x5(Int(score)).label
+        }
+        switch level {
+        case .critical: return "Intolerable"
+        case .high: return "High risk"
+        case .medium: return "Significant risk"
+        case .low: return score <= (method == .fineKinney ? 20 : 2) ? "Minor risk" : "Low risk"
+        case .unknown: return "Unassessed"
+        }
+    }
+
+    private func reportDisclaimer(language: RDLanguage) -> String {
+        copy(
+            language: language,
+            tr: "Bu rapor saha güvenliği değerlendirmesini destekler; yetkili kişi değerlendirmesinin yerine geçmez ve mevzuata uygunluk kararı oluşturmaz.",
+            en: "This report supports a safety review; it does not replace assessment by a competent person or determine legal compliance."
+        )
+    }
+}
+
+#if DEBUG
+extension PDFReportService {
+    static func runEnglishExtractionSelfTest() throws {
+        let analysisJSON = """
+        {
+          "id": "00000000-0000-0000-0000-00000000e501",
+          "user_id": "00000000-0000-0000-0000-00000000e502",
+          "title": "Warehouse inspection",
+          "kind": "photo",
+          "canvas": "general",
+          "status": "completed",
+          "ai_summary": "One finding requires corrective action.",
+          "finding_count": 1,
+          "created_at": "2026-07-30T12:00:00Z",
+          "analysis_sector": "logistics_warehouse",
+          "analysis_sector_source": "user_selected",
+          "analysis_sector_prompt_version": "active-sector-v1",
+          "output_language": "en",
+          "output_locale": "en-GB",
+          "work_jurisdiction_country": "ZZ",
+          "safety_profile_id": "english_international_generic_v1",
+          "safety_profile_version": 1,
+          "localization_snapshot": {
+            "schema_version": 1,
+            "output_language": "en",
+            "output_locale": "en-GB",
+            "work_jurisdiction_country": "ZZ",
+            "work_jurisdiction_region": null,
+            "safety_profile_id": "english_international_generic_v1",
+            "safety_profile_version": 1,
+            "structured_regulatory_references_enabled": false
+          }
+        }
+        """
+        let analysis = try JSONDecoder().decode(
+            AnalysisRow.self,
+            from: Data(analysisJSON.utf8)
+        )
+        let finding = Finding(
+            id: 1,
+            title: "Unprotected loading edge",
+            category: "Fall hazard",
+            confidence: 0.96,
+            description: "The loading edge has no physical barrier.",
+            action: "Install a suitable barrier before work resumes.",
+            measures: [
+                FindingMeasure(
+                    kind: .corrective,
+                    title: "Corrective action",
+                    text: "Install a suitable barrier before work resumes."
+                ),
+                FindingMeasure(
+                    kind: .preventive,
+                    title: "Preventive control",
+                    text: "Add the barrier to the pre-use inspection."
+                ),
+            ],
+            references: "User-provided internal procedure",
+            rootCause: "The pre-use inspection did not cover loading edges.",
+            fk: FineKinneyParams(probability: 6, frequency: 3, severity: 15),
+            m5: FiveByFiveParams(probability: 4, severity: 5)
+        )
+        let bundle = AnalysisResultBundle(
+            analysis: analysis,
+            findings: [],
+            photos: []
+        )
+        let baseOptions = PDFReportOptions(
+            kind: .standard,
+            method: .fineKinney,
+            preparedBy: "Test Operator",
+            preparedTitle: "Safety professional",
+            certificateNumber: "",
+            companyName: "Test Company",
+            companyInfo: "",
+            companyID: nil,
+            language: .english
+        )
+
+        var extractedDocuments: [String] = []
+        for kind in [PDFReportKind.standard, .riskAnalysis] {
+            var options = baseOptions
+            options.kind = kind
+            let url = try PDFReportService.shared.generate(
+                input: ReportInput(
+                    bundle: bundle,
+                    findings: [finding],
+                    profile: nil,
+                    images: [],
+                    companyLogo: nil,
+                    options: options
+                )
+            )
+            guard let document = PDFDocument(url: url), let text = document.string else {
+                throw ReportExtractionSelfTestError.pdfTextUnavailable(kind.rawValue)
+            }
+            extractedDocuments.append(text)
+        }
+
+        let extracted = extractedDocuments.joined(separator: "\n")
+        let required = [
+            "Finding Summary",
+            "RISK / EVIDENCE",
+            "ACTION / CONTROL MEASURES",
+            "FINE-KINNEY METHOD REFERENCE TABLE",
+            "HAZARD AND RISK ASSESSMENT FORM",
+            "Root cause",
+            "This report supports a safety review",
+        ]
+        for marker in required where !extracted.localizedCaseInsensitiveContains(marker) {
+            throw ReportExtractionSelfTestError.requiredMarkerMissing(marker)
+        }
+
+        let forbidden = [
+            "Mevzuat",
+            "İSG Uzmanı",
+            "OSGB",
+            "ÇSGB",
+            "6331",
+            "mevzuata uygundur",
+            "yasal uygunluk",
+        ]
+        for marker in forbidden where extracted.localizedCaseInsensitiveContains(marker) {
+            throw ReportExtractionSelfTestError.forbiddenMarkerFound(marker)
+        }
+    }
+
+    private enum ReportExtractionSelfTestError: LocalizedError {
+        case pdfTextUnavailable(String)
+        case requiredMarkerMissing(String)
+        case forbiddenMarkerFound(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .pdfTextUnavailable(let kind):
+                return "PDF text extraction failed for \(kind)."
+            case .requiredMarkerMissing(let marker):
+                return "Required PDF marker missing: \(marker)"
+            case .forbiddenMarkerFound(let marker):
+                return "Forbidden PDF marker found: \(marker)"
+            }
         }
     }
 }
+#endif
 
 private extension String {
     var nonEmpty: String? {

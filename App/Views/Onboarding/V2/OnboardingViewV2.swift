@@ -33,9 +33,12 @@ struct OnboardingViewV2: View {
     var onPurchase: (OBPlan) async throws -> Void = { _ in }
     var onReloadSubscriptionOfferings: () async -> Void = {}
     var onRestorePurchases: () async throws -> Bool = { false }
+    var onSafetyProfileChange: (RDSafetyProfileID) -> Void = { _ in }
 
     init(
         initialStep: Int = 0,
+        appLanguage: RDLanguage = .current,
+        initialSafetyProfileID: RDSafetyProfileID? = nil,
         isAuthenticated: Bool = false,
         hasCompletedOnboarding: Bool = false,
         currentTier: SubscriptionTier = .free,
@@ -48,9 +51,16 @@ struct OnboardingViewV2: View {
         onSignInExisting: @escaping () -> Void = {},
         onPurchase: @escaping (OBPlan) async throws -> Void = { _ in },
         onReloadSubscriptionOfferings: @escaping () async -> Void = {},
-        onRestorePurchases: @escaping () async throws -> Bool = { false }
+        onRestorePurchases: @escaping () async throws -> Bool = { false },
+        onSafetyProfileChange: @escaping (RDSafetyProfileID) -> Void = { _ in }
     ) {
-        _state = StateObject(wrappedValue: OnboardingV2State(step: initialStep))
+        _state = StateObject(
+            wrappedValue: OnboardingV2State(
+                step: initialStep,
+                appLanguage: appLanguage,
+                safetyProfileID: initialSafetyProfileID
+            )
+        )
         self.isAuthenticated = isAuthenticated
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.currentTier = currentTier
@@ -64,6 +74,7 @@ struct OnboardingViewV2: View {
         self.onPurchase = onPurchase
         self.onReloadSubscriptionOfferings = onReloadSubscriptionOfferings
         self.onRestorePurchases = onRestorePurchases
+        self.onSafetyProfileChange = onSafetyProfileChange
     }
 
     var body: some View {
@@ -148,6 +159,13 @@ struct OnboardingViewV2: View {
         }
         .onChange(of: state.certificate) { _ in persistCurrentDraft() }
         .onChange(of: state.hazards) { _ in persistCurrentDraft() }
+        .onChange(of: state.professionalRole) { _ in persistCurrentDraft() }
+        .onChange(of: state.safetyProfileID) { profileID in
+            if let profileID {
+                onSafetyProfileChange(profileID)
+            }
+            persistCurrentDraft()
+        }
         .onChange(of: state.sectors) { _ in persistCurrentDraft() }
         .onChange(of: state.frequency) { _ in persistCurrentDraft() }
         .onChange(of: state.selectedPlan) { _ in persistCurrentDraft() }
@@ -171,9 +189,17 @@ struct OnboardingViewV2: View {
                 onNext: { state.next() }
             )
         case 2:
-            OBCertificateView(state: state, onBack: { state.back() }, onNext: { state.next() })
+            if state.appLanguage == .turkish {
+                OBCertificateView(state: state, onBack: { state.back() }, onNext: { state.next() })
+            } else {
+                OBProfessionalRoleView(state: state, onBack: { state.back() }, onNext: { state.next() })
+            }
         case 3:
-            OBHazardClassView(state: state, onBack: { state.back() }, onNext: { state.next() })
+            if state.appLanguage == .turkish {
+                OBHazardClassView(state: state, onBack: { state.back() }, onNext: { state.next() })
+            } else {
+                OBSafetyProfileSelectionView(state: state, onBack: { state.back() }, onNext: { state.next() })
+            }
         case 4:
             OBSectorView(state: state, onBack: { state.back() }, onNext: { state.next() })
         case 5:
@@ -283,7 +309,7 @@ struct OnboardingViewV2: View {
                     if hasActiveSubscription {
                         finishOnboarding()
                     } else {
-                        paywallNoticeMessage = "Geri yüklenecek aktif abonelik bulunamadı."
+                        paywallNoticeMessage = RDLocalization.string("onboarding.onboarding.view.v2.geri.yuklenecek.aktif.abonelik.bulunamadi.f996c003", table: .onboarding, fallback: "Geri yüklenecek aktif abonelik bulunamadı.")
                     }
                 }
             } catch {
@@ -291,8 +317,8 @@ struct OnboardingViewV2: View {
                     isPaywallWorking = false
                     paywallNoticeMessage = AppErrorMessage.makePurchase(
                         error,
-                        context: "Satın alma doğrulanamadı",
-                        fallbackTitle: "Satın alma doğrulanamadı"
+                        context: RDLocalization.string("onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.f439bf78", table: .onboarding, fallback: "Satın alma doğrulanamadı"),
+                        fallbackTitle: RDLocalization.string("onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.e8f9d653", table: .onboarding, fallback: "Satın alma doğrulanamadı")
                     ).message
                 }
             }
@@ -322,8 +348,8 @@ struct OnboardingViewV2: View {
                     isPaywallWorking = false
                     paywallNoticeMessage = AppErrorMessage.makePurchase(
                         error,
-                        context: "Satın alma doğrulanamadı",
-                        fallbackTitle: "Satın alma doğrulanamadı"
+                        context: RDLocalization.string("onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.7bdaab97", table: .onboarding, fallback: "Satın alma doğrulanamadı"),
+                        fallbackTitle: RDLocalization.string("onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.7ccf47ab", table: .onboarding, fallback: "Satın alma doğrulanamadı")
                     ).message
                 }
             }
@@ -361,13 +387,13 @@ private struct OBSkipConfirmationView: View {
                     .padding(.bottom, 2)
 
                 VStack(spacing: 8) {
-                    Text("Sana özel sonuçlar veremeyeceğiz")
+                    Text(RDLocalization.string("onboarding.onboarding.view.v2.sana.ozel.sonuclar.veremeyecegiz.38eef1fd", table: .onboarding, fallback: "Sana özel sonuçlar veremeyeceğiz"))
                         .font(.system(size: RDFontScale.size(23), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text("Birkaç kısa cevap, analizlerini sektörüne ve çalışma alanına göre daha isabetli hazırlamamıza yardım eder.")
+                    Text(RDLocalization.string("onboarding.onboarding.view.v2.birkac.kisa.cevap.analizlerini.sektorune.ve.cali.b9867bb8", table: .onboarding, fallback: "Birkaç kısa cevap, analizlerini sektörüne ve çalışma alanına göre daha isabetli hazırlamamıza yardım eder."))
                         .font(.system(size: RDFontScale.size(14)))
                         .lineSpacing(2)
                         .foregroundStyle(Color.rdSlate)
@@ -376,14 +402,14 @@ private struct OBSkipConfirmationView: View {
                 }
 
                 VStack(spacing: 10) {
-                    OBPrimaryButton(title: "Cevaplamaya devam et", trailingIcon: nil) {
+                    OBPrimaryButton(title: RDLocalization.string("onboarding.onboarding.view.v2.cevaplamaya.devam.et.7cad3cb1", table: .onboarding, fallback: "Cevaplamaya devam et"), trailingIcon: nil) {
                         onCancel()
                     }
 
                     Button {
                         onConfirm()
                     } label: {
-                        Text("Yine de atla")
+                        Text(RDLocalization.string("onboarding.onboarding.view.v2.yine.de.atla.de185fdb", table: .onboarding, fallback: "Yine de atla"))
                             .font(.system(size: RDFontScale.size(14), weight: .semibold))
                             .foregroundStyle(Color.rdSlate.opacity(0.72))
                             .frame(maxWidth: .infinity)

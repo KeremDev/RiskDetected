@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "review_status": "machine_draft",
+  "terms": [
+    {
+      "concept": "hazard",
+      "tr": "tehlike",
+      "en": "hazard",
+      "en-GB": "hazard",
+      "en-US": "hazard",
+      "en-AU": "hazard",
+      "en-CA": "hazard"
+    },
+    {
+      "concept": "finding",
+      "tr": "bulgu",
+      "en": "finding",
+      "en-GB": "finding",
+      "en-US": "finding",
+      "en-AU": "finding",
+      "en-CA": "finding"
+    },
+    {
+      "concept": "control_measure",
+      "tr": "kontrol tedbiri",
+      "en": "control measure",
+      "en-GB": "control measure",
+      "en-US": "control",
+      "en-AU": "control measure",
+      "en-CA": "control measure"
+    },
+    {
+      "concept": "corrective_action",
+      "tr": "düzeltici faaliyet",
+      "en": "corrective action",
+      "en-GB": "corrective action",
+      "en-US": "corrective action",
+      "en-AU": "corrective action",
+      "en-CA": "corrective action"
+    },
+    {
+      "concept": "risk_assessment",
+      "tr": "risk değerlendirmesi",
+      "en": "risk assessment",
+      "en-GB": "risk assessment",
+      "en-US": "hazard assessment",
+      "en-AU": "risk assessment",
+      "en-CA": "hazard assessment"
+    },
+    {
+      "concept": "occupational_safety_domain",
+      "tr": "iş sağlığı ve güvenliği",
+      "en": "workplace safety",
+      "en-GB": "health and safety",
+      "en-US": "occupational safety and health",
+      "en-AU": "work health and safety",
+      "en-CA": "occupational health and safety"
+    },
+    {
+      "concept": "inspection",
+      "tr": "saha incelemesi",
+      "en": "safety inspection",
+      "en-GB": "site inspection",
+      "en-US": "safety inspection",
+      "en-AU": "WHS inspection",
+      "en-CA": "OHS inspection"
+    },
+    {
+      "concept": "on_site_verification",
+      "tr": "sahada doğrulama",
+      "en": "on-site verification",
+      "en-GB": "on-site verification",
+      "en-US": "on-site verification",
+      "en-AU": "on-site verification",
+      "en-CA": "on-site verification"
+    }
+  ],
+  "hierarchy_of_controls": [
+    "elimination",
+    "substitution",
+    "engineering controls",
+    "administrative controls",
+    "personal protective equipment (PPE)"
+  ],
+  "risk_method_disclaimer": {
+    "semantic_key": "risk_method.legal_standard_disclaimer",
+    "review_status": "machine_draft",
+    "tr": "Fine-Kinney ve 5×5, riskleri önceliklendirmeye yardımcı olan ürün yöntemleridir; hukuki standart veya mevzuata uygunluk kanıtı değildir.",
+    "en": "Fine-Kinney and 5×5 are product methods for prioritising risk; they are not legal standards or evidence of regulatory compliance."
+  },
+  "risk_band_drafts": {
+    "fine_kinney": ["Intolerable", "High", "Substantial", "Possible", "Trivial"],
+    "matrix_5x5": ["Intolerable", "High", "Medium", "Low", "Trivial"]
+  }
+}

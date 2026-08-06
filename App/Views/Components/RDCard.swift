@@ -76,11 +76,11 @@ struct RDPlaceholderPhoto: View {
     VStack(spacing: 16) {
         RDCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Card title").font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
-                Text("Body text").foregroundStyle(Color.rdSlate)
+                Text(RDLocalization.string("localizable.rdcard.card.title.a9771b20", table: .localizable, fallback: "Kart başlığı")).font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                Text(RDLocalization.string("localizable.rdcard.body.text.cb0e2867", table: .localizable, fallback: "Gövde metni")).foregroundStyle(Color.rdSlate)
             }
         }
-        RDPlaceholderPhoto(label: "Saha")
+        RDPlaceholderPhoto(label: RDLocalization.string("localizable.rdcard.saha.da63570e", table: .localizable, fallback: "Saha"))
             .frame(height: 120)
     }
     .padding()

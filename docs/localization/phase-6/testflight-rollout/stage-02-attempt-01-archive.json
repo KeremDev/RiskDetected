@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "stage": 2,
+  "attempt": 1,
+  "disposition": "archived_blocked_attempt",
+  "reason": "Pipeline v2 stored passed language-validation evidence in raw_ai_response._input_audit but did not synchronize the indexed aggregate columns used by the rollout gate.",
+  "preserved_evidence": [
+    {
+      "path": "docs/localization/phase-6/testflight-rollout/stage-02-attempt-01-blocked-snapshot.json",
+      "sha256": "be07941ec0f0782533e4eebc681d8a3c33630a5464fa7966853fdf6129081a56"
+    },
+    {
+      "path": "docs/localization/phase-6/testflight-rollout/stage-02-attempt-01-blocked-result.json",
+      "sha256": "fcdb599a3d676e5f4de168e6c07401d20dd0adfafd10c95e8be4f324a40797cf"
+    }
+  ],
+  "remediation": {
+    "migration": "supabase/migrations/20260801191332_sync_pipeline_v2_language_validation_telemetry.sql",
+    "production_applied": true,
+    "backfill_source": "raw_ai_response._input_audit",
+    "backfill_policy": "Only completed analyses with a bounded passed, repaired, or failed audit status are synchronized.",
+    "verified_stage_window": {
+      "analyses": 3,
+      "passed": 3,
+      "one_attempt": 3,
+      "missing": 0
+    }
+  },
+  "safety": {
+    "runtime_feature_flags_changed": false,
+    "public_rollout_changed": false,
+    "raw_user_identity_recorded": false,
+    "original_evidence_deleted": false
+  }
+}

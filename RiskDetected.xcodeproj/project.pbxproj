@@ -112,6 +112,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A1000001000000000000A301 /* Build configuration list for PBXNativeTarget "RiskDetected" */;
 			buildPhases = (
+				A1000001000000000000A104 /* Localization release gate */,
 				A1000001000000000000A101 /* Sources */,
 				A1000001000000000000A100 /* Frameworks */,
 				A1000001000000000000A102 /* Resources */,
@@ -264,6 +265,102 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		A1000001000000000000A104 /* Localization release gate */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"$(SRCROOT)/Config/LocalizationReleaseGateInputs.xcfilelist",
+			);
+			inputPaths = (
+				"$(SRCROOT)/App",
+				"$(SRCROOT)/App/Assets.xcassets",
+				"$(SRCROOT)/App/Assets.xcassets/AccentColor.colorset",
+				"$(SRCROOT)/App/Assets.xcassets/AppIcon.appiconset",
+				"$(SRCROOT)/App/Assets.xcassets/AuthHero.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/Hardhat.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/OBSplashPreview.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/OBSplashSafetyPattern.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/RDLogo.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/SplashBg.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/TrialPreview.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/TrialPreviewA.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/TrialPreviewB.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/TrialPreviewC.imageset",
+				"$(SRCROOT)/App/DesignSystem",
+				"$(SRCROOT)/App/Features",
+				"$(SRCROOT)/App/Features/ProfessionalProgress",
+				"$(SRCROOT)/App/Generated",
+				"$(SRCROOT)/App/LegalDocuments",
+				"$(SRCROOT)/App/Localization",
+				"$(SRCROOT)/App/Models",
+				"$(SRCROOT)/App/Preview Content",
+				"$(SRCROOT)/App/Preview Content/Preview Assets.xcassets",
+				"$(SRCROOT)/App/Services",
+				"$(SRCROOT)/App/Views",
+				"$(SRCROOT)/App/Views/Analysis",
+				"$(SRCROOT)/App/Views/Analyzing",
+				"$(SRCROOT)/App/Views/Annotate",
+				"$(SRCROOT)/App/Views/Auth",
+				"$(SRCROOT)/App/Views/Common",
+				"$(SRCROOT)/App/Views/Components",
+				"$(SRCROOT)/App/Views/History",
+				"$(SRCROOT)/App/Views/Home",
+				"$(SRCROOT)/App/Views/Legal",
+				"$(SRCROOT)/App/Views/Onboarding",
+				"$(SRCROOT)/App/Views/Onboarding/V2",
+				"$(SRCROOT)/App/Views/Onboarding/V2/Components",
+				"$(SRCROOT)/App/Views/Onboarding/V2/Screens",
+				"$(SRCROOT)/App/Views/Paywall",
+				"$(SRCROOT)/App/Views/Profile",
+				"$(SRCROOT)/App/Views/Report",
+				"$(SRCROOT)/App/Views/Result",
+				"$(SRCROOT)/Config",
+				"$(SRCROOT)/Legal",
+				"$(SRCROOT)/RiskDetectedUITests",
+				"$(SRCROOT)/RiskDetected.xcodeproj/project.pbxproj",
+				"$(SRCROOT)/docs/localization/baseline/ASC_DISCOVERY_RAW_2026-07-28.json",
+				"$(SRCROOT)/localization",
+				"$(SRCROOT)/localization/generated",
+				"$(SRCROOT)/scripts/localization_catalog_tests.mjs",
+				"$(SRCROOT)/scripts/localization_inventory.mjs",
+				"$(SRCROOT)/scripts/localization_release_build_gate.sh",
+				"$(SRCROOT)/supabase/functions",
+				"$(SRCROOT)/supabase/functions/_shared",
+				"$(SRCROOT)/supabase/functions/_shared/generated",
+				"$(SRCROOT)/supabase/functions/_shared/localization",
+				"$(SRCROOT)/supabase/functions/account-deletion-complete",
+				"$(SRCROOT)/supabase/functions/analyze",
+				"$(SRCROOT)/supabase/functions/app-release-policy",
+				"$(SRCROOT)/supabase/functions/auth-send-email-hook",
+				"$(SRCROOT)/supabase/functions/firebase-phone-bridge",
+				"$(SRCROOT)/supabase/functions/generate-excel-report",
+				"$(SRCROOT)/supabase/functions/manage-notification-automation",
+				"$(SRCROOT)/supabase/functions/mutate-analysis-finding",
+				"$(SRCROOT)/supabase/functions/process-analysis-jobs",
+				"$(SRCROOT)/supabase/functions/process-notification-automation",
+				"$(SRCROOT)/supabase/functions/register-report",
+				"$(SRCROOT)/supabase/functions/request-account-deletion",
+				"$(SRCROOT)/supabase/functions/retention-cleanup",
+				"$(SRCROOT)/supabase/functions/revenuecat-webhook",
+				"$(SRCROOT)/supabase/functions/send-push-notification",
+				"$(SRCROOT)/supabase/functions/send-report-ready-notification",
+				"$(SRCROOT)/supabase/functions/send-trial-reminder-notifications",
+				"$(SRCROOT)/supabase/functions/send-welcome-email",
+				"$(SRCROOT)/supabase/functions/support-contact",
+				"$(SRCROOT)/supabase/functions/sync-revenuecat-subscription",
+			);
+			name = "Localization release gate";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"$SRCROOT/scripts/localization_release_build_gate.sh\"\n";
+		};
 		A1000001000000000000A103 /* Strip xattrs */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -458,7 +555,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/RiskDetected.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 77;
+				CURRENT_PROJECT_VERSION = 81;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
 				DEVELOPMENT_TEAM = 68CU98HAY3;
 				ENABLE_PREVIEWS = YES;
@@ -478,7 +575,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -496,7 +593,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/RiskDetected.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 77;
+				CURRENT_PROJECT_VERSION = 81;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
 				DEVELOPMENT_TEAM = 68CU98HAY3;
 				ENABLE_PREVIEWS = YES;
@@ -516,7 +613,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RISKDETECTED_REVENUECAT_API_KEY = appl_mckFFxUrvtNqzjShezjMIrFmItA;
@@ -524,6 +621,7 @@
 				RISKDETECTED_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_cUQq5Lv-zDF1hXqwnmAj1A_LTdk9FJt";
 				RISKDETECTED_SUPABASE_URL = "https://ppcrzemgiztzcgddbins.supabase.co";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) RD_GLOBAL_LOCALIZATION_WAVE1";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;

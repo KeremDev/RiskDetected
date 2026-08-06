@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-28T19:31:00+03:00",
+  "project_ref": "ppcrzemgiztzcgddbins",
+  "source": "select key, value from public.app_feature_flags order by key",
+  "contains_secrets": false,
+  "flags": [
+    {
+      "key": "analysis_ambiguous_dispatch_guard",
+      "value": {
+        "rollout_mode": "on",
+        "enabled_user_hashes": []
+      }
+    },
+    {
+      "key": "analysis_pipeline_v2",
+      "value": {
+        "rollout_mode": "on",
+        "lease_seconds": 300,
+        "enabled_user_hashes": [],
+        "max_worker_attempts": 3
+      }
+    },
+    {
+      "key": "cancelled_plus_trial_free_routing",
+      "value": {
+        "mode": "on",
+        "user_hashes": []
+      }
+    },
+    {
+      "key": "engagement_notification_automation",
+      "value": {
+        "kill_switch": false,
+        "rollout_mode": "on",
+        "rollout_percentage": 100,
+        "enabled_user_hashes": [],
+        "shadow_observation_started_at": "2026-07-26T15:37:37.309894+00:00"
+      }
+    },
+    {
+      "key": "ios_release_policy",
+      "value": {
+        "message_en": "A new version is available. Please update the app to continue.",
+        "message_tr": "Yeni sürüm mevcut. Devam etmek için uygulamayı güncelleyin.",
+        "latest_build": 77,
+        "app_store_url": "https://apps.apple.com/tr/app/riskdetected-i-%C5%9F-g%C3%BCvenli%C4%9Fi-i-sg/id6769498181",
+        "policy_version": "build-77-appstore",
+        "hard_update_enabled": false,
+        "soft_update_enabled": true,
+        "minimum_supported_build": 62
+      }
+    },
+    {
+      "key": "multi_photo_analysis",
+      "value": {
+        "features": {
+          "editable_findings": true,
+          "manual_finding_add": false,
+          "report_snapshot_v2": true,
+          "multi_photo_analysis": true,
+          "plus_pro_5_photo_limit": true,
+          "multi_photo_coverage_v2": true,
+          "photo_limit_locked_slots_for_free": true
+        },
+        "kill_switch": false,
+        "rollout_mode": "build_allowlist",
+        "min_ios_build": null,
+        "enabled_ios_builds": [
+          "63",
+          "64",
+          "65",
+          "66",
+          "67",
+          "68",
+          "69",
+          "70",
+          "71",
+          "72",
+          "73",
+          "74",
+          "75",
+          "76",
+          "77"
+        ],
+        "runtime_guard_note": "Paid multi-photo product limit: Plus/Pro max 3 photos per analysis.",
+        "max_photo_count_pro": 3,
+        "max_photo_count_free": 1,
+        "max_photo_count_plus": 3,
+        "coverage_rollout_note": "Requires client_capabilities.multi_photo_coverage_v2=true; legacy builds stay on hazards[] flow.",
+        "max_findings_per_photo": 13,
+        "coverage_repair_enabled": true,
+        "enable_editable_findings": false,
+        "enable_manual_finding_add": false,
+        "enable_report_snapshot_v2": false,
+        "target_findings_total_max": 39,
+        "enable_multi_photo_analysis": false,
+        "multi_photo_thinking_budget": 3072,
+        "single_photo_thinking_budget": 6144,
+        "enable_plus_pro_5_photo_limit": false,
+        "target_findings_per_photo_max": 13,
+        "target_findings_per_photo_min": 1,
+        "enable_multi_photo_coverage_v2": false,
+        "multi_photo_layer_audit_enabled": false,
+        "single_photo_layer_audit_enabled": true,
+        "single_photo_evidence_guard_enabled": true,
+        "enable_photo_limit_locked_slots_for_free": false,
+        "single_photo_compact_layer_schema_enabled": true
+      }
+    },
+    {
+      "key": "multi_photo_exact_coverage_schema",
+      "value": {
+        "kill_switch": false,
+        "rollout_mode": "on",
+        "schema_version": 2,
+        "enabled_user_hashes": []
+      }
+    }
+  ]
+}
+

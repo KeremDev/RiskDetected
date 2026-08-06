@@ -6,6 +6,7 @@ struct RiskDetailView: View {
     var photoPath: String? = nil
     var localPreviewImage: UIImage? = nil
     var photoIndex: Int = 1
+    var showsRegulatoryReferences: Bool = true
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -20,12 +21,14 @@ struct RiskDetailView: View {
         method: RiskMethod = .fineKinney,
         photoPath: String? = nil,
         localPreviewImage: UIImage? = nil,
-        photoIndex: Int = 1
+        photoIndex: Int = 1,
+        showsRegulatoryReferences: Bool = true
     ) {
         self.finding = finding
         self.photoPath = photoPath
         self.localPreviewImage = localPreviewImage
         self.photoIndex = max(1, photoIndex)
+        self.showsRegulatoryReferences = showsRegulatoryReferences
         _method = State(initialValue: method)
     }
 
@@ -40,10 +43,12 @@ struct RiskDetailView: View {
                     photoScoreCard
                     comparisonCard
 
-                    section("Tehlike açıklaması", body: finding.description)
+                    section(RDLocalization.string("analysis.risk.detail.view.tehlike.aciklamasi.31eca15b", table: .analysis, fallback: "Tehlike açıklaması"), body: finding.description)
                     controlMeasuresSection
                     rootCauseSection
-                    referenceSection
+                    if showsRegulatoryReferences {
+                        referenceSection
+                    }
 
                     Color.clear.frame(height: 12)
                 }
@@ -81,7 +86,7 @@ struct RiskDetailView: View {
                     .shadow(color: Color.rdOnyx.opacity(0.14), radius: 10, x: 0, y: 5)
             }
             .buttonStyle(RDPressableButtonStyle())
-            .accessibilityLabel("Pencereyi kapat")
+            .accessibilityLabel(RDLocalization.string("analysis.risk.detail.view.pencereyi.kapat.cde23dc0", table: .analysis, fallback: "Pencereyi kapat"))
             .accessibilityIdentifier("result.detail.close")
         }
         .padding(.horizontal, 20)
@@ -95,7 +100,7 @@ struct RiskDetailView: View {
     private var header: some View {
         let band = finding.band(for: method)
         return VStack(alignment: .leading, spacing: 8) {
-            Text(finding.category.uppercased())
+            Text(RDLocalization.uppercased(finding.category))
                 .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .tracking(0.6)
                 .foregroundStyle(Color.rdSlate)
@@ -108,7 +113,7 @@ struct RiskDetailView: View {
 
             HStack(spacing: 6) {
                 RDChip(level: band.level, label: band.label)
-                Text("AI güveni %\(Int(finding.confidence * 100))")
+                Text(RDLocalization.format("analysis.risk.detail.view.ai.guveni.1.3c5aa13f", table: .analysis, fallback: "AI güveni %%%1$@", arguments: [String(describing: Int(finding.confidence * 100))]))
                     .rdMono(size: 11, weight: .semibold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -141,7 +146,7 @@ struct RiskDetailView: View {
         HStack(spacing: 6) {
             Image(systemName: "photo.on.rectangle")
                 .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
-            Text("Foto \(photoIndex)")
+            Text(RDLocalization.format("analysis.risk.detail.view.foto.1.51048e36", table: .analysis, fallback: "Foto %1$@", arguments: [String(describing: photoIndex)]))
                 .rdMono(size: 11, weight: .bold)
         }
         .foregroundStyle(Color.rdOnyx)
@@ -151,7 +156,7 @@ struct RiskDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: 9))
         .shadow(color: Color.rdOnyx.opacity(0.12), radius: 8, x: 0, y: 4)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Kaynak fotoğraf \(photoIndex)")
+        .accessibilityLabel(RDLocalization.format("analysis.risk.detail.view.kaynak.fotograf.1.1bb24334", table: .analysis, fallback: "Kaynak fotoğraf %1$@", arguments: [String(describing: photoIndex)]))
         .accessibilityIdentifier("result.detail.photo_index.\(photoIndex)")
     }
 
@@ -183,13 +188,13 @@ struct RiskDetailView: View {
             Spacer(minLength: 6)
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text(method.fullName.uppercased())
+                Text(RDLocalization.uppercased(method.fullName))
                     .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
                     .tracking(0.6)
                     .foregroundStyle(Color.rdBlack.opacity(0.72))
                     .lineLimit(2)
                     .multilineTextAlignment(.trailing)
-                Text("R = \(finding.formula(for: method))")
+                Text(RDLocalization.format("analysis.risk.detail.view.r.1.a6bbb494", table: .analysis, fallback: "r = %1$@", arguments: [String(describing: finding.formula(for: method))]))
                     .rdMono(size: 10.5, weight: .semibold)
                     .foregroundStyle(Color.rdBlack.opacity(0.78))
                     .lineLimit(1)
@@ -220,33 +225,32 @@ struct RiskDetailView: View {
 
     private func scoreDisplay(_ score: Double) -> String {
         let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.locale = .autoupdatingCurrent
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
-        formatter.groupingSeparator = "."
         return formatter.string(from: NSNumber(value: Int(score))) ?? "\(Int(score))"
     }
 
     private var comparisonCard: some View {
         RDCard(showsShadow: false) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Yöntem karşılaştırması".uppercased())
+                Text(RDLocalization.uppercased(RDLocalization.string("analysis.risk.detail.view.yontem.karsilastirmasi.62bb4353", table: .analysis, fallback: "Yöntem karşılaştırması")))
                     .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .tracking(0.6)
                     .foregroundStyle(Color.rdSlate)
 
                 HStack(spacing: 10) {
                     methodBox(
-                        title: "Fine-Kinney",
-                        formula: "O × F × Ş",
+                        title: RDLocalization.string("analysis.risk.detail.view.fine.kinney.dd5a1c46", table: .analysis, fallback: "İnce Kinney"),
+                        formula: RDLocalization.string("analysis.risk.detail.view.o.f.s.d293e41e", table: .analysis, fallback: "O × F × Ş"),
                         score: Int(finding.fkScore),
                         band: finding.fkBand,
                         active: method == .fineKinney,
                         targetMethod: .fineKinney
                     )
                     methodBox(
-                        title: "5×5 L-Tipi",
-                        formula: "O × Ş",
+                        title: RDLocalization.string("analysis.risk.detail.view.5.5.l.tipi.3cb7030d", table: .analysis, fallback: "5×5 L-Tipi"),
+                        formula: RDLocalization.string("analysis.risk.detail.view.o.s.ed0493f9", table: .analysis, fallback: "O × Ş"),
                         score: finding.m5Score,
                         band: finding.m5Band,
                         active: method == .matrix5x5,
@@ -270,7 +274,7 @@ struct RiskDetailView: View {
                     Text(title)
                         .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(active ? Color.rdBlack : Color.rdSlate)
-                    Text("R = \(formula)")
+                    Text(RDLocalization.format("analysis.risk.detail.view.r.1.957c43b4", table: .analysis, fallback: "r = %1$@", arguments: [String(describing: formula)]))
                         .rdMono(size: 10)
                         .foregroundStyle(Color.rdSlate)
 
@@ -311,7 +315,7 @@ struct RiskDetailView: View {
 
     private var controlMeasuresSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Önlem / Kontrol tedbirleri".uppercased())
+            Text(RDLocalization.uppercased(RDLocalization.string("analysis.risk.detail.view.onlem.kontrol.tedbirleri.98bd1b89", table: .analysis, fallback: "Önlem / Kontrol tedbirleri")))
                 .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .tracking(0.6)
                 .foregroundStyle(Color.rdSlate)
@@ -342,7 +346,7 @@ struct RiskDetailView: View {
                          accent: Color = .rdFog, accentText: Color = .rdGraphite,
                          icon: String = "info.circle") -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased())
+            Text(RDLocalization.uppercased(title))
                 .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .tracking(0.6)
                 .foregroundStyle(Color.rdSlate)
@@ -366,13 +370,13 @@ struct RiskDetailView: View {
     @ViewBuilder
     private var referenceSection: some View {
         if app.currentTier.isPaid {
-            section("Mevzuat referansları", body: finding.references.isEmpty ? "Kontrol edilmeli" : finding.references,
+            section(RDLocalization.string("analysis.risk.detail.view.mevzuat.referanslari.648830a6", table: .analysis, fallback: "Mevzuat referansları"), body: finding.references.isEmpty ? RDLocalization.string("analysis.risk.detail.view.kontrol.edilmeli.ada69d9f", table: .analysis, fallback: "Kontrol edilmeli") : finding.references,
                     accent: Color.rdFog, accentText: Color.rdGraphite,
                     icon: "books.vertical")
         } else {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    Text("Mevzuat referansları".uppercased())
+                    Text(RDLocalization.uppercased(RDLocalization.string("analysis.risk.detail.view.mevzuat.referanslari.cd352b19", table: .analysis, fallback: "Mevzuat referansları")))
                         .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                         .tracking(0.6)
                         .foregroundStyle(Color.rdSlate)
@@ -389,10 +393,10 @@ struct RiskDetailView: View {
                             .foregroundStyle(Color.rdBlack)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Mevzuat Referansları Plus'ta Açıktır")
+                            Text(RDLocalization.string("analysis.risk.detail.view.mevzuat.referanslari.plus.ta.aciktir.11771944", table: .analysis, fallback: "Mevzuat Referansları Plus'ta Açıktır"))
                                 .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
-                            Text("İlgili kanun, yönetmelik ve standart karşılıklarını görmek için Plus veya Pro'ya geç.")
+                            Text(RDLocalization.string("analysis.risk.detail.view.ilgili.kanun.yonetmelik.ve.standart.karsiliklari.8b679e34", table: .analysis, fallback: "İlgili kanun, yönetmelik ve standart karşılıklarını görmek için Plus veya Pro'ya geç."))
                                 .font(.system(size: RDFontScale.size(11), design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                                 .lineLimit(2)
@@ -415,7 +419,7 @@ struct RiskDetailView: View {
     @ViewBuilder
     private var rootCauseSection: some View {
         if app.currentTier.isPaid, !finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            section("Kök neden", body: finding.rootCause,
+            section(RDLocalization.string("analysis.risk.detail.view.kok.neden.ec433ba8", table: .analysis, fallback: "Kök neden"), body: finding.rootCause,
                     accent: Color.rdPlanPlusSoft, accentText: Color.rdPlanPlusDark,
                     icon: "point.3.connected.trianglepath.dotted")
         }

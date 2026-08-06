@@ -1,0 +1,1824 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "paywall.in.app.paywall.view.1.gun.48502c81": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:1167; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 / day"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 / gün"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.10.gun.f71707af": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:1167; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 / day"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 / gün"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.17.468b19d3": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:997; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%17"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%17"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.5.gun.d7dc9e6f": {
+      "comment": "custom_ui_copy; App/Views/Paywall/InAppPaywallView.swift:1059; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.7.gun.ec8fc3fe": {
+      "comment": "custom_ui_copy; App/Views/Paywall/InAppPaywallView.swift:1060; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık plan"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.7.gun.ucretsiz.plus.sonrasinda.yillik.30411629": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:275; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual Plus · eligible offers apply in the App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık Plus · varsa teklif App Store'da uygulanır"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.7.gun.ucretsiz.sonra.yillik.1.7e510489": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:475; placeholders: %1$@; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ per year. Eligible offers are applied by the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık %1$@. Varsa uygun teklif App Store'da uygulanır."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.aboneligi.baslat.229585df": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:459; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Subscription"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aboneliği Başlat"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.abonelik.dogrulanamadi.secilen.plan.1.dogrulanan.715caf2d": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:674; placeholders: %1$@|%2$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscription could not be verified. Selected plan %1$@, confirmed plan %2$@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonelik doğrulanamadı. Seçilen plan %1$@, doğrulanan plan %2$@."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.app.store.abonelik.fiyatlari.su.an.alinamadi.int.7a4731b3": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:523; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store subscription prices are not available at this time. Check your internet connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store abonelik fiyatları şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.app.store.abonelik.paketleri.yukleniyor.a764aab2": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:624; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading App Store subscription options..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store abonelik paketleri yükleniyor..."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.app.store.hesabindaki.abonelik.kayitlari.kontrol.33625ca8": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:713; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking subscriptions in your App Store account."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store hesabındaki abonelik kayıtları kontrol ediliyor."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.app.store.odeme.ekrani.aciliyor.2017db3c": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:649; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening App Store payment screen..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store ödeme ekranı açılıyor..."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.app.store.odeme.ekrani.aciliyor.ea863cb0": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:655; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening App Store payment screen..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store ödeme ekranı açılıyor..."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.app.store.satin.alimlarin.kontrol.ediliyor.cd3aaf32": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:718; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking your App Store purchases..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store satın alımların kontrol ediliyor..."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.aylik.1.2ef43160": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:477; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly %1$@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aylık %1$@."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.aylik.1.aa596d91": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:481; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly %1$@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aylık %1$@."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.aylik.aaed1eef": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:28; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aylık"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.aylik.abonelik.c8bbf382": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:35; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "monthly subscription"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aylık abonelik"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.bekle.c1475169": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:335; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wait"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekle"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.bu.plan.icin.app.store.paketi.henuz.yuklenmedi.3c3253d4": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:643; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The App Store product for this plan has not loaded yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu plan için App Store paketi henüz yüklenmedi."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.bugun.936ba16e": {
+      "comment": "custom_ui_copy; App/Views/Paywall/InAppPaywallView.swift:1058; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.coklu.fotograf.analizi.c5d7318b": {
+      "comment": "custom_ui_copy; App/Views/Paywall/InAppPaywallView.swift:1152; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multi-Photo Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çoklu Fotoğraf Analizi"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.copy.eb392e29": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:277; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.daha.uygun.fiyatli.baslangic.paketi.751d7f54": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:243; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More affordable starter pack"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha uygun fiyatlı başlangıç paketi"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.denemenizin.bittigine.dair.hatirlatma.alin.6eea147c": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify the price and any eligible offer on the App Store confirmation screen."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyatı ve varsa uygun teklifi App Store onay ekranında doğrulayın."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.derin.arastirma.20ba0421": {
+      "comment": "custom_ui_copy; App/Views/Paywall/InAppPaywallView.swift:1150; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deep Research"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Derin Araştırma"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.detayli.analiz.e955c96b": {
+      "comment": "custom_ui_copy; App/Views/Paywall/InAppPaywallView.swift:1149; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detailed analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detaylı analiz"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.firma.yonetimi.0c7cc244": {
+      "comment": "custom_ui_copy; App/Views/Paywall/InAppPaywallView.swift:1151; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company management"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma yönetimi"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.fiyat.alinamadi.50d6ae8c": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:817; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Price unavailable"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "fiyat alınamadı"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.fiyat.yukleniyor.91a8a0da": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:817; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading price"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "fiyat yükleniyor"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.fiyat.yukleniyor.9767cab5": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:476; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Price is loading..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyat yükleniyor..."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.geri.yukle.848d560c": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:335; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri yükle"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.geri.yuklenecek.aktif.abonelik.bulunamadi.ebe10a3d": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:731; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active subscriptions were found to restore."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri yüklenecek aktif abonelik bulunamadı."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.gunluk.analiz.924d4a67": {
+      "comment": "custom_ui_copy; App/Views/Paywall/InAppPaywallView.swift:1147; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Günlük analiz"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.ile.32e56f95": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:281; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "with."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ile."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.ile.3ec2a357": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:292; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "with."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ile."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.ile.tum.pro.ozellikleri.fce81346": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:288; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "with all Pro features."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ile tüm Pro özellikleri."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.ilk.haftaniz.bizden.5545e4d4": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:149; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your first week is on us."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk haftanız bizden."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.iptal.hakki.fd1920ba": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:434; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel anytime"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal hakkı"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.istediginiz.zaman.iptal.edebilirsiniz.otomatik.y.287937e3": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:405; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can cancel anytime · Automatically renews"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İstediğiniz zaman iptal edebilirsiniz · Otomatik yenilenir"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.limitsiz.derin.arastirma.74201aad": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:1339; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited deep research"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limitsiz derin araştırma"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.limitsiz.detayli.analiz.2806a268": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:1338; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited detailed analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limitsiz detaylı analiz"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.limitsiz.gunluk.analiz.117c9b5e": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:1336; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited daily analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limitsiz günlük analiz"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.limitsiz.ozellikler.694562c5": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:196; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited Features"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limitsiz Özellikler"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.limitsiz.ozellikler.icin.6733cee8": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:1195; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For unlimited features"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limitsiz özellikler için"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.limitsiz.risk.analizi.0208fc64": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:1337; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited risk analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limitsiz risk analizi"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.1e66715b": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:59; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please wait, your subscription is being checked through the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.a404ac62": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:652; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please wait, your subscription is being checked through the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.ddd7a8ea": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:715; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please wait, your subscription is being checked through the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.neler.dahil.36a09b8b": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:1158; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's included?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neler dahil?"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.onay.penceresi.acildiginda.islemi.app.store.uzer.9eb4daac": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:650; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the confirmation window opens, you can complete the process via the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onay penceresi açıldığında işlemi App Store üzerinden tamamlayabilirsin."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.oncelikli.destek.d8c6c44d": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:1340; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priority support"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öncelikli destek"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.paywall.ekranini.kapat.92144bcc": {
+      "comment": "swiftui_modifier; App/Views/Paywall/InAppPaywallView.swift:310; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close paywall"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paywall ekranını kapat"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.planin.aktif.a449054e": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:454; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your plan is active"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planın aktif"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.plus.6c6df3b6": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:1239; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLUS"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLUS"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.plus.a.abone.olun.6c6e9c29": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:149; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscribe to Plus."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus’a abone olun."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.plus.aboneligini.incele.847e9604": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:237; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View Plus subscription"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus aboneliğini incele"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.populer.1df05921": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:1226; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "POPULAR"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "POPÜLER"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.pro.uyelik.74a41cf4": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:1333; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro membership"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro üyelik"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.pro.yu.incele.8f867e6b": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:1198; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View Pro"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRO’yu incele"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.risk.analizi.61b95913": {
+      "comment": "custom_ui_copy; App/Views/Paywall/InAppPaywallView.swift:1148; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analizi"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.sartlar.f0fe46a2": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:432; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terms"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şartlar"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alimlar.kontrol.ediliyor.74b29de4": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:712; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking purchases..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alımlar kontrol ediliyor..."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alimlari.geri.yukle.aece5480": {
+      "comment": "swiftui_modifier; App/Views/Paywall/InAppPaywallView.swift:325; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore purchases"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alımları geri yükle"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alma.dogrulanamadi.08b97e50": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:739; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase could not be verified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanamadı"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alma.dogrulanamadi.2601825b": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:694; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase could not be verified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanamadı"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alma.dogrulanamadi.e9d10258": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:740; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase could not be verified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanamadı"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alma.dogrulanamadi.f72c702f": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:693; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase could not be verified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanamadı"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alma.dogrulaniyor.167f9bd5": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:653; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifying purchase..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanıyor..."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alma.dogrulaniyor.4b3902cb": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:714; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifying purchase"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanıyor"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alma.dogrulaniyor.88f1450c": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:651; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifying purchase"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanıyor"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alma.dogrulaniyor.f4be1a8a": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:716; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifying purchase..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanıyor..."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.satin.alma.hazirlaniyor.7db69bb8": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:453; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing to purchase..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma hazırlanıyor..."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.secili.abonelik.paketi.veya.app.store.fiyati.su..8fe2c5f0": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:499; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The selected subscription package or App Store price is not currently available. Check your internet connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçili abonelik paketi veya App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.su.an.odeme.yok.52dc209d": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:362; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Price and eligible offers are verified in the App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyat ve uygun teklifler App Store'da doğrulanır"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.tekrar.dene.a5447e51": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:476; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.tum.plus.ozellikleri.aylik.570b770a": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:279; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Plus features monthly"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm Plus özellikleri aylık"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.tum.plus.ozellikleri.dahil.7a0cdd58": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:1335; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Plus features included"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm Plus özellikleri dahil"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.tum.plus.ozelliklerinin.kilidini.acin.ba20643f": {
+      "comment": "custom_ui_copy; App/Views/Paywall/InAppPaywallView.swift:1078; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock all Plus features."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm Plus özelliklerinin kilidini açın."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.tum.pro.ozellikleri.aylik.4573f500": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:290; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Pro features monthly"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm Pro özellikleri aylık"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.ucretsiz.61d66735": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:1220; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FREE"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.ucretsiz.denemeyi.baslat.8b61966d": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:458; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam et"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.yeni.0a06228d": {
+      "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:1172; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NEW"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YENİ"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.yillik.1.f014f98c": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:479; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual %1$@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık %1$@."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.yillik.1.odeme.alinir.10a000c7": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The annual price is %1$@; App Store terms apply."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık fiyat %1$@; App Store şartları geçerlidir."
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.yillik.a85c0c77": {
+      "comment": "swiftui_text; App/Views/Paywall/InAppPaywallView.swift:286; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.yillik.abonelik.502c943c": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:36; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "annual subscription"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık abonelik"
+          }
+        }
+      }
+    },
+    "paywall.in.app.paywall.view.yillik.ba990912": {
+      "comment": "computed_ui_copy; App/Views/Paywall/InAppPaywallView.swift:29; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık"
+          }
+        }
+      }
+    },
+    "paywall.plus.monthly.subtitle": {
+      "comment": "Paywall price copy; placeholders: %1$@; StoreKit supplies the localized price; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Plus features for %1$@ per month."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm Plus özellikleri aylık %1$@."
+          }
+        }
+      }
+    },
+    "paywall.plus.yearly.subtitle": {
+      "comment": "Paywall price copy; placeholders: %1$@; StoreKit supplies the localized price; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual Plus is %1$@. Eligible offers are applied by the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık Plus %1$@. Varsa uygun teklif App Store'da uygulanır."
+          }
+        }
+      }
+    },
+    "paywall.pro.monthly.subtitle": {
+      "comment": "Paywall price copy; placeholders: %1$@; StoreKit supplies the localized price; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Pro features for %1$@ per month."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm Pro özellikleri aylık %1$@ ile."
+          }
+        }
+      }
+    },
+    "paywall.pro.yearly.subtitle": {
+      "comment": "Paywall price copy; placeholders: %1$@; StoreKit supplies the localized price; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Pro features for %1$@ per year."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık %1$@ ile tüm Pro özellikleri."
+          }
+        }
+      }
+    },
+    "paywall.subscription.manager.abonelik.baslatmadan.once.tekrar.giris.yapman.ge.fd36f753": {
+      "comment": "localized_error_description; App/Services/SubscriptionManager.swift:324; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You need to log in again before starting a subscription."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonelik başlatmadan önce tekrar giriş yapman gerekiyor."
+          }
+        }
+      }
+    },
+    "paywall.subscription.manager.abonelik.paketleri.revenuecat.tarafinda.bulunama.83b104fa": {
+      "comment": "computed_ui_copy; App/Services/SubscriptionManager.swift:69; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscription packages could not be found on RevenueCat."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonelik paketleri RevenueCat tarafında bulunamadı."
+          }
+        }
+      }
+    },
+    "paywall.subscription.manager.app.store.aboneligi.dogrulanamadi.secilen.plan.1.44981b3a": {
+      "comment": "computed_ui_copy; App/Services/SubscriptionManager.swift:77; placeholders: %1$@|%2$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store subscription could not be verified. Selected plan %1$@, confirmed plan %2$@. Please try again or contact support."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store aboneliği doğrulanamadı. Seçilen plan %1$@, doğrulanan plan %2$@. Lütfen tekrar dene veya destekle iletişime geç."
+          }
+        }
+      }
+    },
+    "paywall.subscription.manager.aylik.abonelik.a9ddd6bf": {
+      "comment": "computed_ui_copy; App/Services/SubscriptionManager.swift:635; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "monthly subscription"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aylık abonelik"
+          }
+        }
+      }
+    },
+    "paywall.subscription.manager.original.1.activeproducts.2.activeentitlements.3.14079dbe": {
+      "comment": "computed_ui_copy; App/Services/SubscriptionManager.swift:163; placeholders: %1$@|%2$@|%3$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "original=%1$@ activeProducts=[%2$@] activeEntitlements=[%3$@]"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "orijinal=%1$@ aktifÜrünler=[%2$@] activeEntitlements=[%3$@]"
+          }
+        }
+      }
+    },
+    "paywall.subscription.manager.satin.alimlari.geri.yuklemek.icin.tekrar.giris.y.2d7f4974": {
+      "comment": "localized_error_description; App/Services/SubscriptionManager.swift:446; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You need to sign in again to restore purchases."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alımları geri yüklemek için tekrar giriş yapman gerekiyor."
+          }
+        }
+      }
+    },
+    "paywall.subscription.manager.secilen.abonelik.paketi.bulunamadi.6baced3f": {
+      "comment": "localized_error_description; App/Services/SubscriptionManager.swift:335; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The selected subscription package was not found."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilen abonelik paketi bulunamadı."
+          }
+        }
+      }
+    },
+    "paywall.subscription.manager.yillik.abonelik.c46f4eac": {
+      "comment": "computed_ui_copy; App/Services/SubscriptionManager.swift:633; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "annual subscription"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık abonelik"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

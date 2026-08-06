@@ -1,0 +1,19 @@
+{
+  "manifest_version": 1,
+  "review_status": "machine_draft",
+  "default_profile_id": "tr-tr-current-v1",
+  "english_fallback_profile_id": "en-intl-generic-v1",
+  "app_languages": ["tr", "en"],
+  "content_locales": ["tr-TR", "en-001", "en-GB", "en-US", "en-AU", "en-CA"],
+  "jurisdiction_countries": ["TR", "INTL", "GB", "US", "AU", "CA"],
+  "legal_document_set_ids": ["tr-current", "en-global-v1"],
+  "common_risk_method_disclaimer_key": "risk_method.legal_standard_disclaimer",
+  "profile_ids": [
+    "tr-tr-current-v1",
+    "en-intl-generic-v1",
+    "en-gb-generic-v1",
+    "en-us-generic-v1",
+    "en-au-generic-v1",
+    "en-ca-generic-v1"
+  ]
+}

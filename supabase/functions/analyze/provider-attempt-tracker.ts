@@ -6,7 +6,8 @@ export type ProviderAttemptReason =
   | "invalid_json_fallback"
   | "key_fallback"
   | "model_fallback"
-  | "provider_fallback";
+  | "provider_fallback"
+  | "language_contract_repair";
 
 export type ProviderAttemptRecord = {
   sequence: number;

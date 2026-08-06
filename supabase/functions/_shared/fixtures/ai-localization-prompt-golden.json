@@ -1,0 +1,37 @@
+{
+  "contract_version": "ai-localization-contract-v1",
+  "layer_ids": [
+    "schema_contract",
+    "language_contract",
+    "safety_profile_contract",
+    "regulatory_reference_contract",
+    "risk_method_contract",
+    "photo_evidence_contract"
+  ],
+  "profiles": {
+    "tr-tr-current-v1": {
+      "sha256": "eb4825ad24c19d76a774bbfba2ca7955e6042ef888b586dae5c4e70669fceab4",
+      "length": 4482
+    },
+    "en-intl-generic-v1": {
+      "sha256": "603e7d353efb304c96d9383c638c49320cc7cd2793dc55c75a51e21449d6c0eb",
+      "length": 4662
+    },
+    "en-gb-generic-v1": {
+      "sha256": "3c1f9156d84b06cbd0c4697de8e79cb85b0a7f939065782e83d6091aeeb78042",
+      "length": 4661
+    },
+    "en-us-generic-v1": {
+      "sha256": "acbeea2457710993dd0cd19f45ecd9bbf5b37212b4d6870f6ef2fccf0f53922d",
+      "length": 4717
+    },
+    "en-au-generic-v1": {
+      "sha256": "d67a8d81f83ed722afea31c9d779ee65c913378d3f5130b70bd1c7f597f38e28",
+      "length": 4679
+    },
+    "en-ca-generic-v1": {
+      "sha256": "084a684a732adcdf984f6da29e777e21e1bbbb643573469df9fb29d140edf214",
+      "length": 4727
+    }
+  }
+}

@@ -9,12 +9,10 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   PLUS_YEARLY_PRODUCT_ID,
-  TRIAL_REMINDER_BODY,
   TRIAL_REMINDER_KIND,
   TRIAL_REMINDER_MAX_LEAD_MS,
   TRIAL_REMINDER_MIN_LEAD_MS,
   TRIAL_REMINDER_RETRY_AFTER_MS,
-  TRIAL_REMINDER_TITLE,
   type TrialReminderCandidate,
   trialReminderDecision,
 } from "../_shared/trial-reminder.ts";
@@ -128,8 +126,7 @@ async function sendPush(params: {
       body: JSON.stringify({
         user_id: params.candidate.user_id,
         kind: TRIAL_REMINDER_KIND,
-        title: TRIAL_REMINDER_TITLE,
-        body: TRIAL_REMINDER_BODY,
+        event_key: "trial_reminder",
         data: {
           destination: "profile",
           event: TRIAL_REMINDER_KIND,

@@ -6,11 +6,34 @@ struct OBPainPointView: View {
     @State private var checked: [Bool] = [false, false, false]
     @State private var shimmer: CGFloat = -1.0
 
-    private let pains: [(icon: String, text: String)] = [
-        ("clock", "Saatlerce süren rapor yazımı."),
-        ("photo.on.rectangle.angled", "Dağınık fotoğraflar ve notlar."),
-        ("calendar.badge.exclamationmark", "Geç teslim edilen değerlendirmeler.")
-    ]
+    private var pains: [(icon: String, text: String)] {
+        [
+            (
+                "clock",
+                RDLocalization.string(
+                    "onboarding.pain.report_writing",
+                    table: .onboarding,
+                    fallback: "Saatlerce süren rapor yazımı."
+                )
+            ),
+            (
+                "photo.on.rectangle.angled",
+                RDLocalization.string(
+                    "onboarding.pain.scattered_material",
+                    table: .onboarding,
+                    fallback: "Dağınık fotoğraflar ve notlar."
+                )
+            ),
+            (
+                "calendar.badge.exclamationmark",
+                RDLocalization.string(
+                    "onboarding.pain.late_assessments",
+                    table: .onboarding,
+                    fallback: "Geç teslim edilen değerlendirmeler."
+                )
+            )
+        ]
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -33,7 +56,7 @@ struct OBPainPointView: View {
                         }
                         .obStage(delay: 0.08)
 
-                        Text("Sahada gördüklerini akşam ofiste mi yazıyorsun?")
+                        Text(RDLocalization.string("onboarding.obpain.point.view.sahada.gorduklerini.aksam.ofiste.mi.yaziyorsun.4ae8a20e", table: .onboarding, fallback: "Sahada gördüklerini akşam ofiste mi yazıyorsun?"))
                             .font(.system(size: RDFontScale.size(24), weight: .semibold))
                             .tracking(-0.6)
                             .lineSpacing(2)
@@ -41,7 +64,7 @@ struct OBPainPointView: View {
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
 
-                        Text("Tanıdık geliyor mu?")
+                        Text(RDLocalization.string("onboarding.obpain.point.view.tanidik.geliyor.mu.f06d0cd9", table: .onboarding, fallback: "Tanıdık geliyor mu?"))
                             .font(.system(size: RDFontScale.size(14)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
@@ -71,12 +94,12 @@ struct OBPainPointView: View {
             }
 
             OBFooter {
-                OBPrimaryButton(title: "Devam", accessibilityID: "onboarding.pain.continue") { onNext() }
-                    .obStage(delay: 0.78)
+                OBPrimaryButton(title: RDLocalization.string("onboarding.obpain.point.view.devam.9bac1052", table: .onboarding, fallback: "Devam"), accessibilityID: "onboarding.pain.continue") { onNext() }
             }
         }
         .background(Color.rdPaper)
         .onAppear { runCheckSequence() }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.pain_point")
     }
 
@@ -119,9 +142,27 @@ struct OBPainPointView: View {
 
     private var mirror: some View {
         HStack {
-            (Text("Bunu ").foregroundColor(.white)
-             + Text("birlikte").foregroundColor(Color(hex: "#4FE07E")).bold()
-             + Text(" değiştireceğiz.").foregroundColor(.white))
+            (Text(
+                RDLocalization.string(
+                    "onboarding.pain.mirror.prefix",
+                    table: .onboarding,
+                    fallback: "Bunu "
+                )
+            ).foregroundColor(.white)
+             + Text(
+                RDLocalization.string(
+                    "onboarding.pain.mirror.emphasis",
+                    table: .onboarding,
+                    fallback: "birlikte"
+                )
+             ).foregroundColor(Color(hex: "#4FE07E")).bold()
+             + Text(
+                RDLocalization.string(
+                    "onboarding.pain.mirror.suffix",
+                    table: .onboarding,
+                    fallback: " değiştireceğiz."
+                )
+             ).foregroundColor(.white))
                 .font(.system(size: RDFontScale.size(16), weight: .medium))
             Spacer()
         }

@@ -32,13 +32,13 @@ struct MainTabView: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
-        .alert("Ücretsiz hak doldu", isPresented: $showQuotaAlert) {
-            Button("Yükselt") {
+        .alert(RDLocalization.string("analysis.main.tab.view.ucretsiz.hak.doldu.02b7d919", table: .analysis, fallback: "Ücretsiz hak doldu"), isPresented: $showQuotaAlert) {
+            Button(RDLocalization.string("analysis.main.tab.view.yukselt.a7a8cbd7", table: .analysis, fallback: "Yükselt")) {
                 showPaywall = true
             }
-            Button("Tamam", role: .cancel) {}
+            Button(RDLocalization.string("analysis.main.tab.view.tamam.ce1433e3", table: .analysis, fallback: "Tamam"), role: .cancel) {}
         } message: {
-            Text("Günde 1 ücretsiz analiz hakkınızı kullandınız. Plus veya Pro ile devam edebilirsiniz.")
+            Text(RDLocalization.string("analysis.main.tab.view.gunde.1.ucretsiz.analiz.hakkinizi.kullandiniz.pl.c4387499", table: .analysis, fallback: "Günde 1 ücretsiz analiz hakkınızı kullandınız. Plus veya Pro ile devam edebilirsiniz."))
         }
         .fullScreenCover(isPresented: $showPaywall) {
             FreeAwarePaywallView(

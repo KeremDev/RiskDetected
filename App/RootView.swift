@@ -20,6 +20,10 @@ struct RootView: View {
                     .transition(.opacity)
             case .onboarding:
                 OnboardingViewV2(
+                    appLanguage: app.languagePreference,
+                    initialSafetyProfileID: app.languagePreference == .english
+                        ? app.safetyProfileID
+                        : .turkeyCurrentV1,
                     isAuthenticated: app.isAuthenticated,
                     hasCompletedOnboarding: app.hasSeenOnboarding,
                     currentTier: app.currentTier,
@@ -32,7 +36,8 @@ struct RootView: View {
                     onSignInExisting: {},
                     onPurchase: { plan in try await purchaseOnboardingPlan(plan) },
                     onReloadSubscriptionOfferings: { await app.refreshSubscriptionOfferings() },
-                    onRestorePurchases: { try await restoreOnboardingPurchases() }
+                    onRestorePurchases: { try await restoreOnboardingPurchases() },
+                    onSafetyProfileChange: { app.setSafetyProfile($0) }
                 )
                     .transition(.opacity)
             case .auth:
@@ -73,6 +78,12 @@ struct RootView: View {
                 .padding(.top, network.isOnline ? 10 : 64)
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .zIndex(210)
+                .task(id: notice.id) {
+                    await legalDocuments.recordPresented(
+                        notice,
+                        userID: app.auth.session?.user.id
+                    )
+                }
             }
 
             if case let .soft(policy) = app.releaseUpdateRequirement {
@@ -146,7 +157,10 @@ struct RootView: View {
             )
             .presentationDetents([.height(notice.changeType == .explicitConsent ? 360 : 320), .medium])
             .presentationDragIndicator(.visible)
-            .interactiveDismissDisabled(notice.changeType == .materialTerms)
+            .interactiveDismissDisabled(
+                notice.changeType == .materialTerms
+                    || notice.changeType == .materialPrivacy
+            )
             .preferredColorScheme(app.themePreference.colorScheme)
         }
     }
@@ -205,8 +219,8 @@ struct RootView: View {
                 guard !isUserCancelledAuth(error) else { return }
                 let message = AppErrorMessage.make(
                     error,
-                    context: "Apple ile giriş yapılamadı",
-                    fallbackTitle: "Apple ile giriş yapılamadı"
+                    context: RDLocalization.string("localizable.root.view.apple.ile.giris.yapilamadi.21368868", table: .localizable, fallback: "Apple ile giriş yapılamadı"),
+                    fallbackTitle: RDLocalization.string("localizable.root.view.apple.ile.giris.yapilamadi.a6d8a45e", table: .localizable, fallback: "Apple ile giriş yapılamadı")
                 )
                 AuthService.logAuthError(message, operation: "apple_sign_in")
                 app.authError = message.message
@@ -230,8 +244,8 @@ struct RootView: View {
                 guard !isUserCancelledAuth(error) else { return }
                 let message = AppErrorMessage.make(
                     error,
-                    context: "Google ile giriş yapılamadı",
-                    fallbackTitle: "Google ile giriş yapılamadı"
+                    context: RDLocalization.string("localizable.root.view.google.ile.giris.yapilamadi.b2fcab5f", table: .localizable, fallback: "Google ile giriş yapılamadı"),
+                    fallbackTitle: RDLocalization.string("localizable.root.view.google.ile.giris.yapilamadi.dcbd9e22", table: .localizable, fallback: "Google ile giriş yapılamadı")
                 )
                 AuthService.logAuthError(message, operation: "google_sign_in")
                 app.authError = message.message
@@ -247,7 +261,7 @@ struct RootView: View {
             throw NSError(
                 domain: "RiskDetected.OnboardingPurchase",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Seçilen abonelik paketi şu an hazırlanamadı. Lütfen birazdan tekrar dene."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("localizable.root.view.secilen.abonelik.paketi.su.an.hazirlanamadi.lutf.c748fe84", table: .localizable, fallback: "Seçilen abonelik paketi şu an hazırlanamadı. Lütfen birazdan tekrar dene.")]
             )
         }
         try await app.purchaseSubscription(packageID: package.id, expectedTier: .plus)
@@ -268,7 +282,7 @@ struct RootView: View {
 
     private func isUserCancelledAuth(_ error: Error) -> Bool {
         let nsError = error as NSError
-        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        let lower = error.localizedDescription.lowercased(with: .autoupdatingCurrent)
         return nsError.code == 1 && nsError.domain.contains("WebAuthenticationSession") ||
             lower.contains("cancel") ||
             lower.contains("vazgeç") ||
@@ -286,7 +300,7 @@ private struct OfflineStatusBanner: View {
                 .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdCriticalText)
 
-            Text("Çevrimdışısın. Bazı veriler son kayıtlı haliyle görünebilir.")
+            Text(RDLocalization.string("localizable.root.view.cevrimdisisin.bazi.veriler.son.kayitli.haliyle.g.08875828", table: .localizable, fallback: "Çevrimdışısın. Bazı veriler son kayıtlı haliyle görünebilir."))
                 .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .lineLimit(2)
@@ -330,7 +344,7 @@ private struct LegalUpdateBanner: View {
 
             Spacer(minLength: 0)
 
-            Button("İncele", action: onReview)
+            Button(RDLocalization.string("localizable.root.view.incele.1d16e710", table: .localizable, fallback: "İncele"), action: onReview)
                 .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
                 .buttonStyle(.plain)
@@ -368,7 +382,7 @@ private struct AppReleaseSoftUpdateBanner: View {
                 .foregroundStyle(Color.rdPlanPlusDark)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Yeni sürüm hazır")
+                Text(RDLocalization.string("localizable.root.view.yeni.surum.hazir.6c683226", table: .localizable, fallback: "Yeni sürüm hazır"))
                     .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(policy.displayMessage)
@@ -379,7 +393,7 @@ private struct AppReleaseSoftUpdateBanner: View {
 
             Spacer(minLength: 0)
 
-            Button("Güncelle", action: onUpdate)
+            Button(RDLocalization.string("localizable.root.view.guncelle.b2397c17", table: .localizable, fallback: "Güncelle"), action: onUpdate)
                 .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdPlanPlusDark)
                 .buttonStyle(.plain)
@@ -392,7 +406,7 @@ private struct AppReleaseSoftUpdateBanner: View {
                     .frame(width: 28, height: 28)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Daha sonra")
+            .accessibilityLabel(RDLocalization.string("localizable.root.view.daha.sonra.f6df34f8", table: .localizable, fallback: "Daha sonra"))
             .accessibilityIdentifier("app_release.soft_update.dismiss")
         }
         .padding(.horizontal, 12)
@@ -433,7 +447,7 @@ private struct AppReleaseRequiredView: View {
                                 .stroke(Color.rdPlanPlus.opacity(0.36), lineWidth: 1)
                         )
 
-                    Text("Güncelleme gerekli")
+                    Text(RDLocalization.string("localizable.root.view.guncelleme.gerekli.ed75982f", table: .localizable, fallback: "Güncelleme gerekli"))
                         .font(.system(size: RDFontScale.size(27), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .multilineTextAlignment(.center)
@@ -447,7 +461,7 @@ private struct AppReleaseRequiredView: View {
                 }
 
                 HStack(spacing: 8) {
-                    Text("Mevcut sürüm")
+                    Text(RDLocalization.string("localizable.root.view.mevcut.surum.4acd53ed", table: .localizable, fallback: "Mevcut sürüm"))
                         .foregroundStyle(Color.rdSlate)
                     Text("\(currentVersion) (\(currentBuild))")
                         .foregroundStyle(Color.rdBlack)
@@ -465,7 +479,7 @@ private struct AppReleaseRequiredView: View {
                 Button(action: onUpdate) {
                     HStack(spacing: 10) {
                         Image(systemName: "arrow.up.forward.app.fill")
-                        Text("App Store'da güncelle")
+                        Text(RDLocalization.string("localizable.root.view.app.store.da.guncelle.93093aa7", table: .localizable, fallback: "App Store'da güncelle"))
                     }
                     .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.white)
@@ -523,7 +537,7 @@ private struct LegalUpdateDecisionSheet: View {
             } label: {
                 HStack {
                     Image(systemName: "doc.text.magnifyingglass")
-                    Text("Güncel metinleri incele")
+                    Text(RDLocalization.string("localizable.root.view.guncel.metinleri.incele.7f371307", table: .localizable, fallback: "Güncel metinleri incele"))
                     Spacer()
                     Image(systemName: "chevron.right")
                 }
@@ -540,16 +554,16 @@ private struct LegalUpdateDecisionSheet: View {
             Spacer(minLength: 0)
 
             if notice.changeType == .explicitConsent {
-                RDButton(title: "Kabul ediyorum", style: .primary, icon: "checkmark.shield.fill") {
+                RDButton(title: RDLocalization.string("localizable.root.view.kabul.ediyorum.bad1103d", table: .localizable, fallback: "Kabul ediyorum"), style: .primary, icon: "checkmark.shield.fill") {
                     onExplicitAccept()
                 }
-                Button("Şimdilik kapat", action: onClose)
+                Button(RDLocalization.string("localizable.root.view.simdilik.kapat.9e0bc284", table: .localizable, fallback: "Şimdilik kapat"), action: onClose)
                     .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(maxWidth: .infinity)
                     .buttonStyle(.plain)
             } else {
-                RDButton(title: "Devam et", style: .primary, icon: "checkmark") {
+                RDButton(title: RDLocalization.string("localizable.root.view.devam.et.3ce8f48e", table: .localizable, fallback: "Devam et"), style: .primary, icon: "checkmark") {
                     onContinue()
                 }
             }

@@ -228,29 +228,6 @@ function m5Band(score: number): "low" | "medium" | "high" | "critical" {
   return "critical";
 }
 
-function withDerivedRiskSnapshot(
-  before: FindingRow,
-  update: Record<string, unknown>,
-): FindingRow {
-  const snapshot = { ...before, ...update } as FindingRow;
-  const fkP = Number(snapshot.fk_probability);
-  const fkF = Number(snapshot.fk_frequency);
-  const fkS = Number(snapshot.fk_severity);
-  const m5P = Number(snapshot.m5_probability);
-  const m5S = Number(snapshot.m5_severity);
-  if (Number.isFinite(fkP) && Number.isFinite(fkF) && Number.isFinite(fkS)) {
-    const score = fkP * fkF * fkS;
-    snapshot.fk_score = score;
-    snapshot.fk_band = fkBand(score);
-  }
-  if (Number.isFinite(m5P) && Number.isFinite(m5S)) {
-    const score = m5P * m5S;
-    snapshot.m5_score = score;
-    snapshot.m5_band = m5Band(score);
-  }
-  return snapshot;
-}
-
 function normalizeMeasures(value: unknown):
   | Array<{
     kind: string;
@@ -489,31 +466,24 @@ serve(async (req) => {
 
   try {
     if (action === "delete") {
-      const { error: eventError } = await supabase
-        .from("finding_edit_events")
-        .insert({
-          analysis_id: analysisID,
-          finding_id: findingID,
-          actor_user_id: user.id,
-          event_type: "hard_delete",
-          before_snapshot: before,
-          after_snapshot: null,
-          changed_fields: ["__deleted__"],
-          finding_version_before: beforeVersion,
-          finding_version_after: null,
-          client_app_version: text(body.client_app_version, 80) ?? null,
-          request_id: requestID,
-          support_id: supportID,
-        });
-      if (eventError) throw new Error(`audit:${eventError.message}`);
-
-      const { error: deleteError } = await supabase
-        .from("findings")
-        .delete()
-        .eq("id", findingID)
-        .eq("analysis_id", analysisID)
-        .eq("user_id", user.id);
-      if (deleteError) throw new Error(`delete:${deleteError.message}`);
+      const { error: mutationError } = await supabase.rpc(
+        "apply_finding_mutation_atomic",
+        {
+          p_action: "delete",
+          p_analysis_id: analysisID,
+          p_finding_id: findingID,
+          p_user_id: user.id,
+          p_expected_version: beforeVersion,
+          p_update: {},
+          p_changed_fields: ["__deleted__"],
+          p_client_app_version: text(body.client_app_version, 80) ?? null,
+          p_request_id: requestID,
+          p_support_id: supportID,
+        },
+      );
+      if (mutationError) {
+        throw new Error(`atomic_mutation:${mutationError.message}`);
+      }
     } else {
       const patch = body.patch ?? {};
       const update: Record<string, unknown> = {};
@@ -607,39 +577,25 @@ serve(async (req) => {
         });
       }
 
-      update.last_user_edit_at = new Date().toISOString();
-      update.last_user_edit_by = user.id;
-      update.user_edit_count = Number(before.user_edit_count ?? 0) + 1;
-      update.finding_version = beforeVersion + 1;
-
       const fields = changedFields(before, update);
-      const afterSnapshot = withDerivedRiskSnapshot(before, update);
-
-      const { error: eventError } = await supabase
-        .from("finding_edit_events")
-        .insert({
-          analysis_id: analysisID,
-          finding_id: findingID,
-          actor_user_id: user.id,
-          event_type: "update",
-          before_snapshot: before,
-          after_snapshot: afterSnapshot,
-          changed_fields: fields,
-          finding_version_before: beforeVersion,
-          finding_version_after: beforeVersion + 1,
-          client_app_version: text(body.client_app_version, 80) ?? null,
-          request_id: requestID,
-          support_id: supportID,
-        });
-      if (eventError) throw new Error(`audit:${eventError.message}`);
-
-      const { error: updateError } = await supabase
-        .from("findings")
-        .update(update)
-        .eq("id", findingID)
-        .eq("analysis_id", analysisID)
-        .eq("user_id", user.id);
-      if (updateError) throw new Error(`update:${updateError.message}`);
+      const { error: mutationError } = await supabase.rpc(
+        "apply_finding_mutation_atomic",
+        {
+          p_action: "update",
+          p_analysis_id: analysisID,
+          p_finding_id: findingID,
+          p_user_id: user.id,
+          p_expected_version: beforeVersion,
+          p_update: update,
+          p_changed_fields: fields,
+          p_client_app_version: text(body.client_app_version, 80) ?? null,
+          p_request_id: requestID,
+          p_support_id: supportID,
+        },
+      );
+      if (mutationError) {
+        throw new Error(`atomic_mutation:${mutationError.message}`);
+      }
     }
 
     const { error: analysisUpdateError } = await supabase
@@ -719,6 +675,15 @@ serve(async (req) => {
     });
   } catch (error) {
     const message = String(error);
+    if (message.includes("finding_version_conflict")) {
+      return json(409, {
+        error: "finding_version_conflict",
+        message:
+          "Bu bulgu başka bir işlemle güncellenmiş. Lütfen sayfayı yenileyip tekrar dene.",
+        request_id: requestID,
+        support_id: supportID,
+      });
+    }
     if (message.startsWith("validation:")) {
       return json(400, {
         error: "validation_failed",

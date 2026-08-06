@@ -25,7 +25,7 @@ final class GoogleSignInService {
             throw NSError(
                 domain: "RiskDetected.GoogleSignIn",
                 code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Google giriş penceresi açılamadı."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.google.sign.in.service.google.giris.penceresi.acilamadi.f8260b5c", table: .auth, fallback: "Google giriş penceresi açılamadı.")]
             )
         }
 
@@ -35,7 +35,7 @@ final class GoogleSignInService {
             throw NSError(
                 domain: "RiskDetected.GoogleSignIn",
                 code: -2,
-                userInfo: [NSLocalizedDescriptionKey: "Google kimlik token'ı alınamadı."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.google.sign.in.service.google.kimlik.token.i.alinamadi.5fc54a00", table: .auth, fallback: "Google kimlik token'ı alınamadı.")]
             )
         }
 
@@ -64,7 +64,7 @@ final class GoogleSignInService {
                     continuation.resume(throwing: NSError(
                         domain: "RiskDetected.GoogleSignIn",
                         code: -5,
-                        userInfo: [NSLocalizedDescriptionKey: "Google giriş sonucu alınamadı."]
+                        userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.google.sign.in.service.google.giris.sonucu.alinamadi.f27f918a", table: .auth, fallback: "Google giriş sonucu alınamadı.")]
                     ))
                     return
                 }
@@ -81,7 +81,7 @@ final class GoogleSignInService {
             throw NSError(
                 domain: "RiskDetected.GoogleSignIn",
                 code: -3,
-                userInfo: [NSLocalizedDescriptionKey: "Google iOS Client ID eksik. Google Cloud'dan alınan Client ID Info.plist içine eklenmeli."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.google.sign.in.service.google.ios.client.id.eksik.google.cloud.dan.alin.b11518ec", table: .auth, fallback: "Google iOS Client ID eksik. Google Cloud'dan alınan Client ID Info.plist içine eklenmeli.")]
             )
         }
 
@@ -92,7 +92,7 @@ final class GoogleSignInService {
             throw NSError(
                 domain: "RiskDetected.GoogleSignIn",
                 code: -4,
-                userInfo: [NSLocalizedDescriptionKey: "Google server client ID eksik. Google Cloud Console'da Web OAuth client ID oluşturup Info.plist içindeki GIDServerClientID alanına eklemelisin."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("auth.google.sign.in.service.google.server.client.id.eksik.google.cloud.conso.482f366a", table: .auth, fallback: "Google server client ID eksik. Google Cloud Console'da Web OAuth client ID oluşturup Info.plist içindeki GIDServerClientID alanına eklemelisin.")]
             )
         }
 

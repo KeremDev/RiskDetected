@@ -338,7 +338,6 @@ struct OBPrimaryButton: View {
         }
         .buttonStyle(OBPressStyle())
         .disabled(!enabled || isLoading)
-        .accessibilityElement(children: .ignore)
         .accessibilityLabel(displayTitle)
         .accessibilityIdentifier(resolvedAccessibilityID)
         .onAppear {
@@ -396,7 +395,7 @@ struct OBPrimaryButton: View {
 
 private func obIdentifierSlug(_ value: String) -> String {
     value
-        .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "tr_TR"))
+        .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .autoupdatingCurrent)
         .lowercased(with: Locale(identifier: "en_US_POSIX"))
         .replacingOccurrences(of: "[^a-z0-9]+", with: "_", options: .regularExpression)
         .trimmingCharacters(in: CharacterSet(charactersIn: "_"))
@@ -418,7 +417,7 @@ struct OBFooter<Content: View>: View {
 
 struct OBSelectionCounter: View {
     let count: Int
-    let suffix: String   // "sınıf seçildi" / "sektör seçildi"
+    let suffix: String   // RDLocalization.string("onboarding.obcomponents.sinif.secildi.af68ecbf", table: .onboarding, fallback: "sınıf seçildi") / RDLocalization.string("onboarding.obcomponents.sektor.secildi.985a1dab", table: .onboarding, fallback: "sektör seçildi")
     @State private var pulse: Bool = false
 
     var body: some View {
@@ -787,7 +786,7 @@ struct OBHeroFrequency: View {
     }
 }
 
-// "Planın hazır, şimdi kilitleyelim" metaforu:
+// RDLocalization.string("onboarding.obcomponents.planin.hazir.simdi.kilitleyelim.b6f352e1", table: .onboarding, fallback: "Planın hazır, şimdi kilitleyelim") metaforu:
 // Kilit sürekli açılıp kapanan döngü + iç yeşil check her kapanışta belirir.
 struct OBHeroAuth: View {
     @State private var isClosed: Bool = false

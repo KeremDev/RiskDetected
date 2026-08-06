@@ -7,21 +7,37 @@ struct LegalInfoSheet: View {
 
     init(initialDocument: LegalDocumentKind = .kvkk, onClose: @escaping () -> Void) {
         self.onClose = onClose
-        _selectedDocument = State(initialValue: initialDocument)
+        _selectedDocument = State(
+            initialValue: RDLanguage.current == .english
+                && initialDocument == .kvkk
+                ? .terms
+                : initialDocument
+        )
     }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 14) {
-                documentTabs
-                LegalDocumentReader(document: legalDocuments.document(for: selectedDocument))
+                if RDLanguage.current == .english
+                    && !RDLegalReleaseGate.englishAuthAndPurchaseApproved {
+                    EnglishLegalUnavailableView()
+                } else {
+                    documentTabs
+                    LegalDocumentReader(document: legalDocuments.document(for: selectedDocument))
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
             .padding(.bottom, 20)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(Color.rdPaper)
-            .navigationTitle("Yasal Bilgilendirme")
+            .navigationTitle(
+                RDLocalization.string(
+                    "legal.info.title",
+                    table: .legal,
+                    fallback: "Yasal Bilgilendirme"
+                )
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -30,6 +46,9 @@ struct LegalInfoSheet: View {
             }
         }
         .task {
+            guard RDLanguage.current == .turkish
+                    || RDLegalReleaseGate.englishAuthAndPurchaseApproved
+            else { return }
             await legalDocuments.refreshIfNeeded(
                 userID: SupabaseService.shared.currentUserID,
                 userCreatedAt: SupabaseService.shared.client.auth.currentUser?.createdAt
@@ -40,7 +59,7 @@ struct LegalInfoSheet: View {
     private var documentTabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(LegalDocumentKind.allCases) { kind in
+                ForEach(legalDocuments.availableKinds) { kind in
                     let active = selectedDocument == kind
                     Button {
                         selectedDocument = kind
@@ -61,10 +80,66 @@ struct LegalInfoSheet: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(RDPressableButtonStyle())
-                    .accessibilityLabel("\(kind.title) belgesini göster")
+                    .accessibilityLabel(
+                        RDLocalization.format(
+                            "legal.document.show.accessibility",
+                            table: .legal,
+                            fallback: "%@ belgesini göster",
+                            arguments: [kind.title]
+                        )
+                    )
                 }
             }
         }
+    }
+}
+
+private struct EnglishLegalUnavailableView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Image(systemName: "checkmark.shield")
+                .font(.system(size: RDFontScale.size(28), weight: .semibold))
+                .foregroundStyle(Color.rdGreen)
+
+            Text(
+                RDLocalization.string(
+                    "legal.english_unavailable.title",
+                    table: .legal,
+                    fallback: "İngilizce yasal metinler henüz kullanıma hazır değil"
+                )
+            )
+            .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
+            .foregroundStyle(Color.rdBlack)
+
+            Text(
+                RDLocalization.string(
+                    "legal.english_unavailable.message",
+                    table: .legal,
+                    fallback: "İngilizce Kullanım Koşulları ve Gizlilik Politikası hukuk ve dil incelemesi tamamlanana kadar bu sürümde yayımlanmaz."
+                )
+            )
+            .font(.system(size: RDFontScale.size(14), design: .rounded))
+            .foregroundStyle(Color.rdCharcoal)
+
+            Text(
+                RDLocalization.string(
+                    "legal.english_unavailable.action",
+                    table: .legal,
+                    fallback: "Türkçe metinleri görüntülemek için uygulama dilini iOS Ayarları’ndan Türkçe seçebilirsin."
+                )
+            )
+            .font(.system(size: RDFontScale.size(13), design: .rounded))
+            .foregroundStyle(Color.rdSlate)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .combine)
     }
 }
 

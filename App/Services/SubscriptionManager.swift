@@ -66,7 +66,7 @@ private enum SubscriptionManagerError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noPackagesConfigured:
-            return "Abonelik paketleri RevenueCat tarafında bulunamadı."
+            return RDLocalization.string("paywall.subscription.manager.abonelik.paketleri.revenuecat.tarafinda.bulunama.83b104fa", table: .paywall, fallback: "Abonelik paketleri RevenueCat tarafında bulunamadı.")
         case .restoredPurchaseBelongsToAnotherAccount:
             return AppErrorMessage.subscriptionReceiptConflictMessage
         case .purchasedSubscriptionBelongsToAnotherAccount:
@@ -74,7 +74,7 @@ private enum SubscriptionManagerError: LocalizedError {
         case .storeAccountAlreadyHasSubscription:
             return AppErrorMessage.existingAppStoreSubscriptionMessage
         case let .purchaseTierMismatch(expected, resolved):
-            return "App Store aboneliği doğrulanamadı. Seçilen plan \(expected.title), doğrulanan plan \(resolved.title). Lütfen tekrar dene veya destekle iletişime geç."
+            return RDLocalization.format("paywall.subscription.manager.app.store.aboneligi.dogrulanamadi.secilen.plan.1.44981b3a", table: .paywall, fallback: "App Store aboneliği doğrulanamadı. Seçilen plan %1$@, doğrulanan plan %2$@. Lütfen tekrar dene veya destekle iletişime geç.", arguments: [String(describing: expected.title), String(describing: resolved.title)])
         case let .higherTierAlreadyActive(current, selected):
             return AppErrorMessage.subscriptionActiveHigherTierMessage(current: current, selected: selected)
         }
@@ -160,7 +160,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
     private static func diagnosticSummary(for customerInfo: CustomerInfo) -> String {
         let entitlements = customerInfo.entitlements.active.keys.sorted().joined(separator: ",")
         let products = customerInfo.activeSubscriptions.sorted().joined(separator: ",")
-        return "original=\(customerInfo.originalAppUserId) activeProducts=[\(products)] activeEntitlements=[\(entitlements)]"
+        return RDLocalization.format("paywall.subscription.manager.original.1.activeproducts.2.activeentitlements.3.14079dbe", table: .paywall, fallback: "orijinal=%1$@ aktifÜrünler=[%2$@] activeEntitlements=[%3$@]", arguments: [String(describing: customerInfo.originalAppUserId), String(describing: products), String(describing: entitlements)])
     }
     #endif
 
@@ -321,7 +321,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             throw NSError(
                 domain: "RiskDetected.Subscription",
                 code: 401,
-                userInfo: [NSLocalizedDescriptionKey: "Abonelik başlatmadan önce tekrar giriş yapman gerekiyor."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("paywall.subscription.manager.abonelik.baslatmadan.once.tekrar.giris.yapman.ge.fd36f753", table: .paywall, fallback: "Abonelik başlatmadan önce tekrar giriş yapman gerekiyor.")]
             )
         }
         configure()
@@ -332,7 +332,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             throw NSError(
                 domain: "RiskDetected.Subscription",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Seçilen abonelik paketi bulunamadı."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("paywall.subscription.manager.secilen.abonelik.paketi.bulunamadi.6baced3f", table: .paywall, fallback: "Seçilen abonelik paketi bulunamadı.")]
             )
         }
         let expectedTier = Self.tier(for: package)
@@ -443,7 +443,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             throw NSError(
                 domain: "RiskDetected.Subscription",
                 code: 401,
-                userInfo: [NSLocalizedDescriptionKey: "Satın alımları geri yüklemek için tekrar giriş yapman gerekiyor."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("paywall.subscription.manager.satin.alimlari.geri.yuklemek.icin.tekrar.giris.y.2d7f4974", table: .paywall, fallback: "Satın alımları geri yüklemek için tekrar giriş yapman gerekiyor.")]
             )
         }
         configure()
@@ -630,9 +630,9 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
     private static func subtitle(for package: Package) -> String {
         switch package.packageType {
         case .annual:
-            return "Yıllık abonelik"
+            return RDLocalization.string("paywall.subscription.manager.yillik.abonelik.c46f4eac", table: .paywall, fallback: "Yıllık abonelik")
         case .monthly:
-            return "Aylık abonelik"
+            return RDLocalization.string("paywall.subscription.manager.aylik.abonelik.a9ddd6bf", table: .paywall, fallback: "Aylık abonelik")
         default:
             return package.storeProduct.localizedDescription.isEmpty
                 ? "Abonelik"

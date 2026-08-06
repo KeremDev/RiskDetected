@@ -128,8 +128,6 @@ async function processJob(params: {
         body: JSON.stringify({
           user_id: params.job.user_id,
           kind: params.job.kind,
-          title: params.job.title,
-          body: params.job.body,
           data: {
             ...params.job.payload_data,
             destination: params.job.destination,

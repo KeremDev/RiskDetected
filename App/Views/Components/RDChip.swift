@@ -37,7 +37,7 @@ struct RDRiskDot: View {
         ForEach(RiskLevel.allCases, id: \.self) { lvl in
             HStack {
                 RDChip(level: lvl)
-                RDChip(level: lvl, label: "Özel etiket")
+                RDChip(level: lvl, label: RDLocalization.string("localizable.rdchip.ozel.etiket.1351fb66", table: .localizable, fallback: "Özel etiket"))
                 RDRiskDot(level: lvl)
             }
         }

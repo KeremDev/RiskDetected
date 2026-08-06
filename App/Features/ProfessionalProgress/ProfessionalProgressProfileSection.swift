@@ -28,7 +28,7 @@ struct ProfessionalProgressProfileSection: View {
                         .padding(RDSpacing.lg)
                 }
                 .background(Color.rdPaper)
-                .navigationTitle("Yetkinlik Haritası")
+                .navigationTitle(RDLocalization.string("professionalprogress.professional.progress.profile.section.yetkinlik.haritasi.e9397520", table: .professionalProgress, fallback: "Yetkinlik Haritası"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -76,11 +76,11 @@ struct ProfessionalProgressProfileSection: View {
     private var competencyPreview: some View {
         VStack(alignment: .leading, spacing: RDSpacing.sm) {
             HStack {
-                Text("Yetkinlik Haritası")
+                Text(RDLocalization.string("professionalprogress.professional.progress.profile.section.yetkinlik.haritasi.ab36b62e", table: .professionalProgress, fallback: "Yetkinlik Haritası"))
                     .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Spacer()
-                Button("Tümü") {
+                Button(RDLocalization.string("professionalprogress.professional.progress.profile.section.tumu.5dadc5f6", table: .professionalProgress, fallback: "Tümü")) {
                     showCompetencies = true
                 }
                 .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
@@ -115,7 +115,7 @@ struct ProfessionalProgressProfileSection: View {
                 .background(Color.rdFog)
                 .clipShape(RoundedRectangle(cornerRadius: RDRadius.sm))
 
-            Text("Analiz ve raporların arttıkça yetkinlik alanların burada görünür olacak.")
+            Text(RDLocalization.string("professionalprogress.professional.progress.profile.section.analiz.ve.raporlarin.arttikca.yetkinlik.alanlari.b5934c21", table: .professionalProgress, fallback: "Analiz ve raporların arttıkça yetkinlik alanların burada görünür olacak."))
                 .font(.system(size: RDFontScale.size(13), design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .fixedSize(horizontal: false, vertical: true)

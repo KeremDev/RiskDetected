@@ -61,7 +61,7 @@ struct HomeView: View {
     // Analiz state
     @State private var analysisResult: AnalysisResultBundle? = nil
     @State private var analysisError: String? = nil
-    @State private var analysisErrorTitle: String = "Analiz Hatası"
+    @State private var analysisErrorTitle: String = RDLocalization.string("analysis.home.view.analiz.hatasi.5a62e64f", table: .analysis, fallback: "Analiz Hatası")
     @State private var pendingJob: AnalysisJob? = nil
     @State private var recentItems: [RecentAnalysis] = []
     @State private var recentReports: [ReportRow] = []
@@ -85,6 +85,7 @@ struct HomeView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     if RDConfig.Features.professionalProgressEnabled,
+                       RDProfessionalProgressLocalizationReview.isAvailable,
                        let professionalProgressSummary {
                         ProfessionalProgressWeeklyTrackingCard(
                             summary: professionalProgressSummary,
@@ -101,7 +102,7 @@ struct HomeView: View {
                     }
 
                     RDButton(
-                        title: "Taramayı Başlat",
+                        title: RDLocalization.string("analysis.home.view.taramayi.baslat.59df4910", table: .analysis, fallback: "Taramayı Başlat"),
                         style: .detect,
                         icon: "sparkles",
                         backgroundOverride: scanButtonBackground,
@@ -115,6 +116,7 @@ struct HomeView: View {
                     .padding(.top, 14)
 
                     if RDConfig.Features.professionalProgressEnabled,
+                       RDProfessionalProgressLocalizationReview.isAvailable,
                        let professionalProgressSummary {
                         ProfessionalProgressHomeCard(
                             summary: professionalProgressSummary,
@@ -182,6 +184,9 @@ struct HomeView: View {
             closeFreeQuotaEntryPointsIfNeeded()
             Task { await loadQuotaUsage() }
         }
+        .onChange(of: maxSelectablePhotos) { _ in
+            preparePhotoTrayFixtureIfNeeded()
+        }
         .onChange(of: quotaUsage) { _ in
             closeFreeQuotaEntryPointsIfNeeded()
         }
@@ -229,6 +234,7 @@ struct HomeView: View {
             CanvasSheet(
                 selected: $selectedCanvases,
                 userTier: app.currentTier,
+                legislationCanvasEnabled: app.legislationCanvasEnabled,
                 onConfirm: {
                     showCanvasSheet = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -359,7 +365,8 @@ struct HomeView: View {
                 .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showProfessionalTitlesSheet) {
-            if let professionalProgressSummary {
+            if RDProfessionalProgressLocalizationReview.isAvailable,
+               let professionalProgressSummary {
                 ProfessionalProgressTitlesSheet(summary: professionalProgressSummary)
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
@@ -405,13 +412,13 @@ struct HomeView: View {
             set: {
                 if !$0 {
                     analysisError = nil
-                    analysisErrorTitle = "Analiz Hatası"
+                    analysisErrorTitle = RDLocalization.string("analysis.home.view.analiz.hatasi.a9fd1811", table: .analysis, fallback: "Analiz Hatası")
                 }
             }
         )) {
-            Button("Tamam") {
+            Button(RDLocalization.string("analysis.home.view.tamam.b16fe160", table: .analysis, fallback: "Tamam")) {
                 analysisError = nil
-                analysisErrorTitle = "Analiz Hatası"
+                analysisErrorTitle = RDLocalization.string("analysis.home.view.analiz.hatasi.fb111abd", table: .analysis, fallback: "Analiz Hatası")
             }
         } message: {
             Text(analysisError ?? "")
@@ -476,7 +483,7 @@ struct HomeView: View {
     }
 
     private var annotatePrimaryActionTitle: String {
-        returnToPhotoTrayAfterAnnotation ? "İşaretlemeyi kaydet" : "İşaretli alanları analiz et"
+        returnToPhotoTrayAfterAnnotation ? RDLocalization.string("analysis.home.view.isaretlemeyi.kaydet.aa26b5c5", table: .analysis, fallback: "İşaretlemeyi kaydet") : RDLocalization.string("analysis.home.view.isaretli.alanlari.analiz.et.20a08616", table: .analysis, fallback: "İşaretli alanları analiz et")
     }
 
     private var annotatePrimaryActionIcon: String {
@@ -486,7 +493,7 @@ struct HomeView: View {
     private var photoUploadCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Label("Saha fotoğrafları", systemImage: "photo.on.rectangle.angled")
+                Label(RDLocalization.string("analysis.home.view.saha.fotograflari.b396eb02", table: .analysis, fallback: "Saha fotoğrafları"), systemImage: "photo.on.rectangle.angled")
                     .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Spacer(minLength: 0)
@@ -550,10 +557,10 @@ struct HomeView: View {
             .frame(width: 82, height: 82)
 
             VStack(spacing: 5) {
-                Text("Saha fotoğrafı yükle")
+                Text(RDLocalization.string("analysis.home.view.saha.fotografi.yukle.fc090c81", table: .analysis, fallback: "Saha fotoğrafı yükle"))
                     .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
-                Text("JPG · PNG · HEIC")
+                Text(RDLocalization.string("analysis.home.view.jpg.png.heic.48da947b", table: .analysis, fallback: "JPG · PNG · HEIC"))
                     .rdMono(size: 11, weight: .medium)
                     .foregroundStyle(Color.rdSlate.opacity(0.78))
             }
@@ -574,10 +581,18 @@ struct HomeView: View {
             photoUploadSummaryIcon
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("\(selectedPhotos.count) fotoğraf eklendi")
+                Text(
+                    RDLocalization.plural(
+                        "analysis.count.photos_added",
+                        table: .analysis,
+                        value: selectedPhotos.count,
+                        fallbackOne: "%lld fotoğraf eklendi",
+                        fallbackOther: "%lld fotoğraf eklendi"
+                    )
+                )
                     .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
-                Text("Fotoğrafları düzenle")
+                Text(RDLocalization.string("analysis.home.view.fotograflari.duzenle.7c862adf", table: .analysis, fallback: "Fotoğrafları düzenle"))
                     .rdMono(size: 11, weight: .medium)
                     .foregroundStyle(Color.rdSlate.opacity(0.78))
             }
@@ -669,7 +684,7 @@ struct HomeView: View {
                         }
                         .buttonStyle(RDPressableButtonStyle())
                         .padding(4)
-                        .accessibilityLabel("\(index + 1). fotoğrafı sil")
+                        .accessibilityLabel(RDLocalization.format("analysis.home.view.1.fotografi.sil.63339467", table: .analysis, fallback: "%1$@. fotoğrafı sil", arguments: [String(describing: index + 1)]))
                     }
                     .frame(width: 62, height: 62)
                 }
@@ -719,17 +734,17 @@ struct HomeView: View {
                 }
                 .frame(width: 82, height: 82)
 
-                Text("Ücretsiz hak doldu")
+                Text(RDLocalization.string("analysis.home.view.ucretsiz.hak.doldu.c16fcce9", table: .analysis, fallback: "Ücretsiz hak doldu"))
                     .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                     .foregroundStyle(lockedPhotoTitleColor)
-                Text("Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et.")
+                Text(RDLocalization.string("analysis.home.view.gunde.1.ucretsiz.analiz.hakkin.doldu.plus.veya.p.54c5c949", table: .analysis, fallback: "Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et."))
                     .font(.system(size: RDFontScale.size(13), design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(lockedPhotoSubtitleColor)
                     .frame(maxWidth: 280)
 
                 HStack(spacing: 5) {
-                    Text("Yükselt")
+                    Text(RDLocalization.string("analysis.home.view.yukselt.679408d0", table: .analysis, fallback: "Yükselt"))
                         .font(.system(size: RDFontScale.size(12), weight: .heavy, design: .rounded))
                     Image(systemName: "chevron.right")
                         .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
@@ -826,7 +841,7 @@ struct HomeView: View {
                 .frame(width: 42, height: 38)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Ücretsiz Analiz Hakkı")
+                    Text(RDLocalization.string("analysis.home.view.ucretsiz.analiz.hakki.795e8ebb", table: .analysis, fallback: "Ücretsiz Analiz Hakkı"))
                         .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(freeQuotaHintSubtitle)
@@ -855,7 +870,7 @@ struct HomeView: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .homeCardDepth(colorScheme: colorScheme, radius: 14, y: 6)
-        .accessibilityLabel("Free kullanım bilgisi. \(freeQuotaHintSubtitle)")
+        .accessibilityLabel(RDLocalization.format("analysis.home.view.free.kullanim.bilgisi.1.3f83c487", table: .analysis, fallback: "Free kullanım bilgisi. %1$@", arguments: [String(describing: freeQuotaHintSubtitle)]))
     }
 
     private var freeQuotaCompactText: String {
@@ -865,19 +880,25 @@ struct HomeView: View {
 
     private var freeQuotaHintSubtitle: String {
         if isFreeQuotaExhausted {
-            return "Bugünkü hakkın doldu. Daha fazlası için hesabını yükselt."
+            return RDLocalization.string("analysis.home.view.bugunku.hakkin.doldu.daha.fazlasi.icin.hesabini..2f42126c", table: .analysis, fallback: "Bugünkü hakkın doldu. Daha fazlası için hesabını yükselt.")
         }
-        return "Günde 1 ücretsiz analiz hakkın hazır."
+        return RDLocalization.string("analysis.home.view.gunde.1.ucretsiz.analiz.hakkin.hazir.904ba1c3", table: .analysis, fallback: "Günde 1 ücretsiz analiz hakkın hazır.")
     }
 
 
     private var recentSection: some View {
         homeSectionCard {
             sectionHeader(
-                title: "Son uygunsuzluklar",
+                title: RDLocalization.string("analysis.home.view.son.uygunsuzluklar.4f75d259", table: .analysis, fallback: "Son uygunsuzluklar"),
                 icon: "exclamationmark.triangle.fill",
                 tint: Color.rdCritical,
-                countLabel: "\(recentItems.count) kayıt"
+                countLabel: RDLocalization.plural(
+                    "analysis.count.records",
+                    table: .analysis,
+                    value: recentItems.count,
+                    fallbackOne: "%lld kayıt",
+                    fallbackOther: "%lld kayıt"
+                )
             ) {
                 app.activeTab = .analyses
             }
@@ -905,10 +926,16 @@ struct HomeView: View {
     private var generatedReportsSection: some View {
         homeSectionCard {
             sectionHeader(
-                title: "Oluşturulan raporlar",
+                title: RDLocalization.string("analysis.home.view.olusturulan.raporlar.6b7245c9", table: .analysis, fallback: "Oluşturulan raporlar"),
                 icon: "doc.richtext.fill",
                 tint: Color.rdGreen,
-                countLabel: "\(recentReports.count) dosya"
+                countLabel: RDLocalization.plural(
+                    "reports.count.files",
+                    table: .reports,
+                    value: recentReports.count,
+                    fallbackOne: "%lld dosya",
+                    fallbackOther: "%lld dosya"
+                )
             ) {
                 app.activeTab = .reports
             }
@@ -976,7 +1003,7 @@ struct HomeView: View {
 
             Button(action: action) {
                 HStack(spacing: 4) {
-                    Text("Tümü")
+                    Text(RDLocalization.string("analysis.home.view.tumu.51f59551", table: .analysis, fallback: "Tümü"))
                     Image(systemName: "chevron.right")
                         .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                 }
@@ -1002,10 +1029,10 @@ struct HomeView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Henüz rapor oluşturulmadı")
+                    Text(RDLocalization.string("analysis.home.view.henuz.rapor.olusturulmadi.8ff986dc", table: .analysis, fallback: "Henüz rapor oluşturulmadı"))
                         .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("PDF veya Excel çıktıları burada görünecek.")
+                    Text(RDLocalization.string("analysis.home.view.pdf.veya.excel.ciktilari.burada.gorunecek.da7b3830", table: .analysis, fallback: "PDF veya Excel çıktıları burada görünecek."))
                         .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
@@ -1025,10 +1052,10 @@ struct HomeView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Henüz tamamlanmış analiz yok")
+                    Text(RDLocalization.string("analysis.home.view.henuz.tamamlanmis.analiz.yok.40338932", table: .analysis, fallback: "Henüz tamamlanmış analiz yok"))
                         .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("İlk tarama tamamlandığında burada listelenecek.")
+                    Text(RDLocalization.string("analysis.home.view.ilk.tarama.tamamlandiginda.burada.listelenecek.e43d3070", table: .analysis, fallback: "İlk tarama tamamlandığında burada listelenecek."))
                         .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
@@ -1043,9 +1070,19 @@ struct HomeView: View {
         !app.currentTier.isPaid && quotaUsage?.isExhausted == true
     }
 
-    /// "Taramayı Başlat" → foto yoksa medya tray; varsa sektör veya canvas seçimine geçer.
+    /// RDLocalization.string("analysis.home.view.taramayi.baslat.e82526ee", table: .analysis, fallback: "Taramayı Başlat") → foto yoksa medya tray; varsa sektör veya canvas seçimine geçer.
     private func startAnalysisFlow() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if app.requiresExplicitSafetyProfileSelection {
+            presentAnalysisError(
+                AppErrorMessage.make(
+                    rawMessage: RDLocalization.string("analysis.home.view.choose.a.safety.terminology.profile.in.profile.b.e12b8d4c", table: .analysis, fallback: "Analize başlamadan önce Profil'de bir güvenlik terminolojisi profili seçin."),
+                    context: RDLocalization.string("analysis.home.view.safety.terminology.required.f0f5c4a7", table: .analysis, fallback: "Güvenlik terminolojisi gerekli"),
+                    fallbackTitle: RDLocalization.string("analysis.home.view.safety.terminology.required.a0bb8cf5", table: .analysis, fallback: "Güvenlik terminolojisi gerekli")
+                )
+            )
+            return
+        }
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             return
@@ -1229,6 +1266,17 @@ struct HomeView: View {
             return
         }
         let canvases = selectedCanvasesForCurrentTier()
+        let localization = app.localizationRequestForNewAnalysis
+        if RDGlobalLocalizationBuildGate.isEnabled && localization == nil {
+            presentAnalysisError(
+                AppErrorMessage.make(
+                    rawMessage: RDLocalization.string("analysis.home.view.safety.terminology.profile.is.required.562cf91b", table: .analysis, fallback: "Güvenlik terminolojisi profili gereklidir."),
+                    context: RDLocalization.string("analysis.home.view.safety.terminology.required.2302b5ec", table: .analysis, fallback: "Güvenlik terminolojisi gerekli"),
+                    fallbackTitle: RDLocalization.string("analysis.home.view.safety.terminology.required.bb477590", table: .analysis, fallback: "Güvenlik terminolojisi gerekli")
+                )
+            )
+            return
+        }
         let capturedImages = selectedImages
         let analysisSector: AnalysisSectorID?
         if RDConfig.Features.activeAnalysisSectorEnabled {
@@ -1251,6 +1299,7 @@ struct HomeView: View {
                 userID: userID,
                 images: capturedImages,
                 canvases: canvases,
+                localization: localization,
                 analysisSector: analysisSector,
                 companyID: nil,
                 onProgress: progress
@@ -1259,10 +1308,10 @@ struct HomeView: View {
     }
 
     private func handleAnalysisError(_ msg: String) {
-        let normalized = AppErrorMessage.make(rawMessage: msg, context: "Analiz tamamlanamadı", fallbackTitle: "Analiz tamamlanamadı")
+        let normalized = AppErrorMessage.make(rawMessage: msg, context: RDLocalization.string("analysis.home.view.analiz.tamamlanamadi.7e7d3254", table: .analysis, fallback: "Analiz tamamlanamadı"), fallbackTitle: RDLocalization.string("analysis.home.view.analiz.tamamlanamadi.7e7d3254", table: .analysis, fallback: "Analiz tamamlanamadı"))
         if normalized.category == .quotaExceeded {
             analysisError = nil
-            analysisErrorTitle = "Analiz Hatası"
+            analysisErrorTitle = RDLocalization.string("analysis.home.view.analiz.hatasi.c6ebcb2d", table: .analysis, fallback: "Analiz Hatası")
             markFreeQuotaExhaustedLocally()
             showQuotaPaywall()
             Task { await loadQuotaUsage() }
@@ -1277,7 +1326,10 @@ struct HomeView: View {
     }
 
     private func selectedCanvasesForCurrentTier() -> [AnalysisCanvas] {
-        let ordered = AnalysisCanvas.all.filter { selectedCanvases.contains($0) }
+        let ordered = AnalysisCanvas.all.filter {
+            selectedCanvases.contains($0)
+                && ($0.id != AnalysisCanvas.legislation.id || app.legislationCanvasEnabled)
+        }
         let allowed = ordered.filter { app.currentTier.includes($0.minTier) }
         let nonEmpty = allowed.isEmpty ? [.general] : allowed
         if app.currentTier.isPaid {
@@ -1377,8 +1429,8 @@ struct HomeView: View {
         let allowedCount = maxSelectablePhotos - selectedPhotos.count
         guard allowedCount > 0 else {
             if app.currentTier.isPaid {
-                analysisErrorTitle = "Fotoğraf limiti"
-                analysisError = "Bu planda en fazla \(maxSelectablePhotos) fotoğraf analiz edilebilir."
+                analysisErrorTitle = RDLocalization.string("analysis.home.view.fotograf.limiti.1a3eb0a6", table: .analysis, fallback: "Fotoğraf limiti")
+                analysisError = RDLocalization.format("analysis.home.view.bu.planda.en.fazla.1.fotograf.analiz.edilebilir.03d1b16d", table: .analysis, fallback: "Bu planda en fazla %1$@ fotoğraf analiz edilebilir.", arguments: [String(describing: maxSelectablePhotos)])
             } else {
                 showPlainPaywall()
             }
@@ -1389,8 +1441,8 @@ struct HomeView: View {
         selectedPhotos.append(contentsOf: drafts)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         if images.count > allowedCount {
-            analysisErrorTitle = "Fotoğraf limiti"
-            analysisError = "En fazla \(maxSelectablePhotos) fotoğraf eklenebilir. Fazla seçimler alınmadı."
+            analysisErrorTitle = RDLocalization.string("analysis.home.view.fotograf.limiti.03ab1131", table: .analysis, fallback: "Fotoğraf limiti")
+            analysisError = RDLocalization.format("analysis.home.view.en.fazla.1.fotograf.eklenebilir.fazla.secimler.a.dddd1ee5", table: .analysis, fallback: "En fazla %1$@ fotoğraf eklenebilir. Fazla seçimler alınmadı.", arguments: [String(describing: maxSelectablePhotos)])
         }
         if shouldAnnotate {
             queuePhotoAnnotations(
@@ -1539,6 +1591,11 @@ struct HomeView: View {
     }
 
     private func loadProfessionalProgress() async {
+        guard RDProfessionalProgressLocalizationReview.isAvailable else {
+            professionalProgressSummary = nil
+            showProfessionalTitlesSheet = false
+            return
+        }
         #if DEBUG
         if Self.isUITestMainLaunch {
             professionalProgressSummary = Self.uiTestProfessionalProgressSummary
@@ -1554,12 +1611,14 @@ struct HomeView: View {
 
     private func preparePhotoTrayFixtureIfNeeded() {
         #if DEBUG
-        if Self.isUITestPhotoTrayFixture, selectedPhotos.isEmpty {
-            let fixturePhotos = [
-                AnalysisPhotoDraft(image: Self.uiTestPhotoFixture(seed: 0)),
-                AnalysisPhotoDraft(image: Self.uiTestPhotoFixture(seed: 1))
-            ]
-            selectedPhotos = Array(fixturePhotos.prefix(maxSelectablePhotos))
+        if Self.isUITestPhotoTrayFixture {
+            let targetCount = min(maxSelectablePhotos, 2)
+            if selectedPhotos.count < targetCount {
+                let missingPhotos = (selectedPhotos.count..<targetCount).map { index in
+                    AnalysisPhotoDraft(image: Self.uiTestPhotoFixture(seed: index))
+                }
+                selectedPhotos.append(contentsOf: missingPhotos)
+            }
             showSourceDialog = true
         } else if Self.isUITestOpenPhotoTray {
             showSourceDialog = true
@@ -1760,7 +1819,7 @@ struct HomeView: View {
                 format: "pdf",
                 kind: PDFReportKind.standard.rawValue,
                 method: "fine_kinney",
-                title: "Genel · UI Test",
+                title: RDLocalization.string("analysis.home.view.genel.ui.test.a58b1874", table: .analysis, fallback: "Genel · UI Test"),
                 storagePath: "ui-test/report-standard.pdf",
                 fileName: "report-standard.pdf",
                 mimeType: "application/pdf",
@@ -1778,7 +1837,7 @@ struct HomeView: View {
                 format: "xlsx",
                 kind: "risk_analysis",
                 method: "matrix_5x5",
-                title: "Risk Analizi · UI Test",
+                title: RDLocalization.string("analysis.home.view.risk.analizi.ui.test.a01f53a7", table: .analysis, fallback: "Risk Analizi · UI Test"),
                 storagePath: "ui-test/report-risk.xlsx",
                 fileName: "report-risk.xlsx",
                 mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1922,7 +1981,7 @@ struct HomeView: View {
 
     private func openRecentAnalysis(_ item: RecentAnalysis) {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        openAnalysisResult(analysisID: item.id, context: "Analiz açılamadı")
+        openAnalysisResult(analysisID: item.id, context: RDLocalization.string("analysis.home.view.analiz.acilamadi.bec78d0c", table: .analysis, fallback: "Analiz açılamadı"))
     }
 
     private func openAnalysisResult(analysisID: UUID, context: String) {
@@ -1946,7 +2005,7 @@ struct HomeView: View {
               !showResult,
               openingRecentID == nil else { return }
         app.pendingAnalysisResultID = nil
-        openAnalysisResult(analysisID: analysisID, context: "Analiz sonucu açılamadı")
+        openAnalysisResult(analysisID: analysisID, context: RDLocalization.string("analysis.home.view.analiz.sonucu.acilamadi.5e47c59a", table: .analysis, fallback: "Analiz sonucu açılamadı"))
     }
 
     private func resumeInFlightAnalysisIfNeeded() {
@@ -1962,8 +2021,8 @@ struct HomeView: View {
 
         if inFlight.kind == "text" {
             InFlightAnalysisStore.shared.clear(analysisID: inFlight.analysisID)
-            analysisErrorTitle = "Metin analizi kaldırıldı"
-            analysisError = "Metin analizi artık desteklenmiyor. Lütfen fotoğraf yükleyerek yeni analiz başlatın."
+            analysisErrorTitle = RDLocalization.string("analysis.home.view.metin.analizi.kaldirildi.905d5a82", table: .analysis, fallback: "Metin analizi kaldırıldı")
+            analysisError = RDLocalization.string("analysis.home.view.metin.analizi.artik.desteklenmiyor.lutfen.fotogr.05e50fcd", table: .analysis, fallback: "Metin analizi artık desteklenmiyor. Lütfen fotoğraf yükleyerek yeni analiz başlatın.")
             return
         }
 
@@ -2060,7 +2119,7 @@ struct HomeView: View {
                 canvases: [.general, .ppe, .warningSigns, .workingAtHeight, .electrical],
                 analysisSector: .construction,
                 companyID: nil,
-                title: "E2E 3 Fotoğraf Storage \(Self.uiTestISODate(minutesAgo: 0))",
+                title: RDLocalization.format("analysis.home.view.e2e.3.fotograf.storage.1.c8cb48fa", table: .analysis, fallback: "E2E 3 Fotoğraf Storage %1$@", arguments: [String(describing: Self.uiTestISODate(minutesAgo: 0))]),
                 onProgress: progress
             )
         }
@@ -2085,8 +2144,8 @@ struct HomeView: View {
             } catch {
                 presentAnalysisError(AppErrorMessage.make(
                     error,
-                    context: "Rapor açılamadı",
-                    fallbackTitle: "Rapor açılamadı"
+                    context: RDLocalization.string("analysis.home.view.rapor.acilamadi.8d6f58ee", table: .analysis, fallback: "Rapor açılamadı"),
+                    fallbackTitle: RDLocalization.string("analysis.home.view.rapor.acilamadi.95aed07e", table: .analysis, fallback: "Rapor açılamadı")
                 ))
             }
             openingReportID = nil
@@ -2287,8 +2346,8 @@ private struct HomeReportRow: View {
     }
 
     private var kindLabel: String {
-        if isExcel { return "Excel tablo" }
-        return isRiskAnalysis ? "Risk analizi" : "Standart rapor"
+        if isExcel { return RDLocalization.string("analysis.home.view.excel.tablo.84e74224", table: .analysis, fallback: "Excel tablo") }
+        return isRiskAnalysis ? RDLocalization.string("analysis.home.view.risk.analizi.a7a9a6fd", table: .analysis, fallback: "Risk analizi") : RDLocalization.string("analysis.home.view.standart.rapor.e78add8a", table: .analysis, fallback: "Standart rapor")
     }
 
     private var kindStyle: (text: Color, background: Color) {
@@ -2309,10 +2368,11 @@ private struct HomeReportRow: View {
     }
 
     private var dateText: String {
-        guard let date = report.createdAt.flatMap(Self.parseDate) else { return "Tarih yok" }
+        guard let date = report.createdAt.flatMap(Self.parseDate) else { return RDLocalization.string("analysis.home.view.tarih.yok.6cb91bbc", table: .analysis, fallback: "Tarih yok") }
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMM HH:mm"
+        formatter.locale = .autoupdatingCurrent
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
         return formatter.string(from: date)
     }
 
@@ -2385,8 +2445,18 @@ private struct PhotoMediaTraySheet: View {
             header
 
             HStack(spacing: 10) {
-                sourceButton(title: "Kamera", icon: "camera.fill", action: onCamera)
-                sourceButton(title: "Galeri", icon: "photo.on.rectangle.angled", action: onGallery)
+                sourceButton(
+                    title: RDLocalization.string("analysis.home.view.kamera.0bbfe23e", table: .analysis, fallback: "Kamera"),
+                    icon: "camera.fill",
+                    accessibilityID: "home.photo_tray.camera",
+                    action: onCamera
+                )
+                sourceButton(
+                    title: RDLocalization.string("analysis.home.view.galeri.a1a2ff1c", table: .analysis, fallback: "Galeri"),
+                    icon: "photo.on.rectangle.angled",
+                    accessibilityID: "home.photo_tray.gallery",
+                    action: onGallery
+                )
             }
             .disabled(!canAddMore)
 
@@ -2411,13 +2481,14 @@ private struct PhotoMediaTraySheet: View {
         .padding(.bottom, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(trayBackground)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("home.photo_tray")
     }
 
     private var header: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Fotoğraflar")
+                Text(RDLocalization.string("analysis.home.view.fotograflar.a049e496", table: .analysis, fallback: "Fotoğraflar"))
                     .font(.system(size: RDFontScale.size(23), weight: .bold, design: .rounded))
                     .foregroundStyle(trayPrimaryText)
                 Text("\(photos.count)/\(maxPhotoCount)")
@@ -2436,7 +2507,7 @@ private struct PhotoMediaTraySheet: View {
                     .clipShape(Circle())
             }
             .buttonStyle(RDPressableButtonStyle())
-            .accessibilityLabel("Kapat")
+            .accessibilityLabel(RDLocalization.string("analysis.home.view.kapat.349873ed", table: .analysis, fallback: "Kapat"))
         }
     }
 
@@ -2471,7 +2542,12 @@ private struct PhotoMediaTraySheet: View {
         }
     }
 
-    private func sourceButton(title: String, icon: String, action: @escaping () -> Void) -> some View {
+    private func sourceButton(
+        title: String,
+        icon: String,
+        accessibilityID: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
@@ -2492,7 +2568,7 @@ private struct PhotoMediaTraySheet: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .accessibilityLabel(title)
-        .accessibilityIdentifier(title == "Kamera" ? "home.photo_tray.camera" : "home.photo_tray.gallery")
+        .accessibilityIdentifier(accessibilityID)
     }
 
     private func selectedTile(_ draft: AnalysisPhotoDraft, index: Int, tileSize: CGFloat) -> some View {
@@ -2531,7 +2607,7 @@ private struct PhotoMediaTraySheet: View {
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Fotoğrafı sil")
+                    .accessibilityLabel(RDLocalization.string("analysis.home.view.fotografi.sil.caa00980", table: .analysis, fallback: "Fotoğrafı sil"))
                 }
 
                 Spacer(minLength: 0)
@@ -2575,7 +2651,7 @@ private struct PhotoMediaTraySheet: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .disabled(!canAddMore)
-        .accessibilityLabel("Fotoğraf ekle")
+        .accessibilityLabel(RDLocalization.string("analysis.home.view.fotograf.ekle.279a8fb7", table: .analysis, fallback: "Fotoğraf ekle"))
     }
 
     private func lockedTile(index: Int, tileSize: CGFloat) -> some View {
@@ -2596,7 +2672,7 @@ private struct PhotoMediaTraySheet: View {
             .frame(width: tileSize, height: tileSize)
         }
         .buttonStyle(RDPressableButtonStyle())
-        .accessibilityLabel("\(index + 1). slot kilitli. Plus veya Pro ile açılır.")
+        .accessibilityLabel(RDLocalization.format("analysis.home.view.1.slot.kilitli.plus.veya.pro.ile.acilir.55383064", table: .analysis, fallback: "%1$@. slot kilitli. Plus veya Pro ile açılır.", arguments: [String(describing: index + 1)]))
     }
 
     private var multiPhotoUpgradePrompt: some View {
@@ -2604,7 +2680,7 @@ private struct PhotoMediaTraySheet: View {
             HStack(spacing: 9) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
-                Text("Çoklu fotoğraf özelliği için hesabınızı yükseltin")
+                Text(RDLocalization.string("analysis.home.view.coklu.fotograf.ozelligi.icin.hesabinizi.yukselti.14166947", table: .analysis, fallback: "Çoklu fotoğraf özelliği için hesabınızı yükseltin"))
                     .font(.system(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.86)
@@ -2663,7 +2739,19 @@ private struct PhotoMediaTraySheet: View {
             HStack(spacing: 9) {
                 Image(systemName: photos.isEmpty ? "plus.circle.fill" : "sparkles")
                     .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
-                Text(photos.isEmpty ? "Fotoğraf ekle" : "Analize geç")
+                Text(
+                    photos.isEmpty
+                        ? RDLocalization.string(
+                            "analysis.photo_tray.add_photo",
+                            table: .analysis,
+                            fallback: "Fotoğraf ekle"
+                        )
+                        : RDLocalization.string(
+                            "analysis.photo_tray.continue_to_analysis",
+                            table: .analysis,
+                            fallback: "Analize geç"
+                        )
+                )
                     .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                     .tracking(0)
                     .lineLimit(1)
@@ -2681,6 +2769,19 @@ private struct PhotoMediaTraySheet: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .disabled(photos.isEmpty && !canAddMore)
+        .accessibilityLabel(
+            photos.isEmpty
+                ? RDLocalization.string(
+                    "analysis.photo_tray.add_photo",
+                    table: .analysis,
+                    fallback: "Fotoğraf ekle"
+                )
+                : RDLocalization.string(
+                    "analysis.photo_tray.continue_to_analysis",
+                    table: .analysis,
+                    fallback: "Analize geç"
+                )
+        )
         .accessibilityIdentifier("home.photo_tray.primary")
     }
 }

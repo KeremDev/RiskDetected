@@ -1,0 +1,420 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-28T19:45:02+03:00",
+  "mutation_performed": false,
+  "app": {
+    "id": "6769498181",
+    "attributes": {
+      "name": "RiskDetected: İş Güvenliği İSG",
+      "bundleId": "com.riskdetected.app",
+      "sku": "riskdetected-ios",
+      "primaryLocale": "tr",
+      "contentRightsDeclaration": "DOES_NOT_USE_THIRD_PARTY_CONTENT"
+    }
+  },
+  "versions": [
+    {
+      "id": "ae85614e-d220-4ba7-afc8-dafd5083ac0f",
+      "attributes": {
+        "platform": "IOS",
+        "versionString": "1.2.4",
+        "appStoreState": "READY_FOR_SALE",
+        "appVersionState": "READY_FOR_DISTRIBUTION",
+        "copyright": "© 2026 RiskDetected",
+        "createdDate": "2026-07-25T12:43:24-07:00",
+        "releaseType": "AFTER_APPROVAL"
+      }
+    },
+    {
+      "id": "4025b1c8-2739-457b-8862-8916b6e30589",
+      "attributes": {
+        "platform": "IOS",
+        "versionString": "1.2.3",
+        "appStoreState": "READY_FOR_SALE",
+        "appVersionState": "READY_FOR_DISTRIBUTION",
+        "copyright": "© 2026 RiskDetected",
+        "createdDate": "2026-07-09T01:26:23-07:00",
+        "releaseType": "AFTER_APPROVAL"
+      }
+    },
+    {
+      "id": "bac288cb-2c3e-456c-87da-5ecba017fb4b",
+      "attributes": {
+        "platform": "IOS",
+        "versionString": "1.2.2",
+        "appStoreState": "READY_FOR_SALE",
+        "appVersionState": "READY_FOR_DISTRIBUTION",
+        "copyright": "© 2026 RiskDetected",
+        "createdDate": "2026-06-30T12:35:49-07:00",
+        "releaseType": "AFTER_APPROVAL"
+      }
+    },
+    {
+      "id": "18d8881a-812d-4042-865f-dc35ec8e2595",
+      "attributes": {
+        "platform": "IOS",
+        "versionString": "1.2.1",
+        "appStoreState": "READY_FOR_SALE",
+        "appVersionState": "READY_FOR_DISTRIBUTION",
+        "copyright": "© 2026 RiskDetected",
+        "createdDate": "2026-06-28T13:57:00-07:00",
+        "releaseType": "AFTER_APPROVAL"
+      }
+    },
+    {
+      "id": "945e9518-b561-4a53-bd01-032000e3d00f",
+      "attributes": {
+        "platform": "IOS",
+        "versionString": "1.2.0",
+        "appStoreState": "READY_FOR_SALE",
+        "appVersionState": "READY_FOR_DISTRIBUTION",
+        "copyright": "© 2026 RiskDetected",
+        "createdDate": "2026-06-25T14:48:35-07:00",
+        "releaseType": "MANUAL"
+      }
+    },
+    {
+      "id": "3429a1c6-e97b-49a2-abea-eae84ec75c3a",
+      "attributes": {
+        "platform": "IOS",
+        "versionString": "1.1.1",
+        "appStoreState": "READY_FOR_SALE",
+        "appVersionState": "READY_FOR_DISTRIBUTION",
+        "copyright": "© 2026 RiskDetected",
+        "createdDate": "2026-06-15T12:12:26-07:00",
+        "releaseType": "AFTER_APPROVAL"
+      }
+    },
+    {
+      "id": "bed26212-47f3-4c5a-9393-438ee57f0c56",
+      "attributes": {
+        "platform": "IOS",
+        "versionString": "1.1",
+        "appStoreState": "READY_FOR_SALE",
+        "appVersionState": "READY_FOR_DISTRIBUTION",
+        "copyright": "© 2026 RiskDetected",
+        "createdDate": "2026-06-12T18:11:03-07:00",
+        "releaseType": "AFTER_APPROVAL"
+      }
+    },
+    {
+      "id": "e97f1de1-7e8c-448b-a5b9-80869f0a8816",
+      "attributes": {
+        "platform": "IOS",
+        "versionString": "1.0",
+        "appStoreState": "READY_FOR_SALE",
+        "appVersionState": "READY_FOR_DISTRIBUTION",
+        "copyright": "© 2026 RiskDetected",
+        "createdDate": "2026-05-14T11:22:06-07:00",
+        "releaseType": "AFTER_APPROVAL"
+      }
+    }
+  ],
+  "inspected_version": {
+    "id": "ae85614e-d220-4ba7-afc8-dafd5083ac0f",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.2.4",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 RiskDetected",
+      "createdDate": "2026-07-25T12:43:24-07:00",
+      "releaseType": "AFTER_APPROVAL"
+    },
+    "localizations": [
+      {
+        "id": "e7dafc7e-14b8-428c-9ab6-a079ab95b823",
+        "locale": "tr",
+        "attributes": {
+          "locale": "tr",
+          "description": "RiskDetected, iş güvenliği ve İSG risk analizi süreçlerinde saha fotoğrafı ile tehlike, uygunsuzluk ve riskleri değerlendirip PDF/Excel risk raporu hazırlamanıza yardımcı olur.\n\nİş güvenliği uzmanları, OSGB ekipleri, işveren vekilleri ve saha sorumluları için geliştirilen RiskDetected; Fine-Kinney ve 5x5 Matris yöntemleriyle riskleri önceliklendirmeyi, kontrol tedbirlerini netleştirmeyi ve raporları arşivlemeyi kolaylaştırır.\n\nÖne çıkan özellikler:\n• Fotoğraf ile İSG risk analizi\n• Fine-Kinney ve 5x5 Matris risk değerlendirme çıktıları\n• PDF ve Excel risk raporu oluşturma\n• Tehlike, uygunsuzluk ve kontrol tedbiri önerileri\n• Rapor arşivi, indirme ve paylaşım\n• Firma bilgisi, hazırlayan bilgisi ve logo ile rapor özelleştirme\n• OSGB ve iş güvenliği uzmanları için saha denetim akışı\n• KVKK ve gizlilik hassasiyetiyle veri yönetimi\n\nRiskDetected; iş sağlığı ve güvenliği, risk değerlendirme, saha denetimi ve risk raporlama süreçlerinde zaman kazanmak isteyen profesyoneller için tasarlanmıştır.\n\nUygulama yapay zeka destekli analizler sunar. AI çıktıları profesyonel değerlendirme, mevzuat yorumu veya saha kontrolünün yerine geçmez. Nihai karar, kontrol ve uygunluk değerlendirmesi yetkili iş güvenliği uzmanı veya sorumlu kişi tarafından yapılmalıdır.\n\nBazı gelişmiş özellikler uygulama içi abonelik gerektirebilir. Abonelikler App Store üzerinden yönetilir.\n\nKullanım Koşulları: https://riskdetected.com/kullanim-kosullari\nGizlilik Politikası: https://riskdetected.com/gizlilik\nApple Standart Lisans Sözleşmesi (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+          "keywords": "osgb,is güvenliği,is guvenligi,isg,değerlendirme,uzmanı,sağlığı,tehlike,tespit,5x5,matris",
+          "marketingUrl": "https://riskdetected.com",
+          "supportUrl": "https://riskdetected.com",
+          "whatsNew": "• Bildirim tercihleri sadeleştirildi ve uygulama bildirimleri tek ayarda toplandı.\n• Analiz ve rapor oluşturma akışlarının güvenilirliği artırıldı.\n• Performans iyileştirmeleri ve hata düzeltmeleri yapıldı."
+        },
+        "screenshot_sets": [
+          {
+            "id": "73d1eb37-4a49-4455-bda6-3ba5168ddda3",
+            "attributes": {
+              "screenshotDisplayType": "APP_IPHONE_67"
+            },
+            "screenshots": [
+              {
+                "id": "3db27b3b-c670-45cd-821f-6d1fc639fca5",
+                "attributes": {
+                  "fileSize": 4782708,
+                  "fileName": "var-B-hazard.png",
+                  "sourceFileChecksum": "8429f8008ba019ca857119a44847f88d",
+                  "imageAsset": {
+                    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/71/31/2e/71312e3d-6326-8aca-fbd8-8bf7dbb42d72/var-B-hazard.png/{w}x{h}bb.{f}",
+                    "width": 1290,
+                    "height": 2796
+                  },
+                  "assetToken": "PurpleSource221/v4/71/31/2e/71312e3d-6326-8aca-fbd8-8bf7dbb42d72/var-B-hazard.png",
+                  "assetType": "SortedD74ScreenShot",
+                  "assetDeliveryState": {
+                    "state": "COMPLETE"
+                  }
+                }
+              },
+              {
+                "id": "d5f47ce8-5d6a-41fc-bbf7-8eb698bcd412",
+                "attributes": {
+                  "fileSize": 3179100,
+                  "fileName": "riskdetected-appstore-blue-detailed-risk-assessment-teal-navy-bg-1290x2796.png",
+                  "sourceFileChecksum": "e7f93594d7ee050b0847baa4eff324ee",
+                  "imageAsset": {
+                    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/54/9d/c9/549dc9eb-6349-f0ef-b00e-3883f85d1277/riskdetected-appstore-blue-detailed-risk-assessment-teal-navy-bg-1290x2796.png/{w}x{h}bb.{f}",
+                    "width": 1290,
+                    "height": 2796
+                  },
+                  "assetToken": "PurpleSource211/v4/54/9d/c9/549dc9eb-6349-f0ef-b00e-3883f85d1277/riskdetected-appstore-blue-detailed-risk-assessment-teal-navy-bg-1290x2796.png",
+                  "assetType": "SortedD74ScreenShot",
+                  "assetDeliveryState": {
+                    "state": "COMPLETE"
+                  }
+                }
+              },
+              {
+                "id": "e89a14e0-6274-4e90-8403-22cff83ffa80",
+                "attributes": {
+                  "fileSize": 2965779,
+                  "fileName": "riskdetected-appstore-blue-report-options-fine-kinney-matrix-teal-navy-bg-1290x2796.png",
+                  "sourceFileChecksum": "3bc88dc822fe36c5bf3f5d8eeb2464a4",
+                  "imageAsset": {
+                    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b1/9f/b2/b19fb2ae-1d68-2cc4-b889-fce190512fc8/riskdetected-appstore-blue-report-options-fine-kinney-matrix-teal-navy-bg-1290x2796.png/{w}x{h}bb.{f}",
+                    "width": 1290,
+                    "height": 2796
+                  },
+                  "assetToken": "PurpleSource221/v4/b1/9f/b2/b19fb2ae-1d68-2cc4-b889-fce190512fc8/riskdetected-appstore-blue-report-options-fine-kinney-matrix-teal-navy-bg-1290x2796.png",
+                  "assetType": "SortedD74ScreenShot",
+                  "assetDeliveryState": {
+                    "state": "COMPLETE"
+                  }
+                }
+              },
+              {
+                "id": "eeba945c-a9f7-442b-ae7a-dd771b0d42c1",
+                "attributes": {
+                  "fileSize": 3486345,
+                  "fileName": "riskdetected-fotograf-yukle-riskleri-gor-popups.png",
+                  "sourceFileChecksum": "f5153dd9feaaf2aafc9a27836fabb0ab",
+                  "imageAsset": {
+                    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9c/24/3c/9c243c43-fbde-6538-bcc9-2f6cd2bc8f4e/riskdetected-fotograf-yukle-riskleri-gor-popups.png/{w}x{h}bb.{f}",
+                    "width": 1290,
+                    "height": 2796
+                  },
+                  "assetToken": "PurpleSource211/v4/9c/24/3c/9c243c43-fbde-6538-bcc9-2f6cd2bc8f4e/riskdetected-fotograf-yukle-riskleri-gor-popups.png",
+                  "assetType": "SortedD74ScreenShot",
+                  "assetDeliveryState": {
+                    "state": "COMPLETE"
+                  }
+                }
+              },
+              {
+                "id": "b62f61b5-0905-4d5b-9214-3d849c52cccd",
+                "attributes": {
+                  "fileSize": 4101419,
+                  "fileName": "riskdetected-isaretleme-detayli-analiz-popup-1290x2796-resized.png",
+                  "sourceFileChecksum": "ef3af861d2a2d409f35a27ec254847b5",
+                  "imageAsset": {
+                    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a5/f1/5a/a5f15ab5-c60c-8f28-d8fc-b0202c66776e/riskdetected-isaretleme-detayli-analiz-popup-1290x2796-resized.png/{w}x{h}bb.{f}",
+                    "width": 1290,
+                    "height": 2796
+                  },
+                  "assetToken": "PurpleSource211/v4/a5/f1/5a/a5f15ab5-c60c-8f28-d8fc-b0202c66776e/riskdetected-isaretleme-detayli-analiz-popup-1290x2796-resized.png",
+                  "assetType": "SortedD74ScreenShot",
+                  "assetDeliveryState": {
+                    "state": "COMPLETE"
+                  }
+                }
+              },
+              {
+                "id": "780c865d-6d65-40e0-8f97-d0eb3bcf0f7e",
+                "attributes": {
+                  "fileSize": 3887327,
+                  "fileName": "riskdetected-appstore-blue-score-popup-1290x2796.png",
+                  "sourceFileChecksum": "f8b3cb62975be026ff585accd92f1f92",
+                  "imageAsset": {
+                    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/40/bb/c7/40bbc762-3770-f0ac-9ad7-fc7f64eca0b6/riskdetected-appstore-blue-score-popup-1290x2796.png/{w}x{h}bb.{f}",
+                    "width": 1290,
+                    "height": 2796
+                  },
+                  "assetToken": "PurpleSource221/v4/40/bb/c7/40bbc762-3770-f0ac-9ad7-fc7f64eca0b6/riskdetected-appstore-blue-score-popup-1290x2796.png",
+                  "assetType": "SortedD74ScreenShot",
+                  "assetDeliveryState": {
+                    "state": "COMPLETE"
+                  }
+                }
+              },
+              {
+                "id": "75aad083-2074-4c39-8ce9-8d99ea7bdaf5",
+                "attributes": {
+                  "fileSize": 3703054,
+                  "fileName": "riskdetected-kok-neden-mevzuat-bilgisi-popups-mevzuat-buyuk.png",
+                  "sourceFileChecksum": "91c1b0c49bbff4ff72dceded54b2b088",
+                  "imageAsset": {
+                    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/14/c4/a4/14c4a4fc-152a-7e64-5349-d65db03fdf9e/riskdetected-kok-neden-mevzuat-bilgisi-popups-mevzuat-buyuk.png/{w}x{h}bb.{f}",
+                    "width": 1290,
+                    "height": 2796
+                  },
+                  "assetToken": "PurpleSource221/v4/14/c4/a4/14c4a4fc-152a-7e64-5349-d65db03fdf9e/riskdetected-kok-neden-mevzuat-bilgisi-popups-mevzuat-buyuk.png",
+                  "assetType": "SortedD74ScreenShot",
+                  "assetDeliveryState": {
+                    "state": "COMPLETE"
+                  }
+                }
+              },
+              {
+                "id": "f221b2c4-91d7-4d03-bc2d-7aa3d11f96bc",
+                "attributes": {
+                  "fileSize": 3554558,
+                  "fileName": "riskdetected-appstore-blue-fast-report-share-popup-large-1290x2796.png",
+                  "sourceFileChecksum": "bca8da2d833973e58e21ef0a268d3516",
+                  "imageAsset": {
+                    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/f2/f4/6d/f2f46d25-337b-134e-1435-9d6ff27566c5/riskdetected-appstore-blue-fast-report-share-popup-large-1290x2796.png/{w}x{h}bb.{f}",
+                    "width": 1290,
+                    "height": 2796
+                  },
+                  "assetToken": "PurpleSource211/v4/f2/f4/6d/f2f46d25-337b-134e-1435-9d6ff27566c5/riskdetected-appstore-blue-fast-report-share-popup-large-1290x2796.png",
+                  "assetType": "SortedD74ScreenShot",
+                  "assetDeliveryState": {
+                    "state": "COMPLETE"
+                  }
+                }
+              },
+              {
+                "id": "0293a4af-7328-4db5-9c84-8d7e6729d56b",
+                "attributes": {
+                  "fileSize": 3771693,
+                  "fileName": "riskdetected-uzmanligini-ilerledikce-goster-popup.png",
+                  "sourceFileChecksum": "aef1026f443d9d6858e539a6bbdb4688",
+                  "imageAsset": {
+                    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/df/e3/fc/dfe3fc7a-318e-3024-a61a-aecfb34ff666/riskdetected-uzmanligini-ilerledikce-goster-popup.png/{w}x{h}bb.{f}",
+                    "width": 1290,
+                    "height": 2796
+                  },
+                  "assetToken": "PurpleSource211/v4/df/e3/fc/dfe3fc7a-318e-3024-a61a-aecfb34ff666/riskdetected-uzmanligini-ilerledikce-goster-popup.png",
+                  "assetType": "SortedD74ScreenShot",
+                  "assetDeliveryState": {
+                    "state": "COMPLETE"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "screenshot_count": 9
+      }
+    ]
+  },
+  "subscription_groups": [
+    {
+      "id": "22089637",
+      "attributes": {
+        "referenceName": "RiskDetected Plans"
+      },
+      "localizations": [
+        {
+          "id": "4cbd3c80-5584-4070-9691-161bbb405ef8",
+          "attributes": {
+            "name": "RiskDetected Planları",
+            "locale": "tr",
+            "state": "APPROVED"
+          }
+        }
+      ],
+      "subscriptions": [
+        {
+          "id": "6769501024",
+          "attributes": {
+            "name": "RiskDetected Plus Monthly",
+            "productId": "riskdetected_plus_monthly",
+            "state": "APPROVED",
+            "subscriptionPeriod": "ONE_MONTH",
+            "reviewNote": "This subscription unlocks the RiskDetected Plus monthly plan. Users can access Plus features from the in-app paywall and manage/cancel the subscription through Apple subscription settings.",
+            "groupLevel": 2
+          },
+          "localizations": [
+            {
+              "id": "c5976516-9c06-4c85-959b-898c61fba824",
+              "attributes": {
+                "name": "RiskDetected Plus Aylık",
+                "locale": "tr",
+                "description": "Günlük analiz, gelişmiş canvas ve logolu raporlar.",
+                "state": "APPROVED"
+              }
+            }
+          ]
+        },
+        {
+          "id": "6769501933",
+          "attributes": {
+            "name": "RiskDetected Plus Yearly",
+            "productId": "riskdetected_plus_yearly",
+            "state": "APPROVED",
+            "subscriptionPeriod": "ONE_YEAR",
+            "reviewNote": "This subscription unlocks the RiskDetected Plus yearly plan. Users can access Plus features from the in-app paywall and manage/cancel the subscription through Apple subscription settings. This yearly plan includes a 7-day free trial if eligible.",
+            "groupLevel": 2
+          },
+          "localizations": [
+            {
+              "id": "ef758556-1c53-4428-a5b5-de9a900acaa9",
+              "attributes": {
+                "name": "RiskDetected Plus Yıllık",
+                "locale": "tr",
+                "description": "Günlük analiz, gelişmiş canvas ve logolu raporlar.",
+                "state": "APPROVED"
+              }
+            }
+          ]
+        },
+        {
+          "id": "6769504185",
+          "attributes": {
+            "name": "RiskDetected Pro Monthly",
+            "productId": "riskdetected_pro_monthly",
+            "state": "APPROVED",
+            "subscriptionPeriod": "ONE_MONTH",
+            "reviewNote": "This subscription unlocks the RiskDetected Pro monthly plan. Users can access Pro features from the in-app paywall and manage/cancel the subscription through Apple subscription settings.",
+            "groupLevel": 1
+          },
+          "localizations": [
+            {
+              "id": "c3d866a6-7a3d-4980-adc3-f7b3bf304cef",
+              "attributes": {
+                "name": "RiskDetected Pro Aylık",
+                "locale": "tr",
+                "description": "Tüm canvaslar, yüksek limitler ve sınırsız rapor.",
+                "state": "APPROVED"
+              }
+            }
+          ]
+        },
+        {
+          "id": "6769504261",
+          "attributes": {
+            "name": "RiskDetected Pro Yearly",
+            "productId": "riskdetected_pro_yearly",
+            "state": "APPROVED",
+            "subscriptionPeriod": "ONE_YEAR",
+            "reviewNote": "This subscription unlocks the RiskDetected Pro yearly plan. Users can access Pro features from the in-app paywall and manage/cancel the subscription through Apple subscription settings.",
+            "groupLevel": 1
+          },
+          "localizations": [
+            {
+              "id": "f647c19b-495a-4499-b4f3-a0a718bdd8be",
+              "attributes": {
+                "name": "RiskDetected Pro Yıllık",
+                "locale": "tr",
+                "description": "Tüm canvaslar, yüksek limitler ve sınırsız rapor.",
+                "state": "APPROVED"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "waiver_id": "stage1_asc_session_propagation_owner_waiver_2026-08-01",
+  "contract_id": "rd-global-localization-testflight-rollout-v1",
+  "candidate_build": "78",
+  "stage": 1,
+  "authorized_at": "2026-08-01T18:07:25Z",
+  "authorization": {
+    "authorized": true,
+    "authorized_by_role": "project_owner",
+    "reviewer": "Kerem"
+  },
+  "scope": {
+    "metric": "sessions",
+    "actual": 0,
+    "required": 1,
+    "treatment": "accept_stage_1_only"
+  },
+  "basis": {
+    "installed_tester_count": 1,
+    "physical_candidate_installed": true,
+    "physical_launch_succeeded": true,
+    "asc_crash_count": 0,
+    "apple_documented_latency_hours_max": 24
+  },
+  "proofs": [
+    {
+      "kind": "physical_build_78_smoke",
+      "path": "docs/localization/phase-8/PHYSICAL_BUILD_78_SMOKE_READINESS_2026-08-01.json",
+      "sha256": "0d0cdc31f3487b530495b30bc0cd3b6ac7da0016b62f8101f657ea89221b91d6"
+    },
+    {
+      "kind": "asc_metric_wait_state",
+      "path": "docs/localization/phase-6/testflight-rollout/TESTFLIGHT_METRIC_WAIT_STATE_2026-08-01.json",
+      "sha256": "b25d770c4e1854cf27fe32dc118b9ed84f54c34dcad1125c82f0fc937c635466"
+    }
+  ],
+  "constraints": {
+    "stage_1_only": true,
+    "other_minimums_waived": false,
+    "zero_tolerance_thresholds_waived": false,
+    "reported_session_count_overwritten": false,
+    "stage_2_or_later_affected": false
+  }
+}

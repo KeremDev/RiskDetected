@@ -48,7 +48,7 @@ struct OBPlanSummaryView: View {
                 }
 
                 OBFooter {
-                    OBPrimaryButton(title: "Hesabımı Oluştur", accessibilityID: "onboarding.personal_plan.create_account") {
+                    OBPrimaryButton(title: RDLocalization.string("onboarding.obplan.summary.view.hesabimi.olustur.5a057601", table: .onboarding, fallback: "Hesabımı Oluştur"), accessibilityID: "onboarding.personal_plan.create_account") {
                         record(.personalPlanContinue, context: context)
                         onNext()
                     }
@@ -63,6 +63,7 @@ struct OBPlanSummaryView: View {
             animateTimelineSteps(count: context.steps.count)
             showConfetti = true
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.personal_plan")
     }
 
@@ -250,7 +251,7 @@ struct OBPlanSummaryView: View {
             Image(systemName: "lock.fill")
                 .font(.system(size: RDFontScale.size(11), weight: .bold))
                 .foregroundStyle(Color.rdGreenDark)
-            Text("Planını hesabına kaydedelim, 7 gün ücretsiz denemeyi başlat.")
+            Text(RDLocalization.string("onboarding.obplan.summary.view.planini.hesabina.kaydedelim.7.gun.ucretsiz.denem.ae67c90f", table: .onboarding, fallback: "Planını hesabına kaydedelim; fiyat ve uygun teklifleri App Store'da doğrula."))
                 .font(.system(size: RDFontScale.size(12.5), weight: .medium))
                 .foregroundStyle(Color.rdSlate)
                 .lineLimit(3)

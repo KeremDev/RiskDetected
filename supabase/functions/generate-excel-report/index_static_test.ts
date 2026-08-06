@@ -44,3 +44,18 @@ Deno.test("generate-excel-report summary and table layout prevent clipped text",
   assertStringIncludes(source, "const riskColumnWidths");
   assertStringIncludes(source, "{ min: 72, max: 260");
 });
+
+Deno.test("generate-excel-report derives language from analysis snapshot", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, "resolveReportLocalization({");
+  assertStringIncludes(source, "localization_snapshot");
+  assertStringIncludes(source, "REPORT_LANGUAGE_MISMATCH");
+  assertStringIncludes(source, "makeEnglishWorkbook(");
+  assertStringIncludes(source, "report_language:");
+  assertStringIncludes(source, "regulatory_sections_enabled:");
+  assertStringIncludes(source, "localization_snapshot:");
+});

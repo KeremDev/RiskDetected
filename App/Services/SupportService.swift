@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 import Supabase
 
 struct SupportAttachmentPayload: Encodable, Equatable {
@@ -41,17 +42,21 @@ struct SupportRequestInput {
     let subject: String
     let message: String
     let attachments: [SupportAttachmentDraft]
+    let appLanguage: RDAppLanguage
+    let contentLocale: RDContentLocale
 }
 
 struct SupportRequestResult: Decodable {
     let ok: Bool?
     let supportID: String?
     let deliveryStatus: String?
+    let acknowledgement: String?
 
     enum CodingKeys: String, CodingKey {
         case ok
         case supportID = "support_id"
         case deliveryStatus = "delivery_status"
+        case acknowledgement
     }
 }
 
@@ -67,12 +72,32 @@ final class SupportService {
             let subject: String
             let message: String
             let attachments: [SupportAttachmentPayload]
+            let appLanguage: String
+            let contentLocale: String
+            let userMessageLanguage: String
+            let preferredResponseLanguage: String
+
+            enum CodingKeys: String, CodingKey {
+                case subject
+                case message
+                case attachments
+                case appLanguage = "app_language"
+                case contentLocale = "content_locale"
+                case userMessageLanguage = "user_message_language"
+                case preferredResponseLanguage = "preferred_response_language"
+            }
         }
 
         let body = Body(
             subject: input.subject,
             message: input.message,
-            attachments: input.attachments.map(\.payload)
+            attachments: input.attachments.map(\.payload),
+            appLanguage: input.appLanguage.rawValue,
+            contentLocale: input.contentLocale.rawValue,
+            userMessageLanguage: Self.detectedMessageLanguage(
+                "\(input.subject)\n\(input.message)"
+            ),
+            preferredResponseLanguage: input.appLanguage.rawValue
         )
 
         do {
@@ -90,6 +115,19 @@ final class SupportService {
         }
     }
 
+    private static func detectedMessageLanguage(_ text: String) -> String {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+        switch recognizer.dominantLanguage {
+        case .turkish:
+            return RDAppLanguage.turkish.rawValue
+        case .english:
+            return RDAppLanguage.english.rawValue
+        default:
+            return "und"
+        }
+    }
+
     private static func functionErrorPayload(from data: Data) -> (message: String, supportID: String?) {
         struct ErrorBody: Decodable {
             let message: String?
@@ -102,9 +140,9 @@ final class SupportService {
         }
 
         if let decoded = try? JSONDecoder().decode(ErrorBody.self, from: data) {
-            let supportSuffix = decoded.supportID.map { "\nDestek kodu: \($0)" } ?? ""
-            return ((decoded.message ?? "Destek talebi gönderilemedi.") + supportSuffix, decoded.supportID)
+            let supportSuffix = decoded.supportID.map { RDLocalization.format("localizable.support.service.destek.kodu.1.39ec082a", table: .localizable, fallback: "\nDestek kodu: %1$@", arguments: [String(describing: $0)]) } ?? ""
+            return ((decoded.message ?? RDLocalization.string("localizable.support.service.destek.talebi.gonderilemedi.06e0a169", table: .localizable, fallback: "Destek talebi gönderilemedi.")) + supportSuffix, decoded.supportID)
         }
-        return ("Destek talebi gönderilemedi.", nil)
+        return (RDLocalization.string("localizable.support.service.destek.talebi.gonderilemedi.6b41a926", table: .localizable, fallback: "Destek talebi gönderilemedi."), nil)
     }
 }

@@ -320,38 +320,25 @@ function safeLogText(value: unknown, maxLength = 180): string {
     .slice(0, maxLength);
 }
 
-function accountPushCopy(eventType: string, tier: PlanTier | null): {
-  title: string;
-  body: string;
-} | null {
+function accountPushEventKey(
+  eventType: string,
+  _tier: PlanTier | null,
+): string | null {
   if (eventType === "INITIAL_PURCHASE" || eventType === "PRODUCT_CHANGE") {
     return null;
   }
   if (eventType === "RENEWAL" || eventType === "UNCANCELLATION") return null;
   if (eventType === "CANCELLATION") {
-    return {
-      title: "Üyelik iptali alındı",
-      body: "Planın dönem sonuna kadar aktif kalmaya devam edecek.",
-    };
+    return "account_update.cancellation";
   }
   if (eventType === "EXPIRATION") {
-    return {
-      title: "Üyelik süren doldu",
-      body: "RiskDetected hesabın ücretsiz plana geçirildi.",
-    };
+    return "account_update.expiration";
   }
   if (eventType === "BILLING_ISSUE") {
-    return {
-      title: "Ödeme kontrolü gerekiyor",
-      body:
-        "Üyeliğinin devam etmesi için App Store ödeme bilgilerini kontrol et.",
-    };
+    return "account_update.billing_issue";
   }
   if (eventType === "SUBSCRIPTION_PAUSED") {
-    return {
-      title: "Üyelik duraklatıldı",
-      body: "RiskDetected hesabın geçici olarak ücretsiz plana alındı.",
-    };
+    return "account_update.subscription_paused";
   }
   return null;
 }
@@ -364,8 +351,8 @@ async function sendAccountUpdatePush(params: {
   eventType: string;
   tier: PlanTier | null;
 }) {
-  const copy = accountPushCopy(params.eventType, params.tier);
-  if (!copy) return;
+  const eventKey = accountPushEventKey(params.eventType, params.tier);
+  if (!eventKey) return;
 
   const response = await fetch(
     `${params.supabaseUrl}/functions/v1/send-push-notification`,
@@ -378,8 +365,7 @@ async function sendAccountUpdatePush(params: {
       body: JSON.stringify({
         user_id: params.userID,
         kind: "account_updates",
-        title: copy.title,
-        body: copy.body,
+        event_key: eventKey,
         data: {
           destination: "profile",
           event_id: params.eventID,

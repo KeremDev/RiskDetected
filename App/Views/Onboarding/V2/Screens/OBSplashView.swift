@@ -100,8 +100,8 @@ private struct OBSplashHero: View {
                 .position(x: metrics.width * 0.5, y: phoneTop + phoneHeight / 2)
 
             OBSplashFloatingChip(
-                title: "12 Tehlike",
-                subtitle: "tespit edildi",
+                title: RDLocalization.string("onboarding.obsplash.view.12.tehlike.5f66303d", table: .onboarding, fallback: "12 Tehlike"),
+                subtitle: RDLocalization.string("onboarding.obsplash.view.tespit.edildi.c3b9d6e4", table: .onboarding, fallback: "tespit edildi"),
                 accent: OBSplashColor.red,
                 iconBackground: OBSplashColor.redSoft,
                 kind: .warning,
@@ -115,8 +115,8 @@ private struct OBSplashHero: View {
             )
 
             OBSplashFloatingChip(
-                title: "Kök Neden ve Mevzuat",
-                subtitle: "bilgisi hazırlanıyor…",
+                title: RDLocalization.string("onboarding.obsplash.view.kok.neden.ve.mevzuat.22ab9903", table: .onboarding, fallback: "Kök Neden ve Mevzuat"),
+                subtitle: RDLocalization.string("onboarding.obsplash.view.bilgisi.hazirlaniyor.6b055b9b", table: .onboarding, fallback: "bilgisi hazırlanıyor…"),
                 accent: OBSplashColor.amber,
                 iconBackground: OBSplashColor.amberSoft,
                 kind: .spinner,
@@ -181,7 +181,7 @@ private struct OBSplashPhoneFrame: View {
         }
         .frame(width: width, height: height)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("RiskDetected önizleme telefonu")
+        .accessibilityLabel(RDLocalization.string("onboarding.obsplash.view.riskdetected.onizleme.telefonu.4d1a083b", table: .onboarding, fallback: "RiskDetected önizleme telefonu"))
         .accessibilityIdentifier("onboarding.splash.preview_phone")
     }
 }
@@ -323,7 +323,7 @@ private struct OBSplashBottomSheet: View {
             OBSplashProgressDots()
                 .padding(.top, 24)
 
-            Text("Profesyonel İSG Asistanı")
+            Text(RDLocalization.string("onboarding.obsplash.view.profesyonel.isg.asistani.138cfae2", table: .onboarding, fallback: "Profesyonel İSG Asistanı"))
                 .rdFont(.title1)
                 .foregroundStyle(OBSplashColor.title)
                 .multilineTextAlignment(.center)
@@ -331,7 +331,7 @@ private struct OBSplashBottomSheet: View {
                 .minimumScaleFactor(0.85)
                 .padding(.top, 16)
 
-            Text("Fotoğraf çek; yapay zekâ tehlikeleri otomatik tespit etsin, raporun anında oluşsun ve tek tıklama ile paylaş.")
+            Text(RDLocalization.string("onboarding.obsplash.view.fotograf.cek.yapay.zeka.tehlikeleri.otomatik.tes.2173ee63", table: .onboarding, fallback: "Fotoğraf çek; yapay zekâ tehlikeleri otomatik tespit etsin, raporun anında oluşsun ve tek tıklama ile paylaş."))
                 .font(.system(size: RDFontScale.size(14.5), weight: .regular, design: .rounded))
                 .foregroundStyle(OBSplashColor.slate)
                 .multilineTextAlignment(.center)
@@ -346,7 +346,7 @@ private struct OBSplashBottomSheet: View {
             Button {
                 onSkip?()
             } label: {
-                Text("Atla")
+                Text(RDLocalization.string("onboarding.obsplash.view.atla.d0c256d2", table: .onboarding, fallback: "Atla"))
                     .font(.system(size: RDFontScale.size(14.5), weight: .semibold, design: .rounded))
                     .foregroundStyle(OBSplashColor.slate)
                     .frame(height: 28)
@@ -385,7 +385,7 @@ private struct OBSplashProgressDots: View {
         }
         .frame(height: 6)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Onboarding ilerleme, 1 / 6")
+        .accessibilityLabel(RDLocalization.string("onboarding.obsplash.view.onboarding.ilerleme.1.6.aab755cd", table: .onboarding, fallback: "Onboarding ilerleme, 1 / 6"))
         .accessibilityIdentifier("onboarding.splash.progress")
     }
 }
@@ -399,7 +399,7 @@ private struct OBSplashCTAButton: View {
             action()
         } label: {
             HStack(spacing: 8) {
-                Text("Devam Et")
+                Text(RDLocalization.string("onboarding.obsplash.view.devam.et.a9d4eef4", table: .onboarding, fallback: "Devam Et"))
                     .font(.system(size: RDFontScale.size(16.5), weight: .bold, design: .rounded))
 
                 Image(systemName: "arrow.right")
@@ -413,8 +413,7 @@ private struct OBSplashCTAButton: View {
             .shadow(color: OBSplashColor.cta.opacity(0.60), radius: 12, x: 0, y: 10)
         }
         .buttonStyle(OBPressStyle())
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Devam Et")
+        .accessibilityLabel(RDLocalization.string("onboarding.obsplash.view.devam.et.93ac0880", table: .onboarding, fallback: "Devam Et"))
         .accessibilityIdentifier("onboarding.splash.start")
     }
 }

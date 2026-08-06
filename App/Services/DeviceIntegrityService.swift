@@ -17,22 +17,22 @@ struct DeviceIntegrityAssessment: Equatable {
     var profileDetail: String {
         switch status {
         case .trusted:
-            return "Normal"
+            return RDLocalization.string("localizable.device.integrity.service.normal.6f420d9c", table: .localizable, fallback: "Normal")
         case .simulator:
-            return "Simülatör"
+            return RDLocalization.string("localizable.device.integrity.service.simulator.68f12768", table: .localizable, fallback: "Simülatör")
         case .warning:
-            return "Uyarı"
+            return RDLocalization.string("localizable.device.integrity.service.uyari.1a4db2ea", table: .localizable, fallback: "Uyarı")
         }
     }
 
     var userMessage: String {
         switch status {
         case .trusted:
-            return "Cihaz bütünlüğü kontrollerinde olağan dışı bir bulgu yok."
+            return RDLocalization.string("localizable.device.integrity.service.cihaz.butunlugu.kontrollerinde.olagan.disi.bir.b.69e3c877", table: .localizable, fallback: "Cihaz bütünlüğü kontrollerinde olağan dışı bir bulgu yok.")
         case .simulator:
-            return "Uygulama simülatörde çalışıyor; cihaz bütünlüğü kontrolleri üretim cihazı gibi değerlendirilmez."
+            return RDLocalization.string("localizable.device.integrity.service.uygulama.simulatorde.calisiyor.cihaz.butunlugu.k.90b7dfa6", table: .localizable, fallback: "Uygulama simülatörde çalışıyor; cihaz bütünlüğü kontrolleri üretim cihazı gibi değerlendirilmez.")
         case .warning(let signals):
-            return "Bu cihazda güvenliği etkileyebilecek sistem değişikliği sinyalleri var: \(signals.joined(separator: ", "))."
+            return RDLocalization.format("localizable.device.integrity.service.bu.cihazda.guvenligi.etkileyebilecek.sistem.degi.45c28170", table: .localizable, fallback: "Bu cihazda güvenliği etkileyebilecek sistem değişikliği sinyalleri var: %1$@.", arguments: [String(describing: signals.joined(separator: ", "))])
         }
     }
 }
@@ -60,15 +60,15 @@ enum DeviceIntegrityService {
             "/etc/apt"
         ]
         if suspiciousPaths.contains(where: FileManager.default.fileExists(atPath:)) {
-            signals.append("jailbreak dosya izi")
+            signals.append(RDLocalization.string("localizable.device.integrity.service.jailbreak.dosya.izi.9b7f9c3c", table: .localizable, fallback: "jailbreak dosya izi"))
         }
 
         if canWriteOutsideSandbox() {
-            signals.append("sandbox dışı yazma")
+            signals.append(RDLocalization.string("localizable.device.integrity.service.sandbox.disi.yazma.ec3e1b78", table: .localizable, fallback: "sandbox dışı yazma"))
         }
 
         if getenv("DYLD_INSERT_LIBRARIES") != nil {
-            signals.append("dinamik kütüphane enjeksiyonu")
+            signals.append(RDLocalization.string("localizable.device.integrity.service.dinamik.kutuphane.enjeksiyonu.08bfa91a", table: .localizable, fallback: "dinamik kütüphane enjeksiyonu"))
         }
 
         return signals.isEmpty

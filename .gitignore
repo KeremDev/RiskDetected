@@ -54,3 +54,8 @@ output/app-review-preflight/
 output/app-review-physical-smoke/
 output/imagegen/
 output/snapshot-previews/
+
+# Local tool caches / evidence dumps (large, machine-specific, not source)
+.derivedData/
+.playwright-cli/
+.asc/

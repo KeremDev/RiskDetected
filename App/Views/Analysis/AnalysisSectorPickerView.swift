@@ -26,16 +26,17 @@ struct AnalysisSectorPickerView: View {
         .padding(.top, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.rdPaper.ignoresSafeArea())
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("analysis_sector_picker")
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Analiz kapsamını seç")
+            Text(RDLocalization.string("analysis.analysis.sector.picker.view.analiz.kapsamini.sec.7753a6c8", table: .analysis, fallback: "Analiz kapsamını seç"))
                 .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                 .tracking(-0.4)
                 .foregroundStyle(Color.rdBlack)
-            Text("Bu fotoğrafı hangi sektörün saha koşullarına göre değerlendirelim?\nRisk öncelikleri ve öneriler seçtiğin sektöre göre uyarlanır.")
+            Text(RDLocalization.string("analysis.analysis.sector.picker.view.bu.fotografi.hangi.sektorun.saha.kosullarina.gor.c6c832db", table: .analysis, fallback: "Bu fotoğrafı hangi sektörün saha koşullarına göre değerlendirelim? Risk öncelikleri ve öneriler seçtiğin sektöre göre uyarlanır."))
                 .font(.system(size: RDFontScale.size(14), design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .fixedSize(horizontal: false, vertical: true)
@@ -46,7 +47,7 @@ struct AnalysisSectorPickerView: View {
 
     private var continueButton: some View {
         RDButton(
-            title: "Devam et",
+            title: RDLocalization.string("analysis.analysis.sector.picker.view.devam.et.04ec7e11", table: .analysis, fallback: "Devam et"),
             style: .primary,
             backgroundOverride: .rdCTA,
             a11yID: "analysis_sector_continue_button"
@@ -224,13 +225,13 @@ struct AnalysisSectorPickerSheet: View {
                 .accessibilityIdentifier(item.sector.accessibilityChipID)
             }
             .listStyle(.plain)
-            .searchable(text: $searchText, prompt: "Sektör ara")
+            .searchable(text: $searchText, prompt: RDLocalization.string("analysis.analysis.sector.picker.view.sektor.ara.d2562471", table: .analysis, fallback: "Sektör ara"))
             .accessibilityIdentifier("analysis_sector_search_field")
-            .navigationTitle("Tüm sektörler")
+            .navigationTitle(RDLocalization.string("analysis.analysis.sector.picker.view.tum.sektorler.9c18e12c", table: .analysis, fallback: "Tüm sektörler"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Kapat") { dismiss() }
+                    Button(RDLocalization.string("analysis.analysis.sector.picker.view.kapat.c36ab4f2", table: .analysis, fallback: "Kapat")) { dismiss() }
                 }
             }
         }

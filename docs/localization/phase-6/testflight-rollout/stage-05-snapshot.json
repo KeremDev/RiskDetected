@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "contract_id": "rd-global-localization-testflight-rollout-v1",
+  "stage": 5,
+  "stage_key": "english_us_allowlist",
+  "candidate_build": "78",
+  "window_start": "2026-08-01T19:35:05.225Z",
+  "window_end": "2026-08-01T19:35:07.763Z",
+  "metrics": {
+    "analyses": {
+      "total": 0,
+      "failed": 0,
+      "wrong_language": 0,
+      "repaired": 0
+    },
+    "reports": {
+      "requests": 0,
+      "failed": 0
+    },
+    "notifications": {
+      "attempts": 0,
+      "template_misses": 0
+    },
+    "stability": {
+      "sessions": 6,
+      "crashes": 0
+    },
+    "queue": {
+      "jobs": 0,
+      "retried_jobs": 0,
+      "ambiguous_dispatches": 0
+    }
+  },
+  "observation": {
+    "supabase_project_ref": "ppcrzemgiztzcgddbins",
+    "asc_build_id": "6710ace3-c967-43fc-9186-b005b1a4a83c",
+    "report_counters": {
+      "source": "operator_aggregate_attestation",
+      "attested": true,
+      "observed_successful": 0
+    },
+    "analyses": {
+      "completed": 0,
+      "pending": 0,
+      "telemetry_missing": 0,
+      "telemetry_null": 0,
+      "not_evaluated": 0
+    },
+    "notifications": {
+      "telemetry_missing": 0
+    },
+    "stability_baseline": {
+      "install_count": 0,
+      "crash_count": 0,
+      "session_count": 0,
+      "invite_count": 0,
+      "feedback_count": 0
+    },
+    "stability_end": {
+      "install_count": 0,
+      "crash_count": 0,
+      "session_count": 0,
+      "invite_count": 0,
+      "feedback_count": 0
+    },
+    "stability_source": "device_simulator_validation",
+    "app_store_connect_usage_gate_input": false,
+    "usage_deltas": {
+      "installs": 0,
+      "invites": 0,
+      "feedback": 0
+    },
+    "runtime_config": {
+      "start_sha256": "81330963d87f110aa32f440cc358dd925f51bfee5edf787922204d4543fda8cb",
+      "end_sha256": "81330963d87f110aa32f440cc358dd925f51bfee5edf787922204d4543fda8cb",
+      "unchanged": true,
+      "flag_count": 13,
+      "enabled_user_hash_count": 13,
+      "non_off_flag_count": 13,
+      "kill_switch_count": 0,
+      "flags": [
+        {
+          "key": "ai_country_term_guard_enabled",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "ai_language_guard_enabled",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "english_notifications_enabled",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "english_product_enabled",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "english_report_enabled",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "global_localization_wave1",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "localization_queue_payload_v1",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "localization_v2",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "safety_profile_en_au_enabled",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "safety_profile_en_ca_enabled",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "safety_profile_en_gb_enabled",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "safety_profile_en_intl_enabled",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        },
+        {
+          "key": "safety_profile_en_us_enabled",
+          "rollout_mode": "allowlist",
+          "enabled_user_hash_count": 1,
+          "enabled_ios_builds": [],
+          "min_ios_build": null,
+          "kill_switch": false
+        }
+      ]
+    }
+  },
+  "validation": {
+    "policy_id": "rd-owner-approved-device-simulator-validation-2026-08-01",
+    "mode": "simulator",
+    "status": "passed",
+    "launches": 6,
+    "crashes": 0,
+    "profiles": [
+      "en-au-generic-v1",
+      "en-ca-generic-v1",
+      "en-gb-generic-v1",
+      "en-intl-generic-v1",
+      "en-us-generic-v1",
+      "tr-tr-current-v1"
+    ],
+    "checks": [
+      "accessibility",
+      "backend_contract_suite",
+      "jurisdiction_isolation",
+      "onboarding",
+      "profile_matrix",
+      "pseudolocalization",
+      "report_language",
+      "review_path"
+    ],
+    "proof_digests": [
+      "3b55721040d1e45ce531f6f3d6a45f0900327f648c2cc5cd1161d195658b57f3",
+      "552e98a3dc89113c378771a04b42ac191031959f82fc536bc41fea3d6794676b",
+      "ca6bd412e50871758fddfff905bf096b4d734ea3c7029a222ff5a965611a44ab"
+    ],
+    "source_sha256": "a5743cb1cf4f06851d7b856f2e4f38133963e5dc5b09ccf86c2969920b32000b",
+    "privacy": {
+      "aggregate_only": true,
+      "device_identifiers_included": false,
+      "user_or_account_data_included": false,
+      "user_content_included": false
+    }
+  },
+  "waivers": [],
+  "integrity": {
+    "status": "passed",
+    "issues": [],
+    "blocking_issues": [],
+    "hold_issues": []
+  },
+  "privacy": {
+    "aggregate_only": true,
+    "disallowed_data_present": false
+  }
+}

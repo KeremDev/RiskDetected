@@ -46,12 +46,17 @@ Deno.test("account-deletion-complete records DB/Auth/Storage completion markers"
   assertStringIncludes(source, "target_user_hash");
   assertStringIncludes(source, 'status: "pending"');
   assertStringIncludes(source, "completion_error: message.slice(0, 1000)");
+  assertStringIncludes(source, 'error: "request_already_processing"');
+  assertStringIncludes(source, '.eq("status", "pending")');
+  assertStringIncludes(source, ".select(\"id\")");
+  assertStringIncludes(source, ".maybeSingle()");
+  assertStringIncludes(source, '.eq("completion_support_id", supportID)');
 });
 
 Deno.test("account deletion migration keeps editable finding audit from blocking auth delete", async () => {
   const migration = await readTextIfAllowed(
     new URL(
-      "../../migrations/20260624194120_account_deletion_nullable_audit_user_refs.sql",
+      "../../migrations/20260728201500_reconcile_untracked_production_schema_state.sql",
       import.meta.url,
     ),
   );

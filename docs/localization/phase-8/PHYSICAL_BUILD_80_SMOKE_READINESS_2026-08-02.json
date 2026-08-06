@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "candidate": {
+    "version": "1.3.0",
+    "build": "80",
+    "asc_build_id": "71cc9591-32b9-4fee-b6c4-8c4d30713b23",
+    "bundle_id": "com.riskdetected.app"
+  },
+  "observed_at": "2026-08-01T22:20:29.543Z",
+  "status": "passed",
+  "launch_requested": false,
+  "launch_succeeded": null,
+  "devices": [
+    {
+      "device_slot": 1,
+      "model": "iPhone 14 Pro Max",
+      "os_version": "26.5",
+      "paired": true,
+      "developer_mode": "enabled",
+      "reachable": false,
+      "reachability_source": "unconfirmed",
+      "candidate_app": null,
+      "app_inventory_status": "not_checked"
+    },
+    {
+      "device_slot": 2,
+      "model": "iPhone 17 Pro Max",
+      "os_version": "26.5.2",
+      "paired": true,
+      "developer_mode": "enabled",
+      "reachable": true,
+      "reachability_source": "active_probe",
+      "candidate_app": {
+        "version": "1.3.0",
+        "build": "80",
+        "is_candidate": true
+      },
+      "app_inventory_status": "available"
+    }
+  ],
+  "summary": {
+    "paired_iphone_count": 2,
+    "reachable_iphone_count": 1,
+    "candidate_install_count": 1
+  },
+  "issues": [],
+  "privacy": {
+    "aggregate_only": true,
+    "device_names_included": false,
+    "device_identifiers_included": false,
+    "serial_numbers_included": false,
+    "user_or_account_data_included": false
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "locale": "en-AU",
+  "review_status": "machine_draft",
+  "preferred_terms": [
+    "work health and safety",
+    "WHS inspection",
+    "workplace inspection",
+    "risk management",
+    "control measure",
+    "hazard"
+  ],
+  "spelling_examples": {
+    "prioritize": "prioritise",
+    "organized": "organised"
+  },
+  "restricted_legal_terms": [
+    "PCBU",
+    "duty holder",
+    "reasonably practicable"
+  ]
+}

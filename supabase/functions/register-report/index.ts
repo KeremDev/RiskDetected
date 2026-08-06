@@ -8,6 +8,7 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveReportLocalization } from "../_shared/report-localization.ts";
 
 const PDF_MIME = "application/pdf";
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
@@ -30,6 +31,7 @@ type RegisterReportBody = {
   generated_from_user_edited_findings?: boolean;
   source_photo_count?: number;
   visible_findings_count?: number;
+  report_language?: "tr" | "en";
   client_app_version?: string;
   client_app_build?: string;
   client_platform?: string;
@@ -47,6 +49,7 @@ type AnalysisRow = {
   company_id: string | null;
   analysis_edit_version?: number | null;
   has_user_edits?: boolean | null;
+  localization_snapshot?: Record<string, unknown> | null;
 };
 
 type CompanyRow = {
@@ -80,7 +83,7 @@ type ReportSnapshotResult =
   };
 
 const REPORT_ANALYSIS_SELECT =
-  "id,user_id,status,title,company_id,analysis_edit_version,has_user_edits";
+  "id,user_id,status,title,company_id,analysis_edit_version,has_user_edits,localization_snapshot";
 
 const REPORT_FINDINGS_SELECT =
   "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,needs_field_verification,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,ai_confidence,last_user_edit_at,user_edit_count,finding_version,display_order";
@@ -302,8 +305,7 @@ async function sendReportReadyPush(params: {
       body: JSON.stringify({
         user_id: params.userID,
         kind: "report_ready",
-        title: "Rapor Hazır",
-        body: "Risk raporun oluşturuldu, raporlar bölümünden inceleyebilirsin.",
+        event_key: "report_ready",
         data: {
           report_id: params.reportID,
           analysis_id: params.analysisID,
@@ -458,6 +460,25 @@ serve(async (req) => {
     });
   }
 
+  const reportLocalization = resolveReportLocalization({
+    localizationSnapshot: analysisRow.localization_snapshot,
+    requestedLanguage: body.report_language,
+  });
+  if (!reportLocalization.ok) {
+    await supabase.storage.from("reports").remove([storagePath]);
+    return json(
+      reportLocalization.code === "REPORT_LANGUAGE_MISMATCH" ? 409 : 422,
+      {
+        error: reportLocalization.code,
+        message: reportLocalization.code === "REPORT_LANGUAGE_MISMATCH"
+          ? "Requested report language does not match the analysis snapshot."
+          : "The analysis localization snapshot is unavailable or invalid.",
+        request_id: requestID,
+        support_id: supportID,
+      },
+    );
+  }
+
   const requestedCompanyID = isUUID(body.company_id) ? body.company_id : "";
   const resolvedCompanyID = requestedCompanyID || analysisRow.company_id || "";
   let company: CompanyRow | null = null;
@@ -580,12 +601,19 @@ serve(async (req) => {
       page_count: pageCount,
       company_id: company?.id ?? null,
       company_snapshot: companySnapshot(company),
+      report_language: reportLocalization.context.language,
+      report_locale: reportLocalization.context.locale,
+      safety_profile_id: reportLocalization.context.safetyProfileID,
+      safety_profile_version: reportLocalization.context.safetyProfileVersion,
+      regulatory_sections_enabled:
+        reportLocalization.context.regulatorySectionsEnabled,
+      localization_snapshot: reportLocalization.context.snapshot,
       ...snapshotColumns,
       request_id: requestID,
       support_id: supportID,
     })
     .select(
-      "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,request_id,support_id,created_at",
+      "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,request_id,support_id,report_language,report_locale,safety_profile_id,safety_profile_version,regulatory_sections_enabled,created_at",
     )
     .single();
 

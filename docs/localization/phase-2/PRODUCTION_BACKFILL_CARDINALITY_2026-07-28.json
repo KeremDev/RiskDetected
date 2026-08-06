@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-28T20:52:00+03:00",
+  "project_ref": "ppcrzemgiztzcgddbins",
+  "source": "read-only count queries against the seven Phase 2 backfill targets",
+  "contains_secrets": false,
+  "production_mutation_performed": false,
+  "batch_size": 500,
+  "tables": [
+    {
+      "table": "public.profiles",
+      "row_count": 95,
+      "expected_batches": 1
+    },
+    {
+      "table": "public.analyses",
+      "row_count": 128,
+      "expected_batches": 1
+    },
+    {
+      "table": "public.reports",
+      "row_count": 126,
+      "expected_batches": 1
+    },
+    {
+      "table": "public.ai_usage_logs",
+      "row_count": 128,
+      "expected_batches": 1
+    },
+    {
+      "table": "public.notification_events",
+      "row_count": 290,
+      "expected_batches": 1
+    },
+    {
+      "table": "private.notification_jobs",
+      "row_count": 1,
+      "expected_batches": 1
+    },
+    {
+      "table": "public.support_requests",
+      "row_count": 1,
+      "expected_batches": 1
+    }
+  ]
+}

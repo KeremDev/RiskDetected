@@ -1,10 +1,50 @@
 import SwiftUI
 
+private enum HistoryFilterChip: String, CaseIterable, Identifiable {
+    case all
+    case thisWeek
+    case critical
+    case ppe
+    case general
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all:
+            return RDLocalization.string(
+                "localizable.history.filter.all",
+                fallback: "Tümü"
+            )
+        case .thisWeek:
+            return RDLocalization.string(
+                "localizable.history.filter.this_week",
+                fallback: "Bu hafta"
+            )
+        case .critical:
+            return RDLocalization.string(
+                "localizable.history.filter.critical",
+                fallback: "Kritik"
+            )
+        case .ppe:
+            return RDLocalization.string(
+                "localizable.history.filter.ppe",
+                fallback: "KKD"
+            )
+        case .general:
+            return RDLocalization.string(
+                "localizable.history.filter.general",
+                fallback: "Genel"
+            )
+        }
+    }
+}
+
 struct HistoryView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
     @State private var search: String = ""
-    @State private var activeChip: String = "Tümü"
+    @State private var activeChip: HistoryFilterChip = .all
     @State private var showFilter: Bool = false
     @State private var showCompanyFilter: Bool = false
     @State private var companies: [Company] = []
@@ -20,7 +60,7 @@ struct HistoryView: View {
     @State private var itemPendingDelete: HistoryItem?
     @State private var showPaywall = false
 
-    private let chips = ["Tümü", "Bu hafta", "Kritik", "KKD", "Genel"]
+    private let chips = HistoryFilterChip.allCases
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
     }
@@ -87,7 +127,7 @@ struct HistoryView: View {
         }
         .sheet(isPresented: $showCompanyFilter) {
             CompanyPickerSheet(
-                title: "Analiz firma filtresi",
+                title: RDLocalization.string("localizable.history.view.analiz.firma.filtresi.c17b8b6a", table: .localizable, fallback: "Analiz firma filtresi"),
                 accessTier: app.currentTier,
                 selectedCompanyID: selectedCompanyFilter?.id,
                 allowNoCompany: true,
@@ -125,29 +165,29 @@ struct HistoryView: View {
             .preferredColorScheme(preferredModalColorScheme)
         }
         .confirmationDialog(
-            "Analiz silinsin mi?",
+            RDLocalization.string("localizable.history.view.analiz.silinsin.mi.61ba421c", table: .localizable, fallback: "Analiz silinsin mi?"),
             isPresented: Binding(
                 get: { itemPendingDelete != nil },
                 set: { if !$0 { itemPendingDelete = nil } }
             ),
             titleVisibility: .visible
         ) {
-            Button("Analizi sil", role: .destructive) {
+            Button(RDLocalization.string("localizable.history.view.analizi.sil.24e7f3a8", table: .localizable, fallback: "Analizi sil"), role: .destructive) {
                 if let item = itemPendingDelete {
                     deleteAnalysis(item)
                 }
             }
-            Button("Vazgeç", role: .cancel) {
+            Button(RDLocalization.string("localizable.history.view.vazgec.de467c3e", table: .localizable, fallback: "Vazgeç"), role: .cancel) {
                 itemPendingDelete = nil
             }
         } message: {
-            Text("Analiz, bulgular, fotoğraf kaydı ve bu analize bağlı rapor kayıtları silinir.")
+            Text(RDLocalization.string("localizable.history.view.analiz.bulgular.fotograf.kaydi.ve.bu.analize.bag.dac9fca8", table: .localizable, fallback: "Analiz, bulgular, fotoğraf kaydı ve bu analize bağlı rapor kayıtları silinir."))
         }
-        .alert("Analiz Hatası", isPresented: .init(
+        .alert(RDLocalization.string("localizable.history.view.analiz.hatasi.9e450a8a", table: .localizable, fallback: "Analiz Hatası"), isPresented: .init(
             get: { analysisError != nil },
             set: { if !$0 { analysisError = nil } }
         )) {
-            Button("Tamam") { analysisError = nil }
+            Button(RDLocalization.string("localizable.history.view.tamam.8202ad1f", table: .localizable, fallback: "Tamam")) { analysisError = nil }
         } message: {
             Text(analysisError ?? "")
         }
@@ -164,11 +204,11 @@ struct HistoryView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 7) {
-                    Text("Saha taramaları")
+                    Text(RDLocalization.string("localizable.history.view.saha.taramalari.aacc0bb4", table: .localizable, fallback: "Saha taramaları"))
                         .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
 
-                    Text("Analizlerini, kritik riskleri ve bulgu sayısını tek yerden takip et.")
+                    Text(RDLocalization.string("localizable.history.view.analizlerini.kritik.riskleri.ve.bulgu.sayisini.t.2e84c78d", table: .localizable, fallback: "Analizlerini, kritik riskleri ve bulgu sayısını tek yerden takip et."))
                         .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
@@ -179,7 +219,7 @@ struct HistoryView: View {
                     Text("\(items.count)")
                         .rdMono(size: 22, weight: .bold)
                         .foregroundStyle(Color.white)
-                    Text("Analiz")
+                    Text(RDLocalization.string("localizable.history.view.analiz.c6a55aec", table: .localizable, fallback: "Analiz"))
                         .rdMono(size: 10, weight: .bold)
                         .foregroundStyle(Color.white.opacity(0.72))
                         .lineLimit(1)
@@ -196,9 +236,9 @@ struct HistoryView: View {
             }
 
             HStack(spacing: 8) {
-                overviewMetric(icon: "calendar", title: "Bu hafta", value: "\(weekCount)")
-                overviewMetric(icon: "exclamationmark.triangle.fill", title: "Kritik", value: "\(criticalCount)")
-                overviewMetric(icon: "checkmark.seal.fill", title: "Bulgu", value: "\(findingTotal)")
+                overviewMetric(icon: "calendar", title: RDLocalization.string("localizable.history.view.bu.hafta.0f69ba35", table: .localizable, fallback: "Bu hafta"), value: "\(weekCount)")
+                overviewMetric(icon: "exclamationmark.triangle.fill", title: RDLocalization.string("localizable.history.view.kritik.955bc760", table: .localizable, fallback: "Kritik"), value: "\(criticalCount)")
+                overviewMetric(icon: "checkmark.seal.fill", title: RDLocalization.string("localizable.history.view.bulgu.24bdb5b2", table: .localizable, fallback: "Bulgu"), value: "\(findingTotal)")
             }
         }
         .padding(14)
@@ -280,7 +320,7 @@ struct HistoryView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(chips, id: \.self) { c in
+                    ForEach(chips) { c in
                         filterChip(c)
                     }
                 }
@@ -297,18 +337,18 @@ struct HistoryView: View {
         .historyCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
     }
 
-    private func filterChip(_ title: String) -> some View {
-        let active = title == activeChip
+    private func filterChip(_ chip: HistoryFilterChip) -> some View {
+        let active = chip == activeChip
         return Button {
             UISelectionFeedbackGenerator().selectionChanged()
-            activeChip = title
+            activeChip = chip
         } label: {
             HStack(spacing: 6) {
                 if active {
                     Image(systemName: "checkmark")
                         .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                 }
-                Text(title)
+                Text(chip.title)
                     .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
             }
             .padding(.horizontal, 12)
@@ -327,7 +367,7 @@ struct HistoryView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: RDFontScale.size(14), weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
-            TextField("Analiz ara", text: $search)
+            TextField(RDLocalization.string("localizable.history.view.analiz.ara.39912a48", table: .localizable, fallback: "Analiz ara"), text: $search)
                 .font(.system(size: RDFontScale.size(14), design: .rounded))
                 .foregroundStyle(Color.rdBlack)
         }
@@ -377,14 +417,14 @@ struct HistoryView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(RDPressableButtonStyle())
-        .accessibilityLabel("Firma filtresi")
+        .accessibilityLabel(RDLocalization.string("localizable.history.view.firma.filtresi.d774867d", table: .localizable, fallback: "Firma filtresi"))
         .accessibilityIdentifier("analysis.company_filter")
     }
 
     private var filteredItems: [HistoryItem] {
         let needle = search.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return items.filter { item in
-            let companyName = companyName(for: item.companyID).lowercased(with: Locale(identifier: "tr_TR"))
+            let companyName = companyName(for: item.companyID).lowercased(with: .autoupdatingCurrent)
             let matchesSearch = needle.isEmpty
                 || item.title.lowercased().contains(needle)
                 || item.kind.lowercased().contains(needle)
@@ -393,15 +433,17 @@ struct HistoryView: View {
 
             let matchesChip: Bool
             switch activeChip {
-            case "Bu hafta":
+            case .thisWeek:
                 matchesChip = isThisWeek(item.createdAt)
-            case "Kritik":
+            case .critical:
                 matchesChip = item.level == .critical
-            case "KKD":
+            case .ppe:
                 matchesChip = item.kind.localizedCaseInsensitiveContains("KKD")
-            case "Genel":
-                matchesChip = item.kind.localizedCaseInsensitiveContains("Genel")
-            default:
+            case .general:
+                matchesChip = item.kind.localizedCaseInsensitiveContains(
+                    AnalysisCanvas.general.title
+                )
+            case .all:
                 matchesChip = true
             }
 
@@ -418,10 +460,10 @@ struct HistoryView: View {
                     .frame(width: 48, height: 48)
                     .background(Color.rdGreenSoft)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
-                Text("Analiz bulunamadı")
+                Text(RDLocalization.string("localizable.history.view.analiz.bulunamadi.e46caef9", table: .localizable, fallback: "Analiz bulunamadı"))
                     .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
-                Text("Filtreyi değiştir veya yeni bir saha taraması başlat.")
+                Text(RDLocalization.string("localizable.history.view.filtreyi.degistir.veya.yeni.bir.saha.taramasi.ba.e4cd2cb3", table: .localizable, fallback: "Filtreyi değiştir veya yeni bir saha taraması başlat."))
                     .font(.system(size: RDFontScale.size(13), design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
@@ -435,10 +477,10 @@ struct HistoryView: View {
                 ProgressView()
                     .controlSize(.regular)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Analizler yükleniyor")
+                    Text(RDLocalization.string("localizable.history.view.analizler.yukleniyor.45550383", table: .localizable, fallback: "Analizler yükleniyor"))
                         .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("Son saha taramaların getiriliyor.")
+                    Text(RDLocalization.string("localizable.history.view.son.saha.taramalarin.getiriliyor.9dc0947a", table: .localizable, fallback: "Son saha taramaların getiriliyor."))
                         .font(.system(size: RDFontScale.size(13), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
@@ -458,7 +500,7 @@ struct HistoryView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Analizler yüklenemedi")
+                    Text(RDLocalization.string("localizable.history.view.analizler.yuklenemedi.c6417635", table: .localizable, fallback: "Analizler yüklenemedi"))
                         .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(message)
@@ -470,7 +512,7 @@ struct HistoryView: View {
                 Button {
                     Task { await loadItems() }
                 } label: {
-                    Label("Tekrar dene", systemImage: "arrow.clockwise")
+                    Label(RDLocalization.string("localizable.history.view.tekrar.dene.0c468462", table: .localizable, fallback: "Tekrar dene"), systemImage: "arrow.clockwise")
                         .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 }
                 .buttonStyle(.plain)
@@ -511,7 +553,7 @@ struct HistoryView: View {
             }
             loadErrorMessage = nil
         } catch {
-            let message = AppErrorMessage.make(error, context: "Analizler yüklenemedi", fallbackTitle: "Analizler yüklenemedi").fullText
+            let message = AppErrorMessage.make(error, context: RDLocalization.string("localizable.history.view.analizler.yuklenemedi.da2ab2d1", table: .localizable, fallback: "Analizler yüklenemedi"), fallbackTitle: RDLocalization.string("localizable.history.view.analizler.yuklenemedi.da2ab2d1", table: .localizable, fallback: "Analizler yüklenemedi")).fullText
             loadErrorMessage = message
             if !items.isEmpty {
                 analysisError = message
@@ -529,7 +571,7 @@ struct HistoryView: View {
                 analysisResult = try await AnalysisService.shared.result(analysisID: item.id)
                 showResult = true
             } catch {
-                analysisError = AppErrorMessage.make(error, context: "Analiz açılamadı", fallbackTitle: "Analiz açılamadı").fullText
+                analysisError = AppErrorMessage.make(error, context: RDLocalization.string("localizable.history.view.analiz.acilamadi.cc5dbdef", table: .localizable, fallback: "Analiz açılamadı"), fallbackTitle: RDLocalization.string("localizable.history.view.analiz.acilamadi.cc5dbdef", table: .localizable, fallback: "Analiz açılamadı")).fullText
             }
             openingItemID = nil
         }
@@ -556,9 +598,9 @@ struct HistoryView: View {
                 }
             } catch {
                 analysisError = AppErrorMessage.make(
-                    rawMessage: "\(error.localizedDescription)\nDestek kodu: \(supportID)",
-                    context: "Analiz silinemedi",
-                    fallbackTitle: "Analiz silinemedi"
+                    rawMessage: RDLocalization.format("localizable.history.view.1.destek.kodu.2.d09ac0f4", table: .localizable, fallback: "%1$@\nDestek kodu: %2$@", arguments: [String(describing: error.localizedDescription), String(describing: supportID)]),
+                    context: RDLocalization.string("localizable.history.view.analiz.silinemedi.c4654604", table: .localizable, fallback: "Analiz silinemedi"),
+                    fallbackTitle: RDLocalization.string("localizable.history.view.analiz.silinemedi.c6ad3406", table: .localizable, fallback: "Analiz silinemedi")
                 ).fullText
             }
             deletingItemID = nil
@@ -595,10 +637,10 @@ private struct HistoryRow: View {
                 Button(role: .destructive) {
                     onDelete()
                 } label: {
-                    Label("Analizi sil", systemImage: "trash")
+                    Label(RDLocalization.string("localizable.history.view.analizi.sil.2c80616e", table: .localizable, fallback: "Analizi sil"), systemImage: "trash")
                 }
             }
-            .accessibilityAction(named: "Analizi sil") {
+            .accessibilityAction(named: RDLocalization.string("localizable.history.view.analizi.sil.93bad064", table: .localizable, fallback: "Analizi sil")) {
                 onDelete()
             }
     }
@@ -643,13 +685,21 @@ private struct HistoryRow: View {
                     Text(item.date)
                         .lineLimit(1)
                         .layoutPriority(3)
-                    Text("·")
+                    Text(RDLocalization.string("localizable.history.view.copy.32cf96d7", table: .localizable, fallback: "·"))
                     Text(focusText)
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .layoutPriority(1)
-                    Text("·")
-                    Text("\(item.count) bulgu")
+                    Text(RDLocalization.string("localizable.history.view.copy.0094a905", table: .localizable, fallback: "·"))
+                    Text(
+                        RDLocalization.plural(
+                            "analysis.count.findings",
+                            table: .analysis,
+                            value: item.count,
+                            fallbackOne: "%lld bulgu",
+                            fallbackOther: "%lld bulgu"
+                        )
+                    )
                         .rdMono(size: 10.5, weight: .semibold)
                         .fixedSize(horizontal: true, vertical: false)
                         .layoutPriority(2)
@@ -662,7 +712,7 @@ private struct HistoryRow: View {
                         Circle()
                             .fill(item.status.textColor)
                             .frame(width: 5, height: 5)
-                        Text(item.status.rawValue)
+                        Text(item.status.title)
                             .font(.system(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
                             .foregroundStyle(item.status.textColor)
                     }
@@ -766,4 +816,5 @@ private extension View {
 
 #Preview {
     HistoryView()
+        .environmentObject(AppState())
 }

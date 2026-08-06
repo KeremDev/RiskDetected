@@ -83,15 +83,15 @@ struct PDFGenerationOverlay: View {
     private var statusText: String {
         switch clampedProgress {
         case ..<0.25:
-            return "Rapor verileri hazırlanıyor"
+            return RDLocalization.string("reports.pdfgeneration.overlay.rapor.verileri.hazirlaniyor.669b3ebb", table: .reports, fallback: "Rapor verileri hazırlanıyor")
         case ..<0.55:
-            return "Görsel ve risk tabloları işleniyor"
+            return RDLocalization.string("reports.pdfgeneration.overlay.gorsel.ve.risk.tablolari.isleniyor.89f0951d", table: .reports, fallback: "Görsel ve risk tabloları işleniyor")
         case ..<0.85:
-            return "PDF sayfaları oluşturuluyor"
+            return RDLocalization.string("reports.pdfgeneration.overlay.pdf.sayfalari.olusturuluyor.e24b4046", table: .reports, fallback: "PDF sayfaları oluşturuluyor")
         case ..<1:
-            return "Rapor arşive kaydediliyor"
+            return RDLocalization.string("reports.pdfgeneration.overlay.rapor.arsive.kaydediliyor.a45f30ba", table: .reports, fallback: "Rapor arşive kaydediliyor")
         default:
-            return "PDF hazır"
+            return RDLocalization.string("reports.pdfgeneration.overlay.pdf.hazir.5275371e", table: .reports, fallback: "PDF hazır")
         }
     }
 
@@ -104,7 +104,7 @@ struct PDFGenerationOverlay: View {
                 aiMark
 
                 VStack(spacing: 8) {
-                    Text("PDF hazırlanıyor")
+                    Text(RDLocalization.string("reports.pdfgeneration.overlay.pdf.hazirlaniyor.fc82f5ea", table: .reports, fallback: "PDF hazırlanıyor"))
                         .font(.system(size: RDFontScale.size(28), weight: .bold, design: .rounded))
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
@@ -117,7 +117,7 @@ struct PDFGenerationOverlay: View {
 
                 VStack(spacing: 12) {
                     HStack {
-                        Text("İlerleme")
+                        Text(RDLocalization.string("reports.pdfgeneration.overlay.ilerleme.c4f1db2d", table: .reports, fallback: "İlerleme"))
                             .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .textCase(.uppercase)
@@ -153,7 +153,7 @@ struct PDFGenerationOverlay: View {
 
                 HStack(spacing: 8) {
                     Image(systemName: "sparkles")
-                    Text("RiskDetected raporu oluşturulurken uygulamayı açık tut.")
+                    Text(RDLocalization.string("reports.pdfgeneration.overlay.riskdetected.raporu.olusturulurken.uygulamayi.ac.f81bb077", table: .reports, fallback: "RiskDetected raporu oluşturulurken uygulamayı açık tut."))
                 }
                 .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
@@ -173,9 +173,9 @@ struct PDFGenerationOverlay: View {
         }
         .transition(.opacity.combined(with: .scale(scale: 0.96)))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("PDF hazırlanıyor")
+        .accessibilityLabel(RDLocalization.string("reports.pdfgeneration.overlay.pdf.hazirlaniyor.58dab0c5", table: .reports, fallback: "PDF hazırlanıyor"))
         .accessibilityValue("\(percentText), \(statusText)")
-        .accessibilityHint("Rapor oluşturulurken uygulamayı açık tut.")
+        .accessibilityHint(RDLocalization.string("reports.pdfgeneration.overlay.rapor.olusturulurken.uygulamayi.acik.tut.ce2b9443", table: .reports, fallback: "Rapor oluşturulurken uygulamayı açık tut."))
         .onAppear {
             withAnimation(.easeInOut(duration: 1.15).repeatForever(autoreverses: true)) {
                 pulse = true

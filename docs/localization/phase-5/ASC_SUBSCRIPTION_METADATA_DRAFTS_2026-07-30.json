@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "prepared_at": "2026-07-30T23:55:00+03:00",
+  "status": "draft_not_applied",
+  "mutation_performed": false,
+  "app_id": "6769498181",
+  "subscription_group": {
+    "id": "22089637",
+    "reference_name": "RiskDetected Plans",
+    "localizations": [
+      {
+        "locale": "en-GB",
+        "name": "RiskDetected Plans"
+      },
+      {
+        "locale": "en-US",
+        "name": "RiskDetected Plans"
+      },
+      {
+        "locale": "en-AU",
+        "name": "RiskDetected Plans"
+      },
+      {
+        "locale": "en-CA",
+        "name": "RiskDetected Plans"
+      }
+    ]
+  },
+  "products": [
+    {
+      "subscription_id": "6769501024",
+      "product_id": "riskdetected_plus_monthly",
+      "period": "ONE_MONTH",
+      "group_level": 2,
+      "localizations": [
+        {
+          "locale": "en-GB",
+          "name": "RiskDetected Plus Monthly",
+          "description": "Daily analyses, advanced tools and branded reports."
+        },
+        {
+          "locale": "en-US",
+          "name": "RiskDetected Plus Monthly",
+          "description": "Daily analyses, advanced tools and branded reports."
+        },
+        {
+          "locale": "en-AU",
+          "name": "RiskDetected Plus Monthly",
+          "description": "Daily analyses, advanced tools and branded reports."
+        },
+        {
+          "locale": "en-CA",
+          "name": "RiskDetected Plus Monthly",
+          "description": "Daily analyses, advanced tools and branded reports."
+        }
+      ]
+    },
+    {
+      "subscription_id": "6769501933",
+      "product_id": "riskdetected_plus_yearly",
+      "period": "ONE_YEAR",
+      "group_level": 2,
+      "localizations": [
+        {
+          "locale": "en-GB",
+          "name": "RiskDetected Plus Annual",
+          "description": "Daily analyses, advanced tools and branded reports."
+        },
+        {
+          "locale": "en-US",
+          "name": "RiskDetected Plus Annual",
+          "description": "Daily analyses, advanced tools and branded reports."
+        },
+        {
+          "locale": "en-AU",
+          "name": "RiskDetected Plus Annual",
+          "description": "Daily analyses, advanced tools and branded reports."
+        },
+        {
+          "locale": "en-CA",
+          "name": "RiskDetected Plus Annual",
+          "description": "Daily analyses, advanced tools and branded reports."
+        }
+      ]
+    },
+    {
+      "subscription_id": "6769504185",
+      "product_id": "riskdetected_pro_monthly",
+      "period": "ONE_MONTH",
+      "group_level": 1,
+      "localizations": [
+        {
+          "locale": "en-GB",
+          "name": "RiskDetected Pro Monthly",
+          "description": "Higher limits, all safety tools and expanded reporting."
+        },
+        {
+          "locale": "en-US",
+          "name": "RiskDetected Pro Monthly",
+          "description": "Higher limits, all safety tools and expanded reporting."
+        },
+        {
+          "locale": "en-AU",
+          "name": "RiskDetected Pro Monthly",
+          "description": "Higher limits, all safety tools and expanded reporting."
+        },
+        {
+          "locale": "en-CA",
+          "name": "RiskDetected Pro Monthly",
+          "description": "Higher limits, all safety tools and expanded reporting."
+        }
+      ]
+    },
+    {
+      "subscription_id": "6769504261",
+      "product_id": "riskdetected_pro_yearly",
+      "period": "ONE_YEAR",
+      "group_level": 1,
+      "localizations": [
+        {
+          "locale": "en-GB",
+          "name": "RiskDetected Pro Annual",
+          "description": "Higher limits, all safety tools and expanded reporting."
+        },
+        {
+          "locale": "en-US",
+          "name": "RiskDetected Pro Annual",
+          "description": "Higher limits, all safety tools and expanded reporting."
+        },
+        {
+          "locale": "en-AU",
+          "name": "RiskDetected Pro Annual",
+          "description": "Higher limits, all safety tools and expanded reporting."
+        },
+        {
+          "locale": "en-CA",
+          "name": "RiskDetected Pro Annual",
+          "description": "Higher limits, all safety tools and expanded reporting."
+        }
+      ]
+    }
+  ],
+  "constraints": {
+    "product_ids_changed": false,
+    "prices_changed": false,
+    "limits_changed": false,
+    "offers_changed": false,
+    "legal_or_regulatory_compliance_claims_present": false
+  }
+}

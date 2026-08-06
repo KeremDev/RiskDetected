@@ -1,0 +1,60 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "CFBundleDisplayName": {
+      "comment": "Application display name; do not translate the product name; placeholders: none.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RiskDetected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RiskDetected"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription": {
+      "comment": "Camera permission purpose string; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RiskDetected needs camera access to capture site photos for workplace-safety analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RiskDetected, saha fotoğrafları çekerek iş güvenliği analizi yapabilmek için kamerana ihtiyaç duyar."
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription": {
+      "comment": "Photo library permission purpose string; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RiskDetected needs photo-library access so you can select site photos for analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha fotoğraflarını analiz edebilmek için galerine erişim izni gerekiyor."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

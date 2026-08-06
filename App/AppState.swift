@@ -12,17 +12,17 @@ enum RDThemePreference: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .system: return "Sistem"
-        case .light: return "Aydınlık"
-        case .dark: return "Karanlık"
+        case .system: return RDLocalization.string("localizable.app.state.sistem.9cce35aa", table: .localizable, fallback: "Sistem")
+        case .light: return RDLocalization.string("localizable.app.state.aydinlik.af1a2800", table: .localizable, fallback: "Aydınlık")
+        case .dark: return RDLocalization.string("localizable.app.state.karanlik.e3c9f637", table: .localizable, fallback: "Karanlık")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .system: return "Telefon ayarını takip eder."
-        case .light: return "Her zaman açık tema."
-        case .dark: return "Her zaman koyu tema."
+        case .system: return RDLocalization.string("localizable.app.state.telefon.ayarini.takip.eder.bd03e613", table: .localizable, fallback: "Telefon ayarını takip eder.")
+        case .light: return RDLocalization.string("localizable.app.state.her.zaman.acik.tema.04d1e49b", table: .localizable, fallback: "Her zaman açık tema.")
+        case .dark: return RDLocalization.string("localizable.app.state.her.zaman.koyu.tema.aa37f82a", table: .localizable, fallback: "Her zaman koyu tema.")
         }
     }
 
@@ -187,6 +187,7 @@ private extension BackendMultiPhotoFlags {
             if allowed.contains(build) { return true }
             guard let buildNumber = Int(build) else { return false }
             return allowed.compactMap(Int.init).contains(buildNumber)
+                || (minIOSBuild.map { buildNumber >= $0 } == true)
         case "min_build":
             guard let buildNumber = Int(build), let minimum = minIOSBuild else { return false }
             return buildNumber >= minimum
@@ -257,9 +258,13 @@ struct AppReleasePolicy: Codable, Equatable {
     }
 
     var displayMessage: String {
-        let trimmed = (messageTR ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let selectedMessage = RDLanguage.current == .english ? messageEN : messageTR
+        let trimmed = (selectedMessage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty
-            ? "Yeni sürüm mevcut. Devam etmek için uygulamayı güncelleyin."
+            ? RDLocalization.string(
+                "localizable.release.update_required",
+                fallback: "Yeni sürüm mevcut. Devam etmek için uygulamayı güncelleyin."
+            )
             : trimmed
     }
 
@@ -313,7 +318,7 @@ final class AppState: ObservableObject {
     private static let onboardingCompletedKey = "rd.onboarding.completed"
     private static let darkModeKey = "rd.theme.darkModeEnabled"
     private static let themePreferenceKey = "rd.theme.preference"
-    private static let languagePreferenceKey = "rd.language.preference"
+    private static let safetyProfilePreferenceKey = "rd.safetyProfile.preference"
     private static let cachedHardReleasePolicyKey = "rd.releasePolicy.cachedHard"
     private static let dismissedSoftReleasePolicyKey = "rd.releasePolicy.dismissedSoft"
 
@@ -346,11 +351,8 @@ final class AppState: ObservableObject {
             isDarkModeEnabled = themePreference == .dark
         }
     }
-    @Published var languagePreference: RDLanguagePreference {
-        didSet {
-            UserDefaults.standard.set(languagePreference.rawValue, forKey: Self.languagePreferenceKey)
-        }
-    }
+    @Published private(set) var languagePreference: RDLanguagePreference
+    @Published private(set) var safetyProfileID: RDSafetyProfileID?
 
     let auth: AuthService
     let subscriptions: any SubscriptionManaging
@@ -384,9 +386,18 @@ final class AppState: ObservableObject {
         let resolvedTheme = storedTheme ?? (UserDefaults.standard.bool(forKey: Self.darkModeKey) ? .dark : .system)
         self.themePreference = resolvedTheme
         self.isDarkModeEnabled = resolvedTheme == .dark
-        let storedLanguage = UserDefaults.standard.string(forKey: Self.languagePreferenceKey)
-            .flatMap(RDLanguagePreference.init(rawValue:))
-        self.languagePreference = Self.normalizedLanguagePreference(storedLanguage)
+        let nativeLanguage = RDLanguage.current
+        self.languagePreference = nativeLanguage
+        let storedSafetyProfile = UserDefaults.standard
+            .string(forKey: Self.safetyProfilePreferenceKey)
+            .flatMap(RDSafetyProfileID.init(rawValue:))
+        self.safetyProfileID = RDGlobalLocalizationBuildGate.isEnabled
+            ? Self.compatibleSafetyProfileID(
+                storedSafetyProfile,
+                with: nativeLanguage.appLanguage
+            )
+                ?? (nativeLanguage == .turkish ? .turkeyCurrentV1 : nil)
+            : .turkeyCurrentV1
         self.profile = resolved.profile
         self.isAuthenticated = resolved.isAuthenticated
         applyTier(.free)
@@ -413,8 +424,14 @@ final class AppState: ObservableObject {
             return
         }
         if Self.isUITestMainLaunch {
-            let testTier: SubscriptionTier = Self.isUITestFreeTierLaunch ? .free : .plus
-            profile = Self.uiTestProfile(tier: testTier)
+            let testTier: SubscriptionTier = Self.isUITestFreeTierLaunch
+                ? .free
+                : Self.isUITestProTierLaunch
+                    ? .pro
+                    : .plus
+            let testProfile = Self.uiTestProfile(tier: testTier)
+            profile = testProfile
+            safetyProfileID = testProfile.safetyProfileID
             backendSubscriptionState = SubscriptionState(
                 tier: testTier,
                 entitlementID: testTier.isPaid ? testTier.rawValue : nil,
@@ -539,7 +556,7 @@ final class AppState: ObservableObject {
     func refreshSubscriptionOfferings() async {
         guard let userID = auth.session?.user.id else {
             subscriptionPackages = []
-            subscriptionOfferingsLoadState = .failed("App Store fiyatları için tekrar giriş yapman gerekiyor.")
+            subscriptionOfferingsLoadState = .failed(RDLocalization.string("localizable.app.state.app.store.fiyatlari.icin.tekrar.giris.yapman.ger.8a6258a3", table: .localizable, fallback: "App Store fiyatları için tekrar giriş yapman gerekiyor."))
             return
         }
         await loadSubscriptionOfferings(retryOnce: true, identifyUserID: userID)
@@ -575,7 +592,7 @@ final class AppState: ObservableObject {
     }
 
     private func subscriptionOfferingsFailureMessage() -> String {
-        return "App Store abonelik fiyatları şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+        return RDLocalization.string("localizable.app.state.app.store.abonelik.fiyatlari.su.an.alinamadi.int.69c82993", table: .localizable, fallback: "App Store abonelik fiyatları şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene.")
     }
 
     func refreshPlanState() async {
@@ -712,11 +729,12 @@ final class AppState: ObservableObject {
 
     @discardableResult
     func purchaseSubscription(packageID: String, expectedTier: SubscriptionTier? = nil) async throws -> SubscriptionState {
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
         guard let userID = auth.session?.user.id else {
             throw NSError(
                 domain: "RiskDetected.Subscription",
                 code: 401,
-                userInfo: [NSLocalizedDescriptionKey: "Abonelik başlatmadan önce tekrar giriş yapman gerekiyor."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("localizable.app.state.abonelik.baslatmadan.once.tekrar.giris.yapman.ge.c8b96341", table: .localizable, fallback: "Abonelik başlatmadan önce tekrar giriş yapman gerekiyor.")]
             )
         }
         await subscriptions.identify(userID: userID)
@@ -726,7 +744,7 @@ final class AppState: ObservableObject {
             throw NSError(
                 domain: "RiskDetected.Subscription",
                 code: 409,
-                userInfo: [NSLocalizedDescriptionKey: "Abonelik doğrulanamadı. Seçilen plan \(assertedTier.title), doğrulanan plan \(purchasedState.tier.title)."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.format("localizable.app.state.abonelik.dogrulanamadi.secilen.plan.1.dogrulanan.41b085b6", table: .localizable, fallback: "Abonelik doğrulanamadı. Seçilen plan %1$@, doğrulanan plan %2$@.", arguments: [String(describing: assertedTier.title), String(describing: purchasedState.tier.title)])]
             )
         }
         let backendState = try await syncBackendSubscriptionWithRetry(expectedTier: assertedTier)
@@ -736,7 +754,7 @@ final class AppState: ObservableObject {
             throw NSError(
                 domain: "RiskDetected.Subscription",
                 code: 409,
-                userInfo: [NSLocalizedDescriptionKey: "Abonelik backend tarafında doğrulanamadı. Lütfen birkaç saniye sonra tekrar dene veya satın alımları geri yükle."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("localizable.app.state.abonelik.backend.tarafinda.dogrulanamadi.lutfen..e6a38fc9", table: .localizable, fallback: "Abonelik backend tarafında doğrulanamadı. Lütfen birkaç saniye sonra tekrar dene veya satın alımları geri yükle.")]
             )
         }
         applyTier(backendState.tier)
@@ -749,7 +767,7 @@ final class AppState: ObservableObject {
             throw NSError(
                 domain: "RiskDetected.Subscription",
                 code: 401,
-                userInfo: [NSLocalizedDescriptionKey: "Satın alımları geri yüklemek için tekrar giriş yapman gerekiyor."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("localizable.app.state.satin.alimlari.geri.yuklemek.icin.tekrar.giris.y.a153de84", table: .localizable, fallback: "Satın alımları geri yüklemek için tekrar giriş yapman gerekiyor.")]
             )
         }
         await subscriptions.identify(userID: userID)
@@ -775,15 +793,125 @@ final class AppState: ObservableObject {
         themePreference = preference
     }
 
-    func setLanguagePreference(_ preference: RDLanguagePreference) {
-        languagePreference = Self.normalizedLanguagePreference(preference)
+    var activeSafetyProfile: RDSafetyProfileDefinition? {
+        guard RDGlobalLocalizationBuildGate.isEnabled else {
+            return RDSafetyProfileCatalog.profile(id: .turkeyCurrentV1)
+        }
+        return safetyProfileID.map(RDSafetyProfileCatalog.profile(id:))
     }
 
-    private static func normalizedLanguagePreference(_ preference: RDLanguagePreference?) -> RDLanguagePreference {
-        guard let preference, RDLanguagePreference.supportedCases.contains(preference) else {
-            return .turkish
+    private static func compatibleSafetyProfileID(
+        _ profileID: RDSafetyProfileID?,
+        with appLanguage: RDAppLanguage
+    ) -> RDSafetyProfileID? {
+        guard let profileID else { return nil }
+        let definition = RDSafetyProfileCatalog.profile(id: profileID)
+        return definition.language == appLanguage ? profileID : nil
+    }
+
+    /// Keeps onboarding selection explicit, while giving users who enter
+    /// through the standalone auth flow a deterministic terminology profile.
+    private func ensureAuthenticatedSafetyProfileDefaultIfNeeded() {
+        guard RDGlobalLocalizationBuildGate.isEnabled,
+              isAuthenticated,
+              flow != .onboarding || hasSeenOnboarding
+        else {
+            return
         }
-        return preference
+
+        let appLanguage = languagePreference.appLanguage
+        if Self.compatibleSafetyProfileID(
+            safetyProfileID,
+            with: appLanguage
+        ) != nil {
+            return
+        }
+
+        let fallback: RDSafetyProfileID = appLanguage == .english
+            ? RDSafetyProfileCatalog.englishFallbackProfileID
+            : RDSafetyProfileCatalog.defaultProfileID
+        safetyProfileID = fallback
+        UserDefaults.standard.set(
+            fallback.rawValue,
+            forKey: Self.safetyProfilePreferenceKey
+        )
+    }
+
+    var requiresExplicitSafetyProfileSelection: Bool {
+        RDGlobalLocalizationBuildGate.isEnabled
+            && languagePreference == .english
+            && safetyProfileID == nil
+    }
+
+    var legislationCanvasEnabled: Bool {
+        activeSafetyProfile?.legislationCanvasEnabled
+            ?? (languagePreference == .turkish)
+    }
+
+    var localizationRequestForNewAnalysis: RDAnalysisLocalizationRequest? {
+        guard RDGlobalLocalizationBuildGate.isEnabled else { return nil }
+        guard let safetyProfile = activeSafetyProfile else { return nil }
+        let preferred = profile?.preferredMethod?.localizationMethod
+        let method = preferred.flatMap {
+            safetyProfile.allowedRiskMethods.contains($0) ? $0 : nil
+        } ?? safetyProfile.defaultRiskMethod
+        return RDAnalysisLocalizationRequest(
+            outputLanguage: safetyProfile.language,
+            outputLocale: safetyProfile.contentLocale,
+            workJurisdictionCountry: safetyProfile.jurisdictionCountry,
+            workJurisdictionRegion: profile?.workJurisdictionRegion,
+            safetyProfileID: safetyProfile.id,
+            safetyProfileVersion: safetyProfile.profileVersion,
+            method: method
+        )
+    }
+
+    func setSafetyProfile(_ profileID: RDSafetyProfileID) {
+        guard RDGlobalLocalizationBuildGate.isEnabled
+                || profileID == .turkeyCurrentV1
+        else {
+            return
+        }
+        guard RDSafetyProfileCatalog.profile(id: profileID).language
+                == languagePreference.appLanguage
+        else {
+            return
+        }
+        safetyProfileID = profileID
+        UserDefaults.standard.set(
+            profileID.rawValue,
+            forKey: Self.safetyProfilePreferenceKey
+        )
+        Task { await syncLocalizationPreferences() }
+    }
+
+    /// Re-reads the native per-app language chosen in iOS Settings.
+    func refreshNativeLanguageContext() async {
+        let nativeLanguage = RDLanguage.current
+        if languagePreference != nativeLanguage {
+            languagePreference = nativeLanguage
+        }
+        await syncLocalizationPreferences()
+    }
+
+    private func syncLocalizationPreferences() async {
+        guard RDGlobalLocalizationBuildGate.isEnabled,
+              auth.isAuthenticated
+        else {
+            return
+        }
+        ensureAuthenticatedSafetyProfileDefaultIfNeeded()
+        do {
+            try await auth.updateLocalizationPreferences(
+                appLanguage: languagePreference.appLanguage,
+                safetyProfileID: safetyProfileID,
+                workJurisdictionRegion: profile?.workJurisdictionRegion
+            )
+        } catch {
+            #if DEBUG
+            print("Localization preference sync failed: \(error.localizedDescription)")
+            #endif
+        }
     }
 
     #if DEBUG
@@ -800,6 +928,11 @@ final class AppState: ObservableObject {
     private static var isUITestFreeTierLaunch: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_FREE_TIER")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_FREE_TIER"] == "1"
+    }
+
+    private static var isUITestProTierLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_PRO_TIER")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_PRO_TIER"] == "1"
     }
 
     private static var isUITestLaunch: Bool {
@@ -822,6 +955,7 @@ final class AppState: ObservableObject {
                 "rd.theme.darkModeEnabled",
                 "rd.theme.preference",
                 "rd.language.preference",
+                safetyProfilePreferenceKey,
                 "rd.paywall.funnelSessionID",
                 cachedHardReleasePolicyKey,
                 dismissedSoftReleasePolicyKey,
@@ -831,6 +965,9 @@ final class AppState: ObservableObject {
         if CommandLine.arguments.contains("RD_UI_TEST_DARK_MODE")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_DARK_MODE"] == "1" {
             defaults.set(RDThemePreference.dark.rawValue, forKey: themePreferenceKey)
+        } else if CommandLine.arguments.contains("RD_UI_TEST_LIGHT_MODE")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_LIGHT_MODE"] == "1" {
+            defaults.set(RDThemePreference.light.rawValue, forKey: themePreferenceKey)
         }
     }
 
@@ -840,23 +977,52 @@ final class AppState: ObservableObject {
     }
 
     private static func uiTestProfile(tier: SubscriptionTier = .plus) -> UserProfile {
-        UserProfile(
+        let isEnglish = RDLanguage.current == .english
+        let requestedProfileID = ProcessInfo.processInfo.environment[
+            "RD_UI_TEST_SAFETY_PROFILE_ID"
+        ].flatMap(RDSafetyProfileID.init(rawValue:))
+        let defaultProfileID: RDSafetyProfileID = isEnglish
+            ? .englishInternationalGenericV1
+            : .turkeyCurrentV1
+        let requestedProfile = requestedProfileID.map(
+            RDSafetyProfileCatalog.profile(id:)
+        )
+        let expectedLanguage: RDAppLanguage = isEnglish ? .english : .turkish
+        let safetyProfile: RDSafetyProfileDefinition
+        if let requestedProfile,
+           requestedProfile.language == expectedLanguage {
+            safetyProfile = requestedProfile
+        } else {
+            safetyProfile = RDSafetyProfileCatalog.profile(id: defaultProfileID)
+        }
+        return UserProfile(
             id: UUID(uuidString: "00000000-0000-0000-0000-00000000f201")!,
             email: "ui-test@riskdetected.app",
-            fullName: "UI Test Kullanıcı",
+            fullName: isEnglish ? "UI Test User" : "UI Test Kullanıcı",
             initials: "UT",
-            title: "İSG Uzmanı · A Sınıfı",
+            title: isEnglish
+                ? "Safety professional"
+                : RDLocalization.string("localizable.app.state.isg.uzmani.a.sinifi.299d0687", table: .localizable, fallback: "İSG Uzmanı · A Sınıfı"),
             certificateNumber: "UI-TEST-001",
-            companyName: "RiskDetected Test Firma",
+            companyName: isEnglish
+                ? "RiskDetected Test Company"
+                : "RiskDetected Test Firma",
             companyLogoURL: nil,
             avatarURL: nil,
-            phone: "Test profil",
+            phone: isEnglish ? "Test profile" : "Test profil",
             tier: tier,
             preferredMethod: .fineKinney,
             dailyQuotaUsed: 0,
             dailyQuotaResetAt: nil,
             subscriptionPeriod: "monthly",
             subscriptionRenewalAt: nil,
+            appLanguage: safetyProfile.language,
+            preferredContentLocale: safetyProfile.contentLocale,
+            workJurisdictionCountry: safetyProfile.jurisdictionCountry,
+            workJurisdictionRegion: nil,
+            safetyProfileID: safetyProfile.id,
+            safetyProfileVersion: safetyProfile.profileVersion,
+            legalDocumentSetID: isEnglish ? .englishGlobalV1 : .turkeyCurrent,
             firstSeenDeviceRegionCode: nil,
             firstSeenDeviceRegionAt: nil,
             createdAt: nil
@@ -879,6 +1045,28 @@ final class AppState: ObservableObject {
                 guard !Self.isUITestMainLaunch else { return }
                 #endif
                 self.profile = newProfile
+                if let profileID = newProfile?.safetyProfileID {
+                    if self.flow == .onboarding,
+                       Self.compatibleSafetyProfileID(
+                           self.safetyProfileID,
+                           with: self.languagePreference.appLanguage
+                       ) != nil {
+                        return
+                    }
+                    let effectiveProfileID =
+                        RDGlobalLocalizationBuildGate.isEnabled
+                        ? Self.compatibleSafetyProfileID(
+                            profileID,
+                            with: self.languagePreference.appLanguage
+                        )
+                        : .turkeyCurrentV1
+                    guard let effectiveProfileID else { return }
+                    self.safetyProfileID = effectiveProfileID
+                    UserDefaults.standard.set(
+                        effectiveProfileID.rawValue,
+                        forKey: Self.safetyProfilePreferenceKey
+                    )
+                }
             }
             .store(in: &cancellables)
 
@@ -892,6 +1080,8 @@ final class AppState: ObservableObject {
                 #endif
                 self.isAuthenticated = session != nil
                 if let session {
+                    self.ensureAuthenticatedSafetyProfileDefaultIfNeeded()
+                    NotificationService.shared.prepareForAuthenticatedUser(session.user.id)
                     Task {
                         await LegalAcceptanceService.shared
                             .recordLoginNoticeAcceptanceIfNeeded(userID: session.user.id)
@@ -899,6 +1089,7 @@ final class AppState: ObservableObject {
                         NotificationService.shared.syncCurrentTokenIfPossible()
                         await self.subscriptions.identify(userID: session.user.id)
                         await OnboardingAnswersService.shared.syncPendingDraftIfPossible()
+                        await self.syncLocalizationPreferences()
                         await self.refreshPlanState()
                         await self.sendWelcomeEmailIfPossible()
                     }
@@ -1211,7 +1402,7 @@ final class AppState: ObservableObject {
             throw NSError(
                 domain: "RiskDetected.Subscription",
                 code: 401,
-                userInfo: [NSLocalizedDescriptionKey: "Abonelik doğrulaması için tekrar giriş yapman gerekiyor."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("localizable.app.state.abonelik.dogrulamasi.icin.tekrar.giris.yapman.ge.928cbfae", table: .localizable, fallback: "Abonelik doğrulaması için tekrar giriş yapman gerekiyor.")]
             )
         }
         struct SyncBody: Encodable {
@@ -1237,15 +1428,15 @@ final class AppState: ObservableObject {
             throw NSError(
                 domain: "RiskDetected.Subscription",
                 code: 502,
-                userInfo: [NSLocalizedDescriptionKey: "Abonelik doğrulama yanıtı okunamadı."]
+                userInfo: [NSLocalizedDescriptionKey: RDLocalization.string("localizable.app.state.abonelik.dogrulama.yaniti.okunamadi.bd64dc5e", table: .localizable, fallback: "Abonelik doğrulama yanıtı okunamadı.")]
             )
         }
         guard tier == expectedTier || (!expectedTier.isPaid && !tier.isPaid) else {
             let message: String
             if expectedTier.isPaid && !tier.isPaid {
-                message = "App Store hesabında \(expectedTier.title) aboneliği görünüyor, ancak RevenueCat backend doğrulaması henüz ücretli plan döndürmüyor. Güvenlik için plan açılmadı; abonelik RevenueCat/Supabase tarafında eşleşince otomatik açılır."
+                message = RDLocalization.format("localizable.app.state.app.store.hesabinda.1.aboneligi.gorunuyor.ancak..43b3d4a8", table: .localizable, fallback: "App Store hesabında %1$@ aboneliği görünüyor, ancak RevenueCat backend doğrulaması henüz ücretli plan döndürmüyor. Güvenlik için plan açılmadı; abonelik RevenueCat/Supabase tarafında eşleşince otomatik açılır.", arguments: [String(describing: expectedTier.title)])
             } else {
-                message = "Abonelik doğrulanamadı. Seçilen plan \(expectedTier.title), backend planı \(tier.title)."
+                message = RDLocalization.format("localizable.app.state.abonelik.dogrulanamadi.secilen.plan.1.backend.pl.b6752557", table: .localizable, fallback: "Abonelik doğrulanamadı. Seçilen plan %1$@, backend planı %2$@.", arguments: [String(describing: expectedTier.title), String(describing: tier.title)])
             }
             throw NSError(
                 domain: "RiskDetected.Subscription",
@@ -1295,7 +1486,7 @@ final class AppState: ObservableObject {
         guard nsError.domain == "RiskDetected.Subscription", nsError.code == 409 else {
             return false
         }
-        let message = nsError.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        let message = nsError.localizedDescription.lowercased(with: .autoupdatingCurrent)
         return message.contains("backend planı")
             || message.contains("backend doğrulaması henüz")
             || message.contains("revenuecat backend doğrulaması")

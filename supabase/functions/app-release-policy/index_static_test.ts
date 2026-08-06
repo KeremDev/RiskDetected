@@ -31,19 +31,27 @@ Deno.test("app-release-policy returns sanitized public release policy", async ()
   assert(!source.includes("service_role_key:"));
 });
 
-Deno.test("iOS release policy seed is safe for build 62 and App Review", async () => {
-  const migration = await readTextIfAllowed(
+Deno.test("attested iOS release policy stays safe for build 62 and App Review", async () => {
+  const initialMigration = await readTextIfAllowed(
     new URL(
       "../../migrations/20260622195418_multi_photo_editable_findings.sql",
       import.meta.url,
     ),
   );
-  if (migration == null) return;
-  const normalizedSQL = migration.toLowerCase().replace(/\s+/g, " ");
+  const currentMigration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260726152710_publish_ios_build_77_release_policy.sql",
+      import.meta.url,
+    ),
+  );
+  if (initialMigration == null || currentMigration == null) return;
+  const normalizedSQL = `${initialMigration}\n${currentMigration}`
+    .toLowerCase()
+    .replace(/\s+/g, " ");
 
   assertStringIncludes(normalizedSQL, "'ios_release_policy'");
   assertStringIncludes(normalizedSQL, "'minimum_supported_build', 62");
-  assertStringIncludes(normalizedSQL, "'latest_build', 66");
+  assertStringIncludes(normalizedSQL, "'latest_build', 77");
   assertStringIncludes(normalizedSQL, "'hard_update_enabled', false");
   assertStringIncludes(normalizedSQL, "'soft_update_enabled', true");
   assertStringIncludes(normalizedSQL, "apps.apple.com/tr/app/riskdetected");

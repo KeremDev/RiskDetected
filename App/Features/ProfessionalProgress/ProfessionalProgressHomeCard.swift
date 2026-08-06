@@ -55,7 +55,7 @@ struct ProfessionalProgressHomeCard: View {
                     Text(formattedNumber(summary.profile.totalMDP))
                         .rdMono(size: 14, weight: .bold)
                         .foregroundStyle(primaryText)
-                    Text("/ \(formattedNumber(nextTitleThreshold)) MDP")
+                    Text(RDLocalization.format("professionalprogress.professional.progress.home.card.1.mdp.f5de89f8", table: .professionalProgress, fallback: "/ %1$@ MDP", arguments: [String(describing: formattedNumber(nextTitleThreshold))]))
                         .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
                         .foregroundStyle(secondaryText)
                     Spacer(minLength: 0)
@@ -96,7 +96,7 @@ struct ProfessionalProgressHomeCard: View {
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.up.right.circle.fill")
                         .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
-                    Text("Kıdemini yükselt")
+                    Text(RDLocalization.string("professionalprogress.professional.progress.home.card.kidemini.yukselt.6f180187", table: .professionalProgress, fallback: "Kıdemini yükselt"))
                         .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     if let nextTitle = summary.nextTitle {
                         Text("· \(nextTitle.label)")
@@ -279,9 +279,9 @@ struct ProfessionalProgressHomeCard: View {
 
     private var nextTitleLabel: String {
         if let nextTitle = summary.nextTitle {
-            return "Hedef: \(nextTitle.label) · \(formattedNumber(summary.nextTitleRemaining)) MDP kaldı"
+            return RDLocalization.format("professionalprogress.professional.progress.home.card.hedef.1.2.mdp.kaldi.2439b9e9", table: .professionalProgress, fallback: "Hedef: %1$@ · %2$@ MDP kaldı", arguments: [String(describing: nextTitle.label), String(describing: formattedNumber(summary.nextTitleRemaining))])
         }
-        return "En üst RiskDetected ünvanındasın"
+        return RDLocalization.string("professionalprogress.professional.progress.home.card.en.ust.riskdetected.unvanindasin.7c85a239", table: .professionalProgress, fallback: "En üst RiskDetected ünvanındasın")
     }
 
     private func titleTile(accent: Color, accentSoft: Color) -> some View {
@@ -391,13 +391,13 @@ struct ProfessionalProgressHomeCard: View {
 
     private func stageLabel(for title: ProfessionalProgressTitle) -> String {
         switch title {
-        case .candidate: return "Aday"
-        case .fieldObserver: return "Saha"
-        case .riskHunter: return "Risk"
-        case .hazardAnalyst: return "Analiz"
-        case .seniorRiskSpecialist: return "Kıd."
-        case .safetyStrategist: return "Str."
-        case .masterHSESpecialist: return "Usta"
+        case .candidate: return RDLocalization.string("professionalprogress.professional.progress.home.card.aday.d654b3d8", table: .professionalProgress, fallback: "Aday")
+        case .fieldObserver: return RDLocalization.string("professionalprogress.professional.progress.home.card.saha.fd1acd53", table: .professionalProgress, fallback: "Saha")
+        case .riskHunter: return RDLocalization.string("professionalprogress.professional.progress.home.card.risk.3847ca2d", table: .professionalProgress, fallback: "Risk")
+        case .hazardAnalyst: return RDLocalization.string("professionalprogress.professional.progress.home.card.analiz.eb0963b1", table: .professionalProgress, fallback: "Analiz")
+        case .seniorRiskSpecialist: return RDLocalization.string("professionalprogress.professional.progress.home.card.kid.acd3b4c6", table: .professionalProgress, fallback: "Kıd.")
+        case .safetyStrategist: return RDLocalization.string("professionalprogress.professional.progress.home.card.str.4e8cc96c", table: .professionalProgress, fallback: "Str.")
+        case .masterHSESpecialist: return RDLocalization.string("professionalprogress.professional.progress.home.card.usta.0e4c515a", table: .professionalProgress, fallback: "Usta")
         }
     }
 

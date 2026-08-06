@@ -7,7 +7,7 @@ struct ProfessionalProgressCompetencyMapView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: RDSpacing.sm) {
             if !compact {
-                Text("Yetkinlik Haritası")
+                Text(RDLocalization.string("professionalprogress.professional.progress.competency.map.view.yetkinlik.haritasi.b803796a", table: .professionalProgress, fallback: "Yetkinlik Haritası"))
                     .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
             }
@@ -65,7 +65,7 @@ struct ProfessionalProgressCompetencyMapView: View {
                         Image(systemName: "chart.pie.fill")
                             .font(.system(size: RDFontScale.size(12), weight: .black, design: .rounded))
                             .foregroundStyle(Color.rdGreenDark)
-                        Text("Yetkinlik dağılımı")
+                        Text(RDLocalization.string("professionalprogress.professional.progress.competency.map.view.yetkinlik.dagilimi.2ebc434c", table: .professionalProgress, fallback: "Yetkinlik dağılımı"))
                             .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                     }
@@ -116,7 +116,7 @@ struct ProfessionalProgressCompetencyMapView: View {
                 Text("\(rows.count)")
                     .rdMono(size: 22, weight: .bold)
                     .foregroundStyle(Color.rdBlack)
-                Text("alan")
+                Text(RDLocalization.string("professionalprogress.professional.progress.competency.map.view.alan.dffbc276", table: .professionalProgress, fallback: "alan"))
                     .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
@@ -153,16 +153,16 @@ struct ProfessionalProgressCompetencyMapView: View {
 
     private func compactLabel(for competency: ProfessionalProgressCompetency) -> String {
         switch competency {
-        case .workingAtHeight: return "Yüksekte"
-        case .psychosocial: return "Psikososyal"
-        case .construction: return "İnşaat"
-        case .ergonomics: return "Ergonomi"
-        case .electrical: return "Elektrik"
-        case .chemical: return "Kimyasal"
-        case .mechanical: return "Mekanik"
-        case .factory: return "Fabrika"
-        case .fire: return "Yangın"
-        case .mining: return "Maden"
+        case .workingAtHeight: return RDLocalization.string("professionalprogress.professional.progress.competency.map.view.yuksekte.ab77d7f0", table: .professionalProgress, fallback: "Yüksekte")
+        case .psychosocial: return RDLocalization.string("professionalprogress.professional.progress.competency.map.view.psikososyal.2eadcac8", table: .professionalProgress, fallback: "Psikososyal")
+        case .construction: return RDLocalization.string("professionalprogress.professional.progress.competency.map.view.insaat.9d956dcf", table: .professionalProgress, fallback: "İnşaat")
+        case .ergonomics: return RDLocalization.string("professionalprogress.professional.progress.competency.map.view.ergonomi.0068fe0f", table: .professionalProgress, fallback: "Ergonomi")
+        case .electrical: return RDLocalization.string("professionalprogress.professional.progress.competency.map.view.elektrik.2a8a5498", table: .professionalProgress, fallback: "Elektrik")
+        case .chemical: return RDLocalization.string("professionalprogress.professional.progress.competency.map.view.kimyasal.7a9e8eb7", table: .professionalProgress, fallback: "Kimyasal")
+        case .mechanical: return RDLocalization.string("professionalprogress.professional.progress.competency.map.view.mekanik.03fb4ae4", table: .professionalProgress, fallback: "Mekanik")
+        case .factory: return RDLocalization.string("professionalprogress.professional.progress.competency.map.view.fabrika.e2d5d71d", table: .professionalProgress, fallback: "Fabrika")
+        case .fire: return RDLocalization.string("professionalprogress.professional.progress.competency.map.view.yangin.05333baf", table: .professionalProgress, fallback: "Yangın")
+        case .mining: return RDLocalization.string("professionalprogress.professional.progress.competency.map.view.maden.cba516d8", table: .professionalProgress, fallback: "Maden")
         case .ppe: return "KKD"
         }
     }
@@ -185,9 +185,9 @@ struct ProfessionalProgressCompetencyMapView: View {
         let parts = rows.map { stat in
             let competency = stat.competency?.label ?? stat.competencyKey
             let percent = Int((Double(chartWeight(stat)) / Double(total) * 100).rounded())
-            return "\(competency) yüzde \(percent)"
+            return RDLocalization.format("professionalprogress.professional.progress.competency.map.view.1.yuzde.2.fb547122", table: .professionalProgress, fallback: "%1$@ yüzde %2$@", arguments: [String(describing: competency), String(describing: percent)])
         }
-        return "Yetkinlik dağılımı. \(parts.joined(separator: ", "))."
+        return RDLocalization.format("professionalprogress.professional.progress.competency.map.view.yetkinlik.dagilimi.1.8d7c80e2", table: .professionalProgress, fallback: "Yetkinlik dağılımı. %1$@.", arguments: [String(describing: parts.joined(separator: ", "))])
     }
 
     private func competencyRow(_ stat: ProfessionalProgressCompetencyStat) -> some View {
@@ -207,7 +207,7 @@ struct ProfessionalProgressCompetencyMapView: View {
                             .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                         if stat.onboardingSeed && stat.signalCount == 0 {
-                            Text("Beyan edilen alan")
+                            Text(RDLocalization.string("professionalprogress.professional.progress.competency.map.view.beyan.edilen.alan.3907d53e", table: .professionalProgress, fallback: "Beyan edilen alan"))
                                 .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdGreenDark)
                                 .padding(.horizontal, 6)
@@ -216,7 +216,7 @@ struct ProfessionalProgressCompetencyMapView: View {
                                 .clipShape(Capsule())
                         }
                     }
-                    Text("\(stat.findingCount) bulgu · \(stat.reportCount) rapor")
+                    Text(RDLocalization.format("professionalprogress.professional.progress.competency.map.view.1.bulgu.2.rapor.be98faf5", table: .professionalProgress, fallback: "%1$@ bulgu · %2$@ rapor", arguments: [String(describing: stat.findingCount), String(describing: stat.reportCount)]))
                         .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
@@ -241,10 +241,10 @@ struct ProfessionalProgressCompetencyMapView: View {
 
             if !compact && stat.findingCount > 0 {
                 HStack(spacing: 6) {
-                    riskChip(label: "Kritik", count: stat.criticalCount, color: .rdCritical)
-                    riskChip(label: "Yüksek", count: stat.highCount, color: .rdHigh)
-                    riskChip(label: "Orta", count: stat.mediumCount, color: .rdMedium)
-                    riskChip(label: "Düşük", count: stat.lowCount, color: .rdLow)
+                    riskChip(label: RDLocalization.string("professionalprogress.professional.progress.competency.map.view.kritik.5681ba04", table: .professionalProgress, fallback: "Kritik"), count: stat.criticalCount, color: .rdCritical)
+                    riskChip(label: RDLocalization.string("professionalprogress.professional.progress.competency.map.view.yuksek.85fb2f35", table: .professionalProgress, fallback: "Yüksek"), count: stat.highCount, color: .rdHigh)
+                    riskChip(label: RDLocalization.string("professionalprogress.professional.progress.competency.map.view.orta.01370256", table: .professionalProgress, fallback: "Orta"), count: stat.mediumCount, color: .rdMedium)
+                    riskChip(label: RDLocalization.string("professionalprogress.professional.progress.competency.map.view.dusuk.cdee3361", table: .professionalProgress, fallback: "Düşük"), count: stat.lowCount, color: .rdLow)
                 }
             }
         }

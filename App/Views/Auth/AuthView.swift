@@ -73,7 +73,7 @@ struct AuthView: View {
                 VStack(spacing: phase == .email ? 18 : 20) {
                     VStack(spacing: 10) {
                         RDLogo(size: phase == .email ? 36 : 38)
-                        Text("Saha için yapay zekâ destekli iş güvenliği asistanı")
+                        Text(RDLocalization.string("auth.auth.view.saha.icin.yapay.zeka.destekli.is.guvenligi.asist.73caffd7", table: .auth, fallback: "Saha için yapay zekâ destekli iş güvenliği asistanı"))
                             .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdGraphite)
                             .multilineTextAlignment(.center)
@@ -159,14 +159,14 @@ struct AuthView: View {
 
     private var optionsForm: some View {
         VStack(spacing: 10) {
-            RDButton(title: "E-posta ile giriş yap", style: .secondary, icon: "envelope.fill") {
+            RDButton(title: RDLocalization.string("auth.auth.view.e.posta.ile.giris.yap.ff1b3d8b", table: .auth, fallback: "E-posta ile giriş yap"), style: .secondary, icon: "envelope.fill") {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
             .accessibilityIdentifier("auth.email.start")
 
             HStack(spacing: 12) {
                 Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
-                Text("veya")
+                Text(RDLocalization.string("auth.auth.view.veya.96cc844b", table: .auth, fallback: "veya"))
                     .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdGraphite.opacity(0.78))
                     .padding(.horizontal, 4)
@@ -175,7 +175,7 @@ struct AuthView: View {
             .padding(.vertical, 2)
 
             RDButton(
-                title: isSigningInWithApple ? "Apple ile bağlanıyor..." : "Apple ile devam et",
+                title: isSigningInWithApple ? RDLocalization.string("auth.auth.view.apple.ile.baglaniyor.0ea0accc", table: .auth, fallback: "Apple ile bağlanıyor...") : RDLocalization.string("auth.auth.view.apple.ile.devam.et.44a40f55", table: .auth, fallback: "Apple ile devam et"),
                 style: .primary,
                 icon: isSigningInWithApple ? "hourglass" : "applelogo",
                 showsActionIcon: false
@@ -223,7 +223,7 @@ struct AuthView: View {
                 }
 
                 if isSigningInWithGoogle {
-                    Text("Google ile bağlanıyor...")
+                    Text(RDLocalization.string("auth.auth.view.google.ile.baglaniyor.d73e6d77", table: .auth, fallback: "Google ile bağlanıyor..."))
                         .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .tracking(-0.2)
@@ -281,7 +281,7 @@ struct AuthView: View {
                         HStack(spacing: 6) {
                             Image(systemName: isSendingEmailCode ? "hourglass" : "arrow.clockwise")
                                 .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
-                            Text(isSendingEmailCode ? "Yeni kod gönderiliyor..." : "Yeni kod gönder")
+                            Text(isSendingEmailCode ? RDLocalization.string("auth.auth.view.yeni.kod.gonderiliyor.b1451c30", table: .auth, fallback: "Yeni kod gönderiliyor...") : RDLocalization.string("auth.auth.view.yeni.kod.gonder.7cb92f87", table: .auth, fallback: "Yeni kod gönder"))
                                 .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         }
                         .foregroundStyle(Color.rdCritical)
@@ -306,7 +306,7 @@ struct AuthView: View {
 
     private var emailForm: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("E-posta Adresinizi Giriniz")
+            Text(RDLocalization.string("auth.auth.view.e.posta.adresinizi.giriniz.e6b9a429", table: .auth, fallback: "E-posta Adresinizi Giriniz"))
                 .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdInk)
                 .padding(.horizontal, 14)
@@ -339,7 +339,7 @@ struct AuthView: View {
                 TextField(
                     "",
                     text: $email,
-                    prompt: Text("Mailinizi yazınız...")
+                    prompt: Text(RDLocalization.string("auth.auth.view.mailinizi.yaziniz.0b6f66bd", table: .auth, fallback: "Mailinizi yazınız..."))
                         .foregroundColor(Color.rdOnyx.opacity(0.34))
                 )
                     .keyboardType(.emailAddress)
@@ -358,7 +358,7 @@ struct AuthView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             RDButton(
-                title: isSendingEmailCode ? "Kod gönderiliyor..." : "Kod gönder",
+                title: isSendingEmailCode ? RDLocalization.string("auth.auth.view.kod.gonderiliyor.726a039d", table: .auth, fallback: "Kod gönderiliyor...") : RDLocalization.string("auth.auth.view.kod.gonder.781cb25a", table: .auth, fallback: "Kod gönder"),
                 style: .primary,
                 trailingIcon: isSendingEmailCode ? "hourglass" : "arrow.right"
             ) {
@@ -368,7 +368,7 @@ struct AuthView: View {
             .disabled(!canSendEmailCode)
             legalNotice
             authErrorText
-            Button("← Diğer giriş yöntemleri") {
+            Button(RDLocalization.string("auth.auth.view.diger.giris.yontemleri.99e4376a", table: .auth, fallback: "← Diğer giriş yöntemleri")) {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .options }
             }
             .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
@@ -383,11 +383,11 @@ struct AuthView: View {
     private var otpForm: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Doğrulama kodu")
+                Text(RDLocalization.string("auth.auth.view.dogrulama.kodu.95aeac29", table: .auth, fallback: "Doğrulama kodu"))
                     .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.white)
                     .shadow(color: Color.black.opacity(0.34), radius: 8, x: 0, y: 2)
-                Text("\(normalizedEmail.isEmpty ? "mail@ornek.com" : normalizedEmail) adresine gönderildi")
+                Text(RDLocalization.format("auth.auth.view.1.adresine.gonderildi.a08ac01d", table: .auth, fallback: "%1$@ adresine gönderildi", arguments: [String(describing: normalizedEmail.isEmpty ? "mail@ornek.com" : normalizedEmail)]))
                     .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.white.opacity(0.94))
                     .lineLimit(2)
@@ -421,7 +421,7 @@ struct AuthView: View {
                 focusedField = .otp
             }
 
-            Text("Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin.")
+            Text(RDLocalization.string("auth.auth.view.kod.gelmedi.mi.e.posta.adresini.kontrol.edip.tek.b7b833bb", table: .auth, fallback: "Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin."))
                 .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.white.opacity(0.92))
                 .multilineTextAlignment(.center)
@@ -431,7 +431,7 @@ struct AuthView: View {
                 .shadow(color: Color.black.opacity(0.34), radius: 8, x: 0, y: 2)
 
             RDButton(
-                title: isVerifyingEmailCode ? "Doğrulanıyor..." : "Doğrula ve giriş yap",
+                title: isVerifyingEmailCode ? RDLocalization.string("auth.auth.view.dogrulaniyor.1968dffd", table: .auth, fallback: "Doğrulanıyor...") : RDLocalization.string("auth.auth.view.dogrula.ve.giris.yap.b1c67bca", table: .auth, fallback: "Doğrula ve giriş yap"),
                 style: .detect,
                 icon: isVerifyingEmailCode ? "hourglass" : nil
             ) {
@@ -441,7 +441,7 @@ struct AuthView: View {
             .disabled(!canVerifyEmailCode)
             authErrorText
 
-            Button("← E-posta adresini değiştir") {
+            Button(RDLocalization.string("auth.auth.view.e.posta.adresini.degistir.e85f01e6", table: .auth, fallback: "← E-posta adresini değiştir")) {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
             .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
@@ -478,7 +478,7 @@ struct AuthView: View {
                     focusedField = .otp
                 }
             } catch {
-                setAuthError(error, context: "Kod gönderilemedi", fallbackTitle: "Kod gönderilemedi", operation: "send_email_otp", email: normalizedEmail)
+                setAuthError(error, context: RDLocalization.string("auth.auth.view.kod.gonderilemedi.50c44043", table: .auth, fallback: "Kod gönderilemedi"), fallbackTitle: RDLocalization.string("auth.auth.view.kod.gonderilemedi.50c44043", table: .auth, fallback: "Kod gönderilemedi"), operation: "send_email_otp", email: normalizedEmail)
             }
             isSendingEmailCode = false
         }
@@ -492,7 +492,7 @@ struct AuthView: View {
             do {
                 try await app.auth.verifyEmailOTP(email: normalizedEmail, token: otpCode)
             } catch {
-                setAuthError(error, context: "Kod doğrulanamadı", fallbackTitle: "Kod doğrulanamadı", operation: "verify_email_otp", email: normalizedEmail)
+                setAuthError(error, context: RDLocalization.string("auth.auth.view.kod.dogrulanamadi.8919fbda", table: .auth, fallback: "Kod doğrulanamadı"), fallbackTitle: RDLocalization.string("auth.auth.view.kod.dogrulanamadi.8919fbda", table: .auth, fallback: "Kod doğrulanamadı"), operation: "verify_email_otp", email: normalizedEmail)
             }
             isVerifyingEmailCode = false
         }
@@ -514,7 +514,7 @@ struct AuthView: View {
                 await app.auth.refreshProfile()
             } catch {
                 if !isUserCancelledAuth(error) {
-                    setAuthError(error, context: "Apple ile giriş yapılamadı", fallbackTitle: "Apple ile giriş yapılamadı", operation: "apple_sign_in")
+                    setAuthError(error, context: RDLocalization.string("auth.auth.view.apple.ile.giris.yapilamadi.8f8a40ac", table: .auth, fallback: "Apple ile giriş yapılamadı"), fallbackTitle: RDLocalization.string("auth.auth.view.apple.ile.giris.yapilamadi.8f8a40ac", table: .auth, fallback: "Apple ile giriş yapılamadı"), operation: "apple_sign_in")
                 }
             }
             isSigningInWithApple = false
@@ -538,7 +538,7 @@ struct AuthView: View {
                 await app.auth.refreshProfile()
             } catch {
                 if !isUserCancelledAuth(error) {
-                    setAuthError(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı", operation: "google_sign_in")
+                    setAuthError(error, context: RDLocalization.string("auth.auth.view.google.ile.giris.yapilamadi.28393332", table: .auth, fallback: "Google ile giriş yapılamadı"), fallbackTitle: RDLocalization.string("auth.auth.view.google.ile.giris.yapilamadi.28393332", table: .auth, fallback: "Google ile giriş yapılamadı"), operation: "google_sign_in")
                 }
             }
             isSigningInWithGoogle = false
@@ -559,7 +559,7 @@ struct AuthView: View {
 
     private func isUserCancelledAuth(_ error: Error) -> Bool {
         let nsError = error as NSError
-        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        let lower = error.localizedDescription.lowercased(with: .autoupdatingCurrent)
         return nsError.code == 1 && nsError.domain.contains("WebAuthenticationSession") ||
             lower.contains("cancel") ||
             lower.contains("vazgeç") ||
@@ -630,7 +630,7 @@ private struct GoogleMark: View {
             Circle()
                 .fill(Color.white)
 
-            Text("G")
+            Text(RDLocalization.string("auth.auth.view.g.1bdc8bd9", table: .auth, fallback: "G"))
                 .font(.system(size: RDFontScale.size(16), weight: .heavy, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
@@ -654,15 +654,14 @@ private struct GoogleMark: View {
 
 private struct GoogleWordmark: View {
     var body: some View {
-        HStack(spacing: 0) {
-            Text("G").foregroundStyle(Color(hex: "#4285F4"))
-            Text("o").foregroundStyle(Color(hex: "#EA4335"))
-            Text("o").foregroundStyle(Color(hex: "#FBBC05"))
-            Text("g").foregroundStyle(Color(hex: "#4285F4"))
-            Text("l").foregroundStyle(Color(hex: "#34A853"))
-            Text("e").foregroundStyle(Color(hex: "#EA4335"))
-            Text(" ile devam et").foregroundStyle(Color.rdBlack)
-        }
+        Text(
+            RDLocalization.string(
+                "auth.google.continue",
+                table: .auth,
+                fallback: "Google ile devam et"
+            )
+        )
+        .foregroundStyle(Color.rdBlack)
         .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
         .tracking(-0.2)
     }

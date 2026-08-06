@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildWelcomeEmailContent } from "./template.ts";
+import {
+  buildWelcomeEmailContent,
+  WELCOME_EMAIL_LOCALES,
+  type WelcomeEmailLocale,
+} from "./template.ts";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -17,6 +21,8 @@ type ProfileRow = {
   full_name: string | null;
   welcome_email_sent_at: string | null;
   welcome_email_status: string | null;
+  app_language: "tr" | "en" | null;
+  preferred_content_locale: string | null;
 };
 
 function json(status: number, body: Record<string, unknown>) {
@@ -88,7 +94,9 @@ serve(async (req) => {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id,email,full_name,welcome_email_sent_at,welcome_email_status")
+    .select(
+      "id,email,full_name,welcome_email_sent_at,welcome_email_status,app_language,preferred_content_locale",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -126,7 +134,9 @@ serve(async (req) => {
     .eq("id", user.id)
     .is("welcome_email_sent_at", null)
     .or("welcome_email_status.is.null,welcome_email_status.neq.sending")
-    .select("id,email,full_name,welcome_email_sent_at,welcome_email_status")
+    .select(
+      "id,email,full_name,welcome_email_sent_at,welcome_email_status,app_language,preferred_content_locale",
+    )
     .maybeSingle();
 
   if (lockError || !lockedProfile) {
@@ -134,6 +144,30 @@ serve(async (req) => {
   }
 
   const lockedProfileRow = lockedProfile as ProfileRow;
+  const locale = lockedProfileRow.preferred_content_locale;
+  const localeIsSupported = typeof locale === "string" &&
+    (WELCOME_EMAIL_LOCALES as readonly string[]).includes(locale);
+  const localeLanguage = locale === "tr-TR"
+    ? "tr"
+    : locale?.startsWith("en-")
+    ? "en"
+    : null;
+  if (
+    !localeIsSupported || localeLanguage === null ||
+    localeLanguage !== lockedProfileRow.app_language
+  ) {
+    await supabase
+      .from("profiles")
+      .update({
+        welcome_email_status: "localization_failed",
+        welcome_email_error: "WELCOME_EMAIL_EXACT_LOCALE_TEMPLATE_MISSING",
+      })
+      .eq("id", user.id);
+    return json(422, {
+      error: "WELCOME_EMAIL_EXACT_LOCALE_TEMPLATE_MISSING",
+      delivery_status: "localization_failed",
+    });
+  }
   const toEmail = cleanText(lockedProfileRow.email, 240) ||
     cleanText(user.email, 240);
   if (!toEmail.includes("@")) {
@@ -151,6 +185,7 @@ serve(async (req) => {
     displayName: displayName(lockedProfileRow, user.email),
     supportEmail: SUPPORT_EMAIL,
     currentYear: new Date().getUTCFullYear().toString(),
+    locale: locale as WelcomeEmailLocale,
   });
 
   if (!resendAPIKey) {

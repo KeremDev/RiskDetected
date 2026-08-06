@@ -24,19 +24,13 @@ case "$service" in
     ;;
 esac
 
-printf "Enter secret for %s: " "$service" >&2
-IFS= read -r -s secret
-printf "\n" >&2
-
-if [[ -z "$secret" ]]; then
-  echo "Secret cannot be empty." >&2
-  exit 1
-fi
-
+# Keep the secret out of shell memory and the process argument list. With -w
+# as the final option, macOS Keychain prompts for the value itself.
+printf "macOS Keychain will securely prompt for %s.\n" "$service" >&2
 security add-generic-password \
   -U \
   -a "$USER" \
   -s "$service" \
-  -w "$secret" >/dev/null
+  -w >/dev/null
 
 echo "Stored $service in macOS Keychain."

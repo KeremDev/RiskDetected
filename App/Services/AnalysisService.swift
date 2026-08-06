@@ -25,71 +25,71 @@ struct AnalysisProgressUpdate: Equatable {
 
     static let preparingInput = AnalysisProgressUpdate(
         phase: .preparingInput,
-        title: "Girdi hazırlanıyor",
-        message: "Analiz girdisi kontrol edilip güvenli paket hazırlanıyor.",
+        title: RDLocalization.string("analysis.analysis.service.girdi.hazirlaniyor.9a2af484", table: .analysis, fallback: "Girdi hazırlanıyor"),
+        message: RDLocalization.string("analysis.analysis.service.analiz.girdisi.kontrol.edilip.guvenli.paket.hazi.e6b69f6c", table: .analysis, fallback: "Analiz girdisi kontrol edilip güvenli paket hazırlanıyor."),
         icon: "photo.on.rectangle.angled"
     )
 
     static let creatingAnalysis = AnalysisProgressUpdate(
         phase: .creatingAnalysis,
-        title: "Analiz kaydı açılıyor",
-        message: "Analiz güvenli şekilde başlatılıyor.",
+        title: RDLocalization.string("analysis.analysis.service.analiz.kaydi.aciliyor.63173bd6", table: .analysis, fallback: "Analiz kaydı açılıyor"),
+        message: RDLocalization.string("analysis.analysis.service.analiz.guvenli.sekilde.baslatiliyor.9ae4a5e5", table: .analysis, fallback: "Analiz güvenli şekilde başlatılıyor."),
         icon: "doc.badge.plus"
     )
 
     static let uploadingPhotos = AnalysisProgressUpdate(
         phase: .uploadingPhotos,
-        title: "Fotoğraflar yükleniyor",
-        message: "Fotoğraflar güvenli depoya kaydediliyor.",
+        title: RDLocalization.string("analysis.analysis.service.fotograflar.yukleniyor.01c07e4e", table: .analysis, fallback: "Fotoğraflar yükleniyor"),
+        message: RDLocalization.string("analysis.analysis.service.fotograflar.guvenli.depoya.kaydediliyor.52cadbe9", table: .analysis, fallback: "Fotoğraflar güvenli depoya kaydediliyor."),
         icon: "icloud.and.arrow.up.fill"
     )
 
     static let submitting = AnalysisProgressUpdate(
         phase: .submitting,
-        title: "Analiz gönderiliyor",
-        message: "Risk sinyalleri için sunucuya güvenli istek gönderiliyor.",
+        title: RDLocalization.string("analysis.analysis.service.analiz.gonderiliyor.ee38fb84", table: .analysis, fallback: "Analiz gönderiliyor"),
+        message: RDLocalization.string("analysis.analysis.service.risk.sinyalleri.icin.sunucuya.guvenli.istek.gond.7a0e62d3", table: .analysis, fallback: "Risk sinyalleri için sunucuya güvenli istek gönderiliyor."),
         icon: "paperplane.fill"
     )
 
     static let retryingAI = AnalysisProgressUpdate(
         phase: .retryingAI,
-        title: "AI servisi yoğun",
-        message: "Model yanıt vermedi. Aynı analizi otomatik tekrar deniyoruz.",
+        title: RDLocalization.string("analysis.analysis.service.ai.servisi.yogun.1ad27216", table: .analysis, fallback: "AI servisi yoğun"),
+        message: RDLocalization.string("analysis.analysis.service.model.yanit.vermedi.ayni.analizi.otomatik.tekrar.30fea459", table: .analysis, fallback: "Model yanıt vermedi. Aynı analizi otomatik tekrar deniyoruz."),
         icon: "arrow.clockwise"
     )
 
     static let retryingNetwork = AnalysisProgressUpdate(
         phase: .retryingNetwork,
-        title: "Bağlantı tekrar deneniyor",
-        message: "Depo veya sunucu bağlantısı koptu. Aynı analizi tekrar deniyoruz.",
+        title: RDLocalization.string("analysis.analysis.service.baglanti.tekrar.deneniyor.a6292295", table: .analysis, fallback: "Bağlantı tekrar deneniyor"),
+        message: RDLocalization.string("analysis.analysis.service.depo.veya.sunucu.baglantisi.koptu.ayni.analizi.t.6d3ebe27", table: .analysis, fallback: "Depo veya sunucu bağlantısı koptu. Aynı analizi tekrar deniyoruz."),
         icon: "wifi.exclamationmark"
     )
 
     static let fallbackModel = AnalysisProgressUpdate(
         phase: .fallbackModel,
-        title: "Alternatif model deneniyor",
-        message: "Analizi tamamlamak için uygun yedek model devreye alındı.",
+        title: RDLocalization.string("analysis.analysis.service.alternatif.model.deneniyor.4cae5391", table: .analysis, fallback: "Alternatif model deneniyor"),
+        message: RDLocalization.string("analysis.analysis.service.analizi.tamamlamak.icin.uygun.yedek.model.devrey.94d399d7", table: .analysis, fallback: "Analizi tamamlamak için uygun yedek model devreye alındı."),
         icon: "sparkles"
     )
 
     static let queued = AnalysisProgressUpdate(
         phase: .queued,
-        title: "Analiz hazırlanıyor",
-        message: "Uygulamadan çıksan bile analiz güvenli şekilde tamamlanacak.",
+        title: RDLocalization.string("analysis.analysis.service.analiz.hazirlaniyor.0e83653a", table: .analysis, fallback: "Analiz hazırlanıyor"),
+        message: RDLocalization.string("analysis.analysis.service.uygulamadan.ciksan.bile.analiz.guvenli.sekilde.t.6546513d", table: .analysis, fallback: "Uygulamadan çıksan bile analiz güvenli şekilde tamamlanacak."),
         icon: "clock.arrow.circlepath"
     )
 
     static let analyzing = AnalysisProgressUpdate(
         phase: .analyzing,
-        title: "AI değerlendiriyor",
-        message: "Bulgular, risk seviyeleri ve aksiyonlar yapılandırılıyor.",
+        title: RDLocalization.string("analysis.analysis.service.ai.degerlendiriyor.6fb12004", table: .analysis, fallback: "AI değerlendiriyor"),
+        message: RDLocalization.string("analysis.analysis.service.bulgular.risk.seviyeleri.ve.aksiyonlar.yapilandi.62e4c5c9", table: .analysis, fallback: "Bulgular, risk seviyeleri ve aksiyonlar yapılandırılıyor."),
         icon: "brain.head.profile"
     )
 
     static let finalizingResult = AnalysisProgressUpdate(
         phase: .finalizingResult,
-        title: "Sonuç hazırlanıyor",
-        message: "Analiz tamamlandı. Bulgular güvenli şekilde yükleniyor.",
+        title: RDLocalization.string("analysis.analysis.service.sonuc.hazirlaniyor.b119fda1", table: .analysis, fallback: "Sonuç hazırlanıyor"),
+        message: RDLocalization.string("analysis.analysis.service.analiz.tamamlandi.bulgular.guvenli.sekilde.yukle.290e3c64", table: .analysis, fallback: "Analiz tamamlandı. Bulgular güvenli şekilde yükleniyor."),
         icon: "checkmark.seal.fill"
     )
 }
@@ -153,8 +153,8 @@ struct FindingMutationPatch: Encodable, Equatable {
 private extension DateFormatter {
     static let rdExportFileStamp: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.timeZone = TimeZone(identifier: "Europe/Istanbul")
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "yyyyMMdd_HHmm"
         return formatter
     }()
@@ -177,7 +177,9 @@ enum AppClientMetadata {
             "multi_photo_analysis": true,
             "multi_photo_coverage_v2": true,
             "editable_findings": true,
-            "report_snapshot_v2": true
+            "report_snapshot_v2": true,
+            "global_localization_wave1":
+                RDGlobalLocalizationBuildGate.isCompiledIn
         ]
     }
 }
@@ -216,13 +218,13 @@ final class AnalysisService {
 
         var errorDescription: String? {
             switch self {
-            case .notAuthenticated:               return "Önce giriş yapmalısın."
+            case .notAuthenticated:               return RDLocalization.string("analysis.analysis.service.once.giris.yapmalisin.b2421a61", table: .analysis, fallback: "Önce giriş yapmalısın.")
             case .quotaExceeded(let message, _): return message
-            case .alreadyCompleted:               return "Bu analiz zaten tamamlanmış."
-            case .aiFailed(let msg):              return "AI hatası: \(msg)"
-            case .networkFailed(let msg):         return "Bağlantı hatası: \(msg)"
-            case .storageFailed(let msg):         return "Yükleme hatası: \(msg)"
-            case .databaseFailed(let msg):        return "Veritabanı hatası: \(msg)"
+            case .alreadyCompleted:               return RDLocalization.string("analysis.analysis.service.bu.analiz.zaten.tamamlanmis.298cb56f", table: .analysis, fallback: "Bu analiz zaten tamamlanmış.")
+            case .aiFailed(let msg):              return RDLocalization.format("analysis.analysis.service.ai.hatasi.1.37f7e8d6", table: .analysis, fallback: "AI hatası: %1$@", arguments: [String(describing: msg)])
+            case .networkFailed(let msg):         return RDLocalization.format("analysis.analysis.service.baglanti.hatasi.1.48a793e3", table: .analysis, fallback: "Bağlantı hatası: %1$@", arguments: [String(describing: msg)])
+            case .storageFailed(let msg):         return RDLocalization.format("analysis.analysis.service.yukleme.hatasi.1.76bb6558", table: .analysis, fallback: "Yükleme hatası: %1$@", arguments: [String(describing: msg)])
+            case .databaseFailed(let msg):        return RDLocalization.format("analysis.analysis.service.veritabani.hatasi.1.aea21966", table: .analysis, fallback: "Veritabanı hatası: %1$@", arguments: [String(describing: msg)])
             case .invalidInput(let msg):          return msg
             }
         }
@@ -235,19 +237,20 @@ final class AnalysisService {
         userID: UUID,
         images: [UIImage],
         canvases: [AnalysisCanvas],
+        localization: RDAnalysisLocalizationRequest? = nil,
         analysisSector: AnalysisSectorID? = nil,
         companyID: UUID? = nil,
         title: String? = nil,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
     ) async throws -> AnalysisResultBundle {
         guard !canvases.isEmpty else {
-            throw AnalysisError.invalidInput("En az bir analiz odağı seçmelisin.")
+            throw AnalysisError.invalidInput(RDLocalization.string("analysis.analysis.service.en.az.bir.analiz.odagi.secmelisin.554e3daf", table: .analysis, fallback: "En az bir analiz odağı seçmelisin."))
         }
         guard !images.isEmpty else {
-            throw AnalysisError.invalidInput("Analiz için bir fotoğraf seçmelisin.")
+            throw AnalysisError.invalidInput(RDLocalization.string("analysis.analysis.service.analiz.icin.bir.fotograf.secmelisin.584ee62a", table: .analysis, fallback: "Analiz için bir fotoğraf seçmelisin."))
         }
         guard images.count <= 3 else {
-            throw AnalysisError.invalidInput("Bir analizde en fazla 3 fotoğraf kullanılabilir.")
+            throw AnalysisError.invalidInput(RDLocalization.string("analysis.analysis.service.bir.analizde.en.fazla.3.fotograf.kullanilabilir.f5a759b0", table: .analysis, fallback: "Bir analizde en fazla 3 fotoğraf kullanılabilir."))
         }
 
         // 1) Fotoğrafları analiz kaydı açılmadan önce hazırla.
@@ -256,7 +259,7 @@ final class AnalysisService {
         let preparedPhotos = try await Self.makePreparedJPEGPhotos(from: images)
         let totalPayloadBytes = preparedPhotos.reduce(0) { $0 + $1.encodedByteCount }
         if totalPayloadBytes > Self.maxInlinePhotoPayloadBytes {
-            throw AnalysisError.invalidInput("Fotoğraf paketi çok büyük. Lütfen daha az fotoğraf veya daha düşük çözünürlüklü görsel dene.")
+            throw AnalysisError.invalidInput(RDLocalization.string("analysis.analysis.service.fotograf.paketi.cok.buyuk.lutfen.daha.az.fotogra.f9d64c24", table: .analysis, fallback: "Fotoğraf paketi çok büyük. Lütfen daha az fotoğraf veya daha düşük çözünürlüklü görsel dene."))
         }
 
         // 2) Analyses kaydı (kind=photo, status=pending)
@@ -269,7 +272,8 @@ final class AnalysisService {
             title: resolvedTitle,
             textInput: nil,
             companyID: companyID,
-            analysisSector: analysisSector
+            analysisSector: analysisSector,
+            localization: localization
         )
         InFlightAnalysisStore.shared.save(
             InFlightAnalysis(
@@ -316,6 +320,7 @@ final class AnalysisService {
                 analysisID: analysisID, canvases: canvases,
                 textInput: nil, companyID: companyID,
                 analysisSector: analysisSector,
+                localization: localization,
                 photoPaths: uploadedPhotoPaths, photoBase64Parts: [],
                 requestID: requestID, supportID: supportID,
                 onProgress: onProgress
@@ -529,7 +534,7 @@ final class AnalysisService {
         } catch let FunctionsError.httpError(code, data) {
             let payload = Self.functionErrorPayload(from: data)
             let remoteSupportID = payload.supportID ?? supportID
-            let message = payload.message.isEmpty ? "Bulgu güncellenemedi." : payload.message
+            let message = payload.message.isEmpty ? RDLocalization.string("analysis.analysis.service.bulgu.guncellenemedi.e5339f0c", table: .analysis, fallback: "Bulgu güncellenemedi.") : payload.message
             if code == 409 {
                 throw AnalysisError.databaseFailed(Self.appendSupportID(remoteSupportID, to: message))
             }
@@ -554,7 +559,7 @@ final class AnalysisService {
                 .eq("id", value: analysisID.uuidString)
                 .execute()
         } catch {
-            throw AnalysisError.databaseFailed("Firma analize bağlanamadı.")
+            throw AnalysisError.databaseFailed(RDLocalization.string("analysis.analysis.service.firma.analize.baglanamadi.0ca828a7", table: .analysis, fallback: "Firma analize bağlanamadı."))
         }
     }
 
@@ -586,10 +591,22 @@ final class AnalysisService {
         let resolvedRequestID = requestID ?? UUID().uuidString
         let resolvedSupportID = supportID ?? AppErrorMessage.newSupportID()
 
+        #if DEBUG
+        if Self.isUITestMainLaunch, path.hasPrefix("ui-tests/") {
+            let fixtureData = await MainActor.run {
+                Self.uiTestPhotoData(path: path)
+            }
+            guard let fixtureData else {
+                throw AnalysisError.storageFailed("UI test fotoğraf fixture verisi oluşturulamadı.")
+            }
+            return fixtureData
+        }
+        #endif
+
         if DataActionFailureSimulation.isEnabled(.photoDownload) {
             let error = DataActionFailureSimulation.simulatedError(.photoDownload)
             Self.logger.error("Photo download simulation support=\(resolvedSupportID, privacy: .public) request=\(resolvedRequestID, privacy: .public) path=\(path, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.storageFailed("Analiz fotoğrafı indirilemedi. Destek kodu: \(resolvedSupportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.analiz.fotografi.indirilemedi.destek.kodu.1.98cdb4a9", table: .analysis, fallback: "Analiz fotoğrafı indirilemedi. Destek kodu: %1$@", arguments: [String(describing: resolvedSupportID)]))
         }
 
         do {
@@ -598,7 +615,7 @@ final class AnalysisService {
                 .download(path: path)
         } catch {
             Self.logger.error("Photo download failed support=\(resolvedSupportID, privacy: .public) request=\(resolvedRequestID, privacy: .public) path=\(path, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.storageFailed("Analiz fotoğrafı indirilemedi. Destek kodu: \(resolvedSupportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.analiz.fotografi.indirilemedi.destek.kodu.1.98cdb4a9", table: .analysis, fallback: "Analiz fotoğrafı indirilemedi. Destek kodu: %1$@", arguments: [String(describing: resolvedSupportID)]))
         }
     }
 
@@ -731,12 +748,12 @@ final class AnalysisService {
         } catch let FunctionsError.httpError(code, data) {
             let payload = Self.functionErrorPayload(from: data)
             let remoteSupportID = payload.supportID ?? supportID
-            let message = payload.message.isEmpty ? "Excel raporu oluşturulamadı." : payload.message
+            let message = payload.message.isEmpty ? RDLocalization.string("analysis.analysis.service.excel.raporu.olusturulamadi.cd2b864c", table: .analysis, fallback: "Excel raporu oluşturulamadı.") : payload.message
             Self.logger.error("Excel report invoke failed support=\(remoteSupportID, privacy: .public) request=\(requestID, privacy: .public) http=\(code) message=\(message, privacy: .public)")
-            throw AnalysisError.storageFailed("\(message) Destek kodu: \(remoteSupportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.1.destek.kodu.2.aa38ed07", table: .analysis, fallback: "%1$@ Destek kodu: %2$@", arguments: [String(describing: message), String(describing: remoteSupportID)]))
         } catch {
             Self.logger.error("Excel report invoke failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.storageFailed("Excel raporu oluşturulamadı. Destek kodu: \(supportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.excel.raporu.olusturulamadi.destek.kodu.1.d244e651", table: .analysis, fallback: "Excel raporu oluşturulamadı. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
 
@@ -757,7 +774,7 @@ final class AnalysisService {
             data = try Data(contentsOf: fileURL)
         } catch {
             Self.logger.error("Report read failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.storageFailed("PDF dosyası okunamadı. Destek kodu: \(supportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.dosyasi.okunamadi.destek.kodu.1.8fe80d5b", table: .analysis, fallback: "PDF dosyası okunamadı. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
         #if DEBUG
@@ -794,7 +811,7 @@ final class AnalysisService {
         if ReportFailureSimulation.isEnabled(.storageUpload) {
             let error = ReportFailureSimulation.simulatedError(.storageUpload)
             Self.logger.error("Report upload simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) path=\(storagePath, privacy: .private(mask: .hash))")
-            throw AnalysisError.storageFailed("PDF dosyası rapor arşivine yüklenemedi. Destek kodu: \(supportID). \(error.localizedDescription)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.dosyasi.rapor.arsivine.yuklenemedi.destek.ko.44094f33", table: .analysis, fallback: "PDF dosyası rapor arşivine yüklenemedi. Destek kodu: %1$@. %2$@", arguments: [String(describing: supportID), String(describing: error.localizedDescription)]))
         }
 
         let maxUploadAttempts = 3
@@ -820,13 +837,14 @@ final class AnalysisService {
         }
 
         if lastUploadError != nil {
-            throw AnalysisError.storageFailed("PDF dosyası rapor arşivine yüklenemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.dosyasi.rapor.arsivine.yuklenemedi.destek.ko.91e9a238", table: .analysis, fallback: "PDF dosyası rapor arşivine yüklenemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
         struct RegisterReportPayload: Encodable {
             let analysis_id: String
             let kind: String
             let method: String
+            let report_language: String
             let title: String
             let storage_path: String
             let file_name: String
@@ -855,6 +873,7 @@ final class AnalysisService {
             analysis_id: bundle.analysis.id.uuidString,
             kind: kind.rawValue,
             method: Self.databaseReportMethodValue(method),
+            report_language: bundle.analysis.resolvedOutputLanguage.rawValue,
             title: bundle.analysis.title,
             storage_path: storagePath,
             file_name: fileName,
@@ -881,7 +900,7 @@ final class AnalysisService {
         if ReportFailureSimulation.isEnabled(.metadataInsert) {
             let error = ReportFailureSimulation.simulatedError(.metadataInsert)
             Self.logger.error("Report metadata simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.databaseFailed("PDF oluşturuldu ancak rapor arşiv kaydı tamamlanamadı. Destek kodu: \(supportID)")
+            throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.pdf.olusturuldu.ancak.rapor.arsiv.kaydi.tamamlan.6f67c1a8", table: .analysis, fallback: "PDF oluşturuldu ancak rapor arşiv kaydı tamamlanamadı. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
         do {
@@ -893,7 +912,7 @@ final class AnalysisService {
         } catch let FunctionsError.httpError(_, data) {
             let payload = Self.functionErrorPayload(from: data)
             let remoteSupportID = payload.supportID ?? supportID
-            let message = payload.message.isEmpty ? "Rapor arşiv kaydı tamamlanamadı." : payload.message
+            let message = payload.message.isEmpty ? RDLocalization.string("analysis.analysis.service.rapor.arsiv.kaydi.tamamlanamadi.5b477571", table: .analysis, fallback: "Rapor arşiv kaydı tamamlanamadı.") : payload.message
             Self.logger.error("Report metadata function failed support=\(remoteSupportID, privacy: .public) request=\(requestID, privacy: .public) message=\(message, privacy: .public)")
             do {
                 _ = try await supabase.storage
@@ -925,7 +944,7 @@ final class AnalysisService {
             if AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) {
                 throw AnalysisError.databaseFailed("report_quota_exceeded\nDestek kodu: \(supportID)")
             }
-            throw AnalysisError.databaseFailed("PDF oluşturuldu ancak rapor arşiv kaydı tamamlanamadı. Destek kodu: \(supportID)")
+            throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.pdf.olusturuldu.ancak.rapor.arsiv.kaydi.tamamlan.6f67c1a8", table: .analysis, fallback: "PDF oluşturuldu ancak rapor arşiv kaydı tamamlanamadı. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
 
@@ -957,7 +976,7 @@ final class AnalysisService {
     }
 
     private static func isTransientReportUploadError(_ error: Error) -> Bool {
-        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        let lower = error.localizedDescription.lowercased(with: .autoupdatingCurrent)
         return lower.contains("network connection was lost") ||
             lower.contains("connection was lost") ||
             lower.contains("network") ||
@@ -979,7 +998,7 @@ final class AnalysisService {
         if ReportFailureSimulation.isEnabled(.download) {
             let error = ReportFailureSimulation.simulatedError(.download)
             Self.logger.error("Report download simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.storageFailed("PDF raporu indirilemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.raporu.indirilemedi.destek.kodu.1.3ab369c0", table: .analysis, fallback: "PDF raporu indirilemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
         do {
@@ -988,7 +1007,7 @@ final class AnalysisService {
                 .download(path: report.storagePath)
         } catch {
             Self.logger.error("Report download failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.storageFailed("PDF raporu indirilemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.raporu.indirilemedi.destek.kodu.1.3ab369c0", table: .analysis, fallback: "PDF raporu indirilemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
         let safeName = report.fileName.isEmpty ? "RiskDetected_Report_\(report.id.uuidString.prefix(8)).pdf" : report.fileName
@@ -998,7 +1017,7 @@ final class AnalysisService {
             return url
         } catch {
             Self.logger.error("Report local file write failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.storageFailed("PDF dosyası paylaşım için hazırlanamadı. Destek kodu: \(supportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.dosyasi.paylasim.icin.hazirlanamadi.destek.k.90ef78f6", table: .analysis, fallback: "PDF dosyası paylaşım için hazırlanamadı. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
 
@@ -1013,13 +1032,13 @@ final class AnalysisService {
         if ReportFailureSimulation.isEnabled(.deleteStorage) {
             let error = ReportFailureSimulation.simulatedError(.deleteStorage)
             Self.logger.error("Report file delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.storageFailed("PDF dosyası silinemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.dosyasi.silinemedi.destek.kodu.1.b2852e2a", table: .analysis, fallback: "PDF dosyası silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
         if ReportFailureSimulation.isEnabled(.deleteMetadata) {
             let error = ReportFailureSimulation.simulatedError(.deleteMetadata)
             Self.logger.error("Report metadata delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.databaseFailed("PDF rapor kaydı silinemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.pdf.rapor.kaydi.silinemedi.destek.kodu.1.fa03fd0c", table: .analysis, fallback: "PDF rapor kaydı silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
         do {
@@ -1028,7 +1047,7 @@ final class AnalysisService {
                 .remove(paths: [report.storagePath])
         } catch {
             Self.logger.error("Report file delete failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.storageFailed("PDF dosyası silinemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.dosyasi.silinemedi.destek.kodu.1.b2852e2a", table: .analysis, fallback: "PDF dosyası silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
         do {
@@ -1039,7 +1058,7 @@ final class AnalysisService {
                 .execute()
         } catch {
             Self.logger.error("Report metadata delete failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.databaseFailed("PDF rapor kaydı silinemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.pdf.rapor.kaydi.silinemedi.destek.kodu.1.fa03fd0c", table: .analysis, fallback: "PDF rapor kaydı silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
 
@@ -1069,7 +1088,7 @@ final class AnalysisService {
                 if DataActionFailureSimulation.isEnabled(.analysisDeleteStorage) {
                     let error = DataActionFailureSimulation.simulatedError(.analysisDeleteStorage)
                     Self.logger.error("Analysis photo delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                    throw AnalysisError.storageFailed("Analiz fotoğrafları silinemedi. Destek kodu: \(supportID)")
+                    throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.analiz.fotograflari.silinemedi.destek.kodu.1.7a4387fe", table: .analysis, fallback: "Analiz fotoğrafları silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
                 }
                 _ = try await supabase.storage
                     .from(RDConfig.Bucket.photos)
@@ -1085,7 +1104,7 @@ final class AnalysisService {
             if DataActionFailureSimulation.isEnabled(.analysisDeleteMetadata) {
                 let error = DataActionFailureSimulation.simulatedError(.analysisDeleteMetadata)
                 Self.logger.error("Analysis metadata delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                throw AnalysisError.databaseFailed("Analiz kaydı silinemedi. Destek kodu: \(supportID)")
+                throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.analiz.kaydi.silinemedi.destek.kodu.1.5c6536ef", table: .analysis, fallback: "Analiz kaydı silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
             }
 
             try await supabase.client
@@ -1097,7 +1116,7 @@ final class AnalysisService {
             throw error
         } catch {
             Self.logger.error("Analysis delete failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) analysis=\(analysisID.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.databaseFailed("Analiz silinemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.analiz.silinemedi.destek.kodu.1.b4e76efb", table: .analysis, fallback: "Analiz silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
 
@@ -1117,7 +1136,7 @@ final class AnalysisService {
             if DataActionFailureSimulation.isEnabled(.dataExport) {
                 let error = DataActionFailureSimulation.simulatedError(.dataExport)
                 Self.logger.error("Data export simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                throw AnalysisError.databaseFailed("Veri dışa aktarımı oluşturulamadı. Destek kodu: \(supportID)")
+                throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.veri.disa.aktarimi.olusturulamadi.destek.kodu.1.49e26b28", table: .analysis, fallback: "Veri dışa aktarımı oluşturulamadı. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
             }
 
             async let analyses = listAllAnalyses()
@@ -1158,7 +1177,7 @@ final class AnalysisService {
             throw error
         } catch {
             Self.logger.error("Data export failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.databaseFailed("Veri dışa aktarımı oluşturulamadı. Destek kodu: \(supportID)")
+            throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.veri.disa.aktarimi.olusturulamadi.destek.kodu.1.49e26b28", table: .analysis, fallback: "Veri dışa aktarımı oluşturulamadı. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
 
@@ -1174,7 +1193,7 @@ final class AnalysisService {
                 if DataActionFailureSimulation.isEnabled(.bulkReportDelete) {
                     let error = DataActionFailureSimulation.simulatedError(.bulkReportDelete)
                     Self.logger.error("Bulk report delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                    throw AnalysisError.storageFailed("PDF rapor dosyaları silinemedi. Destek kodu: \(supportID)")
+                    throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.rapor.dosyalari.silinemedi.destek.kodu.1.de15afb0", table: .analysis, fallback: "PDF rapor dosyaları silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
                 }
                 _ = try await supabase.storage
                     .from(RDConfig.Bucket.reports)
@@ -1190,7 +1209,7 @@ final class AnalysisService {
             throw error
         } catch {
             Self.logger.error("Bulk report delete failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.databaseFailed("PDF raporları silinemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.pdf.raporlari.silinemedi.destek.kodu.1.995cb4a0", table: .analysis, fallback: "PDF raporları silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
 
@@ -1224,7 +1243,7 @@ final class AnalysisService {
                 if DataActionFailureSimulation.isEnabled(.bulkAnalysisDelete) {
                     let error = DataActionFailureSimulation.simulatedError(.bulkAnalysisDelete)
                     Self.logger.error("Bulk analysis delete simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                    throw AnalysisError.storageFailed("Analiz fotoğrafları silinemedi. Destek kodu: \(supportID)")
+                    throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.analiz.fotograflari.silinemedi.destek.kodu.1.7a4387fe", table: .analysis, fallback: "Analiz fotoğrafları silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
                 }
                 _ = try await supabase.storage
                     .from(RDConfig.Bucket.photos)
@@ -1246,7 +1265,7 @@ final class AnalysisService {
             throw error
         } catch {
             Self.logger.error("Bulk analysis delete failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.databaseFailed("Analizler silinemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.analizler.silinemedi.destek.kodu.1.4c948c01", table: .analysis, fallback: "Analizler silinemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
 
@@ -1268,7 +1287,7 @@ final class AnalysisService {
             if DataActionFailureSimulation.isEnabled(.accountDeletionRequest) {
                 let error = DataActionFailureSimulation.simulatedError(.accountDeletionRequest)
                 Self.logger.error("Account deletion request simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                throw AnalysisError.databaseFailed("Hesap silme talebi kaydedilemedi. Destek kodu: \(supportID)")
+                throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.hesap.silme.talebi.kaydedilemedi.destek.kodu.1.e3953344", table: .analysis, fallback: "Hesap silme talebi kaydedilemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
             }
 
             let result: AccountDeletionRequestResult = try await supabase.functions.invoke(
@@ -1276,20 +1295,20 @@ final class AnalysisService {
                 options: FunctionInvokeOptions(body: payload)
             )
             guard result.shouldClearLocalSession else {
-                let message = result.message ?? "Hesap silme işlemi tamamlanamadı."
+                let message = result.message ?? RDLocalization.string("analysis.analysis.service.hesap.silme.islemi.tamamlanamadi.a5017312", table: .analysis, fallback: "Hesap silme işlemi tamamlanamadı.")
                 Self.logger.error("Account deletion request returned incomplete support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) user=\(userID.uuidString, privacy: .private(mask: .hash))")
-                throw AnalysisError.databaseFailed("\(message) Destek kodu: \(supportID)")
+                throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.1.destek.kodu.2.9ac9dfc0", table: .analysis, fallback: "%1$@ Destek kodu: %2$@", arguments: [String(describing: message), String(describing: supportID)]))
             }
             return result
         } catch let FunctionsError.httpError(_, data) {
             let payload = Self.functionErrorPayload(from: data)
             let remoteSupportID = payload.supportID ?? supportID
-            let message = payload.message.isEmpty ? "Hesap silme işlemi başlatılamadı." : payload.message
+            let message = payload.message.isEmpty ? RDLocalization.string("analysis.analysis.service.hesap.silme.islemi.baslatilamadi.16a2d364", table: .analysis, fallback: "Hesap silme işlemi başlatılamadı.") : payload.message
             Self.logger.error("Account deletion request failed support=\(remoteSupportID, privacy: .public) request=\(requestID, privacy: .public) user=\(userID.uuidString, privacy: .private(mask: .hash)) message=\(message, privacy: .public)")
-            throw AnalysisError.databaseFailed("\(message) Destek kodu: \(remoteSupportID)")
+            throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.1.destek.kodu.2.aa38ed07", table: .analysis, fallback: "%1$@ Destek kodu: %2$@", arguments: [String(describing: message), String(describing: remoteSupportID)]))
         } catch {
             Self.logger.error("Account deletion request failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) user=\(userID.uuidString, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
-            throw AnalysisError.databaseFailed("Hesap silme talebi kaydedilemedi. Destek kodu: \(supportID)")
+            throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.hesap.silme.talebi.kaydedilemedi.destek.kodu.1.e3953344", table: .analysis, fallback: "Hesap silme talebi kaydedilemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
 
@@ -1528,7 +1547,8 @@ final class AnalysisService {
         title: String,
         textInput: String?,
         companyID: UUID?,
-        analysisSector: AnalysisSectorID?
+        analysisSector: AnalysisSectorID?,
+        localization: RDAnalysisLocalizationRequest?
     ) async throws -> UUID {
         struct InsertPayload: Encodable {
             let user_id: String
@@ -1541,6 +1561,7 @@ final class AnalysisService {
             let analysis_sector: String?
             let analysis_sector_source: String?
             let analysis_sector_prompt_version: String?
+            let primary_method: String?
         }
         // `canvas` field = primary (first sorted) id — legacy single-id contract korunuyor.
         // Çoklu seçim backend hazır olunca `canvases` array üzerinden işlenecek.
@@ -1556,12 +1577,13 @@ final class AnalysisService {
             status: "pending",
             analysis_sector: analysisSector?.rawValue,
             analysis_sector_source: analysisSector == nil ? nil : "user_selected",
-            analysis_sector_prompt_version: analysisSector == nil ? nil : AnalysisSectorID.activeAnalysisPromptVersion
+            analysis_sector_prompt_version: analysisSector == nil ? nil : AnalysisSectorID.activeAnalysisPromptVersion,
+            primary_method: localization?.method.rawValue
         )
         do {
             let row: AnalysisRow = try await Self.withTimeout(
                 nanoseconds: Self.analysisRecordCreationTimeoutNanoseconds,
-                timeoutError: AnalysisError.networkFailed("Analiz kaydı başlatılırken bağlantı zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene.")
+                timeoutError: AnalysisError.networkFailed(RDLocalization.string("analysis.analysis.service.analiz.kaydi.baslatilirken.baglanti.zaman.asimin.cbbfd8a2", table: .analysis, fallback: "Analiz kaydı başlatılırken bağlantı zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."))
             ) {
                 try await self.supabase.client
                     .from("analyses")
@@ -1766,7 +1788,7 @@ final class AnalysisService {
                 }
                 let projectedPayloadBytes = totalPayloadBytes + photo.encodedByteCount
                 if projectedPayloadBytes > maxInlinePhotoPayloadBytes {
-                    throw AnalysisError.invalidInput("Fotoğraf paketi çok büyük. Kaliteyi korumak için lütfen daha az fotoğraf seçerek tekrar dene.")
+                    throw AnalysisError.invalidInput(RDLocalization.string("analysis.analysis.service.fotograf.paketi.cok.buyuk.kaliteyi.korumak.icin..410a35fa", table: .analysis, fallback: "Fotoğraf paketi çok büyük. Kaliteyi korumak için lütfen daha az fotoğraf seçerek tekrar dene."))
                 }
                 totalPayloadBytes = projectedPayloadBytes
                 photos.append(photo)
@@ -1807,7 +1829,7 @@ final class AnalysisService {
             )
         }
 
-        throw AnalysisError.invalidInput("Fotoğraf dosyası analiz için çok büyük. Kaliteyi korumak için lütfen daha küçük bir görsel veya daha az fotoğraf seç.")
+        throw AnalysisError.invalidInput(RDLocalization.string("analysis.analysis.service.fotograf.dosyasi.analiz.icin.cok.buyuk.kaliteyi..66137a94", table: .analysis, fallback: "Fotoğraf dosyası analiz için çok büyük. Kaliteyi korumak için lütfen daha küçük bir görsel veya daha az fotoğraf seç."))
     }
 
     nonisolated private static func base64EncodedByteCount(for byteCount: Int) -> Int {
@@ -1833,7 +1855,7 @@ final class AnalysisService {
                 do {
                     _ = try await Self.withTimeout(
                         nanoseconds: Self.analysisPhotoUploadTimeoutNanoseconds,
-                        timeoutError: AnalysisError.storageFailed("Fotoğraf yüklenirken bağlantı zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene.")
+                        timeoutError: AnalysisError.storageFailed(RDLocalization.string("analysis.analysis.service.fotograf.yuklenirken.baglanti.zaman.asimina.ugra.5316c341", table: .analysis, fallback: "Fotoğraf yüklenirken bağlantı zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."))
                     ) {
                         try await self.supabase.storage
                             .from(RDConfig.Bucket.photos)
@@ -1875,7 +1897,7 @@ final class AnalysisService {
                 do {
                     _ = try await Self.withTimeout(
                         nanoseconds: Self.analysisPhotoMetadataTimeoutNanoseconds,
-                        timeoutError: AnalysisError.databaseFailed("Fotoğraf bilgisi kaydedilirken bağlantı zaman aşımına uğradı. Lütfen tekrar dene.")
+                        timeoutError: AnalysisError.databaseFailed(RDLocalization.string("analysis.analysis.service.fotograf.bilgisi.kaydedilirken.baglanti.zaman.as.c3a91d7f", table: .analysis, fallback: "Fotoğraf bilgisi kaydedilirken bağlantı zaman aşımına uğradı. Lütfen tekrar dene."))
                     ) {
                         try await self.supabase.client
                             .from("photos")
@@ -1910,7 +1932,7 @@ final class AnalysisService {
         do {
             try await Self.withTimeout(
                 nanoseconds: Self.analysisPhotoCleanupTimeoutNanoseconds,
-                timeoutError: AnalysisError.storageFailed("Fotoğraf temizliği zaman aşımına uğradı.")
+                timeoutError: AnalysisError.storageFailed(RDLocalization.string("analysis.analysis.service.fotograf.temizligi.zaman.asimina.ugradi.8959411e", table: .analysis, fallback: "Fotoğraf temizliği zaman aşımına uğradı."))
             ) {
                 if !paths.isEmpty {
                     _ = try await self.supabase.storage
@@ -1936,6 +1958,7 @@ final class AnalysisService {
         textInput: String?,
         companyID: UUID?,
         analysisSector: AnalysisSectorID?,
+        localization: RDAnalysisLocalizationRequest?,
         photoPaths: [String],
         photoBase64Parts: [InlinePhotoPart],
         requestID: String,
@@ -1954,6 +1977,14 @@ final class AnalysisService {
             let analysis_sector: String?
             let analysis_sector_source: String?
             let analysis_sector_prompt_version: String?
+            let app_language: String
+            let output_language: String?
+            let output_locale: String?
+            let work_jurisdiction_country: String?
+            let work_jurisdiction_region: String?
+            let safety_profile_id: String?
+            let safety_profile_version: Int?
+            let method: String?
             let photo_paths: [String]
             let photo_base64_parts: [InlinePhotoPart]
             let client_app_version: String
@@ -1978,6 +2009,14 @@ final class AnalysisService {
             analysis_sector: analysisSector?.rawValue,
             analysis_sector_source: analysisSector == nil ? nil : "user_selected",
             analysis_sector_prompt_version: analysisSector == nil ? nil : AnalysisSectorID.activeAnalysisPromptVersion,
+            app_language: RDLanguage.current.rawValue,
+            output_language: localization?.outputLanguage.rawValue,
+            output_locale: localization?.outputLocale.rawValue,
+            work_jurisdiction_country: localization?.workJurisdictionCountry.rawValue,
+            work_jurisdiction_region: localization?.workJurisdictionRegion,
+            safety_profile_id: localization?.safetyProfileID.rawValue,
+            safety_profile_version: localization?.safetyProfileVersion,
+            method: localization?.method.rawValue,
             photo_paths: photoPaths,
             photo_base64_parts: photoBase64Parts,
             client_app_version: Self.clientAppVersion,
@@ -1991,7 +2030,7 @@ final class AnalysisService {
             do {
                 try await Self.withTimeout(
                     nanoseconds: Self.analysisSubmissionTimeoutNanoseconds,
-                    timeoutError: AnalysisError.networkFailed("Analiz isteği sunucuya gönderilirken bağlantı zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene.")
+                    timeoutError: AnalysisError.networkFailed(RDLocalization.string("analysis.analysis.service.analiz.istegi.sunucuya.gonderilirken.baglanti.za.f977e5d0", table: .analysis, fallback: "Analiz isteği sunucuya gönderilirken bağlantı zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."))
                 ) {
                     try await self.supabase.functions.invoke(
                         RDConfig.analyzeFunctionName,
@@ -2008,15 +2047,25 @@ final class AnalysisService {
 
                 if code == 429,
                    msg.localizedCaseInsensitiveContains("günlük kota") || msg.localizedCaseInsensitiveContains("analiz/gün") || errorCode == "quota_exceeded" {
-                    let fallbackMessage = msg.isEmpty ? "Analiz kotan doldu." : msg
+                    let fallbackMessage = msg.isEmpty ? RDLocalization.string("analysis.analysis.service.analiz.kotan.doldu.cf5ccd2e", table: .analysis, fallback: "Analiz kotan doldu.") : msg
                     throw AnalysisError.quotaExceeded(message: Self.appendSupportID(remoteSupportID, to: fallbackMessage), tier: payload.tier ?? "free")
                 }
                 if code == 409 {
                     throw AnalysisError.alreadyCompleted
                 }
                 if errorCode == "PHOTO_LIMIT_EXCEEDED" {
-                    let fallbackMessage = msg.isEmpty ? "Bu plan için fotoğraf limiti aşıldı." : msg
+                    let fallbackMessage = msg.isEmpty ? RDLocalization.string("analysis.analysis.service.bu.plan.icin.fotograf.limiti.asildi.07089206", table: .analysis, fallback: "Bu plan için fotoğraf limiti aşıldı.") : msg
                     throw AnalysisError.invalidInput(Self.appendSupportID(remoteSupportID, to: fallbackMessage))
+                }
+                if errorCode == "OUTPUT_LANGUAGE_CONTRACT_FAILED" {
+                    let localizedMessage = RDLocalization.string(
+                        "analysis.analysis.service.output.language.contract.failed",
+                        table: .analysis,
+                        fallback: "Analiz, seçilen çıktı diliyle güvenli biçimde tamamlanamadı. Lütfen tekrar dene."
+                    )
+                    throw AnalysisError.aiFailed(
+                        Self.appendSupportID(remoteSupportID, to: localizedMessage)
+                    )
                 }
 
                 let retryable = [429, 500, 502, 503, 504].contains(code)
@@ -2030,9 +2079,9 @@ final class AnalysisService {
                 let messageWithSupport = Self.appendSupportID(remoteSupportID, to: msg)
                 switch code {
                 case 429:
-                    throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "Gemini kotası doldu. Lütfen daha sonra tekrar dene.") : messageWithSupport)
+                    throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: RDLocalization.string("analysis.analysis.service.gemini.kotasi.doldu.lutfen.daha.sonra.tekrar.den.1495b164", table: .analysis, fallback: "Gemini kotası doldu. Lütfen daha sonra tekrar dene.")) : messageWithSupport)
                 case 503:
-                    throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.") : messageWithSupport)
+                    throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: RDLocalization.string("analysis.analysis.service.gemini.modeli.su.anda.yogun.biraz.sonra.tekrar.d.a4d34a5c", table: .analysis, fallback: "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.")) : messageWithSupport)
                 default:
                     throw AnalysisError.aiFailed(messageWithSupport.isEmpty ? Self.appendSupportID(remoteSupportID, to: "HTTP \(code)") : messageWithSupport)
                 }
@@ -2044,8 +2093,8 @@ final class AnalysisService {
                     continue
                 }
                 let fallbackMessage = photoBase64Parts.isEmpty
-                    ? "Analiz isteği sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."
-                    : "Fotoğraf paketi sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."
+                    ? RDLocalization.string("analysis.analysis.service.analiz.istegi.sunucuya.gonderilemedi.ag.baglanti.31e2f63b", table: .analysis, fallback: "Analiz isteği sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene.")
+                    : RDLocalization.string("analysis.analysis.service.fotograf.paketi.sunucuya.gonderilemedi.ag.baglan.c2b4ccc1", table: .analysis, fallback: "Fotoğraf paketi sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene.")
                 throw AnalysisError.networkFailed(Self.appendSupportID(supportID, to: fallbackMessage))
             }
         }
@@ -2085,7 +2134,7 @@ final class AnalysisService {
     private func fetchAnalysisStatusSnapshot(analysisID: UUID) async throws -> AnalysisStatusSnapshot {
         try await Self.withTimeout(
             nanoseconds: Self.analysisSubmissionCleanupTimeoutNanoseconds,
-            timeoutError: AnalysisError.networkFailed("Analiz durumu kontrol edilirken bağlantı zaman aşımına uğradı.")
+            timeoutError: AnalysisError.networkFailed(RDLocalization.string("analysis.analysis.service.analiz.durumu.kontrol.edilirken.baglanti.zaman.a.ad467eeb", table: .analysis, fallback: "Analiz durumu kontrol edilirken bağlantı zaman aşımına uğradı."))
         ) {
             try await self.supabase.client
                 .from("analyses")
@@ -2169,7 +2218,7 @@ final class AnalysisService {
             let message = Self.submissionFailureStatusMessage(error: error, supportID: supportID)
             try await Self.withTimeout(
                 nanoseconds: Self.analysisSubmissionCleanupTimeoutNanoseconds,
-                timeoutError: AnalysisError.networkFailed("Analiz hata durumu güncellenirken bağlantı zaman aşımına uğradı.")
+                timeoutError: AnalysisError.networkFailed(RDLocalization.string("analysis.analysis.service.analiz.hata.durumu.guncellenirken.baglanti.zaman.37c7975a", table: .analysis, fallback: "Analiz hata durumu güncellenirken bağlantı zaman aşımına uğradı."))
             ) {
                 _ = try await self.supabase.client
                     .from("analyses")
@@ -2194,9 +2243,9 @@ final class AnalysisService {
             case .quotaExceeded(let text, _):
                 message = text
             case .alreadyCompleted:
-                message = "Bu analiz zaten tamamlanmış."
+                message = RDLocalization.string("analysis.analysis.service.bu.analiz.zaten.tamamlanmis.ca77e711", table: .analysis, fallback: "Bu analiz zaten tamamlanmış.")
             case .notAuthenticated:
-                message = "Kullanıcı oturumu bulunamadı."
+                message = RDLocalization.string("analysis.analysis.service.kullanici.oturumu.bulunamadi.83ff7aa4", table: .analysis, fallback: "Kullanıcı oturumu bulunamadı.")
             }
         } else {
             message = error.localizedDescription
@@ -2258,7 +2307,7 @@ final class AnalysisService {
                 return bundle
             case "failed":
                 InFlightAnalysisStore.shared.clear(analysisID: analysisID)
-                throw AnalysisError.aiFailed(snapshot.statusMessage ?? "Analiz arka planda tamamlanamadı. Lütfen tekrar dene.")
+                throw AnalysisError.aiFailed(snapshot.statusMessage ?? RDLocalization.string("analysis.analysis.service.analiz.arka.planda.tamamlanamadi.lutfen.tekrar.d.6ddc19ce", table: .analysis, fallback: "Analiz arka planda tamamlanamadı. Lütfen tekrar dene."))
             case "queued", "pending", "analyzing":
                 if lastReportedStatus != snapshot.status {
                     onProgress?(snapshot.status == "analyzing" ? .analyzing : .queued)
@@ -2271,7 +2320,7 @@ final class AnalysisService {
             }
         }
 
-        throw AnalysisError.aiFailed("Analiz arka planda devam ediyor. Tamamlandığında bildirim göndereceğiz; sonucu Geçmiş analizler ekranından açabilirsin.")
+        throw AnalysisError.aiFailed(RDLocalization.string("analysis.analysis.service.analiz.arka.planda.devam.ediyor.tamamlandiginda..a1f01fa4", table: .analysis, fallback: "Analiz arka planda devam ediyor. Tamamlandığında bildirim göndereceğiz; sonucu Geçmiş analizler ekranından açabilirsin."))
     }
 
     private func fetchResult(analysisID: UUID) async throws -> AnalysisResultBundle {
@@ -2305,7 +2354,7 @@ final class AnalysisService {
         do {
             let analysis: AnalysisRow = try await Self.withTimeout(
                 nanoseconds: Self.analysisResultPollTimeoutNanoseconds,
-                timeoutError: AnalysisError.networkFailed("Analiz kaydı alınırken bağlantı zaman aşımına uğradı.")
+                timeoutError: AnalysisError.networkFailed(RDLocalization.string("analysis.analysis.service.analiz.kaydi.alinirken.baglanti.zaman.asimina.ug.605d0305", table: .analysis, fallback: "Analiz kaydı alınırken bağlantı zaman aşımına uğradı."))
             ) {
                 try await self.supabase.client
                     .from("analyses")
@@ -2328,7 +2377,7 @@ final class AnalysisService {
             }
 
             if analysis.status == "completed", expectedCount > 0, findings.isEmpty {
-                throw AnalysisError.databaseFailed("Analiz sonucu hazır ama bulgular yüklenemedi. Lütfen Geçmiş analizlerden tekrar açmayı dene.")
+                throw AnalysisError.databaseFailed(RDLocalization.string("analysis.analysis.service.analiz.sonucu.hazir.ama.bulgular.yuklenemedi.lut.d92d4f00", table: .analysis, fallback: "Analiz sonucu hazır ama bulgular yüklenemedi. Lütfen Geçmiş analizlerden tekrar açmayı dene."))
             }
 
             return (analysis, findings)
@@ -2344,7 +2393,7 @@ final class AnalysisService {
     private func fetchFindingRows(analysisID: UUID) async throws -> [FindingRow] {
         try await Self.withTimeout(
             nanoseconds: Self.analysisResultPollTimeoutNanoseconds,
-            timeoutError: AnalysisError.networkFailed("Analiz bulguları alınırken bağlantı zaman aşımına uğradı.")
+            timeoutError: AnalysisError.networkFailed(RDLocalization.string("analysis.analysis.service.analiz.bulgulari.alinirken.baglanti.zaman.asimin.7e2115c8", table: .analysis, fallback: "Analiz bulguları alınırken bağlantı zaman aşımına uğradı."))
         ) {
             try await self.supabase.client
                 .from("findings")
@@ -2377,7 +2426,7 @@ final class AnalysisService {
         do {
             return try await Self.withTimeout(
                 nanoseconds: Self.analysisResultPollTimeoutNanoseconds,
-                timeoutError: AnalysisError.networkFailed("Analiz fotoğrafları alınırken bağlantı zaman aşımına uğradı.")
+                timeoutError: AnalysisError.networkFailed(RDLocalization.string("analysis.analysis.service.analiz.fotograflari.alinirken.baglanti.zaman.asi.85ac4949", table: .analysis, fallback: "Analiz fotoğrafları alınırken bağlantı zaman aşımına uğradı."))
             ) {
                 try await self.supabase.client
                     .from("photos")
@@ -2398,7 +2447,7 @@ final class AnalysisService {
         do {
             return try await Self.withTimeout(
                 nanoseconds: Self.analysisResultPollTimeoutNanoseconds,
-                timeoutError: AnalysisError.networkFailed("Fotoğraf özetleri alınırken bağlantı zaman aşımına uğradı.")
+                timeoutError: AnalysisError.networkFailed(RDLocalization.string("analysis.analysis.service.fotograf.ozetleri.alinirken.baglanti.zaman.asimi.1cc36761", table: .analysis, fallback: "Fotoğraf özetleri alınırken bağlantı zaman aşımına uğradı."))
             ) {
                 try await self.supabase.client
                     .from("analysis_photo_summaries")
@@ -2416,8 +2465,8 @@ final class AnalysisService {
 
     private func defaultTitle(for canvases: [AnalysisCanvas]) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMM HH:mm"
+        formatter.locale = .autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("dMMMyHHmm")
         let label = canvases.count == 1
             ? canvases[0].title
             : canvases.map(\.title).joined(separator: " + ")
@@ -2446,7 +2495,7 @@ final class AnalysisService {
     private static func appendSupportID(_ supportID: String, to message: String) -> String {
         let clean = message.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.localizedCaseInsensitiveContains("destek kodu") else { return clean }
-        return "\(clean)\nDestek kodu: \(supportID)"
+        return RDLocalization.format("analysis.analysis.service.1.destek.kodu.2.337dcc1b", table: .analysis, fallback: "%1$@\nDestek kodu: %2$@", arguments: [String(describing: clean), String(describing: supportID)])
     }
 
     private static func safeReportFileName(
@@ -2491,7 +2540,18 @@ final class AnalysisService {
         let titlePart = safeTitle.isEmpty ? "analysis" : String(safeTitle.prefix(48))
         let shortID = String(analysis.id.uuidString.prefix(8)).lowercased()
         let archiveID = archiveFileSuffix(requestID: requestID)
-        return "riskdetected_\(titlePart)_\(kind.rawValue)_\(databaseReportMethodValue(method))_\(shortID)_\(archiveID).pdf"
+        let reportKind = analysis.resolvedOutputLanguage == .english
+            ? "risk-assessment"
+            : "risk-analizi"
+        return [
+            "riskdetected",
+            titlePart,
+            reportKind,
+            kind.rawValue,
+            databaseReportMethodValue(method),
+            shortID,
+            archiveID,
+        ].joined(separator: "_") + ".pdf"
     }
 
     private static func archiveFileSuffix(requestID: String) -> String {
@@ -2558,6 +2618,55 @@ final class AnalysisService {
             || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
     }
 
+    @MainActor
+    private static func uiTestPhotoData(path: String) -> Data? {
+        let size = CGSize(width: 640, height: 480)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        let seed = path.utf8.reduce(0) { ($0 + Int($1)) % 3 }
+        let colors: [(UIColor, UIColor)] = [
+            (
+                UIColor(red: 0.08, green: 0.12, blue: 0.13, alpha: 1),
+                UIColor(red: 0.14, green: 0.78, blue: 0.36, alpha: 1)
+            ),
+            (
+                UIColor(red: 0.13, green: 0.16, blue: 0.22, alpha: 1),
+                UIColor(red: 0.98, green: 0.72, blue: 0.10, alpha: 1)
+            ),
+            (
+                UIColor(red: 0.12, green: 0.17, blue: 0.20, alpha: 1),
+                UIColor(red: 0.24, green: 0.62, blue: 0.92, alpha: 1)
+            )
+        ]
+        let palette = colors[seed]
+        let image = UIGraphicsImageRenderer(size: size, format: format).image { context in
+            palette.0.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+
+            palette.1.withAlphaComponent(0.82).setFill()
+            UIBezierPath(
+                roundedRect: CGRect(x: 54, y: 62, width: 532, height: 356),
+                cornerRadius: 32
+            ).fill()
+
+            UIColor.white.withAlphaComponent(0.92).setStroke()
+            let marker = UIBezierPath(ovalIn: CGRect(x: 202, y: 112, width: 236, height: 236))
+            marker.lineWidth = 12
+            marker.stroke()
+
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedSystemFont(ofSize: 28, weight: .bold),
+                .foregroundColor: UIColor.white
+            ]
+            NSString(string: "UI TEST FOTOĞRAF \(seed + 1)").draw(
+                in: CGRect(x: 142, y: 360, width: 356, height: 42),
+                withAttributes: attributes
+            )
+        }
+        return image.jpegData(compressionQuality: 0.88)
+    }
+
     private static func uiTestResultBundle(
         analysisID: UUID,
         updatedFindingID: UUID? = nil,
@@ -2618,11 +2727,11 @@ final class AnalysisService {
                 displayOrder: finding.id
             )
         }
-        let analysis = AnalysisRow(
+        var analysis = AnalysisRow(
             id: analysisID,
             userID: userID,
             companyID: nil,
-            title: "UI Test Saha Analizi",
+            title: RDLocalization.string("analysis.analysis.service.ui.test.saha.analizi.ef355d01", table: .analysis, fallback: "UI Test Saha Analizi"),
             kind: "photo",
             canvas: "ppe",
             status: "completed",
@@ -2637,6 +2746,24 @@ final class AnalysisService {
             analysisSector: "construction",
             analysisSectorSource: "user_selected",
             analysisSectorPromptVersion: AnalysisSectorID.activeAnalysisPromptVersion
+        )
+        let fixtureLanguage = RDLanguage.current
+        analysis.outputLanguage = fixtureLanguage.rawValue
+        analysis.outputLocale = fixtureLanguage == .english ? "en-GB" : "tr-TR"
+        analysis.workJurisdictionCountry = fixtureLanguage == .english ? "ZZ" : "TR"
+        analysis.safetyProfileID = fixtureLanguage == .english
+            ? "english_international_generic_v1"
+            : "turkey_current_v1"
+        analysis.safetyProfileVersion = 1
+        analysis.localizationSnapshot = RDAnalysisLocalizationSnapshot(
+            schemaVersion: 1,
+            outputLanguage: analysis.outputLanguage,
+            outputLocale: analysis.outputLocale,
+            workJurisdictionCountry: analysis.workJurisdictionCountry,
+            workJurisdictionRegion: nil,
+            safetyProfileID: analysis.safetyProfileID,
+            safetyProfileVersion: analysis.safetyProfileVersion,
+            structuredRegulatoryReferencesEnabled: fixtureLanguage == .turkish
         )
         let photos = (1...3).map { index in
             AnalysisPhotoRow(
@@ -2922,6 +3049,11 @@ struct ReportRow: Codable, Identifiable, Equatable {
     let requestID: String?
     let supportID: String?
     let createdAt: String?
+    var reportLanguage: String? = nil
+    var reportLocale: String? = nil
+    var safetyProfileID: String? = nil
+    var safetyProfileVersion: Int? = nil
+    var regulatorySectionsEnabled: Bool? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -2940,6 +3072,11 @@ struct ReportRow: Codable, Identifiable, Equatable {
         case requestID = "request_id"
         case supportID = "support_id"
         case createdAt = "created_at"
+        case reportLanguage = "report_language"
+        case reportLocale = "report_locale"
+        case safetyProfileID = "safety_profile_id"
+        case safetyProfileVersion = "safety_profile_version"
+        case regulatorySectionsEnabled = "regulatory_sections_enabled"
     }
 }
 
@@ -2954,6 +3091,38 @@ extension ReportRow {
 
     var usesRiskAnalysisTrial: Bool {
         isRiskAnalysisReport || isExcelReport
+    }
+}
+
+struct RDAnalysisLocalizationSnapshot: Codable, Equatable, Sendable {
+    let schemaVersion: Int?
+    let outputLanguage: String?
+    let outputLocale: String?
+    let workJurisdictionCountry: String?
+    let workJurisdictionRegion: String?
+    let safetyProfileID: String?
+    let safetyProfileVersion: Int?
+    let structuredRegulatoryReferencesEnabled: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case outputLanguage = "output_language"
+        case outputLocale = "output_locale"
+        case workJurisdictionCountry = "work_jurisdiction_country"
+        case workJurisdictionRegion = "work_jurisdiction_region"
+        case safetyProfileID = "safety_profile_id"
+        case safetyProfileVersion = "safety_profile_version"
+        case structuredRegulatoryReferencesEnabled = "structured_regulatory_references_enabled"
+    }
+
+    var isComplete: Bool {
+        schemaVersion == 1
+            && RDLanguage(rawValue: outputLanguage ?? "") != nil
+            && !(outputLocale ?? "").isEmpty
+            && !(workJurisdictionCountry ?? "").isEmpty
+            && !(safetyProfileID ?? "").isEmpty
+            && (safetyProfileVersion ?? 0) > 0
+            && structuredRegulatoryReferencesEnabled != nil
     }
 }
 
@@ -2988,6 +3157,13 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
     var userEditCount: Int? = nil
     var analysisEditVersion: Int? = nil
     var planAtCreation: String? = nil
+    var outputLanguage: String? = nil
+    var outputLocale: String? = nil
+    var workJurisdictionCountry: String? = nil
+    var workJurisdictionRegion: String? = nil
+    var safetyProfileID: String? = nil
+    var safetyProfileVersion: Int? = nil
+    var localizationSnapshot: RDAnalysisLocalizationSnapshot? = nil
 
     var analysisSectorID: AnalysisSectorID? {
         guard let analysisSector else { return nil }
@@ -2996,6 +3172,24 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
 
     var analysisSectorLabel: String? {
         analysisSectorID?.label()
+    }
+
+    /// Rows created before the localization snapshot migration are Turkish.
+    var resolvedOutputLanguage: RDLanguage {
+        RDLanguage(rawValue: localizationSnapshot?.outputLanguage ?? outputLanguage ?? "")
+            ?? .turkish
+    }
+
+    var hasCompleteLocalizationSnapshot: Bool {
+        localizationSnapshot?.isComplete == true
+    }
+
+    var supportsStructuredRegulatoryReferences: Bool {
+        if let enabled = localizationSnapshot?.structuredRegulatoryReferencesEnabled {
+            return enabled
+        }
+        return (workJurisdictionCountry ?? RDWorkJurisdictionCountry.turkey.rawValue)
+            == RDWorkJurisdictionCountry.turkey.rawValue
     }
 
     enum CodingKeys: String, CodingKey {
@@ -3029,6 +3223,13 @@ struct AnalysisRow: Codable, Identifiable, Equatable {
         case userEditCount = "user_edit_count"
         case analysisEditVersion = "analysis_edit_version"
         case planAtCreation = "plan_at_creation"
+        case outputLanguage = "output_language"
+        case outputLocale = "output_locale"
+        case workJurisdictionCountry = "work_jurisdiction_country"
+        case workJurisdictionRegion = "work_jurisdiction_region"
+        case safetyProfileID = "safety_profile_id"
+        case safetyProfileVersion = "safety_profile_version"
+        case localizationSnapshot = "localization_snapshot"
     }
 }
 

@@ -3,7 +3,7 @@ import PencilKit
 
 struct AnnotateView: View {
     var initialImage: UIImage? = nil
-    var primaryActionTitle: String = "İşaretli alanları analiz et"
+    var primaryActionTitle: String = RDLocalization.string("analysis.annotate.view.isaretli.alanlari.analiz.et.517dc960", table: .analysis, fallback: "İşaretli alanları analiz et")
     var primaryActionIcon: String = "sparkles"
     var onCancel: () -> Void
     var onAnalyze: (UIImage) -> Void
@@ -46,7 +46,7 @@ struct AnnotateView: View {
             .buttonStyle(RDPressableButtonStyle())
 
             Spacer()
-            Text("İşaretleme")
+            Text(RDLocalization.string("analysis.annotate.view.isaretleme.4574bc26", table: .analysis, fallback: "İşaretleme"))
                 .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
             Spacer()
@@ -79,7 +79,7 @@ struct AnnotateView: View {
                         .background(Color.black)
                         .clipShape(RoundedRectangle(cornerRadius: 18))
                 } else {
-                    RDPlaceholderPhoto(label: "Saha fotoğrafı", cornerRadius: 18)
+                    RDPlaceholderPhoto(label: RDLocalization.string("analysis.annotate.view.saha.fotografi.0060bd58", table: .analysis, fallback: "Saha fotoğrafı"), cornerRadius: 18)
                 }
 
                 // Önceki şekiller

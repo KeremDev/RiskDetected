@@ -14,13 +14,13 @@ struct OBFrequencyView: View {
                     VStack(spacing: 10) {
                         OBHeroTile(tint: .green) { OBHeroFrequency() }
                             .obStage(delay: 0.08)
-                        Text("Haftada kaç işyerinde denetim yapıyorsun?")
+                        Text(RDLocalization.string("onboarding.obfrequency.view.haftada.kac.isyerinde.denetim.yapiyorsun.800c3756", table: .onboarding, fallback: "Haftada kaç işyerinde denetim yapıyorsun?"))
                             .font(.system(size: RDFontScale.size(22), weight: .semibold))
                             .tracking(-0.6)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
-                        Text("Planımızı senin tempona göre ölçeklendirelim.")
+                        Text(RDLocalization.string("onboarding.obfrequency.view.planimizi.senin.tempona.gore.olceklendirelim.a834ab15", table: .onboarding, fallback: "Planımızı senin tempona göre ölçeklendirelim."))
                             .font(.system(size: RDFontScale.size(14)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
@@ -47,11 +47,12 @@ struct OBFrequencyView: View {
             }
 
             OBFooter {
-                OBPrimaryButton(title: "Planımı Hazırla", enabled: state.frequency != nil, accessibilityID: "onboarding.frequency.prepare") { onNext() }
+                OBPrimaryButton(title: RDLocalization.string("onboarding.obfrequency.view.planimi.hazirla.3638fcc3", table: .onboarding, fallback: "Planımı Hazırla"), enabled: state.frequency != nil, accessibilityID: "onboarding.frequency.prepare") { onNext() }
                     .obStage(delay: 0.68)
             }
         }
         .background(Color.rdPaper)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.frequency")
     }
 

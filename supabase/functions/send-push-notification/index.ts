@@ -28,10 +28,14 @@ import {
   deliverToAPNs,
   mapWithConcurrency,
 } from "./apns-delivery.ts";
+import {
+  resolveTransactionalNotificationTemplate,
+} from "../_shared/transactional-notification-localization.ts";
 
 type PushRequest = {
   user_id?: string;
   kind?: string;
+  event_key?: string;
   title?: string;
   body?: string;
   data?: Record<string, unknown>;
@@ -40,6 +44,13 @@ type PushRequest = {
   campaign_id?: string | null;
   template_id?: string | null;
   dedupe_key?: string | null;
+  localization?: {
+    language: "tr" | "en";
+    locale: string;
+    snapshot: Record<string, unknown>;
+    templateLocale: string | null;
+    templateLocalizationID: string | null;
+  };
 };
 
 type PushToken = {
@@ -183,6 +194,12 @@ async function createEvent(params: {
       dedupe_key: params.request.dedupe_key ?? null,
       status: params.status,
       last_error: params.lastError,
+      language: params.request.localization?.language ?? null,
+      locale: params.request.localization?.locale ?? null,
+      localization_snapshot: params.request.localization?.snapshot ?? null,
+      template_locale: params.request.localization?.templateLocale ?? null,
+      template_localization_id:
+        params.request.localization?.templateLocalizationID ?? null,
     })
     .select("id")
     .single();
@@ -271,6 +288,138 @@ async function skipForPreference(params: {
   });
 }
 
+function eventKeyMatchesKind(kind: string, eventKey: string): boolean {
+  if (kind === "account_updates") {
+    return eventKey.startsWith("account_update.");
+  }
+  return kind === eventKey;
+}
+
+async function resolveManagedContent(params: {
+  supabase: SupabaseAdminClient;
+  request: PushRequest;
+  source: NotificationSource;
+}): Promise<
+  | { ok: true; request: PushRequest }
+  | { ok: false; code: string; locale: string | null }
+> {
+  const userID = params.request.user_id!;
+  const kind = params.request.kind!;
+
+  if (params.source === "automation" || params.source === "manual") {
+    if (!params.request.job_id) {
+      return {
+        ok: false,
+        code: "NOTIFICATION_JOB_ID_REQUIRED",
+        locale: null,
+      };
+    }
+    const { data, error } = await params.supabase.rpc(
+      "notification_job_delivery_content_v1",
+      { p_job_id: params.request.job_id },
+    );
+    if (
+      error || data?.allowed !== true || data?.user_id !== userID ||
+      data?.kind !== kind || typeof data?.title !== "string" ||
+      typeof data?.body !== "string" || typeof data?.locale !== "string" ||
+      (data?.language !== "tr" && data?.language !== "en")
+    ) {
+      return {
+        ok: false,
+        code: "NOTIFICATION_JOB_CONTENT_UNAVAILABLE",
+        locale: typeof data?.locale === "string" ? data.locale : null,
+      };
+    }
+    return {
+      ok: true,
+      request: {
+        ...params.request,
+        title: data.title,
+        body: data.body,
+        template_id: data.template_id ?? params.request.template_id ?? null,
+        localization: {
+          language: data.language,
+          locale: data.locale,
+          snapshot: data.localization_snapshot ?? {
+            schema_version: 1,
+            content_mode: "managed_job",
+          },
+          templateLocale: data.template_locale ?? null,
+          templateLocalizationID: data.template_localization_id ?? null,
+        },
+      },
+    };
+  }
+
+  const { data: profile, error: profileError } = await params.supabase
+    .from("profiles")
+    .select("app_language,preferred_content_locale")
+    .eq("id", userID)
+    .maybeSingle();
+  const locale = typeof profile?.preferred_content_locale === "string"
+    ? profile.preferred_content_locale
+    : null;
+  if (
+    profileError || !profile || locale === null ||
+    (profile.app_language !== "tr" && profile.app_language !== "en")
+  ) {
+    return {
+      ok: false,
+      code: "NOTIFICATION_RECIPIENT_LOCALE_MISSING",
+      locale,
+    };
+  }
+  if (
+    typeof params.request.event_key !== "string" ||
+    !eventKeyMatchesKind(kind, params.request.event_key)
+  ) {
+    return {
+      ok: false,
+      code: "NOTIFICATION_EVENT_KEY_KIND_MISMATCH",
+      locale,
+    };
+  }
+
+  const resolution = await resolveTransactionalNotificationTemplate({
+    eventKey: params.request.event_key,
+    locale,
+  });
+  if (!resolution.ok) {
+    return { ok: false, code: resolution.code, locale };
+  }
+  if (resolution.language !== profile.app_language) {
+    return {
+      ok: false,
+      code: "NOTIFICATION_PROFILE_LANGUAGE_LOCALE_MISMATCH",
+      locale,
+    };
+  }
+
+  return {
+    ok: true,
+    request: {
+      ...params.request,
+      title: resolution.title,
+      body: resolution.body,
+      localization: {
+        language: resolution.language,
+        locale: resolution.locale,
+        snapshot: {
+          schema_version: 1,
+          content_mode: "transactional_event_catalog",
+          event_key: resolution.eventKey,
+          locale: resolution.locale,
+          language: resolution.language,
+          template_checksum: resolution.checksum,
+          resolved_at: new Date().toISOString(),
+        },
+        templateLocale: resolution.locale,
+        templateLocalizationID: null,
+      },
+    },
+  };
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return json(405, { error: "Method not allowed" });
@@ -287,27 +436,23 @@ serve(async (req) => {
     return json(401, { error: "Unauthorized" });
   }
 
-  let request: PushRequest;
+  let rawRequest: PushRequest;
   try {
-    request = await req.json();
+    rawRequest = await req.json();
   } catch {
     return json(400, { error: "Invalid JSON body" });
   }
 
-  if (!request.user_id || !request.kind) {
+  if (!rawRequest.user_id || !rawRequest.kind) {
     return json(400, { error: "user_id and kind are required" });
   }
-  const contract = notificationKindContract(request.kind);
+  const notificationKind = rawRequest.kind;
+  const contract = notificationKindContract(notificationKind);
   if (!contract) {
     return json(400, { error: "unknown_notification_kind" });
   }
-  const contentError = notificationContentError({
-    title: request.title,
-    body: request.body,
-  });
-  if (contentError) return json(400, { error: contentError });
 
-  const payloadData = request.data ?? {};
+  const payloadData = rawRequest.data ?? {};
   const payloadError = notificationPayloadError(payloadData);
   if (payloadError) return json(400, { error: payloadError });
   const destination = payloadData.destination ?? null;
@@ -317,7 +462,7 @@ serve(async (req) => {
   });
   if (destinationError) return json(400, { error: destinationError });
 
-  const source = request.source ?? contract.defaultSource;
+  const source = rawRequest.source ?? contract.defaultSource;
   if (
     !["transactional", "trial", "progress", "automation", "manual"].includes(
       source,
@@ -329,6 +474,59 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  const managedContent = await resolveManagedContent({
+    supabase,
+    request: rawRequest,
+    source,
+  });
+  if (!managedContent.ok) {
+    const failureLanguage = managedContent.locale === "tr-TR"
+      ? "tr"
+      : managedContent.locale?.startsWith("en-")
+      ? "en"
+      : null;
+    const blockedRequest: PushRequest = {
+      ...rawRequest,
+      title: "LOCALIZATION_BLOCKED",
+      body: "Notification delivery was blocked by exact-locale resolution.",
+      localization: failureLanguage && managedContent.locale
+        ? {
+          language: failureLanguage,
+          locale: managedContent.locale,
+          snapshot: {
+            schema_version: 1,
+            content_mode: "blocked",
+            error_code: managedContent.code,
+            requested_locale: managedContent.locale,
+            resolved_at: new Date().toISOString(),
+          },
+          templateLocale: null,
+          templateLocalizationID: null,
+        }
+        : undefined,
+    };
+    const event = await createEvent({
+      supabase,
+      request: blockedRequest,
+      kind: rawRequest.kind,
+      source,
+      destination: destination as NotificationDestination | null,
+      status: "skipped",
+      lastError: managedContent.code,
+    }).catch(() => null);
+    return json(422, {
+      error: managedContent.code,
+      status: "skipped",
+      event_id: event?.id ?? null,
+    });
+  }
+  const request = managedContent.request;
+  const contentError = notificationContentError({
+    title: request.title,
+    body: request.body,
+  });
+  if (contentError) return json(500, { error: contentError });
 
   const { data: preference, error: preferenceError } = await supabase
     .from("notification_preferences")
@@ -342,7 +540,7 @@ serve(async (req) => {
     return skipForPreference({
       supabase,
       request,
-      kind: request.kind,
+      kind: notificationKind,
       source,
       destination: destination as NotificationDestination | null,
       reason: "preference_query_failed",
@@ -361,7 +559,7 @@ serve(async (req) => {
     return skipForPreference({
       supabase,
       request,
-      kind: request.kind,
+      kind: notificationKind,
       source,
       destination: destination as NotificationDestination | null,
       reason: !preferenceRow
@@ -401,7 +599,7 @@ serve(async (req) => {
     event = await createEvent({
       supabase,
       request,
-      kind: request.kind,
+      kind: notificationKind,
       source,
       destination: destination as NotificationDestination | null,
       status: deviceTokens.length > 0 ? "queued" : "skipped",
@@ -477,7 +675,7 @@ serve(async (req) => {
       sound: "default",
     },
     data: payloadData,
-    kind: request.kind,
+    kind: notificationKind,
     event_id: eventID,
   };
 
