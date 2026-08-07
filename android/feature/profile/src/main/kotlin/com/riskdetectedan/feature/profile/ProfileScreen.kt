@@ -27,6 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.RadioButton
+import com.riskdetectedan.core.data.profile.RiskMethodWire
 import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.designsystem.RdSpacing
 import java.io.ByteArrayOutputStream
@@ -88,6 +91,12 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
     var companyName by remember { mutableStateOf(profile.companyName ?: "") }
     var phone by remember { mutableStateOf(profile.phone ?: "") }
     var logoBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var preferredMethod by remember {
+        mutableStateOf(
+            RiskMethodWire.entries.firstOrNull { it.wireValue == profile.preferredMethod }
+                ?: RiskMethodWire.FineKinney,
+        )
+    }
 
     val context = LocalContext.current
     val pickLogo = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -125,6 +134,23 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
         )
         OutlinedTextField(companyName, { companyName = it }, label = { Text("Firma") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(phone, { phone = it }, label = { Text("Telefon") }, modifier = Modifier.fillMaxWidth())
+
+        Text("Risk yöntemi")
+        Row {
+            RiskMethodWire.entries.forEach { method ->
+                Row {
+                    RadioButton(
+                        selected = preferredMethod == method,
+                        onClick = { preferredMethod = method },
+                    )
+                    Text(
+                        if (method == RiskMethodWire.FineKinney) "Fine-Kinney" else "5x5 Matris",
+                        modifier = Modifier.padding(end = RdSpacing.sm),
+                    )
+                }
+            }
+        }
+
         TextButton(
             onClick = {
                 pickLogo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -144,10 +170,7 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
                         certificateNumber = certificateNumber,
                         companyName = companyName,
                         phone = phone,
-                        // Risk-method choice not surfaced in this first edit-form slice — the
-                        // repository falls back to the existing profile value when null, so
-                        // this save never overwrites it (see ProfileRepository.updateProfile).
-                        preferredMethod = null,
+                        preferredMethod = preferredMethod,
                         logoJpegBytes = logoBytes,
                     )
                 },
