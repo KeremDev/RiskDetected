@@ -272,3 +272,91 @@ export function classifyAPNsTransportError(): APNsClassification {
     reason: "ambiguous_transport",
   };
 }
+
+// FCM sender (Faz 7 — the comment at send-push-notification/index.ts's recordDeliveryAttempt
+// anticipated this exact seam: "a Faz 7 FCM sender calls into with provider='fcm' instead").
+// Reuses APNsClassification/APNsOutcome's shape under provider-neutral aliases rather than a
+// duplicate type — same fields (outcome/retryable/disableToken/reason) apply identically to
+// FCM's HTTP v1 API responses.
+export type PushOutcome = APNsOutcome;
+export type PushClassification = APNsClassification;
+
+// FCM HTTP v1 error codes (response body's error.status, gRPC-style names) — see
+// https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode. UNREGISTERED/
+// SENDER_ID_MISMATCH mean the token itself is dead (app uninstalled, or belongs to a different
+// Firebase project) — the direct analog of APNs's BadDeviceToken/Unregistered/410. Everything
+// else fail-closed to "permanent, no disable" (same default APNs classification takes for an
+// unrecognized 4xx) rather than guessing a token is bad from an ambiguous error.
+const PERMANENT_FCM_TOKEN_STATUSES = new Set([
+  "UNREGISTERED",
+  "SENDER_ID_MISMATCH",
+]);
+const TRANSIENT_FCM_STATUSES = new Set([
+  "UNAVAILABLE",
+  "INTERNAL",
+  "QUOTA_EXCEEDED",
+  "RESOURCE_EXHAUSTED",
+]);
+
+export function parseFcmErrorStatus(rawBody: string): string {
+  try {
+    const value = JSON.parse(rawBody) as {
+      error?: { status?: unknown; message?: unknown };
+    };
+    if (typeof value.error?.status === "string" && value.error.status.trim()) {
+      return value.error.status.trim().slice(0, 60);
+    }
+  } catch {
+    // FCM normally returns JSON. Keep a safe generic reason otherwise.
+  }
+  return "fcm_error";
+}
+
+export function classifyFcmResponse(
+  status: number,
+  rawBody = "",
+): PushClassification {
+  if (status >= 200 && status < 300) {
+    return {
+      outcome: "accepted",
+      retryable: false,
+      disableToken: false,
+      reason: "accepted",
+    };
+  }
+
+  const reason = parseFcmErrorStatus(rawBody);
+  if (status === 404 || PERMANENT_FCM_TOKEN_STATUSES.has(reason)) {
+    return {
+      outcome: "permanent",
+      retryable: false,
+      disableToken: true,
+      reason,
+    };
+  }
+
+  if (status === 429 || status >= 500 || TRANSIENT_FCM_STATUSES.has(reason)) {
+    return {
+      outcome: "transient",
+      retryable: true,
+      disableToken: false,
+      reason,
+    };
+  }
+
+  return {
+    outcome: "permanent",
+    retryable: false,
+    disableToken: false,
+    reason,
+  };
+}
+
+export function classifyFcmTransportError(): PushClassification {
+  return {
+    outcome: "ambiguous",
+    retryable: false,
+    disableToken: false,
+    reason: "ambiguous_transport",
+  };
+}

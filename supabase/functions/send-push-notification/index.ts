@@ -1,5 +1,5 @@
 /**
- * send-push-notification — fail-closed APNs sender for RiskDetected.
+ * send-push-notification — fail-closed APNs + FCM sender for RiskDetected.
  *
  * Required secrets:
  * - APNS_KEY_ID
@@ -7,6 +7,9 @@
  * - APNS_BUNDLE_ID
  * - APNS_PRIVATE_KEY
  * - APNS_ENV (sandbox | production)
+ * - FCM_SERVICE_ACCOUNT_JSON (the raw contents of a Firebase service account key JSON with
+ *   the "Firebase Cloud Messaging API" scope — Android tokens fail closed with
+ *   fcm_credentials_not_configured until this is set, same fail-closed shape APNs already had)
  *
  * This function keeps verify_jwt=false for backwards compatibility and performs
  * an exact service-role Authorization check in the function body.
@@ -22,12 +25,14 @@ import {
   notificationPayloadError,
   type NotificationPreferenceKey,
   type NotificationSource,
+  type PushOutcome,
 } from "../_shared/notification-contract.ts";
 import {
   type APNsAttempt,
   deliverToAPNs,
   mapWithConcurrency,
 } from "./apns-delivery.ts";
+import { deliverToFcm, type FcmAttempt } from "./fcm-delivery.ts";
 import {
   resolveTransactionalNotificationTemplate,
 } from "../_shared/transactional-notification-localization.ts";
@@ -57,6 +62,16 @@ type PushToken = {
   id: string;
   token: string;
   environment: "sandbox" | "production";
+  provider: "apns" | "fcm";
+};
+
+/** Normalized shape both the APNs and FCM delivery loops reduce their results into, so the
+ * final sent/failed/ambiguous/lastError/event-status logic (previously APNs-only) doesn't need
+ * to know which provider produced a given outcome. */
+type DeliveryOutcome = {
+  token: PushToken;
+  outcome: PushOutcome;
+  reason: string;
 };
 
 type PreferenceRow = {
@@ -169,6 +184,112 @@ function apnsHost(environment: "sandbox" | "production"): string {
     : "https://api.sandbox.push.apple.com";
 }
 
+type FcmServiceAccount = {
+  client_email: string;
+  private_key: string;
+  project_id: string;
+};
+
+function parseFcmServiceAccount(): FcmServiceAccount {
+  const raw = requiredEnv("FCM_SERVICE_ACCOUNT_JSON");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("FCM_SERVICE_ACCOUNT_JSON is not valid JSON");
+  }
+  const value = parsed as Partial<FcmServiceAccount>;
+  if (!value.client_email || !value.private_key || !value.project_id) {
+    throw new Error("FCM_SERVICE_ACCOUNT_JSON is missing required fields");
+  }
+  return value as FcmServiceAccount;
+}
+
+let cachedFcmToken:
+  | {
+    value: string;
+    projectId: string;
+    createdAtMilliseconds: number;
+    validForMilliseconds: number;
+  }
+  | null = null;
+
+/** Google OAuth2 service-account JWT-bearer flow (RFC 7523) — the FCM HTTP v1 API's auth
+ * scheme, structurally the same shape as APNs's `makeProviderToken` above (build a signed JWT,
+ * cache the result) but RS256 against a Google service account instead of ES256 against an
+ * Apple auth key, and with an extra token-exchange round trip Apple's scheme doesn't need
+ * (APNs accepts the signed JWT directly as the bearer token; Google exchanges it for a
+ * short-lived OAuth2 access token first). */
+async function makeFcmProviderToken(): Promise<
+  { accessToken: string; projectId: string }
+> {
+  const now = Date.now();
+  if (
+    cachedFcmToken &&
+    now - cachedFcmToken.createdAtMilliseconds < cachedFcmToken.validForMilliseconds
+  ) {
+    return {
+      accessToken: cachedFcmToken.value,
+      projectId: cachedFcmToken.projectId,
+    };
+  }
+
+  const account = parseFcmServiceAccount();
+  const iat = Math.floor(now / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const claims = {
+    iss: account.client_email,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: "https://oauth2.googleapis.com/token",
+    iat,
+    exp: iat + 3600,
+  };
+  const signingInput = `${base64URLText(JSON.stringify(header))}.${
+    base64URLText(JSON.stringify(claims))
+  }`;
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToArrayBuffer(account.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(signingInput),
+  );
+  const assertion = `${signingInput}.${base64URL(signature)}`;
+
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }).toString(),
+  });
+  if (!response.ok) {
+    throw new Error(`fcm_oauth_token_exchange_failed:${response.status}`);
+  }
+  const body = await response.json() as {
+    access_token?: string;
+    expires_in?: number;
+  };
+  if (!body.access_token) {
+    throw new Error("fcm_oauth_token_exchange_missing_access_token");
+  }
+  cachedFcmToken = {
+    value: body.access_token,
+    projectId: account.project_id,
+    createdAtMilliseconds: now,
+    // A 5-minute safety margin before the token's real expiry (typically 3600s) — same margin
+    // philosophy as APNs's 45-minute cache against a JWT technically valid ~60 minutes.
+    validForMilliseconds: Math.max(60_000, ((body.expires_in ?? 3600) - 300) * 1000),
+  };
+  return { accessToken: body.access_token, projectId: account.project_id };
+}
+
 async function createEvent(params: {
   supabase: SupabaseAdminClient;
   request: PushRequest;
@@ -237,18 +358,24 @@ async function createEvent(params: {
 // v1. Row shape/behavior for provider="apns" is proven identical to the old v1 call by the
 // pgTAP suite (android_notification_delivery_attempt_v2_test.sql) — v1 itself now just
 // delegates to v2 with these same arguments, so this is a same-behavior, different-entrypoint
-// change. This is the seam a Faz 7 FCM sender calls into with provider="fcm" instead — the
-// full providers/apns.ts + providers/fcm.ts + dispatch() file split from the review doc's F4
-// write-up is deferred to Faz 7, where a second real provider actually exists to justify it;
-// doing that reorg now on a live, unstaged push path for zero near-term benefit isn't worth
-// the blast radius (no separate staging Supabase project yet — DEC-12).
+// change. `provider` is now a real parameter, not hardcoded "apns" — this is the seam the F4
+// comment anticipated a Faz 7 FCM sender calling into with provider="fcm", now wired for real.
+// The full providers/apns.ts + providers/fcm.ts + dispatch() *file* split from the review doc's
+// F4 write-up still isn't done (this function still holds both providers inline) — that reorg
+// is a separate, purely-organizational follow-up, not required to make FCM sending itself work.
 async function recordDeliveryAttempt(params: {
   supabase: SupabaseAdminClient;
   eventID: string;
   jobID: string | null;
   tokenID: string;
   environment: "sandbox" | "production";
-  attempt: APNsAttempt;
+  provider: "apns" | "fcm";
+  attemptNumber: number;
+  outcome: PushOutcome;
+  httpStatus: number | null;
+  providerMessageID: string | null;
+  reason: string;
+  durationMs: number;
 }) {
   const { error } = await params.supabase.rpc(
     "record_notification_delivery_attempt_v2",
@@ -257,13 +384,13 @@ async function recordDeliveryAttempt(params: {
       p_job_id: params.jobID,
       p_push_device_token_id: params.tokenID,
       p_environment: params.environment,
-      p_attempt_number: params.attempt.attemptNumber,
-      p_outcome: params.attempt.outcome,
-      p_provider: "apns",
-      p_http_status: params.attempt.httpStatus,
-      p_provider_message_id: params.attempt.apnsID,
-      p_reason: params.attempt.reason,
-      p_duration_ms: params.attempt.durationMs,
+      p_attempt_number: params.attemptNumber,
+      p_outcome: params.outcome,
+      p_provider: params.provider,
+      p_http_status: params.httpStatus,
+      p_provider_message_id: params.providerMessageID,
+      p_reason: params.reason,
+      p_duration_ms: params.durationMs,
     },
   );
   if (error) {
@@ -580,7 +707,7 @@ serve(async (req) => {
 
   const { data: tokens, error: tokenError } = await supabase
     .from("push_device_tokens")
-    .select("id,token,environment")
+    .select("id,token,environment,provider")
     .eq("user_id", request.user_id)
     .eq("notifications_enabled", true);
   if (tokenError) {
@@ -591,6 +718,7 @@ serve(async (req) => {
     id: string;
     token: string;
     environment?: string | null;
+    provider?: string | null;
   }>).map((token) => ({
     id: token.id,
     token: token.token,
@@ -598,7 +726,12 @@ serve(async (req) => {
         token.environment === "sandbox"
       ? token.environment
       : fallbackEnvironment(),
+    // Legacy rows predate the `provider` column (F2) and are all iOS — default to "apns" rather
+    // than reject them, same additive-migration spirit as `fallbackEnvironment` above.
+    provider: token.provider === "fcm" ? "fcm" : "apns",
   })) as PushToken[];
+  const apnsTokens = deviceTokens.filter((token) => token.provider === "apns");
+  const fcmTokens = deviceTokens.filter((token) => token.provider === "fcm");
   const environments = [
     ...new Set(deviceTokens.map((token) => token.environment)),
   ]
@@ -662,22 +795,65 @@ serve(async (req) => {
     });
   }
 
-  let providerToken: string;
-  try {
-    providerToken = await makeProviderToken();
-  } catch (error) {
-    await supabase.from("notification_events").update({
-      status: "failed",
-      failure_count: deviceTokens.length,
-      last_error: safeErrorText(error),
-    }).eq("id", eventID);
-    return json(500, {
-      error: "apns_credentials_not_configured",
-      event_id: eventID,
-    });
+  // Fail-closed per provider: only acquire (and require) credentials for a provider that
+  // actually has pending tokens this call. A staging project with zero FCM tokens registered
+  // yet must not fail on a missing FCM_SERVICE_ACCOUNT_JSON, mirroring how APNs already worked
+  // before FCM existed. If a provider *with* pending tokens can't get credentials, the whole
+  // request still fails closed (matches this function's existing all-or-nothing philosophy —
+  // half-sent states would complicate the event status/dedupe logic for little benefit).
+  let apnsProviderToken: string | null = null;
+  if (apnsTokens.length > 0) {
+    try {
+      apnsProviderToken = await makeProviderToken();
+    } catch (error) {
+      await supabase.from("notification_events").update({
+        status: "failed",
+        failure_count: deviceTokens.length,
+        last_error: safeErrorText(error),
+      }).eq("id", eventID);
+      return json(500, {
+        error: "apns_credentials_not_configured",
+        event_id: eventID,
+      });
+    }
+  }
+  let fcmAuth: { accessToken: string; projectId: string } | null = null;
+  if (fcmTokens.length > 0) {
+    try {
+      fcmAuth = await makeFcmProviderToken();
+    } catch (error) {
+      await supabase.from("notification_events").update({
+        status: "failed",
+        failure_count: deviceTokens.length,
+        last_error: safeErrorText(error),
+      }).eq("id", eventID);
+      return json(500, {
+        error: "fcm_credentials_not_configured",
+        event_id: eventID,
+      });
+    }
   }
 
   const now = new Date().toISOString();
+
+  async function finalizeTokenDelivery(
+    token: PushToken,
+    final: { outcome: PushOutcome; reason: string; disableToken: boolean },
+  ) {
+    if (final.outcome === "accepted") {
+      await supabase.from("push_device_tokens").update({
+        last_success_at: now,
+        last_failure_reason: null,
+      }).eq("id", token.id);
+    } else {
+      await supabase.from("push_device_tokens").update({
+        notifications_enabled: final.disableToken ? false : true,
+        last_failure_at: now,
+        last_failure_reason: `${final.outcome}:${final.reason}`,
+      }).eq("id", token.id);
+    }
+  }
+
   const topic = Deno.env.get("APNS_BUNDLE_ID") ?? "com.riskdetected.app";
   const apnsPayload = {
     aps: {
@@ -689,61 +865,102 @@ serve(async (req) => {
     event_id: eventID,
   };
 
-  const results = await mapWithConcurrency(
-    deviceTokens,
+  // FCM's `data` payload must be a flat string map — unlike APNs's `data` (nested JSON is fine
+  // inside `aps`'s sibling keys), so non-string values (numbers, booleans, nested objects
+  // `notificationPayloadError` otherwise allows) are JSON-stringified per key.
+  const fcmDataPayload = Object.fromEntries(
+    Object.entries({ ...payloadData, kind: notificationKind, event_id: eventID })
+      .map((
+        [key, value],
+      ) => [key, typeof value === "string" ? value : JSON.stringify(value)]),
+  );
+
+  const apnsResults = apnsTokens.length === 0 ? [] : await mapWithConcurrency(
+    apnsTokens,
     4,
-    async (token) => {
+    async (token): Promise<DeliveryOutcome> => {
       const result = await deliverToAPNs({
         url: `${apnsHost(token.environment)}/3/device/${token.token}`,
         headers: {
-          authorization: `bearer ${providerToken}`,
+          authorization: `bearer ${apnsProviderToken!}`,
           "apns-topic": topic,
           "apns-push-type": "alert",
           "content-type": "application/json",
         },
         payload: apnsPayload,
-        onAttempt: (attempt) =>
+        onAttempt: (attempt: APNsAttempt) =>
           recordDeliveryAttempt({
             supabase,
             eventID,
             jobID: request.job_id ?? null,
             tokenID: token.id,
             environment: token.environment,
-            attempt,
+            provider: "apns",
+            attemptNumber: attempt.attemptNumber,
+            outcome: attempt.outcome,
+            httpStatus: attempt.httpStatus,
+            providerMessageID: attempt.apnsID,
+            reason: attempt.reason,
+            durationMs: attempt.durationMs,
           }),
       });
-
-      const final = result.final;
-      if (final.outcome === "accepted") {
-        await supabase.from("push_device_tokens").update({
-          last_success_at: now,
-          last_failure_reason: null,
-        }).eq("id", token.id);
-      } else {
-        await supabase.from("push_device_tokens").update({
-          notifications_enabled: final.disableToken ? false : true,
-          last_failure_at: now,
-          last_failure_reason: `${final.outcome}:${final.reason}`,
-        }).eq("id", token.id);
-      }
-      return { token, result };
+      await finalizeTokenDelivery(token, result.final);
+      return { token, outcome: result.final.outcome, reason: result.final.reason };
     },
   );
 
-  const sent = results.filter(({ result }) =>
-    result.final.outcome === "accepted"
-  ).length;
+  const fcmResults = fcmTokens.length === 0 ? [] : await mapWithConcurrency(
+    fcmTokens,
+    4,
+    async (token): Promise<DeliveryOutcome> => {
+      const result = await deliverToFcm({
+        url:
+          `https://fcm.googleapis.com/v1/projects/${fcmAuth!.projectId}/messages:send`,
+        headers: {
+          authorization: `Bearer ${fcmAuth!.accessToken}`,
+          "content-type": "application/json",
+        },
+        payload: {
+          message: {
+            token: token.token,
+            notification: { title: request.title, body: request.body },
+            data: fcmDataPayload,
+            android: { priority: "high" },
+          },
+        },
+        onAttempt: (attempt: FcmAttempt) =>
+          recordDeliveryAttempt({
+            supabase,
+            eventID,
+            jobID: request.job_id ?? null,
+            tokenID: token.id,
+            environment: token.environment,
+            provider: "fcm",
+            attemptNumber: attempt.attemptNumber,
+            outcome: attempt.outcome,
+            httpStatus: attempt.httpStatus,
+            providerMessageID: attempt.messageID,
+            reason: attempt.reason,
+            durationMs: attempt.durationMs,
+          }),
+      });
+      await finalizeTokenDelivery(token, result.final);
+      return { token, outcome: result.final.outcome, reason: result.final.reason };
+    },
+  );
+
+  const results = [...apnsResults, ...fcmResults];
+
+  const sent = results.filter(({ outcome }) => outcome === "accepted").length;
   const failed = results.length - sent;
   const ambiguous =
-    results.filter(({ result }) => result.final.outcome === "ambiguous").length;
-  const transientExhausted = results.some(({ result }) =>
-    result.final.outcome === "transient"
+    results.filter(({ outcome }) => outcome === "ambiguous").length;
+  const transientExhausted = results.some(({ outcome }) =>
+    outcome === "transient"
   );
   const lastError = results
-    .map(({ token, result }) =>
-      result.final.outcome === "accepted"
-        ? null
-        : `${token.environment}:${result.final.outcome}:${result.final.reason}`
+    .map(({ token, outcome, reason }) =>
+      outcome === "accepted" ? null : `${token.environment}:${outcome}:${reason}`
     )
     .filter(Boolean)
     .at(-1) ?? null;
@@ -768,14 +985,14 @@ serve(async (req) => {
     sent_environments: [
       ...new Set(
         results
-          .filter(({ result }) => result.final.outcome === "accepted")
+          .filter(({ outcome }) => outcome === "accepted")
           .map(({ token }) => token.environment),
       ),
     ].sort(),
     failed_environments: [
       ...new Set(
         results
-          .filter(({ result }) => result.final.outcome !== "accepted")
+          .filter(({ outcome }) => outcome !== "accepted")
           .map(({ token }) => token.environment),
       ),
     ].sort(),
