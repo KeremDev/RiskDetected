@@ -47,6 +47,7 @@ fun ProfileScreen(
     onSupport: () -> Unit = {},
     onNotificationSettings: () -> Unit = {},
     onDeleteAccount: () -> Unit = {},
+    onPaywall: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -73,6 +74,7 @@ fun ProfileScreen(
                     Text(current.profile.displayName)
                     Text(current.profile.tier.name)
                     Button(onClick = { isEditing = true }) { Text("Profili düzenle") }
+                    Button(onClick = onPaywall) { Text("Planı yükselt") }
                     Button(onClick = onManageCompanies) { Text("Firmalarım") }
                     Button(onClick = onSupport) { Text("Destek") }
                     Button(onClick = onNotificationSettings) { Text("Bildirim ayarları") }

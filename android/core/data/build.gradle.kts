@@ -35,5 +35,7 @@ dependencies {
     implementation(libs.supabase.functions)
     implementation(libs.ktor.client.okhttp)
 
+    implementation(libs.revenuecat.purchases)
+
     testImplementation(project(":core:testing"))
 }

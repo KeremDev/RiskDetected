@@ -28,4 +28,13 @@ data class RdEnvironmentConfig(
     val googleWebClientId: String = "200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com",
     val clientPlatform: String = "android",
     val clientCapabilities: Map<String, Boolean> = emptyMap(),
+    // RevenueCat's Android *public* SDK key — same "already public, safe to default here" case
+    // as googleWebClientId above (RDConfig.swift's own doc comment calls the iOS equivalent
+    // "intentionally public"; subscription truth for backend limits is still synced
+    // server-side via the RevenueCat webhook, this key alone can't grant entitlements).
+    // Registered against the real Play Console app (com.riskdetectedan.app) 2026-08-07.
+    val revenueCatPublicKey: String = "goog_IloQRDmtxistmNayBpPfwNbIoYa",
+    // Matches RDConfig.Subscription.offeringIdentifier's default — "" would mean "use
+    // whatever RevenueCat marks as current", but iOS pins an explicit id, so Android does too.
+    val revenueCatOfferingIdentifier: String = "default",
 )

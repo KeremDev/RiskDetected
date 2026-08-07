@@ -66,6 +66,7 @@ fun RdNavHost() {
                 onSupport = { navController.navigate(Support) },
                 onNotificationSettings = { navController.navigate(NotificationSettings) },
                 onDeleteAccount = { navController.navigate(DeleteAccount) },
+                onPaywall = { navController.navigate(Paywall) },
             )
         }
         composable<Companies> { CompanyListScreen() }
