@@ -4,6 +4,7 @@ import com.riskdetectedan.core.common.RdResult
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.storage.storage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
@@ -26,8 +27,10 @@ enum class RiskMethodWire(val wireValue: String) {
  * not this edit screen, so they're intentionally left out of this payload (a real upsert would
  * otherwise null them out — see `nilIfBlank` fallback-to-existing pattern in the Swift source,
  * mirrored here by resolving unspecified fields from the already-fetched [current] profile
- * before sending, never sending a bare partial row). `companyLogoPath` isn't ported — no
- * photo-picker UI exists yet (same gap as company logos elsewhere in this port).
+ * before sending, never sending a bare partial row). `companyLogoPath` — really the user's own
+ * profile logo, stored under the confusingly-named `company_logo_url` column on `profiles`
+ * itself (matches iOS's own naming exactly, not renamed here) — is covered via
+ * [ProfileRepository.uploadProfileLogo] + the [updateProfile] `companyLogoUrl` param.
  */
 @Serializable
 private data class ProfileUpdatePayload(
@@ -38,6 +41,7 @@ private data class ProfileUpdatePayload(
     val title: String?,
     @SerialName("certificate_number") val certificateNumber: String?,
     @SerialName("company_name") val companyName: String?,
+    @SerialName("company_logo_url") val companyLogoUrl: String?,
     val phone: String?,
     @SerialName("preferred_method") val preferredMethod: String?,
 )
@@ -77,6 +81,7 @@ class ProfileRepository @Inject constructor(
         companyName: String,
         phone: String,
         preferredMethod: RiskMethodWire?,
+        companyLogoUrl: String? = current.companyLogoUrl,
     ): RdResult<Unit> = try {
         val trimmedName = fullName.trim()
         val initials = trimmedName
@@ -96,6 +101,7 @@ class ProfileRepository @Inject constructor(
                 title = title.trim().ifBlank { null },
                 certificateNumber = certificateNumber.trim().ifBlank { null },
                 companyName = companyName.trim().ifBlank { null },
+                companyLogoUrl = companyLogoUrl,
                 phone = phone.trim().ifBlank { null },
                 preferredMethod = (preferredMethod?.wireValue) ?: current.preferredMethod,
             ),
@@ -109,5 +115,22 @@ class ProfileRepository @Inject constructor(
             message = t.message ?: "profile_update_failed",
             cause = t,
         )
+    }
+
+    /** Mirrors AuthService.swift's `uploadProfileLogo(_:)` — same bucket ("logos"), same
+     * storage path (`{userId}/profile-logo.jpg`). Stays Context-free like every other upload
+     * repository in this port; the caller supplies ready JPEG bytes. */
+    suspend fun uploadProfileLogo(userId: String, jpegBytes: ByteArray): RdResult<String> = try {
+        val path = "${userId.lowercase()}/profile-logo.jpg"
+        client.storage.from(LOGO_BUCKET).upload(path, jpegBytes) {
+            upsert = true
+        }
+        RdResult.Success(path)
+    } catch (t: Throwable) {
+        RdResult.Failure("profile_logo_upload_failed", "Logo yüklenemedi.", t)
+    }
+
+    private companion object {
+        const val LOGO_BUCKET = "logos"
     }
 }

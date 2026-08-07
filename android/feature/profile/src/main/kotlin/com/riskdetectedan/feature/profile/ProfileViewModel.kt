@@ -57,7 +57,13 @@ class ProfileViewModel @Inject constructor(
 
     /** Mirrors ProfileView.swift's `save()` basic-field subset (see ProfileRepository doc) —
      * reloads the full profile from the server on success rather than trusting the local echo,
-     * matching AuthService.swift's own post-upsert `fetchProfile` call. */
+     * matching AuthService.swift's own post-upsert `fetchProfile` call. [logoJpegBytes], when
+     * present, is uploaded first (same "upload then reference the resulting path" order as
+     * ProfileView.swift's `save()`: `resolvedLogoPath = try await auth.uploadProfileLogo(...)`
+     * happens before `updateProfile` is called) — a failed logo upload aborts the whole save
+     * (matches iOS: the upload is inside the same `do` block the profile update is in, so a
+     * throw there skips the update too), unlike company logos where the company row itself is
+     * still valid without one. */
     fun saveProfile(
         fullName: String,
         title: String,
@@ -65,12 +71,26 @@ class ProfileViewModel @Inject constructor(
         companyName: String,
         phone: String,
         preferredMethod: RiskMethodWire?,
+        logoJpegBytes: ByteArray? = null,
     ) {
         val current = (_state.value as? ProfileUiState.Loaded)?.profile ?: return
         if (_isSaving.value) return
         _isSaving.value = true
         _saveError.value = null
         viewModelScope.launch {
+            val logoUrl = if (logoJpegBytes != null) {
+                when (val upload = profileRepository.uploadProfileLogo(current.id, logoJpegBytes)) {
+                    is RdResult.Success -> upload.value
+                    is RdResult.Failure -> {
+                        _isSaving.value = false
+                        _saveError.value = upload.message
+                        return@launch
+                    }
+                }
+            } else {
+                current.companyLogoUrl
+            }
+
             when (
                 val result = profileRepository.updateProfile(
                     current = current,
@@ -80,6 +100,7 @@ class ProfileViewModel @Inject constructor(
                     companyName = companyName,
                     phone = phone,
                     preferredMethod = preferredMethod,
+                    companyLogoUrl = logoUrl,
                 )
             ) {
                 is RdResult.Success -> {

@@ -1,5 +1,10 @@
 package com.riskdetectedan.feature.profile
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,9 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.designsystem.RdSpacing
+import java.io.ByteArrayOutputStream
 
 /**
  * Reads the actual `profiles` row for the signed-in user via [ProfileViewModel]/
@@ -80,6 +87,20 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
     var certificateNumber by remember { mutableStateOf(profile.certificateNumber ?: "") }
     var companyName by remember { mutableStateOf(profile.companyName ?: "") }
     var phone by remember { mutableStateOf(profile.phone ?: "") }
+    var logoBytes by remember { mutableStateOf<ByteArray?>(null) }
+
+    val context = LocalContext.current
+    val pickLogo = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        context.contentResolver.openInputStream(uri)?.use { stream ->
+            val bitmap = BitmapFactory.decodeStream(stream)
+            if (bitmap != null) {
+                val output = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, output)
+                logoBytes = output.toByteArray()
+            }
+        }
+    }
 
     val isSaving by viewModel.isSaving.collectAsState()
     val saveError by viewModel.saveError.collectAsState()
@@ -104,6 +125,13 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
         )
         OutlinedTextField(companyName, { companyName = it }, label = { Text("Firma") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(phone, { phone = it }, label = { Text("Telefon") }, modifier = Modifier.fillMaxWidth())
+        TextButton(
+            onClick = {
+                pickLogo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            },
+        ) {
+            Text(if (logoBytes != null) "Logo seçildi ✓" else "Logo değiştir (opsiyonel)")
+        }
 
         if (isSaving) {
             CircularProgressIndicator()
@@ -120,6 +148,7 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
                         // repository falls back to the existing profile value when null, so
                         // this save never overwrites it (see ProfileRepository.updateProfile).
                         preferredMethod = null,
+                        logoJpegBytes = logoBytes,
                     )
                 },
             ) { Text("Kaydet") }
