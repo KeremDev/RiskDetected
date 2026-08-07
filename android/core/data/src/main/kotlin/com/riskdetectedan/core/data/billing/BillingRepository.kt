@@ -140,9 +140,14 @@ class BillingRepository @Inject constructor(
         else -> SubscriptionTier.Free
     }
 
-    private fun tierForProductId(productId: String): SubscriptionTier? = when (productId) {
-        "riskdetected_pro_monthly", "riskdetected_pro_yearly" -> SubscriptionTier.Pro
-        "riskdetected_plus_monthly", "riskdetected_plus_yearly" -> SubscriptionTier.Plus
+    /** Prefix match, not exact — Android Billing Library 5+ subscriptions have base plans, and
+     * RevenueCat's `StoreProduct.id` on Google Play can come back as `"$productId:$basePlanId"`
+     * rather than the bare product id iOS's StoreKit uses. Play Console products are still
+     * created with the exact `riskdetected_{plus,pro}_{monthly,yearly}` ids (DEC-14 parity with
+     * the live App Store ids) — this just doesn't assume Android echoes that id back unchanged. */
+    private fun tierForProductId(productId: String): SubscriptionTier? = when {
+        productId.startsWith("riskdetected_pro") -> SubscriptionTier.Pro
+        productId.startsWith("riskdetected_plus") -> SubscriptionTier.Plus
         else -> null
     }
 
