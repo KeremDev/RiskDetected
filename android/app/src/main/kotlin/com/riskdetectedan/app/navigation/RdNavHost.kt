@@ -15,6 +15,7 @@ import com.riskdetectedan.feature.capture.CaptureScreen
 import com.riskdetectedan.feature.onboarding.AuthScreen
 import com.riskdetectedan.feature.onboarding.OnboardingFlow
 import com.riskdetectedan.feature.paywall.PaywallScreen
+import com.riskdetectedan.feature.profile.AccountDeletionScreen
 import com.riskdetectedan.feature.profile.CompanyListScreen
 import com.riskdetectedan.feature.profile.NotificationSettingsScreen
 import com.riskdetectedan.feature.profile.ProfileScreen
@@ -64,11 +65,21 @@ fun RdNavHost() {
                 onManageCompanies = { navController.navigate(Companies) },
                 onSupport = { navController.navigate(Support) },
                 onNotificationSettings = { navController.navigate(NotificationSettings) },
+                onDeleteAccount = { navController.navigate(DeleteAccount) },
             )
         }
         composable<Companies> { CompanyListScreen() }
         composable<Support> { SupportScreen() }
         composable<NotificationSettings> { NotificationSettingsScreen() }
+        composable<DeleteAccount> {
+            AccountDeletionScreen(
+                onDeleted = {
+                    navController.navigate(Onboarding) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+            )
+        }
         composable<Paywall> { PaywallScreen() }
     }
 }

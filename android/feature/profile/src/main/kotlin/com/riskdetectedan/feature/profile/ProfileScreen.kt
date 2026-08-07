@@ -25,6 +25,7 @@ fun ProfileScreen(
     onManageCompanies: () -> Unit = {},
     onSupport: () -> Unit = {},
     onNotificationSettings: () -> Unit = {},
+    onDeleteAccount: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -45,6 +46,7 @@ fun ProfileScreen(
                 Button(onClick = onManageCompanies) { Text("Firmalarım") }
                 Button(onClick = onSupport) { Text("Destek") }
                 Button(onClick = onNotificationSettings) { Text("Bildirim ayarları") }
+                Button(onClick = onDeleteAccount) { Text("Hesabı sil") }
             }
         }
     }

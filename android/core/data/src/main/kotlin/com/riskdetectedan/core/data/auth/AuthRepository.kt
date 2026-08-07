@@ -34,6 +34,9 @@ class AuthRepository @Inject constructor(
     val currentUserId: String?
         get() = client.auth.currentUserOrNull()?.id
 
+    val currentUserEmail: String?
+        get() = client.auth.currentUserOrNull()?.email
+
     /** Mirrors AuthService.swift's sendEmailOTP — same data contract, see F6. */
     suspend fun sendEmailOtp(email: String, language: RdAppLanguage): RdResult<Unit> = try {
         client.auth.signInWith(OTP) {
