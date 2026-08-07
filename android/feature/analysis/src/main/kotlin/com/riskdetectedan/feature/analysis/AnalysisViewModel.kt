@@ -42,6 +42,20 @@ class AnalysisViewModel @Inject constructor(
     val state: StateFlow<CreateAnalysisUiState> = _state.asStateFlow()
 
     /**
+     * Separate mutable copy of the completed findings list, kept in sync with
+     * [CreateAnalysisUiState.Completed] but independently updatable — [deleteFinding] mutates
+     * this in place instead of reconstructing a new `Completed` state, since the analysisId
+     * inside that state doesn't change and re-fetching the whole findings list after every
+     * single delete would be wasteful (mirrors optimistic local removal; the edge function is
+     * still the source of truth and a failed delete restores the row).
+     */
+    private val _findings = MutableStateFlow<List<Finding>>(emptyList())
+    val findings: StateFlow<List<Finding>> = _findings.asStateFlow()
+
+    private val _deleteError = MutableStateFlow<String?>(null)
+    val deleteError: StateFlow<String?> = _deleteError.asStateFlow()
+
+    /**
      * Full submit flow, mirroring AnalysisService.swift's sequence: create -> upload photo(s)
      * -> invoke `analyze` -> poll for a terminal status. Without a photo, stops after create
      * (matches the backend requiring at least one photo before `analyze` will do anything
@@ -115,6 +129,7 @@ class AnalysisViewModel @Inject constructor(
                         // whole screen over what's likely a transient read error.
                         is RdResult.Failure -> emptyList()
                     }
+                    _findings.value = findings
                     CreateAnalysisUiState.Completed(analysisId, findings)
                 }
                 is AnalysisStatus.Failed ->
@@ -125,5 +140,29 @@ class AnalysisViewModel @Inject constructor(
                     CreateAnalysisUiState.Failed("Analiz beklenmedik şekilde durdu: ${status.status}")
             }
         }
+    }
+
+    /** Mirrors the "delete" branch of mutate-analysis-finding (see FindingsRepository). Removes
+     * the row from [findings] locally on success; leaves it in place and surfaces
+     * [deleteError] on failure (e.g. `finding_version_conflict` if it was already edited
+     * elsewhere) — no auto-retry, matches the edge function's "reload and try again" message. */
+    fun deleteFinding(analysisId: String, finding: Finding) {
+        viewModelScope.launch {
+            when (
+                val result = findingsRepository.deleteFinding(
+                    analysisId = analysisId,
+                    findingId = finding.id,
+                    expectedFindingVersion = finding.findingVersion,
+                )
+            ) {
+                is RdResult.Success ->
+                    _findings.value = _findings.value.filterNot { it.id == finding.id }
+                is RdResult.Failure -> _deleteError.value = result.message
+            }
+        }
+    }
+
+    fun clearDeleteError() {
+        _deleteError.value = null
     }
 }

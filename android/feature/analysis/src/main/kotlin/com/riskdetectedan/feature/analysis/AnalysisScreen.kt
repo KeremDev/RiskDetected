@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,7 +43,23 @@ fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hil
 
     val completed = state as? CreateAnalysisUiState.Completed
     if (completed != null) {
-        FindingsList(analysisId = completed.analysisId, findings = completed.findings)
+        val findings by viewModel.findings.collectAsState()
+        val deleteError by viewModel.deleteError.collectAsState()
+        FindingsList(
+            analysisId = completed.analysisId,
+            findings = findings,
+            onDelete = { finding -> viewModel.deleteFinding(completed.analysisId, finding) },
+        )
+        deleteError?.let { message ->
+            AlertDialog(
+                onDismissRequest = viewModel::clearDeleteError,
+                title = { Text("Bulgu silinemedi") },
+                text = { Text(message) },
+                confirmButton = {
+                    TextButton(onClick = viewModel::clearDeleteError) { Text("Tamam") }
+                },
+            )
+        }
         return
     }
 
@@ -81,7 +99,7 @@ fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hil
 }
 
 @Composable
-private fun FindingsList(analysisId: String, findings: List<Finding>) {
+private fun FindingsList(analysisId: String, findings: List<Finding>, onDelete: (Finding) -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg)) {
         Text(
             if (findings.isEmpty()) {
@@ -91,13 +109,14 @@ private fun FindingsList(analysisId: String, findings: List<Finding>) {
             },
         )
         LazyColumn(modifier = Modifier.padding(top = RdSpacing.sm)) {
-            items(findings) { finding -> FindingRow(finding) }
+            items(findings, key = { it.id }) { finding -> FindingRow(finding, onDelete) }
         }
     }
 }
 
 @Composable
-private fun FindingRow(finding: Finding) {
+private fun FindingRow(finding: Finding, onDelete: (Finding) -> Unit) {
+    var showConfirm by remember { mutableStateOf(false) }
     val level = riskLevelFromRaw(finding.fkBand)
     Row(
         modifier = Modifier
@@ -115,7 +134,30 @@ private fun FindingRow(finding: Finding) {
             Text(finding.title)
             finding.description?.let { Text(it) }
             Text("FK: ${finding.fkScore ?: "—"}  ·  M5: ${finding.m5Score ?: "—"}")
+            Text(
+                "Sil",
+                modifier = Modifier.clickable { showConfirm = true },
+            )
         }
+    }
+
+    if (showConfirm) {
+        AlertDialog(
+            onDismissRequest = { showConfirm = false },
+            title = { Text("Bulguyu sil") },
+            text = { Text("\"${finding.title}\" bulgusu silinsin mi? Bu işlem geri alınamaz.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirm = false
+                        onDelete(finding)
+                    },
+                ) { Text("Evet, sil") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirm = false }) { Text("Vazgeç") }
+            },
+        )
     }
 }
 
