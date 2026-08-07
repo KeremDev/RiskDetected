@@ -8,7 +8,9 @@ import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.auth.providers.builtin.OTP
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import javax.inject.Inject
@@ -30,6 +32,13 @@ class AuthRepository @Inject constructor(
 ) {
     val sessionStatus: StateFlow<SessionStatus>
         get() = client.auth.sessionStatus
+
+    /** [sessionStatus] narrowed to just the authenticated user id (or null) — lets consumers in
+     * modules that don't otherwise depend on supabase-kt's auth types (e.g. `app`, which only
+     * needs "who is signed in", not the full [SessionStatus] sealed hierarchy) react to sign-in/
+     * sign-out without importing `io.github.jan.supabase.auth.status.SessionStatus` themselves. */
+    val currentUserIdFlow: Flow<String?>
+        get() = client.auth.sessionStatus.map { (it as? SessionStatus.Authenticated)?.session?.user?.id }
 
     val currentUserId: String?
         get() = client.auth.currentUserOrNull()?.id

@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.riskdetectedan.app.legal.LegalAcceptanceRecorder
 import com.riskdetectedan.app.navigation.RdNavHost
 import com.riskdetectedan.app.push.PushTokenRegistrar
 import com.riskdetectedan.app.release.ReleaseGate
@@ -35,6 +36,12 @@ class MainActivity : ComponentActivity() {
                     // signed-in session (see its own doc comment for what onNewToken alone
                     // doesn't cover).
                     PushTokenRegistrar()
+                    // No UI — records a background legal-acceptance audit row (consents table)
+                    // for the Turkish document set once signed in. Mirrors AppState.swift's
+                    // session-sink call to LegalAcceptanceService; there is no interactive
+                    // consent screen for Turkish on iOS either (DEC-10 changed the text, not
+                    // this "continued use" model).
+                    LegalAcceptanceRecorder()
                     RdNavHost()
                 }
             }
