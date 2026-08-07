@@ -8,6 +8,7 @@ import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.data.analysis.AnalysisStatus
 import com.riskdetectedan.core.data.analysis.CreateAnalysisRequest
 import com.riskdetectedan.core.data.analysis.Finding
+import com.riskdetectedan.core.data.analysis.FindingPatch
 import com.riskdetectedan.core.data.analysis.FindingsRepository
 import com.riskdetectedan.core.data.analysis.PhotoRepository
 import com.riskdetectedan.core.data.auth.AuthRepository
@@ -54,6 +55,9 @@ class AnalysisViewModel @Inject constructor(
 
     private val _deleteError = MutableStateFlow<String?>(null)
     val deleteError: StateFlow<String?> = _deleteError.asStateFlow()
+
+    private val _updateError = MutableStateFlow<String?>(null)
+    val updateError: StateFlow<String?> = _updateError.asStateFlow()
 
     /**
      * Full submit flow, mirroring AnalysisService.swift's sequence: create -> upload photo(s)
@@ -164,5 +168,38 @@ class AnalysisViewModel @Inject constructor(
 
     fun clearDeleteError() {
         _deleteError.value = null
+    }
+
+    /** Mirrors the "update" branch of mutate-analysis-finding, text-field subset only (see
+     * FindingsRepository/FindingPatch doc comments). Refetches the findings list on success
+     * rather than patching the local row in place — the server also bumps
+     * `finding_version`/recomputes the analysis rollup, and trusting a locally-guessed new
+     * version would risk a spurious `finding_version_conflict` on the *next* edit. */
+    fun updateFinding(analysisId: String, finding: Finding, patch: FindingPatch) {
+        viewModelScope.launch {
+            when (
+                val result = findingsRepository.updateFinding(
+                    analysisId = analysisId,
+                    findingId = finding.id,
+                    expectedFindingVersion = finding.findingVersion,
+                    patch = patch,
+                )
+            ) {
+                is RdResult.Success -> {
+                    _updateError.value = null
+                    when (val refreshed = findingsRepository.fetchFindings(analysisId)) {
+                        is RdResult.Success -> _findings.value = refreshed.value
+                        // Update itself succeeded — keep showing the (now slightly stale) local
+                        // list rather than fail the screen over a transient re-read error.
+                        is RdResult.Failure -> Unit
+                    }
+                }
+                is RdResult.Failure -> _updateError.value = result.message
+            }
+        }
+    }
+
+    fun clearUpdateError() {
+        _updateError.value = null
     }
 }
