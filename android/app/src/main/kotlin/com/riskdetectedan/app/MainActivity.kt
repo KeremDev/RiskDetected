@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.riskdetectedan.app.account.WelcomeEmailSender
 import com.riskdetectedan.app.legal.LegalAcceptanceRecorder
 import com.riskdetectedan.app.navigation.RdNavHost
 import com.riskdetectedan.app.push.PushTokenRegistrar
@@ -42,6 +43,9 @@ class MainActivity : ComponentActivity() {
                     // consent screen for Turkish on iOS either (DEC-10 changed the text, not
                     // this "continued use" model).
                     LegalAcceptanceRecorder()
+                    // No UI — mirrors AppState.swift's sendWelcomeEmailIfPossible(), fires
+                    // (server-deduped) on every authenticated session.
+                    WelcomeEmailSender()
                     RdNavHost()
                 }
             }
