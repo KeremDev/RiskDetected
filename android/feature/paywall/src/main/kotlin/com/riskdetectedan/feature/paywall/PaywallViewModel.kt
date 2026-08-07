@@ -7,12 +7,16 @@ import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.billing.BillingRepository
+import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
+import com.riskdetectedan.core.data.paywall.PaywallEventName
+import com.riskdetectedan.core.data.paywall.PaywallEventRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 sealed interface PaywallUiState {
@@ -33,6 +37,7 @@ sealed interface PaywallUiState {
 class PaywallViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val billingRepository: BillingRepository,
+    private val paywallEventRepository: PaywallEventRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<PaywallUiState>(PaywallUiState.Loading)
@@ -43,6 +48,11 @@ class PaywallViewModel @Inject constructor(
 
     private val _purchaseError = MutableStateFlow<String?>(null)
     val purchaseError: StateFlow<String?> = _purchaseError.asStateFlow()
+
+    // One funnel session per ViewModel instance — mirrors iOS's per-presentation
+    // funnel_session_id (a fresh UUID each time the paywall is shown, reused by every event
+    // fired during that visit).
+    private val funnelSessionId = UUID.randomUUID().toString()
 
     init {
         load()
@@ -80,23 +90,44 @@ class PaywallViewModel @Inject constructor(
                 is RdResult.Failure -> SubscriptionTier.Free
             }
             _state.value = PaywallUiState.Loaded(packages, tier)
+            recordEvent(userId, PaywallEventName.View, selectedTier = tier)
         }
     }
 
     fun purchase(activity: Activity, billingPackage: BillingPackage) {
         if (_isPurchasing.value) return
+        val userId = authRepository.currentUserId ?: return
         _isPurchasing.value = true
         _purchaseError.value = null
         viewModelScope.launch {
+            recordEvent(
+                userId,
+                PaywallEventName.PurchaseStarted,
+                selectedTier = billingPackage.tier,
+                billingPackage = billingPackage,
+            )
             when (val result = billingRepository.purchase(activity, billingPackage)) {
                 is RdResult.Success -> {
                     _isPurchasing.value = false
                     val current = _state.value as? PaywallUiState.Loaded
                     if (current != null) _state.value = current.copy(currentTier = result.value)
+                    recordEvent(
+                        userId,
+                        PaywallEventName.PurchaseSucceeded,
+                        selectedTier = result.value,
+                        billingPackage = billingPackage,
+                    )
                 }
                 is RdResult.Failure -> {
                     _isPurchasing.value = false
                     _purchaseError.value = result.message
+                    recordEvent(
+                        userId,
+                        PaywallEventName.PurchaseFailed,
+                        selectedTier = billingPackage.tier,
+                        billingPackage = billingPackage,
+                        purchaseError = result.message,
+                    )
                 }
             }
         }
@@ -104,9 +135,11 @@ class PaywallViewModel @Inject constructor(
 
     fun restorePurchases() {
         if (_isPurchasing.value) return
+        val userId = authRepository.currentUserId ?: return
         _isPurchasing.value = true
         _purchaseError.value = null
         viewModelScope.launch {
+            recordEvent(userId, PaywallEventName.RestoreTap, selectedTier = null)
             when (val result = billingRepository.restorePurchases()) {
                 is RdResult.Success -> {
                     _isPurchasing.value = false
@@ -118,6 +151,36 @@ class PaywallViewModel @Inject constructor(
                     _purchaseError.value = result.message
                 }
             }
+        }
+    }
+
+    private fun recordEvent(
+        userId: String,
+        event: PaywallEventName,
+        selectedTier: SubscriptionTier?,
+        billingPackage: BillingPackage? = null,
+        purchaseError: String? = null,
+    ) {
+        viewModelScope.launch {
+            paywallEventRepository.record(
+                event = event,
+                userId = userId,
+                funnelSessionId = funnelSessionId,
+                selectedTier = selectedTier,
+                billing = billingPackage?.productId?.let {
+                    when {
+                        it.contains("yearly", ignoreCase = true) -> "yearly"
+                        it.contains("monthly", ignoreCase = true) -> "monthly"
+                        else -> null
+                    }
+                },
+                productIdentifier = billingPackage?.productId,
+                metadata = PaywallEventMetadata(
+                    currentTier = selectedTier?.name?.lowercase() ?: "unknown",
+                    selectedPackageId = billingPackage?.id,
+                    purchaseError = purchaseError,
+                ),
+            )
         }
     }
 
