@@ -75,11 +75,17 @@ fun PaywallScreen(viewModel: PaywallViewModel = hiltViewModel()) {
         }
     }
 
-    if (purchaseError != null) {
+    purchaseError?.let { error ->
         AlertDialog(
             onDismissRequest = viewModel::clearPurchaseError,
-            title = { Text("İşlem tamamlanamadı") },
-            text = { Text(purchaseError ?: "") },
+            title = { Text(error.title) },
+            text = {
+                Column {
+                    Text(error.message)
+                    if (error.action.isNotEmpty()) Text(error.action)
+                    Text(error.supportID)
+                }
+            },
             confirmButton = {
                 TextButton(onClick = viewModel::clearPurchaseError) { Text("Tamam") }
             },

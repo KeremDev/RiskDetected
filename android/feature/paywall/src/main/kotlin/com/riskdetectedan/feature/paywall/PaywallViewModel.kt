@@ -3,8 +3,11 @@ package com.riskdetectedan.feature.paywall
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.revenuecat.purchases.PurchasesTransactionException
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.billing.AppErrorMessage
+import com.riskdetectedan.core.data.billing.AppErrorMessages
 import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
@@ -18,6 +21,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
+
+private const val PURCHASE_CONTEXT = "Satın alma doğrulanamadı"
 
 sealed interface PaywallUiState {
     data object Loading : PaywallUiState
@@ -46,8 +51,8 @@ class PaywallViewModel @Inject constructor(
     private val _isPurchasing = MutableStateFlow(false)
     val isPurchasing: StateFlow<Boolean> = _isPurchasing.asStateFlow()
 
-    private val _purchaseError = MutableStateFlow<String?>(null)
-    val purchaseError: StateFlow<String?> = _purchaseError.asStateFlow()
+    private val _purchaseError = MutableStateFlow<AppErrorMessage?>(null)
+    val purchaseError: StateFlow<AppErrorMessage?> = _purchaseError.asStateFlow()
 
     // One funnel session per ViewModel instance — mirrors iOS's per-presentation
     // funnel_session_id (a fresh UUID each time the paywall is shown, reused by every event
@@ -120,7 +125,18 @@ class PaywallViewModel @Inject constructor(
                 }
                 is RdResult.Failure -> {
                     _isPurchasing.value = false
-                    _purchaseError.value = result.message
+                    val cause = result.cause
+                    if (cause is PurchasesTransactionException && cause.userCancelled) {
+                        // Silent, matches iOS's `catch is CancellationError` in
+                        // InAppPaywallView.swift — no error UI, no purchase_failed event, the
+                        // user just closed the Google Play sheet.
+                        return@launch
+                    }
+                    _purchaseError.value = AppErrorMessages.makePurchase(
+                        cause ?: RuntimeException(result.message),
+                        context = PURCHASE_CONTEXT,
+                        fallbackTitle = PURCHASE_CONTEXT,
+                    )
                     recordEvent(
                         userId,
                         PaywallEventName.PurchaseFailed,
@@ -148,7 +164,11 @@ class PaywallViewModel @Inject constructor(
                 }
                 is RdResult.Failure -> {
                     _isPurchasing.value = false
-                    _purchaseError.value = result.message
+                    _purchaseError.value = AppErrorMessages.makePurchase(
+                        result.cause ?: RuntimeException(result.message),
+                        context = "Satın alımlar geri yüklenemedi",
+                        fallbackTitle = "Satın alımlar geri yüklenemedi",
+                    )
                 }
             }
         }
