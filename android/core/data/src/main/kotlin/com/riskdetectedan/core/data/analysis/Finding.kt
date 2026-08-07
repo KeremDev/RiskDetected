@@ -31,8 +31,13 @@ data class Finding(
     val description: String? = null,
     @SerialName("recommended_action") val recommendedAction: String? = null,
     val confidence: Double = 0.0,
+    @SerialName("fk_probability") val fkProbability: Double? = null,
+    @SerialName("fk_frequency") val fkFrequency: Double? = null,
+    @SerialName("fk_severity") val fkSeverity: Double? = null,
     @SerialName("fk_score") val fkScore: Double? = null,
     @SerialName("fk_band") val fkBand: String,
+    @SerialName("m5_probability") val m5Probability: Int? = null,
+    @SerialName("m5_severity") val m5Severity: Int? = null,
     @SerialName("m5_score") val m5Score: Int? = null,
     @SerialName("m5_band") val m5Band: String,
     @SerialName("references_text") val referencesText: String? = null,
@@ -41,15 +46,17 @@ data class Finding(
 )
 
 /**
- * Mirrors mutate-analysis-finding/index.ts's text-field patch branch — title/category/
- * description/recommended_action/references_text/root_cause_text only. The fk_/m5_ risk-score
- * fields (probability/frequency/severity re-scoring, which drive the server-recomputed
- * fk_band/m5_band) and `recommended_measures` (structured multi-measure list, which overrides
- * recommendedAction when present) aren't ported — a numeric risk-rescoring UI is a bigger,
- * more deliberate design surface than a first text-edit slice needs, and isn't silently
- * dropped: findings keep whatever risk score the AI/analysis already assigned. `title` and
- * `description` mirror the edge function's `requiredText` validation (non-blank, else
- * `validation_failed`) client-side too, so a blank save fails fast instead of round-tripping.
+ * Mirrors mutate-analysis-finding/index.ts's "update" patch shape — text fields plus the
+ * fk_/m5_ risk-rescoring numbers. `recommended_measures` (structured multi-measure list, which
+ * overrides recommendedAction server-side when present) still isn't ported — a bigger,
+ * separate surface than a rescoring slice needs. `title`/`description` mirror the edge
+ * function's `requiredText` validation client-side (non-blank); fk_probability/fk_frequency/
+ * fk_severity and m5_probability/m5_severity are validated against the exact same allowed sets
+ * the server checks (`FK_PROBABILITY_VALUES`/`FK_FREQUENCY_VALUES`/`FK_SEVERITY_VALUES`, 1-5 for
+ * m5) — [FindingsRepository.updateFinding] fails fast on a save that's guaranteed to 400 rather
+ * than round-tripping. Sending only probability/frequency/severity and never a band matches the
+ * "backend is sole authority" invariant — the server recomputes fk_band/m5_band, this client
+ * never does (same reasoning [Finding]'s own doc comment gives for the read side).
  */
 @Serializable
 data class FindingPatch(
@@ -59,6 +66,11 @@ data class FindingPatch(
     @SerialName("recommended_action") val recommendedAction: String? = null,
     @SerialName("references_text") val referencesText: String? = null,
     @SerialName("root_cause_text") val rootCauseText: String? = null,
+    @SerialName("fk_probability") val fkProbability: Double? = null,
+    @SerialName("fk_frequency") val fkFrequency: Double? = null,
+    @SerialName("fk_severity") val fkSeverity: Double? = null,
+    @SerialName("m5_probability") val m5Probability: Int? = null,
+    @SerialName("m5_severity") val m5Severity: Int? = null,
 )
 
 @Serializable
@@ -82,6 +94,14 @@ private data class MutateFindingResult(
     val error: String? = null,
     val message: String? = null,
 )
+
+/** Exact mirror of mutate-analysis-finding/index.ts's FK_PROBABILITY_VALUES/FK_FREQUENCY_VALUES/
+ * FK_SEVERITY_VALUES (classic Fine-Kinney option sets) — checked in the SDK, not guessed. */
+object FineKinneyValues {
+    val PROBABILITY = listOf(0.2, 0.5, 1.0, 3.0, 6.0, 10.0)
+    val FREQUENCY = listOf(0.5, 1.0, 2.0, 3.0, 6.0, 10.0)
+    val SEVERITY = listOf(1.0, 3.0, 7.0, 15.0, 40.0, 100.0)
+}
 
 @Singleton
 class FindingsRepository @Inject constructor(
@@ -167,6 +187,21 @@ class FindingsRepository @Inject constructor(
         }
         if (patch.description != null && patch.description.isBlank()) {
             return RdResult.Failure("validation_failed", "Açıklama boş olamaz.")
+        }
+        if (patch.fkProbability != null && patch.fkProbability !in FineKinneyValues.PROBABILITY) {
+            return RdResult.Failure("validation_failed", "Geçersiz olasılık değeri.")
+        }
+        if (patch.fkFrequency != null && patch.fkFrequency !in FineKinneyValues.FREQUENCY) {
+            return RdResult.Failure("validation_failed", "Geçersiz frekans değeri.")
+        }
+        if (patch.fkSeverity != null && patch.fkSeverity !in FineKinneyValues.SEVERITY) {
+            return RdResult.Failure("validation_failed", "Geçersiz şiddet değeri.")
+        }
+        if (patch.m5Probability != null && patch.m5Probability !in 1..5) {
+            return RdResult.Failure("validation_failed", "Olasılık 1-5 arasında olmalı.")
+        }
+        if (patch.m5Severity != null && patch.m5Severity !in 1..5) {
+            return RdResult.Failure("validation_failed", "Şiddet 1-5 arasında olmalı.")
         }
         return try {
             val result = client.functions.invoke(

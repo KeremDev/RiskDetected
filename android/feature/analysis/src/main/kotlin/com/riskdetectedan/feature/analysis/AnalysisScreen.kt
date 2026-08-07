@@ -2,14 +2,18 @@ package com.riskdetectedan.feature.analysis
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,10 +28,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.analysis.FindingPatch
+import com.riskdetectedan.core.data.analysis.FineKinneyValues
 import com.riskdetectedan.core.designsystem.RdRadius
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.backgroundColor
@@ -193,20 +199,27 @@ private fun FindingRow(finding: Finding, onDelete: (Finding) -> Unit, onUpdate: 
     }
 }
 
-/** Text-field-only edit surface, matching what [FindingPatch]/`FindingsRepository.updateFinding`
- * actually sends — no fk_/m5_ risk-rescoring controls (see those doc comments for why). */
+/** Text fields plus fk_/m5_ risk-rescoring pickers, matching the full [FindingPatch] shape
+ * `FindingsRepository.updateFinding` sends. Both method's numbers stay editable regardless of
+ * the profile's preferredMethod — the finding row always carries both fk_* and m5_* columns
+ * (see [Finding]'s doc comment), and the existing read-only display already shows both scores. */
 @Composable
 private fun FindingEditDialog(finding: Finding, onDismiss: () -> Unit, onSave: (FindingPatch) -> Unit) {
     var title by remember { mutableStateOf(finding.title) }
     var category by remember { mutableStateOf(finding.category ?: "") }
     var description by remember { mutableStateOf(finding.description ?: "") }
     var recommendedAction by remember { mutableStateOf(finding.recommendedAction ?: "") }
+    var fkProbability by remember { mutableStateOf(finding.fkProbability) }
+    var fkFrequency by remember { mutableStateOf(finding.fkFrequency) }
+    var fkSeverity by remember { mutableStateOf(finding.fkSeverity) }
+    var m5Probability by remember { mutableStateOf(finding.m5Probability) }
+    var m5Severity by remember { mutableStateOf(finding.m5Severity) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Bulguyu düzenle") },
         text = {
-            Column {
+            Column(modifier = Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
                 OutlinedTextField(title, { title = it }, label = { Text("Başlık") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(category, { category = it }, label = { Text("Kategori") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(
@@ -221,6 +234,22 @@ private fun FindingEditDialog(finding: Finding, onDismiss: () -> Unit, onSave: (
                     label = { Text("Önerilen aksiyon") },
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                Text("Fine-Kinney — Olasılık (O)", modifier = Modifier.padding(top = RdSpacing.md))
+                NumberOptionRow(FineKinneyValues.PROBABILITY, fkProbability) { fkProbability = it }
+                Text("Fine-Kinney — Frekans (F)", modifier = Modifier.padding(top = RdSpacing.sm))
+                NumberOptionRow(FineKinneyValues.FREQUENCY, fkFrequency) { fkFrequency = it }
+                Text("Fine-Kinney — Şiddet (Ş)", modifier = Modifier.padding(top = RdSpacing.sm))
+                NumberOptionRow(FineKinneyValues.SEVERITY, fkSeverity) { fkSeverity = it }
+
+                Text("5x5 Matris — Olasılık", modifier = Modifier.padding(top = RdSpacing.md))
+                NumberOptionRow((1..5).map { it.toDouble() }, m5Probability?.toDouble()) {
+                    m5Probability = it.toInt()
+                }
+                Text("5x5 Matris — Şiddet", modifier = Modifier.padding(top = RdSpacing.sm))
+                NumberOptionRow((1..5).map { it.toDouble() }, m5Severity?.toDouble()) {
+                    m5Severity = it.toInt()
+                }
             }
         },
         confirmButton = {
@@ -232,6 +261,11 @@ private fun FindingEditDialog(finding: Finding, onDismiss: () -> Unit, onSave: (
                             category = category,
                             description = description,
                             recommendedAction = recommendedAction,
+                            fkProbability = fkProbability,
+                            fkFrequency = fkFrequency,
+                            fkSeverity = fkSeverity,
+                            m5Probability = m5Probability,
+                            m5Severity = m5Severity,
                         ),
                     )
                 },
@@ -241,6 +275,34 @@ private fun FindingEditDialog(finding: Finding, onDismiss: () -> Unit, onSave: (
             TextButton(onClick = onDismiss) { Text("Vazgeç") }
         },
     )
+}
+
+/** A row of tappable chips for a fixed set of allowed numeric values — matches the discrete
+ * option sets both Fine-Kinney (6 values each) and the 5x5 matrix (1-5) actually allow; there's
+ * no free-text entry here on purpose, an out-of-set value is guaranteed a server 400. */
+@Composable
+private fun NumberOptionRow(options: List<Double>, selected: Double?, onSelect: (Double) -> Unit) {
+    Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+        options.forEach { value ->
+            val label = if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
+            val isSelected = selected == value
+            Text(
+                text = label,
+                modifier = Modifier
+                    .padding(end = RdSpacing.xs)
+                    .background(
+                        if (isSelected) {
+                            androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            androidx.compose.ui.graphics.Color.Transparent
+                        },
+                        RoundedCornerShape(RdRadius.xs),
+                    )
+                    .clickable { onSelect(value) }
+                    .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xxs),
+            )
+        }
+    }
 }
 
 @Composable
