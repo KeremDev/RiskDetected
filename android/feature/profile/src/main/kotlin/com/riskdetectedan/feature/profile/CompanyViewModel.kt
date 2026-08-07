@@ -46,16 +46,33 @@ class CompanyViewModel @Inject constructor(
         }
     }
 
-    fun addCompany(draft: CompanyDraft) {
+    /** [logoJpegBytes] is optional and, when present, uploaded *after* the company row exists
+     * — mirrors CompanyService.swift's flow (uploadLogo needs a real companyID for its storage
+     * path), so a new company is always created first without a logo, then updated with
+     * `logo_path` once the upload succeeds. A failed logo upload doesn't roll back the company
+     * itself (matches iOS: the company is a real, usable row either way; the logo is best-effort). */
+    fun addCompany(draft: CompanyDraft, logoJpegBytes: ByteArray? = null) {
         val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
-            when (val result = companyRepository.saveCompany(userId, draft)) {
-                is RdResult.Success -> {
-                    _saveError.value = null
-                    load()
+            val saved = when (val result = companyRepository.saveCompany(userId, draft)) {
+                is RdResult.Success -> result.value
+                is RdResult.Failure -> {
+                    _saveError.value = result.message
+                    return@launch
                 }
-                is RdResult.Failure -> _saveError.value = result.message
             }
+            _saveError.value = null
+
+            if (logoJpegBytes != null) {
+                when (val upload = companyRepository.uploadLogo(userId, saved.id, logoJpegBytes)) {
+                    is RdResult.Success -> companyRepository.saveCompany(
+                        userId,
+                        draft.copy(id = saved.id, logoPath = upload.value),
+                    )
+                    is RdResult.Failure -> _saveError.value = upload.message
+                }
+            }
+            load()
         }
     }
 }

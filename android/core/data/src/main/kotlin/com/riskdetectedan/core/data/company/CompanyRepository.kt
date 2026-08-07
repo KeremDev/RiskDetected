@@ -5,6 +5,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.storage.storage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
@@ -98,6 +99,21 @@ class CompanyRepository @Inject constructor(
         }
     }
 
+    /** Mirrors CompanyService.swift's `uploadLogo(_:companyID:)` — same bucket ("logos"), same
+     * storage path convention (`{userId}/companies/{companyId}/logo.jpg`). The caller (feature
+     * layer, which has an Android `Context`/`ContentResolver` for reading a picked gallery
+     * image) is responsible for decoding/re-encoding to JPEG bytes before calling this — this
+     * repository stays platform-storage-only, matching [PhotoRepository]/[ReportsRepository]. */
+    suspend fun uploadLogo(userId: String, companyId: String, jpegBytes: ByteArray): RdResult<String> = try {
+        val path = "${userId.lowercase()}/companies/${companyId.lowercase()}/logo.jpg"
+        client.storage.from(LOGO_BUCKET).upload(path, jpegBytes) {
+            upsert = true
+        }
+        RdResult.Success(path)
+    } catch (t: Throwable) {
+        RdResult.Failure("company_logo_upload_failed", "Firma logosu yüklenemedi.", t)
+    }
+
     suspend fun archiveCompany(companyId: String): RdResult<Unit> = try {
         client.postgrest.from("companies")
             .update(mapOf("is_archived" to true)) {
@@ -122,5 +138,9 @@ class CompanyRepository @Inject constructor(
                 "Bu firma adı zaten listende var."
             else -> "Firma kaydedilemedi."
         }
+    }
+
+    private companion object {
+        const val LOGO_BUCKET = "logos"
     }
 }
