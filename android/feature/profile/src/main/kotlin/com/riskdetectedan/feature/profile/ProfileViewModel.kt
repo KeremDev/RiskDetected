@@ -7,6 +7,8 @@ import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.RiskMethodWire
 import com.riskdetectedan.core.data.profile.UserProfile
+import com.riskdetectedan.core.data.progress.ProfessionalProgressRepository
+import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,10 +27,17 @@ sealed interface ProfileUiState {
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
+    private val professionalProgressRepository: ProfessionalProgressRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val state: StateFlow<ProfileUiState> = _state.asStateFlow()
+
+    // Null while loading/unavailable — the card that reads this just doesn't render rather than
+    // showing an error, matching this feature's non-blocking nature on iOS too (a progress fetch
+    // failure there just logs and returns nil, never surfaces an error to the user).
+    private val _progress = MutableStateFlow<ProfessionalProgressSummary?>(null)
+    val progress: StateFlow<ProfessionalProgressSummary?> = _progress.asStateFlow()
 
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
@@ -51,6 +60,12 @@ class ProfileViewModel @Inject constructor(
             _state.value = when (val result = profileRepository.fetchProfile(userId)) {
                 is RdResult.Success -> ProfileUiState.Loaded(result.value)
                 is RdResult.Failure -> ProfileUiState.Failed(result.message)
+            }
+        }
+        viewModelScope.launch {
+            when (val result = professionalProgressRepository.fetchSummary(userId)) {
+                is RdResult.Success -> _progress.value = result.value
+                is RdResult.Failure -> Unit // non-blocking, see _progress's doc comment
             }
         }
     }

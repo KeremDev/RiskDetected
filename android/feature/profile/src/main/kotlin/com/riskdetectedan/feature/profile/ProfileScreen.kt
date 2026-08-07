@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.RadioButton
 import com.riskdetectedan.core.data.profile.RiskMethodWire
 import com.riskdetectedan.core.data.profile.UserProfile
+import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
 import com.riskdetectedan.core.designsystem.RdSpacing
 import java.io.ByteArrayOutputStream
 
@@ -70,9 +71,11 @@ fun ProfileScreen(
                     onDone = { isEditing = false },
                 )
             } else {
+                val progress by viewModel.progress.collectAsState()
                 Column {
                     Text(current.profile.displayName)
                     Text(current.profile.tier.name)
+                    progress?.let { ProfessionalProgressSection(it) }
                     Button(onClick = { isEditing = true }) { Text("Profili düzenle") }
                     Button(onClick = onPaywall) { Text("Planı yükselt") }
                     Button(onClick = onManageCompanies) { Text("Firmalarım") }
@@ -81,6 +84,43 @@ fun ProfileScreen(
                     Button(onClick = onDeleteAccount) { Text("Hesabı sil") }
                 }
             }
+        }
+    }
+}
+
+/**
+ * First functional slice of ProfessionalProgress (mirrors `ProfessionalProgressHomeCard.swift`/
+ * `ProfileSection.swift` in scope, not layout — plain Text list, same "functional skeleton
+ * first" pass every other screen got). Shows the title/MDP core loop (current title, progress
+ * toward the next one, top competencies by signal count) and the weekly summary when the server
+ * has computed one. Deliberately NOT ported in this slice: badge/message UI (unlock celebration
+ * sheet, mark-seen taps — `pendingCelebration` is exposed on the model but nothing reads it
+ * yet), the competency map's visual chart, the full titles-ladder catalog sheet. All three are
+ * presentation-only additions on top of data that's already correctly fetched — deferred to the
+ * visual-design pass, not a functional gap.
+ */
+@Composable
+private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary) {
+    Column(modifier = Modifier.padding(vertical = RdSpacing.sm)) {
+        Text("${progress.currentTitle.label} · ${progress.profile.totalMdp} MDP")
+        progress.nextTitle?.let { next ->
+            Text("Sıradaki: ${next.label} (${progress.nextTitleRemaining} MDP kaldı)")
+        }
+        Text("${progress.profile.totalAnalyses} analiz · ${progress.profile.totalReports} rapor · ${progress.profile.activeDays} aktif gün")
+        val topCompetencies = progress.topCompetencies.take(3)
+        if (topCompetencies.isNotEmpty()) {
+            Text(
+                "En güçlü alanlar: " +
+                    topCompetencies.joinToString(", ") { stat ->
+                        "${stat.competency?.label ?: stat.competencyKey} (${stat.score})"
+                    },
+            )
+        }
+        progress.weeklySummary?.let { weekly ->
+            Text(
+                weekly.messageTitle
+                    ?: "Bu hafta: ${weekly.analysesCount} analiz, ${weekly.reportsCount} rapor",
+            )
         }
     }
 }
