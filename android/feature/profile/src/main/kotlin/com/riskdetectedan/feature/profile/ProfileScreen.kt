@@ -3,22 +3,33 @@ package com.riskdetectedan.feature.profile
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.designsystem.RdSpacing
 
 /**
- * First real (non-placeholder) render in feature:profile — reads the actual `profiles` row
- * for the signed-in user via [ProfileViewModel]/`ProfileRepository`. Layout/fields still far
- * short of App/Views/Profile/ProfileView.swift; this proves the read path end to end first.
+ * Reads the actual `profiles` row for the signed-in user via [ProfileViewModel]/
+ * `ProfileRepository`, and now also supports editing the basic-field subset ProfileView.swift's
+ * `save()` covers (fullName/title/certificateNumber/companyName/phone/preferredMethod — see
+ * ProfileRepository's doc comment for what's deliberately left out). Layout still far short of
+ * App/Views/Profile/ProfileView.swift's real design (deferred visual-parity pass).
  */
 @Composable
 fun ProfileScreen(
@@ -29,6 +40,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    var isEditing by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -40,14 +52,89 @@ fun ProfileScreen(
             is ProfileUiState.Loading -> CircularProgressIndicator()
             is ProfileUiState.SignedOut -> Text("Oturum yok")
             is ProfileUiState.Failed -> Text("Profil yüklenemedi: ${current.message}")
-            is ProfileUiState.Loaded -> Column {
-                Text(current.profile.displayName)
-                Text(current.profile.tier.name)
-                Button(onClick = onManageCompanies) { Text("Firmalarım") }
-                Button(onClick = onSupport) { Text("Destek") }
-                Button(onClick = onNotificationSettings) { Text("Bildirim ayarları") }
-                Button(onClick = onDeleteAccount) { Text("Hesabı sil") }
+            is ProfileUiState.Loaded -> if (isEditing) {
+                ProfileEditForm(
+                    profile = current.profile,
+                    viewModel = viewModel,
+                    onDone = { isEditing = false },
+                )
+            } else {
+                Column {
+                    Text(current.profile.displayName)
+                    Text(current.profile.tier.name)
+                    Button(onClick = { isEditing = true }) { Text("Profili düzenle") }
+                    Button(onClick = onManageCompanies) { Text("Firmalarım") }
+                    Button(onClick = onSupport) { Text("Destek") }
+                    Button(onClick = onNotificationSettings) { Text("Bildirim ayarları") }
+                    Button(onClick = onDeleteAccount) { Text("Hesabı sil") }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, onDone: () -> Unit) {
+    var fullName by remember { mutableStateOf(profile.fullName ?: "") }
+    var title by remember { mutableStateOf(profile.title ?: "") }
+    var certificateNumber by remember { mutableStateOf(profile.certificateNumber ?: "") }
+    var companyName by remember { mutableStateOf(profile.companyName ?: "") }
+    var phone by remember { mutableStateOf(profile.phone ?: "") }
+
+    val isSaving by viewModel.isSaving.collectAsState()
+    val saveError by viewModel.saveError.collectAsState()
+    var wasSaving by remember { mutableStateOf(false) }
+
+    // Returns to the read-only view once a save finishes without error — mirrors
+    // ProfileView.swift's `save()` calling `onSaved()` (which dismisses the edit sheet) only
+    // on the non-throwing path, never on a caught error.
+    LaunchedEffect(isSaving) {
+        if (wasSaving && !isSaving && saveError == null) onDone()
+        wasSaving = isSaving
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(fullName, { fullName = it }, label = { Text("Ad soyad") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(title, { title = it }, label = { Text("Unvan") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(
+            certificateNumber,
+            { certificateNumber = it },
+            label = { Text("Sertifika no") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(companyName, { companyName = it }, label = { Text("Firma") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(phone, { phone = it }, label = { Text("Telefon") }, modifier = Modifier.fillMaxWidth())
+
+        if (isSaving) {
+            CircularProgressIndicator()
+        } else {
+            Button(
+                onClick = {
+                    viewModel.saveProfile(
+                        fullName = fullName,
+                        title = title,
+                        certificateNumber = certificateNumber,
+                        companyName = companyName,
+                        phone = phone,
+                        // Risk-method choice not surfaced in this first edit-form slice — the
+                        // repository falls back to the existing profile value when null, so
+                        // this save never overwrites it (see ProfileRepository.updateProfile).
+                        preferredMethod = null,
+                    )
+                },
+            ) { Text("Kaydet") }
+        }
+        TextButton(onClick = onDone) { Text("Vazgeç") }
+    }
+
+    if (saveError != null) {
+        AlertDialog(
+            onDismissRequest = viewModel::clearSaveError,
+            title = { Text("Profil kaydedilemedi") },
+            text = { Text(saveError ?: "") },
+            confirmButton = {
+                TextButton(onClick = viewModel::clearSaveError) { Text("Tamam") }
+            },
+        )
     }
 }
