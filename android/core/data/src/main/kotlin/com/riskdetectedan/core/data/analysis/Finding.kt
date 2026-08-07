@@ -22,6 +22,16 @@ import javax.inject.Singleton
  * authority" invariant (master §37) — the client was never supposed to be the one computing
  * risk bands anyway.
  */
+/** Mirrors normalizeMeasures()'s output shape in mutate-analysis-finding/index.ts exactly —
+ * `kind` is only ever "corrective" or "preventive" server-side (anything else is coerced to
+ * "corrective"), `title` max 80 chars, `text` max 900. */
+@Serializable
+data class FindingMeasure(
+    val kind: String = "corrective",
+    val title: String = "",
+    val text: String = "",
+)
+
 @Serializable
 data class Finding(
     val id: String,
@@ -30,6 +40,7 @@ data class Finding(
     val category: String? = null,
     val description: String? = null,
     @SerialName("recommended_action") val recommendedAction: String? = null,
+    @SerialName("recommended_measures") val recommendedMeasures: List<FindingMeasure>? = null,
     val confidence: Double = 0.0,
     @SerialName("fk_probability") val fkProbability: Double? = null,
     @SerialName("fk_frequency") val fkFrequency: Double? = null,
@@ -46,17 +57,18 @@ data class Finding(
 )
 
 /**
- * Mirrors mutate-analysis-finding/index.ts's "update" patch shape — text fields plus the
- * fk_/m5_ risk-rescoring numbers. `recommended_measures` (structured multi-measure list, which
- * overrides recommendedAction server-side when present) still isn't ported — a bigger,
- * separate surface than a rescoring slice needs. `title`/`description` mirror the edge
- * function's `requiredText` validation client-side (non-blank); fk_probability/fk_frequency/
- * fk_severity and m5_probability/m5_severity are validated against the exact same allowed sets
- * the server checks (`FK_PROBABILITY_VALUES`/`FK_FREQUENCY_VALUES`/`FK_SEVERITY_VALUES`, 1-5 for
- * m5) — [FindingsRepository.updateFinding] fails fast on a save that's guaranteed to 400 rather
- * than round-tripping. Sending only probability/frequency/severity and never a band matches the
- * "backend is sole authority" invariant — the server recomputes fk_band/m5_band, this client
- * never does (same reasoning [Finding]'s own doc comment gives for the read side).
+ * Mirrors mutate-analysis-finding/index.ts's "update" patch shape in full — text fields, the
+ * fk_/m5_ risk-rescoring numbers, and `recommended_measures`. `title`/`description` mirror the
+ * edge function's `requiredText` validation client-side (non-blank); fk_probability/
+ * fk_frequency/fk_severity and m5_probability/m5_severity are validated against the exact same
+ * allowed sets the server checks (`FK_PROBABILITY_VALUES`/`FK_FREQUENCY_VALUES`/
+ * `FK_SEVERITY_VALUES`, 1-5 for m5) — [FindingsRepository.updateFinding] fails fast on a save
+ * that's guaranteed to 400 rather than round-tripping. Sending only probability/frequency/
+ * severity and never a band matches the "backend is sole authority" invariant — the server
+ * recomputes fk_band/m5_band, this client never does (same reasoning [Finding]'s own doc
+ * comment gives for the read side). [recommendedMeasures], when non-null, overrides
+ * [recommendedAction] server-side (`normalizeMeasures` sets `recommended_action` to the first
+ * measure's text) — matches the edge function's own precedence, not re-derived client-side.
  */
 @Serializable
 data class FindingPatch(
@@ -64,6 +76,7 @@ data class FindingPatch(
     val category: String? = null,
     val description: String? = null,
     @SerialName("recommended_action") val recommendedAction: String? = null,
+    @SerialName("recommended_measures") val recommendedMeasures: List<FindingMeasure>? = null,
     @SerialName("references_text") val referencesText: String? = null,
     @SerialName("root_cause_text") val rootCauseText: String? = null,
     @SerialName("fk_probability") val fkProbability: Double? = null,
@@ -202,6 +215,12 @@ class FindingsRepository @Inject constructor(
         }
         if (patch.m5Severity != null && patch.m5Severity !in 1..5) {
             return RdResult.Failure("validation_failed", "Şiddet 1-5 arasında olmalı.")
+        }
+        // Mirrors normalizeMeasures()'s own "measures.length === 0 after filtering blanks"
+        // rejection — an all-blank-text list is a guaranteed 400, same reasoning as the other
+        // fast-fail checks above.
+        if (patch.recommendedMeasures != null && patch.recommendedMeasures.none { it.text.isNotBlank() }) {
+            return RdResult.Failure("validation_failed", "En az bir önlem metni girilmeli.")
         }
         return try {
             val result = client.functions.invoke(

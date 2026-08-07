@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.data.analysis.Finding
+import com.riskdetectedan.core.data.analysis.FindingMeasure
 import com.riskdetectedan.core.data.analysis.FindingPatch
 import com.riskdetectedan.core.data.analysis.FineKinneyValues
 import com.riskdetectedan.core.designsystem.RdRadius
@@ -214,6 +215,9 @@ private fun FindingEditDialog(finding: Finding, onDismiss: () -> Unit, onSave: (
     var fkSeverity by remember { mutableStateOf(finding.fkSeverity) }
     var m5Probability by remember { mutableStateOf(finding.m5Probability) }
     var m5Severity by remember { mutableStateOf(finding.m5Severity) }
+    val measures = remember {
+        androidx.compose.runtime.mutableStateListOf(*(finding.recommendedMeasures ?: emptyList()).toTypedArray())
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -250,6 +254,21 @@ private fun FindingEditDialog(finding: Finding, onDismiss: () -> Unit, onSave: (
                 NumberOptionRow((1..5).map { it.toDouble() }, m5Severity?.toDouble()) {
                     m5Severity = it.toInt()
                 }
+
+                Text(
+                    "Yapılandırılmış önlemler (varsa \"Önerilen aksiyon\"ın yerine geçer)",
+                    modifier = Modifier.padding(top = RdSpacing.md),
+                )
+                measures.forEachIndexed { index, measure ->
+                    MeasureEditor(
+                        measure = measure,
+                        onChange = { measures[index] = it },
+                        onRemove = { measures.removeAt(index) },
+                    )
+                }
+                if (measures.size < 8) {
+                    TextButton(onClick = { measures.add(FindingMeasure()) }) { Text("+ Önlem ekle") }
+                }
             }
         },
         confirmButton = {
@@ -261,6 +280,7 @@ private fun FindingEditDialog(finding: Finding, onDismiss: () -> Unit, onSave: (
                             category = category,
                             description = description,
                             recommendedAction = recommendedAction,
+                            recommendedMeasures = measures.ifEmpty { null },
                             fkProbability = fkProbability,
                             fkFrequency = fkFrequency,
                             fkSeverity = fkSeverity,
@@ -302,6 +322,58 @@ private fun NumberOptionRow(options: List<Double>, selected: Double?, onSelect: 
                     .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xxs),
             )
         }
+    }
+}
+
+/** One `recommended_measures` entry — kind toggle (corrective/preventive, the only two values
+ * the server accepts, everything else coerced to "corrective"), title, text. Mirrors
+ * normalizeMeasures()'s 80/900-char limits only insofar as the server will trim silently past
+ * them; not enforced client-side (not worth a counter UI for a limit that fails soft). */
+@Composable
+private fun MeasureEditor(measure: FindingMeasure, onChange: (FindingMeasure) -> Unit, onRemove: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = RdSpacing.xs)
+            .background(
+                androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
+                RoundedCornerShape(RdRadius.xs),
+            )
+            .padding(RdSpacing.sm),
+    ) {
+        Row {
+            listOf("corrective" to "Düzeltici", "preventive" to "Önleyici").forEach { (kind, label) ->
+                val isSelected = measure.kind == kind
+                Text(
+                    text = label,
+                    modifier = Modifier
+                        .padding(end = RdSpacing.xs)
+                        .background(
+                            if (isSelected) {
+                                androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                androidx.compose.ui.graphics.Color.Transparent
+                            },
+                            RoundedCornerShape(RdRadius.xs),
+                        )
+                        .clickable { onChange(measure.copy(kind = kind)) }
+                        .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xxs),
+                )
+            }
+            Text("Kaldır", modifier = Modifier.padding(start = RdSpacing.md).clickable(onClick = onRemove))
+        }
+        OutlinedTextField(
+            measure.title,
+            { onChange(measure.copy(title = it)) },
+            label = { Text("Başlık") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            measure.text,
+            { onChange(measure.copy(text = it)) },
+            label = { Text("Metin") },
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
