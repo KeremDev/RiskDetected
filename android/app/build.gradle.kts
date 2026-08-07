@@ -7,10 +7,15 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.google.services)
 }
 
-// google-services / firebase-crashlytics Gradle plugins land in Faz 7 (FCM) once a real
-// google-services.json exists per variant — do not add them speculatively before that.
+// google-services.json (committed — Firebase's own docs: "does not contain sensitive keys or
+// secrets", same category as the RevenueCat public SDK key) covers both com.riskdetectedan.app
+// (release/qa) and com.riskdetectedan.app.debug as two `client` entries in one file; the
+// google-services plugin picks the matching entry per applicationId at build time, no
+// per-variant file needed. firebase-crashlytics still isn't added — DEC-06/Faz 7 scope, separate
+// from FCM.
 
 // Per-machine secrets (staging/production Supabase URL+anon key) live in local.properties,
 // which is gitignored (android/.gitignore) — never in gradle.properties or committed source.
@@ -112,6 +117,10 @@ dependencies {
     ksp(libs.hilt.android.compiler)
 
     implementation(libs.kotlinx.serialization.json)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     testImplementation(project(":core:testing"))
     androidTestImplementation(platform(libs.compose.bom))

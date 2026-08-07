@@ -37,4 +37,12 @@ data class RdEnvironmentConfig(
     // Matches RDConfig.Subscription.offeringIdentifier's default — "" would mean "use
     // whatever RevenueCat marks as current", but iOS pins an explicit id, so Android does too.
     val revenueCatOfferingIdentifier: String = "default",
+    // Firebase project id (from google-services.json's project_info.project_id) — same shared
+    // "riskdetected" Firebase project iOS already uses (its own APNs/phone-verification setup
+    // predates Android). Stored on push_device_tokens.provider_environment (Android/FCM-only
+    // column — "which Firebase project this token belongs to", per that column's own comment
+    // in the migration) alongside every registered token, matches how iOS's environment column
+    // records the APNs sandbox/production split. Not a secret — the project id also appears
+    // plainly inside the committed google-services.json.
+    val firebaseProjectId: String = "riskdetected",
 )

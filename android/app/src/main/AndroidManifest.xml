@@ -49,5 +49,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- FCM push registration — see RdFirebaseMessagingService's doc comment for what's
+             actually wired vs. still Faz 7 scope (backend FCM sending). -->
+        <service
+            android:name=".push.RdFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>
