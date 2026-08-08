@@ -24,6 +24,18 @@ import kotlinx.serialization.Serializable
  * and pop back to [MainShell]'s photo tray instead, matching iOS's real camera-returns-to-tray flow. */
 @Serializable object CaptureForTray
 
+/** Real port of `AnnotateView.swift`'s per-photo markup step (`showAnnotate`) — reached right
+ * after a camera capture ([CaptureForTray]) or gallery pick ([com.riskdetectedan.app.home
+ * .HomeScreen]'s `onAnnotatePhotos`) lands a photo, before it's added to the shared
+ * [com.riskdetectedan.app.home.PhotoTrayViewModel]. [queuedPaths] carries any remaining
+ * not-yet-annotated photos from the same multi-select gallery pick — real port of iOS's
+ * `queuedAnnotatePhotoIDs` sequential-annotation queue, encoded as nav args instead of a shared
+ * ViewModel since there's no natural owner for that queue's lifetime otherwise. */
+@Serializable data class Annotate(
+    val photoPath: String,
+    val queuedPaths: List<String> = emptyList(),
+)
+
 /** photoPaths empty until Capture/the photo tray hands off files — matches Analysis being
  * reachable directly from Home too (sector-first flow) as well as from Capture (photo-first
  * flow). Supports the real multi-photo flow (Faz O) — up to 3 photos, iOS's own hard cap

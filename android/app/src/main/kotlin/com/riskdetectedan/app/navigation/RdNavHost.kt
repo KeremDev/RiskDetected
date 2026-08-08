@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.riskdetectedan.app.annotate.AnnotateScreen
 import com.riskdetectedan.app.home.PhotoTrayViewModel
 import com.riskdetectedan.feature.analysis.AnalysisScreen
 import com.riskdetectedan.feature.capture.CaptureScreen
@@ -54,20 +55,53 @@ fun RdNavHost() {
                 onBack = { navController.popBackStack() },
             )
         }
-        composable<CaptureForTray> { backStackEntry ->
-            // Same CaptureScreen composable, different wiring — adds its photo to the real
-            // PhotoTraySheet (Faz O) and returns to it, matching iOS's real Home camera-tray
-            // flow. Scoped to MainShell's own back stack entry (not this destination's) so the
-            // same PhotoTrayViewModel instance Home reads from is the one that gets the photo —
-            // same NavBackStackEntry-scoping technique used to fix Faz M's active-tab reset bug.
-            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(MainShell) }
-            val photoTrayViewModel: PhotoTrayViewModel = hiltViewModel(parentEntry)
+        composable<CaptureForTray> {
+            // Same CaptureScreen composable, different wiring — routes its photo through
+            // [Annotate] (real port of `appendPickedPhotos(shouldAnnotate: true)`) instead of
+            // adding it to the tray directly, matching iOS's real camera-then-markup-then-tray
+            // flow. popUpTo(inclusive) replaces this destination with Annotate rather than
+            // stacking on top of it, so Annotate's own popBackStack() (cancel/analyze) lands
+            // straight back on MainShell's tray sheet, not back on the camera.
             CaptureScreen(
                 onPhotoCaptured = { file ->
-                    photoTrayViewModel.addPhoto(file.absolutePath)
-                    navController.popBackStack()
+                    navController.navigate(Annotate(photoPath = file.absolutePath)) {
+                        popUpTo<CaptureForTray> { inclusive = true }
+                    }
                 },
                 onBack = { navController.popBackStack() },
+            )
+        }
+        composable<Annotate> { backStackEntry ->
+            // Scoped to MainShell's own back stack entry, same NavBackStackEntry-scoping
+            // technique as CaptureForTray above — the photo this step produces (or the original,
+            // on cancel) needs to land in the same PhotoTrayViewModel instance Home reads from.
+            val args: Annotate = backStackEntry.toRoute()
+            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(MainShell) }
+            val photoTrayViewModel: PhotoTrayViewModel = hiltViewModel(parentEntry)
+
+            fun advance() {
+                val remaining = args.queuedPaths
+                if (remaining.isEmpty()) {
+                    navController.popBackStack()
+                } else {
+                    navController.navigate(Annotate(photoPath = remaining.first(), queuedPaths = remaining.drop(1))) {
+                        popUpTo<Annotate> { inclusive = true }
+                    }
+                }
+            }
+
+            AnnotateScreen(
+                photoPath = args.photoPath,
+                onCancel = {
+                    // Matches iOS's real onCancel — skipping markup keeps the original photo,
+                    // it doesn't discard it.
+                    photoTrayViewModel.addPhoto(args.photoPath)
+                    advance()
+                },
+                onAnalyze = { annotatedPath ->
+                    photoTrayViewModel.addPhoto(annotatedPath)
+                    advance()
+                },
             )
         }
         composable<Analysis> { backStackEntry ->

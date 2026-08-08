@@ -56,10 +56,13 @@ import java.io.File
  * live `PlanCapabilities` system exists on Android yet (same documented gap as Faz N's canvas
  * tier-gating) — this is the safe/conservative default, not a guess.
  *
- * NOT ported: iOS's per-tile "annotate" button (pencil.tip.crop.circle — draw markup directly on
- * a selected photo before analysis). That's its own large sub-feature with no Android
- * implementation at all yet, explicitly called out as deferred in the Faz M-S plan, not silently
- * dropped — tile controls here are just move-left/move-right/remove.
+ * Every photo added here (camera or gallery) is routed through [com.riskdetectedan.app.annotate
+ * .AnnotateScreen] before it lands in a tile — real port of `appendPickedPhotos(shouldAnnotate:
+ * true)`, wired at the nav layer (`RdNavHost`'s `Annotate` destination + `HomeScreen`'s
+ * `onAnnotatePhotos`), not inside this sheet. NOT ported: a per-tile "re-annotate this photo
+ * again" button (iOS's `pencil.tip.crop.circle` tile control) — tile controls here stay
+ * move-left/move-right/remove, matching this sheet's existing scope; markup happens once at
+ * add-time on both platforms in the common case anyway.
  */
 @Composable
 fun PhotoTraySheet(

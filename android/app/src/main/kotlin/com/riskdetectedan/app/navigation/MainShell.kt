@@ -47,6 +47,9 @@ fun MainShellScreen(navController: NavHostController) {
         when (activeTab) {
             RdTab.Home -> HomeScreen(
                 onNavigateToCamera = { navController.navigate(CaptureForTray) },
+                onAnnotatePhotos = { paths ->
+                    navController.navigate(Annotate(photoPath = paths.first(), queuedPaths = paths.drop(1)))
+                },
                 onStartAnalysis = { canvasIds, analysisMode, paths, sectorId ->
                     navController.navigate(
                         Analysis(photoPaths = paths, canvasIds = canvasIds, analysisMode = analysisMode, sectorId = sectorId),

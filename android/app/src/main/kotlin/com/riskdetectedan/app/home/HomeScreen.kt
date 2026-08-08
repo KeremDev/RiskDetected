@@ -105,6 +105,7 @@ import java.util.UUID
 @Composable
 fun HomeScreen(
     onNavigateToCamera: () -> Unit = {},
+    onAnnotatePhotos: (List<String>) -> Unit = {},
     onStartAnalysis: (canvasIds: List<String>, analysisMode: String, photoPaths: List<String>, sectorId: String?) -> Unit = { _, _, _, _ -> },
     onResumeAnalysis: () -> Unit = {},
     onHistory: () -> Unit = {},
@@ -168,11 +169,14 @@ fun HomeScreen(
     val traySheetState = rememberModalBottomSheetState()
     val sectorSheetState = rememberModalBottomSheetState()
 
+    // Real port of `appendPickedPhotos(images, shouldAnnotate: true, ...)` — every gallery-picked
+    // photo queues through Annotate before it lands in the tray, same as a freshly captured one
+    // (see [onAnnotatePhotos]'s doc comment on the call site).
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(),
     ) { uris ->
         val remaining = maxPhotoCount - trayPhotoPaths.size
-        uris.take(maxOf(0, remaining)).forEach { uri ->
+        val savedPaths = uris.take(maxOf(0, remaining)).mapNotNull { uri ->
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 val bitmap = BitmapFactory.decodeStream(stream)
                 if (bitmap != null) {
@@ -180,10 +184,13 @@ fun HomeScreen(
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
                     val file = File(context.cacheDir, "tray_${UUID.randomUUID()}.jpg")
                     file.writeBytes(output.toByteArray())
-                    photoTrayViewModel.addPhoto(file.absolutePath)
+                    file.absolutePath
+                } else {
+                    null
                 }
             }
         }
+        if (savedPaths.isNotEmpty()) onAnnotatePhotos(savedPaths)
     }
 
     /** Real port of `beginPreAnalysisSelection()` — the real order is sector sheet *first*, then
