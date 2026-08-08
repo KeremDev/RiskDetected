@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
@@ -42,7 +43,15 @@ class MainActivity : ComponentActivity() {
                     // `align` to overlay on top of RdNavHost the way RootView.swift's offline
                     // banner overlays the rest of the app (zIndex above the nav content, not a
                     // layout sibling pushing it down).
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    //
+                    // `safeDrawingPadding()`: `enableEdgeToEdge()` above means every screen draws
+                    // under the system status/navigation bars unless padded — a real, pre-existing,
+                    // app-wide gap (every screenshot taken this whole session shows title text
+                    // overlapping the clock/status icons), caught now because the new onboarding
+                    // RdTopBar's "01 / 04" step label was rendering unreadably under the status
+                    // bar. Fixed centrally here rather than per-screen, since it affects every
+                    // screen in the app, not just onboarding.
+                    Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
                         // No UI of its own — registers/refreshes the FCM token for an already
                         // signed-in session (see its own doc comment for what onNewToken alone
                         // doesn't cover).

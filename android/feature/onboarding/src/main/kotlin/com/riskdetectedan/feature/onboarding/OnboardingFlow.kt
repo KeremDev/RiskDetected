@@ -27,21 +27,25 @@ fun OnboardingFlow(
             selected = state.certificate,
             onSelect = viewModel::setCertificate,
             onNext = viewModel::next,
+            onBack = viewModel::back,
         )
         3 -> OBHazardClassScreen(
             selected = state.hazards,
             onToggle = viewModel::toggleHazard,
             onNext = viewModel::next,
+            onBack = viewModel::back,
         )
         4 -> OBSectorScreen(
             selected = state.sectors,
             onToggle = viewModel::toggleSector,
             onNext = viewModel::next,
+            onBack = viewModel::back,
         )
         5 -> OBFrequencyScreen(
             selected = state.frequency,
             onSelect = viewModel::setFrequency,
             onNext = viewModel::next,
+            onBack = viewModel::back,
         )
         6 -> OBLoadingScreen(onFinished = viewModel::next)
         7 -> OBPlanSummaryScreen(state = state, onNext = viewModel::next)

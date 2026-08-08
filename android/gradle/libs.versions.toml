@@ -51,10 +51,15 @@ androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
+compose-foundation = { module = "androidx.compose.foundation:foundation" }
 compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
+# Only androidx.compose.material:material-icons-core ships with material3 by default (~20
+# icons: ArrowBack/Check/Close). The onboarding visual pass (2026-08-08) needs SF-Symbol-ish
+# icons (person/envelope/shield/hammer/flame/etc.) that aren't in the core set.
+compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 

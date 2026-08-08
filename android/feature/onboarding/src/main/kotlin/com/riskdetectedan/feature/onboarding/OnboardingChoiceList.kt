@@ -1,52 +1,151 @@
 package com.riskdetectedan.feature.onboarding
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.Text
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import com.riskdetectedan.core.designsystem.RdButtonStyle
+import com.riskdetectedan.core.designsystem.RdCard
+import com.riskdetectedan.core.designsystem.RdChipTile
+import com.riskdetectedan.core.designsystem.RdFooter
+import com.riskdetectedan.core.designsystem.RdHeroTile
+import com.riskdetectedan.core.designsystem.RdHeroTint
+import com.riskdetectedan.core.designsystem.RdOnboardingSubtitle
+import com.riskdetectedan.core.designsystem.RdOnboardingTitle
+import com.riskdetectedan.core.designsystem.RdPrimaryButton
+import com.riskdetectedan.core.designsystem.RdSelectionCounter
 import com.riskdetectedan.core.designsystem.RdSpacing
+import com.riskdetectedan.core.designsystem.RdTheme
+import com.riskdetectedan.core.designsystem.RdTopBar
 
-/** Shared shape for every single/multi-select onboarding step — no iOS-parity card/animation
- * styling, just a functional list + continue button, matching this port's established
- * low-fidelity-but-real pattern (see AnalysisScreen's sector picker). */
+enum class RdPickerLayout { List, Grid }
+
+/**
+ * Shared shape for every single/multi-select onboarding step, now matching OBTopBar/OBProgress/
+ * OBCard/OBChipTile/OBSelectionCounter/OBFooter's real visual design (2026-08-08 visual pass) —
+ * this file used to be a plain `LazyColumn`+`Text`+`Button` stand-in (see git history commit
+ * before this one). [layout] picks the picker shape: `List` mirrors OBCard's full-width rows
+ * (Certificate/HazardClass/Frequency), `Grid` mirrors OBSectorView's bespoke 2-column chip tiles
+ * (Sector — the one screen iOS gives a genuinely different picker shape, not reused elsewhere).
+ * Per-item leading icons (`RdCard`/`RdChipTile`'s `icon` param) are NOT populated here — iOS's
+ * exact per-sector/per-hazard icon choices weren't in scope for this pass; documented, not
+ * silently dropped, an easy follow-up once real icon-per-item mapping is decided.
+ */
 @Composable
 fun <T> OnboardingChoiceScreen(
     title: String,
-    subtitle: String? = null,
     items: List<T>,
     isSelected: (T) -> Boolean,
     label: (T) -> String,
     onToggle: (T) -> Unit,
     canContinue: Boolean,
     onContinue: () -> Unit,
+    subtitle: String? = null,
     continueLabel: String = "Devam",
+    multi: Boolean = false,
+    layout: RdPickerLayout = RdPickerLayout.List,
+    step: Int? = null,
+    totalSteps: Int = 4,
+    onBack: (() -> Unit)? = null,
+    heroTint: RdHeroTint = RdHeroTint.Neutral,
+    heroIcon: ImageVector? = null,
+    selectionCounterSuffix: String = "seçildi",
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg)) {
-        Text(title)
-        if (subtitle != null) Text(subtitle)
-        LazyColumn(modifier = Modifier.padding(top = RdSpacing.sm).weight(1f)) {
-            items(items) { item ->
-                val selected = isSelected(item)
-                ListItem(
-                    headlineContent = { Text(if (selected) "✓ ${label(item)}" else label(item)) },
-                    modifier = Modifier.clickable { onToggle(item) },
-                )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(RdTheme.colors.paper),
+    ) {
+        if (step != null) {
+            RdTopBar(step = step, total = totalSteps, onBack = onBack)
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = RdSpacing.lg),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (heroIcon != null) {
+                RdHeroTile(tint = heroTint) {
+                    Icon(heroIcon, contentDescription = null, tint = RdTheme.colors.onyx, modifier = Modifier.padding(4.dp))
+                }
+                Spacer(modifier = Modifier.height(RdSpacing.md))
+            }
+            RdOnboardingTitle(title)
+            if (subtitle != null) {
+                Spacer(modifier = Modifier.height(RdSpacing.xxs))
+                RdOnboardingSubtitle(subtitle)
             }
         }
-        Button(
-            onClick = onContinue,
-            enabled = canContinue,
-            modifier = Modifier.fillMaxWidth().padding(top = RdSpacing.sm),
-        ) {
-            Text(continueLabel)
+
+        Spacer(modifier = Modifier.height(RdSpacing.md))
+        HorizontalDivider(color = RdTheme.colors.line)
+
+        when (layout) {
+            RdPickerLayout.List -> LazyColumn(
+                modifier = Modifier.weight(1f).padding(horizontal = RdSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(RdSpacing.xs, alignment = Alignment.Top),
+                contentPadding = PaddingValues(top = RdSpacing.md, bottom = RdSpacing.md),
+            ) {
+                items(items) { item ->
+                    RdCard(
+                        title = label(item),
+                        onClick = { onToggle(item) },
+                        selected = isSelected(item),
+                        multi = multi,
+                    )
+                }
+            }
+            RdPickerLayout.Grid -> LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.weight(1f).padding(horizontal = RdSpacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(RdSpacing.xs),
+                verticalArrangement = Arrangement.spacedBy(RdSpacing.xs),
+                contentPadding = PaddingValues(top = RdSpacing.md, bottom = RdSpacing.md),
+            ) {
+                items(items) { item ->
+                    RdChipTile(
+                        title = label(item),
+                        onClick = { onToggle(item) },
+                        selected = isSelected(item),
+                    )
+                }
+            }
+        }
+
+        if (multi) {
+            RdSelectionCounter(
+                count = items.count(isSelected),
+                suffix = selectionCounterSuffix,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = RdSpacing.lg),
+            )
+        }
+
+        RdFooter {
+            RdPrimaryButton(
+                text = continueLabel,
+                onClick = onContinue,
+                enabled = canContinue,
+                style = RdButtonStyle.Onyx,
+            )
         }
     }
 }
