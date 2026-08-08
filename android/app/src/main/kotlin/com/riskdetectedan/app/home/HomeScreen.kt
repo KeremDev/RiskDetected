@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
@@ -30,6 +32,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.analysis.AnalysisCanvas
+import com.riskdetectedan.core.data.analysis.DailyQuotaUsage
 import com.riskdetectedan.core.data.analysis.HistoryItem
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.designsystem.RdFontStyle
@@ -75,6 +79,12 @@ import java.util.UUID
  * (canvas, then photos) instead of jumping straight to Capture. Selected canvases still aren't
  * threaded into analysis creation (Faz Q's job). `userTier` defaults to Free (no shared app-wide
  * session/tier state exists yet) — same documented gap as Faz N.
+ *
+ * Faz P (2026-08-08): real daily-quota hint row (mirrors HomeView.swift's `freeQuotaHint`) below
+ * "Fotoğraf çek" — free-tier default the same way `userTier` is (`!SubscriptionTier.Free.isPaid`
+ * is always true here, so the hint always shows, same as every other Faz N/O free-tier default).
+ * Tapping "Fotoğraf çek" while exhausted skips [CanvasSheet] entirely and goes straight to
+ * [onUpgrade], mirroring `isFreeQuotaExhausted && selectedPhotos.isEmpty` → `showQuotaPaywall()`.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,11 +96,14 @@ fun HomeScreen(
     onUpgrade: () -> Unit = {},
     viewModel: HistoryViewModel = hiltViewModel(),
     photoTrayViewModel: PhotoTrayViewModel = hiltViewModel(),
+    quotaViewModel: QuotaViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val trayPhotoPaths by photoTrayViewModel.photoPaths.collectAsState()
+    val quota by quotaViewModel.quota.collectAsState()
+    LaunchedEffect(Unit) { quotaViewModel.refresh() }
     // rememberSaveable (not remember) — same fix as MainShellScreen's activeTab (Faz M): this
     // composable is disposed while CaptureForTray covers it (nav pushes a destination on top of
     // MainShell), so a plain `remember` lost showPhotoTray=true on the way back from the camera,
@@ -148,8 +161,13 @@ fun HomeScreen(
                 icon = Icons.Filled.CameraAlt,
                 iconTint = colors.white,
                 iconBackground = colors.onyx,
-                onClick = { showCanvasSheet = true },
+                onClick = {
+                    if (quota?.isExhausted == true) onUpgrade() else showCanvasSheet = true
+                },
             )
+            if (quota != null) {
+                FreeQuotaHint(quota = quota!!, onClick = { if (quota!!.isExhausted) onUpgrade() })
+            }
             RdListRow(
                 title = "Geçmiş analizler",
                 subtitle = "Tüm analizlerini gör",
@@ -228,6 +246,41 @@ fun HomeScreen(
             )
         }
     }
+}
+
+/** Port of HomeView.swift's `freeQuotaHint` — compact "remaining/limit" badge (onyx normally,
+ * critical when exhausted), title + dynamic subtitle, trailing gift icon. Only tappable (and only
+ * navigates anywhere) when exhausted, same as iOS — a non-exhausted tap does nothing there either. */
+@Composable
+private fun FreeQuotaHint(quota: DailyQuotaUsage, onClick: () -> Unit) {
+    val colors = RdTheme.colors
+    RdListRow(
+        title = "Ücretsiz Analiz Hakkı",
+        subtitle = if (quota.isExhausted) {
+            "Bugünkü hakkın doldu. Daha fazlası için hesabını yükselt."
+        } else {
+            "Günde 1 ücretsiz analiz hakkın hazır."
+        },
+        icon = Icons.Filled.CardGiftcard,
+        iconTint = colors.white,
+        iconBackground = if (quota.isExhausted) colors.critical else colors.onyx,
+        onClick = onClick,
+        trailing = {
+            Box(
+                modifier = Modifier
+                    .size(width = 42.dp, height = 32.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (quota.isExhausted) colors.critical else colors.onyx),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "${quota.remaining}/${quota.limit}",
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.white,
+                )
+            }
+        },
+    )
 }
 
 @Composable
