@@ -80,6 +80,6 @@ fun RdNavHost() {
                 onBack = { navController.popBackStack() },
             )
         }
-        composable<Paywall> { PaywallScreen() }
+        composable<Paywall> { PaywallScreen(onBack = { navController.popBackStack() }) }
     }
 }
