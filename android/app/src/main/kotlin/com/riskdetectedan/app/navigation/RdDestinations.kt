@@ -28,10 +28,15 @@ import kotlinx.serialization.Serializable
  * reachable directly from Home too (sector-first flow) as well as from Capture (photo-first
  * flow). Supports the real multi-photo flow (Faz O) — up to 3 photos, iOS's own hard cap
  * regardless of tier (`PlanCapabilities.safeMaxPhotosPerAnalysis`). */
+/** [resume] = true reaches this route via [com.riskdetectedan.app.home.HomeScreen]'s real port of
+ * `resumeInFlightAnalysisIfNeeded` — an in-flight analysis found for the current user (survived
+ * an app-process death mid-submit/mid-poll) skips the sector picker and jumps straight into
+ * polling for that existing analysis instead of configuring a new one. */
 @Serializable data class Analysis(
     val photoPaths: List<String> = emptyList(),
     val canvasIds: List<String> = listOf("general"),
     val analysisMode: String = "standard",
+    val resume: Boolean = false,
 )
 @Serializable object Companies
 @Serializable object Support

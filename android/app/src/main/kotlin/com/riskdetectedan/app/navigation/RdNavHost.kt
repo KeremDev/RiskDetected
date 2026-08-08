@@ -76,6 +76,7 @@ fun RdNavHost() {
                 photoPaths = args.photoPaths,
                 canvasIds = args.canvasIds,
                 analysisMode = args.analysisMode,
+                resume = args.resume,
                 onBack = { navController.popBackStack() },
             )
         }

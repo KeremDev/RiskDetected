@@ -10,6 +10,8 @@ import com.riskdetectedan.core.data.analysis.CreateAnalysisRequest
 import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.analysis.FindingPatch
 import com.riskdetectedan.core.data.analysis.FindingsRepository
+import com.riskdetectedan.core.data.analysis.InFlightAnalysis
+import com.riskdetectedan.core.data.analysis.InFlightAnalysisStore
 import com.riskdetectedan.core.data.analysis.PhotoRepository
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.error.AppErrorMessage
@@ -42,6 +44,7 @@ class AnalysisViewModel @Inject constructor(
     private val analysisRepository: AnalysisRepository,
     private val photoRepository: PhotoRepository,
     private val findingsRepository: FindingsRepository,
+    private val inFlightStore: InFlightAnalysisStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<CreateAnalysisUiState>(CreateAnalysisUiState.Idle)
@@ -129,6 +132,20 @@ class AnalysisViewModel @Inject constructor(
                 return@launch
             }
 
+            // Real port of runPhotoAnalysis's InFlightAnalysisStore.shared.save — right after
+            // create, before upload/submit, so a process death anywhere past this point (upload,
+            // submit, or during the multi-minute poll) still has a record to resume from. Cleared
+            // at every terminal state below.
+            inFlightStore.save(
+                InFlightAnalysis(
+                    analysisId = analysisId,
+                    userId = userId,
+                    photoCount = files.size,
+                    startedAtMillis = System.currentTimeMillis(),
+                    title = request.title,
+                ),
+            )
+
             _state.value = CreateAnalysisUiState.UploadingPhoto
             val uploadedPaths = mutableListOf<String>()
             for ((index, file) in files.withIndex()) {
@@ -173,38 +190,73 @@ class AnalysisViewModel @Inject constructor(
                 is RdResult.Success -> Unit
             }
 
-            _state.value = CreateAnalysisUiState.Polling(analysisId)
-            _state.value = when (
-                val status = analysisRepository.pollAnalysisStatus(analysisId, photoCount = uploadedPaths.size)
-            ) {
-                is AnalysisStatus.Completed -> {
-                    val findings = when (val result = findingsRepository.fetchFindings(analysisId)) {
-                        is RdResult.Success -> result.value
-                        // A completed analysis with an unreadable findings list is still worth
-                        // showing as completed — surface an empty list rather than fail the
-                        // whole screen over what's likely a transient read error.
-                        is RdResult.Failure -> emptyList()
-                    }
-                    _findings.value = findings
-                    CreateAnalysisUiState.Completed(analysisId, findings)
-                }
-                is AnalysisStatus.Failed ->
-                    CreateAnalysisUiState.Failed(
-                        AppErrorMessages.make(status.message ?: "Analiz başarısız oldu.", context = ANALYSIS_CONTEXT),
-                    )
-                is AnalysisStatus.TimedOut ->
-                    CreateAnalysisUiState.Failed(
-                        AppErrorMessages.make("Analiz zaman aşımına uğradı.", context = ANALYSIS_CONTEXT),
-                    )
-                is AnalysisStatus.InProgress ->
-                    CreateAnalysisUiState.Failed(
-                        AppErrorMessages.make(
-                            "Analiz beklenmedik şekilde durdu: ${status.status}",
-                            context = ANALYSIS_CONTEXT,
-                        ),
-                    )
-            }
+            pollAndHandleResult(analysisId, photoCount = uploadedPaths.size)
         }
+    }
+
+    /**
+     * Shared by the normal create->upload->submit flow and [resumeIfInFlight] — real port of the
+     * status-handling half of `waitForCompletedResult`'s caller. Always clears the in-flight
+     * record on a terminal outcome (mirrors iOS's `InFlightAnalysisStore.shared.clear` calls
+     * inside `waitForCompletedResult` on both the completed and failed paths, plus
+     * `resumeAnalysis`'s caller-side clear).
+     */
+    private suspend fun pollAndHandleResult(analysisId: String, photoCount: Int) {
+        _state.value = CreateAnalysisUiState.Polling(analysisId)
+        val status = analysisRepository.pollAnalysisStatus(analysisId, photoCount = photoCount)
+        // Real port of iOS's clear-call placement: `completed`/`failed` (genuinely terminal
+        // server-side statuses) clear the record. A deadline timeout does NOT clear — the server
+        // may still be working past the client's own wall-clock poll deadline, and leaving the
+        // record lets a later relaunch pick the poll back up (matches waitForCompletedResult
+        // exactly: its post-loop timeout throw has no clear() call, unlike the completed/failed
+        // branches inside the loop).
+        if (status is AnalysisStatus.Completed || status is AnalysisStatus.Failed) {
+            inFlightStore.clear(analysisId)
+        }
+        _state.value = when (status) {
+            is AnalysisStatus.Completed -> {
+                val findings = when (val result = findingsRepository.fetchFindings(analysisId)) {
+                    is RdResult.Success -> result.value
+                    // A completed analysis with an unreadable findings list is still worth
+                    // showing as completed — surface an empty list rather than fail the
+                    // whole screen over what's likely a transient read error.
+                    is RdResult.Failure -> emptyList()
+                }
+                _findings.value = findings
+                CreateAnalysisUiState.Completed(analysisId, findings)
+            }
+            is AnalysisStatus.Failed ->
+                CreateAnalysisUiState.Failed(
+                    AppErrorMessages.make(status.message ?: "Analiz başarısız oldu.", context = ANALYSIS_CONTEXT),
+                )
+            is AnalysisStatus.TimedOut ->
+                CreateAnalysisUiState.Failed(
+                    AppErrorMessages.make("Analiz zaman aşımına uğradı.", context = ANALYSIS_CONTEXT),
+                )
+            is AnalysisStatus.InProgress ->
+                CreateAnalysisUiState.Failed(
+                    AppErrorMessages.make(
+                        "Analiz beklenmedik şekilde durdu: ${status.status}",
+                        context = ANALYSIS_CONTEXT,
+                    ),
+                )
+        }
+    }
+
+    /**
+     * Real port of `resumeInFlightAnalysisIfNeeded` + `resumeAnalysis` — checks for an in-flight
+     * record belonging to [userId] and, if found, jumps straight into polling for it (skips
+     * create/upload/submit entirely, exactly like iOS's `resumeAnalysis` which calls
+     * `waitForCompletedResult` directly). Returns whether a resume actually started, so the
+     * caller (Home, in this port — mirrors iOS's own Home-driven trigger) knows whether to
+     * navigate into the Analysis screen at all.
+     */
+    fun resumeIfInFlight(): Boolean {
+        val userId = authRepository.currentUserId ?: return false
+        val inFlight = inFlightStore.load(userId) ?: return false
+        _state.value = CreateAnalysisUiState.Polling(inFlight.analysisId)
+        viewModelScope.launch { pollAndHandleResult(inFlight.analysisId, photoCount = inFlight.photoCount) }
+        return true
     }
 
     /**
@@ -245,6 +297,7 @@ class AnalysisViewModel @Inject constructor(
         }
         if (markedFailed) {
             photoRepository.deleteUploadedPhotos(userId, analysisId, uploadedPaths)
+            inFlightStore.clear(analysisId)
         }
     }
 

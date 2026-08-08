@@ -43,6 +43,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -88,12 +89,22 @@ fun AnalysisScreen(
     photoPaths: List<String> = emptyList(),
     canvasIds: List<String> = listOf("general"),
     analysisMode: String = "standard",
+    resume: Boolean = false,
     onBack: (() -> Unit)? = null,
     viewModel: AnalysisViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     var selectedSector by remember { mutableStateOf<AnalysisSector?>(null) }
+
+    // Real port of resumeInFlightAnalysisIfNeeded's trigger (Home-driven on iOS; here the caller
+    // navigates straight into this screen with resume=true once it's found an in-flight record —
+    // see MainShell/HomeScreen's onResumeAnalysis wiring). Runs once per composition entry, not
+    // per recomposition — resumeIfInFlight is itself idempotent-safe (a second call just finds no
+    // record once the first has consumed/cleared it), but there's no reason to call it twice.
+    LaunchedEffect(resume) {
+        if (resume) viewModel.resumeIfInFlight()
+    }
 
     val completed = state as? CreateAnalysisUiState.Completed
     if (completed != null) {
@@ -131,7 +142,7 @@ fun AnalysisScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
-        RdScreenHeader(title = "Yeni Analiz", onBack = onBack)
+        RdScreenHeader(title = if (resume) "Analiz devam ediyor" else "Yeni Analiz", onBack = onBack)
 
         Column(
             modifier = Modifier
@@ -139,33 +150,38 @@ fun AnalysisScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = RdSpacing.lg),
         ) {
-            if (photoPaths.isNotEmpty()) {
-                Text(
-                    if (photoPaths.size == 1) {
-                        "Fotoğraf hazır — sektör seçince analiz başlatılacak"
-                    } else {
-                        "${photoPaths.size} fotoğraf hazır — sektör seçince analiz başlatılacak"
-                    },
-                    style = RdFontStyle.Footnote.toTextStyle(),
-                    color = colors.slate,
-                    modifier = Modifier.padding(bottom = RdSpacing.sm),
-                )
-            }
-            Text("Sektör seç", style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
-            Column(
-                modifier = Modifier.padding(top = RdSpacing.sm, bottom = RdSpacing.md),
-                verticalArrangement = Arrangement.spacedBy(RdSpacing.xs),
-            ) {
-                AnalysisSector.entries.forEach { sector ->
-                    RdCard(
-                        title = sector.titleTr,
-                        icon = analysisSectorIcon(sector),
-                        selected = selectedSector == sector,
-                        onClick = {
-                            selectedSector = sector
-                            viewModel.createAnalysis(sector, photoPaths, canvasIds, analysisMode)
+            // Resume mode skips the sector picker entirely — there's no new analysis to
+            // configure, this screen is just re-showing progress for one the server is already
+            // working on (real port of resumeAnalysis's straight-to-polling behavior).
+            if (!resume) {
+                if (photoPaths.isNotEmpty()) {
+                    Text(
+                        if (photoPaths.size == 1) {
+                            "Fotoğraf hazır — sektör seçince analiz başlatılacak"
+                        } else {
+                            "${photoPaths.size} fotoğraf hazır — sektör seçince analiz başlatılacak"
                         },
+                        style = RdFontStyle.Footnote.toTextStyle(),
+                        color = colors.slate,
+                        modifier = Modifier.padding(bottom = RdSpacing.sm),
                     )
+                }
+                Text("Sektör seç", style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
+                Column(
+                    modifier = Modifier.padding(top = RdSpacing.sm, bottom = RdSpacing.md),
+                    verticalArrangement = Arrangement.spacedBy(RdSpacing.xs),
+                ) {
+                    AnalysisSector.entries.forEach { sector ->
+                        RdCard(
+                            title = sector.titleTr,
+                            icon = analysisSectorIcon(sector),
+                            selected = selectedSector == sector,
+                            onClick = {
+                                selectedSector = sector
+                                viewModel.createAnalysis(sector, photoPaths, canvasIds, analysisMode)
+                            },
+                        )
+                    }
                 }
             }
 

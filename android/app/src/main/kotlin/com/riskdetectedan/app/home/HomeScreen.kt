@@ -105,6 +105,7 @@ import java.util.UUID
 fun HomeScreen(
     onNavigateToCamera: () -> Unit = {},
     onStartAnalysis: (canvasIds: List<String>, analysisMode: String, photoPaths: List<String>) -> Unit = { _, _, _ -> },
+    onResumeAnalysis: () -> Unit = {},
     onHistory: () -> Unit = {},
     onReports: () -> Unit = {},
     onProfile: () -> Unit = {},
@@ -115,6 +116,7 @@ fun HomeScreen(
     reportsViewModel: GeneratedReportsViewModel = hiltViewModel(),
     progressViewModel: HomeProgressViewModel = hiltViewModel(),
     tierViewModel: HomeTierViewModel = hiltViewModel(),
+    inFlightResumeViewModel: InFlightResumeViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val context = LocalContext.current
@@ -137,6 +139,12 @@ fun HomeScreen(
         quotaViewModel.refresh()
         progressViewModel.refresh()
         tierViewModel.refresh()
+        // Real port of resumeInFlightAnalysisIfNeeded's trigger — Home checks once per real entry
+        // (not full-screen every recomposition) for an analysis that survived an app-process
+        // death mid-submit/mid-poll, navigating straight into its progress screen instead of
+        // silently losing track of it (the analysis itself never stops server-side either way —
+        // this is purely about not losing the client's own "watching it" UI state).
+        if (inFlightResumeViewModel.hasInFlightAnalysis()) onResumeAnalysis()
     }
     // rememberSaveable (not remember) — same fix as MainShellScreen's activeTab (Faz M): this
     // composable is disposed while CaptureForTray covers it (nav pushes a destination on top of

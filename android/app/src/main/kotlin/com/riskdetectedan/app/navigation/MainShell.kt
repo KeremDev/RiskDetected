@@ -50,6 +50,7 @@ fun MainShellScreen(navController: NavHostController) {
                 onStartAnalysis = { canvasIds, analysisMode, paths ->
                     navController.navigate(Analysis(photoPaths = paths, canvasIds = canvasIds, analysisMode = analysisMode))
                 },
+                onResumeAnalysis = { navController.navigate(Analysis(resume = true)) },
                 onHistory = { activeTab = RdTab.Analyses },
                 onReports = { activeTab = RdTab.Reports },
                 onProfile = { activeTab = RdTab.Profile },
