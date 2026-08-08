@@ -121,6 +121,7 @@ fun HomeScreen(
     val colors = RdTheme.colors
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
+    val recentPhotoPaths by viewModel.photoPaths.collectAsState()
     val trayPhotoPaths by photoTrayViewModel.photoPaths.collectAsState()
     val quota by quotaViewModel.quota.collectAsState()
     val reportsState by reportsViewModel.state.collectAsState()
@@ -315,7 +316,9 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    recentItems.forEach { item -> RecentAnalysisRingCard(item = item, onClick = onHistory) }
+                    recentItems.forEach { item ->
+                        RecentAnalysisRingCard(item = item, photoPath = recentPhotoPaths[item.id], onClick = onHistory)
+                    }
                 }
             }
         }

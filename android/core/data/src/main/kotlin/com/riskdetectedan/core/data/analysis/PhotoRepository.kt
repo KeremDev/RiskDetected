@@ -48,6 +48,16 @@ data class AnalysisPhoto(
     @SerialName("is_primary") val isPrimary: Boolean = false,
 )
 
+/** Decode target for [PhotoRepository.firstPhotoPaths]'s batched query — a different column
+ * subset than [AnalysisPhoto] (needs `analysis_id` to build the map key, doesn't need
+ * `is_primary`). */
+@Serializable
+private data class PhotoPathRow(
+    @SerialName("analysis_id") val analysisId: String,
+    @SerialName("storage_path") val storagePath: String,
+    @SerialName("sequence_index") val sequenceIndex: Int = 1,
+)
+
 @Singleton
 class PhotoRepository @Inject constructor(
     private val client: SupabaseClient,
@@ -66,6 +76,32 @@ class PhotoRepository @Inject constructor(
         RdResult.Success(photos)
     } catch (t: Throwable) {
         RdResult.Failure("photo_list_failed", t.message ?: "photo_list_failed", t)
+    }
+
+    /** Real port of `firstPhotoPaths(analysisIDs:)` — batch-fetches just the first (lowest
+     * `sequence_index`, `storage_path` as tiebreaker — same double `order()` as the Swift query)
+     * photo path per analysis, for list-card thumbnails (Home's recent-analyses ring — see
+     * [com.riskdetectedan.core.data.analysis.AnalysisPhoto]'s sibling doc comment for the
+     * long-past-History-item rationale, same one applies here). Empty input short-circuits to an
+     * empty map without a network call, matching the Swift guard. */
+    suspend fun firstPhotoPaths(analysisIds: List<String>): RdResult<Map<String, String>> {
+        if (analysisIds.isEmpty()) return RdResult.Success(emptyMap())
+        return try {
+            val rows = client.postgrest.from("photos")
+                .select(Columns.list("analysis_id", "storage_path", "sequence_index")) {
+                    filter { isIn("analysis_id", analysisIds) }
+                    order("sequence_index", Order.ASCENDING)
+                    order("storage_path", Order.ASCENDING)
+                }
+                .decodeList<PhotoPathRow>()
+            val paths = LinkedHashMap<String, String>()
+            for (row in rows) {
+                paths.getOrPut(row.analysisId) { row.storagePath }
+            }
+            RdResult.Success(paths)
+        } catch (t: Throwable) {
+            RdResult.Failure("photo_paths_fetch_failed", t.message ?: "photo_paths_fetch_failed", t)
+        }
     }
 
     /** Real port of `photoData(path:requestID:supportID:)` — downloads a previously-uploaded

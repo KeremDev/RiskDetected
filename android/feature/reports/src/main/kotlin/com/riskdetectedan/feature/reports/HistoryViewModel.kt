@@ -70,6 +70,14 @@ class HistoryViewModel @Inject constructor(
     private val _reportFile = MutableStateFlow<ReportFile?>(null)
     val reportFile: StateFlow<ReportFile?> = _reportFile.asStateFlow()
 
+    /** Real port of `loadRecentItems()`'s `firstPhotoPaths(analysisIDs:)` call — analysisId ->
+     * first (lowest sequence_index) Storage path, feeds [com.riskdetectedan.app.home.
+     * RecentAnalysisRingCard]'s thumbnail. Best-effort: a failed fetch just leaves the map empty,
+     * same as iOS's own `catch { paths = [:] }` (a missing thumbnail is not worth failing the
+     * whole recent-analyses section over). */
+    private val _photoPaths = MutableStateFlow<Map<String, String>>(emptyMap())
+    val photoPaths: StateFlow<Map<String, String>> = _photoPaths.asStateFlow()
+
     init {
         load()
     }
@@ -82,9 +90,16 @@ class HistoryViewModel @Inject constructor(
         }
         _state.value = HistoryUiState.Loading
         viewModelScope.launch {
-            _state.value = when (val result = historyRepository.listHistory(userId)) {
-                is RdResult.Success -> HistoryUiState.Loaded(result.value)
-                is RdResult.Failure -> HistoryUiState.Failed(
+            when (val result = historyRepository.listHistory(userId)) {
+                is RdResult.Success -> {
+                    _state.value = HistoryUiState.Loaded(result.value)
+                    // Same prefix(8) scope as iOS's loadRecentItems() — Home's ring row only
+                    // ever shows 8, no point fetching paths for the rest of a 50-row history page.
+                    val recentIds = result.value.take(8).map { it.id }
+                    _photoPaths.value = (photoRepository.firstPhotoPaths(recentIds) as? RdResult.Success)
+                        ?.value.orEmpty()
+                }
+                is RdResult.Failure -> _state.value = HistoryUiState.Failed(
                     AppErrorMessages.make(result.message, context = REPORTS_CONTEXT),
                 )
             }

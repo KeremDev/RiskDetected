@@ -32,13 +32,14 @@ import com.riskdetectedan.core.designsystem.toTextStyle
 /**
  * Real port of `RecentAnalysisCard.swift` — angular-gradient risk ring (critical/high/medium
  * sweep, via [Brush.sweepGradient]) around a photo circle, bottom-trailing capsule badge
- * (warning-triangle icon + finding count). Simplified, documented: no real photo inside the ring
- * — [HistoryItem] carries no Storage path/signed-URL (no photo-thumbnail-fetch system exists on
- * Android yet, same gap noted since the Faz M-S plan closed) — a risk-level-tinted icon fills the
- * circle instead of the real site photo.
+ * (warning-triangle icon + finding count). [photoPath] (from [com.riskdetectedan.feature.reports.
+ * HistoryViewModel]'s real `firstPhotoPaths` fetch, closing a previously-documented gap) renders
+ * the real site photo via [AnalysisThumbnailImage] when present; the risk-level-tinted initials
+ * chip stays underneath as the loading/no-photo fallback, same layering as iOS's `AnalysisThumbnail`
+ * over `RDPlaceholderPhoto`.
  */
 @Composable
-fun RecentAnalysisRingCard(item: HistoryItem, onClick: () -> Unit) {
+fun RecentAnalysisRingCard(item: HistoryItem, photoPath: String? = null, onClick: () -> Unit) {
     val colors = RdTheme.colors
     val level = riskLevelFromRaw(item.riskBand)
     val ringSize = 94.dp
@@ -71,6 +72,7 @@ fun RecentAnalysisRingCard(item: HistoryItem, onClick: () -> Unit) {
                 contentAlignment = Alignment.Center,
             ) {
                 Text(item.title.take(2).uppercase(), style = RdFontStyle.Callout.toTextStyle(), color = level.color())
+                AnalysisThumbnailImage(path = photoPath, modifier = Modifier.clip(CircleShape))
             }
         }
         Row(
