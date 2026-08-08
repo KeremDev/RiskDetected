@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,14 +41,20 @@ import java.io.File
  * see [com.riskdetectedan.core.data.analysis.HistoryItem]'s doc comment for the mirrored iOS
  * mapping). Real structure ported: [RdListRow] + [RdRiskChip] for each row, [RdEmptyState] for
  * the empty-list case (none of the History/Reports/Company screens had one before this pass).
- * Report generation ("Excel oluştur") behavior and the system-chooser hand-off are unchanged —
- * pure UI-layer pass, same as every other screen in this redesign.
+ * Report generation ("Excel oluştur"/"PDF oluştur") and the system-chooser hand-off are unchanged
+ * — pure UI-layer pass, same as every other screen in this redesign.
+ *
+ * "PDF oluştur" (added 2026-08-08, DEC-09): real on-device PDF report generation, see
+ * [HistoryViewModel.generatePdfReport]'s doc comment. Uses the same [LaunchedEffect]/FileProvider
+ * hand-off as the Excel button — [HistoryViewModel.reportFile] doesn't distinguish the two, a
+ * generated file is a generated file regardless of which flow produced it.
  */
 @Composable
 fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hiltViewModel()) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     val generatingId by viewModel.generatingReportForId.collectAsState()
+    val generatingPdfId by viewModel.generatingPdfForId.collectAsState()
     val reportError by viewModel.reportError.collectAsState()
     val reportFile by viewModel.reportFile.collectAsState()
     val context = LocalContext.current
@@ -100,7 +107,9 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
                                 HistoryRow(
                                     item = item,
                                     isGenerating = generatingId == item.id,
+                                    isGeneratingPdf = generatingPdfId == item.id,
                                     onGenerateReport = { viewModel.generateReport(item) },
+                                    onGeneratePdf = { viewModel.generatePdfReport(item) },
                                 )
                             }
                         }
@@ -123,7 +132,13 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
 }
 
 @Composable
-private fun HistoryRow(item: HistoryItem, isGenerating: Boolean, onGenerateReport: () -> Unit) {
+private fun HistoryRow(
+    item: HistoryItem,
+    isGenerating: Boolean,
+    isGeneratingPdf: Boolean,
+    onGenerateReport: () -> Unit,
+    onGeneratePdf: () -> Unit,
+) {
     val colors = RdTheme.colors
     val level = riskLevelFromRaw(item.riskBand)
     RdListRow(
@@ -134,13 +149,23 @@ private fun HistoryRow(item: HistoryItem, isGenerating: Boolean, onGenerateRepor
                 RdRiskChip(level = level)
                 // Report generation needs a completed, AI-scored analysis to read findings/photos
                 // from — matches the edge function's own `analysis_not_completed`-style rejection
-                // for non-terminal analyses (see generate-excel-report/index.ts).
+                // for non-terminal analyses (see generate-excel-report/index.ts and
+                // register-report/index.ts, both real-checked, not assumed to be the same).
                 if (item.status == "completed") {
-                    if (isGenerating) {
-                        Text("Oluşturuluyor...", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
-                    } else {
-                        TextButton(onClick = onGenerateReport) {
-                            Text("Excel oluştur", style = RdFontStyle.Caption.toTextStyle())
+                    Row {
+                        if (isGeneratingPdf) {
+                            Text("PDF...", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                        } else {
+                            TextButton(onClick = onGeneratePdf, enabled = !isGenerating) {
+                                Text("PDF oluştur", style = RdFontStyle.Caption.toTextStyle())
+                            }
+                        }
+                        if (isGenerating) {
+                            Text("Oluşturuluyor...", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                        } else {
+                            TextButton(onClick = onGenerateReport, enabled = !isGeneratingPdf) {
+                                Text("Excel oluştur", style = RdFontStyle.Caption.toTextStyle())
+                            }
                         }
                     }
                 }

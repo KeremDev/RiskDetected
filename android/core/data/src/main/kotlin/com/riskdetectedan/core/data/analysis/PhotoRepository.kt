@@ -4,6 +4,8 @@ import android.graphics.BitmapFactory
 import com.riskdetectedan.core.common.RdResult
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -37,10 +39,46 @@ private data class PhotoInsertPayload(
     @SerialName("is_primary") val isPrimary: Boolean,
 )
 
+/** Partial mirror of `AnalysisPhotoRow` — just the columns [com.riskdetectedan.core.data.reports.PdfReportGenerator]
+ * needs to lay out photos on a report page. */
+@Serializable
+data class AnalysisPhoto(
+    @SerialName("storage_path") val storagePath: String,
+    @SerialName("sequence_index") val sequenceIndex: Int = 1,
+    @SerialName("is_primary") val isPrimary: Boolean = false,
+)
+
 @Singleton
 class PhotoRepository @Inject constructor(
     private val client: SupabaseClient,
 ) {
+    /** Real port of `firstPhotoPaths`/the photos-list half of `fetchOptionalPhotos` — ordered by
+     * `sequence_index`, used by on-device PDF report generation to know which photos an
+     * already-completed (possibly long-past) analysis has, since the local capture files are
+     * long gone by the time a report gets (re)generated from History. */
+    suspend fun listPhotos(analysisId: String): RdResult<List<AnalysisPhoto>> = try {
+        val photos = client.postgrest.from("photos")
+            .select(Columns.list("storage_path", "sequence_index", "is_primary")) {
+                filter { eq("analysis_id", analysisId) }
+                order("sequence_index", Order.ASCENDING)
+            }
+            .decodeList<AnalysisPhoto>()
+        RdResult.Success(photos)
+    } catch (t: Throwable) {
+        RdResult.Failure("photo_list_failed", t.message ?: "photo_list_failed", t)
+    }
+
+    /** Real port of `photoData(path:requestID:supportID:)` — downloads a previously-uploaded
+     * photo's bytes back from Storage (the "photos" bucket is private, same authenticated
+     * download pattern [com.riskdetectedan.core.data.reports.ReportsRepository.downloadReportBytes]
+     * already uses for the "reports" bucket). */
+    suspend fun downloadPhoto(storagePath: String): RdResult<ByteArray> = try {
+        val bytes = client.storage.from(BUCKET).downloadAuthenticated(storagePath)
+        RdResult.Success(bytes)
+    } catch (t: Throwable) {
+        RdResult.Failure("photo_download_failed", t.message ?: "photo_download_failed", t)
+    }
+
     /** sequenceIndex is 1-based, matching iOS's `p1.jpg`/`is_primary = sequenceIndex == 1`. */
     suspend fun uploadPhoto(
         userId: String,

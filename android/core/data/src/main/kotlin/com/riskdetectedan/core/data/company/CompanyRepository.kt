@@ -114,6 +114,16 @@ class CompanyRepository @Inject constructor(
         RdResult.Failure("company_logo_upload_failed", "Firma logosu yüklenemedi.", t)
     }
 
+    /** Companion to [uploadLogo] — downloads a company's logo bytes back from Storage, needed
+     * when embedding it in an on-device PDF report cover page (the picked-image bytes aren't
+     * kept around locally past the original upload). */
+    suspend fun downloadLogo(logoPath: String): RdResult<ByteArray> = try {
+        val bytes = client.storage.from(LOGO_BUCKET).downloadAuthenticated(logoPath)
+        RdResult.Success(bytes)
+    } catch (t: Throwable) {
+        RdResult.Failure("company_logo_download_failed", "Firma logosu indirilemedi.", t)
+    }
+
     suspend fun archiveCompany(companyId: String): RdResult<Unit> = try {
         client.postgrest.from("companies")
             .update(mapOf("is_archived" to true)) {

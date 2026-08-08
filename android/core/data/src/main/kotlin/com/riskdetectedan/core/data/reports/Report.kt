@@ -9,8 +9,14 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ResponseException
+import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -56,6 +62,40 @@ private data class GenerateExcelReportBody(
 
 @Serializable
 private data class GenerateExcelReportResult(val report: Report? = null, val message: String? = null)
+
+/** Mirrors `RegisterReportBody`'s real shape — checked directly in
+ * `supabase/functions/register-report/index.ts`, not guessed. Only `analysis_id`/`storage_path`/
+ * `file_name`/`mime_type`/`file_size` are actually validated server-side (must be a completed
+ * analysis owned by the caller, `storage_path` must start with `{userId}/{analysisId}/`,
+ * `mime_type` must be exactly `"application/pdf"`, `0 < file_size <= 20MB`) — everything else has
+ * a server-side default. `findings_snapshot_json`/`photos_snapshot_json` are deliberately NOT
+ * sent: traced the function's own source and confirmed it re-derives the real stored snapshot
+ * itself via its own `analysis_id`-scoped query (`REPORT_FINDINGS_SELECT`/`REPORT_PHOTOS_SELECT`)
+ * — anything the client sent in those two fields is parsed into the request type but never read
+ * again, so sending them would just be dead weight matching iOS's audit-trail *intent* without
+ * doing anything the server actually uses. */
+@Serializable
+private data class RegisterReportBody(
+    @SerialName("analysis_id") val analysisId: String,
+    val kind: String,
+    val method: String,
+    val title: String,
+    @SerialName("storage_path") val storagePath: String,
+    @SerialName("file_name") val fileName: String,
+    @SerialName("mime_type") val mimeType: String = "application/pdf",
+    @SerialName("file_size") val fileSize: Int,
+    @SerialName("size_bytes") val sizeBytes: Int,
+    @SerialName("page_count") val pageCount: Int,
+    @SerialName("company_id") val companyId: String? = null,
+    @SerialName("report_language") val reportLanguage: String = "tr",
+    @SerialName("client_app_version") val clientAppVersion: String,
+    @SerialName("client_app_build") val clientAppBuild: String,
+    @SerialName("client_platform") val clientPlatform: String,
+    @SerialName("api_contract_version") val apiContractVersion: Int,
+    @SerialName("client_capabilities") val clientCapabilities: Map<String, Boolean>,
+    @SerialName("request_id") val requestId: String,
+    @SerialName("support_id") val supportId: String,
+)
 
 @Singleton
 class ReportsRepository @Inject constructor(
@@ -121,6 +161,93 @@ class ReportsRepository @Inject constructor(
         RdResult.Success(items)
     } catch (t: Throwable) {
         RdResult.Failure("reports_list_fetch_failed", t.message ?: "reports_list_fetch_failed", t)
+    }
+
+    /**
+     * Real port of `storeReport` — uploads on-device-generated PDF bytes (from
+     * [PdfReportGenerator]) to the private "reports" bucket, then calls the real `register-report`
+     * edge function (shared server-side infra — real quota enforcement, `analysis.status ==
+     * "completed"` check, path-ownership validation all happen there, matching the "backend is
+     * sole authority" invariant every other repository in this app follows). On a register
+     * failure, best-effort removes the just-uploaded orphan object (matches iOS's own cleanup —
+     * a PDF sitting in Storage with no `reports` row pointing at it is worse than briefly
+     * duplicating the delete call).
+     *
+     * [fileNameSlug] mirrors `safeReportFileName`'s real shape (`riskdetected_{title}_
+     * risk-analizi_{kind}_{method}_{shortId}_{timestamp}.pdf`) — the caller builds it (feature
+     * layer already has the analysis title in hand) rather than this repository re-deriving it,
+     * keeping the transliteration/slugify logic in one place ([PdfReportFileName]).
+     */
+    suspend fun uploadAndRegisterPdfReport(
+        userId: String,
+        analysisId: String,
+        pdfBytes: ByteArray,
+        fileNameSlug: String,
+        kind: String,
+        method: String,
+        title: String,
+        pageCount: Int,
+        companyId: String? = null,
+        reportLanguage: String = "tr",
+    ): RdResult<Report> {
+        val storagePath = "${userId.lowercase()}/${analysisId.lowercase()}/$fileNameSlug"
+        try {
+            client.storage.from(BUCKET).upload(storagePath, pdfBytes) {
+                upsert = true
+            }
+        } catch (t: Throwable) {
+            return RdResult.Failure("report_pdf_upload_failed", t.message ?: "PDF dosyası rapor arşivine yüklenemedi.", t)
+        }
+
+        return try {
+            val requestId = UUID.randomUUID().toString()
+            val supportId = UUID.randomUUID().toString()
+            val row: Report = client.functions.invoke(
+                "register-report",
+                body = RegisterReportBody(
+                    analysisId = analysisId,
+                    kind = kind,
+                    method = method,
+                    title = title,
+                    storagePath = storagePath,
+                    fileName = fileNameSlug,
+                    fileSize = pdfBytes.size,
+                    sizeBytes = pdfBytes.size,
+                    pageCount = pageCount,
+                    companyId = companyId,
+                    reportLanguage = reportLanguage,
+                    clientAppVersion = environmentConfig.appVersionName,
+                    clientAppBuild = environmentConfig.appVersionCode.toString(),
+                    clientPlatform = RdClientMetadata.PLATFORM,
+                    apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
+                    clientCapabilities = RdClientMetadata.capabilities,
+                    requestId = requestId,
+                    supportId = supportId,
+                ),
+            ).body<Report>()
+            RdResult.Success(row)
+        } catch (t: Throwable) {
+            runCatching { client.storage.from(BUCKET).delete(listOf(storagePath)) }
+            // Real error body ({error, message, request_id, support_id}) only exists on a
+            // ResponseException (a real HTTP 4xx/5xx) — a plain network exception's `.message`
+            // never contains it, so this only attempts the parse when there's an actual response
+            // to read (mirrors AnalysisRepository.submitAnalyze's ResponseException handling).
+            val errorCode = if (t is ResponseException) {
+                runCatching {
+                    val bodyText = t.response.bodyAsText()
+                    Json.parseToJsonElement(bodyText).jsonObject["error"]
+                        ?.let { it as? JsonPrimitive }?.contentOrNull
+                }.getOrNull()
+            } else {
+                null
+            }
+            val classified = when (errorCode) {
+                "free_risk_analysis_trial_exhausted" -> "free_risk_analysis_trial_exhausted:1/1"
+                "report_quota_exceeded" -> "report_quota_exceeded"
+                else -> t.message?.ifEmpty { null } ?: "Rapor arşiv kaydı tamamlanamadı."
+            }
+            RdResult.Failure("report_register_failed", classified, t)
+        }
     }
 
     /** Downloads the just-generated (or previously generated) file's bytes from the private
