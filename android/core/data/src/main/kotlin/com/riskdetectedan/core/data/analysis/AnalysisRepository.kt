@@ -40,6 +40,14 @@ private data class CreateAnalysisPayload(
 @Serializable
 private data class CreatedAnalysisRow(val id: String)
 
+/** Mirrors `AnalysisSubmissionFailurePatch` — the two-column patch
+ * `markAnalysisSubmissionFailedIfStillPending` writes. */
+@Serializable
+private data class AnalysisFailurePatch(
+    val status: String = "failed",
+    @SerialName("status_message") val statusMessage: String,
+)
+
 data class CreateAnalysisRequest(
     val userId: String,
     val title: String,
@@ -154,6 +162,37 @@ class AnalysisRepository @Inject constructor(
         RdResult.Failure(
             code = "analysis_create_failed",
             message = t.message ?: "analysis_create_failed",
+            cause = t,
+        )
+    }
+
+    /**
+     * Real port of `markAnalysisSubmissionFailedIfStillPending` — but atomic instead of iOS's
+     * fetch-then-update dance (`fetchAnalysisSubmissionStatus` then a separate conditional
+     * `UPDATE`, a real TOCTOU race iOS accepts because `waitForCompletedResult` never gets called
+     * unless the mark succeeds). A single `UPDATE ... WHERE id=X AND status='pending'` here does
+     * the same "did the server actually start processing this, so we must NOT clobber it" check
+     * server-side, in one round trip, without needing iOS's separate polling step: the `analyze`
+     * function flips `status` away from `"pending"` as the very first thing it does on accepting
+     * a request, so this update only ever affects a row the server never touched. Returns whether
+     * it actually updated a row (i.e., was still pending) — the caller only runs photo cleanup
+     * when this is true, mirroring iOS's real "only cleanup if actually marked failed" branch.
+     */
+    suspend fun markFailedIfPending(analysisId: String, message: String): RdResult<Boolean> = try {
+        val rows = client.postgrest.from("analyses")
+            .update(AnalysisFailurePatch(statusMessage = message)) {
+                select(Columns.list("id"))
+                filter {
+                    eq("id", analysisId)
+                    eq("status", "pending")
+                }
+            }
+            .decodeList<CreatedAnalysisRow>()
+        RdResult.Success(rows.isNotEmpty())
+    } catch (t: Throwable) {
+        RdResult.Failure(
+            code = "analysis_mark_failed_error",
+            message = t.message ?: "analysis_mark_failed_error",
             cause = t,
         )
     }

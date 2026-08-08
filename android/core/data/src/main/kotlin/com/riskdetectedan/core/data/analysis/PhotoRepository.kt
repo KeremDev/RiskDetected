@@ -81,6 +81,31 @@ class PhotoRepository @Inject constructor(
         )
     }
 
+    /**
+     * Real port of `cleanupUploadedPhotos` — removes the just-uploaded Storage objects + their
+     * `photos` rows when an analysis submission ultimately fails. Best-effort: iOS itself only
+     * logs a cleanup failure rather than surfacing it (the analysis is already being marked
+     * failed regardless — a stray orphaned photo object is a much smaller problem than hiding
+     * the real failure behind a secondary cleanup error), so this never returns [RdResult.Failure]
+     * to a UI-facing caller — it's fire-and-forget by design, matching iOS's own `catch { log }`.
+     */
+    suspend fun deleteUploadedPhotos(userId: String, analysisId: String, storagePaths: List<String>) {
+        try {
+            if (storagePaths.isNotEmpty()) {
+                client.storage.from(BUCKET).delete(storagePaths)
+            }
+            client.postgrest.from("photos").delete {
+                filter {
+                    eq("analysis_id", analysisId)
+                    eq("user_id", userId)
+                }
+            }
+        } catch (_: Throwable) {
+            // Best-effort, see doc comment — a failed cleanup here doesn't change the outcome
+            // the caller already surfaced (the analysis submission itself failed).
+        }
+    }
+
     private companion object {
         const val BUCKET = "photos"
     }

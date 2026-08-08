@@ -138,9 +138,9 @@ class AnalysisViewModel @Inject constructor(
                 ) {
                     is RdResult.Success -> uploadedPaths.add(uploadResult.value)
                     is RdResult.Failure -> {
-                        _state.value = CreateAnalysisUiState.Failed(
-                            AppErrorMessages.make(uploadResult.message, context = ANALYSIS_CONTEXT),
-                        )
+                        val error = AppErrorMessages.make(uploadResult.message, context = ANALYSIS_CONTEXT)
+                        failAnalysisAndCleanup(userId, analysisId, uploadedPaths, error.message)
+                        _state.value = CreateAnalysisUiState.Failed(error)
                         return@launch
                     }
                 }
@@ -158,9 +158,9 @@ class AnalysisViewModel @Inject constructor(
                 )
             ) {
                 is RdResult.Failure -> {
-                    _state.value = CreateAnalysisUiState.Failed(
-                        AppErrorMessages.make(submitResult.message, context = ANALYSIS_CONTEXT),
-                    )
+                    val error = AppErrorMessages.make(submitResult.message, context = ANALYSIS_CONTEXT)
+                    failAnalysisAndCleanup(userId, analysisId, uploadedPaths, error.message)
+                    _state.value = CreateAnalysisUiState.Failed(error)
                     return@launch
                 }
                 is RdResult.Success -> Unit
@@ -197,6 +197,26 @@ class AnalysisViewModel @Inject constructor(
                         ),
                     )
             }
+        }
+    }
+
+    /**
+     * Real port of `markAnalysisSubmissionFailedIfStillPending` + `cleanupUploadedPhotos`'s real
+     * call pattern (see [AnalysisRepository.markFailedIfPending]'s doc comment for why this is a
+     * single atomic conditional UPDATE here instead of iOS's fetch-then-update): mark the
+     * `analyses` row failed only if the server hasn't already started processing it, and only
+     * then delete whatever photos were uploaded so far — never touch photos a real in-progress
+     * analysis might still be using. Both steps are best-effort (never surfaced as a second
+     * error to the UI) — the caller has already classified and is about to show the real failure
+     * that triggered this cleanup; a cleanup failure on top of that would just be noise.
+     */
+    private suspend fun failAnalysisAndCleanup(userId: String, analysisId: String, uploadedPaths: List<String>, message: String) {
+        val markedFailed = when (val result = analysisRepository.markFailedIfPending(analysisId, message)) {
+            is RdResult.Success -> result.value
+            is RdResult.Failure -> false
+        }
+        if (markedFailed) {
+            photoRepository.deleteUploadedPhotos(userId, analysisId, uploadedPaths)
         }
     }
 
