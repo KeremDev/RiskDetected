@@ -27,12 +27,11 @@ data class DailyQuotaUsage(val used: Int, val limit: Int) {
  *
  * `freeDailyLimit = 1` matches `AnalysisService.freeDailyLimit` exactly.
  *
- * Not ported: iOS's `cachedQuotaUsageForCurrentUser`/`cacheQuotaUsage` UserDefaults fallback
- * (`HomeView.swift`'s `loadQuotaUsage()` falls back to a locally cached value on a failed
- * network call, so a transient failure doesn't hide a real quota-exhausted state). Android's
- * caller just treats a failed fetch as "unknown" (hint hidden) — a real simplification, not a
- * silently skipped detail; add a SharedPreferences-backed cache here if a future session needs
- * the same offline-graceful behavior.
+ * iOS's `cachedQuotaUsageForCurrentUser`/`cacheQuotaUsage` UserDefaults fallback (`HomeView.swift`'s
+ * `loadQuotaUsage()` falls back to a locally cached value on a failed network call, so a
+ * transient failure doesn't hide a real quota-exhausted state) lives one layer up, in
+ * [com.riskdetectedan.app.home.QuotaViewModel] — same place iOS's own version lives (a View's
+ * `@State`, not the service), not duplicated here.
  */
 @Singleton
 class QuotaRepository @Inject constructor(
