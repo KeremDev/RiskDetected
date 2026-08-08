@@ -1,0 +1,147 @@
+package com.riskdetectedan.app.reports
+
+import android.content.Intent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.riskdetectedan.core.data.reports.Report
+import com.riskdetectedan.core.designsystem.RdEmptyState
+import com.riskdetectedan.core.designsystem.RdFontStyle
+import com.riskdetectedan.core.designsystem.RdListRow
+import com.riskdetectedan.core.designsystem.RdScreenHeader
+import com.riskdetectedan.core.designsystem.RdSpacing
+import com.riskdetectedan.core.designsystem.RdTheme
+import com.riskdetectedan.core.designsystem.toTextStyle
+import java.io.File
+
+/**
+ * Faz R — real "Raporlar" tab (port of `HomeView.swift`'s `generatedReportsSection`'s data source,
+ * as a full tab rather than a Home-embedded card — matches `MainTabView.swift`'s real `.reports`
+ * tab being a full screen). Distinct from Analizler's [com.riskdetectedan.feature.reports.ReportsScreen]
+ * (that one is the `analyses` history + "Excel oluştur" generation action) — this lists
+ * already-generated `reports` rows (`GeneratedReportsViewModel.listReports`) and opens them,
+ * mirroring iOS's real tab split. Replaces `MainShell.kt`'s honest stub.
+ *
+ * Simplified vs iOS's `generatedReportsSection`/`HomeReportRow`: no per-kind tinted icon chip
+ * (Excel green vs. PDF red vs. risk-analysis accent) — a single icon keyed off `isExcel`, reusing
+ * the same [RdListRow]/[RdEmptyState] structure as every other list screen in this pass, not a
+ * hand-painted custom row. Real data/behavior (list, open, error) is not simplified.
+ */
+@Composable
+fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel()) {
+    val colors = RdTheme.colors
+    val state by viewModel.state.collectAsState()
+    val openingId by viewModel.openingReportId.collectAsState()
+    val reportError by viewModel.reportError.collectAsState()
+    val reportFile by viewModel.reportFile.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(reportFile) {
+        val file = reportFile ?: return@LaunchedEffect
+        val dir = File(context.cacheDir, "reports").apply { mkdirs() }
+        val target = File(dir, file.fileName)
+        target.writeBytes(file.bytes)
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", target)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, file.mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Raporu aç"))
+        viewModel.clearReportFile()
+    }
+
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        RdScreenHeader(title = "Raporlar")
+
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
+            when (val current = state) {
+                is GeneratedReportsUiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = colors.onyx)
+                }
+                is GeneratedReportsUiState.SignedOut -> RdEmptyState(
+                    icon = Icons.Filled.Description,
+                    title = "Oturum yok",
+                    subtitle = "Raporlarını görmek için giriş yapmalısın.",
+                )
+                is GeneratedReportsUiState.Failed -> RdEmptyState(
+                    icon = Icons.Filled.Description,
+                    title = "Raporlar yüklenemedi",
+                    subtitle = current.error.message,
+                )
+                is GeneratedReportsUiState.Loaded -> {
+                    if (current.items.isEmpty()) {
+                        RdEmptyState(
+                            icon = Icons.Filled.Description,
+                            title = "Henüz rapor yok",
+                            subtitle = "Oluşturduğun raporların listesi burada görünecek.",
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.padding(top = RdSpacing.sm),
+                            verticalArrangement = Arrangement.spacedBy(RdSpacing.xs),
+                        ) {
+                            items(current.items, key = { it.id }) { report ->
+                                ReportRow(
+                                    report = report,
+                                    isOpening = openingId == report.id,
+                                    onClick = { viewModel.openReport(report) },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    reportError?.let { error ->
+        AlertDialog(
+            onDismissRequest = viewModel::clearReportError,
+            title = { Text(error.title) },
+            text = { Text(error.message) },
+            confirmButton = {
+                TextButton(onClick = viewModel::clearReportError) { Text("Tamam") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ReportRow(report: Report, isOpening: Boolean, onClick: () -> Unit) {
+    val colors = RdTheme.colors
+    val isExcel = report.format == "xlsx" ||
+        report.mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    RdListRow(
+        title = report.title ?: report.fileName ?: "Rapor",
+        subtitle = report.createdAt?.take(10),
+        icon = if (isExcel) Icons.Filled.TableChart else Icons.Filled.Description,
+        iconBackground = colors.fog,
+        onClick = if (isOpening) null else onClick,
+        trailing = if (isOpening) {
+            { Text("Açılıyor...", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate) }
+        } else {
+            null
+        },
+    )
+}

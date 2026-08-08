@@ -2,10 +2,7 @@ package com.riskdetectedan.app.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Description
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,8 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.riskdetectedan.app.home.HomeScreen
-import com.riskdetectedan.core.designsystem.RdEmptyState
-import com.riskdetectedan.core.designsystem.RdScreenHeader
+import com.riskdetectedan.app.reports.GeneratedReportsScreen
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.feature.profile.ProfileScreen
 import com.riskdetectedan.feature.reports.ReportsScreen
@@ -31,9 +27,9 @@ import com.riskdetectedan.feature.reports.ReportsScreen
  *
  * Faz M ships the shell + wires the two already-real tabs (Home, Analizler — the existing
  * `ReportsScreen`/`HistoryViewModel` reused as-is, it already mirrors iOS's real "Analizler" tab
- * content) and Profil. The "Raporlar" tab (iOS's separate generated-PDF/XLSX list, a different
- * table/repository than Analizler's `analyses` history) is a documented stub here — real content
- * lands in Faz R, not invented early.
+ * content) and Profil. Faz R (2026-08-08) replaces the "Raporlar" tab's stub with the real
+ * [GeneratedReportsScreen] — iOS's separate generated-PDF/XLSX list, a genuinely different
+ * table/repository than Analizler's `analyses` history.
  */
 @Composable
 fun MainShellScreen(navController: NavHostController) {
@@ -57,7 +53,7 @@ fun MainShellScreen(navController: NavHostController) {
                 onUpgrade = { navController.navigate(Paywall) },
             )
             RdTab.Analyses -> ReportsScreen(onBack = null)
-            RdTab.Reports -> GeneratedReportsStub()
+            RdTab.Reports -> GeneratedReportsScreen()
             RdTab.Profile -> ProfileScreen(
                 onBack = null,
                 onManageCompanies = { navController.navigate(Companies) },
@@ -74,22 +70,5 @@ fun MainShellScreen(navController: NavHostController) {
             onQuickScan = { navController.navigate(Capture) },
             modifier = Modifier.align(Alignment.BottomCenter),
         )
-    }
-}
-
-/** Faz R stub — real "Raporlar" tab (generated `reports` table list, distinct from Analizler's
- * `analyses` history) lands separately; this is an honest placeholder, not a reuse of
- * [ReportsScreen]'s history content under a misleading label. */
-@Composable
-private fun GeneratedReportsStub() {
-    Column(modifier = Modifier.fillMaxSize()) {
-        RdScreenHeader(title = "Raporlar")
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            RdEmptyState(
-                icon = Icons.Filled.Description,
-                title = "Yakında",
-                subtitle = "Oluşturduğun raporların listesi burada görünecek.",
-            )
-        }
     }
 }

@@ -5,6 +5,8 @@ import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.common.RdResult
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
 import io.ktor.client.call.body
 import kotlinx.serialization.SerialName
@@ -15,22 +17,28 @@ import javax.inject.Singleton
 
 /**
  * Partial mirror of the `reports` row `generate-excel-report/index.ts` inserts and returns
- * (`.select().single()` on the full row — this only decodes the columns the client actually
- * needs to fetch and present the file; ignoreUnknownKeys handles the rest, same pattern as
- * [com.riskdetectedan.core.data.analysis.Finding]'s mutation result). DEC-09: Android's own
- * report *rendering* (PDF) is on-device (`android.graphics.pdf.PdfDocument`, not ported yet) —
- * this is the separate, already-server-side XLSX path (`generate-excel-report`), which both
- * platforms have always used as-is; nothing here duplicates DEC-09's device-side PDF decision.
+ * (`.select().single()` on the full row) / [ReportsRepository.listReports]'s list query — decodes
+ * just the columns the client needs (fetch+present the file, or show it in a list row);
+ * ignoreUnknownKeys handles the rest, same pattern as [com.riskdetectedan.core.data.analysis.Finding]'s
+ * mutation result. `kind`/`method`/`createdAt` are only populated by the list query (Faz R) — the
+ * generate-report response doesn't select them, they stay null there, harmless (nothing reads them
+ * on that path). DEC-09: Android's own report *rendering* (PDF) is on-device
+ * (`android.graphics.pdf.PdfDocument`, not ported yet) — this is the separate, already-server-side
+ * XLSX path (`generate-excel-report`), which both platforms have always used as-is; nothing here
+ * duplicates DEC-09's device-side PDF decision.
  */
 @Serializable
 data class Report(
     val id: String,
     @SerialName("document_no") val documentNo: String? = null,
     val format: String? = null,
+    val kind: String? = null,
+    val method: String? = null,
     val title: String? = null,
     @SerialName("storage_path") val storagePath: String,
     @SerialName("file_name") val fileName: String? = null,
     @SerialName("mime_type") val mimeType: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
 )
 
 @Serializable
@@ -94,6 +102,25 @@ class ReportsRepository @Inject constructor(
             message = t.message ?: "Rapor oluşturulamadı.",
             cause = t,
         )
+    }
+
+    /**
+     * Faz R — the real "Raporlar" tab's list query, mirrors iOS's own real fetch of `ReportRow`
+     * (a genuinely different table/list than [com.riskdetectedan.core.data.analysis.HistoryRepository.listHistory]'s
+     * `analyses` history — iOS's "reports" tab is generated PDF/XLSX archives, not analysis
+     * records). Same Postgrest-select-order-limit shape as `listHistory`.
+     */
+    suspend fun listReports(userId: String, limit: Long = 50): RdResult<List<Report>> = try {
+        val items = client.postgrest.from("reports")
+            .select {
+                filter { eq("user_id", userId) }
+                order("created_at", Order.DESCENDING)
+                limit(limit)
+            }
+            .decodeList<Report>()
+        RdResult.Success(items)
+    } catch (t: Throwable) {
+        RdResult.Failure("reports_list_fetch_failed", t.message ?: "reports_list_fetch_failed", t)
     }
 
     /** Downloads the just-generated (or previously generated) file's bytes from the private
