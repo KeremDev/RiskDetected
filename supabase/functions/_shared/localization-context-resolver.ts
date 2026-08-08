@@ -4,7 +4,7 @@ import {
   legalDocumentSetIDs,
   type RiskMethod,
   riskMethods,
-} from "./generated/safety-profiles.generated.ts";
+} from "./approved-safety-profiles.generated.ts";
 import {
   hasLocalizationRequestFields,
   LOCALIZATION_ERROR_CODES,

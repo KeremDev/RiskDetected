@@ -6,7 +6,7 @@ import {
   safetyProfileManifestVersion,
   safetyProfiles,
   safetyProfileSourceSHA256,
-} from "./generated/safety-profiles.generated.ts";
+} from "./approved-safety-profiles.generated.ts";
 import {
   LOCALIZATION_ERROR_CODES,
   LocalizationContractError,

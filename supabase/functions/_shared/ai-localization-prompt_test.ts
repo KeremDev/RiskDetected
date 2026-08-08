@@ -20,8 +20,8 @@ import {
 import {
   type SafetyProfileID,
   safetyProfiles,
-  safetyProfileSourceSHA256,
 } from "./generated/safety-profiles.generated.ts";
+import { safetyProfileSourceSHA256 } from "./safety-profile-manifest.ts";
 
 const enabledProfileIDs = new Set(
   safetyProfiles.filter((profile) => profile.language === "en").map((profile) =>

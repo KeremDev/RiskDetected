@@ -6,7 +6,7 @@ import type {
   RegulatoryReferencePolicy,
   RiskMethod,
   SafetyProfileID,
-} from "./generated/safety-profiles.generated.ts";
+} from "./approved-safety-profiles.generated.ts";
 
 export const LOCALIZATION_SNAPSHOT_SCHEMA_VERSION = 1 as const;
 export const LOCALIZATION_PROMPT_PROFILE_VERSION =
