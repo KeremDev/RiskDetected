@@ -20,17 +20,25 @@ import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.riskdetectedan.core.data.analysis.AnalysisCanvas
 import com.riskdetectedan.core.data.analysis.HistoryItem
+import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdListRow
 import com.riskdetectedan.core.designsystem.RdRiskChip
@@ -53,16 +61,28 @@ import com.riskdetectedan.feature.reports.HistoryViewModel
  * Reuses `feature:reports`'s already-built [HistoryViewModel] for the last-analysis summary card
  * (rather than adding a second parallel query) — `app` already depends on `feature:reports` for
  * `ReportsScreen`, so this doesn't add a new module edge.
+ *
+ * Faz N (2026-08-08): "Fotoğraf çek" now opens iOS's real [CanvasSheet] first (Odaklı Analiz
+ * picker), matching HomeView.swift's real flow (canvas selection before the photo step) instead
+ * of jumping straight to Capture. Selected canvases aren't threaded into analysis creation yet —
+ * that wiring lands with Faz Q's real scan flow, this is honest scaffolding not a finished
+ * pipeline. `userTier` defaults to Free (no shared app-wide session/tier state exists yet to read
+ * the real signed-in tier from here — same gap Faz Q's real ViewModel will close).
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onCapture: () -> Unit = {},
     onHistory: () -> Unit = {},
     onProfile: () -> Unit = {},
+    onUpgrade: () -> Unit = {},
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
+    var showCanvasSheet by remember { mutableStateOf(false) }
+    var selectedCanvases by remember { mutableStateOf(setOf(AnalysisCanvas.general)) }
+    val sheetState = rememberModalBottomSheetState()
 
     Column(
         modifier = Modifier
@@ -93,7 +113,7 @@ fun HomeScreen(
                 icon = Icons.Filled.CameraAlt,
                 iconTint = colors.white,
                 iconBackground = colors.onyx,
-                onClick = onCapture,
+                onClick = { showCanvasSheet = true },
             )
             RdListRow(
                 title = "Geçmiş analizler",
@@ -121,6 +141,25 @@ fun HomeScreen(
             RdSectionCard(title = "Son Analiz") {
                 LastAnalysisRow(item = lastItem, onClick = onHistory)
             }
+        }
+    }
+
+    if (showCanvasSheet) {
+        ModalBottomSheet(onDismissRequest = { showCanvasSheet = false }, sheetState = sheetState) {
+            CanvasSheet(
+                selected = selectedCanvases,
+                onSelectedChange = { selectedCanvases = it },
+                userTier = SubscriptionTier.Free,
+                onConfirm = {
+                    showCanvasSheet = false
+                    onCapture()
+                },
+                onDismiss = { showCanvasSheet = false },
+                onUpgradeRequested = {
+                    showCanvasSheet = false
+                    onUpgrade()
+                },
+            )
         }
     }
 }

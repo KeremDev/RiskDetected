@@ -53,6 +53,7 @@ fun MainShellScreen(navController: NavHostController) {
                 onCapture = { navController.navigate(Capture) },
                 onHistory = { activeTab = RdTab.Analyses },
                 onProfile = { activeTab = RdTab.Profile },
+                onUpgrade = { navController.navigate(Paywall) },
             )
             RdTab.Analyses -> ReportsScreen(onBack = null)
             RdTab.Reports -> GeneratedReportsStub()

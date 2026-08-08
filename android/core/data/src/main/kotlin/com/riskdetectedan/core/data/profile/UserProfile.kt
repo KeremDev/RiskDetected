@@ -63,4 +63,8 @@ enum class SubscriptionTier {
 
     val isPaid: Boolean get() = this != Free
     val rank: Int get() = when (this) { Free -> 0; Plus -> 1; Pro -> 2 }
+
+    /** Mirrors SubscriptionTier.includes(_:) — tier-gate check (e.g. "does this user's tier
+     * unlock this AnalysisCanvas's minTier"). */
+    fun includes(required: SubscriptionTier): Boolean = rank >= required.rank
 }
