@@ -148,12 +148,9 @@ data class ProfessionalProgressWeeklySummary(
 )
 
 /**
- * Mirrors ProfessionalProgressSummary's computed properties. `weeklyTracking`'s "is this
- * actually the current week" check and its zero-state copy are NOT ported (needs the exact
- * iso8601/business-timezone week-start math iOS uses) — `weeklySummary` is exposed raw instead;
- * the UI reads it directly and shows nothing if null. Documented simplification, not a silent
- * drop: matches this port's pattern of porting the data contract before the last mile of
- * presentation logic.
+ * Mirrors ProfessionalProgressSummary's computed properties, including [weeklyTracking] (real
+ * iso8601/Europe-Istanbul week-start math, ported once Home's real layout needed the exact
+ * zero-state copy it drives — see that property's own doc comment).
  */
 data class ProfessionalProgressSummary(
     val profile: ProfessionalProgressProfileRow,
@@ -186,6 +183,68 @@ data class ProfessionalProgressSummary(
 
     val pendingCelebration: ProfessionalProgressBadge?
         get() = badges.firstOrNull { !it.isSeen }
+
+    /** Real port of `ProfessionalProgressSummary.weeklyTracking` (was explicitly NOT ported in
+     * Faz #24, documented then as "needs the exact iso8601/business-timezone week-start math").
+     * `weeklySummary.normalizedWeekStart` (first 10 chars) vs. the current ISO-8601 week's Monday
+     * in Europe/Istanbul — a stale (last week's) `weeklySummary` row falls back to the same
+     * zero-state as no row at all, matching the Swift `guard` exactly. */
+    val weeklyTracking: ProfessionalProgressWeeklyTracking
+        get() {
+            val current = weeklySummary?.takeIf { it.weekStart.take(10) == currentWeekStartIso() }
+            if (current == null) {
+                return ProfessionalProgressWeeklyTracking(
+                    title = "Haftalık Takip",
+                    body = weeklyTrackingBody(reports = 0, analyses = 0),
+                    reportsCount = 0,
+                    analysesCount = 0,
+                    findingsCount = 0,
+                    topCompetency = null,
+                )
+            }
+            val topCompetency = ProfessionalProgressCompetency.fromKey(current.topCompetencyKey)
+            return ProfessionalProgressWeeklyTracking(
+                title = current.messageTitle ?: "Haftalık Takip",
+                body = current.messageBody
+                    ?: weeklyTrackingBody(reports = current.reportsCount, analyses = current.analysesCount),
+                reportsCount = current.reportsCount,
+                analysesCount = current.analysesCount,
+                findingsCount = current.findingsCount,
+                topCompetency = topCompetency,
+            )
+        }
+
+    private fun weeklyTrackingBody(reports: Int, analyses: Int): String = when {
+        reports == 0 && analyses == 0 -> "Bu hafta ilk analizini başlat. 😔"
+        reports == 0 -> "$analyses analiz tamamladın. Şimdi rapora dönüştür."
+        reports == 1 -> "İlk rapor tamam. Devam et."
+        else -> "Bu hafta $reports rapor tamamladın. 💪"
+    }
+
+    private companion object {
+        /** Matches `Calendar(identifier: .iso8601)`'s week-of-year start (Monday), same
+         * "Europe/Istanbul" business timezone as everywhere else in this feature. */
+        fun currentWeekStartIso(): String {
+            val zone = java.time.ZoneId.of("Europe/Istanbul")
+            val monday = java.time.LocalDate.now(zone)
+                .with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+            return java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(monday)
+        }
+    }
+}
+
+/** Real port of `ProfessionalProgressWeeklyTracking` — the resolved (possibly zero-state) weekly
+ * message [ProfessionalProgressSummary.weeklyTracking] computes, distinct from the raw
+ * [ProfessionalProgressWeeklySummary] row. */
+data class ProfessionalProgressWeeklyTracking(
+    val title: String,
+    val body: String,
+    val reportsCount: Int,
+    val analysesCount: Int,
+    val findingsCount: Int,
+    val topCompetency: ProfessionalProgressCompetency?,
+) {
+    val hasActivity: Boolean get() = reportsCount > 0 || analysesCount > 0
 }
 
 @Singleton
