@@ -54,7 +54,7 @@ fun RdNavHost() {
         }
         composable<Analysis> { backStackEntry ->
             val args: Analysis = backStackEntry.toRoute()
-            AnalysisScreen(photoPath = args.photoPath)
+            AnalysisScreen(photoPath = args.photoPath, onBack = { navController.popBackStack() })
         }
         composable<Reports> { ReportsScreen() }
         composable<Profile> {

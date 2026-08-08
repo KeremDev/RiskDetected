@@ -1,23 +1,44 @@
 package com.riskdetectedan.feature.analysis
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Agriculture
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Construction
+import androidx.compose.material.icons.filled.Factory
+import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.SecurityUpdateWarning
+import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Terrain
+import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -27,7 +48,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.analysis.AnalysisSector
@@ -35,19 +59,33 @@ import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.analysis.FindingMeasure
 import com.riskdetectedan.core.data.analysis.FindingPatch
 import com.riskdetectedan.core.data.analysis.FineKinneyValues
+import com.riskdetectedan.core.designsystem.RdCard
+import com.riskdetectedan.core.designsystem.RdEmptyState
+import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdRadius
+import com.riskdetectedan.core.designsystem.RdRiskChip
+import com.riskdetectedan.core.designsystem.RdScreenHeader
 import com.riskdetectedan.core.designsystem.RdSpacing
-import com.riskdetectedan.core.designsystem.backgroundColor
-import com.riskdetectedan.core.designsystem.color
+import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.riskLevelFromRaw
+import com.riskdetectedan.core.designsystem.toTextStyle
 
 /**
  * Sector picker + full submit flow: create `analyses` row -> upload photo -> call `analyze`
- * -> poll -> fetch+display findings. First real render of AI output, not just a "completed"
- * status string.
+ * -> poll -> fetch+display findings (2026-08-08 visual pass, Faz I of the core-flow redesign).
+ * All ViewModel/state logic is unchanged — pure UI-layer pass over the real findings CRUD flow.
+ *
+ * Sector picker reuses [RdCard] (core:designsystem, built for onboarding's Certificate/Hazard
+ * pickers but a genuinely shared component — not feature-scoped) rather than a bare `ListItem`
+ * list, same selection-indicator language as onboarding. Findings render as real cards
+ * ([RdRiskChip] + title/description/scores), replacing the plain colored-text-label rows. Dialog
+ * chip pickers (Fine-Kinney/5x5/measure-kind) now use the app's real onyx/fog token pair instead
+ * of `MaterialTheme.colorScheme.primaryContainer` (a real inconsistency this pass fixes — that
+ * default Material color was never part of the app's actual design system).
  */
 @Composable
-fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hiltViewModel()) {
+fun AnalysisScreen(photoPath: String? = null, onBack: (() -> Unit)? = null, viewModel: AnalysisViewModel = hiltViewModel()) {
+    val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     var selectedSector by remember { mutableStateOf<AnalysisSector?>(null) }
 
@@ -59,6 +97,7 @@ fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hil
         FindingsList(
             analysisId = completed.analysisId,
             findings = findings,
+            onBack = onBack,
             onDelete = { finding -> viewModel.deleteFinding(completed.analysisId, finding) },
             onUpdate = { finding, patch -> viewModel.updateFinding(completed.analysisId, finding, patch) },
         )
@@ -85,42 +124,110 @@ fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hil
         return
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg)) {
-        if (photoPath != null) {
-            Text("Fotoğraf hazır — sektör seçince analiz başlatılacak")
-        }
-        Text("Sektör seç")
-        LazyColumn(modifier = Modifier.padding(top = RdSpacing.sm)) {
-            items(AnalysisSector.entries) { sector ->
-                val isSelected = selectedSector == sector
-                ListItem(
-                    headlineContent = {
-                        Text(if (isSelected) "✓ ${sector.titleTr}" else sector.titleTr)
-                    },
-                    modifier = Modifier.clickable {
-                        selectedSector = sector
-                        viewModel.createAnalysis(sector, photoPath)
-                    },
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        RdScreenHeader(title = "Yeni Analiz", onBack = onBack)
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = RdSpacing.lg),
+        ) {
+            if (photoPath != null) {
+                Text(
+                    "Fotoğraf hazır — sektör seçince analiz başlatılacak",
+                    style = RdFontStyle.Footnote.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.padding(bottom = RdSpacing.sm),
                 )
             }
-        }
+            Text("Sektör seç", style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
+            Column(
+                modifier = Modifier.padding(top = RdSpacing.sm, bottom = RdSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(RdSpacing.xs),
+            ) {
+                AnalysisSector.entries.forEach { sector ->
+                    RdCard(
+                        title = sector.titleTr,
+                        icon = analysisSectorIcon(sector),
+                        selected = selectedSector == sector,
+                        onClick = {
+                            selectedSector = sector
+                            viewModel.createAnalysis(sector, photoPath)
+                        },
+                    )
+                }
+            }
 
-        when (val current = state) {
-            is CreateAnalysisUiState.Idle -> Unit
-            is CreateAnalysisUiState.Creating -> LabeledProgress("Analiz kaydı oluşturuluyor...")
-            is CreateAnalysisUiState.UploadingPhoto -> LabeledProgress("Fotoğraf yükleniyor...")
-            is CreateAnalysisUiState.Submitting -> LabeledProgress("Analiz gönderiliyor...")
-            is CreateAnalysisUiState.Polling -> LabeledProgress("AI analiz ediyor...")
-            is CreateAnalysisUiState.Completed -> Unit // handled above, returns early
-            is CreateAnalysisUiState.CreatedWithoutPhoto ->
-                Text("Analiz oluşturuldu (fotoğrafsız): ${current.analysisId}")
-            is CreateAnalysisUiState.Failed -> Column {
-                Text(current.error.title)
-                Text(current.error.message)
-                if (current.error.action.isNotEmpty()) Text(current.error.action)
-                Text(current.error.supportID)
+            when (val current = state) {
+                is CreateAnalysisUiState.Idle -> Unit
+                is CreateAnalysisUiState.Creating -> LabeledProgress("Analiz kaydı oluşturuluyor...")
+                is CreateAnalysisUiState.UploadingPhoto -> LabeledProgress("Fotoğraf yükleniyor...")
+                is CreateAnalysisUiState.Submitting -> LabeledProgress("Analiz gönderiliyor...")
+                is CreateAnalysisUiState.Polling -> LabeledProgress("AI analiz ediyor...")
+                is CreateAnalysisUiState.Completed -> Unit // handled above, returns early
+                is CreateAnalysisUiState.CreatedWithoutPhoto ->
+                    Text(
+                        "Analiz oluşturuldu (fotoğrafsız): ${current.analysisId}",
+                        style = RdFontStyle.Footnote.toTextStyle(),
+                        color = colors.slate,
+                        modifier = Modifier.padding(top = RdSpacing.md),
+                    )
+                is CreateAnalysisUiState.Failed -> AnalysisErrorCard(current.error)
             }
         }
+    }
+}
+
+private fun analysisSectorIcon(sector: AnalysisSector): ImageVector = when (sector) {
+    AnalysisSector.General -> Icons.Filled.Business
+    AnalysisSector.Construction -> Icons.Filled.Construction
+    AnalysisSector.Manufacturing -> Icons.Filled.Factory
+    AnalysisSector.Mining -> Icons.Filled.Terrain
+    AnalysisSector.Energy -> Icons.Filled.Bolt
+    AnalysisSector.Office -> Icons.Filled.Business
+    AnalysisSector.LogisticsWarehouse -> Icons.Filled.Warehouse
+    AnalysisSector.ChemicalLaboratory -> Icons.Filled.Science
+    AnalysisSector.Healthcare -> Icons.Filled.LocalHospital
+    AnalysisSector.FoodProduction -> Icons.Filled.Restaurant
+    AnalysisSector.AgricultureLivestock -> Icons.Filled.Agriculture
+    AnalysisSector.Retail -> Icons.Filled.Storefront
+    AnalysisSector.MunicipalFieldServices -> Icons.Filled.AccountBalance
+    AnalysisSector.Education -> Icons.Filled.School
+    AnalysisSector.Hospitality -> Icons.Filled.Hotel
+}
+
+@Composable
+private fun LabeledProgress(label: String) {
+    val colors = RdTheme.colors
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(top = RdSpacing.xl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        CircularProgressIndicator(color = colors.onyx)
+        Spacer(Modifier.height(RdSpacing.sm))
+        Text(label, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
+    }
+}
+
+@Composable
+private fun AnalysisErrorCard(error: com.riskdetectedan.core.data.error.AppErrorMessage) {
+    val colors = RdTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = RdSpacing.md)
+            .clip(RoundedCornerShape(RdRadius.lg))
+            .background(colors.criticalBg.copy(alpha = 0.70f))
+            .border(1.dp, colors.critical.copy(alpha = 0.22f), RoundedCornerShape(RdRadius.lg))
+            .padding(RdSpacing.md),
+    ) {
+        Text(error.title, style = RdFontStyle.Callout.toTextStyle(), color = colors.criticalText)
+        Text(error.message, style = RdFontStyle.Footnote.toTextStyle(), color = colors.criticalText)
+        if (error.action.isNotEmpty()) {
+            Text(error.action, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+        }
+        Text(error.supportID, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
     }
 }
 
@@ -128,19 +235,32 @@ fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hil
 private fun FindingsList(
     analysisId: String,
     findings: List<Finding>,
+    onBack: (() -> Unit)?,
     onDelete: (Finding) -> Unit,
     onUpdate: (Finding, FindingPatch) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg)) {
-        Text(
+    val colors = RdTheme.colors
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        RdScreenHeader(title = "Analiz Sonuçları", onBack = onBack)
+
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
             if (findings.isEmpty()) {
-                "Analiz tamamlandı, bulgu bulunamadı."
+                RdEmptyState(
+                    icon = Icons.Filled.SecurityUpdateWarning,
+                    title = "Bulgu bulunamadı",
+                    subtitle = "Analiz tamamlandı, herhangi bir tehlike tespit edilmedi.",
+                )
             } else {
-                "${findings.size} bulgu — analiz $analysisId"
-            },
-        )
-        LazyColumn(modifier = Modifier.padding(top = RdSpacing.sm)) {
-            items(findings, key = { it.id }) { finding -> FindingRow(finding, onDelete, onUpdate) }
+                Text(
+                    "${findings.size} bulgu",
+                    style = RdFontStyle.Footnote.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.padding(vertical = RdSpacing.sm),
+                )
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
+                    items(findings, key = { it.id }) { finding -> FindingRow(finding, onDelete, onUpdate) }
+                }
+            }
         }
     }
 }
@@ -149,26 +269,35 @@ private fun FindingsList(
 private fun FindingRow(finding: Finding, onDelete: (Finding) -> Unit, onUpdate: (Finding, FindingPatch) -> Unit) {
     var showConfirm by remember { mutableStateOf(false) }
     var showEdit by remember { mutableStateOf(false) }
+    val colors = RdTheme.colors
     val level = riskLevelFromRaw(finding.fkBand)
-    Row(
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = RdSpacing.xs),
+            .clip(RoundedCornerShape(RdRadius.lg))
+            .background(colors.white)
+            .border(1.dp, colors.onyx.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg))
+            .padding(RdSpacing.md),
     ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RdRiskChip(level = level)
+            Spacer(Modifier.width(RdSpacing.xs))
+            Text(finding.title, style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx, modifier = Modifier.weight(1f))
+        }
+        finding.description?.let {
+            Text(it, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, modifier = Modifier.padding(top = RdSpacing.xxs))
+        }
         Text(
-            text = level.name,
-            modifier = Modifier
-                .background(level.backgroundColor(), RoundedCornerShape(RdRadius.xs))
-                .padding(horizontal = RdSpacing.xs, vertical = RdSpacing.xxs),
-            color = level.color(),
+            "FK: ${finding.fkScore ?: "—"}  ·  M5: ${finding.m5Score ?: "—"}",
+            style = RdFontStyle.Caption.toTextStyle(),
+            color = colors.slate,
+            modifier = Modifier.padding(top = RdSpacing.xs),
         )
-        Column(modifier = Modifier.padding(start = RdSpacing.sm)) {
-            Text(finding.title)
-            finding.description?.let { Text(it) }
-            Text("FK: ${finding.fkScore ?: "—"}  ·  M5: ${finding.m5Score ?: "—"}")
-            Row {
-                Text("Düzenle", modifier = Modifier.clickable { showEdit = true })
-                Text("Sil", modifier = Modifier.padding(start = RdSpacing.md).clickable { showConfirm = true })
+        Row(modifier = Modifier.padding(top = RdSpacing.xs)) {
+            TextButton(onClick = { showEdit = true }) { Text("Düzenle", style = RdFontStyle.Caption.toTextStyle()) }
+            TextButton(onClick = { showConfirm = true }) {
+                Text("Sil", style = RdFontStyle.Caption.toTextStyle(), color = colors.critical)
             }
         }
     }
@@ -303,25 +432,24 @@ private fun FindingEditDialog(finding: Finding, onDismiss: () -> Unit, onSave: (
 
 /** A row of tappable chips for a fixed set of allowed numeric values — matches the discrete
  * option sets both Fine-Kinney (6 values each) and the 5x5 matrix (1-5) actually allow; there's
- * no free-text entry here on purpose, an out-of-set value is guaranteed a server 400. */
+ * no free-text entry here on purpose, an out-of-set value is guaranteed a server 400. Uses the
+ * app's real onyx/fog token pair (was `MaterialTheme.colorScheme.primaryContainer`, a stray
+ * default-Material color never part of the actual design system — fixed in this pass). */
 @Composable
 private fun NumberOptionRow(options: List<Double>, selected: Double?, onSelect: (Double) -> Unit) {
+    val colors = RdTheme.colors
     Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
         options.forEach { value ->
             val label = if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
             val isSelected = selected == value
             Text(
                 text = label,
+                color = if (isSelected) colors.white else colors.onyx,
+                style = RdFontStyle.Caption.toTextStyle(),
                 modifier = Modifier
                     .padding(end = RdSpacing.xs)
-                    .background(
-                        if (isSelected) {
-                            androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            androidx.compose.ui.graphics.Color.Transparent
-                        },
-                        RoundedCornerShape(RdRadius.xs),
-                    )
+                    .clip(RoundedCornerShape(RdRadius.xs))
+                    .background(if (isSelected) colors.onyx else colors.fog)
                     .clickable { onSelect(value) }
                     .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xxs),
             )
@@ -335,14 +463,13 @@ private fun NumberOptionRow(options: List<Double>, selected: Double?, onSelect: 
  * them; not enforced client-side (not worth a counter UI for a limit that fails soft). */
 @Composable
 private fun MeasureEditor(measure: FindingMeasure, onChange: (FindingMeasure) -> Unit, onRemove: () -> Unit) {
+    val colors = RdTheme.colors
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = RdSpacing.xs)
-            .background(
-                androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
-                RoundedCornerShape(RdRadius.xs),
-            )
+            .clip(RoundedCornerShape(RdRadius.xs))
+            .background(colors.fog)
             .padding(RdSpacing.sm),
     ) {
         Row {
@@ -350,21 +477,22 @@ private fun MeasureEditor(measure: FindingMeasure, onChange: (FindingMeasure) ->
                 val isSelected = measure.kind == kind
                 Text(
                     text = label,
+                    color = if (isSelected) colors.white else colors.onyx,
+                    style = RdFontStyle.Caption.toTextStyle(),
                     modifier = Modifier
                         .padding(end = RdSpacing.xs)
-                        .background(
-                            if (isSelected) {
-                                androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                androidx.compose.ui.graphics.Color.Transparent
-                            },
-                            RoundedCornerShape(RdRadius.xs),
-                        )
+                        .clip(RoundedCornerShape(RdRadius.xs))
+                        .background(if (isSelected) colors.onyx else colors.white)
                         .clickable { onChange(measure.copy(kind = kind)) }
                         .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xxs),
                 )
             }
-            Text("Kaldır", modifier = Modifier.padding(start = RdSpacing.md).clickable(onClick = onRemove))
+            Text(
+                "Kaldır",
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.critical,
+                modifier = Modifier.padding(start = RdSpacing.md).clickable(onClick = onRemove),
+            )
         }
         OutlinedTextField(
             measure.title,
@@ -378,13 +506,5 @@ private fun MeasureEditor(measure: FindingMeasure, onChange: (FindingMeasure) ->
             label = { Text("Metin") },
             modifier = Modifier.fillMaxWidth(),
         )
-    }
-}
-
-@Composable
-private fun LabeledProgress(label: String) {
-    Column {
-        CircularProgressIndicator()
-        Text(label)
     }
 }
