@@ -54,6 +54,9 @@ fun OnboardingFlow(
                 viewModel.submitAnswersAfterAuth()
                 viewModel.next()
             },
+            onBack = viewModel::back,
+            primarySectorLabel = state.sectors.firstOrNull()?.label,
+            certificateLabel = state.certificate?.label,
         )
         9 -> OBTrialInviteScreen(onContinue = viewModel::next)
         10 -> OBNotificationPermissionScreen(onContinue = viewModel::next)

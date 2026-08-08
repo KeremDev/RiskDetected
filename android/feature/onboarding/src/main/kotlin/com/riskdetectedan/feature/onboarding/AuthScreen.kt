@@ -1,15 +1,40 @@
 package com.riskdetectedan.feature.onboarding
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Pin
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -20,115 +45,416 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.auth.RdAppLanguage
+import com.riskdetectedan.core.designsystem.RdButtonStyle
+import com.riskdetectedan.core.designsystem.RdFontStyle
+import com.riskdetectedan.core.designsystem.RdHeroTile
+import com.riskdetectedan.core.designsystem.RdHeroTint
+import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
+import com.riskdetectedan.core.designsystem.RdTheme
+import com.riskdetectedan.core.designsystem.toTextStyle
+
+private enum class EmailPhase { Hidden, Email, Otp }
 
 /**
- * Port of App/Views/Onboarding/V2/Screens/OBAuthView.swift — email OTP + Google Sign-In only
- * for now (Apple Sign-In on Android is GATE-04-conditional per the plan, not a default path;
- * not wired here). Copy strings below are the same Turkish fallback strings iOS uses
- * (RDLocalization fallback values) — hardcoded until the Android localization pipeline exists
- * (same interim state Faz 1's placeholder screens are already in).
+ * Port of App/Views/Onboarding/V2/Screens/OBAuthView.swift (2026-08-08 visual pass, Faz D) —
+ * email OTP + Google Sign-In only, same scope decision as before (Apple Sign-In is
+ * GATE-04-conditional, not wired). Real structure ported: hero, "Son adım." headline, plan-recap
+ * card (real sector/certificate labels), lock-icon timing reassurance banner, auth button stack,
+ * inline error banner, "Zaten hesabım var" pill, OTP digit boxes (the actual invisible-textfield-
+ * over-visual-boxes technique iOS uses, not a simplification). Deliberately simplified, documented
+ * not silent:
+ * - Email/OTP capture is an inline expanding card in the normal scroll flow, not iOS's floating
+ *   bottom-sheet overlay with a dimmed backdrop + keyboard-height-tracking padding animation — no
+ *   custom keyboard observer built this pass, the system already pans/resizes adequately.
+ * - No auto-focus-on-phase-change (iOS's `focusRequest` retry-with-delay dance) — user taps the
+ *   field, standard Android behavior.
+ * - Google's real 4-color "G" logo (iOS draws it with `Canvas` arc segments) simplified to a
+ *   plain "G" letter in Google blue — no custom Canvas drawing, matching this pass's policy.
+ * - Legal notice is static informational text, not iOS's tappable `LegalAcceptanceNotice` links —
+ *   the legal-document-viewer integration is a separate, larger, not-yet-built surface.
  */
 @Composable
 fun AuthScreen(
     onAuthenticated: () -> Unit,
+    onBack: (() -> Unit)? = null,
+    primarySectorLabel: String? = null,
+    certificateLabel: String? = null,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
 
+    var emailPhase by remember { mutableStateOf(EmailPhase.Hidden) }
     var email by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }
-    var otpSentTo by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(state) {
-        if (state is AuthUiState.SignedIn) onAuthenticated()
-    }
+    var sentTo by remember { mutableStateOf("") }
 
     val isLoading = state is AuthUiState.Loading
     val normalizedEmail = email.trim().lowercase()
     val canSendCode = normalizedEmail.contains("@") && normalizedEmail.contains(".") && !isLoading
     val canVerifyCode = otp.length == 6 && !isLoading
+    val failure = (state as? AuthUiState.Failed)?.error?.message
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(RdSpacing.lg),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Button(
-            onClick = { viewModel.signInWithGoogle(context) },
-            enabled = !isLoading,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(if (isLoading) "Google ile bağlanıyor..." else "Google ile devam et")
+    LaunchedEffect(state) {
+        when (val s = state) {
+            is AuthUiState.SignedIn -> onAuthenticated()
+            is AuthUiState.OtpSent -> {
+                sentTo = normalizedEmail
+                otp = ""
+                emailPhase = EmailPhase.Otp
+            }
+            else -> Unit
         }
+    }
 
-        Spacer(modifier = Modifier.height(RdSpacing.md))
+    // Mirrors iOS's autoVerifiedCode behavior: 6 digits typed -> verify immediately, no extra tap.
+    LaunchedEffect(otp) {
+        if (emailPhase == EmailPhase.Otp && otp.length == 6 && !isLoading) {
+            viewModel.verifyEmailOtp(sentTo, otp)
+        }
+    }
 
-        if (otpSentTo == null) {
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("E-posta adresini gir") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(modifier = Modifier.height(RdSpacing.sm))
-            OutlinedButton(
-                onClick = {
-                    viewModel.sendEmailOtp(normalizedEmail, resolveAppLanguage())
-                    otpSentTo = normalizedEmail
-                },
-                enabled = canSendCode,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(if (isLoading) "Kod gönderiliyor..." else "Kod gönder")
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        if (onBack != null) {
+            IconButton(onClick = onBack, modifier = Modifier.padding(start = 12.dp, top = 8.dp).size(40.dp)) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri", tint = colors.onyx)
             }
         } else {
-            Text("$otpSentTo adresine gönderildi")
-            Spacer(modifier = Modifier.height(RdSpacing.sm))
+            Spacer(Modifier.height(48.dp))
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = RdSpacing.xl),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            RdHeroTile(tint = RdHeroTint.Green) {
+                Icon(Icons.Filled.VerifiedUser, contentDescription = null, tint = colors.green, modifier = Modifier.size(28.dp))
+            }
+
+            Spacer(Modifier.height(24.dp))
+            Text("Son adım.", style = RdFontStyle.Title1.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
+
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Hazırladığın planı kaydedebilmen için hesabını oluşturalım.",
+                style = RdFontStyle.Subheadline.toTextStyle(),
+                color = colors.slate,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = 300.dp),
+            )
+
+            Spacer(Modifier.height(24.dp))
+            PlanRecapCard(primarySectorLabel = primarySectorLabel, certificateLabel = certificateLabel)
+
+            Spacer(Modifier.height(24.dp))
+            HorizontalDivider(color = colors.line)
+
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colors.greenSoft.copy(alpha = 0.5f))
+                    .border(1.dp, colors.green.copy(alpha = 0.18f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Lock, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Planın hesabına kilitlensin diye 10 saniyeni alacağız",
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                )
+            }
+
+            Spacer(Modifier.height(14.dp))
+            RdPrimaryButton(
+                text = if (isLoading && emailPhase == EmailPhase.Hidden) "Google ile bağlanıyor..." else "Google ile devam et",
+                onClick = { viewModel.signInWithGoogle(context) },
+                enabled = !isLoading,
+                showArrow = false,
+                style = RdButtonStyle.Onyx,
+            )
+
+            Spacer(Modifier.height(10.dp))
+            if (emailPhase == EmailPhase.Hidden) {
+                RdPrimaryButton(
+                    text = "E-posta ile devam et",
+                    onClick = { emailPhase = EmailPhase.Email },
+                    enabled = !isLoading,
+                    showArrow = false,
+                    style = RdButtonStyle.Onyx,
+                )
+            } else {
+                EmailAuthPanel(
+                    phase = emailPhase,
+                    email = email,
+                    onEmailChange = { email = it },
+                    otp = otp,
+                    onOtpChange = { otp = it },
+                    sentTo = sentTo,
+                    canSendCode = canSendCode,
+                    canVerifyCode = canVerifyCode,
+                    isLoading = isLoading,
+                    error = failure,
+                    onSendCode = { viewModel.sendEmailOtp(normalizedEmail, resolveAppLanguage()) },
+                    onVerifyCode = { viewModel.verifyEmailOtp(sentTo, otp) },
+                    onResend = { viewModel.sendEmailOtp(sentTo, resolveAppLanguage()) },
+                    onChangeEmail = { emailPhase = EmailPhase.Email; otp = "" },
+                    onClose = { emailPhase = EmailPhase.Hidden },
+                )
+            }
+
+            if (emailPhase == EmailPhase.Hidden && failure != null) {
+                Spacer(Modifier.height(10.dp))
+                AuthErrorBanner(failure)
+            }
+
+            Spacer(Modifier.height(18.dp))
+            Row(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(colors.fog.copy(alpha = 0.6f))
+                    .border(1.dp, colors.line, CircleShape)
+                    .clickable { emailPhase = EmailPhase.Email }
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Zaten hesabım var · ", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                Text("Giriş Yap", style = RdFontStyle.Caption.toTextStyle(), color = colors.onyx)
+            }
+
+            Spacer(Modifier.height(20.dp))
+            Text(
+                "Devam ederek Kullanım Koşulları ve Gizlilik Politikası'nı kabul etmiş olursun.",
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate.copy(alpha = 0.85f),
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun PlanRecapCard(primarySectorLabel: String?, certificateLabel: String?) {
+    val colors = RdTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(colors.fog)
+            .border(1.dp, colors.onyx.copy(alpha = 0.06f), RoundedCornerShape(14.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(colors.green),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Check, contentDescription = null, tint = colors.white, modifier = Modifier.size(16.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(colors.greenSoft)
+                    .border(1.dp, colors.green.copy(alpha = 0.22f), CircleShape)
+                    .padding(horizontal = 7.dp, vertical = 3.dp),
+            ) {
+                Text("SANA ÖZEL", style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 9.sp), color = colors.greenDark)
+            }
+            Spacer(Modifier.height(4.dp))
+            Text("Planın hazır, seni bekliyor", style = RdFontStyle.Footnote.toTextStyle(), color = colors.onyx)
+            Text(
+                "47 şablon · ${primarySectorLabel ?: "Genel"} · ${certificateLabel ?: "-"}",
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AuthErrorBanner(message: String) {
+    val colors = RdTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.criticalBg.copy(alpha = 0.70f))
+            .border(1.dp, colors.critical.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Icon(Icons.Filled.ErrorOutline, contentDescription = null, tint = colors.critical, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(message, style = RdFontStyle.Caption.toTextStyle(), color = colors.criticalText)
+    }
+}
+
+@Composable
+private fun EmailAuthPanel(
+    phase: EmailPhase,
+    email: String,
+    onEmailChange: (String) -> Unit,
+    otp: String,
+    onOtpChange: (String) -> Unit,
+    sentTo: String,
+    canSendCode: Boolean,
+    canVerifyCode: Boolean,
+    isLoading: Boolean,
+    error: String?,
+    onSendCode: () -> Unit,
+    onVerifyCode: () -> Unit,
+    onResend: () -> Unit,
+    onChangeEmail: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val colors = RdTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 12.dp, shape = RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .background(colors.white)
+            .border(1.dp, colors.line.copy(alpha = 0.78f), RoundedCornerShape(24.dp))
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Box(
+                modifier = Modifier.size(36.dp).clip(RoundedCornerShape(11.dp)).background(colors.green.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (phase == EmailPhase.Otp) Icons.Filled.Pin else Icons.Filled.Email,
+                    contentDescription = null,
+                    tint = colors.green,
+                    modifier = Modifier.size(17.dp),
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    if (phase == EmailPhase.Otp) "Doğrulama kodu" else "E-posta adresinizi giriniz",
+                    style = RdFontStyle.Footnote.toTextStyle(),
+                    color = colors.onyx,
+                )
+                Text(
+                    if (phase == EmailPhase.Otp) "$sentTo adresine gönderildi" else "Kod göndermek için e-posta adresini yaz.",
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                    maxLines = 2,
+                )
+            }
+            IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Filled.Close, contentDescription = "Kapat", tint = colors.slate, modifier = Modifier.size(14.dp))
+            }
+        }
+
+        Spacer(Modifier.height(13.dp))
+        if (phase == EmailPhase.Email) {
             OutlinedTextField(
-                value = otp,
-                onValueChange = { if (it.length <= 6) otp = it },
-                label = { Text("Doğrulama kodu") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                    keyboardType = KeyboardType.NumberPassword,
-                ),
+                value = email,
+                onValueChange = onEmailChange,
+                placeholder = { Text("Mailinizi yazınız...") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Spacer(modifier = Modifier.height(RdSpacing.sm))
-            Button(
-                onClick = { viewModel.verifyEmailOtp(otpSentTo.orEmpty(), otp) },
+            Spacer(Modifier.height(10.dp))
+            RdPrimaryButton(
+                text = if (isLoading) "Kod gönderiliyor..." else "Kod gönder",
+                onClick = onSendCode,
+                enabled = canSendCode,
+                modifier = Modifier.height(50.dp),
+            )
+        } else {
+            OtpDigitInput(value = otp, onValueChange = onOtpChange)
+            Spacer(Modifier.height(10.dp))
+            RdPrimaryButton(
+                text = if (isLoading) "Doğrulanıyor..." else "Doğrula ve devam et",
+                onClick = onVerifyCode,
                 enabled = canVerifyCode,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(if (isLoading) "Doğrulanıyor..." else "Doğrula ve devam et")
-            }
-            Spacer(modifier = Modifier.height(RdSpacing.xs))
-            TextButton(onClick = { otpSentTo = null; otp = "" }) {
-                Text("Yeni kod gönder")
+                style = RdButtonStyle.Green,
+                modifier = Modifier.height(50.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TextButton(onClick = onResend, enabled = !isLoading) {
+                    Text("Yeni kod gönder", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                }
+                TextButton(onClick = onChangeEmail) {
+                    Text("E-postayı değiştir", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                }
             }
         }
 
-        if (isLoading) {
-            Spacer(modifier = Modifier.height(RdSpacing.md))
-            CircularProgressIndicator()
+        if (error != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(error, style = RdFontStyle.Caption.toTextStyle(), color = colors.critical.copy(alpha = 0.88f))
         }
+    }
+}
 
-        val failure = state as? AuthUiState.Failed
-        if (failure != null) {
-            Spacer(modifier = Modifier.height(RdSpacing.sm))
-            Text(failure.error.message)
+/** Mirrors OBAuthView's `otpInputRow`: 6 visual digit boxes driven by a single invisible
+ * [BasicTextField] laid on top — the real iOS technique (invisible textfield + visual boxes),
+ * not a simplification. No auto-focus-on-appear (see file doc comment) — tap a box to focus. */
+@Composable
+private fun OtpDigitInput(value: String, onValueChange: (String) -> Unit) {
+    val colors = RdTheme.colors
+    Box(modifier = Modifier.fillMaxWidth().height(58.dp)) {
+        Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            repeat(6) { index ->
+                val digit = value.getOrNull(index)?.toString() ?: ""
+                val isActive = index == value.length && value.length < 6
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(colors.white)
+                        .border(
+                            width = if (isActive) 2.dp else 1.5.dp,
+                            color = if (isActive) colors.green else if (digit.isNotEmpty()) colors.onyx.copy(alpha = 0.72f) else colors.line,
+                            shape = RoundedCornerShape(14.dp),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(digit, style = RdFontStyle.Title2.toTextStyle(), color = colors.onyx)
+                }
+            }
         }
+        BasicTextField(
+            value = value,
+            onValueChange = { onValueChange(it.filter(Char::isDigit).take(6)) },
+            singleLine = true,
+            textStyle = TextStyle(color = androidx.compose.ui.graphics.Color.Transparent, fontSize = 1.sp),
+            cursorBrush = SolidColor(androidx.compose.ui.graphics.Color.Transparent),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            modifier = Modifier.fillMaxSize().alpha(0f),
+        )
     }
 }
 
