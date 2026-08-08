@@ -201,6 +201,29 @@ object AppErrorMessages {
         val lower = raw.lowercase()
         val supportID = existingSupportID(raw) ?: newSupportID()
 
+        // Real bug caught via live on-device testing (2026-08-08): a client-side ktor
+        // HttpRequestTimeoutException's message is "Request timeout has expired [url=.../auth/v1/
+        // otp, ...]" — the request URL itself contains "otp", so the *later*, more specific
+        // `(lower.contains("expired") && lower.contains("otp"))` branch below was matching first
+        // in effect (both conditions true) and mislabeling a plain network timeout as "your
+        // verification code expired, request a new one" — actively misleading for a failure the
+        // user hasn't even received a code for yet. A raw client-side timeout should always win
+        // over a content-based guess at what a response *would* have said, so this check runs
+        // first, ahead of every other classification in this cascade.
+        if (lower.contains("request timeout has expired") ||
+            lower.contains("httprequesttimeoutexception") ||
+            lower.contains("connecttimeoutexception") ||
+            lower.contains("sockettimeoutexception")
+        ) {
+            return AppErrorMessage(
+                title = context ?: "Bağlantı sorunu",
+                message = "Sunucuya bağlanırken zaman aşımı oluştu.",
+                action = "Bağlantını kontrol edip tekrar dene.",
+                category = AppErrorCategory.NetworkUnavailable,
+                supportID = supportID,
+            )
+        }
+
         if (isFreeRiskAnalysisTrialExhausted(rawMessage)) {
             return AppErrorMessage(
                 title = "Risk analizi hakkı kullanıldı",
