@@ -17,17 +17,21 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.encodeToJsonElement
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /** Decode target for [AuthRepository.backfillProviderIdentityIfNeeded]'s read-before-write —
- * just the 3 columns the backfill decision needs. */
+ * the columns the backfill decision + [AuthRepository.recordFirstSeenDeviceRegionIfNeeded] need. */
 @Serializable
 private data class ProfileIdentityRow(
     val email: String? = null,
     @SerialName("full_name") val fullName: String? = null,
     val initials: String? = null,
+    @SerialName("first_seen_device_region_code") val firstSeenDeviceRegionCode: String? = null,
 )
 
 @Serializable
@@ -36,6 +40,9 @@ private data class ProfileIdentityPatchPayload(
     @SerialName("full_name") val fullName: String?,
     val initials: String?,
 )
+
+@Serializable
+private data class FirstSeenDeviceRegionParams(@SerialName("p_region_code") val regionCode: String)
 
 /**
  * app_language/content_locale contract per contracts/mobile/api/otp-email-metadata.md (F6) —
@@ -51,6 +58,12 @@ enum class RdAppLanguage(val code: String, val contentLocale: String) {
 class AuthRepository @Inject constructor(
     private val client: SupabaseClient,
 ) {
+    /** Guards [recordFirstSeenDeviceRegionIfNeeded] against re-firing every sign-in within the
+     * same process — a simpler single-slot version of iOS's `Set<UUID>` in-flight/completed
+     * tracking (Android's auth flows are sequential per user action, no need for the
+     * multi-callback concurrency iOS's reactive `authStateChanges` observer can see). */
+    private var deviceRegionRecordedUserId: String? = null
+
     val sessionStatus: StateFlow<SessionStatus>
         get() = client.auth.sessionStatus
 
@@ -140,13 +153,15 @@ class AuthRepository @Inject constructor(
         val user = client.auth.currentUserOrNull() ?: return
         val profile = try {
             client.postgrest.from("profiles")
-                .select(Columns.list("email", "full_name", "initials")) {
+                .select(Columns.list("email", "full_name", "initials", "first_seen_device_region_code")) {
                     filter { eq("id", user.id) }
                 }
                 .decodeSingleOrNull<ProfileIdentityRow>()
         } catch (t: Throwable) {
             null
         } ?: return
+
+        recordFirstSeenDeviceRegionIfNeeded(user.id, profile)
 
         val metadata = user.userMetadata
         val resolvedEmail = user.email?.trim()?.ifEmpty { null }
@@ -177,6 +192,35 @@ class AuthRepository @Inject constructor(
         } catch (t: Throwable) {
             // Best-effort — see doc comment.
         }
+    }
+
+    /**
+     * Real port of `recordFirstSeenDeviceRegionIfNeeded(userID:)` — a genuinely missing gap, not
+     * a deliberate simplification: `UserProfile.firstSeenDeviceRegionCode` decoded a real column
+     * nothing ever wrote to on Android. Fires once per real sign-in (any provider), idempotent
+     * both client-side (guarded here) and server-side (skipped entirely once
+     * `profiles.first_seen_device_region_code` is already set). `Locale.getDefault().country`
+     * is Android's direct equivalent of `Locale.current.region?.identifier` — both are JVM/OS
+     * locale reads, no `Context` needed, keeping this repository Context-free like every other
+     * one in this port. Best-effort/fire-and-forget — never surfaces a failure to the caller,
+     * matches iOS's own log-only handling.
+     */
+    private suspend fun recordFirstSeenDeviceRegionIfNeeded(userId: String, profile: ProfileIdentityRow) {
+        if (profile.firstSeenDeviceRegionCode != null) return
+        if (deviceRegionRecordedUserId == userId) return
+        val regionCode = normalizedDeviceRegionCode() ?: return
+        try {
+            val params = Json.encodeToJsonElement(FirstSeenDeviceRegionParams(regionCode)) as JsonObject
+            client.postgrest.rpc("record_first_seen_device_region_v1", params)
+            deviceRegionRecordedUserId = userId
+        } catch (t: Throwable) {
+            // Best-effort — see doc comment.
+        }
+    }
+
+    private fun normalizedDeviceRegionCode(): String? {
+        val candidate = Locale.getDefault().country.trim().uppercase()
+        return candidate.takeIf { it.matches(Regex("^[A-Z]{2}$")) }
     }
 
     private fun shouldBackfillFullName(currentFullName: String?, email: String?, providerFullName: String): Boolean {

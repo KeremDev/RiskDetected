@@ -6,6 +6,7 @@ import com.riskdetectedan.core.common.RdEnvironment
 import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.profile.SubscriptionTier
+import com.revenuecat.purchases.CacheFetchPolicy
 import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.LogLevel
 import com.revenuecat.purchases.Package
@@ -108,6 +109,8 @@ class BillingRepository @Inject constructor(
      * reasoning as `GoogleAuthClient.requestIdToken(context)` in feature:onboarding: the
      * Activity is supplied by the caller at the point of use, not held or injected here. */
     suspend fun purchase(activity: Activity, billingPackage: BillingPackage): RdResult<SubscriptionTier> = try {
+        preCheckAlreadyEntitled(billingPackage.tier)?.let { return it }
+
         val result = Purchases.sharedInstance.awaitPurchase(
             PurchaseParams.Builder(activity, billingPackage.revenueCatPackage).build(),
         )
@@ -115,6 +118,38 @@ class BillingRepository @Inject constructor(
         validateReceiptOwner(result.customerInfo, tier) ?: RdResult.Success(tier)
     } catch (t: Throwable) {
         RdResult.Failure("billing_purchase_failed", t.message ?: "billing_purchase_failed", t)
+    }
+
+    /**
+     * Real port of `purchase(packageID:)`'s pre-purchase reconciliation — previously documented
+     * as a deliberately deferred gap alongside [validateReceiptOwner] (that one shipped first as
+     * the safety-critical half; this is the UX-polish half). Two real cases this avoids: buying a
+     * tier the account already has (a real, if harmless, double-charge risk without this check —
+     * Google Play would likely reject it as `ProductAlreadyPurchasedError`, but surfacing that as
+     * a *success* the way iOS does is a better experience than a purchase-failed error for
+     * something that isn't actually a failure), and buying a *lower* tier while a higher one is
+     * already active (Free-tier confusion the user almost certainly didn't intend). Not merged
+     * into [validateReceiptOwner] — that one validates *after* a purchase/restore attempt
+     * resolves; this one runs *before*, deciding whether to attempt the purchase call at all.
+     */
+    private suspend fun preCheckAlreadyEntitled(expectedTier: SubscriptionTier): RdResult<SubscriptionTier>? {
+        val customerInfo = try {
+            Purchases.sharedInstance.awaitCustomerInfo(CacheFetchPolicy.FETCH_CURRENT)
+        } catch (t: Throwable) {
+            return null
+        }
+        val currentTier = tierFromCustomerInfo(customerInfo)
+        if (!currentTier.isPaid) return null
+        validateReceiptOwner(customerInfo, currentTier)?.let { return it }
+
+        if (currentTier == expectedTier) return RdResult.Success(currentTier)
+        if (currentTier.rank > expectedTier.rank) {
+            return RdResult.Failure(
+                code = "billing_higher_tier_already_active",
+                message = "Bu Google Play hesabında zaten daha üst bir RiskDetected aboneliği (${currentTier.name}) aktif.",
+            )
+        }
+        return null
     }
 
     suspend fun restorePurchases(): RdResult<SubscriptionTier> = try {
