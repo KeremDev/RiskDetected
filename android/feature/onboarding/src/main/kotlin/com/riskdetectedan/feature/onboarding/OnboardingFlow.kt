@@ -47,7 +47,16 @@ fun OnboardingFlow(
             onNext = viewModel::next,
             onBack = viewModel::back,
         )
-        6 -> OBLoadingScreen(onFinished = viewModel::next)
+        6 -> OBLoadingScreen(
+            onFinished = viewModel::next,
+            primarySectorLabel = state.sectors.firstOrNull()?.label ?: "İnşaat",
+            hazardsLabel = if (state.hazards.isEmpty()) {
+                "Çok Tehlikeli"
+            } else {
+                state.hazards.joinToString(" · ") { it.label }
+            },
+            certificateLabel = state.certificate?.label ?: "A Sınıfı",
+        )
         7 -> OBPlanSummaryScreen(state = state, onNext = viewModel::next)
         8 -> AuthScreen(
             onAuthenticated = {
