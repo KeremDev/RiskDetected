@@ -93,6 +93,15 @@ class AnalysisViewModel @Inject constructor(
             )
             return
         }
+        // Mirrors runPhotoAnalysis's real guard: `images.count <= 3` — a hard client-side cap
+        // regardless of tier (the tier-based 1/3 cap is a *lower* bound gate, this is the
+        // absolute ceiling AnalysisService.swift itself enforces before ever calling the server).
+        if (photoPaths.size > 3) {
+            _state.value = CreateAnalysisUiState.Failed(
+                AppErrorMessages.make("Bir analizde en fazla 3 fotoğraf kullanılabilir.", context = ANALYSIS_CONTEXT),
+            )
+            return
+        }
         val sortedCanvasIds = canvasIds.sorted().ifEmpty { listOf("general") }
         val canvas = sortedCanvasIds.first()
         _state.value = CreateAnalysisUiState.Creating
@@ -158,7 +167,9 @@ class AnalysisViewModel @Inject constructor(
             }
 
             _state.value = CreateAnalysisUiState.Polling(analysisId)
-            _state.value = when (val status = analysisRepository.pollAnalysisStatus(analysisId)) {
+            _state.value = when (
+                val status = analysisRepository.pollAnalysisStatus(analysisId, photoCount = uploadedPaths.size)
+            ) {
                 is AnalysisStatus.Completed -> {
                     val findings = when (val result = findingsRepository.fetchFindings(analysisId)) {
                         is RdResult.Success -> result.value

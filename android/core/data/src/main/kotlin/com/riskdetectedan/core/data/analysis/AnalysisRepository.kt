@@ -7,8 +7,11 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.ktor.client.plugins.ResponseException
+import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.delay
 import java.util.UUID
 import javax.inject.Inject
@@ -94,6 +97,20 @@ private data class AnalysisStatusSnapshot(
     @SerialName("status_message") val statusMessage: String? = null,
 )
 
+/** Mirrors `functionErrorPayload(from:)`'s decode target exactly — the edge function's real
+ * non-2xx JSON error shape (`error`/`message` are interchangeable, `code`/`tier` only present
+ * on some error paths). */
+@Serializable
+private data class FunctionErrorBody(
+    val error: String? = null,
+    val message: String? = null,
+    @SerialName("support_id") val supportId: String? = null,
+    val code: String? = null,
+    val tier: String? = null,
+)
+
+private data class FunctionErrorPayload(val message: String, val supportId: String?, val code: String?, val tier: String?)
+
 sealed interface AnalysisStatus {
     data object Completed : AnalysisStatus
     data class Failed(val message: String?) : AnalysisStatus
@@ -142,10 +159,23 @@ class AnalysisRepository @Inject constructor(
     }
 
     /**
-     * Mirrors AnalysisService.swift's invokeAnalyze — one attempt, no retry-with-classification
-     * yet (iOS retries up to 2x on 429/500/502/503/504 with quota/photo-limit/language-contract
-     * error-code branching). That retry/error-classification layer is real product behavior,
-     * not decoration — tracked as follow-up, not silently dropped.
+     * Real port of AnalysisService.swift's `invokeAnalyze` — up to 2 attempts, same
+     * error-classification cascade against the edge function's real non-2xx JSON body
+     * (`error`/`message`/`support_id`/`code`/`tier`):
+     * - HTTP 429 whose message/code signals a *quota* rejection (not an AI-provider 429, a real
+     *   distinct case) -> `code="quota_exceeded"`, `tier` from the payload.
+     * - HTTP 409 -> `code="already_completed"` (mirrors `AnalysisError.alreadyCompleted`).
+     * - `code="PHOTO_LIMIT_EXCEEDED"` / `"OUTPUT_LANGUAGE_CONTRACT_FAILED"` passed straight
+     *   through as their own failure codes.
+     * - Otherwise HTTP 429/500/502/503/504 retry once (1s delay) before falling through to a
+     *   final classified failure (`ai_quota_exceeded`/`ai_busy`/`ai_failed`).
+     * - A non-HTTP (network/timeout) exception also retries once, then `network_failed`.
+     *
+     * Every message mirrors the Swift fallback strings verbatim (not just the classification
+     * logic) — `AppErrorMessages.make`'s substring classifier already recognizes them ("günlük
+     * kota", "analiz kotan doldu", "gemini kotası", etc.), so this alone is enough to route a
+     * failure to the right [com.riskdetectedan.core.data.error.AppErrorCategory] without needing
+     * a separate code-based branch there.
      */
     suspend fun submitAnalyze(
         analysisId: String,
@@ -155,7 +185,7 @@ class AnalysisRepository @Inject constructor(
         sector: AnalysisSector?,
         photoPaths: List<String>,
         appLanguage: String = "tr",
-    ): RdResult<Unit> = try {
+    ): RdResult<Unit> {
         val body = AnalyzeRequestBody(
             analysisId = analysisId,
             canvas = canvas,
@@ -174,29 +204,99 @@ class AnalysisRepository @Inject constructor(
             apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
             clientCapabilities = RdClientMetadata.capabilities,
         )
-        client.functions.invoke("analyze", body = body)
-        RdResult.Success(Unit)
-    } catch (t: Throwable) {
-        RdResult.Failure(
-            code = "analysis_submit_failed",
-            message = t.message ?: "analysis_submit_failed",
-            cause = t,
-        )
+        val supportId = body.supportId
+        val maxAttempts = 2
+        for (attempt in 1..maxAttempts) {
+            try {
+                client.functions.invoke("analyze", body = body)
+                return RdResult.Success(Unit)
+            } catch (e: ResponseException) {
+                val code = e.response.status.value
+                val payload = parseFunctionErrorPayload(e.response.bodyAsText(), fallbackSupportId = supportId)
+                val msg = payload.message
+                val errorCode = payload.code ?: ""
+
+                if (code == 429 &&
+                    (msg.contains("günlük kota", ignoreCase = true) || msg.contains("analiz/gün", ignoreCase = true) || errorCode == "quota_exceeded")
+                ) {
+                    val fallback = msg.ifEmpty { "Analiz kotan doldu." }
+                    return RdResult.Failure("quota_exceeded", appendSupportId(payload.supportId, fallback), e)
+                }
+                if (code == 409) {
+                    return RdResult.Failure("already_completed", "Bu analiz zaten tamamlanmış.", e)
+                }
+                if (errorCode == "PHOTO_LIMIT_EXCEEDED") {
+                    val fallback = msg.ifEmpty { "Bu plan için fotoğraf limiti aşıldı." }
+                    return RdResult.Failure("photo_limit_exceeded", appendSupportId(payload.supportId, fallback), e)
+                }
+                if (errorCode == "OUTPUT_LANGUAGE_CONTRACT_FAILED") {
+                    val fallback = "Analiz, seçilen çıktı diliyle güvenli biçimde tamamlanamadı. Lütfen tekrar dene."
+                    return RdResult.Failure("output_language_contract_failed", appendSupportId(payload.supportId, fallback), e)
+                }
+
+                val retryable = code in intArrayOf(429, 500, 502, 503, 504)
+                if (retryable && attempt < maxAttempts) {
+                    delay(1_000)
+                    continue
+                }
+
+                val messageWithSupport = appendSupportId(payload.supportId, msg)
+                val finalMessage = when (code) {
+                    429 -> messageWithSupport.ifEmpty { appendSupportId(payload.supportId, "Gemini kotası doldu. Lütfen daha sonra tekrar dene.") }
+                    503 -> messageWithSupport.ifEmpty { appendSupportId(payload.supportId, "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.") }
+                    else -> messageWithSupport.ifEmpty { appendSupportId(payload.supportId, "HTTP $code") }
+                }
+                return RdResult.Failure("ai_failed", finalMessage, e)
+            } catch (t: Throwable) {
+                if (attempt < maxAttempts) {
+                    delay(1_000)
+                    continue
+                }
+                val fallback = "Analiz isteği sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."
+                return RdResult.Failure("network_failed", appendSupportId(supportId, fallback), t)
+            }
+        }
+        // Unreachable — every branch above returns; kept for exhaustiveness.
+        return RdResult.Failure("analysis_submit_failed", "analysis_submit_failed")
+    }
+
+    private fun parseFunctionErrorPayload(bodyText: String, fallbackSupportId: String): FunctionErrorPayload {
+        val decoded = runCatching { Json { ignoreUnknownKeys = true }.decodeFromString<FunctionErrorBody>(bodyText) }.getOrNull()
+        val message = (decoded?.message ?: decoded?.error ?: "").trim()
+        return if (message.isNotEmpty()) {
+            FunctionErrorPayload(message, decoded?.supportId ?: fallbackSupportId, decoded?.code, decoded?.tier)
+        } else {
+            FunctionErrorPayload(bodyText, fallbackSupportId, null, null)
+        }
+    }
+
+    /** Mirrors `appendSupportID(_:to:)` — appends "Destek kodu: X" unless the message already
+     * carries one (idempotent across the retry loop's repeated classification passes). */
+    private fun appendSupportId(supportId: String?, message: String): String {
+        val clean = message.trim()
+        if (clean.contains("destek kodu", ignoreCase = true)) return clean
+        val id = supportId ?: return clean
+        return "$clean\nDestek kodu: $id"
     }
 
     /**
-     * Mirrors the polling loop inside AnalysisService.swift's waitForCompletedResult (status
-     * values + ~2s interval), simplified: no in-flight-analysis persistence, no findings
-     * hydration (that's the results/reports domain — separate, unbuilt). Times out after
-     * [maxAttempts] polls rather than iOS's 300-420s wall-clock deadline — close enough for a
-     * first pass, revisit if photo count needs to change the deadline like iOS does.
+     * Mirrors the polling loop inside AnalysisService.swift's `waitForCompletedResult` — same
+     * status values + ~2s interval, same wall-clock deadline logic (300s single-photo, 420s once
+     * [photoCount] is >1 — real product behavior: multi-photo analyses genuinely take longer, not
+     * an arbitrary number). Simplified: no in-flight-analysis persistence across an app kill
+     * (`InFlightAnalysisStore`), no cleanup-on-failure/recovery-if-server-actually-accepted
+     * (`recoverPhotoSubmissionIfServerAccepted`) — both real iOS resilience features, genuinely
+     * bigger scope (survive-process-death state machine), documented as still-open gaps rather
+     * than silently approximated.
      */
     suspend fun pollAnalysisStatus(
         analysisId: String,
-        maxAttempts: Int = 150,
+        photoCount: Int = 1,
         pollIntervalMillis: Long = 2_000,
     ): AnalysisStatus {
-        repeat(maxAttempts) {
+        val deadlineMillis = if (photoCount > 1) 420_000L else 300_000L
+        val startedAt = System.currentTimeMillis()
+        while (System.currentTimeMillis() - startedAt < deadlineMillis) {
             val snapshot = try {
                 client.postgrest.from("analyses")
                     .select(Columns.list("status", "status_message")) {
