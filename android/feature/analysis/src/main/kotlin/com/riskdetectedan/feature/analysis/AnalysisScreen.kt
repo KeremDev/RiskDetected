@@ -90,12 +90,14 @@ fun AnalysisScreen(
     canvasIds: List<String> = listOf("general"),
     analysisMode: String = "standard",
     resume: Boolean = false,
+    preSelectedSectorId: String? = null,
     onBack: (() -> Unit)? = null,
     viewModel: AnalysisViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
-    var selectedSector by remember { mutableStateOf<AnalysisSector?>(null) }
+    val preSelectedSector = remember(preSelectedSectorId) { preSelectedSectorId?.let(AnalysisSector::fromId) }
+    var selectedSector by remember { mutableStateOf(preSelectedSector) }
 
     // Real port of resumeInFlightAnalysisIfNeeded's trigger (Home-driven on iOS; here the caller
     // navigates straight into this screen with resume=true once it's found an in-flight record —
@@ -104,6 +106,17 @@ fun AnalysisScreen(
     // record once the first has consumed/cleared it), but there's no reason to call it twice.
     LaunchedEffect(resume) {
         if (resume) viewModel.resumeIfInFlight()
+    }
+
+    // Real port of the Home-embedded sector sheet's real effect on this screen: when a sector was
+    // already chosen upstream (SectorPickerSheet, see HomeScreen), this screen never shows its
+    // own picker at all — it goes straight to creating the analysis, matching iOS's real timing
+    // (sector is picked *before* AnalysisScreen-equivalent work ever starts). Guarded by state
+    // being Idle so this fires exactly once, not on every recomposition.
+    LaunchedEffect(preSelectedSector) {
+        if (preSelectedSector != null && !resume && state is CreateAnalysisUiState.Idle) {
+            viewModel.createAnalysis(preSelectedSector, photoPaths, canvasIds, analysisMode)
+        }
     }
 
     val completed = state as? CreateAnalysisUiState.Completed
@@ -152,8 +165,10 @@ fun AnalysisScreen(
         ) {
             // Resume mode skips the sector picker entirely — there's no new analysis to
             // configure, this screen is just re-showing progress for one the server is already
-            // working on (real port of resumeAnalysis's straight-to-polling behavior).
-            if (!resume) {
+            // working on (real port of resumeAnalysis's straight-to-polling behavior). A
+            // pre-selected sector (real Home-embedded SectorPickerSheet path) also skips this —
+            // the LaunchedEffect above already kicked off createAnalysis with it.
+            if (!resume && preSelectedSector == null) {
                 if (photoPaths.isNotEmpty()) {
                     Text(
                         if (photoPaths.size == 1) {

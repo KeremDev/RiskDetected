@@ -57,6 +57,7 @@ import com.riskdetectedan.app.R
 import com.riskdetectedan.app.reports.GeneratedReportsUiState
 import com.riskdetectedan.app.reports.GeneratedReportsViewModel
 import com.riskdetectedan.core.data.analysis.AnalysisCanvas
+import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.data.analysis.DailyQuotaUsage
 import com.riskdetectedan.core.data.reports.Report
 import com.riskdetectedan.core.designsystem.RdFontStyle
@@ -87,12 +88,12 @@ import java.util.UUID
  *    `selectedPhotos` state placement — not behind a "Fotoğraf çek" row that used to open
  *    CanvasSheet as the *first* step.
  * 4. [FreeQuotaHint] (free tier only).
- * 5. "Taramayı Başlat" button — now the real last-step trigger: empty tray opens [PhotoTraySheet]
- *    (mirrors `showSourceDialog = true`), non-empty tray opens [CanvasSheet] directly (mirrors
- *    `beginPreAnalysisSelection()`). iOS also inserts a sector-picker sheet before CanvasSheet
- *    here (`RDConfig.Features.activeAnalysisSectorEnabled`); Android's sector picker still lives
- *    on the `AnalysisScreen` reached *after* canvas confirm instead — a real ordering
- *    simplification, documented, not silently dropped (sector selection itself is unaffected).
+ * 5. "Taramayı Başlat" button — the real last-step trigger: empty tray opens [PhotoTraySheet]
+ *    (mirrors `showSourceDialog = true`); non-empty tray opens [SectorPickerSheet] first, then
+ *    [CanvasSheet] — real port of `beginPreAnalysisSelection()`'s real order (sector sheet,
+ *    *then* canvas sheet — this was previously reversed/skipped on Android, sector picking lived
+ *    only inside `AnalysisScreen` after canvas confirm; closed, see [SectorPickerSheet]'s doc
+ *    comment).
  * 6. [ProfessionalProgressCard] (if progress loaded) — real `.compactStrip` MDP card.
  * 7. Recent-analyses section ([RecentAnalysisRingCard] horizontal scroll) and generated-reports
  *    section, both via [HomeSectionCard] — real port of `homeSectionCard`/`sectionHeader`.
@@ -104,7 +105,7 @@ import java.util.UUID
 @Composable
 fun HomeScreen(
     onNavigateToCamera: () -> Unit = {},
-    onStartAnalysis: (canvasIds: List<String>, analysisMode: String, photoPaths: List<String>) -> Unit = { _, _, _ -> },
+    onStartAnalysis: (canvasIds: List<String>, analysisMode: String, photoPaths: List<String>, sectorId: String?) -> Unit = { _, _, _, _ -> },
     onResumeAnalysis: () -> Unit = {},
     onHistory: () -> Unit = {},
     onReports: () -> Unit = {},
@@ -117,6 +118,7 @@ fun HomeScreen(
     progressViewModel: HomeProgressViewModel = hiltViewModel(),
     tierViewModel: HomeTierViewModel = hiltViewModel(),
     inFlightResumeViewModel: InFlightResumeViewModel = hiltViewModel(),
+    sectorPickerViewModel: SectorPickerViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val context = LocalContext.current
@@ -159,9 +161,12 @@ fun HomeScreen(
     // silently dropping the just-captured photo's sheet. Reproduced on-device, fixed here.
     var showCanvasSheet by rememberSaveable { mutableStateOf(false) }
     var showPhotoTray by rememberSaveable { mutableStateOf(false) }
+    var showSectorSheet by rememberSaveable { mutableStateOf(false) }
     var selectedCanvases by remember { mutableStateOf(setOf(AnalysisCanvas.general)) }
+    var selectedSector by remember { mutableStateOf<AnalysisSector?>(null) }
     val canvasSheetState = rememberModalBottomSheetState()
     val traySheetState = rememberModalBottomSheetState()
+    val sectorSheetState = rememberModalBottomSheetState()
 
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(),
@@ -181,9 +186,10 @@ fun HomeScreen(
         }
     }
 
-    /** Mirrors `beginPreAnalysisSelection()`: last step before analyzing, canvas confirm. */
-    fun openCanvasSheetOrPaywall() {
-        if (isFreeQuotaExhausted) onUpgrade() else showCanvasSheet = true
+    /** Real port of `beginPreAnalysisSelection()` — the real order is sector sheet *first*, then
+     * [CanvasSheet] (see [SectorPickerSheet]'s doc comment for why this used to be reversed). */
+    fun beginPreAnalysisSelection() {
+        if (isFreeQuotaExhausted) onUpgrade() else showSectorSheet = true
     }
 
     Column(
@@ -272,7 +278,7 @@ fun HomeScreen(
                     } else if (trayPhotoPaths.isEmpty()) {
                         showPhotoTray = true
                     } else {
-                        showCanvasSheet = true
+                        beginPreAnalysisSelection()
                     }
                 }
                 .padding(horizontal = RdSpacing.md),
@@ -356,6 +362,22 @@ fun HomeScreen(
         Spacer(Modifier.height(RdSpacing.xl))
     }
 
+    if (showSectorSheet) {
+        ModalBottomSheet(onDismissRequest = { showSectorSheet = false }, sheetState = sectorSheetState) {
+            SectorPickerSheet(
+                items = remember(showSectorSheet) { sectorPickerViewModel.pickerItems() },
+                onSelect = { sector ->
+                    // Real port of continueAfterSectorSelection(): sector chosen -> straight to
+                    // CanvasSheet, the real last step before analyzing.
+                    selectedSector = sector
+                    showSectorSheet = false
+                    showCanvasSheet = true
+                },
+                onDismiss = { showSectorSheet = false },
+            )
+        }
+    }
+
     if (showCanvasSheet) {
         ModalBottomSheet(onDismissRequest = { showCanvasSheet = false }, sheetState = canvasSheetState) {
             CanvasSheet(
@@ -367,8 +389,12 @@ fun HomeScreen(
                     val paths = trayPhotoPaths
                     val sortedCanvasIds = selectedCanvases.map { it.id }.sorted()
                     val analysisMode = if (selectedCanvases.any { it.isPaid }) "detailed" else "standard"
+                    // Real port of runAnalysis()'s AnalysisSectorPreferences.recordLastUsed(selected)
+                    // call — right before the analyze request itself, not at selection time (a
+                    // sector picked then abandoned mid-flow shouldn't become "last used").
+                    selectedSector?.let { sectorPickerViewModel.recordLastUsed(it) }
                     photoTrayViewModel.clear()
-                    onStartAnalysis(sortedCanvasIds, analysisMode, paths)
+                    onStartAnalysis(sortedCanvasIds, analysisMode, paths, selectedSector?.id)
                 },
                 onDismiss = { showCanvasSheet = false },
                 onUpgradeRequested = {
@@ -400,10 +426,9 @@ fun HomeScreen(
                 },
                 onStartAnalysis = {
                     // Mirrors continueFromPhotoTrayToAnalysis() -> beginPreAnalysisSelection():
-                    // confirming the tray moves to canvas selection, the real *last* step, not
-                    // straight to analysis.
+                    // confirming the tray moves to sector selection, the real next step.
                     showPhotoTray = false
-                    openCanvasSheetOrPaywall()
+                    beginPreAnalysisSelection()
                 },
                 onClose = { showPhotoTray = false },
             )

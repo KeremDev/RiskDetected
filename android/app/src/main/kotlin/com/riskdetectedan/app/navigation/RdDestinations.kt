@@ -32,11 +32,17 @@ import kotlinx.serialization.Serializable
  * `resumeInFlightAnalysisIfNeeded` — an in-flight analysis found for the current user (survived
  * an app-process death mid-submit/mid-poll) skips the sector picker and jumps straight into
  * polling for that existing analysis instead of configuring a new one. */
+/** [sectorId] — real port of `beginPreAnalysisSelection()`'s Home-embedded sector sheet
+ * (see [com.riskdetectedan.app.home.SectorPickerSheet]): the sector is now chosen *before*
+ * reaching this screen, matching iOS's real sector-sheet-then-canvas-sheet order. Null falls
+ * back to this screen's own in-screen picker (e.g. [resume] mode, or any future entry point that
+ * hasn't gone through the Home sheet). */
 @Serializable data class Analysis(
     val photoPaths: List<String> = emptyList(),
     val canvasIds: List<String> = listOf("general"),
     val analysisMode: String = "standard",
     val resume: Boolean = false,
+    val sectorId: String? = null,
 )
 @Serializable object Companies
 @Serializable object Support

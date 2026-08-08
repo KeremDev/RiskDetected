@@ -77,6 +77,7 @@ fun RdNavHost() {
                 canvasIds = args.canvasIds,
                 analysisMode = args.analysisMode,
                 resume = args.resume,
+                preSelectedSectorId = args.sectorId,
                 onBack = { navController.popBackStack() },
             )
         }

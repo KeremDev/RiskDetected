@@ -2,6 +2,8 @@ package com.riskdetectedan.feature.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.riskdetectedan.core.data.analysis.AnalysisSector
+import com.riskdetectedan.core.data.analysis.AnalysisSectorPreferences
 import com.riskdetectedan.core.data.onboarding.OnboardingAnswersRepository
 import com.riskdetectedan.core.data.onboarding.OnboardingCertificate
 import com.riskdetectedan.core.data.onboarding.OnboardingFrequency
@@ -25,6 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class OnboardingFlowViewModel @Inject constructor(
     private val answersRepository: OnboardingAnswersRepository,
+    private val sectorPreferences: AnalysisSectorPreferences,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
@@ -69,8 +72,14 @@ class OnboardingFlowViewModel @Inject constructor(
     }
 
     /** Called once auth succeeds (step 8 -> 9) — mirrors syncPendingDraftIfPossible's
-     * "requires a session" guard, just without the local-cache replay path. */
+     * "requires a session" guard, just without the local-cache replay path. Also lands the
+     * chosen sectors in [AnalysisSectorPreferences] (real port of `savePendingDraft`'s
+     * side effect — this local copy is exactly what `AnalysisSectorPreferences.
+     * onboardingSectors()`/the Home-embedded sector-picker sheet reads back later, matching
+     * iOS's own local-cache-only round trip, not a server fetch). */
     fun submitAnswersAfterAuth() {
+        val sectorIds = _uiState.value.sectors.mapNotNull { AnalysisSector.fromId(it.id)?.id }
+        if (sectorIds.isNotEmpty()) sectorPreferences.saveOnboardingSectors(sectorIds)
         viewModelScope.launch {
             answersRepository.upsert(_uiState.value.toAnswersDraft())
         }
