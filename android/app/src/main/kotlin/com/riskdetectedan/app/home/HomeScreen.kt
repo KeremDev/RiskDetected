@@ -98,6 +98,10 @@ import java.util.UUID
  * `canvasIds` = the full sorted selection, `analysisMode` = "detailed" if any selected canvas is
  * paid-tier else "standard" (`canvases.contains { $0.isPaid }`). Previously this was silently
  * dropped — CanvasSheet's selection UI worked but never reached the actual analyze request.
+ *
+ * Faz S (2026-08-08): real professional-progress card (see [ProfessionalProgressCard]'s doc
+ * comment) between the quota hint and "Geçmiş analizler" — tapping it opens
+ * [ProfessionalTitlesSheet], port of `ProfessionalProgressHomeCard.swift`'s `onTap`.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,6 +116,7 @@ fun HomeScreen(
     photoTrayViewModel: PhotoTrayViewModel = hiltViewModel(),
     quotaViewModel: QuotaViewModel = hiltViewModel(),
     reportsViewModel: GeneratedReportsViewModel = hiltViewModel(),
+    progressViewModel: HomeProgressViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val context = LocalContext.current
@@ -119,7 +124,13 @@ fun HomeScreen(
     val trayPhotoPaths by photoTrayViewModel.photoPaths.collectAsState()
     val quota by quotaViewModel.quota.collectAsState()
     val reportsState by reportsViewModel.state.collectAsState()
-    LaunchedEffect(Unit) { quotaViewModel.refresh() }
+    val progress by progressViewModel.progress.collectAsState()
+    var showTitlesSheet by rememberSaveable { mutableStateOf(false) }
+    val titlesSheetState = rememberModalBottomSheetState()
+    LaunchedEffect(Unit) {
+        quotaViewModel.refresh()
+        progressViewModel.refresh()
+    }
     // rememberSaveable (not remember) — same fix as MainShellScreen's activeTab (Faz M): this
     // composable is disposed while CaptureForTray covers it (nav pushes a destination on top of
     // MainShell), so a plain `remember` lost showPhotoTray=true on the way back from the camera,
@@ -195,6 +206,9 @@ fun HomeScreen(
             )
             if (quota != null) {
                 FreeQuotaHint(quota = quota!!, onClick = { if (quota!!.isExhausted) onUpgrade() })
+            }
+            progress?.let { summary ->
+                ProfessionalProgressCard(progress = summary, onClick = { showTitlesSheet = true })
             }
             RdListRow(
                 title = "Geçmiş analizler",
@@ -298,6 +312,14 @@ fun HomeScreen(
                 },
                 onClose = { showPhotoTray = false },
             )
+        }
+    }
+
+    if (showTitlesSheet) {
+        progress?.let { summary ->
+            ModalBottomSheet(onDismissRequest = { showTitlesSheet = false }, sheetState = titlesSheetState) {
+                ProfessionalTitlesSheet(progress = summary)
+            }
         }
     }
 }
