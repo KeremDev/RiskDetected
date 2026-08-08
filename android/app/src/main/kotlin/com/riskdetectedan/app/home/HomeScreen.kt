@@ -97,8 +97,8 @@ import java.util.UUID
  * 7. Recent-analyses section ([RecentAnalysisRingCard] horizontal scroll) and generated-reports
  *    section, both via [HomeSectionCard] — real port of `homeSectionCard`/`sectionHeader`.
  *
- * `userTier`/`maxPhotoCount` come from [HomeTierViewModel] (real fetched tier, see its own doc
- * comment for what's still not ported — the remote `PlanCapabilities` override system).
+ * `userTier`/`maxPhotoCount` come from [HomeTierViewModel] (real fetched tier + the remote
+ * `PlanCapabilities` override, see its own doc comment).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -127,11 +127,17 @@ fun HomeScreen(
     val reportsState by reportsViewModel.state.collectAsState()
     val progress by progressViewModel.progress.collectAsState()
     val fetchedProfile by tierViewModel.profile.collectAsState()
+    val remotePhotoCapabilities by tierViewModel.photoCapabilities.collectAsState()
     val userTier = fetchedProfile?.tier ?: com.riskdetectedan.core.data.profile.SubscriptionTier.Free
     val initials = fetchedProfile?.displayInitials ?: "—"
-    // AppState.swift's PlanCapabilities local default (pre-remote-override):
-    // `maxPhotosPerAnalysis: tier.isPaid ? 3 : 1`, `safeMaxPhotosPerAnalysis` clamps 1..3.
-    val maxPhotoCount = (if (userTier.isPaid) 3 else 1).coerceIn(1, 3)
+    // AppState.swift's PlanCapabilities local default (`tier.isPaid ? 3 : 1`,
+    // `safeMaxPhotosPerAnalysis` clamps 1..3) paints instantly; `remotePhotoCapabilities`
+    // (PlanCapabilitiesRepository.fetchPhotoCapabilities, real `plan_capability_rules`+
+    // `app_feature_flags` read) overwrites it once resolved, same two-step sequencing as
+    // `applyTier`/`refreshRemotePlanCapabilities` — closes the previously-documented remote
+    // PlanCapabilities-override gap.
+    val maxPhotoCount = remotePhotoCapabilities?.maxPhotosPerAnalysis
+        ?: (if (userTier.isPaid) 3 else 1).coerceIn(1, 3)
     val isFreeQuotaExhausted = !userTier.isPaid && quota?.isExhausted == true
 
     var showTitlesSheet by rememberSaveable { mutableStateOf(false) }
