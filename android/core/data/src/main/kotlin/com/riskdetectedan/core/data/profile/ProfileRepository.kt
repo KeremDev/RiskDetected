@@ -130,7 +130,42 @@ class ProfileRepository @Inject constructor(
         RdResult.Failure("profile_logo_upload_failed", "Logo yüklenemedi.", t)
     }
 
+    /**
+     * Real port of `saveProfileAvatar(_:)` — closes a previously undiscovered gap: `UserProfile`
+     * already decoded `avatar_url` (unused by anything), but no upload path existed at all.
+     * Genuinely distinct from [uploadProfileLogo]/`company_logo_url` (that one is the user's own
+     * report-branding logo, confusingly named after "company" — see that function's doc comment)
+     * — this is the personal profile photo shown in the app's UI (`HomeHeaderAvatar`, the
+     * profile hero card), bucket `"avatars"`, path `{userId}/avatar.jpg`. Upload-then-patch in
+     * one call, same sequencing as iOS (a failed upload never reaches the DB patch).
+     */
+    suspend fun uploadAvatar(userId: String, jpegBytes: ByteArray): RdResult<String> = try {
+        val path = "${userId.lowercase()}/avatar.jpg"
+        client.storage.from(AVATAR_BUCKET).upload(path, jpegBytes) {
+            upsert = true
+        }
+        client.postgrest.from("profiles")
+            .update(AvatarPatchPayload(avatarUrl = path)) {
+                filter { eq("id", userId) }
+            }
+        RdResult.Success(path)
+    } catch (t: Throwable) {
+        RdResult.Failure("profile_avatar_upload_failed", "Profil fotoğrafı yüklenemedi.", t)
+    }
+
+    /** Mirrors `profileAvatarImage(path:)` — authenticated download from the private "avatars"
+     * bucket, same pattern as every other private-bucket download in this port. */
+    suspend fun downloadAvatar(path: String): RdResult<ByteArray> = try {
+        RdResult.Success(client.storage.from(AVATAR_BUCKET).downloadAuthenticated(path))
+    } catch (t: Throwable) {
+        RdResult.Failure("profile_avatar_download_failed", t.message ?: "profile_avatar_download_failed", t)
+    }
+
     private companion object {
         const val LOGO_BUCKET = "logos"
+        const val AVATAR_BUCKET = "avatars"
     }
 }
+
+@Serializable
+private data class AvatarPatchPayload(@SerialName("avatar_url") val avatarUrl: String)

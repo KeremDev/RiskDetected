@@ -115,7 +115,7 @@ fun ProfileScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = RdSpacing.lg),
                 ) {
-                    ProfileHero(profile = current.profile)
+                    ProfileHero(profile = current.profile, viewModel = viewModel)
 
                     progress?.let {
                         Spacer(Modifier.height(RdSpacing.md))
@@ -144,9 +144,46 @@ fun ProfileScreen(
     }
 }
 
+/**
+ * Real port of `ProfileView.swift`'s avatar picker (`selectedProfileAvatarItem`/
+ * `handleProfileAvatarSelection`) — closes a real gap: `UserProfile.avatarUrl` decoded a real
+ * column that nothing ever uploaded to or displayed. Tap the circle to replace it via the system
+ * Photo Picker; the real photo (via [ProfileAvatarImage]) layers over the initials fallback,
+ * center-cropped to a square client-side (512px/quality 86, same budget as iOS's
+ * `centeredSquareJPEG`) before upload.
+ */
 @Composable
-private fun ProfileHero(profile: UserProfile) {
+private fun ProfileHero(profile: UserProfile, viewModel: ProfileViewModel) {
     val colors = RdTheme.colors
+    val context = LocalContext.current
+    val isSavingAvatar by viewModel.isSavingAvatar.collectAsState()
+    val avatarError by viewModel.avatarError.collectAsState()
+
+    val pickAvatar = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        context.contentResolver.openInputStream(uri)?.use { stream ->
+            val bitmap = BitmapFactory.decodeStream(stream) ?: return@use
+            val side = 512
+            val scale = maxOf(side.toFloat() / bitmap.width, side.toFloat() / bitmap.height)
+            val scaled = Bitmap.createScaledBitmap(
+                bitmap,
+                (bitmap.width * scale).toInt(),
+                (bitmap.height * scale).toInt(),
+                true,
+            )
+            val cropped = Bitmap.createBitmap(
+                scaled,
+                maxOf(0, (scaled.width - side) / 2),
+                maxOf(0, (scaled.height - side) / 2),
+                side,
+                side,
+            )
+            val output = ByteArrayOutputStream()
+            cropped.compress(Bitmap.CompressFormat.JPEG, 86, output)
+            viewModel.updateAvatar(output.toByteArray())
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,13 +195,33 @@ private fun ProfileHero(profile: UserProfile) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            modifier = Modifier.size(64.dp).clip(CircleShape).background(colors.onyx),
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(colors.onyx)
+                .clickable {
+                    pickAvatar.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 profile.displayName.take(1).uppercase(),
                 style = RdFontStyle.Title2.toTextStyle(),
                 color = colors.white,
+            )
+            ProfileAvatarImage(path = profile.avatarUrl, modifier = Modifier.clip(CircleShape))
+            if (isSavingAvatar) {
+                Box(modifier = Modifier.fillMaxSize().background(colors.onyx.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = colors.white, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+        avatarError?.let { error ->
+            Text(
+                error.message,
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.critical,
+                modifier = Modifier.padding(top = RdSpacing.xxs),
             )
         }
         Spacer(Modifier.height(RdSpacing.xs))

@@ -49,6 +49,15 @@ class ProfileViewModel @Inject constructor(
     private val _saveError = MutableStateFlow<AppErrorMessage?>(null)
     val saveError: StateFlow<AppErrorMessage?> = _saveError.asStateFlow()
 
+    /** Separate from [isSaving]/[saveError] — the avatar picker lives on [ProfileHero] (outside
+     * the edit form), a distinct action with its own in-flight/error state so it doesn't fight
+     * over the edit form's flags. */
+    private val _isSavingAvatar = MutableStateFlow(false)
+    val isSavingAvatar: StateFlow<Boolean> = _isSavingAvatar.asStateFlow()
+
+    private val _avatarError = MutableStateFlow<AppErrorMessage?>(null)
+    val avatarError: StateFlow<AppErrorMessage?> = _avatarError.asStateFlow()
+
     init {
         load()
     }
@@ -138,5 +147,31 @@ class ProfileViewModel @Inject constructor(
 
     fun clearSaveError() {
         _saveError.value = null
+    }
+
+    /** Real port of `handleProfileAvatarSelection` — upload then reload the full profile
+     * (matches iOS's `saveProfileAvatar` -> `refreshProfile()` pair rather than trusting a local
+     * echo, same discipline as [saveProfile]). */
+    fun updateAvatar(jpegBytes: ByteArray) {
+        val current = (_state.value as? ProfileUiState.Loaded)?.profile ?: return
+        if (_isSavingAvatar.value) return
+        _isSavingAvatar.value = true
+        _avatarError.value = null
+        viewModelScope.launch {
+            when (val result = profileRepository.uploadAvatar(current.id, jpegBytes)) {
+                is RdResult.Success -> {
+                    _isSavingAvatar.value = false
+                    load()
+                }
+                is RdResult.Failure -> {
+                    _isSavingAvatar.value = false
+                    _avatarError.value = AppErrorMessages.make(result.message, context = PROFILE_CONTEXT)
+                }
+            }
+        }
+    }
+
+    fun clearAvatarError() {
+        _avatarError.value = null
     }
 }

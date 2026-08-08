@@ -8,13 +8,34 @@ import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.auth.providers.builtin.OTP
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/** Decode target for [AuthRepository.backfillProviderIdentityIfNeeded]'s read-before-write —
+ * just the 3 columns the backfill decision needs. */
+@Serializable
+private data class ProfileIdentityRow(
+    val email: String? = null,
+    @SerialName("full_name") val fullName: String? = null,
+    val initials: String? = null,
+)
+
+@Serializable
+private data class ProfileIdentityPatchPayload(
+    val email: String?,
+    @SerialName("full_name") val fullName: String?,
+    val initials: String?,
+)
 
 /**
  * app_language/content_locale contract per contracts/mobile/api/otp-email-metadata.md (F6) —
@@ -64,6 +85,7 @@ class AuthRepository @Inject constructor(
 
     suspend fun verifyEmailOtp(email: String, token: String): RdResult<Unit> = try {
         client.auth.verifyEmailOtp(type = OtpType.Email.EMAIL, email = email, token = token)
+        backfillProviderIdentityIfNeeded()
         RdResult.Success(Unit)
     } catch (t: Throwable) {
         RdResult.Failure(code = "otp_verify_failed", message = t.message ?: "otp_verify_failed", cause = t)
@@ -74,17 +96,105 @@ class AuthRepository @Inject constructor(
      * `auth.external.google` configured (supabase/config.toml) with a real client_id — this
      * is the one auth path the review doc's F8 finding didn't even need to flag, since it was
      * already ready before Android work started.
+     *
+     * [emailFallback]/[fullNameFallback] — real port of `signInWithGoogle`'s
+     * `emailFallback`/`fullNameFallback` params (from `GoogleSignInResult.email`/`.fullName`,
+     * read straight off Google's own SDK profile object): passed through to
+     * [backfillProviderIdentityIfNeeded] below.
      */
-    suspend fun signInWithGoogleIdToken(idToken: String, rawNonce: String?): RdResult<Unit> = try {
+    suspend fun signInWithGoogleIdToken(
+        idToken: String,
+        rawNonce: String?,
+        emailFallback: String? = null,
+        fullNameFallback: String? = null,
+    ): RdResult<Unit> = try {
         client.auth.signInWith(IDToken) {
             this.idToken = idToken
             provider = Google
             nonce = rawNonce
         }
+        backfillProviderIdentityIfNeeded(emailFallback, fullNameFallback)
         RdResult.Success(Unit)
     } catch (t: Throwable) {
         RdResult.Failure(code = "google_sign_in_failed", message = t.message ?: "google_sign_in_failed", cause = t)
     }
+
+    /**
+     * Real port of `ensureProfile`+`backfillProviderIdentityIfNeeded` — the DB's
+     * `on_auth_user_created` trigger (`02_profiles.sql`) already creates the `profiles` row on
+     * every sign-up with a single-key fallback (`raw_user_meta_data->>'full_name'`, else the
+     * email local-part), which is NOT always the real provider-supplied name (Google's ID token
+     * claims can land under `name`/`display_name`/`given_name`+`family_name` instead of
+     * `full_name` depending on how GoTrue maps them) — without this correction, a real name could
+     * get silently and *permanently* stuck as the email's local part forever, since nothing else
+     * ever re-derives it. This was previously entirely missing on Android: nothing called
+     * anything after a successful sign-in, the trigger's one-shot insert was the only thing that
+     * ever ran. Best-effort/fire-and-forget by design (never surfaces a failure to the caller,
+     * never blocks sign-in on a cosmetic identity correction) — matches iOS's own
+     * `Self.logger.warning(...)`-only failure handling.
+     */
+    private suspend fun backfillProviderIdentityIfNeeded(
+        emailFallback: String? = null,
+        fullNameFallback: String? = null,
+    ) {
+        val user = client.auth.currentUserOrNull() ?: return
+        val profile = try {
+            client.postgrest.from("profiles")
+                .select(Columns.list("email", "full_name", "initials")) {
+                    filter { eq("id", user.id) }
+                }
+                .decodeSingleOrNull<ProfileIdentityRow>()
+        } catch (t: Throwable) {
+            null
+        } ?: return
+
+        val metadata = user.userMetadata
+        val resolvedEmail = user.email?.trim()?.ifEmpty { null }
+            ?: emailFallback?.trim()?.ifEmpty { null }
+            ?: metadataString(metadata, "email")
+        val resolvedFullName = fullNameFallback?.trim()?.ifEmpty { null }
+            ?: metadataString(metadata, "full_name")
+            ?: metadataString(metadata, "name")
+            ?: metadataString(metadata, "display_name")
+            ?: listOfNotNull(metadataString(metadata, "given_name"), metadataString(metadata, "family_name"))
+                .joinToString(" ").trim().ifEmpty { null }
+
+        val shouldUpdateEmail = profile.email.isNullOrBlank() && resolvedEmail != null
+        val shouldUpdateName = resolvedFullName != null &&
+            shouldBackfillFullName(profile.fullName, resolvedEmail, resolvedFullName)
+        if (!shouldUpdateEmail && !shouldUpdateName) return
+
+        try {
+            client.postgrest.from("profiles").update(
+                ProfileIdentityPatchPayload(
+                    email = if (shouldUpdateEmail) resolvedEmail else profile.email,
+                    fullName = if (shouldUpdateName) resolvedFullName else profile.fullName,
+                    initials = if (shouldUpdateName) computeInitials(resolvedFullName!!) else profile.initials,
+                ),
+            ) {
+                filter { eq("id", user.id) }
+            }
+        } catch (t: Throwable) {
+            // Best-effort — see doc comment.
+        }
+    }
+
+    private fun shouldBackfillFullName(currentFullName: String?, email: String?, providerFullName: String): Boolean {
+        val current = currentFullName?.trim()?.ifEmpty { null } ?: return true
+        val emailLocalPart = email?.substringBefore("@")?.trim()?.lowercase()
+        return current.lowercase() == emailLocalPart
+    }
+
+    private fun metadataString(metadata: JsonObject?, key: String): String? =
+        (metadata?.get(key) as? JsonPrimitive)?.contentOrNull?.trim()?.ifEmpty { null }
+
+    private fun computeInitials(name: String): String? = name.trim()
+        .split(" ")
+        .filter { it.isNotBlank() }
+        .take(2)
+        .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+        .joinToString("")
+        .ifEmpty { null }
 
     suspend fun signOut(): RdResult<Unit> = try {
         client.auth.signOut()

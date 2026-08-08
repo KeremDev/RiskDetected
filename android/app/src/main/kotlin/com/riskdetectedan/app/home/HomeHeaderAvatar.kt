@@ -26,11 +26,12 @@ import com.riskdetectedan.core.designsystem.toTextStyle
  * (bottom-trailing) when paid. `RDAvatar.badgeIcon`'s `crown.fill`/`star.fill` mapped to Material
  * `MilitaryTech`/`Star` (no crown glyph in the extended icon set) — same "closest available
  * Material icon" substitution CanvasSheet already uses for its own SF Symbol mappings, not a
- * silent shortcut. Image-avatar path (`app.profile?.avatarURL`) not ported — no avatar-photo
- * upload/display exists anywhere on Android yet, initials-only.
+ * silent shortcut. Image-avatar path (`app.profile?.avatarURL`) now real via [avatarPath] +
+ * [HomeAvatarImage] — closes a previously documented gap (profile-photo upload/display didn't
+ * exist anywhere on Android).
  */
 @Composable
-fun HomeHeaderAvatar(initials: String, tier: SubscriptionTier, size: Int = 36) {
+fun HomeHeaderAvatar(initials: String, tier: SubscriptionTier, avatarPath: String? = null, size: Int = 36) {
     val colors = RdTheme.colors
     val sizeDp = size.dp
     Box(modifier = Modifier.size(sizeDp)) {
@@ -43,6 +44,7 @@ fun HomeHeaderAvatar(initials: String, tier: SubscriptionTier, size: Int = 36) {
             contentAlignment = Alignment.Center,
         ) {
             Text(initials, style = RdFontStyle.Caption.toTextStyle(), color = colors.white)
+            HomeAvatarImage(path = avatarPath, modifier = Modifier.clip(CircleShape))
         }
         if (tier.isPaid) {
             val badgeColor = if (tier == SubscriptionTier.Pro) colors.green else colors.planPlus

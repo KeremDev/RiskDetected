@@ -14,7 +14,18 @@ import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
 
-data class GoogleIdTokenResult(val idToken: String, val rawNonce: String)
+/** [email]/[displayName] — read straight off [GoogleIdTokenCredential] (Android's counterpart to
+ * `GIDSignInResult.user.profile?.email`/`.name`), passed through to
+ * [com.riskdetectedan.core.data.auth.AuthRepository.signInWithGoogleIdToken]'s
+ * `emailFallback`/`fullNameFallback` so a real name/email is available even when
+ * `auth.users`'s metadata mapping doesn't carry it under the key the profile-bootstrap trigger
+ * expects. */
+data class GoogleIdTokenResult(
+    val idToken: String,
+    val rawNonce: String,
+    val email: String? = null,
+    val displayName: String? = null,
+)
 
 /**
  * Credential Manager wrapper — retrieves a Google ID token for [AuthRepository]
@@ -49,10 +60,17 @@ class GoogleAuthClient @Inject constructor(
             ) {
                 val googleIdTokenCredential =
                     GoogleIdTokenCredential.createFrom(credential.data)
+                val displayName = googleIdTokenCredential.displayName?.trim()?.ifEmpty { null }
+                    ?: listOfNotNull(
+                        googleIdTokenCredential.givenName?.trim()?.ifEmpty { null },
+                        googleIdTokenCredential.familyName?.trim()?.ifEmpty { null },
+                    ).joinToString(" ").trim().ifEmpty { null }
                 RdResult.Success(
                     GoogleIdTokenResult(
                         idToken = googleIdTokenCredential.idToken,
                         rawNonce = rawNonce,
+                        email = googleIdTokenCredential.id.trim().ifEmpty { null },
+                        displayName = displayName,
                     ),
                 )
             } else {

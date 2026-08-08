@@ -231,7 +231,7 @@ fun HomeScreen(
                 Spacer(Modifier.width(RdSpacing.sm))
             }
             Box(modifier = Modifier.clickable(onClick = onProfile)) {
-                HomeHeaderAvatar(initials = initials, tier = userTier)
+                HomeHeaderAvatar(initials = initials, tier = userTier, avatarPath = fetchedProfile?.avatarUrl)
             }
         }
 

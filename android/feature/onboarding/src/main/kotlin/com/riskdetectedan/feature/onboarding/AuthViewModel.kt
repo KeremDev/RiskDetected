@@ -67,10 +67,10 @@ class AuthViewModel @Inject constructor(
                     return@launch
                 }
                 is RdResult.Success -> {
-                    val (idToken, rawNonce) = tokenResult.value
+                    val (idToken, rawNonce, email, displayName) = tokenResult.value
                     _state.value = when (
                         val signInResult =
-                            authRepository.signInWithGoogleIdToken(idToken, rawNonce)
+                            authRepository.signInWithGoogleIdToken(idToken, rawNonce, email, displayName)
                     ) {
                         is RdResult.Success -> AuthUiState.SignedIn
                         is RdResult.Failure -> AuthUiState.Failed(

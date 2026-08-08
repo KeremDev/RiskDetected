@@ -111,23 +111,59 @@ class BillingRepository @Inject constructor(
         val result = Purchases.sharedInstance.awaitPurchase(
             PurchaseParams.Builder(activity, billingPackage.revenueCatPackage).build(),
         )
-        RdResult.Success(tierFromCustomerInfo(result.customerInfo))
+        val tier = tierFromCustomerInfo(result.customerInfo)
+        validateReceiptOwner(result.customerInfo, tier) ?: RdResult.Success(tier)
     } catch (t: Throwable) {
         RdResult.Failure("billing_purchase_failed", t.message ?: "billing_purchase_failed", t)
     }
 
     suspend fun restorePurchases(): RdResult<SubscriptionTier> = try {
         val customerInfo = Purchases.sharedInstance.awaitRestore()
-        RdResult.Success(tierFromCustomerInfo(customerInfo))
+        val tier = tierFromCustomerInfo(customerInfo)
+        validateReceiptOwner(customerInfo, tier) ?: RdResult.Success(tier)
     } catch (t: Throwable) {
         RdResult.Failure("billing_restore_failed", t.message ?: "billing_restore_failed", t)
     }
 
     suspend fun currentTier(): RdResult<SubscriptionTier> = try {
         val customerInfo = Purchases.sharedInstance.awaitCustomerInfo()
-        RdResult.Success(tierFromCustomerInfo(customerInfo))
+        val tier = tierFromCustomerInfo(customerInfo)
+        validateReceiptOwner(customerInfo, tier) ?: RdResult.Success(tier)
     } catch (t: Throwable) {
         RdResult.Failure("billing_customer_info_failed", t.message ?: "billing_customer_info_failed", t)
+    }
+
+    /**
+     * Real port of `SubscriptionManager.swift`'s `validateReceiptOwner` — previously entirely
+     * missing on Android (a real gap, not a deliberate simplification). Without this, a paid
+     * tier resolved from [CustomerInfo] could silently belong to a *different* RiskDetected
+     * account than the one currently signed in (e.g. a shared/reused Google Play account whose
+     * subscription was originally purchased under someone else's account) — this app would then
+     * show "you're Pro" client-side for the wrong user. The real feature gate
+     * (`profiles.tier`) is written server-side by the RevenueCat webhook using RevenueCat's own
+     * account-linking data, so this can't actually smuggle a paid feature past the backend
+     * (master §37, "backend is sole authority" — unaffected either way) — but leaving the
+     * mismatch undetected client-side would let a confusing, wrong "you're Pro!" UI moment
+     * happen with no explanation and no path to resolve it, which is the real problem this
+     * guard exists to catch and message clearly instead.
+     *
+     * The message text ("revenuecat_owner_mismatch: ...") is deliberately the exact magic
+     * substring [PurchaseErrorClassifier.classifyRawMessage] already recognizes (mapped to
+     * [PurchaseErrorKind.ReceiptConflict], with a ready Turkish message in
+     * `AppErrorMessages.makePurchase` since feature #27) — that plumbing existed already and was
+     * simply never triggered from anywhere; this is the missing trigger, not new UI.
+     */
+    private fun validateReceiptOwner(customerInfo: CustomerInfo, tier: SubscriptionTier): RdResult.Failure? {
+        if (tier == SubscriptionTier.Free) return null
+        val appUserId = currentAppUserId ?: return null
+        val original = customerInfo.originalAppUserId.lowercase()
+        if (original.startsWith("\$rcanonymousid:")) return null
+        if (original == appUserId) return null
+        return RdResult.Failure(
+            code = "billing_receipt_owner_mismatch",
+            message = "revenuecat_owner_mismatch: bu Google Play hesabındaki abonelik başka bir " +
+                "RiskDetected hesabına bağlı.",
+        )
     }
 
     /** Same precedence as `SubscriptionManager.swift`'s `state(from:)`: entitlement check first
