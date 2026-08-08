@@ -18,9 +18,17 @@ import kotlinx.serialization.Serializable
 @Serializable object MainShell
 @Serializable object Capture
 
-/** photoPath null until Capture hands off a file — matches Analysis being reachable directly
- * from Home too (sector-first flow) as well as from Capture (photo-first flow). */
-@Serializable data class Analysis(val photoPath: String? = null)
+/** Reached via [Capture]'s quick-scan single-shot flow (adds its one photo to the list itself,
+ * navigates here directly) — a second route, same [com.riskdetectedan.feature.capture.CaptureScreen]
+ * composable, wired (Faz O) to add its photo to the shared [com.riskdetectedan.app.home.PhotoTrayViewModel]
+ * and pop back to [MainShell]'s photo tray instead, matching iOS's real camera-returns-to-tray flow. */
+@Serializable object CaptureForTray
+
+/** photoPaths empty until Capture/the photo tray hands off files — matches Analysis being
+ * reachable directly from Home too (sector-first flow) as well as from Capture (photo-first
+ * flow). Supports the real multi-photo flow (Faz O) — up to 3 photos, iOS's own hard cap
+ * regardless of tier (`PlanCapabilities.safeMaxPhotosPerAnalysis`). */
+@Serializable data class Analysis(val photoPaths: List<String> = emptyList())
 @Serializable object Companies
 @Serializable object Support
 @Serializable object NotificationSettings

@@ -67,9 +67,12 @@ class AnalysisViewModel @Inject constructor(
      * Full submit flow, mirroring AnalysisService.swift's sequence: create -> upload photo(s)
      * -> invoke `analyze` -> poll for a terminal status. Without a photo, stops after create
      * (matches the backend requiring at least one photo before `analyze` will do anything
-     * useful — no point invoking it with an empty photo_paths array).
+     * useful — no point invoking it with an empty photo_paths array). [photoPaths] supports the
+     * real multi-photo flow (Faz O, up to `PlanCapabilities.safeMaxPhotosPerAnalysis` — iOS caps
+     * this at 3 regardless of tier — via Home's real `PhotoTraySheet`); `sequenceIndex` is
+     * 1-based per photo position, matching the single-photo path's existing convention.
      */
-    fun createAnalysis(sector: AnalysisSector?, photoPath: String?) {
+    fun createAnalysis(sector: AnalysisSector?, photoPaths: List<String>) {
         val userId = authRepository.currentUserId
         if (userId == null) {
             _state.value = CreateAnalysisUiState.Failed(
@@ -96,24 +99,27 @@ class AnalysisViewModel @Inject constructor(
                 is RdResult.Success -> created.value
             }
 
-            val file = photoPath?.let { File(it) }
-            if (file == null || !file.exists()) {
+            val files = photoPaths.map { File(it) }.filter { it.exists() }
+            if (files.isEmpty()) {
                 _state.value = CreateAnalysisUiState.CreatedWithoutPhoto(analysisId)
                 return@launch
             }
 
             _state.value = CreateAnalysisUiState.UploadingPhoto
-            val jpegBytes = file.readBytes()
-            val uploadedPath = when (
-                val uploadResult =
-                    photoRepository.uploadPhoto(userId, analysisId, sequenceIndex = 1, jpegBytes)
-            ) {
-                is RdResult.Success -> uploadResult.value
-                is RdResult.Failure -> {
-                    _state.value = CreateAnalysisUiState.Failed(
-                        AppErrorMessages.make(uploadResult.message, context = ANALYSIS_CONTEXT),
-                    )
-                    return@launch
+            val uploadedPaths = mutableListOf<String>()
+            for ((index, file) in files.withIndex()) {
+                val jpegBytes = file.readBytes()
+                when (
+                    val uploadResult =
+                        photoRepository.uploadPhoto(userId, analysisId, sequenceIndex = index + 1, jpegBytes)
+                ) {
+                    is RdResult.Success -> uploadedPaths.add(uploadResult.value)
+                    is RdResult.Failure -> {
+                        _state.value = CreateAnalysisUiState.Failed(
+                            AppErrorMessages.make(uploadResult.message, context = ANALYSIS_CONTEXT),
+                        )
+                        return@launch
+                    }
                 }
             }
 
@@ -123,7 +129,7 @@ class AnalysisViewModel @Inject constructor(
                     analysisId = analysisId,
                     canvas = canvas,
                     sector = sector,
-                    photoPaths = listOf(uploadedPath),
+                    photoPaths = uploadedPaths,
                 )
             ) {
                 is RdResult.Failure -> {

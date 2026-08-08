@@ -50,7 +50,8 @@ fun MainShellScreen(navController: NavHostController) {
     Box(modifier = Modifier.fillMaxSize().background(colors.paper)) {
         when (activeTab) {
             RdTab.Home -> HomeScreen(
-                onCapture = { navController.navigate(Capture) },
+                onNavigateToCamera = { navController.navigate(CaptureForTray) },
+                onStartAnalysis = { paths -> navController.navigate(Analysis(photoPaths = paths)) },
                 onHistory = { activeTab = RdTab.Analyses },
                 onProfile = { activeTab = RdTab.Profile },
                 onUpgrade = { navController.navigate(Paywall) },

@@ -1,10 +1,13 @@
 package com.riskdetectedan.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.riskdetectedan.app.home.PhotoTrayViewModel
 import com.riskdetectedan.feature.analysis.AnalysisScreen
 import com.riskdetectedan.feature.capture.CaptureScreen
 import com.riskdetectedan.feature.onboarding.AuthScreen
@@ -41,16 +44,35 @@ fun RdNavHost() {
         }
         composable<MainShell> { MainShellScreen(navController) }
         composable<Capture> {
+            // Quick-scan single-shot path (RdTabBar's floating viewfinder button) — goes straight
+            // to Analysis with its one photo, matching iOS's own "quick scan" bypass (MainTabView's
+            // handleQuickScanTap, which skips the photo tray entirely).
             CaptureScreen(
                 onPhotoCaptured = { file ->
-                    navController.navigate(Analysis(photoPath = file.absolutePath))
+                    navController.navigate(Analysis(photoPaths = listOf(file.absolutePath)))
+                },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable<CaptureForTray> { backStackEntry ->
+            // Same CaptureScreen composable, different wiring — adds its photo to the real
+            // PhotoTraySheet (Faz O) and returns to it, matching iOS's real Home camera-tray
+            // flow. Scoped to MainShell's own back stack entry (not this destination's) so the
+            // same PhotoTrayViewModel instance Home reads from is the one that gets the photo —
+            // same NavBackStackEntry-scoping technique used to fix Faz M's active-tab reset bug.
+            val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(MainShell) }
+            val photoTrayViewModel: PhotoTrayViewModel = hiltViewModel(parentEntry)
+            CaptureScreen(
+                onPhotoCaptured = { file ->
+                    photoTrayViewModel.addPhoto(file.absolutePath)
+                    navController.popBackStack()
                 },
                 onBack = { navController.popBackStack() },
             )
         }
         composable<Analysis> { backStackEntry ->
             val args: Analysis = backStackEntry.toRoute()
-            AnalysisScreen(photoPath = args.photoPath, onBack = { navController.popBackStack() })
+            AnalysisScreen(photoPaths = args.photoPaths, onBack = { navController.popBackStack() })
         }
         composable<Companies> { CompanyListScreen(onBack = { navController.popBackStack() }) }
         composable<Support> { SupportScreen(onBack = { navController.popBackStack() }) }

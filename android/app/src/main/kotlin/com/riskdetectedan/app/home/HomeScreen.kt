@@ -1,5 +1,9 @@
 package com.riskdetectedan.app.home
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,10 +34,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.analysis.AnalysisCanvas
@@ -49,40 +55,69 @@ import com.riskdetectedan.core.designsystem.riskLevelFromRaw
 import com.riskdetectedan.core.designsystem.toTextStyle
 import com.riskdetectedan.feature.reports.HistoryUiState
 import com.riskdetectedan.feature.reports.HistoryViewModel
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.util.UUID
 
 /**
- * Not a port of App/Views/Home/HomeView.swift's layout (2852 lines — full stats/widget/timeline
- * dashboard) or `MainTabView.swift`'s 4-tab bar — a real, honest visual pass over Android's actual
- * 3-destination hub (Capture/History/Profile), reusing the just-built [RdListRow]/[RdSectionCard]/
- * [RdRiskChip] core-flow components (Faz F). iOS's "reports" tab (generated PDF/XLSX list) still
- * doesn't exist here separately (pre-existing scope note, not new) — only the analyses/history
- * list this app calls "Reports".
+ * Not a port of App/Views/Home/HomeView.swift's full 2852-line dashboard/`MainTabView.swift`'s
+ * tab bar (those are [com.riskdetectedan.app.navigation.MainShellScreen]/[com.riskdetectedan.app.navigation.RdTabBar]
+ * now, Faz M) — this is Home's *own* tab content, reusing [RdListRow]/[RdSectionCard]/[RdRiskChip]
+ * (Faz F). iOS's "reports" tab (generated PDF/XLSX list) is a separate tab now too (Faz M/R stub),
+ * not conflated with this screen's own "Geçmiş analizler" card (which is Analizler-tab content).
  *
  * Reuses `feature:reports`'s already-built [HistoryViewModel] for the last-analysis summary card
  * (rather than adding a second parallel query) — `app` already depends on `feature:reports` for
  * `ReportsScreen`, so this doesn't add a new module edge.
  *
- * Faz N (2026-08-08): "Fotoğraf çek" now opens iOS's real [CanvasSheet] first (Odaklı Analiz
- * picker), matching HomeView.swift's real flow (canvas selection before the photo step) instead
- * of jumping straight to Capture. Selected canvases aren't threaded into analysis creation yet —
- * that wiring lands with Faz Q's real scan flow, this is honest scaffolding not a finished
- * pipeline. `userTier` defaults to Free (no shared app-wide session/tier state exists yet to read
- * the real signed-in tier from here — same gap Faz Q's real ViewModel will close).
+ * Faz N/O (2026-08-08): "Fotoğraf çek" opens the real [CanvasSheet] (Odaklı Analiz picker) then
+ * the real [PhotoTraySheet] (multi-photo picker) — matching HomeView.swift's real flow order
+ * (canvas, then photos) instead of jumping straight to Capture. Selected canvases still aren't
+ * threaded into analysis creation (Faz Q's job). `userTier` defaults to Free (no shared app-wide
+ * session/tier state exists yet) — same documented gap as Faz N.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onCapture: () -> Unit = {},
+    onNavigateToCamera: () -> Unit = {},
+    onStartAnalysis: (List<String>) -> Unit = {},
     onHistory: () -> Unit = {},
     onProfile: () -> Unit = {},
     onUpgrade: () -> Unit = {},
     viewModel: HistoryViewModel = hiltViewModel(),
+    photoTrayViewModel: PhotoTrayViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-    var showCanvasSheet by remember { mutableStateOf(false) }
+    val trayPhotoPaths by photoTrayViewModel.photoPaths.collectAsState()
+    // rememberSaveable (not remember) — same fix as MainShellScreen's activeTab (Faz M): this
+    // composable is disposed while CaptureForTray covers it (nav pushes a destination on top of
+    // MainShell), so a plain `remember` lost showPhotoTray=true on the way back from the camera,
+    // silently dropping the just-captured photo's sheet. Reproduced on-device, fixed here.
+    var showCanvasSheet by rememberSaveable { mutableStateOf(false) }
+    var showPhotoTray by rememberSaveable { mutableStateOf(false) }
     var selectedCanvases by remember { mutableStateOf(setOf(AnalysisCanvas.general)) }
-    val sheetState = rememberModalBottomSheetState()
+    val canvasSheetState = rememberModalBottomSheetState()
+    val traySheetState = rememberModalBottomSheetState()
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(),
+    ) { uris ->
+        val remaining = 1 - trayPhotoPaths.size // Free-tier default cap, see PhotoTraySheet's doc
+        uris.take(maxOf(0, remaining)).forEach { uri ->
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                val bitmap = BitmapFactory.decodeStream(stream)
+                if (bitmap != null) {
+                    val output = ByteArrayOutputStream()
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
+                    val file = File(context.cacheDir, "tray_${UUID.randomUUID()}.jpg")
+                    file.writeBytes(output.toByteArray())
+                    photoTrayViewModel.addPhoto(file.absolutePath)
+                }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -145,20 +180,51 @@ fun HomeScreen(
     }
 
     if (showCanvasSheet) {
-        ModalBottomSheet(onDismissRequest = { showCanvasSheet = false }, sheetState = sheetState) {
+        ModalBottomSheet(onDismissRequest = { showCanvasSheet = false }, sheetState = canvasSheetState) {
             CanvasSheet(
                 selected = selectedCanvases,
                 onSelectedChange = { selectedCanvases = it },
                 userTier = SubscriptionTier.Free,
                 onConfirm = {
                     showCanvasSheet = false
-                    onCapture()
+                    showPhotoTray = true
                 },
                 onDismiss = { showCanvasSheet = false },
                 onUpgradeRequested = {
                     showCanvasSheet = false
                     onUpgrade()
                 },
+            )
+        }
+    }
+
+    if (showPhotoTray) {
+        ModalBottomSheet(onDismissRequest = { showPhotoTray = false }, sheetState = traySheetState) {
+            PhotoTraySheet(
+                photoPaths = trayPhotoPaths,
+                onCamera = {
+                    // Deliberately NOT closing the sheet here (unlike onLockedSlot/onStartAnalysis)
+                    // — CaptureForTray covers MainShell (disposing this composition per Navigation
+                    // Compose default), but showPhotoTray is rememberSaveable, so it survives and
+                    // the sheet reopens automatically on the way back, now showing the new photo.
+                    // Found via on-device repro: closing it here left nothing to reopen it, so a
+                    // captured photo silently landed in the ViewModel with no visible sheet.
+                    onNavigateToCamera()
+                },
+                onGallery = { galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                onRemove = photoTrayViewModel::removePhoto,
+                onMove = photoTrayViewModel::movePhoto,
+                onLockedSlot = {
+                    showPhotoTray = false
+                    onUpgrade()
+                },
+                onStartAnalysis = {
+                    showPhotoTray = false
+                    val paths = trayPhotoPaths
+                    photoTrayViewModel.clear()
+                    onStartAnalysis(paths)
+                },
+                onClose = { showPhotoTray = false },
             )
         }
     }

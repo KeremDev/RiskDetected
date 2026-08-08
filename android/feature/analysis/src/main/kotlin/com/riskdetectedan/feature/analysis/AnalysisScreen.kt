@@ -84,7 +84,7 @@ import com.riskdetectedan.core.designsystem.toTextStyle
  * default Material color was never part of the app's actual design system).
  */
 @Composable
-fun AnalysisScreen(photoPath: String? = null, onBack: (() -> Unit)? = null, viewModel: AnalysisViewModel = hiltViewModel()) {
+fun AnalysisScreen(photoPaths: List<String> = emptyList(), onBack: (() -> Unit)? = null, viewModel: AnalysisViewModel = hiltViewModel()) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     var selectedSector by remember { mutableStateOf<AnalysisSector?>(null) }
@@ -133,9 +133,13 @@ fun AnalysisScreen(photoPath: String? = null, onBack: (() -> Unit)? = null, view
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = RdSpacing.lg),
         ) {
-            if (photoPath != null) {
+            if (photoPaths.isNotEmpty()) {
                 Text(
-                    "Fotoğraf hazır — sektör seçince analiz başlatılacak",
+                    if (photoPaths.size == 1) {
+                        "Fotoğraf hazır — sektör seçince analiz başlatılacak"
+                    } else {
+                        "${photoPaths.size} fotoğraf hazır — sektör seçince analiz başlatılacak"
+                    },
                     style = RdFontStyle.Footnote.toTextStyle(),
                     color = colors.slate,
                     modifier = Modifier.padding(bottom = RdSpacing.sm),
@@ -153,7 +157,7 @@ fun AnalysisScreen(photoPath: String? = null, onBack: (() -> Unit)? = null, view
                         selected = selectedSector == sector,
                         onClick = {
                             selectedSector = sector
-                            viewModel.createAnalysis(sector, photoPath)
+                            viewModel.createAnalysis(sector, photoPaths)
                         },
                     )
                 }
