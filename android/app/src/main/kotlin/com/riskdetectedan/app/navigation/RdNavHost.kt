@@ -49,6 +49,7 @@ fun RdNavHost() {
                 onPhotoCaptured = { file ->
                     navController.navigate(Analysis(photoPath = file.absolutePath))
                 },
+                onBack = { navController.popBackStack() },
             )
         }
         composable<Analysis> { backStackEntry ->
