@@ -267,7 +267,11 @@ fun RdProgress(step: Int, total: Int, modifier: Modifier = Modifier) {
 
 /** Mirrors OBCard: full-width selectable row, leading icon + title/subtitle + a
  * circle-or-rounded-square selection indicator ([multi] picks the shape, matching the Swift
- * single-vs-multi-select visual distinction). */
+ * single-vs-multi-select visual distinction). [iconTint]/[iconBackground] override the default
+ * selection-dependent (fog/onyx, graphite/white) icon coloring — mirrors OBHazardClassView's
+ * `hazardIcon` helper, which bypasses OBCard's own icon slot to keep the icon permanently
+ * severity-tinted (rdCritical/rdHigh/rdLow + their Bg variants) regardless of selection state;
+ * pass both to get that exact behavior, leave both null for the default onyx/fog look. */
 @Composable
 fun RdCard(
     title: String,
@@ -275,6 +279,8 @@ fun RdCard(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     icon: ImageVector? = null,
+    iconTint: Color? = null,
+    iconBackground: Color? = null,
     selected: Boolean = false,
     multi: Boolean = false,
 ) {
@@ -303,13 +309,13 @@ fun RdCard(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (selected) colors.onyx else colors.fog),
+                        .background(iconBackground ?: if (selected) colors.onyx else colors.fog),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         icon,
                         contentDescription = null,
-                        tint = if (selected) colors.white else colors.graphite,
+                        tint = iconTint ?: if (selected) colors.white else colors.graphite,
                         modifier = Modifier.size(18.dp),
                     )
                 }

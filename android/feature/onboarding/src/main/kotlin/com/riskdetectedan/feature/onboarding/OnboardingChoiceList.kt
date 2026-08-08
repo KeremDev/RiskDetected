@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.riskdetectedan.core.designsystem.RdButtonStyle
@@ -44,9 +45,17 @@ enum class RdPickerLayout { List, Grid }
  * before this one). [layout] picks the picker shape: `List` mirrors OBCard's full-width rows
  * (Certificate/HazardClass/Frequency), `Grid` mirrors OBSectorView's bespoke 2-column chip tiles
  * (Sector — the one screen iOS gives a genuinely different picker shape, not reused elsewhere).
- * Per-item leading icons (`RdCard`/`RdChipTile`'s `icon` param) are NOT populated here — iOS's
- * exact per-sector/per-hazard icon choices weren't in scope for this pass; documented, not
- * silently dropped, an easy follow-up once real icon-per-item mapping is decided.
+ * Per-item leading icons/subtitles/tints (`itemIcon`/`itemSubtitle`/`itemIconTint`/
+ * `itemIconBackground`) are real iOS values read directly from `OBSectorView.swift`'s `s.icon`/
+ * `s.sub` (delegates to `AnalysisSector.icon`/`.subtitle`), `OBHazardClassView.swift`'s local
+ * `items` tuple array (icon/sub) + `hazardIcon()` helper (permanently severity-tinted,
+ * independent of selection — that's why `itemIconTint`/`itemIconBackground` exist as overrides
+ * on [RdCard] rather than just always using the selection-dependent onyx/fog default), and
+ * `OBCertificateView.swift`'s `helmetItems` tuple's `hatColor` (reused as the icon tint; iOS's
+ * actual leading view there is a bespoke Canvas hard-hat-with-letter badge, not an SF Symbol —
+ * substituted with a Material icon per this pass's documented simplification policy). SF Symbol
+ * names are mapped to their closest Material Icons Extended equivalent, not a literal port
+ * (Android has no SF Symbol asset catalog to draw from).
  */
 @Composable
 fun <T> OnboardingChoiceScreen(
@@ -67,6 +76,10 @@ fun <T> OnboardingChoiceScreen(
     heroTint: RdHeroTint = RdHeroTint.Neutral,
     heroIcon: ImageVector? = null,
     selectionCounterSuffix: String = "seçildi",
+    itemIcon: (T) -> ImageVector? = { null },
+    itemSubtitle: (T) -> String? = { null },
+    itemIconTint: (T) -> Color? = { null },
+    itemIconBackground: (T) -> Color? = { null },
 ) {
     Column(
         modifier = Modifier
@@ -109,6 +122,10 @@ fun <T> OnboardingChoiceScreen(
                     RdCard(
                         title = label(item),
                         onClick = { onToggle(item) },
+                        subtitle = itemSubtitle(item),
+                        icon = itemIcon(item),
+                        iconTint = itemIconTint(item),
+                        iconBackground = itemIconBackground(item),
                         selected = isSelected(item),
                         multi = multi,
                     )
@@ -125,6 +142,8 @@ fun <T> OnboardingChoiceScreen(
                     RdChipTile(
                         title = label(item),
                         onClick = { onToggle(item) },
+                        subtitle = itemSubtitle(item),
+                        icon = itemIcon(item),
                         selected = isSelected(item),
                     )
                 }
