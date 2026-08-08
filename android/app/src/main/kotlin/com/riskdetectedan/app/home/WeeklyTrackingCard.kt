@@ -51,12 +51,14 @@ fun WeeklyTrackingCard(summary: ProfessionalProgressSummary) {
         Brush.linearGradient(listOf(colors.info.copy(alpha = 0.10f), colors.white))
     }
 
+    val shape = RoundedCornerShape(RdRadius.lg)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(RdRadius.lg))
+            .rdHomeCardShadow(shape)
+            .clip(shape)
             .background(gradient)
-            .border(1.dp, borderColor, RoundedCornerShape(RdRadius.lg))
+            .border(1.dp, borderColor, shape)
             .padding(horizontal = RdSpacing.md, vertical = RdSpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {

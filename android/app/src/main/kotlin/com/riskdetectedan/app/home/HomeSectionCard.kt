@@ -21,18 +21,35 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.riskdetectedan.core.designsystem.RdFontStyle
-import com.riskdetectedan.core.designsystem.RdRadius
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
 
+private val CardCorner = RoundedCornerShape(16.dp)
+
+/** Shared soft card-depth shadow approximating `RDDepthShadowModifier`'s stacked
+ * black/slate/accent shadows (a single native `Modifier.shadow` layer here — Compose has no
+ * built-in multi-shadow stacking — tuned to read close to the same softness/weight). Used by
+ * every Home card so the whole screen reads as "elevated" like iOS instead of flat bordered
+ * boxes. */
+fun Modifier.rdHomeCardShadow(shape: androidx.compose.ui.graphics.Shape = CardCorner): Modifier = this.shadow(
+    elevation = 10.dp,
+    shape = shape,
+    ambientColor = Color.Black.copy(alpha = 0.10f),
+    spotColor = Color.Black.copy(alpha = 0.16f),
+)
+
 /** Real port of `HomeView.swift`'s `homeSectionCard`/`sectionHeader` — icon chip (tinted 10%
- * background) + title + count label, trailing green "Tümü ›" pill. Shared by
- * the recent-analyses/generated-reports sections in [HomeScreen]. */
+ * background) + title + count label, trailing green "Tümü ›" pill, real card-depth shadow
+ * (`homeCardDepth`). Shared by the recent-analyses/generated-reports sections in [HomeScreen] —
+ * both are now unconditionally rendered (matching iOS's own always-visible `recentSection`/
+ * `generatedReportsSection`, which show a real empty-state row via [EmptyHomeSectionRow] instead
+ * of disappearing when there's no data — the previous pass incorrectly hid the whole section). */
 @Composable
 fun HomeSectionCard(
     title: String,
@@ -46,17 +63,18 @@ fun HomeSectionCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(RdRadius.lg))
+            .rdHomeCardShadow(CardCorner)
+            .clip(CardCorner)
             .background(colors.white)
-            .border(1.dp, colors.line, RoundedCornerShape(RdRadius.lg))
-            .padding(RdSpacing.md),
+            .border(1.dp, colors.line, CardCorner)
+            .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(28.dp).clip(RoundedCornerShape(RdRadius.sm)).background(tint.copy(alpha = 0.10f)),
+                modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(tint.copy(alpha = 0.10f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(13.dp))
             }
             Spacer(Modifier.width(RdSpacing.sm))
             Column(modifier = Modifier.weight(1f)) {
@@ -78,5 +96,26 @@ fun HomeSectionCard(
         }
         Spacer(Modifier.height(RdSpacing.sm))
         content()
+    }
+}
+
+/** Real port of `emptyRecentCard`/`emptyReportsCard` — 42x42 tinted icon chip + title/subtitle,
+ * shown inside [HomeSectionCard] whenever there's nothing to list yet, matching iOS's real
+ * always-visible section behavior. */
+@Composable
+fun EmptyHomeSectionRow(icon: ImageVector, iconTint: Color, iconBackground: Color, title: String, subtitle: String) {
+    val colors = RdTheme.colors
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(iconBackground),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
+        }
+        Spacer(Modifier.width(RdSpacing.sm))
+        Column {
+            Text(title, style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
+            Text(subtitle, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+        }
     }
 }

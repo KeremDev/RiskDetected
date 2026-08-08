@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
@@ -54,16 +55,18 @@ fun ProfessionalProgressCard(progress: ProfessionalProgressSummary, onClick: () 
     val nextThreshold = progress.nextTitle?.threshold ?: progress.currentTitle.threshold
     val formatter = remember { NumberFormat.getIntegerInstance(Locale("tr")) }
 
+    val shape = RoundedCornerShape(RdRadius.lg)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(RdRadius.lg))
+            .shadow(elevation = 10.dp, shape = shape, ambientColor = accent.copy(alpha = 0.20f), spotColor = accent.copy(alpha = 0.20f))
+            .clip(shape)
             .background(
                 Brush.linearGradient(
                     listOf(colors.planPlusSoft.copy(alpha = 0.86f), colors.paper, colors.greenSoft.copy(alpha = 0.32f)),
                 ),
             )
-            .border(1.dp, accent.copy(alpha = 0.24f), RoundedCornerShape(RdRadius.lg))
+            .border(1.dp, accent.copy(alpha = 0.24f), shape)
             .clickable(onClick = onClick)
             .padding(horizontal = RdSpacing.md, vertical = RdSpacing.sm),
         verticalAlignment = Alignment.CenterVertically,

@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -57,13 +58,15 @@ import com.riskdetectedan.core.designsystem.toTextStyle
 @Composable
 fun PhotoUploadCard(photoPaths: List<String>, maxPhotoCount: Int, onOpenTray: () -> Unit, onRemove: (String) -> Unit) {
     val colors = RdTheme.colors
+    val shape = RoundedCornerShape(18.dp)
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(RdRadius.lg))
+            .rdHomeCardShadow(shape)
+            .clip(shape)
             .background(colors.white)
-            .border(1.dp, colors.line, RoundedCornerShape(RdRadius.lg))
-            .padding(RdSpacing.md),
+            .border(1.dp, colors.line, shape)
+            .padding(RdSpacing.sm),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.PhotoLibrary, contentDescription = null, tint = colors.black, modifier = Modifier.size(16.dp))
@@ -218,13 +221,15 @@ private fun PhotoUploadPreviewStrip(
 @Composable
 fun LockedPhotoUploadCard(onClick: () -> Unit) {
     val colors = RdTheme.colors
+    val shape = RoundedCornerShape(RdRadius.xl)
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
-            .clip(RoundedCornerShape(RdRadius.xl))
+            .rdHomeCardShadow(shape)
+            .clip(shape)
             .background(colors.criticalBg.copy(alpha = 0.5f))
-            .border(1.7.dp, colors.critical.copy(alpha = 0.3f), RoundedCornerShape(RdRadius.xl))
+            .border(1.7.dp, colors.critical.copy(alpha = 0.3f), shape)
             .clickable(onClick = onClick)
             .padding(RdSpacing.lg),
         horizontalAlignment = Alignment.CenterHorizontally,

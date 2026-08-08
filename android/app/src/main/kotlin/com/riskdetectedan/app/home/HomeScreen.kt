@@ -21,8 +21,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowCircleUp
 import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Send
@@ -44,9 +47,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.riskdetectedan.app.R
 import com.riskdetectedan.app.reports.GeneratedReportsUiState
 import com.riskdetectedan.app.reports.GeneratedReportsViewModel
 import com.riskdetectedan.core.data.analysis.AnalysisCanvas
@@ -172,25 +179,38 @@ fun HomeScreen(
             .padding(horizontal = RdSpacing.lg),
     ) {
         Spacer(Modifier.height(RdSpacing.lg))
-        // Port of HomeHeader.swift: logo, "Yükselt" pill (RDHeaderAccountCTA — hidden once
-        // paid), avatar (RDAvatar). Avatar's real dropdown menu not ported, taps onProfile
-        // directly instead — see HomeHeaderAvatar's doc comment.
+        // Port of HomeHeader.swift: real RDLogo asset (the exact wordmark PNG from
+        // Assets.xcassets/RDLogo.imageset — a text approximation read visibly different from the
+        // real sparkle+magnifying-glass mark, so this uses the actual asset), "Yükselt" pill
+        // (RDHeaderAccountCTA — hidden once paid, real icon+gradient+shadow), avatar (RDAvatar).
+        // Avatar's real dropdown menu not ported, taps onProfile directly instead — see
+        // HomeHeaderAvatar's doc comment.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text("Risk", style = RdFontStyle.Title2.toTextStyle(), color = colors.black)
-                    Text("Detected", style = RdFontStyle.Title2.toTextStyle(), color = colors.slate)
-                }
-            }
+            // Real image height ≈ size / capHeightRatio(0.44) in RDLogo.swift's own math — 34dp
+            // puts the wordmark's cap-height roughly level with the 36dp avatar, sparkle poking
+            // above, matching the reference screenshot's proportions (a flat 20dp read visibly
+            // smaller/thinner than real iOS).
+            Image(
+                painter = painterResource(R.drawable.rd_logo),
+                contentDescription = "RiskDetected",
+                contentScale = ContentScale.FillHeight,
+                modifier = Modifier.height(34.dp),
+                alignment = Alignment.CenterStart,
+            )
+            Spacer(Modifier.weight(1f))
             if (!userTier.isPaid) {
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(50))
+                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(7.dp), ambientColor = colors.green.copy(alpha = 0.24f), spotColor = colors.green.copy(alpha = 0.24f))
+                        .clip(RoundedCornerShape(7.dp))
                         .background(colors.green)
                         .clickable(onClick = onUpgrade)
-                        .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xs),
+                        .padding(horizontal = RdSpacing.sm)
+                        .height(24.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    Icon(Icons.Filled.ArrowCircleUp, contentDescription = null, tint = colors.white, modifier = Modifier.size(12.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text("Yükselt", style = RdFontStyle.Caption.toTextStyle(), color = colors.white)
                 }
                 Spacer(Modifier.width(RdSpacing.sm))
@@ -200,9 +220,12 @@ fun HomeScreen(
             }
         }
 
-        Spacer(Modifier.height(RdSpacing.md))
+        // Exact iOS gaps from here down (HomeView.swift body's real .padding values, not
+        // approximated RdSpacing tokens): weekly→photoUpload 12, photoUpload→quotaHint 10,
+        // →scanButton 14, →progressCard 18, →recentSection 28, →reportsSection 20.
+        Spacer(Modifier.height(16.dp))
         progress?.let { summary -> WeeklyTrackingCard(summary = summary) }
-        if (progress != null) Spacer(Modifier.height(RdSpacing.md))
+        if (progress != null) Spacer(Modifier.height(12.dp))
 
         if (isFreeQuotaExhausted && trayPhotoPaths.isEmpty()) {
             LockedPhotoUploadCard(onClick = onUpgrade)
@@ -216,15 +239,16 @@ fun HomeScreen(
         }
 
         if (quota != null && !userTier.isPaid) {
-            Spacer(Modifier.height(RdSpacing.sm))
+            Spacer(Modifier.height(10.dp))
             FreeQuotaHint(quota = quota!!, onClick = { if (quota!!.isExhausted) onUpgrade() })
         }
 
-        Spacer(Modifier.height(RdSpacing.md))
+        Spacer(Modifier.height(14.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
+                .shadow(elevation = 10.dp, shape = RoundedCornerShape(RdRadius.xl), ambientColor = colors.onyx.copy(alpha = 0.18f), spotColor = colors.onyx.copy(alpha = 0.18f))
                 .clip(RoundedCornerShape(RdRadius.xl))
                 .background(colors.onyx)
                 .clickable {
@@ -250,29 +274,38 @@ fun HomeScreen(
         }
 
         progress?.let { summary ->
-            Spacer(Modifier.height(RdSpacing.md))
+            Spacer(Modifier.height(18.dp))
             ProfessionalProgressCard(progress = summary, onClick = { showTitlesSheet = true })
         }
 
+        // Always visible, matching iOS's real `recentSection`/`generatedReportsSection` — both
+        // show their header + a real empty-state row (EmptyHomeSectionRow) rather than
+        // disappearing when there's nothing to list yet (the earlier pass hid the whole section,
+        // which read as "these cards don't exist" — this was the actual gap, not a visual one).
         val loaded = state as? HistoryUiState.Loaded
         val recentItems = loaded?.items?.take(8).orEmpty()
-        if (state is HistoryUiState.Loading) {
-            Spacer(Modifier.height(RdSpacing.xl))
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = colors.onyx)
-            }
-        } else if (recentItems.isNotEmpty()) {
-            Spacer(Modifier.height(RdSpacing.lg))
-            HomeSectionCard(
-                title = "Son uygunsuzluklar",
-                icon = Icons.Filled.ReportProblem,
-                tint = colors.critical,
-                countLabel = "${loaded?.items?.size ?: recentItems.size} kayıt",
-                onSeeAll = onHistory,
-            ) {
-                Row(
+        Spacer(Modifier.height(28.dp))
+        HomeSectionCard(
+            title = "Son uygunsuzluklar",
+            icon = Icons.Filled.ReportProblem,
+            tint = colors.critical,
+            countLabel = "${loaded?.items?.size ?: 0} kayıt",
+            onSeeAll = onHistory,
+        ) {
+            when {
+                state is HistoryUiState.Loading -> Box(modifier = Modifier.fillMaxWidth().padding(vertical = RdSpacing.md), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = colors.onyx, modifier = Modifier.size(22.dp))
+                }
+                recentItems.isEmpty() -> EmptyHomeSectionRow(
+                    icon = Icons.Filled.CheckCircle,
+                    iconTint = colors.greenDark,
+                    iconBackground = colors.greenSoft,
+                    title = "Henüz tamamlanmış analiz yok",
+                    subtitle = "İlk tarama tamamlandığında burada listelenecek.",
+                )
+                else -> Row(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(RdSpacing.md),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     recentItems.forEach { item -> RecentAnalysisRingCard(item = item, onClick = onHistory) }
                 }
@@ -281,15 +314,23 @@ fun HomeScreen(
 
         val reportsLoaded = reportsState as? GeneratedReportsUiState.Loaded
         val recentReports = reportsLoaded?.items?.take(5).orEmpty()
-        if (recentReports.isNotEmpty()) {
-            Spacer(Modifier.height(RdSpacing.md))
-            HomeSectionCard(
-                title = "Oluşturulan raporlar",
-                icon = Icons.Filled.Description,
-                tint = colors.greenDark,
-                countLabel = "${reportsLoaded?.items?.size ?: recentReports.size} dosya",
-                onSeeAll = onReports,
-            ) {
+        Spacer(Modifier.height(20.dp))
+        HomeSectionCard(
+            title = "Oluşturulan raporlar",
+            icon = Icons.Filled.Description,
+            tint = colors.greenDark,
+            countLabel = "${reportsLoaded?.items?.size ?: 0} dosya",
+            onSeeAll = onReports,
+        ) {
+            if (recentReports.isEmpty()) {
+                EmptyHomeSectionRow(
+                    icon = Icons.Filled.Description,
+                    iconTint = colors.slate,
+                    iconBackground = colors.fog,
+                    title = "Henüz rapor oluşturulmadı",
+                    subtitle = "PDF veya Excel çıktıları burada görünecek.",
+                )
+            } else {
                 Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
                     recentReports.forEach { report -> HomeReportRow(report = report, onClick = onReports) }
                 }

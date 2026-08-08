@@ -17,7 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.riskdetectedan.core.data.analysis.HistoryItem
 import com.riskdetectedan.core.designsystem.RdFontStyle
@@ -46,6 +48,7 @@ fun RecentAnalysisRingCard(item: HistoryItem, onClick: () -> Unit) {
         Box(
             modifier = Modifier
                 .size(ringSize)
+                .shadow(elevation = 6.dp, shape = CircleShape, ambientColor = Color.Black.copy(alpha = 0.10f), spotColor = Color.Black.copy(alpha = 0.10f))
                 .clip(CircleShape)
                 .border(
                     3.5.dp,
