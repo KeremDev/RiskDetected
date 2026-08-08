@@ -59,6 +59,7 @@ fun RdNavHost() {
         composable<Reports> { ReportsScreen(onBack = { navController.popBackStack() }) }
         composable<Profile> {
             ProfileScreen(
+                onBack = { navController.popBackStack() },
                 onManageCompanies = { navController.navigate(Companies) },
                 onSupport = { navController.navigate(Support) },
                 onNotificationSettings = { navController.navigate(NotificationSettings) },
@@ -66,9 +67,9 @@ fun RdNavHost() {
                 onPaywall = { navController.navigate(Paywall) },
             )
         }
-        composable<Companies> { CompanyListScreen() }
-        composable<Support> { SupportScreen() }
-        composable<NotificationSettings> { NotificationSettingsScreen() }
+        composable<Companies> { CompanyListScreen(onBack = { navController.popBackStack() }) }
+        composable<Support> { SupportScreen(onBack = { navController.popBackStack() }) }
+        composable<NotificationSettings> { NotificationSettingsScreen(onBack = { navController.popBackStack() }) }
         composable<DeleteAccount> {
             AccountDeletionScreen(
                 onDeleted = {
@@ -76,6 +77,7 @@ fun RdNavHost() {
                         popUpTo(0) { inclusive = true }
                     }
                 },
+                onBack = { navController.popBackStack() },
             )
         }
         composable<Paywall> { PaywallScreen() }

@@ -5,14 +5,35 @@ import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.SupportAgent
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,25 +46,37 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.RadioButton
 import com.riskdetectedan.core.data.profile.RiskMethodWire
 import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
+import com.riskdetectedan.core.designsystem.RdButtonStyle
+import com.riskdetectedan.core.designsystem.RdFontStyle
+import com.riskdetectedan.core.designsystem.RdListRow
+import com.riskdetectedan.core.designsystem.RdPrimaryButton
+import com.riskdetectedan.core.designsystem.RdRadius
+import com.riskdetectedan.core.designsystem.RdScreenHeader
+import com.riskdetectedan.core.designsystem.RdSectionCard
 import com.riskdetectedan.core.designsystem.RdSpacing
+import com.riskdetectedan.core.designsystem.RdTheme
+import com.riskdetectedan.core.designsystem.toTextStyle
 import java.io.ByteArrayOutputStream
 
 /**
  * Reads the actual `profiles` row for the signed-in user via [ProfileViewModel]/
- * `ProfileRepository`, and now also supports editing the basic-field subset ProfileView.swift's
- * `save()` covers (fullName/title/certificateNumber/companyName/phone/preferredMethod — see
- * ProfileRepository's doc comment for what's deliberately left out). Layout still far short of
- * App/Views/Profile/ProfileView.swift's real design (deferred visual-parity pass).
+ * `ProfileRepository` — all logic unchanged (2026-08-08 visual pass, Faz K of the core-flow
+ * redesign). Real structure: avatar+name+tier hero card, [RdSectionCard] for professional
+ * progress, [RdListRow] menu (Profili düzenle/Planı yükselt/Firmalarım/Destek/Bildirim
+ * ayarları), destructive "Hesabı sil" styled with the app's real critical color instead of a
+ * plain `Button`.
  */
 @Composable
 fun ProfileScreen(
+    onBack: (() -> Unit)? = null,
     onManageCompanies: () -> Unit = {},
     onSupport: () -> Unit = {},
     onNotificationSettings: () -> Unit = {},
@@ -51,19 +84,23 @@ fun ProfileScreen(
     onPaywall: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
+    val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     var isEditing by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(RdSpacing.lg),
-        contentAlignment = Alignment.Center,
-    ) {
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        RdScreenHeader(title = "Profil", onBack = onBack)
+
         when (val current = state) {
-            is ProfileUiState.Loading -> CircularProgressIndicator()
-            is ProfileUiState.SignedOut -> Text("Oturum yok")
-            is ProfileUiState.Failed -> Text("Profil yüklenemedi: ${current.error.message}")
+            is ProfileUiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = colors.onyx)
+            }
+            is ProfileUiState.SignedOut -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Oturum yok", style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
+            }
+            is ProfileUiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Profil yüklenemedi: ${current.error.message}", style = RdFontStyle.Callout.toTextStyle(), color = colors.critical)
+            }
             is ProfileUiState.Loaded -> if (isEditing) {
                 ProfileEditForm(
                     profile = current.profile,
@@ -72,41 +109,108 @@ fun ProfileScreen(
                 )
             } else {
                 val progress by viewModel.progress.collectAsState()
-                Column {
-                    Text(current.profile.displayName)
-                    Text(current.profile.tier.name)
-                    progress?.let { ProfessionalProgressSection(it) }
-                    Button(onClick = { isEditing = true }) { Text("Profili düzenle") }
-                    Button(onClick = onPaywall) { Text("Planı yükselt") }
-                    Button(onClick = onManageCompanies) { Text("Firmalarım") }
-                    Button(onClick = onSupport) { Text("Destek") }
-                    Button(onClick = onNotificationSettings) { Text("Bildirim ayarları") }
-                    Button(onClick = onDeleteAccount) { Text("Hesabı sil") }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = RdSpacing.lg),
+                ) {
+                    ProfileHero(profile = current.profile)
+
+                    progress?.let {
+                        Spacer(Modifier.height(RdSpacing.md))
+                        RdSectionCard(title = "İlerleme") { ProfessionalProgressSection(it) }
+                    }
+
+                    Spacer(Modifier.height(RdSpacing.md))
+                    Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
+                        RdListRow(title = "Profili düzenle", icon = Icons.Filled.Edit, onClick = { isEditing = true })
+                        RdListRow(title = "Planı yükselt", icon = Icons.Filled.WorkspacePremium, onClick = onPaywall)
+                        RdListRow(title = "Firmalarım", icon = Icons.Filled.Business, onClick = onManageCompanies)
+                        RdListRow(title = "Destek", icon = Icons.Filled.SupportAgent, onClick = onSupport)
+                        RdListRow(title = "Bildirim ayarları", icon = Icons.Filled.Notifications, onClick = onNotificationSettings)
+                        RdListRow(
+                            title = "Hesabı sil",
+                            icon = Icons.Filled.DeleteForever,
+                            iconTint = colors.critical,
+                            iconBackground = colors.criticalBg,
+                            onClick = onDeleteAccount,
+                        )
+                    }
+                    Spacer(Modifier.height(RdSpacing.lg))
                 }
             }
         }
     }
 }
 
+@Composable
+private fun ProfileHero(profile: UserProfile) {
+    val colors = RdTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = RdSpacing.md)
+            .clip(RoundedCornerShape(RdRadius.lg))
+            .background(colors.white)
+            .border(1.dp, colors.onyx.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg))
+            .padding(RdSpacing.md),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier.size(64.dp).clip(CircleShape).background(colors.onyx),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                profile.displayName.take(1).uppercase(),
+                style = RdFontStyle.Title2.toTextStyle(),
+                color = colors.white,
+            )
+        }
+        Spacer(Modifier.height(RdSpacing.xs))
+        Text(profile.displayName, style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .background(colors.fog)
+                .padding(horizontal = RdSpacing.sm, vertical = 4.dp),
+        ) {
+            Text(profile.tier.name, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+        }
+    }
+}
+
 /**
  * First functional slice of ProfessionalProgress (mirrors `ProfessionalProgressHomeCard.swift`/
- * `ProfileSection.swift` in scope, not layout — plain Text list, same "functional skeleton
- * first" pass every other screen got). Shows the title/MDP core loop (current title, progress
- * toward the next one, top competencies by signal count) and the weekly summary when the server
- * has computed one. Deliberately NOT ported in this slice: badge/message UI (unlock celebration
- * sheet, mark-seen taps — `pendingCelebration` is exposed on the model but nothing reads it
- * yet), the competency map's visual chart, the full titles-ladder catalog sheet. All three are
- * presentation-only additions on top of data that's already correctly fetched — deferred to the
- * visual-design pass, not a functional gap.
+ * `ProfileSection.swift` in scope, not layout). Shows the title/MDP core loop (current title,
+ * progress toward the next one, top competencies by signal count) and the weekly summary when
+ * the server has computed one. Deliberately NOT ported in this slice: badge/message UI (unlock
+ * celebration sheet, mark-seen taps), the competency map's visual chart, the full titles-ladder
+ * catalog sheet — presentation-only additions on top of data that's already correctly fetched.
  */
 @Composable
 private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary) {
-    Column(modifier = Modifier.padding(vertical = RdSpacing.sm)) {
-        Text("${progress.currentTitle.label} · ${progress.profile.totalMdp} MDP")
+    val colors = RdTheme.colors
+    Column {
+        Text(
+            "${progress.currentTitle.label} · ${progress.profile.totalMdp} MDP",
+            style = RdFontStyle.Callout.toTextStyle(),
+            color = colors.onyx,
+        )
         progress.nextTitle?.let { next ->
-            Text("Sıradaki: ${next.label} (${progress.nextTitleRemaining} MDP kaldı)")
+            Text(
+                "Sıradaki: ${next.label} (${progress.nextTitleRemaining} MDP kaldı)",
+                style = RdFontStyle.Footnote.toTextStyle(),
+                color = colors.slate,
+            )
         }
-        Text("${progress.profile.totalAnalyses} analiz · ${progress.profile.totalReports} rapor · ${progress.profile.activeDays} aktif gün")
+        Spacer(Modifier.height(RdSpacing.xxs))
+        Text(
+            "${progress.profile.totalAnalyses} analiz · ${progress.profile.totalReports} rapor · ${progress.profile.activeDays} aktif gün",
+            style = RdFontStyle.Caption.toTextStyle(),
+            color = colors.slate,
+        )
         val topCompetencies = progress.topCompetencies.take(3)
         if (topCompetencies.isNotEmpty()) {
             Text(
@@ -114,12 +218,18 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary) {
                     topCompetencies.joinToString(", ") { stat ->
                         "${stat.competency?.label ?: stat.competencyKey} (${stat.score})"
                     },
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate,
+                modifier = Modifier.padding(top = RdSpacing.xxs),
             )
         }
         progress.weeklySummary?.let { weekly ->
             Text(
                 weekly.messageTitle
                     ?: "Bu hafta: ${weekly.analysesCount} analiz, ${weekly.reportsCount} rapor",
+                style = RdFontStyle.Footnote.toTextStyle(),
+                color = colors.greenDark,
+                modifier = Modifier.padding(top = RdSpacing.xs),
             )
         }
     }
@@ -127,6 +237,7 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary) {
 
 @Composable
 private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, onDone: () -> Unit) {
+    val colors = RdTheme.colors
     var fullName by remember { mutableStateOf(profile.fullName ?: "") }
     var title by remember { mutableStateOf(profile.title ?: "") }
     var certificateNumber by remember { mutableStateOf(profile.certificateNumber ?: "") }
@@ -165,34 +276,51 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
         wasSaving = isSaving
     }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(fullName, { fullName = it }, label = { Text("Ad soyad") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(title, { title = it }, label = { Text("Unvan") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(
-            certificateNumber,
-            { certificateNumber = it },
-            label = { Text("Sertifika no") },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        OutlinedTextField(companyName, { companyName = it }, label = { Text("Firma") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(phone, { phone = it }, label = { Text("Telefon") }, modifier = Modifier.fillMaxWidth())
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = RdSpacing.lg),
+    ) {
+        Spacer(Modifier.height(RdSpacing.sm))
+        RdSectionCard {
+            Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
+                OutlinedTextField(fullName, { fullName = it }, label = { Text("Ad soyad") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(title, { title = it }, label = { Text("Unvan") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    certificateNumber,
+                    { certificateNumber = it },
+                    label = { Text("Sertifika no") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(companyName, { companyName = it }, label = { Text("Firma") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(phone, { phone = it }, label = { Text("Telefon") }, modifier = Modifier.fillMaxWidth())
+            }
+        }
 
-        Text("Risk yöntemi")
-        Row {
+        Spacer(Modifier.height(RdSpacing.md))
+        Text("Risk yöntemi", style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
+        Spacer(Modifier.height(RdSpacing.xs))
+        Row(horizontalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
             RiskMethodWire.entries.forEach { method ->
-                Row {
-                    RadioButton(
-                        selected = preferredMethod == method,
-                        onClick = { preferredMethod = method },
-                    )
+                val isSelected = preferredMethod == method
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(RdRadius.xs))
+                        .background(if (isSelected) colors.onyx else colors.fog)
+                        .clickable { preferredMethod = method }
+                        .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xs),
+                ) {
                     Text(
                         if (method == RiskMethodWire.FineKinney) "Fine-Kinney" else "5x5 Matris",
-                        modifier = Modifier.padding(end = RdSpacing.sm),
+                        style = RdFontStyle.Footnote.toTextStyle(),
+                        color = if (isSelected) colors.white else colors.onyx,
                     )
                 }
             }
         }
 
+        Spacer(Modifier.height(RdSpacing.md))
         TextButton(
             onClick = {
                 pickLogo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -201,24 +329,27 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
             Text(if (logoBytes != null) "Logo seçildi ✓" else "Logo değiştir (opsiyonel)")
         }
 
+        Spacer(Modifier.height(RdSpacing.sm))
         if (isSaving) {
-            CircularProgressIndicator()
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = colors.onyx)
+            }
         } else {
-            Button(
-                onClick = {
-                    viewModel.saveProfile(
-                        fullName = fullName,
-                        title = title,
-                        certificateNumber = certificateNumber,
-                        companyName = companyName,
-                        phone = phone,
-                        preferredMethod = preferredMethod,
-                        logoJpegBytes = logoBytes,
-                    )
-                },
-            ) { Text("Kaydet") }
+            RdPrimaryButton(text = "Kaydet", onClick = {
+                viewModel.saveProfile(
+                    fullName = fullName,
+                    title = title,
+                    certificateNumber = certificateNumber,
+                    companyName = companyName,
+                    phone = phone,
+                    preferredMethod = preferredMethod,
+                    logoJpegBytes = logoBytes,
+                )
+            }, style = RdButtonStyle.Onyx)
         }
-        TextButton(onClick = onDone) { Text("Vazgeç") }
+        Spacer(Modifier.height(RdSpacing.xs))
+        TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text("Vazgeç") }
+        Spacer(Modifier.height(RdSpacing.lg))
     }
 
     saveError?.let { error ->
