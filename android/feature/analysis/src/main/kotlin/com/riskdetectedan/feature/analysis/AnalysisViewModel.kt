@@ -15,6 +15,7 @@ import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -158,10 +159,16 @@ class AnalysisViewModel @Inject constructor(
                 )
             ) {
                 is RdResult.Failure -> {
-                    val error = AppErrorMessages.make(submitResult.message, context = ANALYSIS_CONTEXT)
-                    failAnalysisAndCleanup(userId, analysisId, uploadedPaths, error.message)
-                    _state.value = CreateAnalysisUiState.Failed(error)
-                    return@launch
+                    // Real port of recoverPhotoSubmissionIfServerAccepted: a network/timeout
+                    // failure here doesn't necessarily mean the server never got the request —
+                    // probe status a few times before trusting the client-side failure. If it
+                    // recovers, fall straight through to polling below as if submit succeeded.
+                    if (!probeSubmissionRecovery(analysisId)) {
+                        val error = AppErrorMessages.make(submitResult.message, context = ANALYSIS_CONTEXT)
+                        failAnalysisAndCleanup(userId, analysisId, uploadedPaths, error.message)
+                        _state.value = CreateAnalysisUiState.Failed(error)
+                        return@launch
+                    }
                 }
                 is RdResult.Success -> Unit
             }
@@ -198,6 +205,27 @@ class AnalysisViewModel @Inject constructor(
                     )
             }
         }
+    }
+
+    /**
+     * Real port of `recoverPhotoSubmissionIfServerAccepted` — probes `analyses.status` at
+     * 2s/3s/5s delays (matches iOS's exact probe schedule). If the status ever moves away from
+     * `"pending"` at any probe, the server actually accepted and started processing the request
+     * despite the client-side failure (a network blip after the request landed, a slow response
+     * the client's own timeout gave up on first) — returns `true`, telling the caller to
+     * continue straight into polling as if submit had succeeded. Only returns `false` (genuinely
+     * not recovered) once every probe still reads `"pending"` — mirrors iOS's real
+     * `guard lastStatus == "pending" else { return false }` after the loop: an unreadable status
+     * (all three probes themselves failing to fetch) also returns `false` rather than guessing.
+     */
+    private suspend fun probeSubmissionRecovery(analysisId: String): Boolean {
+        val probeDelaysMillis = longArrayOf(2_000, 3_000, 5_000)
+        for (delayMillis in probeDelaysMillis) {
+            delay(delayMillis)
+            val result = analysisRepository.fetchAnalysisStatus(analysisId)
+            if (result is RdResult.Success && result.value != "pending") return true
+        }
+        return false
     }
 
     /**

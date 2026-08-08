@@ -197,6 +197,25 @@ class AnalysisRepository @Inject constructor(
         )
     }
 
+    /** Thin status-only read, mirrors `fetchAnalysisSubmissionStatus` — used by
+     * [com.riskdetectedan.feature.analysis.AnalysisViewModel]'s recovery probe (real port of
+     * `recoverPhotoSubmissionIfServerAccepted`) to check whether the server actually accepted a
+     * submission that the client saw as a network/timeout failure. */
+    suspend fun fetchAnalysisStatus(analysisId: String): RdResult<String> = try {
+        val snapshot = client.postgrest.from("analyses")
+            .select(Columns.list("status")) {
+                filter { eq("id", analysisId) }
+            }
+            .decodeSingle<AnalysisStatusSnapshot>()
+        RdResult.Success(snapshot.status)
+    } catch (t: Throwable) {
+        RdResult.Failure(
+            code = "analysis_status_fetch_failed",
+            message = t.message ?: "analysis_status_fetch_failed",
+            cause = t,
+        )
+    }
+
     /**
      * Real port of AnalysisService.swift's `invokeAnalyze` — up to 2 attempts, same
      * error-classification cascade against the edge function's real non-2xx JSON body
