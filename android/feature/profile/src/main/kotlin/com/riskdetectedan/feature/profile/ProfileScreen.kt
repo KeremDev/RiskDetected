@@ -27,16 +27,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -53,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.profile.RiskMethodWire
 import com.riskdetectedan.core.data.profile.UserProfile
+import com.riskdetectedan.core.data.progress.ProfessionalProgressBadge
 import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdFontStyle
@@ -74,6 +80,7 @@ import java.io.ByteArrayOutputStream
  * ayarları), destructive "Hesabı sil" styled with the app's real critical color instead of a
  * plain `Button`.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onBack: (() -> Unit)? = null,
@@ -109,17 +116,39 @@ fun ProfileScreen(
                 )
             } else {
                 val progress by viewModel.progress.collectAsState()
+                var showBadges by remember { mutableStateOf(false) }
+                var showCompetencies by remember { mutableStateOf(false) }
+                var pendingCelebrationBadge by remember { mutableStateOf<ProfessionalProgressBadge?>(null) }
+
+                // Real port of ProfessionalProgressProfileSection.swift's `.task(id:
+                // summary.pendingCelebration?.id)` — auto-opens the celebration sheet for the
+                // first unseen badge, once per distinct pending badge id (a local dismiss without
+                // marking it seen — see the sheet's onDismissRequest below — won't re-trigger
+                // until a *different* badge becomes pending).
+                LaunchedEffect(progress?.pendingCelebration?.id) {
+                    if (pendingCelebrationBadge == null) {
+                        progress?.pendingCelebration?.let { pendingCelebrationBadge = it }
+                    }
+                }
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = RdSpacing.lg),
                 ) {
-                    ProfileHero(profile = current.profile, viewModel = viewModel)
+                    ProfileHero(
+                        profile = current.profile,
+                        viewModel = viewModel,
+                        progress = progress,
+                        onShowBadges = { showBadges = true },
+                    )
 
                     progress?.let {
                         Spacer(Modifier.height(RdSpacing.md))
-                        RdSectionCard(title = "İlerleme") { ProfessionalProgressSection(it) }
+                        RdSectionCard(title = "İlerleme") {
+                            ProfessionalProgressSection(it, onShowCompetencies = { showCompetencies = true })
+                        }
                     }
 
                     Spacer(Modifier.height(RdSpacing.md))
@@ -139,6 +168,44 @@ fun ProfileScreen(
                     }
                     Spacer(Modifier.height(RdSpacing.lg))
                 }
+
+                if (showBadges) {
+                    progress?.let { summary ->
+                        val sheetState = rememberModalBottomSheetState()
+                        ModalBottomSheet(onDismissRequest = { showBadges = false }, sheetState = sheetState) {
+                            ProfessionalProgressBadgesSheet(summary = summary, onDismiss = { showBadges = false })
+                        }
+                    }
+                }
+                if (showCompetencies) {
+                    progress?.let { summary ->
+                        val sheetState = rememberModalBottomSheetState()
+                        ModalBottomSheet(onDismissRequest = { showCompetencies = false }, sheetState = sheetState) {
+                            Column(
+                                modifier = Modifier
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(RdSpacing.lg),
+                            ) {
+                                ProfessionalProgressCompetencyMapView(competencies = summary.competencies, compact = false)
+                            }
+                        }
+                    }
+                }
+                // Real port of the Swift `onClose` closure — marks the badge seen and refreshes
+                // the summary only on an explicit close (Tamam / X), never on a plain swipe-away
+                // (see the LaunchedEffect above's doc comment for why that distinction matters).
+                pendingCelebrationBadge?.let { badge ->
+                    val sheetState = rememberModalBottomSheetState()
+                    ModalBottomSheet(
+                        onDismissRequest = { pendingCelebrationBadge = null },
+                        sheetState = sheetState,
+                    ) {
+                        ProfessionalProgressCelebrationSheet(badge = badge) {
+                            viewModel.markBadgeSeen(badge)
+                            pendingCelebrationBadge = null
+                        }
+                    }
+                }
             }
         }
     }
@@ -153,7 +220,12 @@ fun ProfileScreen(
  * `centeredSquareJPEG`) before upload.
  */
 @Composable
-private fun ProfileHero(profile: UserProfile, viewModel: ProfileViewModel) {
+private fun ProfileHero(
+    profile: UserProfile,
+    viewModel: ProfileViewModel,
+    progress: ProfessionalProgressSummary? = null,
+    onShowBadges: () -> Unit = {},
+) {
     val colors = RdTheme.colors
     val context = LocalContext.current
     val isSavingAvatar by viewModel.isSavingAvatar.collectAsState()
@@ -235,19 +307,38 @@ private fun ProfileHero(profile: UserProfile, viewModel: ProfileViewModel) {
         ) {
             Text(profile.tier.name, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
         }
+        // Real port of ProfileView.swift's "Başarılarım" rosette button under the display name
+        // (`showProfileBadges(professionalProgressSummary)`) — the only real trigger for the
+        // badges catalog sheet on either platform (`ProfessionalProgressProfileSection`'s own
+        // `showBadges` state is unused dead code on iOS itself, confirmed via source grep).
+        if (progress != null) {
+            Row(
+                modifier = Modifier
+                    .padding(top = RdSpacing.xxs)
+                    .clip(RoundedCornerShape(50))
+                    .clickable(onClick = onShowBadges)
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.MilitaryTech, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Başarılarım", style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
+            }
+        }
     }
 }
 
 /**
- * First functional slice of ProfessionalProgress (mirrors `ProfessionalProgressHomeCard.swift`/
- * `ProfileSection.swift` in scope, not layout). Shows the title/MDP core loop (current title,
- * progress toward the next one, top competencies by signal count) and the weekly summary when
- * the server has computed one. Deliberately NOT ported in this slice: badge/message UI (unlock
- * celebration sheet, mark-seen taps), the competency map's visual chart, the full titles-ladder
- * catalog sheet — presentation-only additions on top of data that's already correctly fetched.
+ * Real port of `ProfessionalProgressProfileSection.swift`'s scope (title/MDP core loop text +
+ * `competencyPreview` card), minus the `.showcase`-style [ProfessionalProgressHomeCard] (Home's
+ * own `.compactStrip` card already carries the real MDP/title-ladder UI — see
+ * `app/home/ProfessionalProgressCard.kt` — Profile keeps this plain text line instead of
+ * duplicating that whole card, the one deliberate layout simplification here). The competency
+ * preview itself is the real donut-chart port ([ProfessionalProgressCompetencyMapView], compact),
+ * not a text summary — "Tümü" opens the full scored-row sheet, matching `showCompetencies`.
  */
 @Composable
-private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary) {
+private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, onShowCompetencies: () -> Unit) {
     val colors = RdTheme.colors
     Column {
         Text(
@@ -268,25 +359,49 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary) {
             style = RdFontStyle.Caption.toTextStyle(),
             color = colors.slate,
         )
-        val topCompetencies = progress.topCompetencies.take(3)
-        if (topCompetencies.isNotEmpty()) {
+
+        Spacer(Modifier.height(RdSpacing.sm))
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "En güçlü alanlar: " +
-                    topCompetencies.joinToString(", ") { stat ->
-                        "${stat.competency?.label ?: stat.competencyKey} (${stat.score})"
-                    },
+                "Yetkinlik Haritası",
+                style = RdFontStyle.Callout.toTextStyle(),
+                color = colors.onyx,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                "Tümü",
                 style = RdFontStyle.Caption.toTextStyle(),
-                color = colors.slate,
-                modifier = Modifier.padding(top = RdSpacing.xxs),
+                color = colors.greenDark,
+                modifier = Modifier.clickable(onClick = onShowCompetencies),
             )
         }
+        Spacer(Modifier.height(RdSpacing.xxs))
+        if (progress.topCompetencies.isEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(36.dp).clip(RoundedCornerShape(RdRadius.sm)).background(colors.fog),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.ShowChart, contentDescription = null, tint = colors.slate, modifier = Modifier.size(16.dp))
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    "Analiz ve raporların arttıkça yetkinlik alanların burada görünür olacak.",
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                )
+            }
+        } else {
+            ProfessionalProgressCompetencyMapView(competencies = progress.competencies, compact = true)
+        }
+
         progress.weeklySummary?.let { weekly ->
             Text(
                 weekly.messageTitle
                     ?: "Bu hafta: ${weekly.analysesCount} analiz, ${weekly.reportsCount} rapor",
                 style = RdFontStyle.Footnote.toTextStyle(),
                 color = colors.greenDark,
-                modifier = Modifier.padding(top = RdSpacing.xs),
+                modifier = Modifier.padding(top = RdSpacing.sm),
             )
         }
     }

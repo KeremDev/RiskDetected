@@ -9,6 +9,7 @@ import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.RiskMethodWire
 import com.riskdetectedan.core.data.profile.UserProfile
+import com.riskdetectedan.core.data.progress.ProfessionalProgressBadge
 import com.riskdetectedan.core.data.progress.ProfessionalProgressRepository
 import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -77,11 +78,26 @@ class ProfileViewModel @Inject constructor(
                 )
             }
         }
+        viewModelScope.launch { refreshProgress(userId) }
+    }
+
+    private suspend fun refreshProgress(userId: String) {
+        when (val result = professionalProgressRepository.fetchSummary(userId)) {
+            is RdResult.Success -> _progress.value = result.value
+            is RdResult.Failure -> Unit // non-blocking, see _progress's doc comment
+        }
+    }
+
+    /** Real port of `onClose`'s `markBadgeSeen` + `onRefresh` pair
+     * ([ProfessionalProgressProfileSection.swift]) — marks the celebrated badge's `seen_at` (so
+     * [ProfessionalProgressSummary.pendingCelebration] stops returning it) then refetches the
+     * summary, matching the Swift call order exactly (seen-write happens before the refresh that
+     * would otherwise immediately re-show the same sheet). */
+    fun markBadgeSeen(badge: ProfessionalProgressBadge) {
+        val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
-            when (val result = professionalProgressRepository.fetchSummary(userId)) {
-                is RdResult.Success -> _progress.value = result.value
-                is RdResult.Failure -> Unit // non-blocking, see _progress's doc comment
-            }
+            professionalProgressRepository.markBadgeSeen(badge.id)
+            refreshProgress(userId)
         }
     }
 
