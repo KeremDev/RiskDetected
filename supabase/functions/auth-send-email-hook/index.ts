@@ -96,11 +96,46 @@ serve(async (req) => {
   const supabase = createClient(supabaseURL, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: profile } = await supabase
+
+  // Latency mitigation for GoTrue's hard 5s Auth Hook timeout: delivery index 0 always exists
+  // regardless of locale/action (see `deliveries` below — every branch's first entry is
+  // `{currentEmail|newEmail, token}`), and claiming it depends only on the webhook id/body hash
+  // already computed above, not on the profile row. Firing it concurrently with the profile fetch
+  // removes one full round trip from the previously-sequential profile -> claim -> send -> complete
+  // chain for the overwhelmingly common single-recipient case (every action except email_change).
+  const profileFetchPromise = supabase
     .from("profiles")
     .select("app_language,preferred_content_locale")
     .eq("id", userID)
     .maybeSingle();
+  const firstClaimPromise = supabase.rpc("claim_auth_email_delivery_v1", {
+    p_webhook_id_sha256: webhookIDHash,
+    p_delivery_index: 0,
+    p_request_body_sha256: requestBodyHash,
+  });
+  const [{ data: profile }, firstClaimResponse] = await Promise.all([
+    profileFetchPromise,
+    firstClaimPromise,
+  ]);
+  const firstClaim = (firstClaimResponse.data ?? {}) as DeliveryClaim;
+  const firstClaimWasMade = !firstClaimResponse.error &&
+    firstClaim.status === "claimed" &&
+    firstClaim.claimed === true &&
+    typeof firstClaim.lease_token === "string";
+  // Every early-return path below (locale/render validation) runs *after* the concurrent claim
+  // above may already have leased delivery index 0 — a permanent (non-retryable) validation
+  // failure must release that lease immediately, or a legitimate GoTrue retry of the same
+  // webhook id would see it still "processing" and get a spurious 503 for up to the 5-minute
+  // lease window instead of the real 422 that caused it.
+  async function releaseFirstClaimIfMade() {
+    if (!firstClaimWasMade) return;
+    await supabase.rpc("release_auth_email_delivery_v1", {
+      p_webhook_id_sha256: webhookIDHash,
+      p_delivery_index: 0,
+      p_request_body_sha256: requestBodyHash,
+      p_lease_token: firstClaim.lease_token,
+    });
+  }
   const metadata = payload.user?.user_metadata ?? {};
   const resolvedLocale = profile?.preferred_content_locale ??
     metadata.content_locale ??
@@ -116,6 +151,7 @@ serve(async (req) => {
     (appLanguage !== "tr" && appLanguage !== "en") ||
     (locale === "tr-TR" ? "tr" : "en") !== appLanguage
   ) {
+    await releaseFirstClaimIfMade();
     return json(422, {
       error: "AUTH_EMAIL_EXACT_LOCALE_TEMPLATE_MISSING",
     });
@@ -147,6 +183,7 @@ serve(async (req) => {
     !delivery.email.ok
   );
   if (renderFailure && !renderFailure.email.ok) {
+    await releaseFirstClaimIfMade();
     return json(422, { error: renderFailure.email.code });
   }
 
@@ -161,14 +198,19 @@ serve(async (req) => {
     if (!email.ok) {
       return json(422, { error: email.code });
     }
-    const { data: claimData, error: claimError } = await supabase.rpc(
-      "claim_auth_email_delivery_v1",
-      {
-        p_webhook_id_sha256: webhookIDHash,
-        p_delivery_index: deliveryIndex,
-        p_request_body_sha256: requestBodyHash,
-      },
-    );
+    // Index 0's claim was already fired concurrently with the profile fetch above — reuse it
+    // instead of re-calling the RPC. Every other index (email_change's second recipient only)
+    // still claims here, sequentially, same as before.
+    const { data: claimData, error: claimError } = deliveryIndex === 0
+      ? firstClaimResponse
+      : await supabase.rpc(
+        "claim_auth_email_delivery_v1",
+        {
+          p_webhook_id_sha256: webhookIDHash,
+          p_delivery_index: deliveryIndex,
+          p_request_body_sha256: requestBodyHash,
+        },
+      );
     if (claimError) {
       return json(503, { error: "auth_email_delivery_claim_failed" });
     }
