@@ -6,8 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.revenuecat.purchases.PurchasesTransactionException
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
-import com.riskdetectedan.core.data.billing.AppErrorMessage
-import com.riskdetectedan.core.data.billing.AppErrorMessages
+import com.riskdetectedan.core.data.error.AppErrorMessage
+import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.paywall.PaywallEventMetadata

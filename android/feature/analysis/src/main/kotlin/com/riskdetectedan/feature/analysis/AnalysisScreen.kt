@@ -114,8 +114,12 @@ fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hil
             is CreateAnalysisUiState.Completed -> Unit // handled above, returns early
             is CreateAnalysisUiState.CreatedWithoutPhoto ->
                 Text("Analiz oluşturuldu (fotoğrafsız): ${current.analysisId}")
-            is CreateAnalysisUiState.Failed ->
-                Text("Analiz başarısız: ${current.message}")
+            is CreateAnalysisUiState.Failed -> Column {
+                Text(current.error.title)
+                Text(current.error.message)
+                if (current.error.action.isNotEmpty()) Text(current.error.action)
+                Text(current.error.supportID)
+            }
         }
     }
 }

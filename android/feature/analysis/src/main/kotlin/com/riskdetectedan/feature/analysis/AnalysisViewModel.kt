@@ -12,6 +12,8 @@ import com.riskdetectedan.core.data.analysis.FindingPatch
 import com.riskdetectedan.core.data.analysis.FindingsRepository
 import com.riskdetectedan.core.data.analysis.PhotoRepository
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.error.AppErrorMessage
+import com.riskdetectedan.core.data.error.AppErrorMessages
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,8 +30,10 @@ sealed interface CreateAnalysisUiState {
     data class Polling(val analysisId: String) : CreateAnalysisUiState
     data class Completed(val analysisId: String, val findings: List<Finding>) : CreateAnalysisUiState
     data class CreatedWithoutPhoto(val analysisId: String) : CreateAnalysisUiState
-    data class Failed(val message: String) : CreateAnalysisUiState
+    data class Failed(val error: AppErrorMessage) : CreateAnalysisUiState
 }
+
+private const val ANALYSIS_CONTEXT = "Analiz tamamlanamadı"
 
 @HiltViewModel
 class AnalysisViewModel @Inject constructor(
@@ -68,7 +72,9 @@ class AnalysisViewModel @Inject constructor(
     fun createAnalysis(sector: AnalysisSector?, photoPath: String?) {
         val userId = authRepository.currentUserId
         if (userId == null) {
-            _state.value = CreateAnalysisUiState.Failed("Önce giriş yapmalısın.")
+            _state.value = CreateAnalysisUiState.Failed(
+                AppErrorMessages.make("Önce giriş yapmalısın.", context = ANALYSIS_CONTEXT),
+            )
             return
         }
         val canvas = "general" // only canvas wired so far; matches AnalysisRepository's default
@@ -82,7 +88,9 @@ class AnalysisViewModel @Inject constructor(
             )
             val analysisId = when (val created = analysisRepository.createAnalysis(request)) {
                 is RdResult.Failure -> {
-                    _state.value = CreateAnalysisUiState.Failed(created.message)
+                    _state.value = CreateAnalysisUiState.Failed(
+                        AppErrorMessages.make(created.message, context = ANALYSIS_CONTEXT),
+                    )
                     return@launch
                 }
                 is RdResult.Success -> created.value
@@ -102,7 +110,9 @@ class AnalysisViewModel @Inject constructor(
             ) {
                 is RdResult.Success -> uploadResult.value
                 is RdResult.Failure -> {
-                    _state.value = CreateAnalysisUiState.Failed(uploadResult.message)
+                    _state.value = CreateAnalysisUiState.Failed(
+                        AppErrorMessages.make(uploadResult.message, context = ANALYSIS_CONTEXT),
+                    )
                     return@launch
                 }
             }
@@ -117,7 +127,9 @@ class AnalysisViewModel @Inject constructor(
                 )
             ) {
                 is RdResult.Failure -> {
-                    _state.value = CreateAnalysisUiState.Failed(submitResult.message)
+                    _state.value = CreateAnalysisUiState.Failed(
+                        AppErrorMessages.make(submitResult.message, context = ANALYSIS_CONTEXT),
+                    )
                     return@launch
                 }
                 is RdResult.Success -> Unit
@@ -137,11 +149,20 @@ class AnalysisViewModel @Inject constructor(
                     CreateAnalysisUiState.Completed(analysisId, findings)
                 }
                 is AnalysisStatus.Failed ->
-                    CreateAnalysisUiState.Failed(status.message ?: "Analiz başarısız oldu.")
+                    CreateAnalysisUiState.Failed(
+                        AppErrorMessages.make(status.message ?: "Analiz başarısız oldu.", context = ANALYSIS_CONTEXT),
+                    )
                 is AnalysisStatus.TimedOut ->
-                    CreateAnalysisUiState.Failed("Analiz zaman aşımına uğradı.")
+                    CreateAnalysisUiState.Failed(
+                        AppErrorMessages.make("Analiz zaman aşımına uğradı.", context = ANALYSIS_CONTEXT),
+                    )
                 is AnalysisStatus.InProgress ->
-                    CreateAnalysisUiState.Failed("Analiz beklenmedik şekilde durdu: ${status.status}")
+                    CreateAnalysisUiState.Failed(
+                        AppErrorMessages.make(
+                            "Analiz beklenmedik şekilde durdu: ${status.status}",
+                            context = ANALYSIS_CONTEXT,
+                        ),
+                    )
             }
         }
     }
