@@ -150,6 +150,8 @@ class AnalysisRepository @Inject constructor(
     suspend fun submitAnalyze(
         analysisId: String,
         canvas: String,
+        canvases: List<String> = listOf(canvas),
+        analysisMode: String = "standard",
         sector: AnalysisSector?,
         photoPaths: List<String>,
         appLanguage: String = "tr",
@@ -157,8 +159,8 @@ class AnalysisRepository @Inject constructor(
         val body = AnalyzeRequestBody(
             analysisId = analysisId,
             canvas = canvas,
-            canvases = listOf(canvas),
-            analysisMode = "standard", // only the free "general" canvas is wired so far
+            canvases = canvases,
+            analysisMode = analysisMode,
             requestId = UUID.randomUUID().toString(),
             supportId = UUID.randomUUID().toString(),
             analysisSector = sector?.id,

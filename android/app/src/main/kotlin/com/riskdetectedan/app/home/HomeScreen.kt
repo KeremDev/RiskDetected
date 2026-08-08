@@ -17,14 +17,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,10 +49,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.riskdetectedan.app.reports.GeneratedReportsUiState
+import com.riskdetectedan.app.reports.GeneratedReportsViewModel
 import com.riskdetectedan.core.data.analysis.AnalysisCanvas
 import com.riskdetectedan.core.data.analysis.DailyQuotaUsage
 import com.riskdetectedan.core.data.analysis.HistoryItem
 import com.riskdetectedan.core.data.profile.SubscriptionTier
+import com.riskdetectedan.core.data.reports.Report
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdListRow
 import com.riskdetectedan.core.designsystem.RdRiskChip
@@ -85,24 +92,33 @@ import java.util.UUID
  * is always true here, so the hint always shows, same as every other Faz N/O free-tier default).
  * Tapping "Fotoğraf çek" while exhausted skips [CanvasSheet] entirely and goes straight to
  * [onUpgrade], mirroring `isFreeQuotaExhausted && selectedPhotos.isEmpty` → `showQuotaPaywall()`.
+ *
+ * Faz Q (2026-08-08): [selectedCanvases] is now actually threaded into analysis creation —
+ * `onStartAnalysis`'s first two params mirror AnalysisService.swift's real contract exactly:
+ * `canvasIds` = the full sorted selection, `analysisMode` = "detailed" if any selected canvas is
+ * paid-tier else "standard" (`canvases.contains { $0.isPaid }`). Previously this was silently
+ * dropped — CanvasSheet's selection UI worked but never reached the actual analyze request.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToCamera: () -> Unit = {},
-    onStartAnalysis: (List<String>) -> Unit = {},
+    onStartAnalysis: (canvasIds: List<String>, analysisMode: String, photoPaths: List<String>) -> Unit = { _, _, _ -> },
     onHistory: () -> Unit = {},
+    onReports: () -> Unit = {},
     onProfile: () -> Unit = {},
     onUpgrade: () -> Unit = {},
     viewModel: HistoryViewModel = hiltViewModel(),
     photoTrayViewModel: PhotoTrayViewModel = hiltViewModel(),
     quotaViewModel: QuotaViewModel = hiltViewModel(),
+    reportsViewModel: GeneratedReportsViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val trayPhotoPaths by photoTrayViewModel.photoPaths.collectAsState()
     val quota by quotaViewModel.quota.collectAsState()
+    val reportsState by reportsViewModel.state.collectAsState()
     LaunchedEffect(Unit) { quotaViewModel.refresh() }
     // rememberSaveable (not remember) — same fix as MainShellScreen's activeTab (Faz M): this
     // composable is disposed while CaptureForTray covers it (nav pushes a destination on top of
@@ -136,6 +152,7 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.paper)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = RdSpacing.lg),
     ) {
         Spacer(Modifier.height(RdSpacing.xl))
@@ -147,9 +164,20 @@ fun HomeScreen(
                 Icon(Icons.Filled.HealthAndSafety, contentDescription = null, tint = colors.white, modifier = Modifier.size(22.dp))
             }
             Spacer(Modifier.width(RdSpacing.sm))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text("RiskDetected", style = RdFontStyle.Title2.toTextStyle(), color = colors.onyx)
                 Text("Profesyonel İSG Asistanı", style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
+            }
+            // Port of HomeHeader.swift's RDHeaderAccountCTA — opens the paywall directly from
+            // the header, same as iOS.
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(colors.onyx)
+                    .clickable(onClick = onUpgrade)
+                    .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xs),
+            ) {
+                Text("Planı Yükselt", style = RdFontStyle.Caption.toTextStyle(), color = colors.white)
             }
         }
 
@@ -183,18 +211,40 @@ fun HomeScreen(
         }
 
         val loaded = state as? HistoryUiState.Loaded
-        val lastItem = loaded?.items?.firstOrNull()
+        val recentItems = loaded?.items?.take(5).orEmpty()
         if (state is HistoryUiState.Loading) {
             Spacer(Modifier.height(RdSpacing.xl))
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = colors.onyx)
             }
-        } else if (lastItem != null) {
+        } else if (recentItems.isNotEmpty()) {
+            // Faz Q: port of HomeView.swift's recentSection — real list (up to 5), not just the
+            // single last item. Simplified vs iOS's RecentAnalysisCard (AngularGradient risk-ring
+            // + photo thumbnail, horizontal scroll): a plain vertical RdListRow list, same rows
+            // Analizler's own history screen already uses — no Storage signed-URL photo-fetch
+            // exists yet to back a real thumbnail, documented gap, not silently dropped.
             Spacer(Modifier.height(RdSpacing.xl))
-            RdSectionCard(title = "Son Analiz") {
-                LastAnalysisRow(item = lastItem, onClick = onHistory)
+            RdSectionCard(title = "Son Analizler") {
+                Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
+                    recentItems.forEach { item -> LastAnalysisRow(item = item, onClick = onHistory) }
+                }
             }
         }
+
+        val reportsLoaded = reportsState as? GeneratedReportsUiState.Loaded
+        val recentReports = reportsLoaded?.items?.take(5).orEmpty()
+        if (recentReports.isNotEmpty()) {
+            // Port of HomeView.swift's generatedReportsSection — real data from Faz R's
+            // GeneratedReportsViewModel, same simplified single-icon row style as the Raporlar
+            // tab itself (see GeneratedReportsScreen's doc comment).
+            Spacer(Modifier.height(RdSpacing.lg))
+            RdSectionCard(title = "Oluşturulan Raporlar") {
+                Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
+                    recentReports.forEach { report -> HomeReportRow(report = report, onClick = onReports) }
+                }
+            }
+        }
+        Spacer(Modifier.height(RdSpacing.xl))
     }
 
     if (showCanvasSheet) {
@@ -239,8 +289,12 @@ fun HomeScreen(
                 onStartAnalysis = {
                     showPhotoTray = false
                     val paths = trayPhotoPaths
+                    // Same "canvas = sorted().first, canvases = sorted()" contract as
+                    // AnalysisService.swift — see this function's doc comment.
+                    val sortedCanvasIds = selectedCanvases.map { it.id }.sorted()
+                    val analysisMode = if (selectedCanvases.any { it.isPaid }) "detailed" else "standard"
                     photoTrayViewModel.clear()
-                    onStartAnalysis(paths)
+                    onStartAnalysis(sortedCanvasIds, analysisMode, paths)
                 },
                 onClose = { showPhotoTray = false },
             )
@@ -300,5 +354,35 @@ private fun LastAnalysisRow(item: HistoryItem, onClick: () -> Unit) {
             )
         }
         RdRiskChip(level = level)
+    }
+}
+
+/** Home-embedded row for [GeneratedReportsUiState.Loaded] items — mirrors HomeView.swift's
+ * `HomeReportRow` structurally (icon/title/date, tap opens), simplified to a single icon per
+ * `isExcel` like Faz R's own tab list, not iOS's per-kind tinted chip. Tapping any row here just
+ * switches to the Raporlar tab ([onClick] = `onReports`) rather than downloading+opening inline —
+ * Home is a summary surface, the real open action lives on the tab itself (Faz R). */
+@Composable
+private fun HomeReportRow(report: Report, onClick: () -> Unit) {
+    val colors = RdTheme.colors
+    val isExcel = report.format == "xlsx" ||
+        report.mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            if (isExcel) Icons.Filled.TableChart else Icons.Filled.Description,
+            contentDescription = null,
+            tint = colors.slate,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(RdSpacing.sm))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(report.title ?: report.fileName ?: "Rapor", style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx)
+            report.createdAt?.take(10)?.let {
+                Text(it, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+            }
+        }
     }
 }

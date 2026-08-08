@@ -84,7 +84,13 @@ import com.riskdetectedan.core.designsystem.toTextStyle
  * default Material color was never part of the app's actual design system).
  */
 @Composable
-fun AnalysisScreen(photoPaths: List<String> = emptyList(), onBack: (() -> Unit)? = null, viewModel: AnalysisViewModel = hiltViewModel()) {
+fun AnalysisScreen(
+    photoPaths: List<String> = emptyList(),
+    canvasIds: List<String> = listOf("general"),
+    analysisMode: String = "standard",
+    onBack: (() -> Unit)? = null,
+    viewModel: AnalysisViewModel = hiltViewModel(),
+) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     var selectedSector by remember { mutableStateOf<AnalysisSector?>(null) }
@@ -157,7 +163,7 @@ fun AnalysisScreen(photoPaths: List<String> = emptyList(), onBack: (() -> Unit)?
                         selected = selectedSector == sector,
                         onClick = {
                             selectedSector = sector
-                            viewModel.createAnalysis(sector, photoPaths)
+                            viewModel.createAnalysis(sector, photoPaths, canvasIds, analysisMode)
                         },
                     )
                 }

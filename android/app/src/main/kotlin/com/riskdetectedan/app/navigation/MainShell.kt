@@ -47,8 +47,11 @@ fun MainShellScreen(navController: NavHostController) {
         when (activeTab) {
             RdTab.Home -> HomeScreen(
                 onNavigateToCamera = { navController.navigate(CaptureForTray) },
-                onStartAnalysis = { paths -> navController.navigate(Analysis(photoPaths = paths)) },
+                onStartAnalysis = { canvasIds, analysisMode, paths ->
+                    navController.navigate(Analysis(photoPaths = paths, canvasIds = canvasIds, analysisMode = analysisMode))
+                },
                 onHistory = { activeTab = RdTab.Analyses },
+                onReports = { activeTab = RdTab.Reports },
                 onProfile = { activeTab = RdTab.Profile },
                 onUpgrade = { navController.navigate(Paywall) },
             )

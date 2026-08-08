@@ -28,7 +28,11 @@ import kotlinx.serialization.Serializable
  * reachable directly from Home too (sector-first flow) as well as from Capture (photo-first
  * flow). Supports the real multi-photo flow (Faz O) — up to 3 photos, iOS's own hard cap
  * regardless of tier (`PlanCapabilities.safeMaxPhotosPerAnalysis`). */
-@Serializable data class Analysis(val photoPaths: List<String> = emptyList())
+@Serializable data class Analysis(
+    val photoPaths: List<String> = emptyList(),
+    val canvasIds: List<String> = listOf("general"),
+    val analysisMode: String = "standard",
+)
 @Serializable object Companies
 @Serializable object Support
 @Serializable object NotificationSettings

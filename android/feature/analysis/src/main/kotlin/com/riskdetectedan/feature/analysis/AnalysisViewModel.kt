@@ -71,8 +71,21 @@ class AnalysisViewModel @Inject constructor(
      * real multi-photo flow (Faz O, up to `PlanCapabilities.safeMaxPhotosPerAnalysis` — iOS caps
      * this at 3 regardless of tier — via Home's real `PhotoTraySheet`); `sequenceIndex` is
      * 1-based per photo position, matching the single-photo path's existing convention.
+     *
+     * [canvasIds] mirrors AnalysisService.swift's real canvas-selection contract (Faz Q,
+     * 2026-08-08): `canvas` (the `analyses` row + primary AnalyzeRequestBody field) = the
+     * lexicographically-sorted-first id, `canvases` = the full sorted selection — matches the
+     * Swift comment "canvas field = primary (first sorted) id — legacy single-id contract
+     * korunuyor" exactly. Defaults to `["general"]` for any caller that doesn't have a real
+     * [com.riskdetectedan.core.data.analysis.AnalysisCanvas] selection yet (e.g. the quick-scan
+     * Capture route, which still bypasses CanvasSheet entirely).
      */
-    fun createAnalysis(sector: AnalysisSector?, photoPaths: List<String>) {
+    fun createAnalysis(
+        sector: AnalysisSector?,
+        photoPaths: List<String>,
+        canvasIds: List<String> = listOf("general"),
+        analysisMode: String = "standard",
+    ) {
         val userId = authRepository.currentUserId
         if (userId == null) {
             _state.value = CreateAnalysisUiState.Failed(
@@ -80,7 +93,8 @@ class AnalysisViewModel @Inject constructor(
             )
             return
         }
-        val canvas = "general" // only canvas wired so far; matches AnalysisRepository's default
+        val sortedCanvasIds = canvasIds.sorted().ifEmpty { listOf("general") }
+        val canvas = sortedCanvasIds.first()
         _state.value = CreateAnalysisUiState.Creating
         viewModelScope.launch {
             val request = CreateAnalysisRequest(
@@ -128,6 +142,8 @@ class AnalysisViewModel @Inject constructor(
                 val submitResult = analysisRepository.submitAnalyze(
                     analysisId = analysisId,
                     canvas = canvas,
+                    canvases = sortedCanvasIds,
+                    analysisMode = analysisMode,
                     sector = sector,
                     photoPaths = uploadedPaths,
                 )
