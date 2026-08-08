@@ -102,6 +102,10 @@ import java.util.UUID
  * Faz S (2026-08-08): real professional-progress card (see [ProfessionalProgressCard]'s doc
  * comment) between the quota hint and "Geçmiş analizler" — tapping it opens
  * [ProfessionalTitlesSheet], port of `ProfessionalProgressHomeCard.swift`'s `onTap`.
+ *
+ * Post-Faz-S (2026-08-08): `userTier` is now the real fetched tier (see [HomeTierViewModel]'s
+ * doc comment) instead of a permanent hardcoded Free — closes that documented gap's local-default
+ * half; the remote `PlanCapabilities` override system stays a separate, still-open gap.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,6 +121,7 @@ fun HomeScreen(
     quotaViewModel: QuotaViewModel = hiltViewModel(),
     reportsViewModel: GeneratedReportsViewModel = hiltViewModel(),
     progressViewModel: HomeProgressViewModel = hiltViewModel(),
+    tierViewModel: HomeTierViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val context = LocalContext.current
@@ -125,11 +130,19 @@ fun HomeScreen(
     val quota by quotaViewModel.quota.collectAsState()
     val reportsState by reportsViewModel.state.collectAsState()
     val progress by progressViewModel.progress.collectAsState()
+    val fetchedTier by tierViewModel.tier.collectAsState()
+    // Same fallback iOS's own AppState.currentTier defaults to before a profile loads.
+    val userTier = fetchedTier ?: SubscriptionTier.Free
+    // AppState.swift's PlanCapabilities local default (pre-remote-override):
+    // `maxPhotosPerAnalysis: tier.isPaid ? 3 : 1`, `safeMaxPhotosPerAnalysis` clamps 1..3 — the
+    // clamp is a no-op for these two inputs, kept for the same "never silently exceed 3" intent.
+    val maxPhotoCount = (if (userTier.isPaid) 3 else 1).coerceIn(1, 3)
     var showTitlesSheet by rememberSaveable { mutableStateOf(false) }
     val titlesSheetState = rememberModalBottomSheetState()
     LaunchedEffect(Unit) {
         quotaViewModel.refresh()
         progressViewModel.refresh()
+        tierViewModel.refresh()
     }
     // rememberSaveable (not remember) — same fix as MainShellScreen's activeTab (Faz M): this
     // composable is disposed while CaptureForTray covers it (nav pushes a destination on top of
@@ -144,7 +157,7 @@ fun HomeScreen(
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(),
     ) { uris ->
-        val remaining = 1 - trayPhotoPaths.size // Free-tier default cap, see PhotoTraySheet's doc
+        val remaining = maxPhotoCount - trayPhotoPaths.size
         uris.take(maxOf(0, remaining)).forEach { uri ->
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 val bitmap = BitmapFactory.decodeStream(stream)
@@ -266,7 +279,7 @@ fun HomeScreen(
             CanvasSheet(
                 selected = selectedCanvases,
                 onSelectedChange = { selectedCanvases = it },
-                userTier = SubscriptionTier.Free,
+                userTier = userTier,
                 onConfirm = {
                     showCanvasSheet = false
                     showPhotoTray = true
@@ -284,6 +297,7 @@ fun HomeScreen(
         ModalBottomSheet(onDismissRequest = { showPhotoTray = false }, sheetState = traySheetState) {
             PhotoTraySheet(
                 photoPaths = trayPhotoPaths,
+                maxPhotoCount = maxPhotoCount,
                 onCamera = {
                     // Deliberately NOT closing the sheet here (unlike onLockedSlot/onStartAnalysis)
                     // — CaptureForTray covers MainShell (disposing this composition per Navigation
