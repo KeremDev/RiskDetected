@@ -45,7 +45,7 @@ fun AccountDeletionScreen(onDeleted: () -> Unit, viewModel: AccountDeletionViewM
             is AccountDeletionUiState.Requesting -> CircularProgressIndicator()
             is AccountDeletionUiState.Completed -> Text("Hesap silindi.")
             is AccountDeletionUiState.Failed -> {
-                Text(current.message)
+                Text(current.error.message)
                 Button(onClick = { showConfirm = true }) { Text("Tekrar dene") }
             }
         }

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.error.AppErrorMessage
+import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.RiskMethodWire
 import com.riskdetectedan.core.data.profile.UserProfile
@@ -19,9 +21,11 @@ import javax.inject.Inject
 sealed interface ProfileUiState {
     data object Loading : ProfileUiState
     data class Loaded(val profile: UserProfile) : ProfileUiState
-    data class Failed(val message: String) : ProfileUiState
+    data class Failed(val error: AppErrorMessage) : ProfileUiState
     data object SignedOut : ProfileUiState
 }
+
+private const val PROFILE_CONTEXT = "Profil işlemi tamamlanamadı"
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
@@ -42,8 +46,8 @@ class ProfileViewModel @Inject constructor(
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
-    private val _saveError = MutableStateFlow<String?>(null)
-    val saveError: StateFlow<String?> = _saveError.asStateFlow()
+    private val _saveError = MutableStateFlow<AppErrorMessage?>(null)
+    val saveError: StateFlow<AppErrorMessage?> = _saveError.asStateFlow()
 
     init {
         load()
@@ -59,7 +63,9 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = when (val result = profileRepository.fetchProfile(userId)) {
                 is RdResult.Success -> ProfileUiState.Loaded(result.value)
-                is RdResult.Failure -> ProfileUiState.Failed(result.message)
+                is RdResult.Failure -> ProfileUiState.Failed(
+                    AppErrorMessages.make(result.message, context = PROFILE_CONTEXT),
+                )
             }
         }
         viewModelScope.launch {
@@ -98,7 +104,7 @@ class ProfileViewModel @Inject constructor(
                     is RdResult.Success -> upload.value
                     is RdResult.Failure -> {
                         _isSaving.value = false
-                        _saveError.value = upload.message
+                        _saveError.value = AppErrorMessages.make(upload.message, context = PROFILE_CONTEXT)
                         return@launch
                     }
                 }
@@ -124,7 +130,7 @@ class ProfileViewModel @Inject constructor(
                 }
                 is RdResult.Failure -> {
                     _isSaving.value = false
-                    _saveError.value = result.message
+                    _saveError.value = AppErrorMessages.make(result.message, context = PROFILE_CONTEXT)
                 }
             }
         }

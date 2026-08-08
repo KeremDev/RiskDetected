@@ -127,7 +127,7 @@ fun AuthScreen(
         val failure = state as? AuthUiState.Failed
         if (failure != null) {
             Spacer(modifier = Modifier.height(RdSpacing.sm))
-            Text(failure.message)
+            Text(failure.error.message)
         }
     }
 }

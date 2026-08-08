@@ -57,11 +57,11 @@ class AnalysisViewModel @Inject constructor(
     private val _findings = MutableStateFlow<List<Finding>>(emptyList())
     val findings: StateFlow<List<Finding>> = _findings.asStateFlow()
 
-    private val _deleteError = MutableStateFlow<String?>(null)
-    val deleteError: StateFlow<String?> = _deleteError.asStateFlow()
+    private val _deleteError = MutableStateFlow<AppErrorMessage?>(null)
+    val deleteError: StateFlow<AppErrorMessage?> = _deleteError.asStateFlow()
 
-    private val _updateError = MutableStateFlow<String?>(null)
-    val updateError: StateFlow<String?> = _updateError.asStateFlow()
+    private val _updateError = MutableStateFlow<AppErrorMessage?>(null)
+    val updateError: StateFlow<AppErrorMessage?> = _updateError.asStateFlow()
 
     /**
      * Full submit flow, mirroring AnalysisService.swift's sequence: create -> upload photo(s)
@@ -182,7 +182,8 @@ class AnalysisViewModel @Inject constructor(
             ) {
                 is RdResult.Success ->
                     _findings.value = _findings.value.filterNot { it.id == finding.id }
-                is RdResult.Failure -> _deleteError.value = result.message
+                is RdResult.Failure ->
+                    _deleteError.value = AppErrorMessages.make(result.message, context = ANALYSIS_CONTEXT)
             }
         }
     }
@@ -215,7 +216,8 @@ class AnalysisViewModel @Inject constructor(
                         is RdResult.Failure -> Unit
                     }
                 }
-                is RdResult.Failure -> _updateError.value = result.message
+                is RdResult.Failure ->
+                    _updateError.value = AppErrorMessages.make(result.message, context = ANALYSIS_CONTEXT)
             }
         }
     }

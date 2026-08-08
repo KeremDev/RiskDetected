@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.error.AppErrorMessage
+import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.notifications.NotificationPreferences
 import com.riskdetectedan.core.data.notifications.NotificationPreferencesRepository
 import com.riskdetectedan.core.data.notifications.ProgressPreference
@@ -18,7 +20,7 @@ sealed interface NotificationSettingsUiState {
     data object Loading : NotificationSettingsUiState
     data object SignedOut : NotificationSettingsUiState
     data class Loaded(val preferences: NotificationPreferences) : NotificationSettingsUiState
-    data class Failed(val message: String) : NotificationSettingsUiState
+    data class Failed(val error: AppErrorMessage) : NotificationSettingsUiState
 }
 
 @HiltViewModel
@@ -44,7 +46,9 @@ class NotificationSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = when (val result = preferencesRepository.fetch(userId)) {
                 is RdResult.Success -> NotificationSettingsUiState.Loaded(result.value)
-                is RdResult.Failure -> NotificationSettingsUiState.Failed(result.message)
+                is RdResult.Failure -> NotificationSettingsUiState.Failed(
+                    AppErrorMessages.make(result.message, context = "Bildirim ayarları yüklenemedi"),
+                )
             }
         }
     }

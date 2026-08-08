@@ -65,7 +65,7 @@ fun ReportsScreen(viewModel: HistoryViewModel = hiltViewModel()) {
         when (val current = state) {
             is HistoryUiState.Loading -> CircularProgressIndicator()
             is HistoryUiState.SignedOut -> Text("Oturum yok")
-            is HistoryUiState.Failed -> Text("Geçmiş yüklenemedi: ${current.message}")
+            is HistoryUiState.Failed -> Text("Geçmiş yüklenemedi: ${current.error.message}")
             is HistoryUiState.Loaded -> {
                 if (current.items.isEmpty()) {
                     Text("Henüz analiz yok")
@@ -84,11 +84,11 @@ fun ReportsScreen(viewModel: HistoryViewModel = hiltViewModel()) {
         }
     }
 
-    if (reportError != null) {
+    reportError?.let { error ->
         AlertDialog(
             onDismissRequest = viewModel::clearReportError,
-            title = { Text("Rapor oluşturulamadı") },
-            text = { Text(reportError ?: "") },
+            title = { Text(error.title) },
+            text = { Text(error.message) },
             confirmButton = {
                 TextButton(onClick = viewModel::clearReportError) { Text("Tamam") }
             },

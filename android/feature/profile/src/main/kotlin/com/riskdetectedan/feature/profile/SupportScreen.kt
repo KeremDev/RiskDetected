@@ -52,7 +52,7 @@ fun SupportScreen(viewModel: SupportViewModel = hiltViewModel()) {
             is SupportUiState.Idle -> Unit
             is SupportUiState.Sending -> CircularProgressIndicator()
             is SupportUiState.Sent -> Text("Gönderildi. Destek kodu: ${current.supportId ?: "—"}")
-            is SupportUiState.Failed -> Text(current.message)
+            is SupportUiState.Failed -> Text(current.error.message)
         }
     }
 }

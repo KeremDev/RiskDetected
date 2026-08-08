@@ -62,7 +62,7 @@ fun CompanyListScreen(viewModel: CompanyViewModel = hiltViewModel()) {
 
         when (val current = state) {
             is CompanyListUiState.Loading -> CircularProgressIndicator()
-            is CompanyListUiState.Failed -> Text(current.message)
+            is CompanyListUiState.Failed -> Text(current.error.message)
             is CompanyListUiState.Loaded -> LazyColumn(modifier = Modifier.padding(top = RdSpacing.sm)) {
                 items(current.companies) { company ->
                     ListItem(
@@ -97,6 +97,6 @@ fun CompanyListScreen(viewModel: CompanyViewModel = hiltViewModel()) {
         ) {
             Text("Firma ekle")
         }
-        saveError?.let { Text(it) }
+        saveError?.let { Text(it.message) }
     }
 }

@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.auth.RdAppLanguage
+import com.riskdetectedan.core.data.error.AppErrorMessage
+import com.riskdetectedan.core.data.error.AppErrorMessages
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +20,7 @@ sealed interface AuthUiState {
     data object Loading : AuthUiState
     data object OtpSent : AuthUiState
     data object SignedIn : AuthUiState
-    data class Failed(val message: String) : AuthUiState
+    data class Failed(val error: AppErrorMessage) : AuthUiState
 }
 
 @HiltViewModel
@@ -35,7 +37,9 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = when (val result = authRepository.sendEmailOtp(email, language)) {
                 is RdResult.Success -> AuthUiState.OtpSent
-                is RdResult.Failure -> AuthUiState.Failed(result.message)
+                is RdResult.Failure -> AuthUiState.Failed(
+                    AppErrorMessages.make(result.message, context = "Kod gönderilemedi"),
+                )
             }
         }
     }
@@ -45,7 +49,9 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = when (val result = authRepository.verifyEmailOtp(email, token)) {
                 is RdResult.Success -> AuthUiState.SignedIn
-                is RdResult.Failure -> AuthUiState.Failed(result.message)
+                is RdResult.Failure -> AuthUiState.Failed(
+                    AppErrorMessages.make(result.message, context = "Kod doğrulanamadı"),
+                )
             }
         }
     }
@@ -55,7 +61,9 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             when (val tokenResult = googleAuthClient.requestIdToken(context)) {
                 is RdResult.Failure -> {
-                    _state.value = AuthUiState.Failed(tokenResult.message)
+                    _state.value = AuthUiState.Failed(
+                        AppErrorMessages.make(tokenResult.message, context = "Google ile giriş yapılamadı"),
+                    )
                     return@launch
                 }
                 is RdResult.Success -> {
@@ -65,7 +73,9 @@ class AuthViewModel @Inject constructor(
                             authRepository.signInWithGoogleIdToken(idToken, rawNonce)
                     ) {
                         is RdResult.Success -> AuthUiState.SignedIn
-                        is RdResult.Failure -> AuthUiState.Failed(signInResult.message)
+                        is RdResult.Failure -> AuthUiState.Failed(
+                            AppErrorMessages.make(signInResult.message, context = "Google ile giriş yapılamadı"),
+                        )
                     }
                 }
             }

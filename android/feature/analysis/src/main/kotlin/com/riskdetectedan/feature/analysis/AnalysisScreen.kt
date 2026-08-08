@@ -62,21 +62,21 @@ fun AnalysisScreen(photoPath: String? = null, viewModel: AnalysisViewModel = hil
             onDelete = { finding -> viewModel.deleteFinding(completed.analysisId, finding) },
             onUpdate = { finding, patch -> viewModel.updateFinding(completed.analysisId, finding, patch) },
         )
-        deleteError?.let { message ->
+        deleteError?.let { error ->
             AlertDialog(
                 onDismissRequest = viewModel::clearDeleteError,
                 title = { Text("Bulgu silinemedi") },
-                text = { Text(message) },
+                text = { Text(error.message) },
                 confirmButton = {
                     TextButton(onClick = viewModel::clearDeleteError) { Text("Tamam") }
                 },
             )
         }
-        updateError?.let { message ->
+        updateError?.let { error ->
             AlertDialog(
                 onDismissRequest = viewModel::clearUpdateError,
                 title = { Text("Bulgu kaydedilemedi") },
-                text = { Text(message) },
+                text = { Text(error.message) },
                 confirmButton = {
                     TextButton(onClick = viewModel::clearUpdateError) { Text("Tamam") }
                 },

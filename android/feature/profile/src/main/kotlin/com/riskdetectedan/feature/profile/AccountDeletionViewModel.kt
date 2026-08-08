@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.account.AccountRepository
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.error.AppErrorMessage
+import com.riskdetectedan.core.data.error.AppErrorMessages
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +18,7 @@ sealed interface AccountDeletionUiState {
     data object Idle : AccountDeletionUiState
     data object Requesting : AccountDeletionUiState
     data object Completed : AccountDeletionUiState
-    data class Failed(val message: String) : AccountDeletionUiState
+    data class Failed(val error: AppErrorMessage) : AccountDeletionUiState
 }
 
 @HiltViewModel
@@ -43,7 +45,9 @@ class AccountDeletionViewModel @Inject constructor(
                     authRepository.signOut()
                     _state.value = AccountDeletionUiState.Completed
                 }
-                is RdResult.Failure -> _state.value = AccountDeletionUiState.Failed(result.message)
+                is RdResult.Failure -> _state.value = AccountDeletionUiState.Failed(
+                    AppErrorMessages.make(result.message, context = "Hesap silme talebi kaydedilemedi"),
+                )
             }
         }
     }

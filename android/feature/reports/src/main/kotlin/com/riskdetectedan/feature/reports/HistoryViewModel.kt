@@ -6,6 +6,8 @@ import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.analysis.HistoryItem
 import com.riskdetectedan.core.data.analysis.HistoryRepository
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.error.AppErrorMessage
+import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.reports.ReportsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,8 +20,10 @@ sealed interface HistoryUiState {
     data object Loading : HistoryUiState
     data object SignedOut : HistoryUiState
     data class Loaded(val items: List<HistoryItem>) : HistoryUiState
-    data class Failed(val message: String) : HistoryUiState
+    data class Failed(val error: AppErrorMessage) : HistoryUiState
 }
+
+private const val REPORTS_CONTEXT = "Rapor işlemi tamamlanamadı"
 
 /** One-shot payload the screen consumes to hand the downloaded bytes off to a FileProvider +
  * ACTION_VIEW intent, then clears via [HistoryViewModel.clearReportFile] — the repository layer
@@ -40,8 +44,8 @@ class HistoryViewModel @Inject constructor(
     private val _generatingReportForId = MutableStateFlow<String?>(null)
     val generatingReportForId: StateFlow<String?> = _generatingReportForId.asStateFlow()
 
-    private val _reportError = MutableStateFlow<String?>(null)
-    val reportError: StateFlow<String?> = _reportError.asStateFlow()
+    private val _reportError = MutableStateFlow<AppErrorMessage?>(null)
+    val reportError: StateFlow<AppErrorMessage?> = _reportError.asStateFlow()
 
     private val _reportFile = MutableStateFlow<ReportFile?>(null)
     val reportFile: StateFlow<ReportFile?> = _reportFile.asStateFlow()
@@ -60,7 +64,9 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = when (val result = historyRepository.listHistory(userId)) {
                 is RdResult.Success -> HistoryUiState.Loaded(result.value)
-                is RdResult.Failure -> HistoryUiState.Failed(result.message)
+                is RdResult.Failure -> HistoryUiState.Failed(
+                    AppErrorMessages.make(result.message, context = REPORTS_CONTEXT),
+                )
             }
         }
     }
@@ -77,7 +83,7 @@ class HistoryViewModel @Inject constructor(
             val report = when (val result = reportsRepository.generateExcelReport(item.id)) {
                 is RdResult.Success -> result.value
                 is RdResult.Failure -> {
-                    _reportError.value = result.message
+                    _reportError.value = AppErrorMessages.make(result.message, context = REPORTS_CONTEXT)
                     _generatingReportForId.value = null
                     return@launch
                 }
@@ -89,7 +95,8 @@ class HistoryViewModel @Inject constructor(
                     mimeType = report.mimeType
                         ?: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
-                is RdResult.Failure -> _reportError.value = download.message
+                is RdResult.Failure ->
+                    _reportError.value = AppErrorMessages.make(download.message, context = REPORTS_CONTEXT)
             }
             _generatingReportForId.value = null
         }

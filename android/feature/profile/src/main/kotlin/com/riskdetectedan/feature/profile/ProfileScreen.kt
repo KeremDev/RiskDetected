@@ -63,7 +63,7 @@ fun ProfileScreen(
         when (val current = state) {
             is ProfileUiState.Loading -> CircularProgressIndicator()
             is ProfileUiState.SignedOut -> Text("Oturum yok")
-            is ProfileUiState.Failed -> Text("Profil yüklenemedi: ${current.message}")
+            is ProfileUiState.Failed -> Text("Profil yüklenemedi: ${current.error.message}")
             is ProfileUiState.Loaded -> if (isEditing) {
                 ProfileEditForm(
                     profile = current.profile,
@@ -221,11 +221,11 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
         TextButton(onClick = onDone) { Text("Vazgeç") }
     }
 
-    if (saveError != null) {
+    saveError?.let { error ->
         AlertDialog(
             onDismissRequest = viewModel::clearSaveError,
-            title = { Text("Profil kaydedilemedi") },
-            text = { Text(saveError ?: "") },
+            title = { Text(error.title) },
+            text = { Text(error.message) },
             confirmButton = {
                 TextButton(onClick = viewModel::clearSaveError) { Text("Tamam") }
             },

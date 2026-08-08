@@ -43,7 +43,7 @@ fun PaywallScreen(viewModel: PaywallViewModel = hiltViewModel()) {
         when (val current = state) {
             is PaywallUiState.Loading -> CircularProgressIndicator()
             is PaywallUiState.SignedOut -> Text("Oturum yok")
-            is PaywallUiState.Failed -> Text("Paketler yüklenemedi: ${current.message}")
+            is PaywallUiState.Failed -> Text("Paketler yüklenemedi: ${current.error.message}")
             is PaywallUiState.Loaded -> Column(modifier = Modifier.fillMaxWidth()) {
                 Text("Mevcut plan: ${current.currentTier.name}")
                 if (current.packages.isEmpty()) {

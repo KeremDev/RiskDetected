@@ -6,10 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.revenuecat.purchases.PurchasesTransactionException
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
-import com.riskdetectedan.core.data.error.AppErrorMessage
-import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.billing.BillingRepository
+import com.riskdetectedan.core.data.error.AppErrorMessage
+import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
 import com.riskdetectedan.core.data.paywall.PaywallEventName
 import com.riskdetectedan.core.data.paywall.PaywallEventRepository
@@ -28,7 +28,7 @@ sealed interface PaywallUiState {
     data object Loading : PaywallUiState
     data object SignedOut : PaywallUiState
     data class Loaded(val packages: List<BillingPackage>, val currentTier: SubscriptionTier) : PaywallUiState
-    data class Failed(val message: String) : PaywallUiState
+    data class Failed(val error: AppErrorMessage) : PaywallUiState
 }
 
 /**
@@ -73,7 +73,9 @@ class PaywallViewModel @Inject constructor(
         viewModelScope.launch {
             when (val configured = billingRepository.configure(userId)) {
                 is RdResult.Failure -> {
-                    _state.value = PaywallUiState.Failed(configured.message)
+                    _state.value = PaywallUiState.Failed(
+                        AppErrorMessages.make(configured.message, context = "Abonelik yüklenemedi"),
+                    )
                     return@launch
                 }
                 is RdResult.Success -> Unit
@@ -82,7 +84,9 @@ class PaywallViewModel @Inject constructor(
             val packages = when (val result = billingRepository.fetchPackages()) {
                 is RdResult.Success -> result.value
                 is RdResult.Failure -> {
-                    _state.value = PaywallUiState.Failed(result.message)
+                    _state.value = PaywallUiState.Failed(
+                        AppErrorMessages.make(result.message, context = "Abonelik yüklenemedi"),
+                    )
                     return@launch
                 }
             }

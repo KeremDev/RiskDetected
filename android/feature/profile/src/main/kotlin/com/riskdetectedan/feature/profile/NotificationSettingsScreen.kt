@@ -29,7 +29,7 @@ fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltVi
         when (val current = state) {
             is NotificationSettingsUiState.Loading -> CircularProgressIndicator()
             is NotificationSettingsUiState.SignedOut -> Text("Oturum yok")
-            is NotificationSettingsUiState.Failed -> Text(current.message)
+            is NotificationSettingsUiState.Failed -> Text(current.error.message)
             is NotificationSettingsUiState.Loaded -> {
                 val prefs = current.preferences
                 PreferenceRow("Bildirimler açık", prefs.enabled, viewModel::setMaster)
