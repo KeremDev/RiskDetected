@@ -2,15 +2,15 @@ package com.riskdetectedan.feature.reports
 
 import android.content.Intent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -19,27 +19,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.analysis.HistoryItem
-import com.riskdetectedan.core.designsystem.RdRadius
+import com.riskdetectedan.core.designsystem.RdEmptyState
+import com.riskdetectedan.core.designsystem.RdFontStyle
+import com.riskdetectedan.core.designsystem.RdListRow
+import com.riskdetectedan.core.designsystem.RdRiskChip
+import com.riskdetectedan.core.designsystem.RdScreenHeader
 import com.riskdetectedan.core.designsystem.RdSpacing
-import com.riskdetectedan.core.designsystem.backgroundColor
-import com.riskdetectedan.core.designsystem.color
+import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.riskLevelFromRaw
+import com.riskdetectedan.core.designsystem.toTextStyle
 import java.io.File
 
-/** Port of the analysis history list (App/Models/HistoryItem.swift's `init(row:)` mapping —
- * not a port of App/Views/History/HistoryView.swift's layout, which wasn't read; this reuses
- * the same functional-list pattern as every other screen built this session). Each completed
- * analysis row now also offers "Excel oluştur" (generate-excel-report), same as iOS's report
- * generation entry point — the actual file is opened via a system chooser rather than an
- * in-app viewer (no XLSX renderer built, this hands off to whatever's installed).
+/** Port of the analysis history list (2026-08-08 visual pass, Faz J of the core-flow redesign —
+ * see [com.riskdetectedan.core.data.analysis.HistoryItem]'s doc comment for the mirrored iOS
+ * mapping). Real structure ported: [RdListRow] + [RdRiskChip] for each row, [RdEmptyState] for
+ * the empty-list case (none of the History/Reports/Company screens had one before this pass).
+ * Report generation ("Excel oluştur") behavior and the system-chooser hand-off are unchanged —
+ * pure UI-layer pass, same as every other screen in this redesign.
  */
 @Composable
-fun ReportsScreen(viewModel: HistoryViewModel = hiltViewModel()) {
+fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hiltViewModel()) {
+    val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     val generatingId by viewModel.generatingReportForId.collectAsState()
     val reportError by viewModel.reportError.collectAsState()
@@ -60,23 +66,43 @@ fun ReportsScreen(viewModel: HistoryViewModel = hiltViewModel()) {
         viewModel.clearReportFile()
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg)) {
-        Text("Geçmiş analizler")
-        when (val current = state) {
-            is HistoryUiState.Loading -> CircularProgressIndicator()
-            is HistoryUiState.SignedOut -> Text("Oturum yok")
-            is HistoryUiState.Failed -> Text("Geçmiş yüklenemedi: ${current.error.message}")
-            is HistoryUiState.Loaded -> {
-                if (current.items.isEmpty()) {
-                    Text("Henüz analiz yok")
-                } else {
-                    LazyColumn(modifier = Modifier.padding(top = RdSpacing.sm)) {
-                        items(current.items, key = { it.id }) { item ->
-                            HistoryRow(
-                                item = item,
-                                isGenerating = generatingId == item.id,
-                                onGenerateReport = { viewModel.generateReport(item) },
-                            )
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        RdScreenHeader(title = "Geçmiş Analizler", onBack = onBack)
+
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
+            when (val current = state) {
+                is HistoryUiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = colors.onyx)
+                }
+                is HistoryUiState.SignedOut -> RdEmptyState(
+                    icon = Icons.Filled.History,
+                    title = "Oturum yok",
+                    subtitle = "Geçmiş analizlerini görmek için giriş yapmalısın.",
+                )
+                is HistoryUiState.Failed -> RdEmptyState(
+                    icon = Icons.Filled.History,
+                    title = "Geçmiş yüklenemedi",
+                    subtitle = current.error.message,
+                )
+                is HistoryUiState.Loaded -> {
+                    if (current.items.isEmpty()) {
+                        RdEmptyState(
+                            icon = Icons.Filled.History,
+                            title = "Henüz analiz yok",
+                            subtitle = "İlk fotoğrafını çekince analizlerin burada listelenecek.",
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.padding(top = RdSpacing.sm),
+                            verticalArrangement = Arrangement.spacedBy(RdSpacing.xs),
+                        ) {
+                            items(current.items, key = { it.id }) { item ->
+                                HistoryRow(
+                                    item = item,
+                                    isGenerating = generatingId == item.id,
+                                    onGenerateReport = { viewModel.generateReport(item) },
+                                )
+                            }
                         }
                     }
                 }
@@ -98,32 +124,27 @@ fun ReportsScreen(viewModel: HistoryViewModel = hiltViewModel()) {
 
 @Composable
 private fun HistoryRow(item: HistoryItem, isGenerating: Boolean, onGenerateReport: () -> Unit) {
+    val colors = RdTheme.colors
     val level = riskLevelFromRaw(item.riskBand)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = RdSpacing.xs),
-    ) {
-        Text(
-            text = level.name,
-            modifier = Modifier
-                .background(level.backgroundColor(), RoundedCornerShape(RdRadius.xs))
-                .padding(horizontal = RdSpacing.xs, vertical = RdSpacing.xxs),
-            color = level.color(),
-        )
-        Column(modifier = Modifier.padding(start = RdSpacing.sm)) {
-            Text(item.title)
-            Text("${item.findingCount} bulgu · ${item.historyStatus}")
-            // Report generation needs a completed, AI-scored analysis to read findings/photos
-            // from — matches the edge function's own `analysis_not_completed`-style rejection
-            // for non-terminal analyses (see generate-excel-report/index.ts).
-            if (item.status == "completed") {
-                if (isGenerating) {
-                    Text("Rapor oluşturuluyor...")
-                } else {
-                    Text("Excel oluştur", modifier = Modifier.clickable(onClick = onGenerateReport))
+    RdListRow(
+        title = item.title,
+        subtitle = "${item.findingCount} bulgu · ${item.historyStatus}",
+        trailing = {
+            Column(horizontalAlignment = Alignment.End) {
+                RdRiskChip(level = level)
+                // Report generation needs a completed, AI-scored analysis to read findings/photos
+                // from — matches the edge function's own `analysis_not_completed`-style rejection
+                // for non-terminal analyses (see generate-excel-report/index.ts).
+                if (item.status == "completed") {
+                    if (isGenerating) {
+                        Text("Oluşturuluyor...", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                    } else {
+                        TextButton(onClick = onGenerateReport) {
+                            Text("Excel oluştur", style = RdFontStyle.Caption.toTextStyle())
+                        }
+                    }
                 }
             }
-        }
-    }
+        },
+    )
 }
