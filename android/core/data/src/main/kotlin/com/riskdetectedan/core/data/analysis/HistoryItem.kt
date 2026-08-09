@@ -3,7 +3,9 @@ package com.riskdetectedan.core.data.analysis
 import com.riskdetectedan.core.common.RdResult
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.storage.storage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
@@ -38,6 +40,9 @@ data class HistoryItem(
     val historyStatus: String get() = if (status == "completed") "reviewed" else "open"
 }
 
+@Serializable
+private data class StoragePathRow(@SerialName("storage_path") val storagePath: String)
+
 @Singleton
 class HistoryRepository @Inject constructor(
     private val client: SupabaseClient,
@@ -53,5 +58,36 @@ class HistoryRepository @Inject constructor(
         RdResult.Success(items)
     } catch (t: Throwable) {
         RdResult.Failure("history_fetch_failed", t.message ?: "history_fetch_failed", t)
+    }
+
+    /** Real gap sweep finding (2026-08-09): Android's History list had no delete action at all —
+     * mirrors `AnalysisService.swift`'s `deleteAnalysis(analysisID:...)` exactly: remove the
+     * analysis's photos from the `photos` storage bucket, its generated reports from the
+     * `reports` storage bucket, then delete the `analyses` row itself (cascades to
+     * findings/photos/reports rows via FK, same as iOS relies on). Storage removal failures are
+     * non-fatal here — an orphaned storage object with no DB row pointing at it is a harmless
+     * leak, not a correctness problem, same reasoning iOS's own `runCatching`-style storage
+     * cleanup in [com.riskdetectedan.core.data.reports.ReportsRepository] already uses. */
+    suspend fun deleteAnalysis(analysisId: String): RdResult<Unit> = try {
+        val photoPaths = client.postgrest.from("photos")
+            .select(Columns.list("storage_path")) { filter { eq("analysis_id", analysisId) } }
+            .decodeList<StoragePathRow>()
+            .map { it.storagePath }
+        val reportPaths = client.postgrest.from("reports")
+            .select(Columns.list("storage_path")) { filter { eq("analysis_id", analysisId) } }
+            .decodeList<StoragePathRow>()
+            .map { it.storagePath }
+
+        if (photoPaths.isNotEmpty()) {
+            runCatching { client.storage.from("photos").delete(photoPaths) }
+        }
+        if (reportPaths.isNotEmpty()) {
+            runCatching { client.storage.from("reports").delete(reportPaths) }
+        }
+
+        client.postgrest.from("analyses").delete { filter { eq("id", analysisId) } }
+        RdResult.Success(Unit)
+    } catch (t: Throwable) {
+        RdResult.Failure("analysis_delete_failed", t.message ?: "analysis_delete_failed", t)
     }
 }

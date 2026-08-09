@@ -8,21 +8,29 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.analysis.HistoryItem
@@ -57,6 +65,9 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
     val generatingPdfId by viewModel.generatingPdfForId.collectAsState()
     val reportError by viewModel.reportError.collectAsState()
     val reportFile by viewModel.reportFile.collectAsState()
+    val deletingId by viewModel.deletingId.collectAsState()
+    val deleteError by viewModel.deleteError.collectAsState()
+    var itemPendingDelete by remember { mutableStateOf<HistoryItem?>(null) }
     val context = LocalContext.current
 
     LaunchedEffect(reportFile) {
@@ -108,8 +119,10 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
                                     item = item,
                                     isGenerating = generatingId == item.id,
                                     isGeneratingPdf = generatingPdfId == item.id,
+                                    isDeleting = deletingId == item.id,
                                     onGenerateReport = { viewModel.generateReport(item) },
                                     onGeneratePdf = { viewModel.generatePdfReport(item) },
+                                    onDelete = { itemPendingDelete = item },
                                 )
                             }
                         }
@@ -129,6 +142,34 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
             },
         )
     }
+
+    itemPendingDelete?.let { item ->
+        AlertDialog(
+            onDismissRequest = { itemPendingDelete = null },
+            title = { Text("Analizi sil") },
+            text = { Text("Bu analiz ve ona ait fotoğraf/rapor dosyaları kalıcı olarak silinecek. Bu işlem geri alınamaz.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteAnalysis(item)
+                    itemPendingDelete = null
+                }) { Text("Sil") }
+            },
+            dismissButton = {
+                TextButton(onClick = { itemPendingDelete = null }) { Text("Vazgeç") }
+            },
+        )
+    }
+
+    deleteError?.let { error ->
+        AlertDialog(
+            onDismissRequest = viewModel::clearDeleteError,
+            title = { Text(error.title) },
+            text = { Text(error.message) },
+            confirmButton = {
+                TextButton(onClick = viewModel::clearDeleteError) { Text("Tamam") }
+            },
+        )
+    }
 }
 
 @Composable
@@ -136,8 +177,10 @@ private fun HistoryRow(
     item: HistoryItem,
     isGenerating: Boolean,
     isGeneratingPdf: Boolean,
+    isDeleting: Boolean,
     onGenerateReport: () -> Unit,
     onGeneratePdf: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     val colors = RdTheme.colors
     val level = riskLevelFromRaw(item.riskBand)
@@ -146,7 +189,24 @@ private fun HistoryRow(
         subtitle = "${item.findingCount} bulgu · ${item.historyStatus}",
         trailing = {
             Column(horizontalAlignment = Alignment.End) {
-                RdRiskChip(level = level)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RdRiskChip(level = level)
+                    if (isDeleting) {
+                        CircularProgressIndicator(
+                            color = colors.critical,
+                            modifier = Modifier.size(16.dp).padding(start = RdSpacing.xs),
+                        )
+                    } else {
+                        IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                            Icon(
+                                Icons.Filled.DeleteOutline,
+                                contentDescription = "Analizi sil",
+                                tint = colors.critical,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    }
+                }
                 // Report generation needs a completed, AI-scored analysis to read findings/photos
                 // from — matches the edge function's own `analysis_not_completed`-style rejection
                 // for non-terminal analyses (see generate-excel-report/index.ts and

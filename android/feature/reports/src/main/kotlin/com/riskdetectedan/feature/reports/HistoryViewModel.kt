@@ -70,6 +70,12 @@ class HistoryViewModel @Inject constructor(
     private val _reportFile = MutableStateFlow<ReportFile?>(null)
     val reportFile: StateFlow<ReportFile?> = _reportFile.asStateFlow()
 
+    private val _deletingId = MutableStateFlow<String?>(null)
+    val deletingId: StateFlow<String?> = _deletingId.asStateFlow()
+
+    private val _deleteError = MutableStateFlow<AppErrorMessage?>(null)
+    val deleteError: StateFlow<AppErrorMessage?> = _deleteError.asStateFlow()
+
     /** Real port of `loadRecentItems()`'s `firstPhotoPaths(analysisIDs:)` call — analysisId ->
      * first (lowest sequence_index) Storage path, feeds [com.riskdetectedan.app.home.
      * RecentAnalysisRingCard]'s thumbnail. Best-effort: a failed fetch just leaves the map empty,
@@ -237,5 +243,33 @@ class HistoryViewModel @Inject constructor(
 
     fun clearReportError() {
         _reportError.value = null
+    }
+
+    /** Real gap sweep finding (2026-08-09): History had no delete action at all — real port of
+     * `HistoryView.swift`'s `deleteAnalysis(_:)`, see [HistoryRepository.deleteAnalysis]'s doc
+     * comment for the storage+row cleanup it does. Removes the row from local state on success,
+     * same "no full refetch needed" reasoning as [com.riskdetectedan.feature.analysis.
+     * AnalysisViewModel]'s finding-delete — deletion doesn't change any *other* row's data, a
+     * local list-remove is honest here. */
+    fun deleteAnalysis(item: HistoryItem) {
+        if (_deletingId.value != null) return
+        _deletingId.value = item.id
+        _deleteError.value = null
+        viewModelScope.launch {
+            when (val result = historyRepository.deleteAnalysis(item.id)) {
+                is RdResult.Success -> {
+                    val current = _state.value as? HistoryUiState.Loaded
+                    if (current != null) {
+                        _state.value = current.copy(items = current.items.filterNot { it.id == item.id })
+                    }
+                }
+                is RdResult.Failure -> _deleteError.value = AppErrorMessages.make(result.message, context = REPORTS_CONTEXT)
+            }
+            _deletingId.value = null
+        }
+    }
+
+    fun clearDeleteError() {
+        _deleteError.value = null
     }
 }

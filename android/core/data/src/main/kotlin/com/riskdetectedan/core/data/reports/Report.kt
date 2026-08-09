@@ -265,6 +265,25 @@ class ReportsRepository @Inject constructor(
         )
     }
 
+    /** Real gap sweep finding (2026-08-09): the generated-reports list had no delete action —
+     * real port of `AnalysisService.swift`'s `deleteReport(_:...)`: remove the file from the
+     * `reports` storage bucket, then delete the `reports` row. Unlike [downloadReportBytes]'s
+     * storage-only scope, this also touches the row — matches iOS exactly (storage failure is
+     * fatal here, unlike [com.riskdetectedan.core.data.analysis.HistoryRepository.deleteAnalysis]'s
+     * best-effort cleanup, since deleting *only* the row would silently orphan a real file a user
+     * might expect gone). */
+    suspend fun deleteReport(report: Report): RdResult<Unit> = try {
+        client.storage.from(BUCKET).delete(listOf(report.storagePath))
+        client.postgrest.from("reports").delete { filter { eq("id", report.id) } }
+        RdResult.Success(Unit)
+    } catch (t: Throwable) {
+        RdResult.Failure(
+            code = "report_delete_failed",
+            message = t.message ?: "Rapor silinemedi.",
+            cause = t,
+        )
+    }
+
     private companion object {
         const val BUCKET = "reports"
     }

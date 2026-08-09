@@ -51,6 +51,12 @@ class GeneratedReportsViewModel @Inject constructor(
     private val _reportFile = MutableStateFlow<ReportFile?>(null)
     val reportFile: StateFlow<ReportFile?> = _reportFile.asStateFlow()
 
+    private val _deletingReportId = MutableStateFlow<String?>(null)
+    val deletingReportId: StateFlow<String?> = _deletingReportId.asStateFlow()
+
+    private val _deleteError = MutableStateFlow<AppErrorMessage?>(null)
+    val deleteError: StateFlow<AppErrorMessage?> = _deleteError.asStateFlow()
+
     init {
         load()
     }
@@ -100,5 +106,31 @@ class GeneratedReportsViewModel @Inject constructor(
 
     fun clearReportError() {
         _reportError.value = null
+    }
+
+    /** Real gap sweep finding (2026-08-09): this list had no delete action — real port of
+     * `AnalysisService.swift`'s `deleteReport(_:...)`, see [ReportsRepository.deleteReport]'s
+     * doc comment. Removes the row from local state on success, same "no full refetch needed"
+     * reasoning as `HistoryViewModel.deleteAnalysis`. */
+    fun deleteReport(report: Report) {
+        if (_deletingReportId.value != null) return
+        _deletingReportId.value = report.id
+        _deleteError.value = null
+        viewModelScope.launch {
+            when (val result = reportsRepository.deleteReport(report)) {
+                is RdResult.Success -> {
+                    val current = _state.value as? GeneratedReportsUiState.Loaded
+                    if (current != null) {
+                        _state.value = current.copy(items = current.items.filterNot { it.id == report.id })
+                    }
+                }
+                is RdResult.Failure -> _deleteError.value = AppErrorMessages.make(result.message, context = REPORTS_CONTEXT)
+            }
+            _deletingReportId.value = null
+        }
+    }
+
+    fun clearDeleteError() {
+        _deleteError.value = null
     }
 }

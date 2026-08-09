@@ -5,24 +5,33 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.reports.Report
@@ -55,6 +64,9 @@ fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel(
     val openingId by viewModel.openingReportId.collectAsState()
     val reportError by viewModel.reportError.collectAsState()
     val reportFile by viewModel.reportFile.collectAsState()
+    val deletingReportId by viewModel.deletingReportId.collectAsState()
+    val deleteError by viewModel.deleteError.collectAsState()
+    var reportPendingDelete by remember { mutableStateOf<Report?>(null) }
     val context = LocalContext.current
 
     LaunchedEffect(reportFile) {
@@ -105,7 +117,9 @@ fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel(
                                 ReportRow(
                                     report = report,
                                     isOpening = openingId == report.id,
+                                    isDeleting = deletingReportId == report.id,
                                     onClick = { viewModel.openReport(report) },
+                                    onDelete = { reportPendingDelete = report },
                                 )
                             }
                         }
@@ -125,10 +139,44 @@ fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel(
             },
         )
     }
+
+    reportPendingDelete?.let { report ->
+        AlertDialog(
+            onDismissRequest = { reportPendingDelete = null },
+            title = { Text("Raporu sil") },
+            text = { Text("Bu rapor dosyası kalıcı olarak silinecek. Bu işlem geri alınamaz.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteReport(report)
+                    reportPendingDelete = null
+                }) { Text("Sil") }
+            },
+            dismissButton = {
+                TextButton(onClick = { reportPendingDelete = null }) { Text("Vazgeç") }
+            },
+        )
+    }
+
+    deleteError?.let { error ->
+        AlertDialog(
+            onDismissRequest = viewModel::clearDeleteError,
+            title = { Text(error.title) },
+            text = { Text(error.message) },
+            confirmButton = {
+                TextButton(onClick = viewModel::clearDeleteError) { Text("Tamam") }
+            },
+        )
+    }
 }
 
 @Composable
-private fun ReportRow(report: Report, isOpening: Boolean, onClick: () -> Unit) {
+private fun ReportRow(
+    report: Report,
+    isOpening: Boolean,
+    isDeleting: Boolean,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
     val colors = RdTheme.colors
     val isExcel = report.format == "xlsx" ||
         report.mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -138,10 +186,24 @@ private fun ReportRow(report: Report, isOpening: Boolean, onClick: () -> Unit) {
         icon = if (isExcel) Icons.Filled.TableChart else Icons.Filled.Description,
         iconBackground = colors.fog,
         onClick = if (isOpening) null else onClick,
-        trailing = if (isOpening) {
-            { Text("Açılıyor...", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate) }
-        } else {
-            null
+        trailing = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isOpening) {
+                    Text("Açılıyor...", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                }
+                if (isDeleting) {
+                    CircularProgressIndicator(color = colors.critical, modifier = Modifier.size(16.dp))
+                } else {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                        Icon(
+                            Icons.Filled.DeleteOutline,
+                            contentDescription = "Raporu sil",
+                            tint = colors.critical,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
         },
     )
 }
