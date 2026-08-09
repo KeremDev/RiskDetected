@@ -1,5 +1,7 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
@@ -48,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
@@ -68,12 +71,17 @@ import kotlinx.coroutines.delay
 @Composable
 fun OBLoadingScreen(
     onFinished: () -> Unit,
-    primarySectorLabel: String = "İnşaat",
-    hazardsLabel: String = "Çok Tehlikeli",
-    certificateLabel: String = "A Sınıfı",
+    primarySectorLabel: String? = null,
+    hazardsLabel: String? = null,
+    certificateLabel: String? = null,
 ) {
     val colors = RdTheme.colors
-    var title by remember { mutableStateOf("Sana özel kurulum hazırlanıyor…") }
+    val resolvedSectorLabel = primarySectorLabel ?: stringResource(RdR.string.rd_sector_construction)
+    val resolvedHazardsLabel = hazardsLabel ?: stringResource(RdR.string.rd_hazard_critical)
+    val resolvedCertificateLabel = certificateLabel ?: stringResource(RdR.string.rd_cert_a)
+    val preparingTitle = stringResource(RdR.string.rd_kurulum_hazirlaniyor)
+    val readyTitle = stringResource(RdR.string.rd_plan_hazir_nokta)
+    var title by remember { mutableStateOf(preparingTitle) }
     var revealed by remember { mutableStateOf(BooleanArray(3)) }
     var done by remember { mutableStateOf(BooleanArray(3)) }
 
@@ -84,7 +92,7 @@ fun OBLoadingScreen(
         delay(100); done = done.copyOf().also { it[0] = true }
         delay(900); done = done.copyOf().also { it[1] = true }
         delay(900); done = done.copyOf().also { it[2] = true }
-        delay(300); title = "Plan hazır."
+        delay(300); title = readyTitle
         delay(850); onFinished()
     }
 
@@ -100,9 +108,9 @@ fun OBLoadingScreen(
 
             Spacer(Modifier.height(28.dp))
             Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.widthIn(max = 320.dp)) {
-                StepRow(done = done.getOrElse(0) { false }, revealed = revealed.getOrElse(0) { false }, highlight = primarySectorLabel, suffix = " için risk analiz şablonları yükleniyor...")
-                StepRow(done = done.getOrElse(1) { false }, revealed = revealed.getOrElse(1) { false }, highlight = hazardsLabel, suffix = " sınıfı için kontrol listesi hazırlanıyor...")
-                StepRow(done = done.getOrElse(2) { false }, revealed = revealed.getOrElse(2) { false }, highlight = certificateLabel, suffix = " için rapor formatı kişiselleştiriliyor...")
+                StepRow(done = done.getOrElse(0) { false }, revealed = revealed.getOrElse(0) { false }, highlight = resolvedSectorLabel, suffix = stringResource(RdR.string.rd_loading_sector_suffix))
+                StepRow(done = done.getOrElse(1) { false }, revealed = revealed.getOrElse(1) { false }, highlight = resolvedHazardsLabel, suffix = stringResource(RdR.string.rd_loading_hazard_suffix))
+                StepRow(done = done.getOrElse(2) { false }, revealed = revealed.getOrElse(2) { false }, highlight = resolvedCertificateLabel, suffix = stringResource(RdR.string.rd_loading_certificate_suffix))
             }
         }
     }

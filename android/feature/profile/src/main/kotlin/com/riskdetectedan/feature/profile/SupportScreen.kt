@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.profile
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.provider.OpenableColumns
@@ -100,7 +104,7 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
     }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
-        RdScreenHeader(title = "Destek", onBack = onBack)
+        RdScreenHeader(title = stringResource(RdR.string.rd_destek), onBack = onBack)
 
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
             RdSectionCard {
@@ -108,17 +112,17 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
                     OutlinedTextField(
                         value = subject,
                         onValueChange = { subject = it },
-                        label = { Text("Konu") },
+                        label = { Text(stringResource(RdR.string.rd_konu)) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = message,
                         onValueChange = { message = it },
-                        label = { Text("Mesaj") },
+                        label = { Text(stringResource(RdR.string.rd_mesaj)) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     RdPrimaryButton(
-                        text = "Gönder",
+                        text = stringResource(RdR.string.rd_gonder),
                         onClick = { viewModel.send(subject, message) },
                         enabled = subject.isNotBlank() && message.isNotBlank() && state !is SupportUiState.Sending,
                         style = RdButtonStyle.Onyx,
@@ -130,7 +134,7 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
             Spacer(Modifier.height(RdSpacing.md))
             RdSectionCard {
                 Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
-                    Text("EK", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                    Text(stringResource(RdR.string.rd_ek), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                     attachments.forEach { attachment ->
                         Row(
                             modifier = Modifier
@@ -149,29 +153,29 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(attachment.filename, style = RdFontStyle.Footnote.toTextStyle(), color = colors.onyx)
                                 Text(
-                                    "${attachment.sizeBytes / 1024} KB",
+                                    stringResource(RdR.string.rd_dosya_boyutu_kb_format, attachment.sizeBytes / 1024),
                                     style = RdFontStyle.Caption.toTextStyle(),
                                     color = colors.slate,
                                 )
                             }
                             IconButton(onClick = { viewModel.removeAttachment(attachment.id) }) {
-                                Icon(Icons.Filled.Close, contentDescription = "Kaldır", tint = colors.onyx)
+                                Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kaldir), tint = colors.onyx)
                             }
                         }
                     }
                     if (attachments.size >= 3) {
-                        Text("En fazla 3 ek ekleyebilirsin.", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                        Text(stringResource(RdR.string.rd_en_fazla_3_ek_ekleyebilirsin), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                     } else {
                         Row(horizontalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
                             TextButton(onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                                 Icon(Icons.Filled.Photo, contentDescription = null, tint = colors.onyx)
                                 Spacer(Modifier.width(RdSpacing.xs))
-                                Text("Fotoğraf")
+                                Text(stringResource(RdR.string.rd_fotograf))
                             }
                             TextButton(onClick = { pickFile.launch(arrayOf("*/*")) }) {
                                 Icon(Icons.Filled.AttachFile, contentDescription = null, tint = colors.onyx)
                                 Spacer(Modifier.width(RdSpacing.xs))
-                                Text("Dosya")
+                                Text(stringResource(RdR.string.rd_dosya))
                             }
                         }
                     }
@@ -188,7 +192,10 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
                     CircularProgressIndicator(color = colors.onyx)
                 }
                 is SupportUiState.Sent -> Text(
-                    "Gönderildi. Destek kodu: ${current.supportId ?: "—"}",
+                    stringResource(
+                        RdR.string.rd_destek_gonderildi_format,
+                        current.supportId ?: stringResource(RdR.string.rd_emdash),
+                    ),
                     style = RdFontStyle.Footnote.toTextStyle(),
                     color = colors.greenDark,
                 )

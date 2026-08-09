@@ -21,6 +21,10 @@
         android:theme="@style/Theme.RiskDetected"
         android:supportsRtl="true">
 
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="${firebaseMessagingAutoInitEnabled}" />
+
         <!--
           Ç1 (review doc): no certificate pinning in v1 — Network Security Config +
           HTTPS-only + system CA store is the accepted v1 baseline. android:allowBackup is
@@ -34,6 +38,14 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="${applicationId}"
+                    android:host="login-callback" />
             </intent-filter>
         </activity>
 

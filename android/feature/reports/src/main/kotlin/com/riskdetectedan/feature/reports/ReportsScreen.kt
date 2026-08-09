@@ -1,6 +1,11 @@
 package com.riskdetectedan.feature.reports
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -76,12 +81,12 @@ import java.time.temporal.ChronoUnit
  * a real feature to port faithfully. The company filter (`CompanyPickerSheet`, Plus/Pro-gated)
  * is also not ported this pass — real, but lower-priority than the chips/search that
  * `filteredItems` actually uses; a genuine follow-up, not silently dropped. */
-private enum class HistoryFilterChip(val label: String) {
-    All("Tümü"),
-    ThisWeek("Bu hafta"),
-    Critical("Kritik"),
-    Ppe("KKD"),
-    General("Genel"),
+private enum class HistoryFilterChip(@StringRes val labelRes: Int) {
+    All(RdR.string.rd_tumu),
+    ThisWeek(RdR.string.rd_bu_hafta),
+    Critical(RdR.string.rd_kritik),
+    Ppe(RdR.string.rd_kkd),
+    General(RdR.string.rd_genel),
 }
 
 private fun isWithinLastWeek(createdAt: String?): Boolean {
@@ -115,7 +120,12 @@ private fun matchesChip(item: HistoryItem, chip: HistoryFilterChip): Boolean = w
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hiltViewModel()) {
+fun ReportsScreen(
+    onBack: (() -> Unit)? = null,
+    focusedAnalysisId: String? = null,
+    onOpenAnalysis: ((String) -> Unit)? = null,
+    viewModel: HistoryViewModel = hiltViewModel(),
+) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     val generatingId by viewModel.generatingReportForId.collectAsState()
@@ -132,6 +142,7 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
     val selectedCompany by viewModel.selectedCompanyFilter.collectAsState()
     var showCompanyFilter by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val shareChooserTitle = stringResource(RdR.string.rd_raporu_paylas)
 
     LaunchedEffect(reportFile) {
         val file = reportFile ?: return@LaunchedEffect
@@ -139,16 +150,18 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
         val target = File(dir, file.fileName)
         target.writeBytes(file.bytes)
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", target)
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, file.mimeType)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = file.mimeType
+            putExtra(Intent.EXTRA_STREAM, uri)
+            clipData = android.content.ClipData.newRawUri(file.fileName, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, "Raporu aç"))
+        context.startActivity(Intent.createChooser(intent, shareChooserTitle))
         viewModel.clearReportFile()
     }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
-        RdScreenHeader(title = "Geçmiş Analizler", onBack = onBack)
+        RdScreenHeader(title = stringResource(RdR.string.rd_gecmis_analizler), onBack = onBack)
 
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
             when (val current = state) {
@@ -157,29 +170,30 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
                 }
                 is HistoryUiState.SignedOut -> RdEmptyState(
                     icon = Icons.Filled.History,
-                    title = "Oturum yok",
-                    subtitle = "Geçmiş analizlerini görmek için giriş yapmalısın.",
+                    title = stringResource(RdR.string.rd_oturum_yok),
+                    subtitle = stringResource(RdR.string.rd_gecmis_analiz_giris),
                 )
                 is HistoryUiState.Failed -> RdEmptyState(
                     icon = Icons.Filled.History,
-                    title = "Geçmiş yüklenemedi",
+                    title = stringResource(RdR.string.rd_gecmis_yuklenemedi),
                     subtitle = current.error.message,
                 )
                 is HistoryUiState.Loaded -> {
                     if (current.items.isEmpty()) {
                         RdEmptyState(
                             icon = Icons.Filled.History,
-                            title = "Henüz analiz yok",
-                            subtitle = "İlk fotoğrafını çekince analizlerin burada listelenecek.",
+                            title = stringResource(RdR.string.rd_henuz_analiz_yok),
+                            subtitle = stringResource(RdR.string.rd_ilk_fotograf_analiz_aciklama),
                         )
                     } else {
                         val needle = search.trim().lowercase()
                         val filtered = current.items.filter { item ->
+                            val matchesFocused = focusedAnalysisId == null || item.id == focusedAnalysisId
                             val matchesSearch = needle.isEmpty() ||
                                 item.title.lowercase().contains(needle) ||
                                 item.kind.lowercase().contains(needle)
                             val matchesCompany = selectedCompany == null || item.companyId == selectedCompany?.id
-                            matchesSearch && matchesChip(item, activeChip) && matchesCompany
+                            matchesFocused && matchesSearch && matchesChip(item, activeChip) && matchesCompany
                         }
 
                         HistoryFilterSurface(
@@ -196,8 +210,8 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
                         if (filtered.isEmpty()) {
                             RdEmptyState(
                                 icon = Icons.Filled.History,
-                                title = "Analiz bulunamadı",
-                                subtitle = "Filtreyi değiştir veya yeni bir saha taraması başlat.",
+                                title = stringResource(RdR.string.rd_analiz_bulunamadi),
+                                subtitle = stringResource(RdR.string.rd_analiz_filtre_bos_aciklama),
                             )
                         } else {
                         LazyColumn(
@@ -207,6 +221,7 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
                             items(filtered, key = { it.id }) { item ->
                                 HistoryRow(
                                     item = item,
+                                    onOpen = { onOpenAnalysis?.invoke(item.id) },
                                     isGenerating = generatingId == item.id,
                                     isGeneratingPdf = generatingPdfId == item.id,
                                     isDeleting = deletingId == item.id,
@@ -229,7 +244,7 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
             title = { Text(error.title) },
             text = { Text(error.message) },
             confirmButton = {
-                TextButton(onClick = viewModel::clearReportError) { Text("Tamam") }
+                TextButton(onClick = viewModel::clearReportError) { Text(stringResource(RdR.string.rd_tamam)) }
             },
         )
     }
@@ -237,16 +252,16 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
     itemPendingDelete?.let { item ->
         AlertDialog(
             onDismissRequest = { itemPendingDelete = null },
-            title = { Text("Analizi sil") },
-            text = { Text("Bu analiz ve ona ait fotoğraf/rapor dosyaları kalıcı olarak silinecek. Bu işlem geri alınamaz.") },
+            title = { Text(stringResource(RdR.string.rd_analizi_sil)) },
+            text = { Text(stringResource(RdR.string.rd_bu_analiz_ve_ona_ait_fotograf_rapor_dosyalari_kalici_ol)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteAnalysis(item)
                     itemPendingDelete = null
-                }) { Text("Sil") }
+                }) { Text(stringResource(RdR.string.rd_sil)) }
             },
             dismissButton = {
-                TextButton(onClick = { itemPendingDelete = null }) { Text("Vazgeç") }
+                TextButton(onClick = { itemPendingDelete = null }) { Text(stringResource(RdR.string.rd_vazgec)) }
             },
         )
     }
@@ -257,7 +272,7 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
             title = { Text(error.title) },
             text = { Text(error.message) },
             confirmButton = {
-                TextButton(onClick = viewModel::clearDeleteError) { Text("Tamam") }
+                TextButton(onClick = viewModel::clearDeleteError) { Text(stringResource(RdR.string.rd_tamam)) }
             },
         )
     }
@@ -285,10 +300,10 @@ private fun CompanyFilterSheet(
 ) {
     val colors = RdTheme.colors
     Column(modifier = Modifier.fillMaxWidth().padding(RdSpacing.lg)) {
-        Text("Analiz firma filtresi", style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
+        Text(stringResource(RdR.string.rd_analiz_firma_filtresi), style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
         Spacer(Modifier.height(RdSpacing.sm))
         RdListRow(
-            title = "Tümü",
+            title = stringResource(RdR.string.rd_tumu),
             onClick = { onSelect(null) },
             trailing = if (selected == null) {
                 { Icon(Icons.Filled.Check, contentDescription = null, tint = colors.green) }
@@ -344,7 +359,7 @@ private fun HistoryFilterSurface(
                 Spacer(Modifier.width(8.dp))
                 Box(modifier = Modifier.fillMaxWidth()) {
                     if (search.isEmpty()) {
-                        Text("Analiz ara", style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
+                        Text(stringResource(RdR.string.rd_analiz_ara), style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
                     }
                     BasicTextField(
                         value = search,
@@ -367,7 +382,7 @@ private fun HistoryFilterSurface(
                 ) {
                     Icon(
                         Icons.Filled.Business,
-                        contentDescription = "Firma filtresi",
+                        contentDescription = stringResource(RdR.string.rd_firma_filtresi),
                         tint = if (companySelected) colors.greenDark else colors.black,
                         modifier = Modifier.size(16.dp),
                     )
@@ -388,7 +403,7 @@ private fun HistoryFilterSurface(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        chip.label,
+                        stringResource(chip.labelRes),
                         style = RdFontStyle.Caption.toTextStyle(),
                         color = if (active) colors.white else colors.charcoal,
                     )
@@ -401,6 +416,7 @@ private fun HistoryFilterSurface(
 @Composable
 private fun HistoryRow(
     item: HistoryItem,
+    onOpen: () -> Unit,
     isGenerating: Boolean,
     isGeneratingPdf: Boolean,
     isDeleting: Boolean,
@@ -410,9 +426,15 @@ private fun HistoryRow(
 ) {
     val colors = RdTheme.colors
     val level = riskLevelFromRaw(item.riskBand)
+    val statusLabel = if (item.historyStatus == "reviewed") {
+        stringResource(RdR.string.rd_incelendi)
+    } else {
+        stringResource(RdR.string.rd_acik)
+    }
     RdListRow(
         title = item.title,
-        subtitle = "${item.findingCount} bulgu · ${item.historyStatus}",
+        subtitle = stringResource(RdR.string.rd_bulgu_durum_format, item.findingCount, statusLabel),
+        onClick = onOpen,
         trailing = {
             Column(horizontalAlignment = Alignment.End) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -426,7 +448,7 @@ private fun HistoryRow(
                         IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
                             Icon(
                                 Icons.Filled.DeleteOutline,
-                                contentDescription = "Analizi sil",
+                                contentDescription = stringResource(RdR.string.rd_analizi_sil),
                                 tint = colors.critical,
                                 modifier = Modifier.size(18.dp),
                             )
@@ -440,17 +462,17 @@ private fun HistoryRow(
                 if (item.status == "completed") {
                     Row {
                         if (isGeneratingPdf) {
-                            Text("PDF...", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                            Text(stringResource(RdR.string.rd_pdf), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                         } else {
                             TextButton(onClick = onGeneratePdf, enabled = !isGenerating) {
-                                Text("PDF oluştur", style = RdFontStyle.Caption.toTextStyle())
+                                Text(stringResource(RdR.string.rd_pdf_olustur), style = RdFontStyle.Caption.toTextStyle())
                             }
                         }
                         if (isGenerating) {
-                            Text("Oluşturuluyor...", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                            Text(stringResource(RdR.string.rd_olusturuluyor), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                         } else {
                             TextButton(onClick = onGenerateReport, enabled = !isGeneratingPdf) {
-                                Text("Excel oluştur", style = RdFontStyle.Caption.toTextStyle())
+                                Text(stringResource(RdR.string.rd_excel_olustur), style = RdFontStyle.Caption.toTextStyle())
                             }
                         }
                     }

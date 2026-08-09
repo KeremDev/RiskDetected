@@ -1,5 +1,7 @@
 package com.riskdetectedan.core.data.error
 
+import com.riskdetectedan.core.data.billing.PurchaseErrorClassification
+import com.riskdetectedan.core.data.billing.PurchaseErrorKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -10,6 +12,34 @@ import org.junit.Test
  * they all touch Context/Supabase/RevenueCat; this classifier touches neither).
  */
 class AppErrorMessageTest {
+
+    @Test
+    fun `pending Google Play payment keeps entitlement closed and explains automatic activation`() {
+        val result = AppErrorMessages.makePurchase(
+            PurchaseErrorClassification(
+                kind = PurchaseErrorKind.PaymentPending,
+                rawMessage = "PaymentPendingError",
+                codeName = "PaymentPendingError",
+            ),
+        )
+        assertEquals(AppErrorCategory.ValidationFailed, result.category)
+        assertTrue(result.message.contains("beklemede"))
+        assertTrue(result.action.contains("otomatik güncellenir"))
+    }
+
+    @Test
+    fun `receipt owner conflict never activates current account`() {
+        val result = AppErrorMessages.makePurchase(
+            PurchaseErrorClassification(
+                kind = PurchaseErrorKind.ReceiptConflict,
+                rawMessage = "ReceiptAlreadyInUseError",
+                codeName = "ReceiptAlreadyInUseError",
+            ),
+        )
+        assertEquals(AppErrorCategory.ValidationFailed, result.category)
+        assertTrue(result.message.contains("başka bir RiskDetected hesabına bağlı"))
+        assertTrue(result.action.contains("Doğru RiskDetected hesabıyla"))
+    }
 
     @Test
     fun `free risk analysis trial exhausted is classified as quota exceeded`() {

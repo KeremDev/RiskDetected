@@ -1,0 +1,24 @@
+{
+  "project_info": {
+    "project_number": "0",
+    "project_id": "riskdetected-android-staging-unconfigured",
+    "storage_bucket": "riskdetected-android-staging-unconfigured.invalid"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:0:android:unconfigureddebug",
+        "android_client_info": {
+          "package_name": "com.riskdetectedan.app.debug"
+        }
+      },
+      "api_key": [
+        { "current_key": "UNCONFIGURED_STAGING_FIREBASE" }
+      ],
+      "services": {
+        "appinvite_service": { "other_platform_oauth_client": [] }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

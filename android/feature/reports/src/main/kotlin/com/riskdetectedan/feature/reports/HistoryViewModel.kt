@@ -1,5 +1,6 @@
 package com.riskdetectedan.feature.reports
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
@@ -19,6 +20,10 @@ import com.riskdetectedan.core.data.reports.PdfReportFileName
 import com.riskdetectedan.core.data.reports.PdfReportGenerator
 import com.riskdetectedan.core.data.reports.PdfReportInput
 import com.riskdetectedan.core.data.reports.ReportsRepository
+import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
+import com.riskdetectedan.core.data.release.ReleasePolicyRepository
+import com.riskdetectedan.core.designsystem.R as RdR
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,8 +40,6 @@ sealed interface HistoryUiState {
     data class Failed(val error: AppErrorMessage) : HistoryUiState
 }
 
-private const val REPORTS_CONTEXT = "Rapor işlemi tamamlanamadı"
-
 /** One-shot payload the screen consumes to hand the downloaded bytes off to a FileProvider +
  * ACTION_VIEW intent, then clears via [HistoryViewModel.clearReportFile] — the repository layer
  * stays Context-free (see ReportsRepository's doc comment), so writing to disk and launching an
@@ -45,6 +48,7 @@ data class ReportFile(val bytes: ByteArray, val fileName: String, val mimeType: 
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val historyRepository: HistoryRepository,
     private val reportsRepository: ReportsRepository,
@@ -52,6 +56,8 @@ class HistoryViewModel @Inject constructor(
     private val photoRepository: PhotoRepository,
     private val companyRepository: CompanyRepository,
     private val profileRepository: ProfileRepository,
+    private val releasePolicyRepository: ReleasePolicyRepository,
+    private val pdfReportGenerator: PdfReportGenerator,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
@@ -126,7 +132,10 @@ class HistoryViewModel @Inject constructor(
                         ?.value.orEmpty()
                 }
                 is RdResult.Failure -> _state.value = HistoryUiState.Failed(
-                    AppErrorMessages.make(result.message, context = REPORTS_CONTEXT),
+                    AppErrorMessages.make(
+                        result.message,
+                        context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                    ),
                 )
             }
             _companies.value = (companyRepository.listCompanies() as? RdResult.Success)?.value.orEmpty()
@@ -147,7 +156,10 @@ class HistoryViewModel @Inject constructor(
             val report = when (val result = reportsRepository.generateExcelReport(item.id)) {
                 is RdResult.Success -> result.value
                 is RdResult.Failure -> {
-                    _reportError.value = AppErrorMessages.make(result.message, context = REPORTS_CONTEXT)
+                    _reportError.value = AppErrorMessages.make(
+                        result.message,
+                        context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                    )
                     _generatingReportForId.value = null
                     return@launch
                 }
@@ -159,7 +171,10 @@ class HistoryViewModel @Inject constructor(
                     mimeType = report.mimeType
                         ?: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
-                is RdResult.Failure -> _reportError.value = AppErrorMessages.make(download.message, context = REPORTS_CONTEXT)
+                is RdResult.Failure -> _reportError.value = AppErrorMessages.make(
+                    download.message,
+                    context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                )
             }
             _generatingReportForId.value = null
         }
@@ -186,15 +201,30 @@ class HistoryViewModel @Inject constructor(
         _reportError.value = null
         val userId = authRepository.currentUserId
         if (userId == null) {
-            _reportError.value = AppErrorMessages.make("Önce giriş yapmalısın.", context = REPORTS_CONTEXT)
+            _reportError.value = AppErrorMessages.make(
+                context.getString(RdR.string.rd_once_giris_yapmalisin),
+                context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+            )
             _generatingPdfForId.value = null
             return
         }
         viewModelScope.launch {
+            val runtimeGate = releasePolicyRepository.resolveGate(AndroidRuntimeGateName.PdfReports)
+            if (!runtimeGate.enabled) {
+                _reportError.value = AppErrorMessages.make(
+                    context.getString(RdR.string.rd_android_pdf_kapali_format, runtimeGate.reason),
+                    context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                )
+                _generatingPdfForId.value = null
+                return@launch
+            }
             val findings = when (val result = findingsRepository.fetchFindings(item.id)) {
                 is RdResult.Success -> result.value
                 is RdResult.Failure -> {
-                    _reportError.value = AppErrorMessages.make(result.message, context = REPORTS_CONTEXT)
+                    _reportError.value = AppErrorMessages.make(
+                        result.message,
+                        context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                    )
                     _generatingPdfForId.value = null
                     return@launch
                 }
@@ -215,24 +245,33 @@ class HistoryViewModel @Inject constructor(
 
             val canvasLabel = AnalysisCanvas.all.firstOrNull { it.id == item.canvas }?.title ?: item.canvas
 
-            val pdfBytes = withContext(Dispatchers.Default) {
-                PdfReportGenerator.generate(
-                    PdfReportInput(
-                        kind = kind,
-                        method = method,
-                        title = item.title,
-                        canvasLabel = canvasLabel,
-                        createdAt = item.createdAt,
-                        findings = findings,
-                        companyName = company?.name,
-                        companyAddress = company?.address,
-                        companyLogoBytes = companyLogoBytes,
-                        preparedByName = profile?.displayName ?: "—",
-                        preparedByTitle = profile?.title,
-                        certificateNumber = profile?.certificateNumber,
-                        coverPhotoBytes = coverPhotoBytes,
-                    ),
+            val generatedPdf = try {
+                withContext(Dispatchers.Default) {
+                    pdfReportGenerator.generate(
+                        PdfReportInput(
+                            kind = kind,
+                            method = method,
+                            title = item.title,
+                            canvasLabel = canvasLabel,
+                            createdAt = item.createdAt,
+                            findings = findings,
+                            companyName = company?.name,
+                            companyAddress = company?.address,
+                            companyLogoBytes = companyLogoBytes,
+                            preparedByName = profile?.displayName ?: context.getString(RdR.string.rd_emdash),
+                            preparedByTitle = profile?.title,
+                            certificateNumber = profile?.certificateNumber,
+                            coverPhotoBytes = coverPhotoBytes,
+                        ),
+                    )
+                }
+            } catch (t: Throwable) {
+                _reportError.value = AppErrorMessages.make(
+                    t,
+                    context = context.getString(RdR.string.rd_pdf_olusturulamadi),
                 )
+                _generatingPdfForId.value = null
+                return@launch
             }
 
             val fileNameSlug = PdfReportFileName.build(item.title, item.id, kind, method)
@@ -240,21 +279,24 @@ class HistoryViewModel @Inject constructor(
                 val registered = reportsRepository.uploadAndRegisterPdfReport(
                     userId = userId,
                     analysisId = item.id,
-                    pdfBytes = pdfBytes,
+                    pdfBytes = generatedPdf.bytes,
                     fileNameSlug = fileNameSlug,
                     kind = kind,
                     method = method,
                     title = item.title,
-                    pageCount = maxOf(1, 1 + findings.size / 4),
+                    pageCount = generatedPdf.pageCount,
                     companyId = item.companyId,
                 )
             ) {
                 is RdResult.Success -> _reportFile.value = ReportFile(
-                    bytes = pdfBytes,
+                    bytes = generatedPdf.bytes,
                     fileName = registered.value.fileName ?: fileNameSlug,
                     mimeType = "application/pdf",
                 )
-                is RdResult.Failure -> _reportError.value = AppErrorMessages.make(registered.message, context = REPORTS_CONTEXT)
+                is RdResult.Failure -> _reportError.value = AppErrorMessages.make(
+                    registered.message,
+                    context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                )
             }
             _generatingPdfForId.value = null
         }
@@ -286,7 +328,10 @@ class HistoryViewModel @Inject constructor(
                         _state.value = current.copy(items = current.items.filterNot { it.id == item.id })
                     }
                 }
-                is RdResult.Failure -> _deleteError.value = AppErrorMessages.make(result.message, context = REPORTS_CONTEXT)
+                is RdResult.Failure -> _deleteError.value = AppErrorMessages.make(
+                    result.message,
+                    context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                )
             }
             _deletingId.value = null
         }

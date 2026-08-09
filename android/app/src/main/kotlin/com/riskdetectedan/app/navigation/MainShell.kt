@@ -1,9 +1,12 @@
 package com.riskdetectedan.app.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -11,7 +14,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.app.home.HomeScreen
+import com.riskdetectedan.app.push.NotificationRouteTarget
+import com.riskdetectedan.app.push.NotificationRouteViewModel
 import com.riskdetectedan.app.reports.GeneratedReportsScreen
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.feature.profile.ProfileScreen
@@ -32,7 +38,10 @@ import com.riskdetectedan.feature.reports.ReportsScreen
  * table/repository than Analizler's `analyses` history.
  */
 @Composable
-fun MainShellScreen(navController: NavHostController) {
+fun MainShellScreen(
+    navController: NavHostController,
+    notificationRouteViewModel: NotificationRouteViewModel = hiltViewModel(),
+) {
     val colors = RdTheme.colors
     // rememberSaveable (not remember) — MainShellScreen's composition is disposed while a
     // covering destination (Capture/Analysis/Companies/...) is on top of the outer NavHost's back
@@ -42,6 +51,59 @@ fun MainShellScreen(navController: NavHostController) {
     // sheet/fullScreenCover presentation) — `rememberSaveable` is the Compose-Navigation-correct
     // fix, ties the value to the back stack entry's own SavedStateHandle instead of composition.
     var activeTab by rememberSaveable { mutableStateOf(RdTab.Home) }
+    var tabHistoryNames by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    var focusedAnalysisId by rememberSaveable { mutableStateOf<String?>(null) }
+    var focusedReportId by rememberSaveable { mutableStateOf<String?>(null) }
+    var quickScanRequestKey by rememberSaveable { mutableStateOf(0) }
+    val pendingNotification by notificationRouteViewModel.pending.collectAsState()
+
+    fun selectTab(target: RdTab) {
+        val snapshot = TabHistoryReducer.select(
+            TabHistorySnapshot(
+                active = activeTab,
+                history = tabHistoryNames.mapNotNull { name ->
+                    runCatching { RdTab.valueOf(name) }.getOrNull()
+                },
+            ),
+            target,
+        )
+        activeTab = snapshot.active
+        tabHistoryNames = snapshot.history.map(RdTab::name)
+    }
+
+    BackHandler(enabled = activeTab != RdTab.Home || tabHistoryNames.isNotEmpty()) {
+        val previous = TabHistoryReducer.back(
+            TabHistorySnapshot(
+                active = activeTab,
+                history = tabHistoryNames.mapNotNull { name ->
+                    runCatching { RdTab.valueOf(name) }.getOrNull()
+                },
+            ),
+        )
+        activeTab = previous.active
+        tabHistoryNames = previous.history.map(RdTab::name)
+    }
+
+    LaunchedEffect(pendingNotification) {
+        val route = pendingNotification ?: return@LaunchedEffect
+        when (route.target) {
+            NotificationRouteTarget.Home -> selectTab(RdTab.Home)
+            NotificationRouteTarget.Analyses -> {
+                focusedAnalysisId = route.analysisId
+                selectTab(RdTab.Analyses)
+            }
+            NotificationRouteTarget.Reports -> {
+                focusedReportId = route.reportId
+                selectTab(RdTab.Reports)
+            }
+            NotificationRouteTarget.Profile -> selectTab(RdTab.Profile)
+            NotificationRouteTarget.NewAnalysis -> {
+                selectTab(RdTab.Home)
+                quickScanRequestKey += 1
+            }
+        }
+        notificationRouteViewModel.consume()
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(colors.paper)) {
         when (activeTab) {
@@ -56,18 +118,25 @@ fun MainShellScreen(navController: NavHostController) {
                     )
                 },
                 onResumeAnalysis = { navController.navigate(Analysis(resume = true)) },
-                onHistory = { activeTab = RdTab.Analyses },
-                onReports = { activeTab = RdTab.Reports },
-                onProfile = { activeTab = RdTab.Profile },
+                onHistory = { selectTab(RdTab.Analyses) },
+                onReports = { selectTab(RdTab.Reports) },
+                onProfile = { selectTab(RdTab.Profile) },
                 onUpgrade = { navController.navigate(Paywall) },
+                quickScanRequestKey = quickScanRequestKey,
             )
-            RdTab.Analyses -> ReportsScreen(onBack = null)
-            RdTab.Reports -> GeneratedReportsScreen()
+            RdTab.Analyses -> ReportsScreen(
+                onBack = null,
+                focusedAnalysisId = focusedAnalysisId,
+                onOpenAnalysis = { analysisId -> navController.navigate(AnalysisResult(analysisId)) },
+            )
+            RdTab.Reports -> GeneratedReportsScreen(focusedReportId = focusedReportId)
             RdTab.Profile -> ProfileScreen(
                 onBack = null,
                 onManageCompanies = { navController.navigate(Companies) },
                 onSupport = { navController.navigate(Support) },
                 onNotificationSettings = { navController.navigate(NotificationSettings) },
+                onAppearanceSettings = { navController.navigate(AppearanceSettings) },
+                onDataManagement = { navController.navigate(DataManagement) },
                 onDeleteAccount = { navController.navigate(DeleteAccount) },
                 onPaywall = { navController.navigate(Paywall) },
             )
@@ -75,8 +144,18 @@ fun MainShellScreen(navController: NavHostController) {
 
         RdTabBar(
             active = activeTab,
-            onTabSelected = { activeTab = it },
-            onQuickScan = { navController.navigate(Capture) },
+            onTabSelected = {
+                selectTab(it)
+                if (it != RdTab.Analyses) focusedAnalysisId = null
+                if (it != RdTab.Reports) focusedReportId = null
+            },
+            onQuickScan = {
+                // Live iOS handleQuickScanTap -> Home.handleQuickScanRequest: select Home first,
+                // then let Home apply quota/existing-draft rules and open the camera/gallery
+                // chooser. Direct camera navigation skipped that entire product sequence.
+                selectTab(RdTab.Home)
+                quickScanRequestKey += 1
+            },
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }

@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.profile
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -95,14 +99,14 @@ fun ProfessionalProgressCelebrationSheet(badge: ProfessionalProgressBadge, onClo
                     .background(colors.greenSoft)
                     .padding(horizontal = 14.dp, vertical = 7.dp),
             ) {
-                Text("Tebrikler", style = RdFontStyle.Footnote.toTextStyle(), color = colors.greenDark)
+                Text(stringResource(RdR.string.rd_tebrikler), style = RdFontStyle.Footnote.toTextStyle(), color = colors.greenDark)
             }
             Spacer(Modifier.height(9.dp))
             Text(badge.title, style = RdFontStyle.Title2.toTextStyle(), color = colors.black, textAlign = TextAlign.Center)
             Spacer(Modifier.height(9.dp))
             Text(badge.subtitle, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
             Spacer(Modifier.height(RdSpacing.sm))
-            RdPrimaryButton(text = "Tamam", onClick = onClose, style = RdButtonStyle.Green, showArrow = false)
+            RdPrimaryButton(text = stringResource(RdR.string.rd_tamam), onClick = onClose, style = RdButtonStyle.Green, showArrow = false)
         }
 
         IconButton(
@@ -115,7 +119,7 @@ fun ProfessionalProgressCelebrationSheet(badge: ProfessionalProgressBadge, onClo
                 .background(colors.white)
                 .border(1.dp, colors.line, CircleShape),
         ) {
-            Icon(Icons.Filled.Close, contentDescription = "Kapat", tint = colors.black, modifier = Modifier.size(14.dp))
+            Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kapat), tint = colors.black, modifier = Modifier.size(14.dp))
         }
     }
 }

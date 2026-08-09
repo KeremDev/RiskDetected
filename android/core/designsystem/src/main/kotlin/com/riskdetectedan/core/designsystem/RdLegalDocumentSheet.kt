@@ -1,5 +1,7 @@
 package com.riskdetectedan.core.designsystem
 
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -87,13 +89,13 @@ fun RdLegalDocumentSheet(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "Yasal Bilgilendirme",
+                        stringResource(R.string.rd_yasal_bilgilendirme),
                         style = RdFontStyle.Title3.toTextStyle(),
                         color = colors.black,
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = onClose) {
-                        Icon(Icons.Filled.Close, contentDescription = "Kapat", tint = colors.black)
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.rd_kapat), tint = colors.black)
                     }
                 }
 

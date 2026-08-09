@@ -1,5 +1,7 @@
 package com.riskdetectedan.app.network
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import com.riskdetectedan.core.data.network.NetworkMonitor
@@ -38,7 +41,7 @@ fun NetworkStatusBanner(modifier: Modifier = Modifier, viewModel: NetworkStatusV
     if (isOnline) return
 
     Text(
-        "Çevrimdışısın. Bazı veriler son kayıtlı haliyle görünebilir.",
+        stringResource(RdR.string.rd_offline_banner),
         modifier = modifier
             .padding(RdSpacing.sm)
             .clip(RoundedCornerShape(14.dp))

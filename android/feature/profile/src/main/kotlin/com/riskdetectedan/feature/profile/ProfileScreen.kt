@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.profile
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -25,14 +29,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.SupportAgent
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -74,6 +82,7 @@ import com.riskdetectedan.core.designsystem.RdSectionCard
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
+import com.riskdetectedan.core.designsystem.professionalProgressTitleLabel
 import java.io.ByteArrayOutputStream
 
 /**
@@ -91,26 +100,30 @@ fun ProfileScreen(
     onManageCompanies: () -> Unit = {},
     onSupport: () -> Unit = {},
     onNotificationSettings: () -> Unit = {},
+    onAppearanceSettings: () -> Unit = {},
+    onDataManagement: () -> Unit = {},
     onDeleteAccount: () -> Unit = {},
     onPaywall: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
+    val restoreState by viewModel.restoreState.collectAsState()
     var isEditing by remember { mutableStateOf(false) }
+    var showSignOutConfirmation by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
-        RdScreenHeader(title = "Profil", onBack = onBack)
+        RdScreenHeader(title = stringResource(RdR.string.rd_profil), onBack = onBack)
 
         when (val current = state) {
             is ProfileUiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = colors.onyx)
             }
             is ProfileUiState.SignedOut -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Oturum yok", style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
+                Text(stringResource(RdR.string.rd_oturum_yok), style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
             }
             is ProfileUiState.Failed -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Profil yüklenemedi: ${current.error.message}", style = RdFontStyle.Callout.toTextStyle(), color = colors.critical)
+                Text(stringResource(RdR.string.rd_profil_yuklenemedi_format, current.error.message), style = RdFontStyle.Callout.toTextStyle(), color = colors.critical)
             }
             is ProfileUiState.Loaded -> if (isEditing) {
                 ProfileEditForm(
@@ -151,21 +164,32 @@ fun ProfileScreen(
 
                     progress?.let {
                         Spacer(Modifier.height(RdSpacing.md))
-                        RdSectionCard(title = "İlerleme") {
+                        RdSectionCard(title = stringResource(RdR.string.rd_ilerleme)) {
                             ProfessionalProgressSection(it, onShowCompetencies = { showCompetencies = true })
                         }
                     }
 
                     Spacer(Modifier.height(RdSpacing.md))
                     Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
-                        RdListRow(title = "Profili düzenle", icon = Icons.Filled.Edit, onClick = { isEditing = true })
-                        RdListRow(title = "Planı yükselt", icon = Icons.Filled.WorkspacePremium, onClick = onPaywall)
-                        RdListRow(title = "Firmalarım", icon = Icons.Filled.Business, onClick = onManageCompanies)
-                        RdListRow(title = "Destek", icon = Icons.Filled.SupportAgent, onClick = onSupport)
-                        RdListRow(title = "Bildirim ayarları", icon = Icons.Filled.Notifications, onClick = onNotificationSettings)
-                        RdListRow(title = "Yasal Bilgilendirme", icon = Icons.Filled.Gavel, onClick = { showLegal = true })
+                        RdListRow(title = stringResource(RdR.string.rd_profili_duzenle), icon = Icons.Filled.Edit, onClick = { isEditing = true })
+                        RdListRow(title = stringResource(RdR.string.rd_plani_yukselt), icon = Icons.Filled.WorkspacePremium, onClick = onPaywall)
                         RdListRow(
-                            title = "Hesabı sil",
+                            title = stringResource(
+                                if (restoreState is ProfileRestoreState.Restoring) RdR.string.rd_satin_alimlar_geri_yukleniyor
+                                else RdR.string.rd_satin_alimlari_geri_yukle,
+                            ),
+                            icon = Icons.Filled.Restore,
+                            onClick = viewModel::restorePurchases,
+                        )
+                        RdListRow(title = stringResource(RdR.string.rd_firmalarim), icon = Icons.Filled.Business, onClick = onManageCompanies)
+                        RdListRow(title = stringResource(RdR.string.rd_destek), icon = Icons.Filled.SupportAgent, onClick = onSupport)
+                        RdListRow(title = stringResource(RdR.string.rd_bildirim_ayarlari), icon = Icons.Filled.Notifications, onClick = onNotificationSettings)
+                        RdListRow(title = stringResource(RdR.string.rd_gorunum), icon = Icons.Filled.ColorLens, onClick = onAppearanceSettings)
+                        RdListRow(title = stringResource(RdR.string.rd_verilerim), icon = Icons.Filled.Storage, onClick = onDataManagement)
+                        RdListRow(title = stringResource(RdR.string.rd_yasal_bilgilendirme), icon = Icons.Filled.Gavel, onClick = { showLegal = true })
+                        RdListRow(title = stringResource(RdR.string.rd_cikis_yap), icon = Icons.Filled.Logout, onClick = { showSignOutConfirmation = true })
+                        RdListRow(
+                            title = stringResource(RdR.string.rd_hesabimi_sil),
                             icon = Icons.Filled.DeleteForever,
                             iconTint = colors.critical,
                             iconBackground = colors.criticalBg,
@@ -230,6 +254,39 @@ fun ProfileScreen(
                 }
             }
         }
+    }
+
+    if (showSignOutConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showSignOutConfirmation = false },
+            title = { Text(stringResource(RdR.string.rd_cikis_yapilsin_mi)) },
+            text = { Text(stringResource(RdR.string.rd_bu_cihazdaki_oturumun_kapatilacak)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showSignOutConfirmation = false
+                    viewModel.signOut()
+                }) { Text(stringResource(RdR.string.rd_cikis_yap)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSignOutConfirmation = false }) { Text(stringResource(RdR.string.rd_vazgec)) }
+            },
+        )
+    }
+
+    when (val restore = restoreState) {
+        is ProfileRestoreState.Completed -> AlertDialog(
+            onDismissRequest = viewModel::clearRestoreState,
+            title = { Text(stringResource(RdR.string.rd_geri_yukleme_tamamlandi)) },
+            text = { Text(restore.message) },
+            confirmButton = { TextButton(onClick = viewModel::clearRestoreState) { Text(stringResource(RdR.string.rd_tamam)) } },
+        )
+        is ProfileRestoreState.Failed -> AlertDialog(
+            onDismissRequest = viewModel::clearRestoreState,
+            title = { Text(restore.error.title) },
+            text = { Text(restore.error.message) },
+            confirmButton = { TextButton(onClick = viewModel::clearRestoreState) { Text(stringResource(RdR.string.rd_tamam)) } },
+        )
+        ProfileRestoreState.Idle, ProfileRestoreState.Restoring -> Unit
     }
 }
 
@@ -320,6 +377,9 @@ private fun ProfileHero(
         }
         Spacer(Modifier.height(RdSpacing.xs))
         Text(profile.displayName, style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
+        profile.email?.let {
+            Text(it, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
+        }
         Spacer(Modifier.height(4.dp))
         Box(
             modifier = Modifier
@@ -328,6 +388,14 @@ private fun ProfileHero(
                 .padding(horizontal = RdSpacing.sm, vertical = 4.dp),
         ) {
             Text(profile.tier.name, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+        }
+        profile.subscriptionRenewalAt?.takeIf(String::isNotBlank)?.let { renewal ->
+            Text(
+                stringResource(RdR.string.rd_uyelik_donemi_format, renewal.take(10)),
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate,
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
         // Real port of ProfileView.swift's "Başarılarım" rosette button under the display name
         // (`showProfileBadges(professionalProgressSummary)`) — the only real trigger for the
@@ -344,7 +412,7 @@ private fun ProfileHero(
             ) {
                 Icon(Icons.Filled.MilitaryTech, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("Başarılarım", style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
+                Text(stringResource(RdR.string.rd_basarilarim), style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
             }
         }
     }
@@ -364,20 +432,33 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
     val colors = RdTheme.colors
     Column {
         Text(
-            "${progress.currentTitle.label} · ${progress.profile.totalMdp} MDP",
+            stringResource(
+                RdR.string.rd_unvan_mdp_format,
+                professionalProgressTitleLabel(progress.currentTitle.key),
+                progress.profile.totalMdp,
+            ),
             style = RdFontStyle.Callout.toTextStyle(),
             color = colors.onyx,
         )
         progress.nextTitle?.let { next ->
             Text(
-                "Sıradaki: ${next.label} (${progress.nextTitleRemaining} MDP kaldı)",
+                stringResource(
+                    RdR.string.rd_siradaki_mdp_format,
+                    professionalProgressTitleLabel(next.key),
+                    progress.nextTitleRemaining,
+                ),
                 style = RdFontStyle.Footnote.toTextStyle(),
                 color = colors.slate,
             )
         }
         Spacer(Modifier.height(RdSpacing.xxs))
         Text(
-            "${progress.profile.totalAnalyses} analiz · ${progress.profile.totalReports} rapor · ${progress.profile.activeDays} aktif gün",
+            stringResource(
+                RdR.string.rd_ilerleme_istatistik_format,
+                progress.profile.totalAnalyses,
+                progress.profile.totalReports,
+                progress.profile.activeDays,
+            ),
             style = RdFontStyle.Caption.toTextStyle(),
             color = colors.slate,
         )
@@ -385,13 +466,13 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
         Spacer(Modifier.height(RdSpacing.sm))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Yetkinlik Haritası",
+                stringResource(RdR.string.rd_yetkinlik_haritasi),
                 style = RdFontStyle.Callout.toTextStyle(),
                 color = colors.onyx,
                 modifier = Modifier.weight(1f),
             )
             Text(
-                "Tümü",
+                stringResource(RdR.string.rd_tumu),
                 style = RdFontStyle.Caption.toTextStyle(),
                 color = colors.greenDark,
                 modifier = Modifier.clickable(onClick = onShowCompetencies),
@@ -408,7 +489,7 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
                 }
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    "Analiz ve raporların arttıkça yetkinlik alanların burada görünür olacak.",
+                    stringResource(RdR.string.rd_yetkinlik_bos_aciklama),
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
                 )
@@ -420,7 +501,7 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
         progress.weeklySummary?.let { weekly ->
             Text(
                 weekly.messageTitle
-                    ?: "Bu hafta: ${weekly.analysesCount} analiz, ${weekly.reportsCount} rapor",
+                    ?: stringResource(RdR.string.rd_bu_hafta_istatistik_format, weekly.analysesCount, weekly.reportsCount),
                 style = RdFontStyle.Footnote.toTextStyle(),
                 color = colors.greenDark,
                 modifier = Modifier.padding(top = RdSpacing.sm),
@@ -479,21 +560,21 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
         Spacer(Modifier.height(RdSpacing.sm))
         RdSectionCard {
             Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
-                OutlinedTextField(fullName, { fullName = it }, label = { Text("Ad soyad") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(title, { title = it }, label = { Text("Unvan") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(fullName, { fullName = it }, label = { Text(stringResource(RdR.string.rd_ad_soyad)) }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(title, { title = it }, label = { Text(stringResource(RdR.string.rd_unvan)) }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(
                     certificateNumber,
                     { certificateNumber = it },
-                    label = { Text("Sertifika no") },
+                    label = { Text(stringResource(RdR.string.rd_sertifika_no)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(companyName, { companyName = it }, label = { Text("Firma") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(phone, { phone = it }, label = { Text("Telefon") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(companyName, { companyName = it }, label = { Text(stringResource(RdR.string.rd_firma)) }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(phone, { phone = it }, label = { Text(stringResource(RdR.string.rd_telefon)) }, modifier = Modifier.fillMaxWidth())
             }
         }
 
         Spacer(Modifier.height(RdSpacing.md))
-        Text("Risk yöntemi", style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
+        Text(stringResource(RdR.string.rd_risk_yontemi), style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
         Spacer(Modifier.height(RdSpacing.xs))
         Row(horizontalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
             RiskMethodWire.entries.forEach { method ->
@@ -506,7 +587,11 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
                         .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xs),
                 ) {
                     Text(
-                        if (method == RiskMethodWire.FineKinney) "Fine-Kinney" else "5x5 Matris",
+                        if (method == RiskMethodWire.FineKinney) {
+                            stringResource(RdR.string.rd_fine_kinney)
+                        } else {
+                            stringResource(RdR.string.rd_bes_carp_bes_matris)
+                        },
                         style = RdFontStyle.Footnote.toTextStyle(),
                         color = if (isSelected) colors.white else colors.onyx,
                     )
@@ -520,7 +605,13 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
                 pickLogo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             },
         ) {
-            Text(if (logoBytes != null) "Logo seçildi ✓" else "Logo değiştir (opsiyonel)")
+            Text(
+                if (logoBytes != null) {
+                    stringResource(RdR.string.rd_logo_secildi)
+                } else {
+                    stringResource(RdR.string.rd_logo_degistir_opsiyonel)
+                },
+            )
         }
 
         Spacer(Modifier.height(RdSpacing.sm))
@@ -529,7 +620,7 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
                 CircularProgressIndicator(color = colors.onyx)
             }
         } else {
-            RdPrimaryButton(text = "Kaydet", onClick = {
+            RdPrimaryButton(text = stringResource(RdR.string.rd_kaydet), onClick = {
                 viewModel.saveProfile(
                     fullName = fullName,
                     title = title,
@@ -542,7 +633,7 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
             }, style = RdButtonStyle.Onyx)
         }
         Spacer(Modifier.height(RdSpacing.xs))
-        TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text("Vazgeç") }
+        TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text(stringResource(RdR.string.rd_vazgec)) }
         Spacer(Modifier.height(RdSpacing.lg))
     }
 
@@ -552,7 +643,7 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
             title = { Text(error.title) },
             text = { Text(error.message) },
             confirmButton = {
-                TextButton(onClick = viewModel::clearSaveError) { Text("Tamam") }
+                TextButton(onClick = viewModel::clearSaveError) { Text(stringResource(RdR.string.rd_tamam)) }
             },
         )
     }

@@ -1,5 +1,9 @@
 package com.riskdetectedan.app.home
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -71,9 +75,9 @@ fun PhotoUploadCard(photoPaths: List<String>, maxPhotoCount: Int, onOpenTray: ()
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.PhotoLibrary, contentDescription = null, tint = colors.black, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(RdSpacing.xs))
-            Text("Saha fotoğrafları", style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
+            Text(stringResource(RdR.string.rd_saha_fotograflari), style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
             Spacer(Modifier.weight(1f))
-            Text("${photoPaths.size}/$maxPhotoCount", style = RdFontStyle.Data.toTextStyle(), color = colors.slate)
+            Text(stringResource(RdR.string.rd_fotograf_orani_format, photoPaths.size, maxPhotoCount), style = RdFontStyle.Data.toTextStyle(), color = colors.slate)
         }
         Spacer(Modifier.height(RdSpacing.sm))
 
@@ -112,8 +116,8 @@ private fun EmptyPhotoUploadDropZone(onClick: () -> Unit) {
             Icon(Icons.Filled.Add, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(32.dp))
         }
         Spacer(Modifier.height(RdSpacing.sm))
-        Text("Saha fotoğrafı yükle", style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
-        Text("JPG · PNG · HEIC", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate.copy(alpha = 0.78f))
+        Text(stringResource(RdR.string.rd_saha_fotografi_yukle), style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
+        Text(stringResource(RdR.string.rd_jpg_png_heic), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate.copy(alpha = 0.78f))
     }
 }
 
@@ -140,8 +144,8 @@ private fun SelectedPhotoUploadSummaryRow(firstPhotoPath: String, count: Int, on
         }
         Spacer(Modifier.width(RdSpacing.sm))
         Column(modifier = Modifier.weight(1f)) {
-            Text("$count fotoğraf eklendi", style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
-            Text("Fotoğrafları düzenle", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate.copy(alpha = 0.78f))
+            Text(stringResource(RdR.string.rd_fotograf_eklendi_format, count), style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
+            Text(stringResource(RdR.string.rd_fotograflari_duzenle), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate.copy(alpha = 0.78f))
         }
         Box(
             modifier = Modifier.size(34.dp).clip(CircleShape).background(colors.fog),
@@ -195,7 +199,7 @@ private fun PhotoUploadPreviewStrip(
                         .clickable { onRemove(path) },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.Close, contentDescription = "Fotoğrafı sil", tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(9.dp))
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_fotografi_sil), tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(9.dp))
                 }
             }
         }
@@ -243,14 +247,14 @@ fun LockedPhotoUploadCard(onClick: () -> Unit) {
             Icon(Icons.Filled.Lock, contentDescription = null, tint = colors.critical, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.height(RdSpacing.sm))
-        Text("Ücretsiz hak doldu", style = RdFontStyle.Callout.toTextStyle(), color = colors.criticalText)
+        Text(stringResource(RdR.string.rd_ucretsiz_hak_doldu), style = RdFontStyle.Callout.toTextStyle(), color = colors.criticalText)
         Text(
-            "Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et.",
+            stringResource(RdR.string.rd_ucretsiz_hak_doldu_aciklama),
             style = RdFontStyle.Caption.toTextStyle(),
             color = colors.criticalText.copy(alpha = 0.85f),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
         Spacer(Modifier.height(RdSpacing.xs))
-        Text("Yükselt ›", style = RdFontStyle.Caption.toTextStyle(), color = colors.critical)
+        Text(stringResource(RdR.string.rd_yukselt_1bfd44dd), style = RdFontStyle.Caption.toTextStyle(), color = colors.critical)
     }
 }

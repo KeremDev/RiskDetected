@@ -32,16 +32,19 @@ begin
       v_flag_count;
   end if;
 
+  -- A fresh/local replay legitimately has these gates at `off`: the production allowlist was
+  -- opened operationally before this attestation migration. Keep a new environment fail-closed
+  -- instead of making the migration chain unreplayable or enabling iOS localization there.
   if exists (
     select 1
     from public.app_feature_flags
     where key = any(v_keys)
       and (
         coalesce((value ->> 'kill_switch')::boolean, true)
-        or value ->> 'rollout_mode' is distinct from 'allowlist'
+        or coalesce(value ->> 'rollout_mode', 'off') not in ('off', 'allowlist')
       )
   ) then
-    raise exception 'localization release flags must remain allowlist-scoped with kill switches off';
+    raise exception 'localization release flags must remain off/allowlist-scoped with kill switches off';
   end if;
 
   update public.app_feature_flags
@@ -58,7 +61,8 @@ begin
         true
       ),
       updated_at = now()
-  where key = any(v_keys);
+  where key = any(v_keys)
+    and value ->> 'rollout_mode' = 'allowlist';
 end
 $allow_build_81_localization$;
 

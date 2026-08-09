@@ -20,6 +20,7 @@ data class LegalDocument(
     val kind: String,
     val title: String,
     val version: String,
+    val checksum: String,
     val text: String,
 )
 
@@ -32,6 +33,7 @@ private data class LegalManifestEntry(
     val title: String,
     val version: String,
     val path: String,
+    @SerialName("hash") val checksum: String,
 )
 
 object LegalDocumentAssets {
@@ -60,6 +62,7 @@ object LegalDocumentAssets {
                     kind = entry.kind,
                     title = entry.title,
                     version = entry.version,
+                    checksum = entry.checksum,
                     text = text,
                 )
             }

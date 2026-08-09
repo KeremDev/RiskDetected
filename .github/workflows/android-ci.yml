@@ -1,21 +1,27 @@
 name: android-ci
 
 # First CI pipeline in this repo (review §28 "CI/CD" — previously all manual via scripts/).
-# Scope: Android only for now. Runs on every PR/push touching android/ or contracts/ — the
-# latter because a contracts/ change without a matching Android update is exactly the failure
-# mode Bölüm D.2 exists to prevent.
+# Scope: Android plus the additive Supabase contracts it consumes. Runs on every PR/push touching
+# android/, contracts/, or the backend function/migration/test surface so an Android contract
+# change cannot merge without both client and server quality gates.
 
 on:
   pull_request:
     paths:
       - "android/**"
       - "contracts/**"
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
       - ".github/workflows/android-ci.yml"
   push:
     branches: [main]
     paths:
       - "android/**"
       - "contracts/**"
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
 
 defaults:
   run:
@@ -46,14 +52,23 @@ jobs:
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Verify environment isolation
+        run: ./gradlew :app:verifyEnvironmentIsolation --stacktrace
+
       - name: Lint
         run: ./gradlew lint --stacktrace
 
       - name: Unit tests (all modules)
         run: ./gradlew testDebugUnitTest --stacktrace
 
+      - name: Verify Android screenshot goldens
+        run: ./gradlew :app:verifyRoborazziDebug -Proborazzi.dumpUiTree=true --stacktrace
+
       - name: Assemble debug
         run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Assemble QA
+        run: ./gradlew :app:assembleQa --stacktrace
 
       - name: Upload debug APK
         if: always()
@@ -71,6 +86,50 @@ jobs:
           path: android/**/build/reports/lint-results-*.html
           if-no-files-found: ignore
 
-  # release/qa builds are NOT built in CI — they need real staging/production Supabase keys
-  # (DEC-12) and a signing keystore (master §9.3: "CI secret store dışında keystore bulunmaz"),
-  # neither of which exists yet. Add a signed-release job once those land (Faz 8).
+      - name: Upload screenshot comparison report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-screenshot-regression
+          path: |
+            android/app/build/reports/roborazzi
+            android/app/build/outputs/roborazzi
+            android/app/build/test-results/roborazzi
+          if-no-files-found: ignore
+
+  # Release is intentionally not assembled here until the CI secret store contains production
+  # configuration and a signing keystore. QA is assembled with staging-only configuration.
+
+  backend-contract-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pinned Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.7.14
+          cache: true
+
+      - name: Edge Function unit and static tests
+        run: rg --files supabase/functions | rg '(test\.ts$|static_test\.ts$)' | sort | xargs deno test --allow-read
+
+      - name: Set up pinned Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.113.0
+
+      # Explicit --local is a safety invariant. This workflow must never follow the repository's
+      # project link or execute destructive test setup against staging/production.
+      - name: Start isolated local Postgres
+        run: supabase db start
+
+      - name: Database RLS, RPC, gate and idempotency tests
+        run: supabase test db --local
+
+      - name: Stop isolated local Postgres
+        if: always()
+        run: supabase stop --no-backup

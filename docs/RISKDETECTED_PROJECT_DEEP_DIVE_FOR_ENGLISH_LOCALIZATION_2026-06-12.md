@@ -851,7 +851,7 @@ Ozellikler:
 - `reports` metadata'si kaydedilir.
 - Report ready push tetiklenebilir.
 - Company logo indirip workbook'a embed eder.
-- Monthly report limit: Free 3, Plus 150, Pro 750.
+- Report limit: Free 1 standard report/day, Plus 150/month, Pro 750/month.
 
 Kritik lokalizasyon noktasi:
 

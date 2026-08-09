@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -83,8 +87,8 @@ private enum class EmailPhase { Hidden, Email, Otp }
 
 /**
  * Port of App/Views/Onboarding/V2/Screens/OBAuthView.swift (2026-08-08 visual pass, Faz D) —
- * email OTP + Google Sign-In only, same scope decision as before (Apple Sign-In is
- * GATE-04-conditional, not wired). Real structure ported: hero, "Son adım." headline, plan-recap
+ * email OTP, Apple OAuth/PKCE and Google Sign-In share the same screen. Real structure ported:
+ * hero, "Son adım." headline, plan-recap
  * card (real sector/certificate labels), lock-icon timing reassurance banner, auth button stack,
  * inline error banner, "Zaten hesabım var" pill, OTP digit boxes (the actual invisible-textfield-
  * over-visual-boxes technique iOS uses, not a simplification). Deliberately simplified, documented
@@ -147,7 +151,7 @@ fun AuthScreen(
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
         if (onBack != null) {
             IconButton(onClick = onBack, modifier = Modifier.padding(start = 12.dp, top = 8.dp).size(40.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri", tint = colors.onyx)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(RdR.string.rd_geri), tint = colors.onyx)
             }
         } else {
             Spacer(Modifier.height(48.dp))
@@ -166,11 +170,11 @@ fun AuthScreen(
             }
 
             Spacer(Modifier.height(24.dp))
-            Text("Son adım.", style = RdFontStyle.Title1.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
+            Text(stringResource(RdR.string.rd_son_adim), style = RdFontStyle.Title1.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
 
             Spacer(Modifier.height(10.dp))
             Text(
-                "Hazırladığın planı kaydedebilmen için hesabını oluşturalım.",
+                stringResource(RdR.string.rd_auth_plan_kaydet),
                 style = RdFontStyle.Subheadline.toTextStyle(),
                 color = colors.slate,
                 textAlign = TextAlign.Center,
@@ -196,7 +200,7 @@ fun AuthScreen(
                 Icon(Icons.Filled.Lock, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Planın hesabına kilitlensin diye 10 saniyeni alacağız",
+                    stringResource(RdR.string.rd_auth_on_saniye),
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
                 )
@@ -204,7 +208,20 @@ fun AuthScreen(
 
             Spacer(Modifier.height(14.dp))
             RdPrimaryButton(
-                text = if (isLoading && emailPhase == EmailPhase.Hidden) "Google ile bağlanıyor..." else "Google ile devam et",
+                text = stringResource(
+                    if (isLoading && emailPhase == EmailPhase.Hidden) RdR.string.rd_apple_baglaniyor else RdR.string.rd_apple_devam,
+                ),
+                onClick = viewModel::signInWithApple,
+                enabled = !isLoading,
+                showArrow = false,
+                style = RdButtonStyle.Onyx,
+            )
+
+            Spacer(Modifier.height(10.dp))
+            RdPrimaryButton(
+                text = stringResource(
+                    if (isLoading && emailPhase == EmailPhase.Hidden) RdR.string.rd_google_baglaniyor else RdR.string.rd_google_devam,
+                ),
                 onClick = { viewModel.signInWithGoogle(context) },
                 enabled = !isLoading,
                 showArrow = false,
@@ -214,7 +231,7 @@ fun AuthScreen(
             Spacer(Modifier.height(10.dp))
             if (emailPhase == EmailPhase.Hidden) {
                 RdPrimaryButton(
-                    text = "E-posta ile devam et",
+                    text = stringResource(RdR.string.rd_eposta_devam),
                     onClick = { emailPhase = EmailPhase.Email },
                     enabled = !isLoading,
                     showArrow = false,
@@ -255,8 +272,8 @@ fun AuthScreen(
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Zaten hesabım var · ", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
-                Text("Giriş Yap", style = RdFontStyle.Caption.toTextStyle(), color = colors.onyx)
+                Text(stringResource(RdR.string.rd_zaten_hesabim_var), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                Text(stringResource(RdR.string.rd_giris_yap), style = RdFontStyle.Caption.toTextStyle(), color = colors.onyx)
             }
 
             Spacer(Modifier.height(20.dp))
@@ -289,11 +306,11 @@ fun AuthScreen(
 @Composable
 private fun LegalAcceptanceNotice(onOpenDocument: (String) -> Unit) {
     val colors = RdTheme.colors
-    val prefix = "Devam ederek "
-    val termsLabel = "Kullanım Koşulları"
-    val joiner = " ve "
-    val privacyLabel = "Gizlilik Politikası"
-    val suffix = "'nı kabul etmiş olursun."
+    val prefix = stringResource(RdR.string.rd_legal_prefix)
+    val termsLabel = stringResource(RdR.string.rd_kullanim_kosullari)
+    val joiner = stringResource(RdR.string.rd_legal_joiner)
+    val privacyLabel = stringResource(RdR.string.rd_gizlilik_politikasi)
+    val suffix = stringResource(RdR.string.rd_legal_suffix)
 
     val annotated = buildAnnotatedString {
         append(prefix)
@@ -353,12 +370,16 @@ private fun PlanRecapCard(primarySectorLabel: String?, certificateLabel: String?
                     .border(1.dp, colors.green.copy(alpha = 0.22f), CircleShape)
                     .padding(horizontal = 7.dp, vertical = 3.dp),
             ) {
-                Text("SANA ÖZEL", style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 9.sp), color = colors.greenDark)
+                Text(stringResource(RdR.string.rd_sana_ozel), style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 9.sp), color = colors.greenDark)
             }
             Spacer(Modifier.height(4.dp))
-            Text("Planın hazır, seni bekliyor", style = RdFontStyle.Footnote.toTextStyle(), color = colors.onyx)
+            Text(stringResource(RdR.string.rd_planin_hazir_seni_bekliyor), style = RdFontStyle.Footnote.toTextStyle(), color = colors.onyx)
             Text(
-                "47 şablon · ${primarySectorLabel ?: "Genel"} · ${certificateLabel ?: "-"}",
+                stringResource(
+                    RdR.string.rd_auth_plan_recap_format,
+                    primarySectorLabel ?: stringResource(RdR.string.rd_genel),
+                    certificateLabel ?: stringResource(RdR.string.rd_tire),
+                ),
                 style = RdFontStyle.Caption.toTextStyle(),
                 color = colors.slate,
             )
@@ -426,19 +447,25 @@ private fun EmailAuthPanel(
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    if (phase == EmailPhase.Otp) "Doğrulama kodu" else "E-posta adresinizi giriniz",
+                    stringResource(
+                        if (phase == EmailPhase.Otp) RdR.string.rd_dogrulama_kodu_baslik else RdR.string.rd_eposta_adresi_giriniz,
+                    ),
                     style = RdFontStyle.Footnote.toTextStyle(),
                     color = colors.onyx,
                 )
                 Text(
-                    if (phase == EmailPhase.Otp) "$sentTo adresine gönderildi" else "Kod göndermek için e-posta adresini yaz.",
+                    if (phase == EmailPhase.Otp) {
+                        stringResource(RdR.string.rd_kod_gonderildi_format, sentTo)
+                    } else {
+                        stringResource(RdR.string.rd_kod_icin_eposta)
+                    },
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
                     maxLines = 2,
                 )
             }
             IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Filled.Close, contentDescription = "Kapat", tint = colors.slate, modifier = Modifier.size(14.dp))
+                Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kapat), tint = colors.slate, modifier = Modifier.size(14.dp))
             }
         }
 
@@ -447,14 +474,14 @@ private fun EmailAuthPanel(
             OutlinedTextField(
                 value = email,
                 onValueChange = onEmailChange,
-                placeholder = { Text("Mailinizi yazınız...") },
+                placeholder = { Text(stringResource(RdR.string.rd_mailinizi_yaziniz)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(10.dp))
             RdPrimaryButton(
-                text = if (isLoading) "Kod gönderiliyor..." else "Kod gönder",
+                text = stringResource(if (isLoading) RdR.string.rd_kod_gonderiliyor else RdR.string.rd_kod_gonder),
                 onClick = onSendCode,
                 enabled = canSendCode,
                 modifier = Modifier.height(50.dp),
@@ -463,7 +490,7 @@ private fun EmailAuthPanel(
             OtpDigitInput(value = otp, onValueChange = onOtpChange)
             Spacer(Modifier.height(10.dp))
             RdPrimaryButton(
-                text = if (isLoading) "Doğrulanıyor..." else "Doğrula ve devam et",
+                text = stringResource(if (isLoading) RdR.string.rd_dogrulaniyor else RdR.string.rd_dogrula_devam),
                 onClick = onVerifyCode,
                 enabled = canVerifyCode,
                 style = RdButtonStyle.Green,
@@ -472,10 +499,10 @@ private fun EmailAuthPanel(
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(onClick = onResend, enabled = !isLoading) {
-                    Text("Yeni kod gönder", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                    Text(stringResource(RdR.string.rd_yeni_kod_gonder), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                 }
                 TextButton(onClick = onChangeEmail) {
-                    Text("E-postayı değiştir", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                    Text(stringResource(RdR.string.rd_e_postayi_degistir), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                 }
             }
         }

@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,7 +35,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -62,9 +65,9 @@ import com.riskdetectedan.core.designsystem.toTextStyle
  * back-and-forth that would feel spammy over an onboarding screen users sit on for seconds), and
  * the radial glow behind it breathes (scale) in its own slower loop — same intent as iOS's
  * ripple, simpler mechanism (scale, not an expanding stroked ring). Android's pre-existing
- * two-path footer (primary "Bildirimleri Aç" request button + secondary "Ücretsiz devam et"
- * skip-without-prompting text link) is kept as-is — a real, deliberate divergence from iOS's
- * single combined button that predates this visual pass, not something to silently remove here.
+ * The footer uses the same single "Ücretsiz devam et" action as iOS: that action requests the
+ * system permission once and advances regardless of the user's decision. There is no second
+ * permission-bypass action, so the onboarding order and prompt timing stay identical.
  */
 @Composable
 fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
@@ -111,7 +114,7 @@ fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
     ) {
         Spacer(Modifier.height(52.dp))
         Text(
-            "Plan ve teklif bilgilerini bildirimlerden takip edebilirsin",
+            stringResource(RdR.string.rd_bildirim_plan_teklif_baslik),
             style = RdFontStyle.Title1.toTextStyle(),
             color = colors.onyx,
             textAlign = TextAlign.Center,
@@ -138,7 +141,7 @@ fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
 
         Spacer(Modifier.height(36.dp))
         Text(
-            "Plan, teklif ve uygulama hatırlatmaları için bildirimleri aç.",
+            stringResource(RdR.string.rd_bildirim_plan_teklif_aciklama),
             style = RdFontStyle.Callout.toTextStyle().copy(fontWeight = FontWeight.Normal),
             color = colors.slate,
             textAlign = TextAlign.Center,
@@ -154,12 +157,12 @@ fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
                 Icon(Icons.Filled.Check, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(11.dp))
             }
             Spacer(Modifier.width(8.dp))
-            Text("Bu adımda satın alma yapılmaz", style = RdFontStyle.Callout.toTextStyle(), color = colors.graphite)
+            Text(stringResource(RdR.string.rd_bu_adimda_satin_alma_yapilmaz), style = RdFontStyle.Callout.toTextStyle(), color = colors.graphite)
         }
 
         Spacer(Modifier.height(16.dp))
         RdPrimaryButton(
-            text = "Bildirimleri Aç",
+            text = stringResource(RdR.string.rd_ucretsiz_devam_et),
             onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -170,11 +173,6 @@ fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
             showArrow = false,
             style = RdButtonStyle.Onyx,
         )
-
-        Spacer(Modifier.height(4.dp))
-        TextButton(onClick = onContinue) {
-            Text("Ücretsiz devam et", style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
-        }
         Spacer(Modifier.height(16.dp))
     }
 }

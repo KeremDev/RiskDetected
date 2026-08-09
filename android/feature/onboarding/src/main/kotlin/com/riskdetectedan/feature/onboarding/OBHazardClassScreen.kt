@@ -1,5 +1,7 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
@@ -7,6 +9,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import com.riskdetectedan.core.data.onboarding.OnboardingHazardClass
 import com.riskdetectedan.core.designsystem.RdColors
 import com.riskdetectedan.core.designsystem.RdHeroTint
@@ -26,11 +29,11 @@ fun OBHazardClassScreen(
 ) {
     val colors = RdTheme.colors
     OnboardingChoiceScreen(
-        title = "Hangi tehlike sınıfında çalışıyorsun?",
-        subtitle = "Birden fazla seçebilirsin",
+        title = stringResource(RdR.string.rd_tehlike_sinifi_soru),
+        subtitle = stringResource(RdR.string.rd_birden_fazla_secebilirsin),
         items = OnboardingHazardClass.entries,
         isSelected = { selected.contains(it) },
-        label = { it.label },
+        label = { hazardLabel(it) },
         onToggle = onToggle,
         canContinue = selected.isNotEmpty(),
         onContinue = onNext,
@@ -39,7 +42,7 @@ fun OBHazardClassScreen(
         onBack = onBack,
         heroTint = RdHeroTint.Warm,
         heroIcon = Icons.Filled.Warning,
-        selectionCounterSuffix = "tehlike sınıfı seçildi",
+        selectionCounterSuffix = stringResource(RdR.string.rd_tehlike_sinifi_secildi),
         itemIcon = { hazardIcon(it) },
         itemSubtitle = { hazardSubtitle(it) },
         itemIconTint = { hazardTint(it, colors) },
@@ -57,11 +60,23 @@ private fun hazardIcon(hazard: OnboardingHazardClass): ImageVector = when (hazar
 }
 
 /** Mirrors the screen's local `items` array sub text verbatim. */
-private fun hazardSubtitle(hazard: OnboardingHazardClass): String = when (hazard) {
-    OnboardingHazardClass.Critical -> "Petrokimya, maden, inşaat, fabrika vb."
-    OnboardingHazardClass.High -> "İmalat, gıda, sağlık vb."
-    OnboardingHazardClass.Low -> "Ofis, perakende, hizmet vb."
-}
+@Composable
+private fun hazardSubtitle(hazard: OnboardingHazardClass): String = stringResource(
+    when (hazard) {
+        OnboardingHazardClass.Critical -> RdR.string.rd_hazard_critical_subtitle
+        OnboardingHazardClass.High -> RdR.string.rd_hazard_high_subtitle
+        OnboardingHazardClass.Low -> RdR.string.rd_hazard_low_subtitle
+    },
+)
+
+@Composable
+internal fun hazardLabel(hazard: OnboardingHazardClass): String = stringResource(
+    when (hazard) {
+        OnboardingHazardClass.Critical -> RdR.string.rd_hazard_critical
+        OnboardingHazardClass.High -> RdR.string.rd_hazard_high
+        OnboardingHazardClass.Low -> RdR.string.rd_hazard_low
+    },
+)
 
 /** Mirrors OBHazardClass.color (rdCritical/rdHigh/rdLow). */
 private fun hazardTint(hazard: OnboardingHazardClass, colors: RdColors): Color =

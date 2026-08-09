@@ -17,7 +17,7 @@ enum class RdEnvironment { Staging, Production }
 data class RdEnvironmentConfig(
     val environment: RdEnvironment,
     val supabaseUrl: String,
-    val supabaseAnonKey: String,
+    val supabasePublishableKey: String,
     val appVersionName: String,
     val appVersionCode: Int,
     val applicationId: String,
@@ -25,7 +25,7 @@ data class RdEnvironmentConfig(
     // Android-specific; this is the exact value Credential Manager's GetGoogleIdOption needs
     // to hand Supabase a verifiable ID token. It's already public (committed in config.toml,
     // not a secret) so defaulting production to the real value here is fine.
-    val googleWebClientId: String = "200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com",
+    val googleWebClientId: String,
     val clientPlatform: String = "android",
     val clientCapabilities: Map<String, Boolean> = emptyMap(),
     // RevenueCat's Android *public* SDK key — same "already public, safe to default here" case
@@ -33,7 +33,7 @@ data class RdEnvironmentConfig(
     // "intentionally public"; subscription truth for backend limits is still synced
     // server-side via the RevenueCat webhook, this key alone can't grant entitlements).
     // Registered against the real Play Console app (com.riskdetectedan.app) 2026-08-07.
-    val revenueCatPublicKey: String = "goog_IloQRDmtxistmNayBpPfwNbIoYa",
+    val revenueCatPublicKey: String,
     // Matches RDConfig.Subscription.offeringIdentifier's default — "" would mean "use
     // whatever RevenueCat marks as current", but iOS pins an explicit id, so Android does too.
     val revenueCatOfferingIdentifier: String = "default",
@@ -44,5 +44,5 @@ data class RdEnvironmentConfig(
     // in the migration) alongside every registered token, matches how iOS's environment column
     // records the APNs sandbox/production split. Not a secret — the project id also appears
     // plainly inside the committed google-services.json.
-    val firebaseProjectId: String = "riskdetected",
+    val firebaseProjectId: String,
 )

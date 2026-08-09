@@ -7,6 +7,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.ExternalAuthAction
+import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
@@ -23,9 +25,14 @@ object SupabaseModule {
     fun provideSupabaseClient(config: RdEnvironmentConfig): SupabaseClient =
         createSupabaseClient(
             supabaseUrl = config.supabaseUrl,
-            supabaseKey = config.supabaseAnonKey,
+            supabaseKey = config.supabasePublishableKey,
         ) {
-            install(Auth)
+            install(Auth) {
+                flowType = FlowType.PKCE
+                scheme = config.applicationId
+                host = "login-callback"
+                defaultExternalAuthAction = ExternalAuthAction.CustomTabs()
+            }
             install(Postgrest)
             install(Storage)
             install(Functions)

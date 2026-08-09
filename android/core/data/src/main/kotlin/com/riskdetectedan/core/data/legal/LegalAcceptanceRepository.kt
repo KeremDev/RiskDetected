@@ -3,11 +3,16 @@ package com.riskdetectedan.core.data.legal
 import android.content.Context
 import android.util.Log
 import com.riskdetectedan.core.common.RdEnvironmentConfig
+import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.data.release.AndroidLegalPolicy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
@@ -28,6 +33,7 @@ import kotlin.math.pow
 object LegalAndroidVersions {
     const val KVKK = "kvkk-android-2026-08-07"
     const val TERMS = "terms-android-2026-08-07"
+    const val PRIVACY = "privacy-android-2026-08-07"
     const val CONSENT = "consent-android-2026-08-07"
 }
 
@@ -52,6 +58,7 @@ object LegalDocumentSet {
     private val sources = listOf(
         Triple("kvkk", LegalAndroidVersions.KVKK, "legal/KVKK-Aydinlatma-ve-Acik-Riza-Metni.md"),
         Triple("terms", LegalAndroidVersions.TERMS, "legal/Kullanim-Kosullari.md"),
+        Triple("privacy", LegalAndroidVersions.PRIVACY, "legal/Gizlilik-Politikasi.md"),
         Triple("consent", LegalAndroidVersions.CONSENT, "legal/Acik-Riza-Beyani.md"),
     )
 
@@ -99,6 +106,20 @@ private data class ConsentAuditPayload(
     @SerialName("device_id") val deviceId: String,
 )
 
+@Serializable
+private data class LegalAcknowledgementRpcPayload(
+    @SerialName("p_document_kind") val documentKind: String,
+    @SerialName("p_version") val version: String,
+    @SerialName("p_change_type") val changeType: String,
+    @SerialName("p_document_set_id") val documentSetId: String,
+    @SerialName("p_document_locale") val documentLocale: String,
+    @SerialName("p_document_checksum") val documentChecksum: String,
+    @SerialName("p_action") val action: String,
+    @SerialName("p_source") val source: String,
+    @SerialName("p_app_version") val appVersion: String,
+    @SerialName("p_device_id") val deviceId: String,
+)
+
 /**
  * Mirrors LegalAcceptanceService.swift's `recordLoginNoticeAcceptanceIfNeeded` — a background,
  * non-blocking audit record written to `consents` on sign-in, not an interactive consent screen.
@@ -118,6 +139,62 @@ class LegalAcceptanceRepository @Inject constructor(
     private val recordingUsers = mutableSetOf<String>()
     private val failedAttempts = mutableMapOf<String, Int>()
     private val nextRetryAtMillis = mutableMapOf<String, Long>()
+
+    /** Records a material Android legal update only after the server policy is proven to refer
+     * to the exact document bytes bundled in this APK. This prevents a stale build from claiming
+     * acceptance for text it could not have shown. The server-owned RPC repeats the document
+     * registry/checksum validation and writes under auth.uid(), so neither the user id nor the
+     * accepted document identity is trusted from a direct table insert. */
+    suspend fun acknowledgeLegalUpdate(policy: AndroidLegalPolicy): RdResult<Unit> {
+        val audit = LegalDocumentSet.acceptanceAuditMetadata(context)
+            ?: return RdResult.Failure("legal_documents_unavailable", "legal_documents_unavailable")
+        if (
+            audit.documentSetID != policy.documentSetId ||
+            audit.locale != LegalDocumentSet.LOCALE ||
+            audit.manifestChecksum != policy.manifestChecksum
+        ) {
+            return RdResult.Failure("legal_documents_outdated", "legal_documents_outdated")
+        }
+
+        val localDocuments = LegalDocumentAssets.load(context).associateBy { it.kind }
+        val policyMatchesBundle = policy.documents.size == localDocuments.size &&
+            policy.documents.all { required ->
+                localDocuments[required.kind]?.let { local ->
+                    local.version == required.version && local.checksum == required.checksum
+                } == true
+            }
+        if (!policyMatchesBundle) {
+            return RdResult.Failure("legal_documents_outdated", "legal_documents_outdated")
+        }
+
+        val action = if (policy.requiresExplicitConsent) {
+            "explicitly_accepted"
+        } else {
+            "continued_use_accepted"
+        }
+        return try {
+            policy.documents.forEach { document ->
+                val params = Json.encodeToJsonElement(
+                    LegalAcknowledgementRpcPayload(
+                        documentKind = document.kind,
+                        version = document.version,
+                        changeType = document.changeType,
+                        documentSetId = policy.documentSetId,
+                        documentLocale = LegalDocumentSet.LOCALE,
+                        documentChecksum = document.checksum,
+                        action = action,
+                        source = "android_legal_update_notice",
+                        appVersion = "${environmentConfig.appVersionName} (${environmentConfig.appVersionCode})",
+                        deviceId = installationId(),
+                    ),
+                ) as JsonObject
+                client.postgrest.rpc("acknowledge_legal_document_v1", params)
+            }
+            RdResult.Success(Unit)
+        } catch (t: Throwable) {
+            RdResult.Failure("legal_acknowledgement_failed", t.message ?: "legal_acknowledgement_failed", t)
+        }
+    }
 
     suspend fun recordLoginNoticeAcceptanceIfNeeded(userId: String) {
         if (userId in recordedUsers || userId in recordingUsers) return

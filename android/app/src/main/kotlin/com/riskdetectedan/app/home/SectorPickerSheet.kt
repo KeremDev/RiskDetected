@@ -1,5 +1,9 @@
 package com.riskdetectedan.app.home
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,10 +83,10 @@ fun SectorPickerSheet(
             verticalAlignment = Alignment.Top,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Sektör seç", style = RdFontStyle.Title2.toTextStyle(), color = colors.black)
+                Text(stringResource(RdR.string.rd_sektor_sec), style = RdFontStyle.Title2.toTextStyle(), color = colors.black)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Analizin hangi saha türüne odaklanacağını seç.",
+                    stringResource(RdR.string.rd_sektor_sec_aciklama),
                     style = RdFontStyle.Footnote.toTextStyle(),
                     color = colors.slate,
                 )
@@ -95,7 +99,7 @@ fun SectorPickerSheet(
                     .background(colors.white)
                     .border(1.dp, colors.line, CircleShape),
             ) {
-                Icon(Icons.Filled.Close, contentDescription = "Kapat", tint = colors.black, modifier = Modifier.size(14.dp))
+                Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kapat), tint = colors.black, modifier = Modifier.size(14.dp))
             }
         }
 
@@ -143,7 +147,9 @@ private fun SectorRow(item: AnalysisSectorPickerItem, onClick: () -> Unit) {
                             .padding(horizontal = 6.dp, vertical = 1.dp),
                     ) {
                         Text(
-                            if (badge == AnalysisSectorBadge.LastUsed) "Son" else "Önerilen",
+                            stringResource(
+                                if (badge == AnalysisSectorBadge.LastUsed) RdR.string.rd_son else RdR.string.rd_onerilen,
+                            ),
                             style = RdFontStyle.Caption.toTextStyle(),
                             color = colors.greenDark,
                         )

@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.profile
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,13 +54,14 @@ fun AccountDeletionScreen(onDeleted: () -> Unit, onBack: (() -> Unit)? = null, v
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     var showConfirm by remember { mutableStateOf(false) }
+    var verificationCode by remember { mutableStateOf("") }
 
     LaunchedEffect(state) {
         if (state is AccountDeletionUiState.Completed) onDeleted()
     }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
-        RdScreenHeader(title = "Hesabı Sil", onBack = onBack)
+        RdScreenHeader(title = stringResource(RdR.string.rd_hesabi_sil_baslik), onBack = onBack)
 
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
             Column(
@@ -66,10 +72,10 @@ fun AccountDeletionScreen(onDeleted: () -> Unit, onBack: (() -> Unit)? = null, v
                     .border(1.dp, colors.critical.copy(alpha = 0.22f), RoundedCornerShape(RdRadius.lg))
                     .padding(RdSpacing.md),
             ) {
-                Text("Hesabını silmek üzeresin", style = RdFontStyle.Callout.toTextStyle(), color = colors.criticalText)
+                Text(stringResource(RdR.string.rd_hesabini_silmek_uzeresin), style = RdFontStyle.Callout.toTextStyle(), color = colors.criticalText)
                 Spacer(Modifier.height(RdSpacing.xxs))
                 Text(
-                    "Bu işlem geri alınamaz. Tüm analizlerin, fotoğrafların ve raporların kalıcı olarak silinir.",
+                    stringResource(RdR.string.rd_hesap_sil_geri_alinamaz),
                     style = RdFontStyle.Footnote.toTextStyle(),
                     color = colors.criticalText,
                 )
@@ -77,15 +83,35 @@ fun AccountDeletionScreen(onDeleted: () -> Unit, onBack: (() -> Unit)? = null, v
 
             Spacer(Modifier.height(RdSpacing.md))
             when (val current = state) {
-                is AccountDeletionUiState.Idle -> DestructiveButton(text = "Hesabımı sil", onClick = { showConfirm = true })
+                is AccountDeletionUiState.Idle -> DestructiveButton(text = stringResource(RdR.string.rd_hesabimi_sil), onClick = { showConfirm = true })
+                is AccountDeletionUiState.VerificationSent -> Column {
+                    Text(
+                        stringResource(RdR.string.rd_hesap_kod_gonderildi_format, current.email),
+                        style = RdFontStyle.Footnote.toTextStyle(),
+                        color = colors.slate,
+                    )
+                    Spacer(Modifier.height(RdSpacing.sm))
+                    OutlinedTextField(
+                        value = verificationCode,
+                        onValueChange = { verificationCode = it.filter(Char::isDigit).take(8) },
+                        label = { Text(stringResource(RdR.string.rd_dogrulama_kodu)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(RdSpacing.sm))
+                    DestructiveButton(
+                        text = stringResource(RdR.string.rd_kimlik_dogrula_hesap_sil),
+                        onClick = { viewModel.confirmDeletion(current.email, verificationCode) },
+                    )
+                }
                 is AccountDeletionUiState.Requesting -> Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = colors.critical)
                 }
-                is AccountDeletionUiState.Completed -> Text("Hesap silindi.", style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
+                is AccountDeletionUiState.Completed -> Text(stringResource(RdR.string.rd_hesap_silindi), style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
                 is AccountDeletionUiState.Failed -> Column {
                     Text(current.error.message, style = RdFontStyle.Footnote.toTextStyle(), color = colors.critical)
                     Spacer(Modifier.height(RdSpacing.sm))
-                    DestructiveButton(text = "Tekrar dene", onClick = { showConfirm = true })
+                    DestructiveButton(text = stringResource(RdR.string.rd_tekrar_dene), onClick = viewModel::reset)
                 }
             }
         }
@@ -94,18 +120,18 @@ fun AccountDeletionScreen(onDeleted: () -> Unit, onBack: (() -> Unit)? = null, v
     if (showConfirm) {
         AlertDialog(
             onDismissRequest = { showConfirm = false },
-            title = { Text("Emin misin?") },
-            text = { Text("Hesabın ve tüm verilerin kalıcı olarak silinecek. Bu işlem geri alınamaz.") },
+            title = { Text(stringResource(RdR.string.rd_emin_misin)) },
+            text = { Text(stringResource(RdR.string.rd_hesabin_ve_tum_verilerin_kalici_olarak_silinecek_bu_isl)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showConfirm = false
-                        viewModel.confirmDeletion()
+                        viewModel.sendVerification()
                     },
-                ) { Text("Evet, sil") }
+                ) { Text(stringResource(RdR.string.rd_evet_sil)) }
             },
             dismissButton = {
-                TextButton(onClick = { showConfirm = false }) { Text("Vazgeç") }
+                TextButton(onClick = { showConfirm = false }) { Text(stringResource(RdR.string.rd_vazgec)) }
             },
         )
     }

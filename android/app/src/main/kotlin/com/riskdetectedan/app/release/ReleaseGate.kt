@@ -1,5 +1,9 @@
 package com.riskdetectedan.app.release
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
@@ -8,15 +12,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.riskdetectedan.core.data.legal.LegalDocumentAssets
+import com.riskdetectedan.core.designsystem.RdLegalDocument
+import com.riskdetectedan.core.designsystem.RdLegalDocumentSheet
 import com.riskdetectedan.core.designsystem.RdSpacing
 
 /**
@@ -34,7 +48,7 @@ fun ReleaseGate(viewModel: ReleaseGateViewModel = hiltViewModel(), content: @Com
         is ReleaseGateState.Hard -> {
             Box(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg), contentAlignment = Alignment.Center) {
                 Column {
-                    Text("Güncelleme gerekli")
+                    Text(stringResource(RdR.string.rd_guncelleme_gerekli))
                     Text(current.policy.displayMessage)
                     Button(
                         onClick = {
@@ -43,7 +57,22 @@ fun ReleaseGate(viewModel: ReleaseGateViewModel = hiltViewModel(), content: @Com
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                         },
                         modifier = Modifier.padding(top = RdSpacing.md),
-                    ) { Text("Google Play'de aç") }
+                    ) { Text(stringResource(RdR.string.rd_google_play_de_ac)) }
+                }
+            }
+        }
+        is ReleaseGateState.LegalDocumentsOutdated -> {
+            Box(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg), contentAlignment = Alignment.Center) {
+                Column {
+                    Text(stringResource(RdR.string.rd_hukuki_metinler_guncellendi))
+                    Text(stringResource(RdR.string.rd_hukuk_metinleri_guncel_degil))
+                    Button(
+                        onClick = {
+                            val url = "https://play.google.com/store/apps/details?id=${context.packageName}"
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        },
+                        modifier = Modifier.padding(top = RdSpacing.md),
+                    ) { Text(stringResource(RdR.string.rd_google_play_de_ac)) }
                 }
             }
         }
@@ -52,7 +81,7 @@ fun ReleaseGate(viewModel: ReleaseGateViewModel = hiltViewModel(), content: @Com
             if (current is ReleaseGateState.Soft) {
                 AlertDialog(
                     onDismissRequest = { viewModel.dismissSoft(current.policy) },
-                    title = { Text("Yeni sürüm mevcut") },
+                    title = { Text(stringResource(RdR.string.rd_yeni_surum_mevcut)) },
                     text = { Text(current.policy.displayMessage) },
                     confirmButton = {
                         Button(
@@ -61,13 +90,93 @@ fun ReleaseGate(viewModel: ReleaseGateViewModel = hiltViewModel(), content: @Com
                                     ?: "https://play.google.com/store/apps/details?id=${context.packageName}"
                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                             },
-                        ) { Text("Google Play'de aç") }
+                        ) { Text(stringResource(RdR.string.rd_google_play_de_ac)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { viewModel.dismissSoft(current.policy) }) { Text("Sonra") }
+                        TextButton(onClick = { viewModel.dismissSoft(current.policy) }) { Text(stringResource(RdR.string.rd_sonra)) }
                     },
                 )
             }
+            if (current is ReleaseGateState.Legal) {
+                LegalUpdateDialog(current = current, viewModel = viewModel)
+            }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun LegalUpdateDialog(
+    current: ReleaseGateState.Legal,
+    viewModel: ReleaseGateViewModel,
+) {
+    val context = LocalContext.current
+    var showDocuments by remember { mutableStateOf(false) }
+    var documents by remember { mutableStateOf<List<RdLegalDocument>>(emptyList()) }
+
+    LaunchedEffect(showDocuments) {
+        if (showDocuments && documents.isEmpty()) {
+            documents = LegalDocumentAssets.load(context)
+                .map { RdLegalDocument(kind = it.kind, title = it.title, text = it.text) }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = {
+            if (current.policy.requiresExplicitConsent) {
+                viewModel.dismissExplicitLegal(current.policy)
+            }
+        },
+        title = { Text(stringResource(RdR.string.rd_hukuki_metinler_guncellendi)) },
+        text = {
+            Column {
+                Text(current.policy.messageTr)
+                TextButton(onClick = { showDocuments = true }) {
+                    Text(stringResource(RdR.string.rd_guncel_metinleri_incele))
+                }
+                if (current.errorCode != null) {
+                    Text(stringResource(RdR.string.rd_hukuk_kabul_hatasi))
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { viewModel.acknowledgeLegal(current.policy) },
+                enabled = !current.isSubmitting,
+            ) {
+                if (current.isSubmitting) {
+                    CircularProgressIndicator()
+                } else {
+                    Text(
+                        stringResource(
+                            if (current.policy.requiresExplicitConsent) {
+                                RdR.string.rd_kabul_ediyorum
+                            } else {
+                                RdR.string.rd_devam_et
+                            },
+                        ),
+                    )
+                }
+            }
+        },
+        dismissButton = if (current.policy.requiresExplicitConsent) {
+            {
+                TextButton(onClick = { viewModel.dismissExplicitLegal(current.policy) }) {
+                    Text(stringResource(RdR.string.rd_simdilik_kapat))
+                }
+            }
+        } else {
+            null
+        },
+    )
+
+    if (showDocuments) {
+        ModalBottomSheet(onDismissRequest = { showDocuments = false }) {
+            RdLegalDocumentSheet(
+                documents = documents,
+                initialKind = null,
+                onClose = { showDocuments = false },
+            )
         }
     }
 }

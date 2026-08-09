@@ -18,7 +18,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Fine-Kinney ve 5x5 ham girdileri AI'dan alınıyor; skorlar DB/sistem tarafında hesaplanıyor.
 - Free standart analiz limiti günde 1 olarak uygulanıyor.
 - Plus standart analiz limiti günde 10, Pro standart analiz limiti günde 40 olarak uygulanıyor.
-- Rapor kotası Free 3/ay, Plus 150/ay, Pro 750/ay olarak uygulanıyor.
+- Güncel production kuralı: Free 1 standart rapor/gün, Plus 150/ay, Pro 750/ay.
 - Free kullanıcı yalnızca 1 canvas seçebiliyor; Plus sınırlı gelişmiş canvas, Pro tam gelişmiş canvas erişimine sahip.
 - Free analizde backend tarafındaki sabit bulgu kırpma kaldırıldı; Free prompt kalite hedefi 6-9 bulgu olarak güncellendi.
 - Plus/Pro analizlerde bulgu hedefi 11-14 aralığına çıkarıldı.

@@ -33,4 +33,24 @@ data class OnboardingUiState(
         auditFrequency = frequency?.let { OnboardingAnswerChoice(it.id, it.title) },
         selectedPlan = OnboardingAnswerChoice(selectedPlan.id, selectedPlan.label),
     )
+
+    companion object {
+        fun fromAnswersDraft(draft: OnboardingAnswersDraft): OnboardingUiState = OnboardingUiState(
+            certificate = OnboardingCertificate.entries.firstOrNull {
+                it.id == draft.certificateClass?.value
+            },
+            hazards = OnboardingHazardClass.entries.filterTo(linkedSetOf()) { hazard ->
+                draft.hazardClasses.any { it.value == hazard.id }
+            },
+            sectors = draft.sectors.mapNotNull { answer ->
+                OnboardingSector.entries.firstOrNull { it.id == answer.value }
+            },
+            frequency = OnboardingFrequency.entries.firstOrNull {
+                it.id == draft.auditFrequency?.value
+            },
+            selectedPlan = OnboardingPlan.entries.firstOrNull {
+                it.id == draft.selectedPlan?.value
+            } ?: OnboardingPlan.Yearly,
+        )
+    }
 }

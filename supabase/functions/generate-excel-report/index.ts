@@ -389,13 +389,21 @@ function reportSnapshotV2GateOpen(
       typeof body.client_capabilities === "object"
     ? body.client_capabilities
     : {};
-  if (platform !== "ios" || contractVersion < 2 || !build) return false;
+  if (
+    (platform !== "ios" && platform !== "android") ||
+    contractVersion < 2 ||
+    !build
+  ) return false;
   if (capabilities.report_snapshot_v2 !== true) return false;
 
   const mode = safeText(value.rollout_mode, "off").trim().toLowerCase();
   if (mode === "all") return true;
   if (mode === "build_allowlist") {
-    const allowed = stringArray(value.enabled_ios_builds);
+    const allowed = stringArray(
+      platform === "android"
+        ? value.enabled_android_builds
+        : value.enabled_ios_builds,
+    );
     if (allowed.includes(build)) return true;
     return buildNumber != null &&
       allowed
@@ -403,7 +411,9 @@ function reportSnapshotV2GateOpen(
         .some((item) => item === buildNumber);
   }
   if (mode === "min_build") {
-    const minimum = optionalPositiveInt(value.min_ios_build);
+    const minimum = optionalPositiveInt(
+      platform === "android" ? value.min_android_build : value.min_ios_build,
+    );
     return buildNumber != null && minimum != null && buildNumber >= minimum;
   }
   return false;

@@ -9,6 +9,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveReportLocalization } from "../_shared/report-localization.ts";
+import { readAndroidRuntimeGates } from "../_shared/android-runtime-gates.ts";
 
 const PDF_MIME = "application/pdf";
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
@@ -147,13 +148,21 @@ function snapshotGateOpen(
       typeof body.client_capabilities === "object"
     ? body.client_capabilities
     : {};
-  if (platform !== "ios" || contractVersion < 2 || !build) return false;
+  if (
+    (platform !== "ios" && platform !== "android") ||
+    contractVersion < 2 ||
+    !build
+  ) return false;
   if (capabilities.report_snapshot_v2 !== true) return false;
 
   const mode = safeText(value.rollout_mode, "off", 40).toLowerCase();
   if (mode === "all") return true;
   if (mode === "build_allowlist") {
-    const allowed = stringArray(value.enabled_ios_builds);
+    const allowed = stringArray(
+      platform === "android"
+        ? value.enabled_android_builds
+        : value.enabled_ios_builds,
+    );
     if (allowed.includes(build)) return true;
     return buildNumber != null &&
       allowed
@@ -161,7 +170,9 @@ function snapshotGateOpen(
         .some((item) => item === buildNumber);
   }
   if (mode === "min_build") {
-    const minimum = optionalPositiveInt(value.min_ios_build);
+    const minimum = optionalPositiveInt(
+      platform === "android" ? value.min_android_build : value.min_ios_build,
+    );
     return buildNumber != null && minimum != null && buildNumber >= minimum;
   }
   return false;
@@ -417,6 +428,25 @@ serve(async (req) => {
       request_id: requestID,
       support_id: supportID,
     });
+  }
+
+  const clientPlatform = safeText(body.client_platform, "unknown", 40)
+    .toLowerCase();
+  if (clientPlatform === "android") {
+    const runtimeGates = await readAndroidRuntimeGates(
+      supabase,
+      clientPlatform,
+      optionalPositiveInt(body.client_app_build),
+    );
+    const decision = runtimeGates?.pdf_reports;
+    if (decision?.enabled !== true) {
+      return json(503, {
+        error: "android_pdf_reports_disabled",
+        reason: decision?.reason ?? "gate_unavailable",
+        request_id: requestID,
+        support_id: supportID,
+      });
+    }
   }
 
   const analysisID = body.analysis_id;

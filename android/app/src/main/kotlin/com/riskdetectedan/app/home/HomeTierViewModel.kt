@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.analysis.PlanCapabilitiesRepository
-import com.riskdetectedan.core.data.analysis.PlanPhotoCapabilities
+import com.riskdetectedan.core.data.analysis.PlanCapabilities
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
@@ -25,11 +25,10 @@ import javax.inject.Inject
  *
  * **Remote `PlanCapabilities` override now closed too** (previously documented as a separate
  * still-open gap): [refresh] fires [PlanCapabilitiesRepository.fetchPhotoCapabilities] right
- * after the tier resolves, same two-step sequencing as `applyTier`/`refreshRemotePlanCapabilities`
- * — [photoCapabilities] starts null (caller uses its own local `tier.isPaid ? 3 : 1` default,
- * same as iOS's synchronous `PlanCapabilities.forTier(tier)` before the async remote fetch lands)
- * and gets overwritten once the remote fetch resolves, exactly like iOS's `planCapabilities`
- * `@Published` getting reassigned twice.
+ * after the tier resolves. [photoCapabilities] starts null and the caller uses the fail-closed
+ * local capability contract until the Android build allowlist and remote rules resolve; this is
+ * intentionally stricter than briefly exposing a paid slot before the Android rollout gate is
+ * known.
  */
 @HiltViewModel
 class HomeTierViewModel @Inject constructor(
@@ -41,8 +40,8 @@ class HomeTierViewModel @Inject constructor(
     private val _profile = MutableStateFlow<UserProfile?>(null)
     val profile: StateFlow<UserProfile?> = _profile.asStateFlow()
 
-    private val _photoCapabilities = MutableStateFlow<PlanPhotoCapabilities?>(null)
-    val photoCapabilities: StateFlow<PlanPhotoCapabilities?> = _photoCapabilities.asStateFlow()
+    private val _photoCapabilities = MutableStateFlow<PlanCapabilities?>(null)
+    val photoCapabilities: StateFlow<PlanCapabilities?> = _photoCapabilities.asStateFlow()
 
     fun refresh() {
         val userId = authRepository.currentUserId ?: return
@@ -51,7 +50,7 @@ class HomeTierViewModel @Inject constructor(
                 is RdResult.Success -> {
                     _profile.value = result.value
                     val tier = result.value.tier
-                    _photoCapabilities.value = (planCapabilitiesRepository.fetchPhotoCapabilities(tier) as? RdResult.Success)
+                    _photoCapabilities.value = (planCapabilitiesRepository.fetchCapabilities(tier) as? RdResult.Success)
                         ?.value
                 }
                 is RdResult.Failure -> Unit

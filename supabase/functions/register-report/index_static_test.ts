@@ -85,9 +85,23 @@ Deno.test("register-report snapshot storage is build gated", async () => {
   assertStringIncludes(source, "function snapshotGateOpen");
   assertStringIncludes(source, "contractVersion < 2");
   assertStringIncludes(source, "capabilities.report_snapshot_v2 !== true");
+  assertStringIncludes(source, 'platform !== "android"');
+  assertStringIncludes(source, "value.enabled_android_builds");
+  assertStringIncludes(source, "value.min_android_build");
   assertStringIncludes(
     source,
     "const shouldStoreSnapshot = await reportSnapshotV2Enabled",
   );
   assertStringIncludes(source, "...snapshotColumns");
+});
+
+Deno.test("register-report enforces the additive Android PDF runtime gate", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, 'clientPlatform === "android"');
+  assertStringIncludes(source, "runtimeGates?.pdf_reports");
+  assertStringIncludes(source, "android_pdf_reports_disabled");
 });

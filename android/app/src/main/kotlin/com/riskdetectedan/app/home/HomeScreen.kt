@@ -1,5 +1,9 @@
 package com.riskdetectedan.app.home
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -112,6 +116,7 @@ fun HomeScreen(
     onReports: () -> Unit = {},
     onProfile: () -> Unit = {},
     onUpgrade: () -> Unit = {},
+    quickScanRequestKey: Int = 0,
     viewModel: HistoryViewModel = hiltViewModel(),
     photoTrayViewModel: PhotoTrayViewModel = hiltViewModel(),
     quotaViewModel: QuotaViewModel = hiltViewModel(),
@@ -133,14 +138,15 @@ fun HomeScreen(
     val remotePhotoCapabilities by tierViewModel.photoCapabilities.collectAsState()
     val userTier = fetchedProfile?.tier ?: com.riskdetectedan.core.data.profile.SubscriptionTier.Free
     val initials = fetchedProfile?.displayInitials ?: "—"
-    // AppState.swift's PlanCapabilities local default (`tier.isPaid ? 3 : 1`,
-    // `safeMaxPhotosPerAnalysis` clamps 1..3) paints instantly; `remotePhotoCapabilities`
-    // (PlanCapabilitiesRepository.fetchPhotoCapabilities, real `plan_capability_rules`+
-    // `app_feature_flags` read) overwrites it once resolved, same two-step sequencing as
-    // `applyTier`/`refreshRemotePlanCapabilities` — closes the previously-documented remote
-    // PlanCapabilities-override gap.
+    // Android's additive rollout must remain closed until its build allowlist and capability
+    // rules have both resolved. The local tier contract therefore paints a one-photo surface;
+    // the remote result opens the paid slots only when the Android-specific gate allows it.
+    // This also avoids a brief three-photo window on a slow/offline launch.
+    val localPhotoCapabilities = com.riskdetectedan.core.data.analysis.PlanCapabilities.forTier(userTier)
     val maxPhotoCount = remotePhotoCapabilities?.maxPhotosPerAnalysis
-        ?: (if (userTier.isPaid) 3 else 1).coerceIn(1, 3)
+        ?: localPhotoCapabilities.maxPhotosPerAnalysis
+    val visiblePhotoSlots = remotePhotoCapabilities?.visiblePhotoSlotsInUI
+        ?: localPhotoCapabilities.visiblePhotoSlotsInUI
     val isFreeQuotaExhausted = !userTier.isPaid && quota?.isExhausted == true
 
     var showTitlesSheet by rememberSaveable { mutableStateOf(false) }
@@ -199,6 +205,26 @@ fun HomeScreen(
         if (isFreeQuotaExhausted) onUpgrade() else showSectorSheet = true
     }
 
+    // Live iOS MainTabView always routes the center action back through Home. Empty drafts open
+    // the source/tray chooser; an existing draft continues with sector then canvas. Keeping the
+    // request as a monotonically increasing key also makes repeated taps observable while Home
+    // remains the active tab.
+    LaunchedEffect(quickScanRequestKey) {
+        if (quickScanRequestKey <= 0) return@LaunchedEffect
+        val latestQuota = if (!userTier.isPaid) quotaViewModel.refreshAndGet() else quota
+        when (
+            QuickScanReducer.decide(
+                isPaid = userTier.isPaid,
+                quotaExhausted = latestQuota?.isExhausted == true,
+                hasPhotos = trayPhotoPaths.isNotEmpty(),
+            )
+        ) {
+            QuickScanDecision.Upgrade -> onUpgrade()
+            QuickScanDecision.OpenPhotoTray -> showPhotoTray = true
+            QuickScanDecision.SelectSector -> showSectorSheet = true
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -220,7 +246,7 @@ fun HomeScreen(
             // smaller/thinner than real iOS).
             Image(
                 painter = painterResource(R.drawable.rd_logo),
-                contentDescription = "RiskDetected",
+                contentDescription = stringResource(RdR.string.rd_riskdetected),
                 contentScale = ContentScale.FillHeight,
                 modifier = Modifier.height(34.dp),
                 alignment = Alignment.CenterStart,
@@ -239,7 +265,7 @@ fun HomeScreen(
                 ) {
                     Icon(Icons.Filled.ArrowCircleUp, contentDescription = null, tint = colors.white, modifier = Modifier.size(12.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Yükselt", style = RdFontStyle.Caption.toTextStyle(), color = colors.white)
+                    Text(stringResource(RdR.string.rd_yukselt), style = RdFontStyle.Caption.toTextStyle(), color = colors.white)
                 }
                 Spacer(Modifier.width(RdSpacing.sm))
             }
@@ -292,7 +318,7 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Taramayı Başlat", style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
+            Text(stringResource(RdR.string.rd_taramayi_baslat), style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
             Box(
                 modifier = Modifier.size(32.dp).clip(RoundedCornerShape(RdRadius.md)).background(colors.white),
                 contentAlignment = Alignment.Center,
@@ -314,10 +340,10 @@ fun HomeScreen(
         val recentItems = loaded?.items?.take(8).orEmpty()
         Spacer(Modifier.height(28.dp))
         HomeSectionCard(
-            title = "Son uygunsuzluklar",
+            title = stringResource(RdR.string.rd_son_uygunsuzluklar),
             icon = Icons.Filled.ReportProblem,
             tint = colors.critical,
-            countLabel = "${loaded?.items?.size ?: 0} kayıt",
+            countLabel = stringResource(RdR.string.rd_kayit_sayisi_format, loaded?.items?.size ?: 0),
             onSeeAll = onHistory,
         ) {
             when {
@@ -328,8 +354,8 @@ fun HomeScreen(
                     icon = Icons.Filled.CheckCircle,
                     iconTint = colors.greenDark,
                     iconBackground = colors.greenSoft,
-                    title = "Henüz tamamlanmış analiz yok",
-                    subtitle = "İlk tarama tamamlandığında burada listelenecek.",
+                    title = stringResource(RdR.string.rd_henuz_tamamlanmis_analiz_yok),
+                    subtitle = stringResource(RdR.string.rd_ilk_tarama_listelenecek),
                 )
                 else -> Row(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -346,10 +372,10 @@ fun HomeScreen(
         val recentReports = reportsLoaded?.items?.take(5).orEmpty()
         Spacer(Modifier.height(20.dp))
         HomeSectionCard(
-            title = "Oluşturulan raporlar",
+            title = stringResource(RdR.string.rd_olusturulan_raporlar),
             icon = Icons.Filled.Description,
             tint = colors.greenDark,
-            countLabel = "${reportsLoaded?.items?.size ?: 0} dosya",
+            countLabel = stringResource(RdR.string.rd_dosya_sayisi_format, reportsLoaded?.items?.size ?: 0),
             onSeeAll = onReports,
         ) {
             if (recentReports.isEmpty()) {
@@ -357,8 +383,8 @@ fun HomeScreen(
                     icon = Icons.Filled.Description,
                     iconTint = colors.slate,
                     iconBackground = colors.fog,
-                    title = "Henüz rapor oluşturulmadı",
-                    subtitle = "PDF veya Excel çıktıları burada görünecek.",
+                    title = stringResource(RdR.string.rd_henuz_rapor_olusturulmadi),
+                    subtitle = stringResource(RdR.string.rd_rapor_ciktilari_burada),
                 )
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
@@ -417,6 +443,7 @@ fun HomeScreen(
             PhotoTraySheet(
                 photoPaths = trayPhotoPaths,
                 maxPhotoCount = maxPhotoCount,
+                visibleSlotCount = visiblePhotoSlots,
                 onCamera = {
                     // Deliberately NOT closing the sheet here (unlike onLockedSlot) —
                     // CaptureForTray covers MainShell (disposing this composition per Navigation
@@ -458,11 +485,11 @@ fun HomeScreen(
 private fun FreeQuotaHint(quota: DailyQuotaUsage, onClick: () -> Unit) {
     val colors = RdTheme.colors
     RdListRow(
-        title = "Ücretsiz Analiz Hakkı",
+        title = stringResource(RdR.string.rd_ucretsiz_analiz_hakki),
         subtitle = if (quota.isExhausted) {
-            "Bugünkü hakkın doldu. Daha fazlası için hesabını yükselt."
+            stringResource(RdR.string.rd_bugunku_hak_doldu)
         } else {
-            "Günde 1 ücretsiz analiz hakkın hazır."
+            stringResource(RdR.string.rd_gunluk_ucretsiz_hak_hazir)
         },
         icon = Icons.Filled.CardGiftcard,
         iconTint = colors.white,
@@ -508,7 +535,7 @@ private fun HomeReportRow(report: Report, onClick: () -> Unit) {
         )
         Spacer(Modifier.width(RdSpacing.sm))
         Column(modifier = Modifier.weight(1f)) {
-            Text(report.title ?: report.fileName ?: "Rapor", style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx)
+            Text(report.title ?: report.fileName ?: stringResource(RdR.string.rd_rapor), style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx)
             report.createdAt?.take(10)?.let {
                 Text(it, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
             }

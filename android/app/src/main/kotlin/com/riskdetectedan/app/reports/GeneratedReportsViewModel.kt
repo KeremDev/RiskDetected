@@ -1,5 +1,6 @@
 package com.riskdetectedan.app.reports
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
@@ -9,6 +10,8 @@ import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.reports.Report
 import com.riskdetectedan.core.data.reports.ReportsRepository
 import com.riskdetectedan.feature.reports.ReportFile
+import com.riskdetectedan.core.designsystem.R as RdR
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,8 +26,6 @@ sealed interface GeneratedReportsUiState {
     data class Failed(val error: AppErrorMessage) : GeneratedReportsUiState
 }
 
-private const val REPORTS_CONTEXT = "Rapor işlemi tamamlanamadı"
-
 /**
  * Faz R — real "Raporlar" tab, distinct from `feature:reports`'s [com.riskdetectedan.feature.reports.HistoryViewModel]
  * (that one lists the `analyses` history/Analizler tab and *generates* new reports; this one lists
@@ -35,6 +36,7 @@ private const val REPORTS_CONTEXT = "Rapor işlemi tamamlanamadı"
  */
 @HiltViewModel
 class GeneratedReportsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val reportsRepository: ReportsRepository,
 ) : ViewModel() {
@@ -72,7 +74,10 @@ class GeneratedReportsViewModel @Inject constructor(
             _state.value = when (val result = reportsRepository.listReports(userId)) {
                 is RdResult.Success -> GeneratedReportsUiState.Loaded(result.value)
                 is RdResult.Failure -> GeneratedReportsUiState.Failed(
-                    AppErrorMessages.make(result.message, context = REPORTS_CONTEXT),
+                    AppErrorMessages.make(
+                        result.message,
+                        context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                    ),
                 )
             }
         }
@@ -94,7 +99,10 @@ class GeneratedReportsViewModel @Inject constructor(
                         ?: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
                 is RdResult.Failure ->
-                    _reportError.value = AppErrorMessages.make(download.message, context = REPORTS_CONTEXT)
+                    _reportError.value = AppErrorMessages.make(
+                        download.message,
+                        context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                    )
             }
             _openingReportId.value = null
         }
@@ -124,7 +132,10 @@ class GeneratedReportsViewModel @Inject constructor(
                         _state.value = current.copy(items = current.items.filterNot { it.id == report.id })
                     }
                 }
-                is RdResult.Failure -> _deleteError.value = AppErrorMessages.make(result.message, context = REPORTS_CONTEXT)
+                is RdResult.Failure -> _deleteError.value = AppErrorMessages.make(
+                    result.message,
+                    context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                )
             }
             _deletingReportId.value = null
         }

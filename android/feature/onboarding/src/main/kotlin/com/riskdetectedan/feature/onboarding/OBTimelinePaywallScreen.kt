@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -79,13 +83,14 @@ private enum class TimelinePlan { Yearly, Monthly }
 
 private data class TimelineFeature(val title: String, val badge: String? = null)
 
-private val plusFeatures = listOf(
-    TimelineFeature("Detaylı Analiz"),
-    TimelineFeature("Risk Analizi (Fine-Kinney ve 5*5)"),
-    TimelineFeature("PDF/Excel Rapor"),
-    TimelineFeature("Firma Yönetimi"),
-    TimelineFeature("Çoklu Fotoğraf Analizi", badge = "Yeni"),
-    TimelineFeature("Sektör Bazlı Analiz"),
+@Composable
+private fun plusFeatures() = listOf(
+    TimelineFeature(stringResource(RdR.string.rd_detayli_analiz)),
+    TimelineFeature(stringResource(RdR.string.rd_risk_analizi_yontemler)),
+    TimelineFeature(stringResource(RdR.string.rd_pdf_excel_rapor)),
+    TimelineFeature(stringResource(RdR.string.rd_firma_yonetimi)),
+    TimelineFeature(stringResource(RdR.string.rd_coklu_fotograf_analizi), badge = stringResource(RdR.string.rd_yeni)),
+    TimelineFeature(stringResource(RdR.string.rd_sektor_bazli_analiz)),
 )
 
 /**
@@ -98,8 +103,8 @@ private val plusFeatures = listOf(
  * Real RevenueCat purchase now, via [OBTimelinePaywallViewModel]/[com.riskdetectedan.core.data.billing.BillingRepository]
  * (previously the real gap this doc comment used to justify away: this screen never fetched live
  * offerings, so "Devam et" always just skipped past a fake plans page). While packages are
- * loading or unavailable the price line/CTA fall back to the pre-existing static Google Play
- * copy — same honest degrade `feature:paywall`'s empty-packages state uses, not a soft-lock.
+ * loading or unavailable the price line stays honest and the purchase CTA remains disabled;
+ * only the explicit free-continuation action may dismiss without a store package.
  * "Devam et" now attempts a real purchase for the selected plan and only continues onboarding on
  * success (or on the free "Şimdilik ücretsiz devam et" tap, which still always continues).
  * Not ported: the processing overlay's own visual chrome (borrowed as a disabled/"İşleniyor..."
@@ -133,7 +138,10 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
         ) {
             Spacer(Modifier.height(48.dp))
             Text(
-                if (selectedPlan == TimelinePlan.Yearly) "Yıllık Plan Nasıl Çalışır" else "Plus Aboneliğin Gücünü Hemen Kullanın",
+                stringResource(
+                    if (selectedPlan == TimelinePlan.Yearly) RdR.string.rd_yillik_plan_nasil_calisir
+                    else RdR.string.rd_plus_gucunu_hemen_kullanin,
+                ),
                 style = RdFontStyle.Title1.toTextStyle(),
                 color = colors.black,
                 modifier = Modifier.padding(end = 52.dp),
@@ -158,7 +166,7 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
                 .background(colors.white.copy(alpha = 0.94f))
                 .border(1.dp, colors.line, CircleShape),
         ) {
-            Icon(Icons.Filled.Close, contentDescription = "Kapat", tint = colors.black, modifier = Modifier.size(15.dp))
+            Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kapat), tint = colors.black, modifier = Modifier.size(15.dp))
         }
 
         Column(
@@ -171,41 +179,46 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             RdPrimaryButton(
-                text = if (selectedPlan == TimelinePlan.Yearly) "Devam et" else "Aboneliği başlat",
+                text = stringResource(
+                    if (selectedPlan == TimelinePlan.Yearly) RdR.string.rd_devam_et else RdR.string.rd_aboneligi_baslat,
+                ),
                 onClick = {
                     val activityRef = activity
                     if (selectedPackage != null && activityRef != null) {
                         viewModel.purchase(activityRef, selectedPackage, onPurchased = onDismiss)
-                    } else {
-                        // Unavailable/loading fallback — no real package to purchase yet,
-                        // matches this screen's pre-existing behavior.
-                        onDismiss()
                     }
                 },
-                enabled = !isPurchasing,
+                enabled = !isPurchasing && selectedPackage != null && activity != null,
                 loading = isPurchasing,
-                loadingLabel = "İşleniyor...",
+                loadingLabel = stringResource(RdR.string.rd_isleniyor),
                 style = RdButtonStyle.Onyx,
             )
 
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onDismiss, enabled = !isPurchasing) {
-                Text("Şimdilik ücretsiz devam et", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                Text(stringResource(RdR.string.rd_simdilik_ucretsiz_devam_et), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
             }
 
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Geri yükle", style = RdFontStyle.Caption.toTextStyle(), color = colors.black)
+                Text(
+                    stringResource(RdR.string.rd_geri_yukle),
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.black,
+                    modifier = Modifier.clickable(enabled = !isPurchasing) {
+                        viewModel.restorePurchases(onRestored = onDismiss)
+                    },
+                )
                 Box(modifier = Modifier.size(3.dp).clip(CircleShape).background(colors.slate.copy(alpha = 0.35f)))
                 Text(
-                    "Kullanım Şartları",
+                    stringResource(RdR.string.rd_kullanim_sartlari),
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
                     modifier = Modifier.clickable { legalDocumentKind = "terms" },
                 )
                 Box(modifier = Modifier.size(3.dp).clip(CircleShape).background(colors.slate.copy(alpha = 0.35f)))
                 Text(
-                    "Gizlilik Politikası",
+                    stringResource(RdR.string.rd_gizlilik_politikasi),
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
                     modifier = Modifier.clickable { legalDocumentKind = "privacy" },
@@ -235,7 +248,7 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
                 }
             },
             confirmButton = {
-                TextButton(onClick = viewModel::clearPurchaseError) { Text("Tamam") }
+                TextButton(onClick = viewModel::clearPurchaseError) { Text(stringResource(RdR.string.rd_tamam)) }
             },
         )
     }
@@ -261,15 +274,16 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
 /** Real price when the package loaded, otherwise the pre-existing static Google Play copy
  * (loading, signed-out, offerings-fetch-failed, or no Plus package configured on this offering
  * yet — all fold into the same honest fallback). */
+@Composable
 private fun priceLine(plan: TimelinePlan, billingPackage: BillingPackage?): String = when {
     plan == TimelinePlan.Yearly && billingPackage != null ->
-        "Yıllık plan · ${billingPackage.formattedPrice}/yıl"
+        stringResource(RdR.string.rd_yillik_fiyat_format, billingPackage.formattedPrice)
     plan == TimelinePlan.Yearly ->
-        "Yıllık plan · fiyat ve varsa uygun teklif Google Play'de gösterilir"
+        stringResource(RdR.string.rd_yillik_google_play_fiyat)
     billingPackage != null ->
-        "Aylık plan · istediğin zaman iptal · ${billingPackage.formattedPrice}/ay"
+        stringResource(RdR.string.rd_aylik_fiyat_format, billingPackage.formattedPrice)
     else ->
-        "Aylık plan · istediğin zaman iptal · fiyat Google Play'de gösterilir"
+        stringResource(RdR.string.rd_aylik_google_play_fiyat)
 }
 
 /** RevenueCat's `PurchaseParams.Builder` needs an Activity (to launch Google Play's billing
@@ -295,12 +309,12 @@ private fun PlanToggle(selectedPlan: TimelinePlan, onSelect: (TimelinePlan) -> U
                 .border(1.dp, colors.line, CircleShape)
                 .padding(4.dp),
         ) {
-            PlanPill("Yıllık", selected = selectedPlan == TimelinePlan.Yearly, onClick = { onSelect(TimelinePlan.Yearly) }, modifier = Modifier.weight(1f))
-            PlanPill("Aylık", selected = selectedPlan == TimelinePlan.Monthly, onClick = { onSelect(TimelinePlan.Monthly) }, modifier = Modifier.weight(1f))
+            PlanPill(stringResource(RdR.string.rd_yillik), selected = selectedPlan == TimelinePlan.Yearly, onClick = { onSelect(TimelinePlan.Yearly) }, modifier = Modifier.weight(1f))
+            PlanPill(stringResource(RdR.string.rd_aylik), selected = selectedPlan == TimelinePlan.Monthly, onClick = { onSelect(TimelinePlan.Monthly) }, modifier = Modifier.weight(1f))
         }
         if (selectedPlan == TimelinePlan.Yearly) {
             Spacer(Modifier.height(7.dp))
-            Text("%17 İndirim", style = RdFontStyle.Caption.toTextStyle(), color = colors.green)
+            Text(stringResource(RdR.string.rd_yuzde_17_i_ndirim), style = RdFontStyle.Caption.toTextStyle(), color = colors.green)
         }
     }
 }
@@ -324,6 +338,7 @@ private fun PlanPill(label: String, selected: Boolean, onClick: () -> Unit, modi
 @Composable
 private fun TimelineCard(plan: TimelinePlan) {
     val colors = RdTheme.colors
+    val features = plusFeatures()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -333,12 +348,12 @@ private fun TimelineCard(plan: TimelinePlan) {
             .padding(14.dp),
     ) {
         if (plan == TimelinePlan.Yearly) {
-            TimelineStep(Icons.Filled.Lock, colors.green, "Bugün", "Yıllık Plus özelliklerini ve Google Play fiyatını incele.", plusFeatures, isLast = false)
-            TimelineStep(Icons.Filled.Notifications, Color(0xFFF0A400), "5 gün", "Denemen bitmeden sana hatırlatma göndeririz.", emptyList(), isLast = false)
-            TimelineStep(Icons.Filled.WorkspacePremium, Color(0xFFF0A400), "7 gün · Yenileme", "Devam edersen yıllık plan başlar; istediğin zaman iptal edebilirsin.", emptyList(), isLast = true)
+            TimelineStep(Icons.Filled.Lock, colors.green, stringResource(RdR.string.rd_bugun), stringResource(RdR.string.rd_yillik_plus_incele), features, isLast = false)
+            TimelineStep(Icons.Filled.Notifications, Color(0xFFF0A400), stringResource(RdR.string.rd_bes_gun), stringResource(RdR.string.rd_deneme_hatirlatma), emptyList(), isLast = false)
+            TimelineStep(Icons.Filled.WorkspacePremium, Color(0xFFF0A400), stringResource(RdR.string.rd_yedi_gun_yenileme), stringResource(RdR.string.rd_yillik_plan_baslar), emptyList(), isLast = true)
         } else {
-            TimelineStep(Icons.Filled.Lock, Color(0xFFF0A400), "Bugün", "Tüm özellikler hemen aktif olur, ödeme başlar.", plusFeatures, isLast = false)
-            TimelineStep(Icons.Filled.CalendarMonth, colors.green, "Her ay", "Aylık plan otomatik yenilenir. İstediğin zaman iptal edebilirsin.", emptyList(), isLast = true)
+            TimelineStep(Icons.Filled.Lock, Color(0xFFF0A400), stringResource(RdR.string.rd_bugun), stringResource(RdR.string.rd_ozellikler_aktif_odeme_baslar), features, isLast = false)
+            TimelineStep(Icons.Filled.CalendarMonth, colors.green, stringResource(RdR.string.rd_her_ay), stringResource(RdR.string.rd_aylik_plan_yenilenir), emptyList(), isLast = true)
         }
     }
 }
@@ -441,4 +456,3 @@ private fun TimelineStep(
         }
     }
 }
-

@@ -1,6 +1,7 @@
 package com.riskdetectedan.feature.onboarding
 
 import android.app.Activity
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revenuecat.purchases.PurchasesTransactionException
@@ -14,6 +15,10 @@ import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
 import com.riskdetectedan.core.data.paywall.PaywallEventName
 import com.riskdetectedan.core.data.paywall.PaywallEventRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
+import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
+import com.riskdetectedan.core.data.release.ReleasePolicyRepository
+import com.riskdetectedan.core.designsystem.R as RdR
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +27,6 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
-private const val PURCHASE_CONTEXT = "Satın alma doğrulanamadı"
 private const val EVENT_SOURCE = "onboarding_v2"
 
 /** The two real packages [OBTimelinePaywallScreen] offers — always Plus (onboarding upsells the
@@ -52,9 +56,11 @@ sealed interface OBTimelinePaywallUiState {
  */
 @HiltViewModel
 class OBTimelinePaywallViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val billingRepository: BillingRepository,
     private val paywallEventRepository: PaywallEventRepository,
+    private val releasePolicyRepository: ReleasePolicyRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<OBTimelinePaywallUiState>(OBTimelinePaywallUiState.Loading)
@@ -79,6 +85,10 @@ class OBTimelinePaywallViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
+            if (!releasePolicyRepository.resolveGate(AndroidRuntimeGateName.Payments).enabled) {
+                _state.value = OBTimelinePaywallUiState.Unavailable
+                return@launch
+            }
             when (billingRepository.configure(userId)) {
                 is RdResult.Failure -> {
                     _state.value = OBTimelinePaywallUiState.Unavailable
@@ -119,6 +129,15 @@ class OBTimelinePaywallViewModel @Inject constructor(
         _isPurchasing.value = true
         _purchaseError.value = null
         viewModelScope.launch {
+            val gate = releasePolicyRepository.resolveGate(AndroidRuntimeGateName.Payments)
+            if (!gate.enabled) {
+                _isPurchasing.value = false
+                _purchaseError.value = AppErrorMessages.make(
+                    context.getString(RdR.string.rd_satin_alma_kapali_format, gate.reason),
+                    context = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
+                )
+                return@launch
+            }
             recordEvent(userId, PaywallEventName.PurchaseStarted, selectedTier = billingPackage.tier, billingPackage = billingPackage)
             when (val result = billingRepository.purchase(activity, billingPackage)) {
                 is RdResult.Success -> {
@@ -132,8 +151,8 @@ class OBTimelinePaywallViewModel @Inject constructor(
                     if (cause is PurchasesTransactionException && cause.userCancelled) return@launch
                     _purchaseError.value = AppErrorMessages.makePurchase(
                         cause ?: RuntimeException(result.message),
-                        context = PURCHASE_CONTEXT,
-                        fallbackTitle = PURCHASE_CONTEXT,
+                        context = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
+                        fallbackTitle = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
                     )
                     recordEvent(
                         userId,
@@ -149,6 +168,57 @@ class OBTimelinePaywallViewModel @Inject constructor(
 
     fun clearPurchaseError() {
         _purchaseError.value = null
+    }
+
+    fun restorePurchases(onRestored: () -> Unit) {
+        if (_isPurchasing.value) return
+        val userId = authRepository.currentUserId ?: return
+        _isPurchasing.value = true
+        _purchaseError.value = null
+        viewModelScope.launch {
+            val gate = releasePolicyRepository.resolveGate(AndroidRuntimeGateName.Payments)
+            if (!gate.enabled) {
+                _isPurchasing.value = false
+                _purchaseError.value = AppErrorMessages.make(
+                    context.getString(RdR.string.rd_satin_alma_kapali_format, gate.reason),
+                    context = context.getString(RdR.string.rd_satin_alimlar_geri_yuklenemedi),
+                )
+                return@launch
+            }
+            when (val configured = billingRepository.configure(userId)) {
+                is RdResult.Failure -> {
+                    _isPurchasing.value = false
+                    _purchaseError.value = AppErrorMessages.make(
+                        configured.message,
+                        context = context.getString(RdR.string.rd_satin_alimlar_geri_yuklenemedi),
+                    )
+                    return@launch
+                }
+                is RdResult.Success -> Unit
+            }
+            recordEvent(userId, PaywallEventName.RestoreTap, selectedTier = null)
+            when (val result = billingRepository.restorePurchases()) {
+                is RdResult.Success -> {
+                    _isPurchasing.value = false
+                    if (result.value.isPaid) {
+                        onRestored()
+                    } else {
+                        _purchaseError.value = AppErrorMessages.make(
+                            context.getString(RdR.string.rd_aktif_abonelik_bulunamadi),
+                            context = context.getString(RdR.string.rd_satin_alimlar_geri_yuklenemedi),
+                        )
+                    }
+                }
+                is RdResult.Failure -> {
+                    _isPurchasing.value = false
+                    _purchaseError.value = AppErrorMessages.makePurchase(
+                        result.cause ?: RuntimeException(result.message),
+                        context = context.getString(RdR.string.rd_satin_alimlar_geri_yuklenemedi),
+                        fallbackTitle = context.getString(RdR.string.rd_satin_alimlar_geri_yuklenemedi),
+                    )
+                }
+            }
+        }
     }
 
     private fun recordEvent(

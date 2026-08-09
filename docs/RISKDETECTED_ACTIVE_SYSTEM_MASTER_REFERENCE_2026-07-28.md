@@ -1166,7 +1166,7 @@ Request/support ID ve unique sözleşmeler duplicate rapor üretimini sınırlar
 
 ### 18.5 Rapor kotası
 
-- Free: ayda 3 standart rapor.
+- Free: günde 1 standart rapor.
 - Plus: ayda 150.
 - Pro: ayda 750.
 

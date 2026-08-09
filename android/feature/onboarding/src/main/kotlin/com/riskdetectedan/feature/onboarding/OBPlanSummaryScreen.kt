@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -81,9 +85,18 @@ import kotlinx.coroutines.delay
 @Composable
 fun OBPlanSummaryScreen(state: OnboardingUiState, onNext: () -> Unit) {
     val colors = RdTheme.colors
-    val certificateLabel = state.certificate?.label ?: "A Sınıfı"
-    val hazardsLabel = if (state.hazards.isEmpty()) "Çok Tehlikeli" else state.hazards.joinToString(" · ") { it.label }
-    val primarySectorLabel = state.sectors.firstOrNull()?.label ?: "İnşaat"
+    val certificateLabel = state.certificate?.let { certificateLabel(it) }
+        ?: stringResource(RdR.string.rd_cert_a)
+    val hazardLabels = buildList {
+        state.hazards.forEach { add(hazardLabel(it)) }
+    }
+    val hazardsLabel = if (hazardLabels.isEmpty()) {
+        stringResource(RdR.string.rd_hazard_critical)
+    } else {
+        hazardLabels.joinToString(" · ")
+    }
+    val primarySectorLabel = state.sectors.firstOrNull()?.let { onboardingSectorLabel(it) }
+        ?: stringResource(RdR.string.rd_sector_construction)
 
     val context = remember(state.certificate, state.hazards, state.sectors, state.frequency) {
         OnboardingPersonalPlanContext.make(
@@ -123,7 +136,7 @@ fun OBPlanSummaryScreen(state: OnboardingUiState, onNext: () -> Unit) {
                     .background(colors.green),
             )
             Spacer(Modifier.width(RdSpacing.sm))
-            Text("HAZIR", style = RdFontStyle.Data.toTextStyle(), color = colors.greenDark)
+            Text(stringResource(RdR.string.rd_hazir), style = RdFontStyle.Data.toTextStyle(), color = colors.greenDark)
         }
 
         Column(
@@ -156,7 +169,7 @@ fun OBPlanSummaryScreen(state: OnboardingUiState, onNext: () -> Unit) {
                 Icon(Icons.Filled.Lock, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(13.dp))
                 Spacer(Modifier.width(9.dp))
                 Text(
-                    "Planını hesabına kaydedelim; fiyat ve uygun teklifleri Google Play'de doğrula.",
+                    stringResource(RdR.string.rd_plan_kaydet_google_play),
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
                 )
@@ -165,7 +178,7 @@ fun OBPlanSummaryScreen(state: OnboardingUiState, onNext: () -> Unit) {
         }
 
         RdFooter {
-            RdPrimaryButton(text = "Hesabımı Oluştur", onClick = onNext, style = RdButtonStyle.Onyx)
+            RdPrimaryButton(text = stringResource(RdR.string.rd_hesabimi_olustur), onClick = onNext, style = RdButtonStyle.Onyx)
         }
     }
 }

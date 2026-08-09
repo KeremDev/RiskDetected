@@ -18,6 +18,11 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+  ANDROID_RUNTIME_GATE_KEYS,
+  type AndroidRuntimeGateName,
+  evaluateAndroidRuntimeGates,
+} from "../_shared/android-runtime-gates.ts";
+import {
   notificationContentError,
   type NotificationDestination,
   notificationDestinationError,
@@ -63,6 +68,7 @@ type PushToken = {
   token: string;
   environment: "sandbox" | "production";
   provider: "apns" | "fcm";
+  clientBuild: number | null;
 };
 
 /** Normalized shape both the APNs and FCM delivery loops reduce their results into, so the
@@ -85,6 +91,35 @@ type PreferenceRow = {
   progress_milestones: boolean;
   app_reminders: boolean;
 };
+
+async function filterAndroidRuntimeEnabledTokens(
+  supabase: SupabaseAdminClient,
+  tokens: PushToken[],
+): Promise<PushToken[]> {
+  if (!tokens.some((token) => token.provider === "fcm")) return tokens;
+
+  const names = Object.keys(
+    ANDROID_RUNTIME_GATE_KEYS,
+  ) as AndroidRuntimeGateName[];
+  const { data, error } = await supabase
+    .from("app_feature_flags")
+    .select("key,value")
+    .in("key", Object.values(ANDROID_RUNTIME_GATE_KEYS));
+  if (error || !Array.isArray(data)) {
+    return tokens.filter((token) => token.provider !== "fcm");
+  }
+  const rows = new Map<string, unknown>(
+    data.map((row: Record<string, unknown>) => [String(row.key), row.value]),
+  );
+  const values = Object.fromEntries(
+    names.map((name) => [name, rows.get(ANDROID_RUNTIME_GATE_KEYS[name])]),
+  ) as Partial<Record<AndroidRuntimeGateName, unknown>>;
+
+  return tokens.filter((token) =>
+    token.provider !== "fcm" ||
+    evaluateAndroidRuntimeGates(values, token.clientBuild).notifications.enabled
+  );
+}
 
 type SupabaseAdminClient = ReturnType<typeof createClient<any>>;
 
@@ -226,7 +261,8 @@ async function makeFcmProviderToken(): Promise<
   const now = Date.now();
   if (
     cachedFcmToken &&
-    now - cachedFcmToken.createdAtMilliseconds < cachedFcmToken.validForMilliseconds
+    now - cachedFcmToken.createdAtMilliseconds <
+      cachedFcmToken.validForMilliseconds
   ) {
     return {
       accessToken: cachedFcmToken.value,
@@ -285,7 +321,10 @@ async function makeFcmProviderToken(): Promise<
     createdAtMilliseconds: now,
     // A 5-minute safety margin before the token's real expiry (typically 3600s) — same margin
     // philosophy as APNs's 45-minute cache against a JWT technically valid ~60 minutes.
-    validForMilliseconds: Math.max(60_000, ((body.expires_in ?? 3600) - 300) * 1000),
+    validForMilliseconds: Math.max(
+      60_000,
+      ((body.expires_in ?? 3600) - 300) * 1000,
+    ),
   };
   return { accessToken: body.access_token, projectId: account.project_id };
 }
@@ -707,7 +746,7 @@ serve(async (req) => {
 
   const { data: tokens, error: tokenError } = await supabase
     .from("push_device_tokens")
-    .select("id,token,environment,provider")
+    .select("id,token,environment,provider,client_build")
     .eq("user_id", request.user_id)
     .eq("notifications_enabled", true);
   if (tokenError) {
@@ -719,6 +758,7 @@ serve(async (req) => {
     token: string;
     environment?: string | null;
     provider?: string | null;
+    client_build?: string | null;
   }>).map((token) => ({
     id: token.id,
     token: token.token,
@@ -729,11 +769,23 @@ serve(async (req) => {
     // Legacy rows predate the `provider` column (F2) and are all iOS — default to "apns" rather
     // than reject them, same additive-migration spirit as `fallbackEnvironment` above.
     provider: token.provider === "fcm" ? "fcm" : "apns",
+    clientBuild: (() => {
+      const parsed = Math.round(Number(token.client_build));
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    })(),
   })) as PushToken[];
-  const apnsTokens = deviceTokens.filter((token) => token.provider === "apns");
-  const fcmTokens = deviceTokens.filter((token) => token.provider === "fcm");
+  const runtimeEnabledTokens = await filterAndroidRuntimeEnabledTokens(
+    supabase,
+    deviceTokens,
+  );
+  const apnsTokens = runtimeEnabledTokens.filter((token) =>
+    token.provider === "apns"
+  );
+  const fcmTokens = runtimeEnabledTokens.filter((token) =>
+    token.provider === "fcm"
+  );
   const environments = [
-    ...new Set(deviceTokens.map((token) => token.environment)),
+    ...new Set(runtimeEnabledTokens.map((token) => token.environment)),
   ]
     .sort();
 
@@ -745,8 +797,10 @@ serve(async (req) => {
       kind: notificationKind,
       source,
       destination: destination as NotificationDestination | null,
-      status: deviceTokens.length > 0 ? "queued" : "skipped",
-      lastError: deviceTokens.length > 0 ? null : "no_active_device_tokens",
+      status: runtimeEnabledTokens.length > 0 ? "queued" : "skipped",
+      lastError: runtimeEnabledTokens.length > 0
+        ? null
+        : "no_active_device_tokens",
     });
   } catch (error) {
     return json(500, {
@@ -786,7 +840,7 @@ serve(async (req) => {
     });
   }
 
-  if (deviceTokens.length === 0) {
+  if (runtimeEnabledTokens.length === 0) {
     return json(200, {
       status: "skipped",
       reason: "no_active_device_tokens",
@@ -808,7 +862,7 @@ serve(async (req) => {
     } catch (error) {
       await supabase.from("notification_events").update({
         status: "failed",
-        failure_count: deviceTokens.length,
+        failure_count: runtimeEnabledTokens.length,
         last_error: safeErrorText(error),
       }).eq("id", eventID);
       return json(500, {
@@ -824,7 +878,7 @@ serve(async (req) => {
     } catch (error) {
       await supabase.from("notification_events").update({
         status: "failed",
-        failure_count: deviceTokens.length,
+        failure_count: runtimeEnabledTokens.length,
         last_error: safeErrorText(error),
       }).eq("id", eventID);
       return json(500, {
@@ -865,15 +919,22 @@ serve(async (req) => {
     event_id: eventID,
   };
 
-  // FCM's `data` payload must be a flat string map — unlike APNs's `data` (nested JSON is fine
-  // inside `aps`'s sibling keys), so non-string values (numbers, booleans, nested objects
-  // `notificationPayloadError` otherwise allows) are JSON-stringified per key.
-  const fcmDataPayload = Object.fromEntries(
-    Object.entries({ ...payloadData, kind: notificationKind, event_id: eventID })
-      .map((
-        [key, value],
-      ) => [key, typeof value === "string" ? value : JSON.stringify(value)]),
-  );
+  // Android receives a typed, minimal deep-link contract only. Display title/body stay in the
+  // FCM notification envelope; arbitrary request data, PII and raw message content never enter
+  // the FCM data map. APNs remains byte-for-byte compatible with the existing iOS payload.
+  const fcmDataPayload: Record<string, string> = {
+    type: notificationKind,
+  };
+  for (const key of ["analysis_id", "report_id"] as const) {
+    const value = payloadData[key];
+    if (
+      typeof value === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        .test(value)
+    ) {
+      fcmDataPayload[key] = value;
+    }
+  }
 
   const apnsResults = apnsTokens.length === 0 ? [] : await mapWithConcurrency(
     apnsTokens,
@@ -905,7 +966,11 @@ serve(async (req) => {
           }),
       });
       await finalizeTokenDelivery(token, result.final);
-      return { token, outcome: result.final.outcome, reason: result.final.reason };
+      return {
+        token,
+        outcome: result.final.outcome,
+        reason: result.final.reason,
+      };
     },
   );
 
@@ -914,8 +979,9 @@ serve(async (req) => {
     4,
     async (token): Promise<DeliveryOutcome> => {
       const result = await deliverToFcm({
-        url:
-          `https://fcm.googleapis.com/v1/projects/${fcmAuth!.projectId}/messages:send`,
+        url: `https://fcm.googleapis.com/v1/projects/${
+          fcmAuth!.projectId
+        }/messages:send`,
         headers: {
           authorization: `Bearer ${fcmAuth!.accessToken}`,
           "content-type": "application/json",
@@ -945,7 +1011,11 @@ serve(async (req) => {
           }),
       });
       await finalizeTokenDelivery(token, result.final);
-      return { token, outcome: result.final.outcome, reason: result.final.reason };
+      return {
+        token,
+        outcome: result.final.outcome,
+        reason: result.final.reason,
+      };
     },
   );
 
@@ -953,14 +1023,17 @@ serve(async (req) => {
 
   const sent = results.filter(({ outcome }) => outcome === "accepted").length;
   const failed = results.length - sent;
-  const ambiguous =
-    results.filter(({ outcome }) => outcome === "ambiguous").length;
+  const ambiguous = results.filter(({ outcome }) =>
+    outcome === "ambiguous"
+  ).length;
   const transientExhausted = results.some(({ outcome }) =>
     outcome === "transient"
   );
   const lastError = results
     .map(({ token, outcome, reason }) =>
-      outcome === "accepted" ? null : `${token.environment}:${outcome}:${reason}`
+      outcome === "accepted"
+        ? null
+        : `${token.environment}:${outcome}:${reason}`
     )
     .filter(Boolean)
     .at(-1) ?? null;

@@ -1,5 +1,9 @@
 package com.riskdetectedan.app.navigation
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +37,7 @@ import com.riskdetectedan.core.designsystem.RdTheme
 @Composable
 fun RdTabBar(active: RdTab, onTabSelected: (RdTab) -> Unit, onQuickScan: () -> Unit, modifier: Modifier = Modifier) {
     val colors = RdTheme.colors
+    val quickScanContentDescription = stringResource(RdR.string.rd_hizli_tarama_baslat)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -64,7 +69,7 @@ fun RdTabBar(active: RdTab, onTabSelected: (RdTab) -> Unit, onQuickScan: () -> U
                 .background(colors.white)
                 .border(1.dp, colors.white.copy(alpha = 0.82f), CircleShape)
                 .clickable(onClick = onQuickScan)
-                .semantics { contentDescription = "Hızlı tarama başlat" },
+                .semantics { contentDescription = quickScanContentDescription },
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Filled.CenterFocusStrong, contentDescription = null, tint = colors.green, modifier = Modifier.size(23.dp))
@@ -75,13 +80,14 @@ fun RdTabBar(active: RdTab, onTabSelected: (RdTab) -> Unit, onQuickScan: () -> U
 @Composable
 private fun TabButton(tab: RdTab, isActive: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = RdTheme.colors
+    val tabLabel = stringResource(tab.labelRes)
     Box(
         modifier = modifier
             .height(44.dp)
             .clip(CircleShape)
             .background(if (isActive) colors.fog.copy(alpha = 0.9f) else Color.Transparent)
             .clickable(onClick = onClick)
-            .semantics { contentDescription = tab.label },
+            .semantics { contentDescription = tabLabel },
         contentAlignment = Alignment.Center,
     ) {
         Icon(

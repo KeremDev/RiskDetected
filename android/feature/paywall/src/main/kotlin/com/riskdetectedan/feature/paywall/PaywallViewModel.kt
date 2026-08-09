@@ -1,6 +1,7 @@
 package com.riskdetectedan.feature.paywall
 
 import android.app.Activity
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revenuecat.purchases.PurchasesTransactionException
@@ -14,6 +15,10 @@ import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
 import com.riskdetectedan.core.data.paywall.PaywallEventName
 import com.riskdetectedan.core.data.paywall.PaywallEventRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
+import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
+import com.riskdetectedan.core.data.release.ReleasePolicyRepository
+import com.riskdetectedan.core.designsystem.R as RdR
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,13 +27,21 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
-private const val PURCHASE_CONTEXT = "Satın alma doğrulanamadı"
-
 sealed interface PaywallUiState {
     data object Loading : PaywallUiState
     data object SignedOut : PaywallUiState
     data class Loaded(val packages: List<BillingPackage>, val currentTier: SubscriptionTier) : PaywallUiState
     data class Failed(val error: AppErrorMessage) : PaywallUiState
+}
+
+enum class PaywallPlan(val tier: SubscriptionTier) {
+    Plus(SubscriptionTier.Plus),
+    Pro(SubscriptionTier.Pro),
+}
+
+enum class PaywallBilling(val wireValue: String) {
+    Monthly("monthly"),
+    Yearly("yearly"),
 }
 
 /**
@@ -40,9 +53,11 @@ sealed interface PaywallUiState {
  */
 @HiltViewModel
 class PaywallViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val billingRepository: BillingRepository,
     private val paywallEventRepository: PaywallEventRepository,
+    private val releasePolicyRepository: ReleasePolicyRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<PaywallUiState>(PaywallUiState.Loading)
@@ -53,6 +68,12 @@ class PaywallViewModel @Inject constructor(
 
     private val _purchaseError = MutableStateFlow<AppErrorMessage?>(null)
     val purchaseError: StateFlow<AppErrorMessage?> = _purchaseError.asStateFlow()
+
+    private val _selectedPlan = MutableStateFlow(PaywallPlan.Plus)
+    val selectedPlan: StateFlow<PaywallPlan> = _selectedPlan.asStateFlow()
+
+    private val _selectedBilling = MutableStateFlow(PaywallBilling.Yearly)
+    val selectedBilling: StateFlow<PaywallBilling> = _selectedBilling.asStateFlow()
 
     // One funnel session per ViewModel instance — mirrors iOS's per-presentation
     // funnel_session_id (a fresh UUID each time the paywall is shown, reused by every event
@@ -71,10 +92,23 @@ class PaywallViewModel @Inject constructor(
         }
         _state.value = PaywallUiState.Loading
         viewModelScope.launch {
+            val runtimeGate = releasePolicyRepository.resolveGate(AndroidRuntimeGateName.Payments)
+            if (!runtimeGate.enabled) {
+                _state.value = PaywallUiState.Failed(
+                    AppErrorMessages.make(
+                        context.getString(RdR.string.rd_android_satin_alma_kapali_format, runtimeGate.reason),
+                        context = context.getString(RdR.string.rd_abonelik_yuklenemedi),
+                    ),
+                )
+                return@launch
+            }
             when (val configured = billingRepository.configure(userId)) {
                 is RdResult.Failure -> {
                     _state.value = PaywallUiState.Failed(
-                        AppErrorMessages.make(configured.message, context = "Abonelik yüklenemedi"),
+                        AppErrorMessages.make(
+                            configured.message,
+                            context = context.getString(RdR.string.rd_abonelik_yuklenemedi),
+                        ),
                     )
                     return@launch
                 }
@@ -85,7 +119,10 @@ class PaywallViewModel @Inject constructor(
                 is RdResult.Success -> result.value
                 is RdResult.Failure -> {
                     _state.value = PaywallUiState.Failed(
-                        AppErrorMessages.make(result.message, context = "Abonelik yüklenemedi"),
+                        AppErrorMessages.make(
+                            result.message,
+                            context = context.getString(RdR.string.rd_abonelik_yuklenemedi),
+                        ),
                     )
                     return@launch
                 }
@@ -99,7 +136,53 @@ class PaywallViewModel @Inject constructor(
                 is RdResult.Failure -> SubscriptionTier.Free
             }
             _state.value = PaywallUiState.Loaded(packages, tier)
-            recordEvent(userId, PaywallEventName.View, selectedTier = tier)
+            _selectedPlan.value = if (tier == SubscriptionTier.Free) PaywallPlan.Plus else PaywallPlan.Pro
+            alignBillingWithAvailablePackage(packages)
+            recordEvent(userId, PaywallEventName.View, selectedTier = _selectedPlan.value.tier)
+        }
+    }
+
+    fun selectPlan(plan: PaywallPlan) {
+        if (_selectedPlan.value == plan || _isPurchasing.value) return
+        _selectedPlan.value = plan
+        _selectedBilling.value = PaywallBilling.Yearly
+        val packages = (_state.value as? PaywallUiState.Loaded)?.packages.orEmpty()
+        alignBillingWithAvailablePackage(packages)
+        authRepository.currentUserId?.let {
+            recordEvent(it, PaywallEventName.PlanSelect, selectedTier = plan.tier, billing = _selectedBilling.value)
+        }
+    }
+
+    fun selectBilling(billing: PaywallBilling) {
+        if (_selectedBilling.value == billing || _isPurchasing.value) return
+        _selectedBilling.value = billing
+        authRepository.currentUserId?.let {
+            recordEvent(it, PaywallEventName.BillingSelect, selectedTier = _selectedPlan.value.tier, billing = billing)
+        }
+    }
+
+    fun selectedPackage(): BillingPackage? {
+        val packages = (_state.value as? PaywallUiState.Loaded)?.packages.orEmpty()
+        return packages.firstOrNull { pkg ->
+            pkg.tier == _selectedPlan.value.tier && pkg.matches(_selectedBilling.value)
+        }
+    }
+
+    fun recordClose() {
+        authRepository.currentUserId?.let {
+            recordEvent(it, PaywallEventName.Close, selectedTier = _selectedPlan.value.tier, billing = _selectedBilling.value)
+        }
+    }
+
+    fun recordCtaTap() {
+        authRepository.currentUserId?.let {
+            recordEvent(
+                it,
+                PaywallEventName.CtaTap,
+                selectedTier = _selectedPlan.value.tier,
+                billingPackage = selectedPackage(),
+                billing = _selectedBilling.value,
+            )
         }
     }
 
@@ -109,6 +192,7 @@ class PaywallViewModel @Inject constructor(
         _isPurchasing.value = true
         _purchaseError.value = null
         viewModelScope.launch {
+            if (!ensurePaymentsGateOpen()) return@launch
             recordEvent(
                 userId,
                 PaywallEventName.PurchaseStarted,
@@ -138,8 +222,8 @@ class PaywallViewModel @Inject constructor(
                     }
                     _purchaseError.value = AppErrorMessages.makePurchase(
                         cause ?: RuntimeException(result.message),
-                        context = PURCHASE_CONTEXT,
-                        fallbackTitle = PURCHASE_CONTEXT,
+                        context = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
+                        fallbackTitle = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
                     )
                     recordEvent(
                         userId,
@@ -159,6 +243,7 @@ class PaywallViewModel @Inject constructor(
         _isPurchasing.value = true
         _purchaseError.value = null
         viewModelScope.launch {
+            if (!ensurePaymentsGateOpen()) return@launch
             recordEvent(userId, PaywallEventName.RestoreTap, selectedTier = null)
             when (val result = billingRepository.restorePurchases()) {
                 is RdResult.Success -> {
@@ -170,12 +255,23 @@ class PaywallViewModel @Inject constructor(
                     _isPurchasing.value = false
                     _purchaseError.value = AppErrorMessages.makePurchase(
                         result.cause ?: RuntimeException(result.message),
-                        context = "Satın alımlar geri yüklenemedi",
-                        fallbackTitle = "Satın alımlar geri yüklenemedi",
+                        context = context.getString(RdR.string.rd_satin_alimlar_geri_yuklenemedi),
+                        fallbackTitle = context.getString(RdR.string.rd_satin_alimlar_geri_yuklenemedi),
                     )
                 }
             }
         }
+    }
+
+    private suspend fun ensurePaymentsGateOpen(): Boolean {
+        val runtimeGate = releasePolicyRepository.resolveGate(AndroidRuntimeGateName.Payments)
+        if (runtimeGate.enabled) return true
+        _isPurchasing.value = false
+        _purchaseError.value = AppErrorMessages.make(
+            context.getString(RdR.string.rd_android_satin_alma_kapali_format, runtimeGate.reason),
+            context = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
+        )
+        return false
     }
 
     private fun recordEvent(
@@ -184,6 +280,7 @@ class PaywallViewModel @Inject constructor(
         selectedTier: SubscriptionTier?,
         billingPackage: BillingPackage? = null,
         purchaseError: String? = null,
+        billing: PaywallBilling? = null,
     ) {
         viewModelScope.launch {
             paywallEventRepository.record(
@@ -191,7 +288,7 @@ class PaywallViewModel @Inject constructor(
                 userId = userId,
                 funnelSessionId = funnelSessionId,
                 selectedTier = selectedTier,
-                billing = billingPackage?.productId?.let {
+                billing = billing?.wireValue ?: billingPackage?.productId?.let {
                     when {
                         it.contains("yearly", ignoreCase = true) -> "yearly"
                         it.contains("monthly", ignoreCase = true) -> "monthly"
@@ -200,7 +297,8 @@ class PaywallViewModel @Inject constructor(
                 },
                 productIdentifier = billingPackage?.productId,
                 metadata = PaywallEventMetadata(
-                    currentTier = selectedTier?.name?.lowercase() ?: "unknown",
+                    currentTier = ((_state.value as? PaywallUiState.Loaded)?.currentTier)
+                        ?.name?.lowercase() ?: "unknown",
                     selectedPackageId = billingPackage?.id,
                     purchaseError = purchaseError,
                 ),
@@ -210,5 +308,18 @@ class PaywallViewModel @Inject constructor(
 
     fun clearPurchaseError() {
         _purchaseError.value = null
+    }
+
+    private fun alignBillingWithAvailablePackage(packages: List<BillingPackage>) {
+        if (packages.any { it.tier == _selectedPlan.value.tier && it.matches(_selectedBilling.value) }) return
+        _selectedBilling.value = when {
+            packages.any { it.tier == _selectedPlan.value.tier && it.matches(PaywallBilling.Yearly) } -> PaywallBilling.Yearly
+            else -> PaywallBilling.Monthly
+        }
+    }
+
+    private fun BillingPackage.matches(billing: PaywallBilling): Boolean = when (billing) {
+        PaywallBilling.Monthly -> productId.contains("monthly", ignoreCase = true)
+        PaywallBilling.Yearly -> productId.contains("yearly", ignoreCase = true) || productId.contains("annual", ignoreCase = true)
     }
 }

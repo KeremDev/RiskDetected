@@ -1,5 +1,6 @@
 package com.riskdetectedan.core.data.reports
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -10,9 +11,13 @@ import android.graphics.pdf.PdfDocument
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+import com.riskdetectedan.core.data.R
 import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.analysis.FineKinneyValues
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /** What [PdfReportGenerator] needs to lay out a report — deliberately not a 1:1 port of
  * `PDFReportService.ReportInput` (which carries live `UIImage`/`AnalysisResultBundle` objects);
@@ -35,6 +40,11 @@ data class PdfReportInput(
     val coverPhotoBytes: ByteArray?,
 )
 
+data class GeneratedPdf(
+    val bytes: ByteArray,
+    val pageCount: Int,
+)
+
 /**
  * Real on-device PDF report generator (DEC-09) — Android's `android.graphics.pdf.PdfDocument`
  * counterpart to `PDFReportService.swift`. That file is 1642 lines of hand-tuned Core Graphics
@@ -45,15 +55,18 @@ data class PdfReportInput(
  * real data throughout (no placeholder text anywhere), but does not attempt byte-identical
  * layout/typography replication of every table cell and gradient; same "structure real,
  * decoration reasonably matched, not pixel-identical" policy this whole visual pass has used
- * since Home's rebuild. Per-finding photo association (`source_photo_indices`) isn't ported —
- * [Finding] doesn't carry that column yet — only a single cover photo is placed, documented gap.
+ * since Home's rebuild. Per-finding source-photo associations and field-verification state are
+ * retained as visible report metadata; the primary source image remains the cover photograph.
  */
-object PdfReportGenerator {
+@Singleton
+class PdfReportGenerator @Inject constructor(
+    @ApplicationContext private val context: Context,
+) {
     // A4 at ~150dpi — sharp enough for on-screen PDF viewers/printing without an unreasonably
     // large file for a text-heavy document.
-    private const val PAGE_WIDTH = 1240
-    private const val PAGE_HEIGHT = 1754
-    private const val MARGIN = 60f
+    private val PAGE_WIDTH = 1240
+    private val PAGE_HEIGHT = 1754
+    private val MARGIN = 60f
 
     private val COLOR_ONYX = Color.parseColor("#1A1D1F")
     private val COLOR_SLATE = Color.parseColor("#64748B")
@@ -69,13 +82,13 @@ object PdfReportGenerator {
         else -> Color.parseColor("#94A3B8")
     }
 
-    private fun bandLabel(band: String): String = when (band.lowercase()) {
-        "critical" -> "Kritik"
-        "high" -> "Yüksek"
-        "medium" -> "Orta"
-        "low" -> "Düşük"
-        else -> "Bilinmiyor"
-    }
+    private fun bandLabel(band: String): String = context.getString(when (band.lowercase()) {
+        "critical" -> R.string.rd_pdf_band_critical
+        "high" -> R.string.rd_pdf_band_high
+        "medium" -> R.string.rd_pdf_band_medium
+        "low" -> R.string.rd_pdf_band_low
+        else -> R.string.rd_pdf_band_unknown
+    })
 
     /** Table column budget is a fixed char count, not a wrap — cutting to [max] mid-word without
      * marking it reads like a typo (verified on the real test render: "...malzeme isti" looked
@@ -83,20 +96,23 @@ object PdfReportGenerator {
     private fun truncateWithEllipsis(text: String, max: Int): String =
         if (text.length <= max) text else text.take(max - 1).trimEnd() + "…"
 
-    fun generate(input: PdfReportInput): ByteArray {
+    fun generate(input: PdfReportInput): GeneratedPdf {
         val document = PdfDocument()
-        var pageNumber = 1
+        var nextPageNumber = 1
 
-        pageNumber = drawCoverPage(document, input, pageNumber)
-        pageNumber = drawFindingPages(document, input, pageNumber)
+        nextPageNumber = drawCoverPage(document, input, nextPageNumber)
+        nextPageNumber = drawFindingPages(document, input, nextPageNumber)
         if (input.kind == "risk_analysis") {
-            drawRiskAssessmentPages(document, input, pageNumber)
+            nextPageNumber = drawRiskAssessmentPages(document, input, nextPageNumber)
         }
 
         val output = ByteArrayOutputStream()
         document.writeTo(output)
         document.close()
-        return output.toByteArray()
+        return GeneratedPdf(
+            bytes = output.toByteArray(),
+            pageCount = (nextPageNumber - 1).coerceAtLeast(1),
+        )
     }
 
     private fun newPage(document: PdfDocument, pageNumber: Int): PdfDocument.Page {
@@ -116,10 +132,10 @@ object PdfReportGenerator {
 
         // Wordmark
         val brand = TextPaint().apply { color = COLOR_ONYX; textSize = 34f; isFakeBoldText = true }
-        canvas.drawText("RiskDetected", MARGIN, y, brand)
+        canvas.drawText(context.getString(R.string.rd_pdf_brand), MARGIN, y, brand)
         y += 30f
         val tagline = TextPaint().apply { color = COLOR_SLATE; textSize = 18f }
-        canvas.drawText("Profesyonel İSG Asistanı", MARGIN, y, tagline)
+        canvas.drawText(context.getString(R.string.rd_pdf_tagline), MARGIN, y, tagline)
         y += 70f
 
         canvas.drawLine(MARGIN, y, PAGE_WIDTH - MARGIN, y, Paint().apply { color = COLOR_LINE; strokeWidth = 2f })
@@ -127,7 +143,7 @@ object PdfReportGenerator {
 
         // Report title
         val title = TextPaint().apply { color = COLOR_ONYX; textSize = 40f; isFakeBoldText = true }
-        y = drawWrapped(canvas, if (input.kind == "risk_analysis") "Risk Değerlendirme Raporu" else "Standart Rapor", MARGIN, y, PAGE_WIDTH - 2 * MARGIN, title) + 12f
+        y = drawWrapped(canvas, context.getString(if (input.kind == "risk_analysis") R.string.rd_pdf_risk_report else R.string.rd_pdf_standard_report), MARGIN, y, PAGE_WIDTH - 2 * MARGIN, title) + 12f
         val subtitle = TextPaint().apply { color = COLOR_SLATE; textSize = 22f }
         y = drawWrapped(canvas, input.title, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, subtitle) + 50f
 
@@ -152,12 +168,12 @@ object PdfReportGenerator {
 
         // Info rows
         val rows = listOfNotNull(
-            "Hazırlayan" to input.preparedByName,
-            input.preparedByTitle?.takeIf { it.isNotBlank() }?.let { "Unvan" to it },
-            input.certificateNumber?.takeIf { it.isNotBlank() }?.let { "Sertifika No" to it },
-            "Analiz Odağı" to input.canvasLabel,
-            "Yöntem" to if (input.method == "matrix_5x5") "5x5 Risk Matrisi" else "Fine-Kinney",
-            "Tarih" to (input.createdAt?.take(10) ?: "—"),
+            context.getString(R.string.rd_pdf_prepared_by) to input.preparedByName,
+            input.preparedByTitle?.takeIf { it.isNotBlank() }?.let { context.getString(R.string.rd_pdf_title) to it },
+            input.certificateNumber?.takeIf { it.isNotBlank() }?.let { context.getString(R.string.rd_pdf_certificate_number) to it },
+            context.getString(R.string.rd_pdf_analysis_focus) to input.canvasLabel,
+            context.getString(R.string.rd_pdf_method) to context.getString(if (input.method == "matrix_5x5") R.string.rd_pdf_matrix_method else R.string.rd_pdf_fine_kinney_method),
+            context.getString(R.string.rd_pdf_date) to (input.createdAt?.take(10) ?: "—"),
         )
         val labelPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 18f }
         val valuePaint = TextPaint().apply { color = COLOR_ONYX; textSize = 18f; isFakeBoldText = true }
@@ -171,7 +187,7 @@ object PdfReportGenerator {
         // Summary counts by band
         val counts = input.findings.groupingBy { it.fkBand.ifBlank { it.m5Band } }.eachCount()
         val summaryPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 22f; isFakeBoldText = true }
-        canvas.drawText("${input.findings.size} bulgu", MARGIN, y, summaryPaint)
+        canvas.drawText(context.getString(R.string.rd_pdf_finding_count, input.findings.size), MARGIN, y, summaryPaint)
         y += 40f
         var chipX = MARGIN
         listOf("critical", "high", "medium", "low").forEach { band ->
@@ -180,7 +196,7 @@ object PdfReportGenerator {
                 val chipPaint = Paint().apply { color = bandColor(band) }
                 canvas.drawRoundRect(RectF(chipX, y - 26f, chipX + 130f, y + 4f), 8f, 8f, chipPaint)
                 val chipText = TextPaint().apply { color = COLOR_WHITE; textSize = 16f; isFakeBoldText = true; textAlign = Paint.Align.CENTER }
-                canvas.drawText("${bandLabel(band)}: $count", chipX + 65f, y - 6f, chipText)
+                canvas.drawText(context.getString(R.string.rd_pdf_band_count, bandLabel(band), count), chipX + 65f, y - 6f, chipText)
                 chipX += 150f
             }
         }
@@ -208,7 +224,7 @@ object PdfReportGenerator {
 
         fun header() {
             val h = TextPaint().apply { color = COLOR_ONYX; textSize = 26f; isFakeBoldText = true }
-            canvas.drawText("Bulgu Detayları", MARGIN, y, h)
+            canvas.drawText(context.getString(R.string.rd_pdf_finding_details), MARGIN, y, h)
             y += 50f
         }
         header()
@@ -230,10 +246,10 @@ object PdfReportGenerator {
             }
 
             val titlePaint = TextPaint().apply { color = COLOR_ONYX; textSize = 22f; isFakeBoldText = true }
-            canvas.drawText("${index + 1}. ${finding.title}", MARGIN, y, titlePaint)
+            canvas.drawText(context.getString(R.string.rd_pdf_finding_title, index + 1, finding.title), MARGIN, y, titlePaint)
 
             val chipPaint = Paint().apply { color = bandColor(band) }
-            val chipLabel = "${bandLabel(band)}${score?.let { " · %.1f".format(it) } ?: ""}"
+            val chipLabel = "${bandLabel(band)}${score?.let { context.getString(R.string.rd_pdf_score_suffix, it) } ?: ""}"
             val chipWidth = 40f + chipLabel.length * 11f
             canvas.drawRoundRect(RectF(PAGE_WIDTH - MARGIN - chipWidth, y - 28f, PAGE_WIDTH - MARGIN, y + 4f), 8f, 8f, chipPaint)
             val chipText = TextPaint().apply { color = COLOR_WHITE; textSize = 16f; isFakeBoldText = true; textAlign = Paint.Align.CENTER }
@@ -245,13 +261,22 @@ object PdfReportGenerator {
                 canvas.drawText(it, MARGIN, y, catPaint)
                 y += 28f
             }
+            val verificationMeta = buildList {
+                if (finding.sourcePhotoIndices.isNotEmpty()) {
+                    add(context.getString(R.string.rd_pdf_source_photos, finding.sourcePhotoIndices.joinToString(", ")))
+                }
+                if (finding.needsFieldVerification) add(context.getString(R.string.rd_pdf_field_verification_required))
+                add(context.getString(R.string.rd_pdf_ai_confidence, (finding.confidence.coerceIn(0.0, 1.0) * 100).toInt()))
+            }.joinToString(" · ")
+            val metaPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 15f }
+            y = drawWrapped(canvas, verificationMeta, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, metaPaint) + 10f
             finding.description?.takeIf { it.isNotBlank() }?.let {
                 val descPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 18f }
                 y = drawWrapped(canvas, it, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, descPaint) + 16f
             }
             finding.rootCauseText?.takeIf { it.isNotBlank() }?.let {
                 val labelPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 15f; isFakeBoldText = true }
-                canvas.drawText("Kök neden", MARGIN, y, labelPaint)
+                canvas.drawText(context.getString(R.string.rd_pdf_root_cause), MARGIN, y, labelPaint)
                 y += 22f
                 val bodyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 17f }
                 y = drawWrapped(canvas, it, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, bodyPaint) + 16f
@@ -259,18 +284,22 @@ object PdfReportGenerator {
             val measures = finding.recommendedMeasures
             if (!measures.isNullOrEmpty()) {
                 val labelPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 15f; isFakeBoldText = true }
-                canvas.drawText("Önlemler", MARGIN, y, labelPaint)
+                canvas.drawText(context.getString(R.string.rd_pdf_measures), MARGIN, y, labelPaint)
                 y += 22f
                 val bodyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 17f }
                 measures.forEach { measure ->
-                    val kindLabel = if (measure.kind == "preventive") "Önleyici" else "Düzeltici"
-                    y = drawWrapped(canvas, "• [$kindLabel] ${measure.title}: ${measure.text}", MARGIN, y, PAGE_WIDTH - 2 * MARGIN, bodyPaint) + 8f
+                    val kindLabel = context.getString(if (measure.kind == "preventive") R.string.rd_pdf_preventive else R.string.rd_pdf_corrective)
+                    // iOS intentionally ignores the model-provided title for the two known
+                    // measure kinds and renders the canonical kind label once. The AI commonly
+                    // returns that same label as `title` ("Düzeltici Önlem" / "Önleyici
+                    // Kontrol"), so concatenating both produced duplicated report copy.
+                    y = drawWrapped(canvas, context.getString(R.string.rd_pdf_measure_row, kindLabel, measure.text), MARGIN, y, PAGE_WIDTH - 2 * MARGIN, bodyPaint) + 8f
                 }
                 y += 8f
             } else {
                 finding.recommendedAction?.takeIf { it.isNotBlank() }?.let {
                     val labelPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 15f; isFakeBoldText = true }
-                    canvas.drawText("Önerilen aksiyon", MARGIN, y, labelPaint)
+                    canvas.drawText(context.getString(R.string.rd_pdf_recommended_action), MARGIN, y, labelPaint)
                     y += 22f
                     val bodyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 17f }
                     y = drawWrapped(canvas, it, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, bodyPaint) + 16f
@@ -291,18 +320,37 @@ object PdfReportGenerator {
      * [com.riskdetectedan.core.data.analysis.FineKinneyValues] option sets for Fine-Kinney, or a
      * short 1-5 scale description for the 5x5 matrix — not iOS's full multi-page illustrated
      * legend, a real but condensed reference. */
-    private fun drawRiskAssessmentPages(document: PdfDocument, input: PdfReportInput, startPage: Int) {
+    private fun drawRiskAssessmentPages(document: PdfDocument, input: PdfReportInput, startPage: Int): Int {
         var pageNumber = startPage
         var page = newPage(document, pageNumber)
         var canvas = page.canvas
         var y = MARGIN
 
         val header = TextPaint().apply { color = COLOR_ONYX; textSize = 26f; isFakeBoldText = true }
-        canvas.drawText("Risk Değerlendirme Tablosu", MARGIN, y, header)
+        canvas.drawText(context.getString(R.string.rd_pdf_risk_table), MARGIN, y, header)
         y += 50f
 
         val isMatrix = input.method == "matrix_5x5"
-        val headers = if (isMatrix) listOf("No", "Bulgu", "Olasılık", "Şiddet", "Skor", "Seviye") else listOf("No", "Bulgu", "O", "F", "Ş", "Skor", "Seviye")
+        val headers = if (isMatrix) {
+            listOf(
+                context.getString(R.string.rd_pdf_column_number),
+                context.getString(R.string.rd_pdf_column_finding),
+                context.getString(R.string.rd_pdf_column_probability),
+                context.getString(R.string.rd_pdf_column_severity),
+                context.getString(R.string.rd_pdf_column_score),
+                context.getString(R.string.rd_pdf_column_level),
+            )
+        } else {
+            listOf(
+                context.getString(R.string.rd_pdf_column_number),
+                context.getString(R.string.rd_pdf_column_finding),
+                "O",
+                "F",
+                "Ş",
+                context.getString(R.string.rd_pdf_column_score),
+                context.getString(R.string.rd_pdf_column_level),
+            )
+        }
         val widths = if (isMatrix) {
             listOf(0.06f, 0.44f, 0.12f, 0.12f, 0.12f, 0.14f)
         } else {
@@ -352,22 +400,22 @@ object PdfReportGenerator {
             canvas = page.canvas
             y = MARGIN
         }
-        canvas.drawText(if (isMatrix) "5x5 Risk Matrisi Referansı" else "Fine-Kinney Referansı", MARGIN, y, legendTitle)
+        canvas.drawText(context.getString(if (isMatrix) R.string.rd_pdf_matrix_reference else R.string.rd_pdf_fine_kinney_reference), MARGIN, y, legendTitle)
         y += 40f
         val bodyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 17f }
         val legendText = if (isMatrix) {
-            "Skor = Olasılık × Şiddet (1-5 ölçek her ikisi için de). 1-4: Düşük, 5-9: Orta, 10-14: Yüksek, 15-25: Kritik."
+            context.getString(R.string.rd_pdf_matrix_legend)
         } else {
             val p = FineKinneyValues.PROBABILITY.joinToString(", ")
             val f = FineKinneyValues.FREQUENCY.joinToString(", ")
             val s = FineKinneyValues.SEVERITY.joinToString(", ")
-            "Skor = Olasılık (O) × Frekans (F) × Şiddet (Ş).\nOlasılık değerleri: $p\nFrekans değerleri: $f\nŞiddet değerleri: $s\n" +
-                "0-20: Düşük, 20-70: Orta, 70-200: Yüksek, 200+: Kritik."
+            context.getString(R.string.rd_pdf_fine_kinney_legend, p, f, s)
         }
         drawWrapped(canvas, legendText, MARGIN, y, tableWidth, bodyPaint)
 
         drawFooter(canvas, pageNumber)
         document.finishPage(page)
+        return pageNumber + 1
     }
 
     private fun drawTableRow(

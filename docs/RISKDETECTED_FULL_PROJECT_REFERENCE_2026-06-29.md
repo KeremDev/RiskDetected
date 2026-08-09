@@ -252,7 +252,7 @@ Client fallback kabiliyetleri:
 |---|---:|---:|---:|
 | Standart analiz | günde 1 | günde 10 | günde 40 |
 | Detaylı/risk analizi | yok veya tek trial | günde 2 | günde 10 |
-| Rapor | ayda 3 | ayda 150 | ayda 750 |
+| Rapor | günde 1 standart | ayda 150 | ayda 750 |
 | Çoklu fotoğraf | hayır | 5 foto | 5 foto |
 | Firma/logolu rapor | kısıtlı | var | var |
 | Bulgu düzenleme | var | var | var |
@@ -773,7 +773,7 @@ Report snapshot v2:
 
 Rapor limitleri:
 
-- Free: ayda 3
+- Free: günde 1 standart rapor
 - Plus: ayda 150
 - Pro: ayda 750
 - Free risk analysis table için tek trial davranışı vardır.

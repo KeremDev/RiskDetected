@@ -1,9 +1,11 @@
 package com.riskdetectedan.feature.profile
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.profile.ProfileRepository
@@ -12,6 +14,10 @@ import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.data.progress.ProfessionalProgressBadge
 import com.riskdetectedan.core.data.progress.ProfessionalProgressRepository
 import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
+import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
+import com.riskdetectedan.core.data.release.ReleasePolicyRepository
+import com.riskdetectedan.core.designsystem.R as RdR
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,13 +32,21 @@ sealed interface ProfileUiState {
     data object SignedOut : ProfileUiState
 }
 
-private const val PROFILE_CONTEXT = "Profil işlemi tamamlanamadı"
+sealed interface ProfileRestoreState {
+    data object Idle : ProfileRestoreState
+    data object Restoring : ProfileRestoreState
+    data class Completed(val message: String) : ProfileRestoreState
+    data class Failed(val error: AppErrorMessage) : ProfileRestoreState
+}
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
     private val professionalProgressRepository: ProfessionalProgressRepository,
+    private val billingRepository: BillingRepository,
+    private val releasePolicyRepository: ReleasePolicyRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
@@ -59,6 +73,9 @@ class ProfileViewModel @Inject constructor(
     private val _avatarError = MutableStateFlow<AppErrorMessage?>(null)
     val avatarError: StateFlow<AppErrorMessage?> = _avatarError.asStateFlow()
 
+    private val _restoreState = MutableStateFlow<ProfileRestoreState>(ProfileRestoreState.Idle)
+    val restoreState: StateFlow<ProfileRestoreState> = _restoreState.asStateFlow()
+
     init {
         load()
     }
@@ -74,7 +91,10 @@ class ProfileViewModel @Inject constructor(
             _state.value = when (val result = profileRepository.fetchProfile(userId)) {
                 is RdResult.Success -> ProfileUiState.Loaded(result.value)
                 is RdResult.Failure -> ProfileUiState.Failed(
-                    AppErrorMessages.make(result.message, context = PROFILE_CONTEXT),
+                    AppErrorMessages.make(
+                        result.message,
+                        context = context.getString(RdR.string.rd_profil_islemi_tamamlanamadi),
+                    ),
                 )
             }
         }
@@ -129,7 +149,10 @@ class ProfileViewModel @Inject constructor(
                     is RdResult.Success -> upload.value
                     is RdResult.Failure -> {
                         _isSaving.value = false
-                        _saveError.value = AppErrorMessages.make(upload.message, context = PROFILE_CONTEXT)
+                        _saveError.value = AppErrorMessages.make(
+                            upload.message,
+                            context = context.getString(RdR.string.rd_profil_islemi_tamamlanamadi),
+                        )
                         return@launch
                     }
                 }
@@ -155,7 +178,10 @@ class ProfileViewModel @Inject constructor(
                 }
                 is RdResult.Failure -> {
                     _isSaving.value = false
-                    _saveError.value = AppErrorMessages.make(result.message, context = PROFILE_CONTEXT)
+                    _saveError.value = AppErrorMessages.make(
+                        result.message,
+                        context = context.getString(RdR.string.rd_profil_islemi_tamamlanamadi),
+                    )
                 }
             }
         }
@@ -181,7 +207,10 @@ class ProfileViewModel @Inject constructor(
                 }
                 is RdResult.Failure -> {
                     _isSavingAvatar.value = false
-                    _avatarError.value = AppErrorMessages.make(result.message, context = PROFILE_CONTEXT)
+                    _avatarError.value = AppErrorMessages.make(
+                        result.message,
+                        context = context.getString(RdR.string.rd_profil_islemi_tamamlanamadi),
+                    )
                 }
             }
         }
@@ -189,5 +218,67 @@ class ProfileViewModel @Inject constructor(
 
     fun clearAvatarError() {
         _avatarError.value = null
+    }
+
+    fun restorePurchases() {
+        if (_restoreState.value is ProfileRestoreState.Restoring) return
+        val userId = authRepository.currentUserId ?: return
+        _restoreState.value = ProfileRestoreState.Restoring
+        viewModelScope.launch {
+            val gate = releasePolicyRepository.resolveGate(AndroidRuntimeGateName.Payments)
+            if (!gate.enabled) {
+                _restoreState.value = ProfileRestoreState.Failed(
+                    AppErrorMessages.make(
+                        context.getString(RdR.string.rd_satin_alma_kapali_format, gate.reason),
+                        context = context.getString(RdR.string.rd_geri_yukleme_tamamlanamadi),
+                    ),
+                )
+                return@launch
+            }
+            val configured = billingRepository.configure(userId)
+            if (configured is RdResult.Failure) {
+                _restoreState.value = ProfileRestoreState.Failed(
+                    AppErrorMessages.make(
+                        configured.message,
+                        context = context.getString(RdR.string.rd_geri_yukleme_tamamlanamadi),
+                    ),
+                )
+                return@launch
+            }
+            when (val result = billingRepository.restorePurchases()) {
+                is RdResult.Success -> {
+                    _restoreState.value = ProfileRestoreState.Completed(
+                        if (result.value.isPaid) {
+                            context.getString(RdR.string.rd_abonelik_bulundu_format, result.value.name)
+                        } else {
+                            context.getString(RdR.string.rd_google_play_aktif_abonelik_yok)
+                        },
+                    )
+                    load()
+                }
+                is RdResult.Failure -> _restoreState.value = ProfileRestoreState.Failed(
+                    AppErrorMessages.make(
+                        result.message,
+                        context = context.getString(RdR.string.rd_geri_yukleme_tamamlanamadi),
+                    ),
+                )
+            }
+        }
+    }
+
+    fun clearRestoreState() {
+        _restoreState.value = ProfileRestoreState.Idle
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            when (val result = authRepository.signOut()) {
+                is RdResult.Success -> _state.value = ProfileUiState.SignedOut
+                is RdResult.Failure -> _saveError.value = AppErrorMessages.make(
+                    result.message,
+                    context = context.getString(RdR.string.rd_cikis_yapilamadi),
+                )
+            }
+        }
     }
 }

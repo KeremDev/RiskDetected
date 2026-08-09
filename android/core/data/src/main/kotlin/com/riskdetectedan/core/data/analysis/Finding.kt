@@ -42,6 +42,8 @@ data class Finding(
     @SerialName("recommended_action") val recommendedAction: String? = null,
     @SerialName("recommended_measures") val recommendedMeasures: List<FindingMeasure>? = null,
     val confidence: Double = 0.0,
+    @SerialName("needs_field_verification") val needsFieldVerification: Boolean = false,
+    @SerialName("source_photo_indices") val sourcePhotoIndices: List<Int> = emptyList(),
     @SerialName("fk_probability") val fkProbability: Double? = null,
     @SerialName("fk_frequency") val fkFrequency: Double? = null,
     @SerialName("fk_severity") val fkSeverity: Double? = null,

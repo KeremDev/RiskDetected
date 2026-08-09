@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Kotlin mirror of App/Models/OnboardingAnswers.swift's OnboardingAnswerChoice. */
+@Serializable
 data class OnboardingAnswerChoice(val value: String, val label: String)
 
 /**
@@ -14,6 +15,7 @@ data class OnboardingAnswerChoice(val value: String, val label: String)
  * (OnboardingAnswersService.swift's post-upsert `profiles` update for English users) is
  * deliberately not ported — it would be dead code until Android has that gate.
  */
+@Serializable
 data class OnboardingAnswersDraft(
     val onboardingVersion: String = "v2",
     val certificateClass: OnboardingAnswerChoice? = null,

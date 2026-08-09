@@ -29,11 +29,14 @@ object AppModule {
             RdEnvironment.Staging
         },
         supabaseUrl = BuildConfig.SUPABASE_URL,
-        supabaseAnonKey = BuildConfig.SUPABASE_ANON_KEY,
+        supabasePublishableKey = BuildConfig.SUPABASE_PUBLISHABLE_KEY,
         appVersionName = BuildConfig.VERSION_NAME,
         appVersionCode = BuildConfig.VERSION_CODE,
         applicationId = BuildConfig.APPLICATION_ID,
         clientPlatform = RdClientMetadata.PLATFORM,
         clientCapabilities = RdClientMetadata.capabilities,
+        googleWebClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID,
+        revenueCatPublicKey = BuildConfig.REVENUECAT_PUBLIC_KEY,
+        firebaseProjectId = BuildConfig.FIREBASE_PROJECT_ID,
     )
 }

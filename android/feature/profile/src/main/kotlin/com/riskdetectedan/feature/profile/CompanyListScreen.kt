@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.profile
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -60,9 +64,12 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     val saveError by viewModel.saveError.collectAsState()
+    val capabilities by viewModel.capabilities.collectAsState()
     val context = LocalContext.current
     var name by remember { mutableStateOf("") }
     var logoBytes by remember { mutableStateOf<ByteArray?>(null) }
+    val companyCount = (state as? CompanyListUiState.Loaded)?.companies?.size ?: 0
+    val canAddCompany = companyCount < capabilities.companyLimit
 
     val pickLogo = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -77,7 +84,7 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
     }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
-        RdScreenHeader(title = "Firmalarım", onBack = onBack)
+        RdScreenHeader(title = stringResource(RdR.string.rd_firmalarim), onBack = onBack)
 
         Column(
             modifier = Modifier
@@ -89,9 +96,13 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
                 is CompanyListUiState.Loading -> Box(modifier = Modifier.fillMaxWidth().padding(RdSpacing.xl), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = colors.onyx)
                 }
-                is CompanyListUiState.Failed -> RdEmptyState(icon = Icons.Filled.Business, title = "Firmalar yüklenemedi", subtitle = current.error.message)
+                is CompanyListUiState.Failed -> RdEmptyState(icon = Icons.Filled.Business, title = stringResource(RdR.string.rd_firmalar_yuklenemedi), subtitle = current.error.message)
                 is CompanyListUiState.Loaded -> if (current.companies.isEmpty()) {
-                    RdEmptyState(icon = Icons.Filled.Business, title = "Henüz firma yok", subtitle = "Aşağıdan ilk firmanı ekleyebilirsin.")
+                    RdEmptyState(
+                        icon = Icons.Filled.Business,
+                        title = stringResource(RdR.string.rd_henuz_firma_yok),
+                        subtitle = stringResource(RdR.string.rd_ilk_firma_ekle_aciklama),
+                    )
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
                         current.companies.forEach { company ->
@@ -102,14 +113,23 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
             }
 
             Spacer(Modifier.height(RdSpacing.lg))
-            Text("Yeni firma ekle", style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
+            Text(stringResource(RdR.string.rd_yeni_firma_ekle), style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
+            Text(
+                if (capabilities.companyLimit == 0) {
+                    stringResource(RdR.string.rd_firma_yonetimi_plan_gerektirir)
+                } else {
+                    stringResource(RdR.string.rd_firma_sayaci_format, companyCount, capabilities.companyLimit)
+                },
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate,
+            )
             Spacer(Modifier.height(RdSpacing.sm))
             RdSectionCard {
                 Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Firma adı") },
+                        label = { Text(stringResource(RdR.string.rd_firma_adi)) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     TextButton(
@@ -117,16 +137,20 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
                             pickLogo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         },
                     ) {
-                        Text(if (logoBytes != null) "Logo seçildi ✓" else "Logo seç (opsiyonel)")
+                        Text(
+                            stringResource(
+                                if (logoBytes != null) RdR.string.rd_logo_secildi else RdR.string.rd_logo_sec_opsiyonel,
+                            ),
+                        )
                     }
                     RdPrimaryButton(
-                        text = "Firma ekle",
+                        text = stringResource(RdR.string.rd_firma_ekle),
                         onClick = {
                             viewModel.addCompany(CompanyDraft(name = name), logoBytes)
                             name = ""
                             logoBytes = null
                         },
-                        enabled = name.isNotBlank(),
+                        enabled = name.isNotBlank() && canAddCompany,
                         style = RdButtonStyle.Onyx,
                         showArrow = false,
                     )

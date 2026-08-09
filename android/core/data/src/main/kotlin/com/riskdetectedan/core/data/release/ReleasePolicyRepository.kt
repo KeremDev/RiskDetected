@@ -4,6 +4,7 @@ import android.content.Context
 import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.data.legal.LegalDocumentSet
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
@@ -11,6 +12,9 @@ import io.ktor.client.call.body
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -66,7 +70,98 @@ data class AppReleasePolicy(
 }
 
 @Serializable
-private data class AppReleasePolicyResponse(val ok: Boolean? = null, val policy: AppReleasePolicy? = null)
+data class AndroidRuntimeGate(
+    val enabled: Boolean = false,
+    val reason: String = "unavailable",
+)
+
+enum class AndroidRuntimeGateName {
+    Client,
+    Auth,
+    AnalysisSubmit,
+    Payments,
+    Notifications,
+    PdfReports,
+}
+
+@Serializable
+data class AndroidRuntimeGates(
+    @SerialName("schema_version") val schemaVersion: Int = 1,
+    @SerialName("evaluated_version_code") val evaluatedVersionCode: Int? = null,
+    val client: AndroidRuntimeGate = AndroidRuntimeGate(),
+    val auth: AndroidRuntimeGate = AndroidRuntimeGate(),
+    @SerialName("analysis_submit") val analysisSubmit: AndroidRuntimeGate = AndroidRuntimeGate(),
+    val payments: AndroidRuntimeGate = AndroidRuntimeGate(),
+    val notifications: AndroidRuntimeGate = AndroidRuntimeGate(),
+    @SerialName("pdf_reports") val pdfReports: AndroidRuntimeGate = AndroidRuntimeGate(),
+) {
+    fun decision(name: AndroidRuntimeGateName): AndroidRuntimeGate = when (name) {
+        AndroidRuntimeGateName.Client -> client
+        AndroidRuntimeGateName.Auth -> auth
+        AndroidRuntimeGateName.AnalysisSubmit -> analysisSubmit
+        AndroidRuntimeGateName.Payments -> payments
+        AndroidRuntimeGateName.Notifications -> notifications
+        AndroidRuntimeGateName.PdfReports -> pdfReports
+    }
+
+    companion object {
+        val CLOSED = AndroidRuntimeGates(schemaVersion = 0)
+    }
+}
+
+@Serializable
+data class AndroidLegalDocumentPolicy(
+    val kind: String,
+    val version: String,
+    val checksum: String,
+    @SerialName("change_type") val changeType: String,
+)
+
+@Serializable
+data class AndroidLegalPolicy(
+    @SerialName("schema_version") val schemaVersion: Int = 1,
+    val enabled: Boolean = false,
+    val required: Boolean = false,
+    val action: String = "none",
+    val reason: String = "unavailable",
+    @SerialName("document_set_id") val documentSetId: String = "",
+    @SerialName("manifest_checksum") val manifestChecksum: String = "",
+    @SerialName("policy_version") val policyVersion: String = "",
+    @SerialName("message_tr") val messageTr: String = "",
+    val documents: List<AndroidLegalDocumentPolicy> = emptyList(),
+) {
+    val requiresAcknowledgement: Boolean
+        get() = enabled && required && action == "accept"
+
+    val requiresAppUpdate: Boolean
+        get() = enabled && required && action == "update_app"
+
+    val requiresExplicitConsent: Boolean
+        get() = documents.any { it.changeType == "explicit_consent" }
+
+    val identity: String
+        get() = listOf(policyVersion, documentSetId, manifestChecksum).joinToString("|")
+}
+
+data class ReleasePolicySnapshot(
+    val releasePolicy: AppReleasePolicy,
+    val androidLegalPolicy: AndroidLegalPolicy? = null,
+)
+
+@Serializable
+private data class AppReleasePolicyResponse(
+    val ok: Boolean? = null,
+    val policy: AppReleasePolicy? = null,
+    @SerialName("android_runtime_gates") val androidRuntimeGates: AndroidRuntimeGates? = null,
+    @SerialName("android_legal_policy") val androidLegalPolicy: AndroidLegalPolicy? = null,
+)
+
+@Serializable
+private data class AndroidLegalContextRequest(
+    @SerialName("document_set_id") val documentSetId: String,
+    @SerialName("manifest_checksum") val manifestChecksum: String,
+    @SerialName("accepted_policy_version") val acceptedPolicyVersion: String,
+)
 
 @Serializable
 private data class AppReleasePolicyRequest(
@@ -74,6 +169,13 @@ private data class AppReleasePolicyRequest(
     @SerialName("client_app_version") val clientAppVersion: String,
     @SerialName("client_app_build") val clientAppBuild: String,
     @SerialName("api_contract_version") val apiContractVersion: Int,
+    @SerialName("client_capabilities") val clientCapabilities: Map<String, Boolean>,
+    @SerialName("app_language") val appLanguage: String,
+    @SerialName("content_locale") val contentLocale: String,
+    @SerialName("work_jurisdiction_country") val workJurisdictionCountry: String,
+    @SerialName("safety_profile_id") val safetyProfileId: String,
+    @SerialName("safety_profile_version") val safetyProfileVersion: Int,
+    @SerialName("android_legal_context") val androidLegalContext: AndroidLegalContextRequest?,
 )
 
 /**
@@ -89,8 +191,11 @@ class ReleasePolicyRepository @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     private val prefs by lazy { context.getSharedPreferences("rd_release_policy", Context.MODE_PRIVATE) }
+    private val _androidRuntimeGates = MutableStateFlow(AndroidRuntimeGates.CLOSED)
+    val androidRuntimeGates: StateFlow<AndroidRuntimeGates> = _androidRuntimeGates.asStateFlow()
 
-    suspend fun fetchReleasePolicy(): RdResult<AppReleasePolicy> = try {
+    suspend fun fetchReleasePolicy(userId: String? = null): RdResult<ReleasePolicySnapshot> = try {
+        val legalAudit = LegalDocumentSet.acceptanceAuditMetadata(context)
         val response = client.functions.invoke(
             "app-release-policy",
             body = AppReleasePolicyRequest(
@@ -98,12 +203,50 @@ class ReleasePolicyRepository @Inject constructor(
                 clientAppVersion = environmentConfig.appVersionName,
                 clientAppBuild = environmentConfig.appVersionCode.toString(),
                 apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
+                clientCapabilities = RdClientMetadata.capabilities,
+                appLanguage = RdClientMetadata.APP_LANGUAGE,
+                contentLocale = RdClientMetadata.CONTENT_LOCALE,
+                workJurisdictionCountry = RdClientMetadata.WORK_JURISDICTION_COUNTRY,
+                safetyProfileId = RdClientMetadata.SAFETY_PROFILE_ID,
+                safetyProfileVersion = RdClientMetadata.SAFETY_PROFILE_VERSION,
+                androidLegalContext = legalAudit?.let {
+                    AndroidLegalContextRequest(
+                        documentSetId = it.documentSetID,
+                        manifestChecksum = it.manifestChecksum,
+                        acceptedPolicyVersion = userId?.let(::acceptedLegalPolicyVersion).orEmpty(),
+                    )
+                },
             ),
         ).body<AppReleasePolicyResponse>()
-        RdResult.Success(response.policy ?: AppReleasePolicy.FALLBACK)
+        _androidRuntimeGates.value = response.androidRuntimeGates ?: AndroidRuntimeGates.CLOSED
+        RdResult.Success(
+            ReleasePolicySnapshot(
+                releasePolicy = response.policy ?: AppReleasePolicy.FALLBACK,
+                androidLegalPolicy = response.androidLegalPolicy,
+            ),
+        )
     } catch (t: Throwable) {
+        _androidRuntimeGates.value = AndroidRuntimeGates.CLOSED
         RdResult.Failure("release_policy_fetch_failed", t.message ?: "release_policy_fetch_failed", t)
     }
+
+    fun gate(name: AndroidRuntimeGateName): AndroidRuntimeGate =
+        _androidRuntimeGates.value.decision(name)
+
+    suspend fun resolveGate(name: AndroidRuntimeGateName): AndroidRuntimeGate {
+        if (_androidRuntimeGates.value.schemaVersion == 0) fetchReleasePolicy()
+        return gate(name)
+    }
+
+    fun acceptedLegalPolicyVersion(userId: String): String =
+        prefs.getString(legalAcceptanceKey(userId), null).orEmpty()
+
+    fun markLegalPolicyAccepted(userId: String, policy: AndroidLegalPolicy) {
+        prefs.edit().putString(legalAcceptanceKey(userId), policy.policyVersion).apply()
+    }
+
+    private fun legalAcceptanceKey(userId: String): String =
+        "$KEY_ACCEPTED_LEGAL_POLICY_PREFIX${userId.lowercase()}"
 
     fun cachedHardPolicy(): AppReleasePolicy? {
         val json = prefs.getString(KEY_CACHED_HARD_POLICY, null) ?: return null
@@ -131,5 +274,6 @@ class ReleasePolicyRepository @Inject constructor(
     private companion object {
         const val KEY_CACHED_HARD_POLICY = "cached_hard_policy"
         const val KEY_DISMISSED_SOFT_IDENTITY = "dismissed_soft_identity"
+        const val KEY_ACCEPTED_LEGAL_POLICY_PREFIX = "accepted_legal_policy."
     }
 }

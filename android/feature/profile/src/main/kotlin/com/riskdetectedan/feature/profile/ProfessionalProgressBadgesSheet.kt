@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.profile
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
 import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdRadius
@@ -61,7 +66,7 @@ fun ProfessionalProgressBadgesSheet(summary: ProfessionalProgressSummary, onDism
             verticalAlignment = Alignment.Top,
         ) {
             Text(
-                "Başarılarım",
+                stringResource(RdR.string.rd_basarilarim),
                 style = RdFontStyle.Title2.toTextStyle(),
                 color = colors.black,
                 modifier = Modifier.weight(1f),
@@ -74,7 +79,7 @@ fun ProfessionalProgressBadgesSheet(summary: ProfessionalProgressSummary, onDism
                     .background(colors.white)
                     .border(1.dp, colors.line, CircleShape),
             ) {
-                Icon(Icons.Filled.Close, contentDescription = "Kapat", tint = colors.black, modifier = Modifier.size(14.dp))
+                Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kapat), tint = colors.black, modifier = Modifier.size(14.dp))
             }
         }
 
@@ -137,7 +142,7 @@ private fun BadgeTile(item: BadgeCatalog, earned: Boolean) {
         }
         Spacer(Modifier.height(9.dp))
         Text(
-            item.title,
+            stringResource(item.titleRes),
             style = RdFontStyle.Caption.toTextStyle(),
             color = if (earned) colors.black else colors.slate,
             textAlign = TextAlign.Center,
@@ -150,7 +155,7 @@ private enum class BadgeRequirement { ReportCount, CompetencyCount, HighRisk, Ac
 
 private data class BadgeCatalog(
     val key: String,
-    val title: String,
+    @StringRes val titleRes: Int,
     val icon: ImageVector,
     val accent: Color,
     val requirement: BadgeRequirement,
@@ -169,12 +174,12 @@ private data class BadgeCatalog(
 
     companion object {
         val defaults = listOf(
-            BadgeCatalog("reports:10", "10 Rapor", sfIconToImageVector("medal.fill"), Color(0xFF0E9F6E), BadgeRequirement.ReportCount, 10),
-            BadgeCatalog("reports:50", "50 Rapor", sfIconToImageVector("trophy.fill"), Color(0xFFD97706), BadgeRequirement.ReportCount, 50),
-            BadgeCatalog("reports:100", "Yüz Rapor", sfIconToImageVector("trophy.fill"), Color(0xFFB45309), BadgeRequirement.ReportCount, 100),
-            BadgeCatalog("competency:5", "5 Alan", sfIconToImageVector("square.grid.3x2.fill"), Color(0xFF2563EB), BadgeRequirement.CompetencyCount, 5),
-            BadgeCatalog("risk:first_high", "Yüksek Risk", sfIconToImageVector("exclamationmark.triangle.fill"), Color(0xFFB42318), BadgeRequirement.HighRisk),
-            BadgeCatalog("active_days:30", "30 Aktif Gün", sfIconToImageVector("calendar.badge.checkmark"), Color(0xFF7C3AED), BadgeRequirement.ActiveDays, 30),
+            BadgeCatalog("reports:10", RdR.string.rd_on_rapor, sfIconToImageVector("medal.fill"), Color(0xFF0E9F6E), BadgeRequirement.ReportCount, 10),
+            BadgeCatalog("reports:50", RdR.string.rd_elli_rapor, sfIconToImageVector("trophy.fill"), Color(0xFFD97706), BadgeRequirement.ReportCount, 50),
+            BadgeCatalog("reports:100", RdR.string.rd_yuz_rapor, sfIconToImageVector("trophy.fill"), Color(0xFFB45309), BadgeRequirement.ReportCount, 100),
+            BadgeCatalog("competency:5", RdR.string.rd_bes_alan, sfIconToImageVector("square.grid.3x2.fill"), Color(0xFF2563EB), BadgeRequirement.CompetencyCount, 5),
+            BadgeCatalog("risk:first_high", RdR.string.rd_yuksek_risk, sfIconToImageVector("exclamationmark.triangle.fill"), Color(0xFFB42318), BadgeRequirement.HighRisk),
+            BadgeCatalog("active_days:30", RdR.string.rd_otuz_aktif_gun, sfIconToImageVector("calendar.badge.checkmark"), Color(0xFF7C3AED), BadgeRequirement.ActiveDays, 30),
         )
     }
 }

@@ -12,12 +12,9 @@ import javax.inject.Singleton
  * Mirrors PaywallEventService.swift's `record()` — analytics only, never blocks/affects the
  * purchase flow (errors are swallowed, matching the Swift `Task { try? ... }` fire-and-forget).
  *
- * Only the 5 event names Android's simpler single-layout paywall (feature #20) actually has a
- * real moment for are ported: `view`/`purchase_started`/`purchase_succeeded`/`purchase_failed`/
- * `restore_tap`. `close`/`cta_tap`/`plan_select`/`billing_select` aren't ported — Android's
- * `PaywallScreen` has no distinct "select a plan, then confirm" step or a dismiss action
- * separate from the system back gesture, so those Swift interaction moments don't exist here to
- * instrument (not a silent drop, there is genuinely no click to attach the event to).
+ * Android now mirrors the live in-app paywall interactions, including explicit plan/billing
+ * selection, CTA and close events. Payment-pending remains excluded until the shared database
+ * CHECK accepts it; RevenueCat's pending result is still surfaced through the billing state.
  * `payment_pending`/`personal_plan_view`/`personal_plan_continue`/`trial_invite_*` exist as Swift
  * enum cases but AREN'T in `paywall_events_event_name_check`'s allowed list either (pre-existing
  * drift between the Swift enum and the DB constraint, not something this port needs to fix) —
@@ -36,6 +33,10 @@ private const val VARIANT_ID = "android_default_v1"
 
 enum class PaywallEventName(val wireValue: String) {
     View("view"),
+    Close("close"),
+    CtaTap("cta_tap"),
+    PlanSelect("plan_select"),
+    BillingSelect("billing_select"),
     PurchaseStarted("purchase_started"),
     PurchaseSucceeded("purchase_succeeded"),
     PurchaseFailed("purchase_failed"),

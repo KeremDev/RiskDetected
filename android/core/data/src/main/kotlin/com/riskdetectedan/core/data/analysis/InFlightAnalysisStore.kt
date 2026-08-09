@@ -29,6 +29,16 @@ data class InFlightAnalysis(
     val isExpired: Boolean get() = System.currentTimeMillis() - startedAtMillis > 30 * 60 * 1000
 }
 
+@Serializable
+data class PendingAnalysisSubmission(
+    val submissionId: String,
+    val userId: String,
+    val inputFingerprint: String,
+    val startedAtMillis: Long,
+) {
+    val isExpired: Boolean get() = System.currentTimeMillis() - startedAtMillis > 30 * 60 * 1000
+}
+
 @Singleton
 class InFlightAnalysisStore @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -71,12 +81,43 @@ class InFlightAnalysisStore @Inject constructor(
         }
     }
 
+    fun savePending(submission: PendingAnalysisSubmission) {
+        prefs.edit().putString(
+            PENDING_KEY,
+            json.encodeToString(PendingAnalysisSubmission.serializer(), submission),
+        ).apply()
+    }
+
+    fun pendingFor(userId: String, inputFingerprint: String): PendingAnalysisSubmission? {
+        val pending = loadPendingWithoutExpiryCheck() ?: return null
+        if (pending.isExpired || pending.userId != userId || pending.inputFingerprint != inputFingerprint) {
+            prefs.edit().remove(PENDING_KEY).apply()
+            return null
+        }
+        return pending
+    }
+
+    fun clearPending(submissionId: String) {
+        val pending = loadPendingWithoutExpiryCheck()
+        if (pending == null || pending.submissionId == submissionId) {
+            prefs.edit().remove(PENDING_KEY).apply()
+        }
+    }
+
     private fun loadWithoutExpiryCheck(): InFlightAnalysis? {
         val raw = prefs.getString(KEY, null) ?: return null
         return runCatching { json.decodeFromString(InFlightAnalysis.serializer(), raw) }.getOrNull()
     }
 
+    private fun loadPendingWithoutExpiryCheck(): PendingAnalysisSubmission? {
+        val raw = prefs.getString(PENDING_KEY, null) ?: return null
+        return runCatching {
+            json.decodeFromString(PendingAnalysisSubmission.serializer(), raw)
+        }.getOrNull()
+    }
+
     private companion object {
         const val KEY = "rd.analysis.inFlight.v1"
+        const val PENDING_KEY = "rd.analysis.pendingSubmission.v1"
     }
 }

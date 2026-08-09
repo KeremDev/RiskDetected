@@ -41,19 +41,23 @@ class QuotaViewModel @Inject constructor(
     val quota: StateFlow<DailyQuotaUsage?> = _quota.asStateFlow()
 
     fun refresh() {
+        viewModelScope.launch { refreshAndGet() }
+    }
+
+    /** Used by the center quick-scan action, matching iOS's awaited pre-navigation quota read. */
+    suspend fun refreshAndGet(): DailyQuotaUsage? {
         val userId = authRepository.currentUserId
         if (userId == null) {
             _quota.value = null
-            return
+            return null
         }
-        viewModelScope.launch {
-            when (val result = quotaRepository.dailyQuotaUsage(userId)) {
-                is RdResult.Success -> {
-                    _quota.value = result.value
-                    cacheQuotaUsage(userId, result.value)
-                }
-                is RdResult.Failure -> _quota.value = cachedQuotaUsage(userId)
+        return when (val result = quotaRepository.dailyQuotaUsage(userId)) {
+            is RdResult.Success -> {
+                _quota.value = result.value
+                cacheQuotaUsage(userId, result.value)
+                result.value
             }
+            is RdResult.Failure -> cachedQuotaUsage(userId).also { _quota.value = it }
         }
     }
 

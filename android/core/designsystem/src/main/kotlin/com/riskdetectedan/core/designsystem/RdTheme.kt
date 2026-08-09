@@ -47,3 +47,11 @@ fun RiskDetectedTheme(
         )
     }
 }
+
+/** Live iOS explicitly pins onboarding, authentication and in-app paywall surfaces to light
+ * appearance. Use this nested provider for those product surfaces so a dark system/app setting
+ * cannot leak through while the rest of the application remains appearance-aware. */
+@Composable
+fun RiskDetectedLightOnlyTheme(content: @Composable () -> Unit) {
+    RiskDetectedTheme(darkTheme = false, content = content)
+}

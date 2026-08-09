@@ -59,3 +59,4 @@ output/snapshot-previews/
 .derivedData/
 .playwright-cli/
 .asc/
+android/.kotlin/

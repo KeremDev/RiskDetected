@@ -60,6 +60,12 @@ class BillingRepository @Inject constructor(
      * with the signed-in user's id as the RevenueCat appUserID, or logs in if a different user
      * is now signed in (matches iOS's currentAppUserID-diffing branch in `identify(userID:)`). */
     suspend fun configure(userId: String): RdResult<Unit> {
+        if (environmentConfig.revenueCatPublicKey.isBlank()) {
+            return RdResult.Failure(
+                code = "billing_not_configured",
+                message = "Bu ortam için RevenueCat yapılandırması tamamlanmamış.",
+            )
+        }
         val appUserId = userId.lowercase()
         if (!isConfigured) {
             if (environmentConfig.environment == RdEnvironment.Staging) {

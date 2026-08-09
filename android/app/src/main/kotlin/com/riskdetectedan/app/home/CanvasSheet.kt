@@ -1,5 +1,9 @@
 package com.riskdetectedan.app.home
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -96,10 +100,12 @@ fun CanvasSheet(
             verticalAlignment = Alignment.Top,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Odaklı Analiz", style = RdFontStyle.Title2.toTextStyle(), color = colors.black)
+                Text(stringResource(RdR.string.rd_odakli_analiz), style = RdFontStyle.Title2.toTextStyle(), color = colors.black)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    if (userTier.isPaid) "Bir veya birden fazla analiz odağı seçebilirsin." else "Bir analiz odağı seçebilirsin.",
+                    stringResource(
+                        if (userTier.isPaid) RdR.string.rd_coklu_odak_sec else RdR.string.rd_tek_odak_sec,
+                    ),
                     style = RdFontStyle.Footnote.toTextStyle(),
                     color = colors.slate,
                 )
@@ -112,7 +118,7 @@ fun CanvasSheet(
                     .background(colors.white)
                     .border(1.dp, colors.line, CircleShape),
             ) {
-                Icon(Icons.Filled.Close, contentDescription = "Kapat", tint = colors.black, modifier = Modifier.size(14.dp))
+                Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kapat), tint = colors.black, modifier = Modifier.size(14.dp))
             }
         }
 
@@ -134,7 +140,7 @@ fun CanvasSheet(
 
         Spacer(Modifier.height(RdSpacing.sm))
         RdPrimaryButton(
-            text = "Onayla ve devam et",
+            text = stringResource(RdR.string.rd_onayla_devam_et),
             onClick = onConfirm,
             style = RdButtonStyle.Onyx,
             modifier = Modifier.padding(horizontal = RdSpacing.lg),
@@ -217,7 +223,7 @@ private fun LockedBadge() {
     ) {
         Icon(Icons.Filled.Lock, contentDescription = null, tint = Color(0xFF8A6500), modifier = Modifier.size(7.dp))
         Spacer(Modifier.width(2.dp))
-        Text("KİLİTLİ", style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 7.sp), color = Color(0xFF8A6500))
+        Text(stringResource(RdR.string.rd_ki_li_tli), style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 7.sp), color = Color(0xFF8A6500))
     }
 }
 

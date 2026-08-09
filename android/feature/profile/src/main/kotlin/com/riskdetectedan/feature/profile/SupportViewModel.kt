@@ -1,5 +1,6 @@
 package com.riskdetectedan.feature.profile
 
+import android.content.Context
 import android.util.Base64
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,6 +9,8 @@ import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.support.SupportAttachmentPayload
 import com.riskdetectedan.core.data.support.SupportRepository
+import com.riskdetectedan.core.designsystem.R as RdR
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +43,7 @@ private const val MAX_ATTACHMENT_BYTES = 5_000_000
 
 @HiltViewModel
 class SupportViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val supportRepository: SupportRepository,
 ) : ViewModel() {
 
@@ -57,11 +61,11 @@ class SupportViewModel @Inject constructor(
      * `support-contact/index.ts`), same [uniqueAttachmentName] de-dupe suffixing. */
     fun addAttachment(bytes: ByteArray, filename: String, mimeType: String) {
         if (_attachments.value.size >= MAX_ATTACHMENT_COUNT) {
-            _attachmentError.value = "En fazla $MAX_ATTACHMENT_COUNT ek ekleyebilirsin."
+            _attachmentError.value = context.getString(RdR.string.rd_ek_sayisi_limiti_format, MAX_ATTACHMENT_COUNT)
             return
         }
         if (bytes.size > MAX_ATTACHMENT_BYTES) {
-            _attachmentError.value = "Ek dosya 5 MB'dan küçük olmalı."
+            _attachmentError.value = context.getString(RdR.string.rd_ek_dosya_boyutu_limiti)
             return
         }
         _attachments.value = _attachments.value + SupportAttachmentDraft(
@@ -107,7 +111,10 @@ class SupportViewModel @Inject constructor(
                     SupportUiState.Sent(result.value.supportId)
                 }
                 is RdResult.Failure -> SupportUiState.Failed(
-                    AppErrorMessages.make(result.message, context = "Destek talebi gönderilemedi"),
+                    AppErrorMessages.make(
+                        result.message,
+                        context = context.getString(RdR.string.rd_destek_talebi_gonderilemedi),
+                    ),
                 )
             }
         }

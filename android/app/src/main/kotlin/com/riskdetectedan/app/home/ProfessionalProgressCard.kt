@@ -1,5 +1,9 @@
 package com.riskdetectedan.app.home
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,6 +41,7 @@ import com.riskdetectedan.core.designsystem.RdRadius
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
+import com.riskdetectedan.core.designsystem.professionalProgressTitleLabel
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -82,12 +87,12 @@ fun ProfessionalProgressCard(progress: ProfessionalProgressSummary, onClick: () 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(formatter.format(progress.profile.totalMdp), style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx)
                 Text(
-                    " / ${formatter.format(nextThreshold)} MDP",
+                    stringResource(RdR.string.rd_mdp_progress_format, formatter.format(nextThreshold)),
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
                 )
                 Spacer(Modifier.weight(1f))
-                Text("%$percent", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                Text(stringResource(RdR.string.rd_yuzde_deger_format, percent), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
             }
             Spacer(Modifier.height(RdSpacing.xxs))
             LinearProgressIndicator(
@@ -100,9 +105,16 @@ fun ProfessionalProgressCard(progress: ProfessionalProgressSummary, onClick: () 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.ArrowOutward, contentDescription = null, tint = accent, modifier = Modifier.size(12.dp))
                 Spacer(Modifier.width(2.dp))
-                Text("Kıdemini yükselt", style = RdFontStyle.Caption.toTextStyle(), color = accent)
+                Text(stringResource(RdR.string.rd_kidemini_yukselt), style = RdFontStyle.Caption.toTextStyle(), color = accent)
                 progress.nextTitle?.let { next ->
-                    Text(" · ${next.label}", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                    Text(
+                        stringResource(
+                            RdR.string.rd_ayrac_etiket_format,
+                            professionalProgressTitleLabel(next.key),
+                        ),
+                        style = RdFontStyle.Caption.toTextStyle(),
+                        color = colors.slate,
+                    )
                 }
             }
         }
@@ -117,9 +129,9 @@ fun ProfessionalProgressCard(progress: ProfessionalProgressSummary, onClick: () 
 fun ProfessionalTitlesSheet(progress: ProfessionalProgressSummary) {
     val colors = RdTheme.colors
     Column(modifier = Modifier.padding(RdSpacing.lg)) {
-        Text("Uzmanlık Seviyeleri", style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
+        Text(stringResource(RdR.string.rd_uzmanlik_seviyeleri), style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
         Text(
-            "${progress.profile.totalMdp} MDP",
+            stringResource(RdR.string.rd_mdp_total_format, progress.profile.totalMdp),
             style = RdFontStyle.Footnote.toTextStyle(),
             color = colors.slate,
             modifier = Modifier.padding(bottom = RdSpacing.md),
@@ -140,14 +152,14 @@ fun ProfessionalTitlesSheet(progress: ProfessionalProgressSummary) {
                 Spacer(Modifier.width(RdSpacing.sm))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        title.label,
+                        professionalProgressTitleLabel(title.key),
                         style = RdFontStyle.Callout.toTextStyle(),
                         color = if (unlocked) colors.onyx else colors.slate,
                     )
-                    Text("${title.threshold} MDP", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                    Text(stringResource(RdR.string.rd_mdp_esigi_format, title.threshold), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                 }
                 if (isCurrent) {
-                    Text("Şu an", style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
+                    Text(stringResource(RdR.string.rd_su_an), style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
                 }
             }
         }

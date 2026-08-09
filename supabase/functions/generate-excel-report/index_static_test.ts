@@ -22,6 +22,9 @@ Deno.test("generate-excel-report snapshot columns are build gated", async () => 
   assertStringIncludes(source, "function reportSnapshotV2GateOpen");
   assertStringIncludes(source, "contractVersion < 2");
   assertStringIncludes(source, "capabilities.report_snapshot_v2 !== true");
+  assertStringIncludes(source, 'platform !== "android"');
+  assertStringIncludes(source, "value.enabled_android_builds");
+  assertStringIncludes(source, "value.min_android_build");
   assertStringIncludes(
     source,
     "const shouldStoreSnapshot = await reportSnapshotV2Enabled",

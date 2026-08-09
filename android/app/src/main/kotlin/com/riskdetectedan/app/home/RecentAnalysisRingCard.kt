@@ -1,5 +1,7 @@
 package com.riskdetectedan.app.home
 
+import androidx.compose.ui.res.stringResource
+import com.riskdetectedan.core.designsystem.R as RdR
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -86,7 +88,7 @@ fun RecentAnalysisRingCard(item: HistoryItem, photoPath: String? = null, onClick
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(Icons.Filled.Warning, contentDescription = null, tint = colors.black, modifier = Modifier.size(9.dp))
-            Text(" ${item.findingCount}", style = RdFontStyle.Data.toTextStyle(), color = colors.black)
+            Text(stringResource(RdR.string.rd_sayi_format, item.findingCount), style = RdFontStyle.Data.toTextStyle(), color = colors.black)
         }
     }
 }

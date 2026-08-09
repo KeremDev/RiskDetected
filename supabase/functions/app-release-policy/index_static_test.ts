@@ -28,6 +28,16 @@ Deno.test("app-release-policy returns sanitized public release policy", async ()
   assertStringIncludes(source, 'key: "android_release_policy"');
   assertStringIncludes(source, "sanitizePolicy(data.value, fallback)");
   assertStringIncludes(source, "decisionFor(policy, build)");
+  assertStringIncludes(
+    source,
+    "readAndroidRuntimeGates(supabase, platform, build)",
+  );
+  assertStringIncludes(source, "android_runtime_gates");
+  assertStringIncludes(source, "android_legal_policy");
+  assertStringIncludes(source, 'if (platform !== "android") return null');
+  assertStringIncludes(source, 'action: "update_app"');
+  assertStringIncludes(source, 'requiresAcknowledgement ? "accept" : "none"');
+  assertStringIncludes(source, "sanitizeAndroidLegalPolicy(data.value)");
   assertStringIncludes(source, "hard_update_required");
   assertStringIncludes(source, "soft_update_available");
   assertStringIncludes(source, "cleanURL(");
@@ -48,7 +58,7 @@ Deno.test("app-release-policy resolves android and unrecognized platforms withou
   assertStringIncludes(source, 'if (platform === "android")');
   assertStringIncludes(source, "DEFAULT_ANDROID_POLICY");
   assertStringIncludes(source, "DEFAULT_UNKNOWN_PLATFORM_POLICY");
-  assertStringIncludes(source, "readPolicy(platform)");
+  assertStringIncludes(source, "readPolicy(platform, supabase)");
 });
 
 Deno.test("attested iOS release policy stays safe for build 62 and App Review", async () => {

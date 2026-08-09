@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.profile
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +37,7 @@ import com.riskdetectedan.core.designsystem.RdRadius
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
+import com.riskdetectedan.core.designsystem.professionalProgressCompetencyLabel
 
 /**
  * Real port of `ProfessionalProgressCompetencyMapView.swift` — donut chart + legend chips
@@ -68,7 +73,7 @@ fun ProfessionalProgressCompetencyMapView(
 
     Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
         if (!compact) {
-            Text("Yetkinlik Haritası", style = RdFontStyle.Title2.toTextStyle(), color = colors.black)
+            Text(stringResource(RdR.string.rd_yetkinlik_haritasi), style = RdFontStyle.Title2.toTextStyle(), color = colors.black)
         }
         if (compact) {
             CompactCompetencyChart(rows)
@@ -124,14 +129,14 @@ private fun CompactCompetencyChart(rows: List<ProfessionalProgressCompetencyStat
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("${rows.size}", style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
-                    Text("alan", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                    Text(stringResource(RdR.string.rd_sayi_format, rows.size), style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
+                    Text(stringResource(RdR.string.rd_alan), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                 }
             }
         }
 
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text("Yetkinlik dağılımı", style = RdFontStyle.Footnote.toTextStyle(), color = colors.black)
+            Text(stringResource(RdR.string.rd_yetkinlik_dagilimi), style = RdFontStyle.Footnote.toTextStyle(), color = colors.black)
             val chunks = rows.chunked(2)
             chunks.forEach { chunk ->
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -159,8 +164,14 @@ private fun CompetencyLegendChip(stat: ProfessionalProgressCompetencyStat, total
     ) {
         Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(accent))
         Spacer(Modifier.width(5.dp))
-        Text(competency.label, style = RdFontStyle.Caption.toTextStyle(), color = colors.black, maxLines = 1, modifier = Modifier.weight(1f))
-        Text("%$percent", style = RdFontStyle.Caption.toTextStyle(), color = colors.black)
+        Text(
+            professionalProgressCompetencyLabel(competency.key),
+            style = RdFontStyle.Caption.toTextStyle(),
+            color = colors.black,
+            maxLines = 1,
+            modifier = Modifier.weight(1f),
+        )
+        Text(stringResource(RdR.string.rd_yuzde_deger_format, percent), style = RdFontStyle.Caption.toTextStyle(), color = colors.black)
     }
 }
 
@@ -189,7 +200,11 @@ private fun CompetencyRow(stat: ProfessionalProgressCompetencyStat) {
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(competency.label, style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
+                    Text(
+                        professionalProgressCompetencyLabel(competency.key),
+                        style = RdFontStyle.Callout.toTextStyle(),
+                        color = colors.black,
+                    )
                     if (stat.onboardingSeed && stat.signalCount == 0) {
                         Spacer(Modifier.width(6.dp))
                         Box(
@@ -198,18 +213,18 @@ private fun CompetencyRow(stat: ProfessionalProgressCompetencyStat) {
                                 .background(colors.greenSoft)
                                 .padding(horizontal = 6.dp, vertical = 3.dp),
                         ) {
-                            Text("Beyan edilen alan", style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
+                            Text(stringResource(RdR.string.rd_beyan_edilen_alan), style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
                         }
                     }
                 }
                 Text(
-                    "${stat.findingCount} bulgu · ${stat.reportCount} rapor",
+                    stringResource(RdR.string.rd_bulgu_rapor_format, stat.findingCount, stat.reportCount),
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
                 )
             }
             Spacer(Modifier.width(8.dp))
-            Text("${stat.score}", style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
+            Text(stringResource(RdR.string.rd_sayi_format, stat.score), style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
         }
 
         Box(modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(colors.fog)) {
@@ -224,10 +239,10 @@ private fun CompetencyRow(stat: ProfessionalProgressCompetencyStat) {
 
         if (stat.findingCount > 0) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                RiskChip("Kritik", stat.criticalCount, colors.critical)
-                RiskChip("Yüksek", stat.highCount, colors.high)
-                RiskChip("Orta", stat.mediumCount, colors.medium)
-                RiskChip("Düşük", stat.lowCount, colors.low)
+                RiskChip(stringResource(RdR.string.rd_risk_kritik), stat.criticalCount, colors.critical)
+                RiskChip(stringResource(RdR.string.rd_risk_yuksek), stat.highCount, colors.high)
+                RiskChip(stringResource(RdR.string.rd_risk_orta), stat.mediumCount, colors.medium)
+                RiskChip(stringResource(RdR.string.rd_risk_dusuk), stat.lowCount, colors.low)
             }
         }
     }
@@ -241,6 +256,6 @@ private fun RiskChip(label: String, count: Int, color: Color) {
             .background(color.copy(alpha = 0.11f))
             .padding(horizontal = 7.dp, vertical = 4.dp),
     ) {
-        Text("$label $count", style = RdFontStyle.Caption.toTextStyle(), color = color)
+        Text(stringResource(RdR.string.rd_etiket_sayi_format, label, count), style = RdFontStyle.Caption.toTextStyle(), color = color)
     }
 }

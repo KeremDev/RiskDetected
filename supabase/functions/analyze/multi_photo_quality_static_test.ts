@@ -572,8 +572,9 @@ Deno.test("single-pass layer audit is flag gated and schema bounded", async () =
   );
   assertStringIncludes(
     source,
-    "clientBuildAtLeast(\n      flags.multi_photo_layer_audit_min_ios_build",
+    "flags.multi_photo_layer_audit_min_ios_build,",
   );
+  assertStringIncludes(source, 'client.platform === "ios"');
   assertStringIncludes(source, "INSPECTION_LAYER_KEYS,");
   assertStringIncludes(
     auditSource,
@@ -796,7 +797,10 @@ Deno.test("Android build-allowlist gate mirrors iOS's, closed by default", async
   // populates enabled_android_builds/min_android_build for a real Android build).
   assertStringIncludes(source, "enabled_android_builds: string[]");
   assertStringIncludes(source, "min_android_build: number | null");
-  assertStringIncludes(source, "enabled_android_builds: [],\n  min_android_build: null,");
+  assertStringIncludes(
+    source,
+    "enabled_android_builds: [],\n  min_android_build: null,",
+  );
   assertStringIncludes(
     source,
     "enabled_android_builds: asStringArray(record.enabled_android_builds)",
@@ -811,7 +815,10 @@ Deno.test("Android build-allowlist gate mirrors iOS's, closed by default", async
   // separate functions so the existing iOS-only call sites (multi_photo_layer_audit,
   // thinking-budget overrides) stay untouched by this addition.
   assertStringIncludes(source, "function androidBuildMatches(");
-  assertStringIncludes(source, 'if (client.platform !== "android") return false;');
+  assertStringIncludes(
+    source,
+    'if (client.platform !== "android") return false;',
+  );
   assertStringIncludes(source, "function androidBuildAtLeast(");
   assertStringIncludes(source, 'client.platform === "android" &&');
 

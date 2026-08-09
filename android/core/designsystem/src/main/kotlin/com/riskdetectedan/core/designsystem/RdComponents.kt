@@ -1,5 +1,7 @@
 package com.riskdetectedan.core.designsystem
 
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -51,7 +53,7 @@ fun RdScreenHeader(title: String, onBack: (() -> Unit)? = null, modifier: Modifi
     ) {
         if (onBack != null) {
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri", tint = RdTheme.colors.onyx)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.rd_geri), tint = RdTheme.colors.onyx)
             }
             Spacer(Modifier.width(RdSpacing.xs))
         }
@@ -123,13 +125,16 @@ fun RdListRow(
     }
 }
 
-private fun RiskLevel.turkishLabel(): String = when (this) {
-    RiskLevel.Critical -> "Kritik"
-    RiskLevel.High -> "Yüksek"
-    RiskLevel.Medium -> "Orta"
-    RiskLevel.Low -> "Düşük"
-    RiskLevel.Unknown -> "Bilinmiyor"
-}
+@Composable
+private fun RiskLevel.turkishLabel(): String = stringResource(
+    when (this) {
+        RiskLevel.Critical -> R.string.rd_risk_kritik
+        RiskLevel.High -> R.string.rd_risk_yuksek
+        RiskLevel.Medium -> R.string.rd_risk_orta
+        RiskLevel.Low -> R.string.rd_risk_dusuk
+        RiskLevel.Unknown -> R.string.rd_risk_bilinmiyor
+    },
+)
 
 @Composable
 private fun RiskLevel.textColor(): Color = when (this) {

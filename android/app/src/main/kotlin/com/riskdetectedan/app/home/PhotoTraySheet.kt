@@ -1,5 +1,9 @@
 package com.riskdetectedan.app.home
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -52,9 +56,9 @@ import java.io.File
  * not a single-shot capture). 3-column grid of photo slots (filled/empty/locked), source buttons
  * (Kamera/Galeri), locked-slot upgrade prompt, dynamic primary button ("Fotoğraf ekle" when
  * empty, "Analize geç" once at least one photo is in). `maxPhotoCount`/`visibleSlotCount` default
- * to iOS's real Free-tier numbers (1 photo, 3 visible slots — the other 2 show locked) since no
- * live `PlanCapabilities` system exists on Android yet (same documented gap as Faz N's canvas
- * tier-gating) — this is the safe/conservative default, not a guess.
+ * to the fail-closed Android contract (1 photo, 1 visible slot); Home passes the live
+ * `PlanCapabilities` values after the Android-specific rollout gate resolves, including the
+ * optional locked Free slots.
  *
  * Every photo added here (camera or gallery) is routed through [com.riskdetectedan.app.annotate
  * .AnnotateScreen] before it lands in a tile — real port of `appendPickedPhotos(shouldAnnotate:
@@ -68,7 +72,7 @@ import java.io.File
 fun PhotoTraySheet(
     photoPaths: List<String>,
     maxPhotoCount: Int = 1,
-    visibleSlotCount: Int = 3,
+    visibleSlotCount: Int = 1,
     onCamera: () -> Unit,
     onGallery: () -> Unit,
     onRemove: (String) -> Unit,
@@ -85,8 +89,8 @@ fun PhotoTraySheet(
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = RdSpacing.lg).padding(top = RdSpacing.md, bottom = RdSpacing.lg)) {
         Row(verticalAlignment = Alignment.Top) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Fotoğraflar", style = RdFontStyle.Title2.toTextStyle(), color = colors.onyx)
-                Text("${photoPaths.size}/$maxPhotoCount", style = RdFontStyle.Data.toTextStyle(), color = colors.slate)
+                Text(stringResource(RdR.string.rd_fotograflar), style = RdFontStyle.Title2.toTextStyle(), color = colors.onyx)
+                Text(stringResource(RdR.string.rd_fotograf_orani_format, photoPaths.size, maxPhotoCount), style = RdFontStyle.Data.toTextStyle(), color = colors.slate)
             }
             Box(
                 modifier = Modifier
@@ -96,14 +100,14 @@ fun PhotoTraySheet(
                     .clickable(onClick = onClose),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Close, contentDescription = "Kapat", tint = colors.slate, modifier = Modifier.size(15.dp))
+                Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kapat), tint = colors.slate, modifier = Modifier.size(15.dp))
             }
         }
 
         Spacer(Modifier.height(RdSpacing.md))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            SourceButton(title = "Kamera", icon = Icons.Filled.CameraAlt, enabled = canAddMore, onClick = onCamera, modifier = Modifier.weight(1f))
-            SourceButton(title = "Galeri", icon = Icons.Filled.PhotoLibrary, enabled = canAddMore, onClick = onGallery, modifier = Modifier.weight(1f))
+            SourceButton(title = stringResource(RdR.string.rd_kamera), icon = Icons.Filled.CameraAlt, enabled = canAddMore, onClick = onCamera, modifier = Modifier.weight(1f))
+            SourceButton(title = stringResource(RdR.string.rd_galeri), icon = Icons.Filled.PhotoLibrary, enabled = canAddMore, onClick = onGallery, modifier = Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(RdSpacing.sm))
@@ -177,7 +181,7 @@ private fun PhotoTile(path: String, index: Int, canMoveLeft: Boolean, canMoveRig
                     modifier = Modifier.size(24.dp).clip(CircleShape).background(colors.white.copy(alpha = 0.92f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("${index + 1}", style = RdFontStyle.Data.toTextStyle(), color = colors.onyx)
+                    Text(stringResource(RdR.string.rd_sayi_format, index + 1), style = RdFontStyle.Data.toTextStyle(), color = colors.onyx)
                 }
                 Box(
                     modifier = Modifier
@@ -187,7 +191,7 @@ private fun PhotoTile(path: String, index: Int, canMoveLeft: Boolean, canMoveRig
                         .clickable(onClick = onRemove),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.Close, contentDescription = "Fotoğrafı sil", tint = Color.White, modifier = Modifier.size(10.dp))
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_fotografi_sil), tint = Color.White, modifier = Modifier.size(10.dp))
                 }
             }
             Spacer(Modifier.weight(1f))
@@ -200,13 +204,13 @@ private fun PhotoTile(path: String, index: Int, canMoveLeft: Boolean, canMoveRig
             ) {
                 Icon(
                     Icons.Filled.NavigateBefore,
-                    contentDescription = "Sola taşı",
+                    contentDescription = stringResource(RdR.string.rd_sola_tasi),
                     tint = if (canMoveLeft) colors.onyx else colors.slate.copy(alpha = 0.38f),
                     modifier = Modifier.size(18.dp).clickable(enabled = canMoveLeft) { onMove(-1) },
                 )
                 Icon(
                     Icons.Filled.NavigateNext,
-                    contentDescription = "Sağa taşı",
+                    contentDescription = stringResource(RdR.string.rd_saga_tasi),
                     tint = if (canMoveRight) colors.onyx else colors.slate.copy(alpha = 0.38f),
                     modifier = Modifier.size(18.dp).clickable(enabled = canMoveRight) { onMove(1) },
                 )
@@ -227,7 +231,7 @@ private fun EmptyTile(enabled: Boolean, onClick: () -> Unit) {
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.Add, contentDescription = "Fotoğraf ekle", tint = colors.slate.copy(alpha = 0.58f), modifier = Modifier.size(31.dp))
+        Icon(Icons.Filled.Add, contentDescription = stringResource(RdR.string.rd_fotograf_ekle), tint = colors.slate.copy(alpha = 0.58f), modifier = Modifier.size(31.dp))
     }
 }
 
@@ -243,7 +247,7 @@ private fun LockedTile(onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.Lock, contentDescription = "Kilitli slot", tint = colors.black, modifier = Modifier.size(18.dp))
+        Icon(Icons.Filled.Lock, contentDescription = stringResource(RdR.string.rd_kilitli_slot), tint = colors.black, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -263,7 +267,7 @@ private fun UpgradePrompt(onClick: () -> Unit) {
         Icon(Icons.Filled.Lock, contentDescription = null, tint = Color(0xFF8A5A00), modifier = Modifier.size(12.dp))
         Spacer(Modifier.width(9.dp))
         Text(
-            "Çoklu fotoğraf özelliği için hesabınızı yükseltin",
+            stringResource(RdR.string.rd_coklu_fotograf_yukselt),
             style = RdFontStyle.Caption.toTextStyle(),
             color = Color(0xFF8A5A00),
             modifier = Modifier.weight(1f),
@@ -287,6 +291,10 @@ private fun PrimaryButton(hasPhotos: Boolean, onClick: () -> Unit) {
     ) {
         Icon(if (hasPhotos) Icons.Filled.AutoAwesome else Icons.Filled.Add, contentDescription = null, tint = colors.white, modifier = Modifier.size(17.dp))
         Spacer(Modifier.width(9.dp))
-        Text(if (hasPhotos) "Analize geç" else "Fotoğraf ekle", style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
+        Text(
+            stringResource(if (hasPhotos) RdR.string.rd_analize_gec else RdR.string.rd_fotograf_ekle),
+            style = RdFontStyle.Callout.toTextStyle(),
+            color = colors.white,
+        )
     }
 }

@@ -1,5 +1,6 @@
 package com.riskdetectedan.feature.profile
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
@@ -9,6 +10,8 @@ import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.notifications.NotificationPreferences
 import com.riskdetectedan.core.data.notifications.NotificationPreferencesRepository
 import com.riskdetectedan.core.data.notifications.ProgressPreference
+import com.riskdetectedan.core.designsystem.R as RdR
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +28,7 @@ sealed interface NotificationSettingsUiState {
 
 @HiltViewModel
 class NotificationSettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val preferencesRepository: NotificationPreferencesRepository,
 ) : ViewModel() {
@@ -47,7 +51,10 @@ class NotificationSettingsViewModel @Inject constructor(
             _state.value = when (val result = preferencesRepository.fetch(userId)) {
                 is RdResult.Success -> NotificationSettingsUiState.Loaded(result.value)
                 is RdResult.Failure -> NotificationSettingsUiState.Failed(
-                    AppErrorMessages.make(result.message, context = "Bildirim ayarları yüklenemedi"),
+                    AppErrorMessages.make(
+                        result.message,
+                        context = context.getString(RdR.string.rd_bildirim_ayarlari_yuklenemedi),
+                    ),
                 )
             }
         }

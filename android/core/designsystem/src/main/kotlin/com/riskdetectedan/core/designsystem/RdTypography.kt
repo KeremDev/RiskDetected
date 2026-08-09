@@ -1,6 +1,7 @@
 package com.riskdetectedan.core.designsystem
 
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -32,6 +33,22 @@ fun rdFontScale(base: Float): Float = when {
 
 fun RdFontStyle.toTextStyle(): TextStyle = TextStyle(
     fontSize = rdFontScale(baseSize).sp,
+    lineHeight = (rdFontScale(baseSize) * when (this) {
+        RdFontStyle.LargeTitle, RdFontStyle.Title1, RdFontStyle.Title2, RdFontStyle.Title3 -> 1.12f
+        RdFontStyle.Caption, RdFontStyle.Data, RdFontStyle.SectionHeader -> 1.16f
+        else -> 1.22f
+    }).sp,
+    letterSpacing = when (this) {
+        RdFontStyle.LargeTitle, RdFontStyle.Title1 -> (-0.35f).sp
+        RdFontStyle.Title2, RdFontStyle.Title3 -> (-0.2f).sp
+        RdFontStyle.SectionHeader -> 0.55f.sp
+        else -> 0.sp
+    },
     fontWeight = weight,
-    fontFamily = if (mono) FontFamily.Monospace else FontFamily.Default,
+    // SF Pro / SF Pro Rounded cannot be redistributed in the Android bundle. Android's
+    // platform sans family is the safe system counterpart; explicit metrics below remove
+    // Roboto's extra vertical padding and match the live iOS optical sizes more closely.
+    fontFamily = FontFamily.SansSerif,
+    fontFeatureSettings = if (mono) "tnum" else null,
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
 )

@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -63,10 +67,11 @@ import kotlinx.coroutines.delay
 
 private data class PainItem(val icon: ImageVector, val text: String)
 
-private val pains = listOf(
-    PainItem(Icons.Filled.Schedule, "Saatlerce süren rapor yazımı."),
-    PainItem(Icons.Filled.PhotoLibrary, "Dağınık fotoğraflar ve notlar."),
-    PainItem(Icons.Filled.EventBusy, "Geç teslim edilen değerlendirmeler."),
+@Composable
+private fun pains() = listOf(
+    PainItem(Icons.Filled.Schedule, stringResource(RdR.string.rd_pain_rapor_yazimi)),
+    PainItem(Icons.Filled.PhotoLibrary, stringResource(RdR.string.rd_pain_daginik_notlar)),
+    PainItem(Icons.Filled.EventBusy, stringResource(RdR.string.rd_pain_gec_teslim)),
 )
 
 /** Port of OBPainPointView.swift (2026-08-08 visual pass, Faz E). Hero simplified from iOS's
@@ -83,11 +88,12 @@ private val pains = listOf(
 @Composable
 fun OBPainPointScreen(onNext: () -> Unit) {
     val colors = RdTheme.colors
-    var checked by remember { mutableStateOf(BooleanArray(pains.size)) }
+    val painItems = pains()
+    var checked by remember { mutableStateOf(BooleanArray(painItems.size)) }
 
     LaunchedEffect(Unit) {
         val state = checked.copyOf()
-        for (i in pains.indices) {
+        for (i in painItems.indices) {
             delay(if (i == 0) 600L else 450L)
             state[i] = true
             checked = state.copyOf()
@@ -111,20 +117,20 @@ fun OBPainPointScreen(onNext: () -> Unit) {
 
             Spacer(Modifier.height(16.dp))
             Text(
-                "Sahada gördüklerini akşam ofiste mi yazıyorsun?",
+                stringResource(RdR.string.rd_saha_aksam_ofis_soru),
                 style = RdFontStyle.Title2.toTextStyle(),
                 color = colors.onyx,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(6.dp))
-            Text("Tanıdık geliyor mu?", style = RdFontStyle.Subheadline.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
+            Text(stringResource(RdR.string.rd_tanidik_geliyor_mu), style = RdFontStyle.Subheadline.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
 
             Spacer(Modifier.height(18.dp))
             HorizontalDivider(color = colors.line)
 
             Spacer(Modifier.height(10.dp))
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                pains.forEachIndexed { index, pain ->
+                painItems.forEachIndexed { index, pain ->
                     PainCard(pain = pain, isChecked = checked.getOrElse(index) { false })
                 }
             }
@@ -135,7 +141,7 @@ fun OBPainPointScreen(onNext: () -> Unit) {
         }
 
         RdFooter {
-            RdPrimaryButton(text = "Devam", onClick = onNext, style = RdButtonStyle.Onyx)
+            RdPrimaryButton(text = stringResource(RdR.string.rd_devam), onClick = onNext, style = RdButtonStyle.Onyx)
         }
     }
 }
@@ -225,9 +231,9 @@ private fun MirrorBanner() {
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Bunu ", style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
-            Text("birlikte", style = RdFontStyle.Callout.toTextStyle(), color = Color(0xFF4FE07E))
-            Text(" değiştireceğiz.", style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
+            Text(stringResource(RdR.string.rd_bunu), style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
+            Text(stringResource(RdR.string.rd_birlikte), style = RdFontStyle.Callout.toTextStyle(), color = Color(0xFF4FE07E))
+            Text(stringResource(RdR.string.rd_degistirecegiz), style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
         }
     }
 }

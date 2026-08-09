@@ -1,5 +1,9 @@
 package com.riskdetectedan.app.home
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -90,7 +94,7 @@ fun HomeSectionCard(
                     .height(28.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Tümü", style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
+                Text(stringResource(RdR.string.rd_tumu), style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(14.dp))
             }
         }

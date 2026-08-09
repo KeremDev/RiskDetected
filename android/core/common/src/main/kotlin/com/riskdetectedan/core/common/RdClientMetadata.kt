@@ -13,6 +13,16 @@ object RdClientMetadata {
     const val API_CONTRACT_VERSION = 2
     const val PLATFORM = "android"
 
+    // The first Android release is deliberately Turkish-only. Keep these values together so
+    // auth, analysis, reports, support and release-policy requests cannot slowly drift into
+    // different locale/safety contexts. They mirror build-81's Turkey safety profile.
+    const val APP_LANGUAGE = "tr"
+    const val CONTENT_LOCALE = "tr-TR"
+    const val WORK_JURISDICTION_COUNTRY = "TR"
+    const val SAFETY_PROFILE_ID = "tr-tr-current-v1"
+    const val SAFETY_PROFILE_VERSION = 1
+    const val DEFAULT_RISK_METHOD = "fine_kinney"
+
     /**
      * See contracts/mobile/api/client-capabilities.md for the fail-closed-per-key rule and why
      * global_localization_wave1 stays false until Android has its own build-gate equivalent of

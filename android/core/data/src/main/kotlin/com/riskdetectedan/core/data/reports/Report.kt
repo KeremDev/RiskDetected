@@ -58,6 +58,11 @@ private data class GenerateExcelReportBody(
     @SerialName("client_platform") val clientPlatform: String,
     @SerialName("api_contract_version") val apiContractVersion: Int,
     @SerialName("client_capabilities") val clientCapabilities: Map<String, Boolean>,
+    @SerialName("app_language") val appLanguage: String,
+    @SerialName("content_locale") val contentLocale: String,
+    @SerialName("work_jurisdiction_country") val workJurisdictionCountry: String,
+    @SerialName("safety_profile_id") val safetyProfileId: String,
+    @SerialName("safety_profile_version") val safetyProfileVersion: Int,
 )
 
 @Serializable
@@ -93,6 +98,11 @@ private data class RegisterReportBody(
     @SerialName("client_platform") val clientPlatform: String,
     @SerialName("api_contract_version") val apiContractVersion: Int,
     @SerialName("client_capabilities") val clientCapabilities: Map<String, Boolean>,
+    @SerialName("app_language") val appLanguage: String,
+    @SerialName("content_locale") val contentLocale: String,
+    @SerialName("work_jurisdiction_country") val workJurisdictionCountry: String,
+    @SerialName("safety_profile_id") val safetyProfileId: String,
+    @SerialName("safety_profile_version") val safetyProfileVersion: Int,
     @SerialName("request_id") val requestId: String,
     @SerialName("support_id") val supportId: String,
 )
@@ -124,6 +134,11 @@ class ReportsRepository @Inject constructor(
                 clientPlatform = RdClientMetadata.PLATFORM,
                 apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
                 clientCapabilities = RdClientMetadata.capabilities,
+                appLanguage = RdClientMetadata.APP_LANGUAGE,
+                contentLocale = RdClientMetadata.CONTENT_LOCALE,
+                workJurisdictionCountry = RdClientMetadata.WORK_JURISDICTION_COUNTRY,
+                safetyProfileId = RdClientMetadata.SAFETY_PROFILE_ID,
+                safetyProfileVersion = RdClientMetadata.SAFETY_PROFILE_VERSION,
             ),
         ).body<GenerateExcelReportResult>()
 
@@ -221,6 +236,11 @@ class ReportsRepository @Inject constructor(
                     clientPlatform = RdClientMetadata.PLATFORM,
                     apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
                     clientCapabilities = RdClientMetadata.capabilities,
+                    appLanguage = RdClientMetadata.APP_LANGUAGE,
+                    contentLocale = RdClientMetadata.CONTENT_LOCALE,
+                    workJurisdictionCountry = RdClientMetadata.WORK_JURISDICTION_COUNTRY,
+                    safetyProfileId = RdClientMetadata.SAFETY_PROFILE_ID,
+                    safetyProfileVersion = RdClientMetadata.SAFETY_PROFILE_VERSION,
                     requestId = requestId,
                     supportId = supportId,
                 ),

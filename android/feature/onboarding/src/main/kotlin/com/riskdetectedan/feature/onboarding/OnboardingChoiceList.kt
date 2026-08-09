@@ -1,5 +1,7 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdCard
 import com.riskdetectedan.core.designsystem.RdChipTile
@@ -62,12 +65,12 @@ fun <T> OnboardingChoiceScreen(
     title: String,
     items: List<T>,
     isSelected: (T) -> Boolean,
-    label: (T) -> String,
+    label: @Composable (T) -> String,
     onToggle: (T) -> Unit,
     canContinue: Boolean,
     onContinue: () -> Unit,
     subtitle: String? = null,
-    continueLabel: String = "Devam",
+    continueLabel: String? = null,
     multi: Boolean = false,
     layout: RdPickerLayout = RdPickerLayout.List,
     step: Int? = null,
@@ -75,12 +78,14 @@ fun <T> OnboardingChoiceScreen(
     onBack: (() -> Unit)? = null,
     heroTint: RdHeroTint = RdHeroTint.Neutral,
     heroIcon: ImageVector? = null,
-    selectionCounterSuffix: String = "seçildi",
+    selectionCounterSuffix: String? = null,
     itemIcon: (T) -> ImageVector? = { null },
-    itemSubtitle: (T) -> String? = { null },
+    itemSubtitle: @Composable (T) -> String? = { null },
     itemIconTint: (T) -> Color? = { null },
     itemIconBackground: (T) -> Color? = { null },
 ) {
+    val resolvedContinueLabel = continueLabel ?: stringResource(RdR.string.rd_devam)
+    val resolvedSelectionCounterSuffix = selectionCounterSuffix ?: stringResource(RdR.string.rd_secildi)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -153,14 +158,14 @@ fun <T> OnboardingChoiceScreen(
         if (multi) {
             RdSelectionCounter(
                 count = items.count(isSelected),
-                suffix = selectionCounterSuffix,
+                    suffix = resolvedSelectionCounterSuffix,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = RdSpacing.lg),
             )
         }
 
         RdFooter {
             RdPrimaryButton(
-                text = continueLabel,
+                text = resolvedContinueLabel,
                 onClick = onContinue,
                 enabled = canContinue,
                 style = RdButtonStyle.Onyx,

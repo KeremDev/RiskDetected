@@ -1,13 +1,26 @@
 package com.riskdetectedan.app.push
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.messaging.FirebaseMessaging
+import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.notifications.DeviceTokenRepository
+import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
+import com.riskdetectedan.core.data.release.ReleasePolicyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -30,27 +43,46 @@ import javax.inject.Inject
 class PushTokenRegistrarViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val deviceTokenRepository: DeviceTokenRepository,
+    private val environmentConfig: RdEnvironmentConfig,
+    private val releasePolicyRepository: ReleasePolicyRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
     init {
         viewModelScope.launch {
             authRepository.currentUserIdFlow.collectLatest { userId ->
-                if (userId != null) {
-                    val token = try {
-                        FirebaseMessaging.getInstance().token.await()
-                    } catch (t: Throwable) {
-                        null
-                    }
-                    if (token != null) {
-                        deviceTokenRepository.registerToken(userId, token, notificationsEnabled = true)
-                    }
-                }
+                if (userId != null) registerCurrentToken(userId)
             }
         }
+    }
+
+    fun refresh() {
+        val userId = authRepository.currentUserId ?: return
+        viewModelScope.launch { registerCurrentToken(userId) }
+    }
+
+    private suspend fun registerCurrentToken(userId: String) {
+        if (environmentConfig.firebaseProjectId.isBlank()) return
+        if (!releasePolicyRepository.resolveGate(AndroidRuntimeGateName.Notifications).enabled) return
+        val token = try {
+            FirebaseMessaging.getInstance().token.await()
+        } catch (t: Throwable) {
+            null
+        } ?: return
+        val notificationsEnabled = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        deviceTokenRepository.registerToken(userId, token, notificationsEnabled = notificationsEnabled)
     }
 }
 
 @Composable
 fun PushTokenRegistrar(viewModel: PushTokenRegistrarViewModel = hiltViewModel()) {
-    // No UI — the ViewModel's init block does the work. Composing this once (see MainActivity)
-    // is enough to create/retain it for the process lifetime.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refresh()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 }

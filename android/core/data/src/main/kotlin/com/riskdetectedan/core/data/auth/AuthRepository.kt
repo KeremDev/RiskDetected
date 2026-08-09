@@ -7,6 +7,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.auth.providers.builtin.OTP
 import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.providers.Apple
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
@@ -130,6 +131,26 @@ class AuthRepository @Inject constructor(
         RdResult.Success(Unit)
     } catch (t: Throwable) {
         RdResult.Failure(code = "google_sign_in_failed", message = t.message ?: "google_sign_in_failed", cause = t)
+    }
+
+    /** Starts Supabase Apple OAuth in a Custom Tab. PKCE completion is imported by
+     * `SupabaseClient.handleDeeplinks` in MainActivity; sessionStatus is the completion signal. */
+    suspend fun signInWithAppleOAuth(): RdResult<Unit> = try {
+        client.auth.signInWith(Apple)
+        RdResult.Success(Unit)
+    } catch (t: Throwable) {
+        RdResult.Failure(code = "apple_sign_in_failed", message = t.message ?: "apple_sign_in_failed", cause = t)
+    }
+
+    suspend fun awaitInitialization() {
+        client.auth.awaitInitialization()
+    }
+
+    suspend fun clearLocalSession(): RdResult<Unit> = try {
+        client.auth.clearSession()
+        RdResult.Success(Unit)
+    } catch (t: Throwable) {
+        RdResult.Failure(code = "session_clear_failed", message = t.message ?: "session_clear_failed", cause = t)
     }
 
     /**

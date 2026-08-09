@@ -118,6 +118,7 @@ import {
   hazardConfidence,
   productionFindingNeedsFieldVerification,
 } from "../_shared/finding-confidence.ts";
+import { readAndroidRuntimeGates } from "../_shared/android-runtime-gates.ts";
 
 declare const EdgeRuntime: {
   waitUntil: (promise: Promise<unknown>) => void;
@@ -235,6 +236,8 @@ type MultiPhotoFeatureFlags = {
   multi_photo_layer_audit_enabled: boolean;
   multi_photo_layer_audit_enabled_ios_builds: string[];
   multi_photo_layer_audit_min_ios_build: number | null;
+  multi_photo_layer_audit_enabled_android_builds: string[];
+  multi_photo_layer_audit_min_android_build: number | null;
   single_photo_compact_layer_schema_enabled: boolean;
   single_photo_evidence_guard_enabled: boolean;
   single_photo_thinking_budget: number;
@@ -242,6 +245,9 @@ type MultiPhotoFeatureFlags = {
   multi_photo_thinking_budget_ios_build_overrides: Record<string, number>;
   multi_photo_thinking_budget_min_ios_build: number | null;
   multi_photo_thinking_budget_min_ios_build_value: number | null;
+  multi_photo_thinking_budget_android_build_overrides: Record<string, number>;
+  multi_photo_thinking_budget_min_android_build: number | null;
+  multi_photo_thinking_budget_min_android_build_value: number | null;
   coverage_repair_enabled: boolean;
   max_photo_count_free: number;
   max_photo_count_plus: number;
@@ -433,6 +439,8 @@ const DEFAULT_MULTI_PHOTO_FLAGS: MultiPhotoFeatureFlags = {
   multi_photo_layer_audit_enabled: false,
   multi_photo_layer_audit_enabled_ios_builds: [],
   multi_photo_layer_audit_min_ios_build: null,
+  multi_photo_layer_audit_enabled_android_builds: [],
+  multi_photo_layer_audit_min_android_build: null,
   single_photo_compact_layer_schema_enabled: false,
   single_photo_evidence_guard_enabled: false,
   single_photo_thinking_budget: 3072,
@@ -440,6 +448,9 @@ const DEFAULT_MULTI_PHOTO_FLAGS: MultiPhotoFeatureFlags = {
   multi_photo_thinking_budget_ios_build_overrides: {},
   multi_photo_thinking_budget_min_ios_build: null,
   multi_photo_thinking_budget_min_ios_build_value: null,
+  multi_photo_thinking_budget_android_build_overrides: {},
+  multi_photo_thinking_budget_min_android_build: null,
+  multi_photo_thinking_budget_min_android_build_value: null,
   coverage_repair_enabled: true,
   max_photo_count_free: 1,
   max_photo_count_plus: 3,
@@ -877,6 +888,12 @@ function normalizeMultiPhotoFlags(value: unknown): MultiPhotoFeatureFlags {
     multi_photo_layer_audit_min_ios_build: asOptionalPositiveInt(
       record.multi_photo_layer_audit_min_ios_build,
     ),
+    multi_photo_layer_audit_enabled_android_builds: asStringArray(
+      record.multi_photo_layer_audit_enabled_android_builds,
+    ),
+    multi_photo_layer_audit_min_android_build: asOptionalPositiveInt(
+      record.multi_photo_layer_audit_min_android_build,
+    ),
     single_photo_compact_layer_schema_enabled: asBoolean(
       record.single_photo_compact_layer_schema_enabled,
       DEFAULT_MULTI_PHOTO_FLAGS.single_photo_compact_layer_schema_enabled,
@@ -903,6 +920,17 @@ function normalizeMultiPhotoFlags(value: unknown): MultiPhotoFeatureFlags {
     multi_photo_thinking_budget_min_ios_build_value: asOptionalThinkingBudget(
       record.multi_photo_thinking_budget_min_ios_build_value,
     ),
+    multi_photo_thinking_budget_android_build_overrides:
+      normalizeThinkingBudgetOverrides(
+        record.multi_photo_thinking_budget_android_build_overrides,
+      ),
+    multi_photo_thinking_budget_min_android_build: asOptionalPositiveInt(
+      record.multi_photo_thinking_budget_min_android_build,
+    ),
+    multi_photo_thinking_budget_min_android_build_value:
+      asOptionalThinkingBudget(
+        record.multi_photo_thinking_budget_min_android_build_value,
+      ),
     coverage_repair_enabled: asBoolean(
       record.coverage_repair_enabled,
       DEFAULT_MULTI_PHOTO_FLAGS.coverage_repair_enabled,
@@ -1105,26 +1133,46 @@ function applyReleaseGateToFlags(
   const enabled = (feature: string, flag: boolean) =>
     decision.open && supports(feature) && flag;
   const buildScopedMultiPhotoLayerAuditEnabled = decision.open &&
-    (clientBuildMatches(
-      flags.multi_photo_layer_audit_enabled_ios_builds,
-      client,
-    ) || clientBuildAtLeast(
-      flags.multi_photo_layer_audit_min_ios_build,
-      client,
-    ));
-  const buildScopedMultiPhotoThinkingBudget = decision.open
-    ? (
-      thinkingBudgetOverrideForBuild(
-        flags.multi_photo_thinking_budget_ios_build_overrides,
+    (client.platform === "ios"
+      ? clientBuildMatches(
+        flags.multi_photo_layer_audit_enabled_ios_builds,
         client,
-      ) ??
-        (clientBuildAtLeast(
-            flags.multi_photo_thinking_budget_min_ios_build,
-            client,
-          )
-          ? flags.multi_photo_thinking_budget_min_ios_build_value
-          : null)
-    )
+      ) || clientBuildAtLeast(
+        flags.multi_photo_layer_audit_min_ios_build,
+        client,
+      )
+      : client.platform === "android" &&
+        (androidBuildMatches(
+          flags.multi_photo_layer_audit_enabled_android_builds,
+          client,
+        ) || androidBuildAtLeast(
+          flags.multi_photo_layer_audit_min_android_build,
+          client,
+        )));
+  const buildScopedMultiPhotoThinkingBudget = !decision.open
+    ? null
+    : client.platform === "ios"
+    ? thinkingBudgetOverrideForBuild(
+      flags.multi_photo_thinking_budget_ios_build_overrides,
+      client,
+    ) ??
+      (clientBuildAtLeast(
+          flags.multi_photo_thinking_budget_min_ios_build,
+          client,
+        )
+        ? flags.multi_photo_thinking_budget_min_ios_build_value
+        : null)
+    : client.platform === "android"
+    ? thinkingBudgetOverrideForBuild(
+      flags.multi_photo_thinking_budget_android_build_overrides,
+      client,
+    ) ??
+      (androidBuildAtLeast(
+          flags.multi_photo_thinking_budget_min_android_build,
+          client,
+        )
+        ? flags.multi_photo_thinking_budget_min_android_build_value
+        : null)
     : null;
   return {
     ...flags,
@@ -5155,6 +5203,7 @@ function errorResponse(status: number, message: string, meta?: {
   requested_photo_count?: number;
   upgrade_target?: string | null;
   paywall_context?: string | null;
+  reason?: string;
 }): Response {
   const supportID = meta?.supportID ?? newSupportID();
   return new Response(
@@ -5172,6 +5221,7 @@ function errorResponse(status: number, message: string, meta?: {
       requested_photo_count: meta?.requested_photo_count ?? null,
       upgrade_target: meta?.upgrade_target ?? null,
       paywall_context: meta?.paywall_context ?? null,
+      reason: meta?.reason ?? null,
     }),
     {
       status,
@@ -6003,6 +6053,26 @@ serve(async (req: Request) => {
   const clientRelease = parseClientReleaseContext(
     body as Record<string, unknown>,
   );
+  if (!isWorkerInvocation && clientRelease.platform === "android") {
+    const runtimeGates = await readAndroidRuntimeGates(
+      supabase,
+      clientRelease.platform,
+      clientRelease.appBuildNumber,
+    );
+    const decision = runtimeGates?.analysis_submit;
+    if (decision?.enabled !== true) {
+      return errorResponse(
+        503,
+        "Android analiz gönderimi geçici olarak kullanılamıyor.",
+        {
+          code: "android_analysis_submit_disabled",
+          reason: decision?.reason ?? "gate_unavailable",
+          requestID,
+          supportID,
+        },
+      );
+    }
+  }
   const requestedAnalysisSector = typeof analysis_sector === "string"
     ? analysis_sector.trim()
     : "";

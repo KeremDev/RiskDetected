@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -108,7 +112,7 @@ fun OBSplashScreen(onNext: () -> Unit, onSkip: () -> Unit) {
 
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = "Profesyonel İSG Asistanı",
+                    text = stringResource(RdR.string.rd_profesyonel_isg_asistani),
                     style = RdFontStyle.Title1.toTextStyle(),
                     color = colors.onyx,
                     textAlign = TextAlign.Center,
@@ -116,7 +120,7 @@ fun OBSplashScreen(onNext: () -> Unit, onSkip: () -> Unit) {
 
                 Spacer(Modifier.height(11.dp))
                 Text(
-                    text = "Fotoğraf çek; yapay zekâ tehlikeleri otomatik tespit etsin, raporun anında oluşsun ve tek tıklama ile paylaş.",
+                    text = stringResource(RdR.string.rd_splash_aciklama),
                     style = RdFontStyle.Subheadline.toTextStyle(),
                     color = colors.slate,
                     textAlign = TextAlign.Center,
@@ -124,14 +128,14 @@ fun OBSplashScreen(onNext: () -> Unit, onSkip: () -> Unit) {
 
                 Spacer(Modifier.height(17.dp))
                 RdPrimaryButton(
-                    text = "Devam Et",
+                    text = stringResource(RdR.string.rd_devam_et_baslik),
                     onClick = onNext,
                     style = RdButtonStyle.Onyx,
                 )
 
                 TextButton(onClick = onSkip) {
                     Text(
-                        text = "Atla",
+                        text = stringResource(RdR.string.rd_atla),
                         style = RdFontStyle.Subheadline.toTextStyle(),
                         color = colors.slate,
                     )
@@ -165,8 +169,8 @@ private fun OBSplashHero(scale: Float) {
         }
 
         OBSplashFloatingChip(
-            title = "12 Tehlike",
-            subtitle = "tespit edildi",
+            title = stringResource(RdR.string.rd_on_iki_tehlike),
+            subtitle = stringResource(RdR.string.rd_tespit_edildi),
             accent = Color(0xFFE5484D),
             iconBackground = Color(0xFFFDECEC),
             icon = Icons.Filled.Warning,
@@ -176,8 +180,8 @@ private fun OBSplashHero(scale: Float) {
                 .rotate(-5f),
         )
         OBSplashFloatingChip(
-            title = "Kök Neden ve Mevzuat",
-            subtitle = "bilgisi hazırlanıyor…",
+            title = stringResource(RdR.string.rd_kok_neden_mevzuat),
+            subtitle = stringResource(RdR.string.rd_bilgisi_hazirlaniyor),
             accent = Color(0xFFF59E0B),
             iconBackground = Color(0xFFFFF4E5),
             icon = null,
@@ -254,7 +258,7 @@ private fun OBSplashPhoneFrame(width: Dp, modifier: Modifier = Modifier) {
     ) {
         Image(
             painter = painterResource(R.drawable.ob_splash_preview),
-            contentDescription = "RiskDetected önizleme telefonu",
+            contentDescription = stringResource(RdR.string.rd_riskdetected_onizleme_telefonu),
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopCenter,
             modifier = Modifier

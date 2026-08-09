@@ -1,5 +1,5 @@
 /**
- * app-release-policy — public, sanitized iOS release policy endpoint.
+ * app-release-policy — public, sanitized mobile release policy endpoint.
  *
  * This function lets approved builds fetch force/soft update decisions without
  * exposing app_feature_flags or service-role credentials to the mobile client.
@@ -7,12 +7,14 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { readAndroidRuntimeGates } from "../_shared/android-runtime-gates.ts";
 
 type ReleasePolicyBody = {
   client_platform?: unknown;
   client_app_version?: unknown;
   client_app_build?: unknown;
   api_contract_version?: unknown;
+  android_legal_context?: unknown;
 };
 
 // F9 (Android review, 2026-08-06): renamed from IOSReleasePolicy — the shape itself was
@@ -26,6 +28,33 @@ type ReleasePolicy = {
   message_tr: string;
   message_en: string;
   policy_version: string;
+};
+
+type AndroidLegalDocument = {
+  kind: "terms" | "privacy" | "kvkk" | "consent";
+  version: string;
+  checksum: string;
+  change_type:
+    | "info"
+    | "material_terms"
+    | "material_privacy"
+    | "explicit_consent";
+};
+
+type AndroidLegalPolicy = {
+  schema_version: number;
+  enabled: boolean;
+  document_set_id: string;
+  manifest_checksum: string;
+  policy_version: string;
+  message_tr: string;
+  documents: AndroidLegalDocument[];
+};
+
+type AndroidLegalContext = {
+  document_set_id: string;
+  manifest_checksum: string;
+  accepted_policy_version: string;
 };
 
 const CORS_HEADERS = {
@@ -75,6 +104,50 @@ const DEFAULT_UNKNOWN_PLATFORM_POLICY: ReleasePolicy = {
   policy_version: "unrecognized-platform",
 };
 
+// Legal policy is Android-only and closed by default. Keeping the complete, current document
+// identity in the fallback makes the response deterministic for tests while `enabled: false`
+// guarantees that an absent/malformed flag can never block a user.
+const DEFAULT_ANDROID_LEGAL_POLICY: AndroidLegalPolicy = {
+  schema_version: 1,
+  enabled: false,
+  document_set_id: "tr-android-v1",
+  manifest_checksum:
+    "b56396d22e1d8ca03d8f402f619c7f694acc944a31cc0c592bb041547462f83b",
+  policy_version: "android-legal-2026-08-07",
+  message_tr:
+    "Hukuki metinlerimiz güncellendi. Devam etmeden önce güncel metinleri inceleyin.",
+  documents: [
+    {
+      kind: "terms",
+      version: "terms-android-2026-08-07",
+      checksum:
+        "0d55c5cb1257afea527a1fd49633fcbbdd3e561ef6d63c6739f6d9b372703db8",
+      change_type: "info",
+    },
+    {
+      kind: "privacy",
+      version: "privacy-android-2026-08-07",
+      checksum:
+        "72a4f78f1abbfb64c03b0a932cfe48a3bafe711a7aa1395fa1f0217cf58c44ce",
+      change_type: "info",
+    },
+    {
+      kind: "kvkk",
+      version: "kvkk-android-2026-08-07",
+      checksum:
+        "a60c019472990142f1ad0642678a7086f9459d5e583b97fa647a13b52575a730",
+      change_type: "info",
+    },
+    {
+      kind: "consent",
+      version: "consent-android-2026-08-07",
+      checksum:
+        "973932b929f6d58b78d63441f45d8b72c2877c3e7ae0177d458b47487d23677f",
+      change_type: "info",
+    },
+  ],
+};
+
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -94,6 +167,11 @@ function positiveInt(value: unknown, fallback: number): number {
 
 function bool(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
+}
+
+function sha256(value: unknown, fallback: string): string {
+  const candidate = text(value, "", 64).toLowerCase();
+  return /^[0-9a-f]{64}$/.test(candidate) ? candidate : fallback;
 }
 
 function cleanURL(value: unknown, fallback: string): string {
@@ -143,6 +221,109 @@ function sanitizePolicy(raw: unknown, fallback: ReleasePolicy): ReleasePolicy {
   };
 }
 
+function sanitizeAndroidLegalPolicy(raw: unknown): AndroidLegalPolicy {
+  const value = raw && typeof raw === "object"
+    ? raw as Record<string, unknown>
+    : {};
+  const rawDocuments = Array.isArray(value.documents) ? value.documents : [];
+  const fallbackByKind = new Map(
+    DEFAULT_ANDROID_LEGAL_POLICY.documents.map((
+      document,
+    ) => [document.kind, document]),
+  );
+  const allowedKinds = new Set(["terms", "privacy", "kvkk", "consent"]);
+  const allowedChangeTypes = new Set([
+    "info",
+    "material_terms",
+    "material_privacy",
+    "explicit_consent",
+  ]);
+  const documents = rawDocuments.slice(0, 4).flatMap((rawDocument) => {
+    if (!rawDocument || typeof rawDocument !== "object") return [];
+    const document = rawDocument as Record<string, unknown>;
+    const kind = text(document.kind, "", 20);
+    if (!allowedKinds.has(kind)) return [];
+    const fallback = fallbackByKind.get(kind as AndroidLegalDocument["kind"]);
+    if (!fallback) return [];
+    const changeType = text(document.change_type, fallback.change_type, 30);
+    return [{
+      kind: kind as AndroidLegalDocument["kind"],
+      version: text(document.version, fallback.version, 100),
+      checksum: sha256(document.checksum, fallback.checksum),
+      change_type: (allowedChangeTypes.has(changeType)
+        ? changeType
+        : fallback.change_type) as AndroidLegalDocument["change_type"],
+    }];
+  });
+
+  return {
+    schema_version: positiveInt(value.schema_version, 1),
+    enabled: bool(value.enabled, false),
+    document_set_id: text(
+      value.document_set_id,
+      DEFAULT_ANDROID_LEGAL_POLICY.document_set_id,
+      80,
+    ),
+    manifest_checksum: sha256(
+      value.manifest_checksum,
+      DEFAULT_ANDROID_LEGAL_POLICY.manifest_checksum,
+    ),
+    policy_version: text(
+      value.policy_version,
+      DEFAULT_ANDROID_LEGAL_POLICY.policy_version,
+      100,
+    ),
+    message_tr: text(
+      value.message_tr,
+      DEFAULT_ANDROID_LEGAL_POLICY.message_tr,
+      240,
+    ),
+    documents: documents.length === 4
+      ? documents
+      : DEFAULT_ANDROID_LEGAL_POLICY.documents,
+  };
+}
+
+function parseAndroidLegalContext(raw: unknown): AndroidLegalContext {
+  const value = raw && typeof raw === "object"
+    ? raw as Record<string, unknown>
+    : {};
+  return {
+    document_set_id: text(value.document_set_id, "", 80),
+    manifest_checksum: sha256(value.manifest_checksum, ""),
+    accepted_policy_version: text(value.accepted_policy_version, "", 100),
+  };
+}
+
+function androidLegalDecision(
+  policy: AndroidLegalPolicy,
+  context: AndroidLegalContext,
+) {
+  if (!policy.enabled) {
+    return { ...policy, required: false, action: "none", reason: "disabled" };
+  }
+  const hasCurrentDocuments =
+    context.document_set_id === policy.document_set_id &&
+    context.manifest_checksum === policy.manifest_checksum;
+  if (!hasCurrentDocuments) {
+    return {
+      ...policy,
+      required: true,
+      action: "update_app",
+      reason: "legal_documents_outdated",
+    };
+  }
+  const requiresAcknowledgement =
+    context.accepted_policy_version !== policy.policy_version &&
+    policy.documents.some((document) => document.change_type !== "info");
+  return {
+    ...policy,
+    required: requiresAcknowledgement,
+    action: requiresAcknowledgement ? "accept" : "none",
+    reason: requiresAcknowledgement ? "acknowledgement_required" : "current",
+  };
+}
+
 function decisionFor(policy: ReleasePolicy, build: number | null) {
   const hardUpdateRequired = build != null &&
     policy.hard_update_enabled &&
@@ -179,17 +360,24 @@ function policyKeyAndFallback(
   return { key: "", fallback: DEFAULT_UNKNOWN_PLATFORM_POLICY };
 }
 
-async function readPolicy(platform: string): Promise<ReleasePolicy> {
-  const { key, fallback } = policyKeyAndFallback(platform);
-  if (!key) return fallback;
-
+// deno-lint-ignore no-explicit-any
+function serviceClient(): any | null {
   const supabaseURL = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseURL || !serviceRoleKey) return fallback;
-
-  const supabase = createClient(supabaseURL, serviceRoleKey, {
+  if (!supabaseURL || !serviceRoleKey) return null;
+  return createClient(supabaseURL, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+}
+
+// deno-lint-ignore no-explicit-any
+async function readPolicy(
+  platform: string,
+  supabase: any | null,
+): Promise<ReleasePolicy> {
+  const { key, fallback } = policyKeyAndFallback(platform);
+  if (!key) return fallback;
+  if (!supabase) return fallback;
   const { data, error } = await supabase
     .from("app_feature_flags")
     .select("value")
@@ -198,6 +386,22 @@ async function readPolicy(platform: string): Promise<ReleasePolicy> {
 
   if (error || !data?.value) return fallback;
   return sanitizePolicy(data.value, fallback);
+}
+
+// deno-lint-ignore no-explicit-any
+async function readAndroidLegalPolicy(
+  platform: string,
+  supabase: any | null,
+): Promise<AndroidLegalPolicy | null> {
+  if (platform !== "android") return null;
+  if (!supabase) return DEFAULT_ANDROID_LEGAL_POLICY;
+  const { data, error } = await supabase
+    .from("app_feature_flags")
+    .select("value")
+    .eq("key", "android_legal_policy")
+    .maybeSingle();
+  if (error || !data?.value) return DEFAULT_ANDROID_LEGAL_POLICY;
+  return sanitizeAndroidLegalPolicy(data.value);
 }
 
 serve(async (req) => {
@@ -218,12 +422,18 @@ serve(async (req) => {
       client_app_version: url.searchParams.get("client_app_version"),
       client_app_build: url.searchParams.get("client_app_build"),
       api_contract_version: url.searchParams.get("api_contract_version"),
+      android_legal_context: null,
     };
   }
 
   const platform = text(body.client_platform, "unknown", 40).toLowerCase();
   const build = parseBuild(body.client_app_build);
-  const policy = await readPolicy(platform);
+  const supabase = serviceClient();
+  const [policy, androidRuntimeGates, androidLegalPolicy] = await Promise.all([
+    readPolicy(platform, supabase),
+    readAndroidRuntimeGates(supabase, platform, build),
+    readAndroidLegalPolicy(platform, supabase),
+  ]);
 
   return json(200, {
     ok: true,
@@ -233,5 +443,16 @@ serve(async (req) => {
     api_contract_version: positiveInt(body.api_contract_version, 1),
     policy,
     decision: decisionFor(policy, build),
+    ...(androidRuntimeGates
+      ? { android_runtime_gates: androidRuntimeGates }
+      : {}),
+    ...(androidLegalPolicy
+      ? {
+        android_legal_policy: androidLegalDecision(
+          androidLegalPolicy,
+          parseAndroidLegalContext(body.android_legal_context),
+        ),
+      }
+      : {}),
   });
 });

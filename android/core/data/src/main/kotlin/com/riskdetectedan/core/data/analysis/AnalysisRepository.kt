@@ -18,9 +18,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Mirrors AnalysisService.swift's `createAnalysis` insert contract exactly — same column
- * names, same "canvas = primary sorted id, single-id contract for now" comment (multi-canvas
- * goes through a `canvases` array once the backend supports it, not yet).
+ * Mirrors AnalysisService.swift's `createAnalysis` insert contract: `canvas` remains the primary
+ * sorted id for the legacy row while the full `canvases` selection travels in the analyze body.
+ * Android adds only the nullable submission id used for durable, owner-scoped idempotency.
  */
 @Serializable
 private data class CreateAnalysisPayload(
@@ -35,6 +35,9 @@ private data class CreateAnalysisPayload(
     @SerialName("analysis_sector_source") val analysisSectorSource: String? = null,
     @SerialName("analysis_sector_prompt_version") val analysisSectorPromptVersion: String? = null,
     @SerialName("primary_method") val primaryMethod: String? = null,
+    @SerialName("client_platform") val clientPlatform: String,
+    @SerialName("client_build") val clientBuild: String,
+    @SerialName("client_submission_id") val clientSubmissionId: String,
 )
 
 @Serializable
@@ -55,16 +58,17 @@ data class CreateAnalysisRequest(
     val sector: AnalysisSector? = null,
     val companyId: String? = null,
     val textInput: String? = null,
+    val clientSubmissionId: String,
+    val primaryMethod: String = RdClientMetadata.DEFAULT_RISK_METHOD,
 )
 
 /**
  * Mirrors AnalysisService.swift's `invokeAnalyze` Body struct field-for-field, including field
- * order (not that order matters for JSON, but it makes the two easy to diff by eye). All the
- * localization_* fields are null here — that's the same "no explicit localization request"
- * default path iOS takes on a first-time submit; the backend's resolveLocalizationContext
- * (supabase/functions/_shared/localization-context-resolver.ts, F3-hardened earlier) derives
- * from the profile/persisted snapshot in that case (`source: "legacy_tr_default"`), a real,
- * well-exercised production path — not a shortcut unique to Android.
+ * order (not that order matters for JSON, but it makes the two easy to diff by eye). Build-81
+ * compiles the localization contract and therefore sends an explicit output locale, Turkey
+ * jurisdiction, versioned safety profile and method. Android's first release is Turkish-only,
+ * so it sends that same context explicitly while keeping the broader global-localization client
+ * capability false until the non-Turkish UI exists.
  */
 @Serializable
 private data class AnalyzeRequestBody(
@@ -105,6 +109,17 @@ private data class AnalysisStatusSnapshot(
     @SerialName("status_message") val statusMessage: String? = null,
 )
 
+@Serializable
+data class AnalysisResultSummary(
+    val id: String,
+    val title: String,
+    val canvas: String,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("analysis_sector") val analysisSector: String? = null,
+    @SerialName("company_id") val companyId: String? = null,
+    @SerialName("primary_method") val primaryMethod: String? = null,
+)
+
 /** Mirrors `functionErrorPayload(from:)`'s decode target exactly — the edge function's real
  * non-2xx JSON error shape (`error`/`message` are interchangeable, `code`/`tier` only present
  * on some error paths). */
@@ -131,17 +146,40 @@ class AnalysisRepository @Inject constructor(
     private val client: SupabaseClient,
     private val environmentConfig: RdEnvironmentConfig,
 ) {
+    /** Result header metadata used by the Android result surface. RLS keeps this ownership-bound. */
+    suspend fun fetchResultSummary(analysisId: String): RdResult<AnalysisResultSummary> = try {
+        val row = client.postgrest.from("analyses")
+            .select(
+                Columns.list(
+                    "id",
+                    "title",
+                    "canvas",
+                    "created_at",
+                    "analysis_sector",
+                    "company_id",
+                    "primary_method",
+                ),
+            ) {
+                filter { eq("id", analysisId) }
+            }
+            .decodeSingle<AnalysisResultSummary>()
+        RdResult.Success(row)
+    } catch (t: Throwable) {
+        RdResult.Failure("analysis_result_summary_failed", t.message ?: "analysis_result_summary_failed", t)
+    }
+
     /**
-     * Creates the `analyses` row (status "pending") — the first half of the submit flow.
-     * Calling `analyze` itself (photo upload + AI routing) is separate, larger, not built yet;
-     * this proves the write path (RLS as the authenticated user) end to end first.
+     * Creates the `analyses` row (status "pending") — the first half of the submit flow. Photo
+     * upload, analyze invocation, recovery and polling are orchestrated by AnalysisViewModel.
      */
     suspend fun createAnalysis(request: CreateAnalysisRequest): RdResult<String> = try {
         // ANALYSIS_SECTOR_PROMPT_VERSION mirrors AnalysisSectorID.activeAnalysisPromptVersion —
         // hardcoded here until that value needs to change; not worth a remote-config round trip
         // for a single constant string yet.
-        val row = client.postgrest.from("analyses")
-            .insert(
+        // `ignoreDuplicates` keeps an already-queued row immutable. We always select by the
+        // owner-bound submission id afterwards, including after a lost insert response.
+        val writeFailure = runCatching {
+            client.postgrest.from("analyses").upsert(
                 CreateAnalysisPayload(
                     userId = request.userId,
                     kind = "photo",
@@ -152,11 +190,27 @@ class AnalysisRepository @Inject constructor(
                     analysisSector = request.sector?.id,
                     analysisSectorSource = request.sector?.let { "user_selected" },
                     analysisSectorPromptVersion = request.sector?.let { ANALYSIS_SECTOR_PROMPT_VERSION },
+                    primaryMethod = request.primaryMethod,
+                    clientPlatform = RdClientMetadata.PLATFORM,
+                    clientBuild = environmentConfig.appVersionCode.toString(),
+                    clientSubmissionId = request.clientSubmissionId,
                 ),
             ) {
-                select(Columns.list("id"))
+                onConflict = "user_id,client_submission_id"
+                ignoreDuplicates = true
             }
-            .decodeSingle<CreatedAnalysisRow>()
+        }.exceptionOrNull()
+        val row = client.postgrest.from("analyses")
+            .select(Columns.list("id")) {
+                filter {
+                    eq("user_id", request.userId)
+                    eq("client_submission_id", request.clientSubmissionId)
+                }
+                limit(1)
+            }
+            .decodeList<CreatedAnalysisRow>()
+            .firstOrNull()
+            ?: throw writeFailure ?: IllegalStateException("analysis_idempotent_create_missing")
         RdResult.Success(row.id)
     } catch (t: Throwable) {
         RdResult.Failure(
@@ -242,7 +296,13 @@ class AnalysisRepository @Inject constructor(
         analysisMode: String = "standard",
         sector: AnalysisSector?,
         photoPaths: List<String>,
-        appLanguage: String = "tr",
+        appLanguage: String = RdClientMetadata.APP_LANGUAGE,
+        outputLanguage: String = RdClientMetadata.APP_LANGUAGE,
+        outputLocale: String = RdClientMetadata.CONTENT_LOCALE,
+        workJurisdictionCountry: String = RdClientMetadata.WORK_JURISDICTION_COUNTRY,
+        safetyProfileId: String = RdClientMetadata.SAFETY_PROFILE_ID,
+        safetyProfileVersion: Int = RdClientMetadata.SAFETY_PROFILE_VERSION,
+        riskMethod: String = RdClientMetadata.DEFAULT_RISK_METHOD,
     ): RdResult<Unit> {
         val body = AnalyzeRequestBody(
             analysisId = analysisId,
@@ -255,6 +315,12 @@ class AnalysisRepository @Inject constructor(
             analysisSectorSource = sector?.let { "user_selected" },
             analysisSectorPromptVersion = sector?.let { ANALYSIS_SECTOR_PROMPT_VERSION },
             appLanguage = appLanguage,
+            outputLanguage = outputLanguage,
+            outputLocale = outputLocale,
+            workJurisdictionCountry = workJurisdictionCountry,
+            safetyProfileId = safetyProfileId,
+            safetyProfileVersion = safetyProfileVersion,
+            method = riskMethod,
             photoPaths = photoPaths,
             clientAppVersion = environmentConfig.appVersionName,
             clientAppBuild = environmentConfig.appVersionCode.toString(),
@@ -341,11 +407,8 @@ class AnalysisRepository @Inject constructor(
      * Mirrors the polling loop inside AnalysisService.swift's `waitForCompletedResult` — same
      * status values + ~2s interval, same wall-clock deadline logic (300s single-photo, 420s once
      * [photoCount] is >1 — real product behavior: multi-photo analyses genuinely take longer, not
-     * an arbitrary number). Simplified: no in-flight-analysis persistence across an app kill
-     * (`InFlightAnalysisStore`), no cleanup-on-failure/recovery-if-server-actually-accepted
-     * (`recoverPhotoSubmissionIfServerAccepted`) — both real iOS resilience features, genuinely
-     * bigger scope (survive-process-death state machine), documented as still-open gaps rather
-     * than silently approximated.
+     * an arbitrary number). In-flight persistence, accepted-request recovery and safe cleanup are
+     * owned by AnalysisViewModel/InFlightAnalysisStore around this polling primitive.
      */
     suspend fun pollAnalysisStatus(
         analysisId: String,

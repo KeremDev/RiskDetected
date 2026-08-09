@@ -1,5 +1,9 @@
 package com.riskdetectedan.feature.capture
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.camera.core.CameraSelector
@@ -96,7 +100,7 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
         ) {
             if (onBack != null) {
                 IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri", tint = colors.onyx)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(RdR.string.rd_geri), tint = colors.onyx)
                 }
             }
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -108,17 +112,17 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
                         Icon(Icons.Filled.CameraAlt, contentDescription = null, tint = colors.slate, modifier = Modifier.size(36.dp))
                     }
                     Spacer(Modifier.height(RdSpacing.sm))
-                    Text("Kameraya erişim gerekiyor", style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
+                    Text(stringResource(RdR.string.rd_kameraya_erisim_gerekiyor), style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(RdSpacing.sm))
                     Text(
-                        "Tehlikeleri fotoğraflayıp analiz edebilmek için kamera iznine ihtiyacımız var.",
+                        stringResource(RdR.string.rd_kamera_izin_aciklama),
                         style = RdFontStyle.Footnote.toTextStyle(),
                         color = colors.slate,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(Modifier.height(RdSpacing.sm))
                     RdPrimaryButton(
-                        text = "İzin ver",
+                        text = stringResource(RdR.string.rd_izin_ver),
                         onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
                         style = RdButtonStyle.Onyx,
                         showArrow = false,
@@ -179,7 +183,7 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.35f)),
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(RdR.string.rd_geri), tint = Color.White)
                 }
             }
         }
@@ -233,7 +237,7 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
                 if (isCapturing) {
                     CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
                 } else {
-                    Icon(Icons.Filled.PhotoCamera, contentDescription = "Fotoğraf çek", tint = Color.Black, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Filled.PhotoCamera, contentDescription = stringResource(RdR.string.rd_fotograf_cek), tint = Color.Black, modifier = Modifier.size(28.dp))
                 }
             }
         }

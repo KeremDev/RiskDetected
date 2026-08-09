@@ -1,5 +1,7 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Agriculture
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import com.riskdetectedan.core.data.onboarding.OnboardingSector
 import com.riskdetectedan.core.designsystem.RdHeroTint
 
@@ -35,11 +38,11 @@ fun OBSectorScreen(
     onBack: (() -> Unit)? = null,
 ) {
     OnboardingChoiceScreen(
-        title = "Hangi sektörde çalışıyorsun?",
-        subtitle = "Birden fazla seçebilirsin",
+        title = stringResource(RdR.string.rd_sektor_soru),
+        subtitle = stringResource(RdR.string.rd_birden_fazla_secebilirsin),
         items = OnboardingSector.entries,
         isSelected = { selected.contains(it) },
-        label = { it.label },
+        label = { onboardingSectorLabel(it) },
         onToggle = onToggle,
         canContinue = selected.isNotEmpty(),
         onContinue = onNext,
@@ -49,7 +52,7 @@ fun OBSectorScreen(
         onBack = onBack,
         heroTint = RdHeroTint.Cool,
         heroIcon = Icons.Filled.LocationCity,
-        selectionCounterSuffix = "sektör seçildi",
+        selectionCounterSuffix = stringResource(RdR.string.rd_sektor_secildi),
         itemIcon = { sectorIcon(it) },
         itemSubtitle = { sectorSubtitle(it) },
     )
@@ -82,20 +85,44 @@ private fun sectorIcon(sector: OnboardingSector): ImageVector = when (sector) {
 }
 
 /** Mirrors AnalysisSector.subtitle's Turkish values verbatim. */
-private fun sectorSubtitle(sector: OnboardingSector): String = when (sector) {
-    OnboardingSector.Construction -> "Şantiye, yapı, hafriyat"
-    OnboardingSector.Manufacturing -> "Fabrika, atölye, üretim hattı"
-    OnboardingSector.Energy -> "Santral, rafineri, enerji tesisleri"
-    OnboardingSector.Mining -> "Yeraltı, açık ocak, taşocağı"
-    OnboardingSector.Office -> "Banka, AVM, idari bina"
-    OnboardingSector.LogisticsWarehouse -> "Depo, lojistik, yükleme alanları"
-    OnboardingSector.ChemicalLaboratory -> "Kimyasal işlem, laboratuvar"
-    OnboardingSector.Healthcare -> "Hastane, klinik, sağlık tesisi"
-    OnboardingSector.FoodProduction -> "Gıda üretimi, mutfak, hijyen alanları"
-    OnboardingSector.AgricultureLivestock -> "Tarım, hayvancılık, açık alan"
-    OnboardingSector.Retail -> "Mağaza, perakende, müşteri alanı"
-    OnboardingSector.MunicipalFieldServices -> "Belediye, kamu saha işleri"
-    OnboardingSector.Education -> "Okul, üniversite, atölye"
-    OnboardingSector.Hospitality -> "Otel, konaklama, misafir alanları"
-    OnboardingSector.Other -> "Tanımlanmamış veya farklı sektörler"
-}
+@Composable
+private fun sectorSubtitle(sector: OnboardingSector): String = stringResource(
+    when (sector) {
+        OnboardingSector.Construction -> RdR.string.rd_sector_construction_subtitle
+        OnboardingSector.Manufacturing -> RdR.string.rd_sector_manufacturing_subtitle
+        OnboardingSector.Energy -> RdR.string.rd_sector_energy_subtitle
+        OnboardingSector.Mining -> RdR.string.rd_sector_mining_subtitle
+        OnboardingSector.Office -> RdR.string.rd_sector_office_subtitle
+        OnboardingSector.LogisticsWarehouse -> RdR.string.rd_sector_logistics_subtitle
+        OnboardingSector.ChemicalLaboratory -> RdR.string.rd_sector_chemical_subtitle
+        OnboardingSector.Healthcare -> RdR.string.rd_sector_healthcare_subtitle
+        OnboardingSector.FoodProduction -> RdR.string.rd_sector_food_subtitle
+        OnboardingSector.AgricultureLivestock -> RdR.string.rd_sector_agriculture_subtitle
+        OnboardingSector.Retail -> RdR.string.rd_sector_retail_subtitle
+        OnboardingSector.MunicipalFieldServices -> RdR.string.rd_sector_municipal_subtitle
+        OnboardingSector.Education -> RdR.string.rd_sector_education_subtitle
+        OnboardingSector.Hospitality -> RdR.string.rd_sector_hospitality_subtitle
+        OnboardingSector.Other -> RdR.string.rd_sector_other_subtitle
+    },
+)
+
+@Composable
+internal fun onboardingSectorLabel(sector: OnboardingSector): String = stringResource(
+    when (sector) {
+        OnboardingSector.Construction -> RdR.string.rd_sector_construction
+        OnboardingSector.Manufacturing -> RdR.string.rd_sector_manufacturing
+        OnboardingSector.Energy -> RdR.string.rd_sector_energy
+        OnboardingSector.Mining -> RdR.string.rd_sector_mining
+        OnboardingSector.Office -> RdR.string.rd_sector_office
+        OnboardingSector.LogisticsWarehouse -> RdR.string.rd_sector_logistics
+        OnboardingSector.ChemicalLaboratory -> RdR.string.rd_sector_chemical
+        OnboardingSector.Healthcare -> RdR.string.rd_sector_healthcare
+        OnboardingSector.FoodProduction -> RdR.string.rd_sector_food
+        OnboardingSector.AgricultureLivestock -> RdR.string.rd_sector_agriculture
+        OnboardingSector.Retail -> RdR.string.rd_sector_retail
+        OnboardingSector.MunicipalFieldServices -> RdR.string.rd_sector_municipal
+        OnboardingSector.Education -> RdR.string.rd_sector_education
+        OnboardingSector.Hospitality -> RdR.string.rd_sector_hospitality
+        OnboardingSector.Other -> RdR.string.rd_sector_other
+    },
+)

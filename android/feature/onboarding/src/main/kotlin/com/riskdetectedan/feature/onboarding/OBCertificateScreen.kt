@@ -1,11 +1,14 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.riskdetectedan.core.data.onboarding.OnboardingCertificate
@@ -29,10 +32,10 @@ fun OBCertificateScreen(
     onBack: (() -> Unit)? = null,
 ) {
     OnboardingChoiceScreen(
-        title = "Sertifika sınıfın nedir?",
+        title = stringResource(RdR.string.rd_sertifika_sinifi_soru),
         items = OnboardingCertificate.entries,
         isSelected = { it == selected },
-        label = { it.label },
+        label = { certificateLabel(it) },
         onToggle = onSelect,
         canContinue = selected != null,
         onContinue = onNext,
@@ -44,6 +47,17 @@ fun OBCertificateScreen(
         itemIconTint = { certificateTint(it) },
     )
 }
+
+@Composable
+internal fun certificateLabel(certificate: OnboardingCertificate): String = stringResource(
+    when (certificate) {
+        OnboardingCertificate.A -> RdR.string.rd_cert_a
+        OnboardingCertificate.B -> RdR.string.rd_cert_b
+        OnboardingCertificate.C -> RdR.string.rd_cert_c
+        OnboardingCertificate.Doctor -> RdR.string.rd_cert_doctor
+        OnboardingCertificate.OtherHealth -> RdR.string.rd_cert_health
+    },
+)
 
 private fun certificateIcon(certificate: OnboardingCertificate): ImageVector = when (certificate) {
     OnboardingCertificate.A -> Icons.Filled.WorkspacePremium

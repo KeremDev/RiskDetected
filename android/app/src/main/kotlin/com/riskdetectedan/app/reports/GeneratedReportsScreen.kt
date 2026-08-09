@@ -1,6 +1,11 @@
 package com.riskdetectedan.app.reports
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -75,13 +80,13 @@ private val Report.isRiskAnalysis: Boolean
  * (`Calendar.current.isDate(_:equalTo:toGranularity:.weekOfYear)`) — deliberately different from
  * [com.riskdetectedan.feature.reports.HistoryFilterChip]'s "last 7 days", matching each screen's
  * own iOS source exactly rather than reusing one semantic for both. */
-private enum class ReportArchiveFilter(val label: String) {
-    All("Tümü"),
-    Pdf("PDF"),
-    Excel("Excel"),
-    Standard("Standart"),
-    RiskAnalysis("Risk analizi"),
-    ThisWeek("Bu hafta"),
+private enum class ReportArchiveFilter(@StringRes val labelRes: Int) {
+    All(RdR.string.rd_tumu),
+    Pdf(RdR.string.rd_pdf_label),
+    Excel(RdR.string.rd_excel_label),
+    Standard(RdR.string.rd_standart),
+    RiskAnalysis(RdR.string.rd_risk_analizi),
+    ThisWeek(RdR.string.rd_bu_hafta),
 }
 
 private fun isSameIsoWeek(createdAt: String?): Boolean {
@@ -125,7 +130,10 @@ private fun reportSearchText(report: Report): String = listOfNotNull(
  * hand-painted custom row. Real data/behavior (list, open, error) is not simplified.
  */
 @Composable
-fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel()) {
+fun GeneratedReportsScreen(
+    focusedReportId: String? = null,
+    viewModel: GeneratedReportsViewModel = hiltViewModel(),
+) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     val openingId by viewModel.openingReportId.collectAsState()
@@ -137,6 +145,7 @@ fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel(
     var search by remember { mutableStateOf("") }
     var activeFilter by remember { mutableStateOf(ReportArchiveFilter.All) }
     val context = LocalContext.current
+    val openChooserTitle = stringResource(RdR.string.rd_raporu_ac)
 
     LaunchedEffect(reportFile) {
         val file = reportFile ?: return@LaunchedEffect
@@ -148,12 +157,12 @@ fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel(
             setDataAndType(uri, file.mimeType)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, "Raporu aç"))
+        context.startActivity(Intent.createChooser(intent, openChooserTitle))
         viewModel.clearReportFile()
     }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
-        RdScreenHeader(title = "Raporlar")
+        RdScreenHeader(title = stringResource(RdR.string.rd_raporlar))
 
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
             when (val current = state) {
@@ -162,25 +171,26 @@ fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel(
                 }
                 is GeneratedReportsUiState.SignedOut -> RdEmptyState(
                     icon = Icons.Filled.Description,
-                    title = "Oturum yok",
-                    subtitle = "Raporlarını görmek için giriş yapmalısın.",
+                    title = stringResource(RdR.string.rd_oturum_yok),
+                    subtitle = stringResource(RdR.string.rd_rapor_giris),
                 )
                 is GeneratedReportsUiState.Failed -> RdEmptyState(
                     icon = Icons.Filled.Description,
-                    title = "Raporlar yüklenemedi",
+                    title = stringResource(RdR.string.rd_raporlar_yuklenemedi),
                     subtitle = current.error.message,
                 )
                 is GeneratedReportsUiState.Loaded -> {
                     if (current.items.isEmpty()) {
                         RdEmptyState(
                             icon = Icons.Filled.Description,
-                            title = "Henüz rapor yok",
-                            subtitle = "Oluşturduğun raporların listesi burada görünecek.",
+                            title = stringResource(RdR.string.rd_henuz_rapor_yok),
+                            subtitle = stringResource(RdR.string.rd_rapor_bos_aciklama),
                         )
                     } else {
                         val needle = search.trim().lowercase()
                         val filtered = current.items.filter { report ->
-                            (needle.isEmpty() || reportSearchText(report).contains(needle)) &&
+                            (focusedReportId == null || report.id == focusedReportId) &&
+                                (needle.isEmpty() || reportSearchText(report).contains(needle)) &&
                                 matchesReportFilter(report, activeFilter)
                         }
 
@@ -195,8 +205,8 @@ fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel(
                         if (filtered.isEmpty()) {
                             RdEmptyState(
                                 icon = Icons.Filled.Description,
-                                title = "Rapor bulunamadı",
-                                subtitle = "Filtreyi değiştir veya farklı bir arama dene.",
+                                title = stringResource(RdR.string.rd_rapor_bulunamadi),
+                                subtitle = stringResource(RdR.string.rd_rapor_filtre_bos_aciklama),
                             )
                         } else {
                             LazyColumn(
@@ -226,7 +236,7 @@ fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel(
             title = { Text(error.title) },
             text = { Text(error.message) },
             confirmButton = {
-                TextButton(onClick = viewModel::clearReportError) { Text("Tamam") }
+                TextButton(onClick = viewModel::clearReportError) { Text(stringResource(RdR.string.rd_tamam)) }
             },
         )
     }
@@ -234,16 +244,16 @@ fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel(
     reportPendingDelete?.let { report ->
         AlertDialog(
             onDismissRequest = { reportPendingDelete = null },
-            title = { Text("Raporu sil") },
-            text = { Text("Bu rapor dosyası kalıcı olarak silinecek. Bu işlem geri alınamaz.") },
+            title = { Text(stringResource(RdR.string.rd_raporu_sil)) },
+            text = { Text(stringResource(RdR.string.rd_bu_rapor_dosyasi_kalici_olarak_silinecek_bu_islem_geri)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteReport(report)
                     reportPendingDelete = null
-                }) { Text("Sil") }
+                }) { Text(stringResource(RdR.string.rd_sil)) }
             },
             dismissButton = {
-                TextButton(onClick = { reportPendingDelete = null }) { Text("Vazgeç") }
+                TextButton(onClick = { reportPendingDelete = null }) { Text(stringResource(RdR.string.rd_vazgec)) }
             },
         )
     }
@@ -254,7 +264,7 @@ fun GeneratedReportsScreen(viewModel: GeneratedReportsViewModel = hiltViewModel(
             title = { Text(error.title) },
             text = { Text(error.message) },
             confirmButton = {
-                TextButton(onClick = viewModel::clearDeleteError) { Text("Tamam") }
+                TextButton(onClick = viewModel::clearDeleteError) { Text(stringResource(RdR.string.rd_tamam)) }
             },
         )
     }
@@ -289,7 +299,7 @@ private fun ReportArchiveFilterSurface(
             Spacer(Modifier.width(8.dp))
             Box(modifier = Modifier.fillMaxWidth()) {
                 if (search.isEmpty()) {
-                    Text("Rapor ara", style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
+                    Text(stringResource(RdR.string.rd_rapor_ara), style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
                 }
                 BasicTextField(
                     value = search,
@@ -314,7 +324,7 @@ private fun ReportArchiveFilterSurface(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        filter.label,
+                        stringResource(filter.labelRes),
                         style = RdFontStyle.Caption.toTextStyle(),
                         color = if (active) colors.white else colors.charcoal,
                     )
@@ -336,7 +346,7 @@ private fun ReportRow(
     val isExcel = report.format == "xlsx" ||
         report.mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     RdListRow(
-        title = report.title ?: report.fileName ?: "Rapor",
+        title = report.title ?: report.fileName ?: stringResource(RdR.string.rd_rapor),
         subtitle = report.createdAt?.take(10),
         icon = if (isExcel) Icons.Filled.TableChart else Icons.Filled.Description,
         iconBackground = colors.fog,
@@ -344,7 +354,7 @@ private fun ReportRow(
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (isOpening) {
-                    Text("Açılıyor...", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                    Text(stringResource(RdR.string.rd_aciliyor), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                 }
                 if (isDeleting) {
                     CircularProgressIndicator(color = colors.critical, modifier = Modifier.size(16.dp))
@@ -352,7 +362,7 @@ private fun ReportRow(
                     IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
                         Icon(
                             Icons.Filled.DeleteOutline,
-                            contentDescription = "Raporu sil",
+                            contentDescription = stringResource(RdR.string.rd_raporu_sil),
                             tint = colors.critical,
                             modifier = Modifier.size(18.dp),
                         )

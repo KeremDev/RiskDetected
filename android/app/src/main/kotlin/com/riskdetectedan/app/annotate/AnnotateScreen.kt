@@ -1,5 +1,10 @@
 package com.riskdetectedan.app.annotate
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Paint
@@ -76,11 +81,11 @@ import kotlin.math.sin
 
 /** Real port of `AnnotationTool` (`App/Models/Annotation.swift`) — icons are the closest Material
  * equivalents to the SF Symbols (`square`/`circle`/`arrow.up.right`/`scribble`), not a redesign. */
-enum class AnnotationTool(val icon: ImageVector, val label: String) {
-    Rect(Icons.Filled.CropSquare, "Kutu"),
-    Circle(Icons.Filled.Circle, "Daire"),
-    Arrow(Icons.Filled.NorthEast, "Ok"),
-    Pen(Icons.Filled.Draw, "Çiz"),
+enum class AnnotationTool(val icon: ImageVector, @StringRes val labelRes: Int) {
+    Rect(Icons.Filled.CropSquare, RdR.string.rd_annotate_box),
+    Circle(Icons.Filled.Circle, RdR.string.rd_annotate_circle),
+    Arrow(Icons.Filled.NorthEast, RdR.string.rd_annotate_arrow),
+    Pen(Icons.Filled.Draw, RdR.string.rd_annotate_pen),
 }
 
 /** Real port of `AnnotationColor` — same 3 hex values as iOS (`rdGreen`/`#B42318`/`#FFD75A`). */
@@ -110,11 +115,12 @@ private data class PenStroke(val color: AnnotationColor, val points: List<Offset
 @Composable
 fun AnnotateScreen(
     photoPath: String,
-    primaryActionTitle: String = "İşaretli alanları analiz et",
+    primaryActionTitle: String? = null,
     onCancel: () -> Unit,
     onAnalyze: (String) -> Unit,
 ) {
     val context = LocalContext.current
+    val resolvedPrimaryActionTitle = primaryActionTitle ?: stringResource(RdR.string.rd_isaretli_alanlari_analiz_et)
     val original = remember(photoPath) { BitmapFactory.decodeFile(photoPath) }
 
     var tool by remember { mutableStateOf(AnnotationTool.Rect) }
@@ -140,11 +146,11 @@ fun AnnotateScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButtonChip(icon = Icons.Filled.Close, contentDescription = "Kapat", onClick = onCancel)
+            IconButtonChip(icon = Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kapat), onClick = onCancel)
             Spacer(Modifier.weight(1f))
-            Text("İşaretleme", style = RdFontStyle.Callout.toTextStyle(), color = Color.White)
+            Text(stringResource(RdR.string.rd_i_saretleme), style = RdFontStyle.Callout.toTextStyle(), color = Color.White)
             Spacer(Modifier.weight(1f))
-            IconButtonChip(icon = Icons.Filled.Undo, contentDescription = "Geri al", onClick = ::undoLast)
+            IconButtonChip(icon = Icons.Filled.Undo, contentDescription = stringResource(RdR.string.rd_geri_al), onClick = ::undoLast)
         }
 
         // Photo + annotation layer
@@ -240,6 +246,7 @@ fun AnnotateScreen(
         ) {
             AnnotationTool.entries.forEach { t ->
                 val active = tool == t
+                val toolLabel = stringResource(t.labelRes)
                 Column(
                     modifier = Modifier
                         .size(width = 52.dp, height = 44.dp)
@@ -249,8 +256,8 @@ fun AnnotateScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Icon(t.icon, contentDescription = t.label, tint = if (active) Color.White else Color.Black, modifier = Modifier.size(16.dp))
-                    Text(t.label, style = RdFontStyle.Caption.toTextStyle(), color = if (active) Color.White else Color.Black)
+                    Icon(t.icon, contentDescription = toolLabel, tint = if (active) Color.White else Color.Black, modifier = Modifier.size(16.dp))
+                    Text(toolLabel, style = RdFontStyle.Caption.toTextStyle(), color = if (active) Color.White else Color.Black)
                 }
             }
             Box(modifier = Modifier.width(1.dp).height(28.dp).padding(horizontal = 4.dp).background(Color.Black.copy(alpha = 0.12f)))
@@ -271,7 +278,7 @@ fun AnnotateScreen(
         }
 
         RdPrimaryButton(
-            text = primaryActionTitle,
+            text = resolvedPrimaryActionTitle,
             onClick = {
                 val output = flattenAnnotatedImage(context, original, boxSize, shapes, penStrokes)
                 if (output != null) onAnalyze(output) else onCancel()

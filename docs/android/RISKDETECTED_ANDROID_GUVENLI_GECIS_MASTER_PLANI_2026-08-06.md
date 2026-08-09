@@ -1974,7 +1974,7 @@ Android:
 - Snapshot JSON, edit version, company snapshot korunur.
 - Kullanıcı raporu silerse storage + DB sözleşmesi server-side işler.
 - Signed URL expiry sonrası otomatik refresh.
-- Free 3/ay, Plus 150/ay, Pro 750/ay; Europe/Istanbul.
+- Free 1 standart rapor/gün, Plus 150/ay, Pro 750/ay; Europe/Istanbul.
 - Free risk-analysis trial hakkı aynı usage event ile izlenir.
 
 ---

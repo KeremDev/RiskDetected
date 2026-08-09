@@ -1,11 +1,17 @@
 package com.riskdetectedan.feature.onboarding
 
+import com.riskdetectedan.core.designsystem.R as RdR
+
+import androidx.compose.ui.res.stringResource
+
+import android.graphics.BitmapFactory
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,13 +31,16 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +52,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -63,6 +74,7 @@ import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
+import androidx.hilt.navigation.compose.hiltViewModel
 
 /**
  * Port of OBTrialInviteView.swift (2026-08-08 visual pass, Faz E). Real RevenueCat pricing not
@@ -75,18 +87,22 @@ import com.riskdetectedan.core.designsystem.toTextStyle
  * user glancing at an onboarding screen for a few seconds, cheaper than perpetually-running
  * per-frame math for 3 stacked cards. All 3 share the same real preview content (mini risk rows +
  * "Rapor hazır") — the deck is a depth/ordering animation, not 3 different screens. Footer links:
- * "Gizlilik Politikası"/"Şartlar" now open the real [RdLegalDocumentSheet]
- * (2026-08-09 gap sweep — were static, non-interactive text before). "Geri Yükle" stays
- * static/non-interactive — a real restore-purchases call already exists on the post-onboarding
- * Paywall screen (feature #20), wiring it here too is a separate, deliberate follow-up, not an
- * oversight of this pass.
+ * "Gizlilik Politikası"/"Şartlar" open the real [RdLegalDocumentSheet]. "Geri Yükle" uses
+ * the same RevenueCat owner checks and backend-authoritative entitlement flow as the final
+ * onboarding paywall; an active subscription completes onboarding exactly like iOS.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OBTrialInviteScreen(onContinue: () -> Unit) {
+fun OBTrialInviteScreen(
+    onContinue: () -> Unit,
+    onRestored: () -> Unit,
+    viewModel: OBTimelinePaywallViewModel = hiltViewModel(),
+) {
     val colors = RdTheme.colors
     val context = LocalContext.current
     var legalDocumentKind by remember { mutableStateOf<String?>(null) }
+    val isRestoring by viewModel.isPurchasing.collectAsState()
+    val restoreError by viewModel.purchaseError.collectAsState()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -105,11 +121,16 @@ fun OBTrialInviteScreen(onContinue: () -> Unit) {
             Spacer(Modifier.height(32.dp))
 
             Text(
-                buildAnnotatedTitle(colors.onyx, colors.green),
+                buildAnnotatedTitle(
+                    colors.onyx,
+                    colors.green,
+                    stringResource(RdR.string.rd_trial_title_prefix),
+                    stringResource(RdR.string.rd_trial_title_emphasis),
+                ),
                 style = RdFontStyle.Title1.toTextStyle(),
                 textAlign = TextAlign.Center,
             )
-            Text("birlikte seçelim", style = RdFontStyle.Title1.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
+            Text(stringResource(RdR.string.rd_birlikte_secelim), style = RdFontStyle.Title1.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
 
             Spacer(Modifier.height(24.dp))
             PhoneDeck()
@@ -119,7 +140,7 @@ fun OBTrialInviteScreen(onContinue: () -> Unit) {
                 Icon(Icons.Filled.Check, contentDescription = null, tint = colors.onyx, modifier = Modifier.size(15.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Fiyat ve uygun teklifler Google Play'de gösterilir",
+                    stringResource(RdR.string.rd_fiyat_google_play),
                     style = RdFontStyle.Callout.toTextStyle(),
                     color = colors.onyx,
                     fontWeight = FontWeight.SemiBold,
@@ -127,22 +148,29 @@ fun OBTrialInviteScreen(onContinue: () -> Unit) {
             }
 
             Spacer(Modifier.height(14.dp))
-            RdPrimaryButton(text = "Plan seçeneklerini gör", onClick = onContinue, style = RdButtonStyle.Onyx)
+            RdPrimaryButton(text = stringResource(RdR.string.rd_plan_seceneklerini_gor), onClick = onContinue, style = RdButtonStyle.Onyx)
 
             Spacer(Modifier.height(10.dp))
-            Text("Taahhüt yok, istediğin zaman iptal.", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
+            Text(stringResource(RdR.string.rd_taahhut_yok_istedigin_zaman_iptal), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
 
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    "Gizlilik Politikası",
+                    stringResource(RdR.string.rd_gizlilik_politikasi),
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
                     modifier = Modifier.clickable { legalDocumentKind = "privacy" },
                 )
-                Text("Geri Yükle", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                 Text(
-                    "Şartlar",
+                    if (isRestoring) stringResource(RdR.string.rd_geri_yukleniyor) else stringResource(RdR.string.rd_geri_yukle),
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.clickable(enabled = !isRestoring) {
+                        viewModel.restorePurchases(onRestored)
+                    },
+                )
+                Text(
+                    stringResource(RdR.string.rd_sartlar),
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
                     modifier = Modifier.clickable { legalDocumentKind = "terms" },
@@ -167,11 +195,20 @@ fun OBTrialInviteScreen(onContinue: () -> Unit) {
             )
         }
     }
+
+    restoreError?.let { error ->
+        AlertDialog(
+            onDismissRequest = viewModel::clearPurchaseError,
+            title = { Text(error.title) },
+            text = { Text(error.message) },
+            confirmButton = { TextButton(onClick = viewModel::clearPurchaseError) { Text(stringResource(RdR.string.rd_tamam)) } },
+        )
+    }
 }
 
-private fun buildAnnotatedTitle(onyx: Color, green: Color) = buildAnnotatedString {
-    withStyle(SpanStyle(color = onyx)) { append("Sana uygun ") }
-    withStyle(SpanStyle(color = green)) { append("planı") }
+private fun buildAnnotatedTitle(onyx: Color, green: Color, prefix: String, emphasis: String) = buildAnnotatedString {
+    withStyle(SpanStyle(color = onyx)) { append(prefix) }
+    withStyle(SpanStyle(color = green)) { append(emphasis) }
 }
 
 /** Depth-ordered target values for the deck effect — index 0 is front (full size, no tilt), 2 is
@@ -195,16 +232,27 @@ private fun PhoneDeck() {
     }
 
     Box(modifier = Modifier.width(210.dp).height(446.dp), contentAlignment = Alignment.TopCenter) {
+        val previewAssets = listOf(
+            "TrialPreviewA.imageset/TrialPreviewA.png",
+            "TrialPreviewB.imageset/TrialPreviewB.png",
+            "TrialPreviewC.imageset/TrialPreviewC.png",
+        )
         for (cardIndex in 0 until 3) {
             val depthOrder = (cardIndex - frontIndex).mod(3)
             val depth = deckDepths[depthOrder]
-            PhoneCard(depth)
+            PhoneCard(depth, previewAssets[cardIndex])
         }
     }
 }
 
 @Composable
-private fun PhoneCard(depth: DeckDepth) {
+private fun PhoneCard(depth: DeckDepth, previewAsset: String) {
+    val context = LocalContext.current
+    val preview = remember(previewAsset) {
+        runCatching {
+            context.assets.open(previewAsset).use(BitmapFactory::decodeStream)?.asImageBitmap()
+        }.getOrNull()
+    }
     val scale by animateFloatAsState(depth.scale, animationSpec = tween(700), label = "deck-scale")
     val rotation by animateFloatAsState(depth.rotation, animationSpec = tween(700), label = "deck-rotation")
     val offsetY by animateDpAsState(depth.offsetY, animationSpec = tween(700), label = "deck-offset")
@@ -233,22 +281,41 @@ private fun PhoneCard(depth: DeckDepth) {
                 .clip(RoundedCornerShape(30.dp))
                 .background(Color(0xFF0B0D0E)),
         ) {
-            Column(
+            if (preview != null) {
+                Image(
+                    bitmap = preview,
+                    contentDescription = stringResource(RdR.string.rd_riskdetected_uygulama_onizlemesi),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else Column(
                 modifier = Modifier.fillMaxSize().padding(vertical = 24.dp, horizontal = 14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Icon(Icons.Filled.Shield, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.weight(1f))
-                MiniRiskRow(Color(0xFFB42318), "Yüksekte çalışma", "KRİTİK")
+                MiniRiskRow(
+                    Color(0xFFB42318),
+                    stringResource(RdR.string.rd_yuksekte_calisma),
+                    stringResource(RdR.string.rd_kritik_upper),
+                )
                 Spacer(Modifier.height(8.dp))
-                MiniRiskRow(Color(0xFFC76A00), "KKD eksikliği", "YÜKSEK")
+                MiniRiskRow(
+                    Color(0xFFC76A00),
+                    stringResource(RdR.string.rd_kkd_eksikligi),
+                    stringResource(RdR.string.rd_yuksek_upper),
+                )
                 Spacer(Modifier.height(8.dp))
-                MiniRiskRow(Color(0xFFD4A106), "Aydınlatma", "ORTA")
+                MiniRiskRow(
+                    Color(0xFFD4A106),
+                    stringResource(RdR.string.rd_aydinlatma),
+                    stringResource(RdR.string.rd_orta_upper),
+                )
                 Spacer(Modifier.weight(1f))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Verified, contentDescription = null, tint = Color(0xFF00B82E), modifier = Modifier.size(15.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Rapor hazır", style = RdFontStyle.Footnote.toTextStyle().copy(fontSize = 12.sp), color = Color(0xFF00B82E))
+                    Text(stringResource(RdR.string.rd_rapor_hazir), style = RdFontStyle.Footnote.toTextStyle().copy(fontSize = 12.sp), color = Color(0xFF00B82E))
                 }
             }
         }

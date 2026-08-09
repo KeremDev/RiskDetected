@@ -10,6 +10,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.designsystem.R as RdR
 import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
@@ -36,6 +37,12 @@ class GoogleAuthClient @Inject constructor(
     private val config: RdEnvironmentConfig,
 ) {
     suspend fun requestIdToken(context: Context): RdResult<GoogleIdTokenResult> {
+        if (config.googleWebClientId.isBlank()) {
+            return RdResult.Failure(
+                code = "google_auth_not_configured",
+                message = context.getString(RdR.string.rd_google_giris_yapilandirilmamis),
+            )
+        }
         val rawNonce = UUID.randomUUID().toString()
         val hashedNonce = MessageDigest.getInstance("SHA-256")
             .digest(rawNonce.toByteArray())

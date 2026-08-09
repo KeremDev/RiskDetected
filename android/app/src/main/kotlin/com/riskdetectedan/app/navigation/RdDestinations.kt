@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
  * decided as not-yet-GA at plan time). One object per top-level destination; add data classes
  * with typed args here as real flows replace the Faz-1 placeholders.
  */
+@Serializable object Splash
 @Serializable object Onboarding
 @Serializable object Auth
 
@@ -59,5 +60,10 @@ import kotlinx.serialization.Serializable
 @Serializable object Companies
 @Serializable object Support
 @Serializable object NotificationSettings
+@Serializable object AppearanceSettings
+@Serializable object DataManagement
+@Serializable data class AnalysisReports(val analysisId: String)
+@Serializable data class AnalysisResult(val analysisId: String)
 @Serializable object DeleteAccount
 @Serializable object Paywall
+@Serializable data class PaywallForTier(val tier: String)

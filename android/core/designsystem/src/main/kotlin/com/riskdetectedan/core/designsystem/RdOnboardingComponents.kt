@@ -1,5 +1,7 @@
 package com.riskdetectedan.core.designsystem
 
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -222,7 +224,7 @@ fun RdTopBar(step: Int, total: Int, onBack: (() -> Unit)? = null, modifier: Modi
     ) {
         if (onBack != null) {
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri", tint = RdTheme.colors.onyx)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.rd_geri), tint = RdTheme.colors.onyx)
             }
         } else {
             Spacer(Modifier.size(40.dp))

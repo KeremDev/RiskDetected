@@ -871,7 +871,7 @@ Request/support ID ve unique sözleşmeler duplicate rapor üretimini sınırlar
 
 ### 17.4 Kota ve saklama
 
-Free 3/ay · Plus 150/ay · Pro 750/ay (`Europe/Istanbul`). Free kullanıcı için bir kez
+Free 1 standart rapor/gün · Plus 150/ay · Pro 750/ay (`Europe/Istanbul`). Free kullanıcı için bir kez
 kullanılabilen risk analizi tablosu trial hakkı ayrıca `report_risk_analysis_trial`
 usage event'i ile takip edilir. Raporlar kullanıcı silene kadar saklanır; bucket private,
 erişim signed URL ile.

@@ -1,6 +1,9 @@
 package com.riskdetectedan.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -8,23 +11,33 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.riskdetectedan.app.annotate.AnnotateScreen
+import com.riskdetectedan.app.bootstrap.AppBootstrapViewModel
+import com.riskdetectedan.app.bootstrap.AppSplashScreen
+import com.riskdetectedan.app.bootstrap.BootstrapState
+import com.riskdetectedan.app.settings.AppearanceSettingsScreen
 import com.riskdetectedan.app.home.PhotoTrayViewModel
 import com.riskdetectedan.feature.analysis.AnalysisScreen
 import com.riskdetectedan.feature.capture.CaptureScreen
 import com.riskdetectedan.feature.onboarding.AuthScreen
 import com.riskdetectedan.feature.onboarding.OnboardingFlow
 import com.riskdetectedan.feature.paywall.PaywallScreen
+import com.riskdetectedan.feature.paywall.PaywallPlan
 import com.riskdetectedan.feature.profile.AccountDeletionScreen
 import com.riskdetectedan.feature.profile.CompanyListScreen
 import com.riskdetectedan.feature.profile.NotificationSettingsScreen
+import com.riskdetectedan.feature.profile.DataManagementScreen
 import com.riskdetectedan.feature.profile.SupportScreen
+import com.riskdetectedan.feature.reports.ReportsScreen
+import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
 
 /**
- * Real root-state routing (`App/AppState.swift`/`App/RootView.swift`'s auth/onboarding/legal/
- * paywall gating on app relaunch) still isn't ported — this always starts at Onboarding.
+ * Root routing mirrors AppState.bootstrap/finishOnboarding: Splash resolves persisted onboarding
+ * and the Supabase session, and every root transition clears the complete navigation stack.
  * Onboarding (0-11, matching OnboardingViewV2.swift's step switch — see OnboardingFlow) embeds
- * Auth as step 8 internally, same as iOS; the separate `Auth` destination below stays reachable
- * for a possible future direct-signin-reentry case (e.g. post sign-out), unused by this flow.
+ * Auth as step 8 internally, same as iOS. The separate `Auth` destination below (2026-08-09) is
+ * now also reachable from Onboarding's "Atla" skip — mirrors `AppState.finishOnboarding()`'s
+ * `auth.isAuthenticated ? .main : .auth` branch, which always resolves to `.auth` at skip time
+ * since skip fires before step 8 ever runs.
  *
  * `MainShell` (Faz M, 2026-08-08) replaces the old separate `Home`/`Reports`/`Profile` top-level
  * destinations — it's the persistent 4-tab shell (mirrors MainTabView.swift), Capture/Analysis/
@@ -33,21 +46,53 @@ import com.riskdetectedan.feature.profile.SupportScreen
  * including the tab bar).
  */
 @Composable
-fun RdNavHost() {
+fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
     val navController = rememberNavController()
+    val bootstrapState by viewModel.state.collectAsState()
 
-    NavHost(navController = navController, startDestination = Onboarding) {
+    LaunchedEffect(bootstrapState) {
+        when (bootstrapState) {
+            BootstrapState.Splash -> Unit
+            BootstrapState.Onboarding -> navController.navigate(Onboarding) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+            BootstrapState.Auth -> navController.navigate(Auth) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+            BootstrapState.Main -> navController.navigate(MainShell) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+            // ReleaseGate and the legal service render these blocking layers above this graph.
+            BootstrapState.UpdateBlocked, BootstrapState.LegalBlocked -> Unit
+        }
+    }
+
+    NavHost(navController = navController, startDestination = Splash) {
+        composable<Splash> { AppSplashScreen() }
         composable<Onboarding> {
-            OnboardingFlow(onFinished = { navController.navigate(MainShell) })
+            // Live iOS pins the complete V2 onboarding surface to light mode. Nesting the
+            // design-system provider here preserves that behavior even when the device/app
+            // appearance preference is dark, while the main application remains theme-aware.
+            RiskDetectedLightOnlyTheme {
+                OnboardingFlow(
+                    onFinished = viewModel::finishOnboarding,
+                    onSkip = viewModel::finishOnboarding,
+                )
+            }
         }
         composable<Auth> {
-            AuthScreen(onAuthenticated = { navController.navigate(MainShell) })
+            // AuthView.swift is also explicitly light-only on iOS.
+            RiskDetectedLightOnlyTheme {
+                AuthScreen(onAuthenticated = viewModel::authenticated)
+            }
         }
         composable<MainShell> { MainShellScreen(navController) }
         composable<Capture> {
-            // Quick-scan single-shot path (RdTabBar's floating viewfinder button) — goes straight
-            // to Analysis with its one photo, matching iOS's own "quick scan" bypass (MainTabView's
-            // handleQuickScanTap, which skips the photo tray entirely).
+            // Retained as a typed direct-camera entry point. The center quick-scan action no
+            // longer uses it: live iOS first returns to Home and opens the source chooser there.
             CaptureScreen(
                 onPhotoCaptured = { file ->
                     navController.navigate(Analysis(photoPaths = listOf(file.absolutePath)))
@@ -113,21 +158,56 @@ fun RdNavHost() {
                 resume = args.resume,
                 preSelectedSectorId = args.sectorId,
                 onBack = { navController.popBackStack() },
+                onOpenCompanies = { navController.navigate(Companies) },
+                onUpgrade = { navController.navigate(Paywall) },
+                onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+            )
+        }
+        composable<AnalysisReports> { backStackEntry ->
+            val args: AnalysisReports = backStackEntry.toRoute()
+            ReportsScreen(
+                onBack = { navController.popBackStack() },
+                focusedAnalysisId = args.analysisId,
+                onOpenAnalysis = { analysisId -> navController.navigate(AnalysisResult(analysisId)) },
+            )
+        }
+        composable<AnalysisResult> { backStackEntry ->
+            val args: AnalysisResult = backStackEntry.toRoute()
+            AnalysisScreen(
+                completedAnalysisId = args.analysisId,
+                onBack = { navController.popBackStack() },
+                onOpenCompanies = { navController.navigate(Companies) },
+                onUpgrade = { navController.navigate(Paywall) },
+                onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
             )
         }
         composable<Companies> { CompanyListScreen(onBack = { navController.popBackStack() }) }
         composable<Support> { SupportScreen(onBack = { navController.popBackStack() }) }
         composable<NotificationSettings> { NotificationSettingsScreen(onBack = { navController.popBackStack() }) }
+        composable<AppearanceSettings> { AppearanceSettingsScreen(onBack = { navController.popBackStack() }) }
+        composable<DataManagement> { DataManagementScreen(onBack = { navController.popBackStack() }) }
         composable<DeleteAccount> {
             AccountDeletionScreen(
                 onDeleted = {
-                    navController.navigate(Onboarding) {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    viewModel.accountDeleted()
                 },
                 onBack = { navController.popBackStack() },
             )
         }
-        composable<Paywall> { PaywallScreen(onBack = { navController.popBackStack() }) }
+        composable<Paywall> {
+            // InAppPaywallView.swift pins both its surface and legal sheet to light mode.
+            RiskDetectedLightOnlyTheme {
+                PaywallScreen(onBack = { navController.popBackStack() })
+            }
+        }
+        composable<PaywallForTier> { backStackEntry ->
+            val args: PaywallForTier = backStackEntry.toRoute()
+            RiskDetectedLightOnlyTheme {
+                PaywallScreen(
+                    onBack = { navController.popBackStack() },
+                    initialPlan = if (args.tier == "pro") PaywallPlan.Pro else PaywallPlan.Plus,
+                )
+            }
+        }
     }
 }
