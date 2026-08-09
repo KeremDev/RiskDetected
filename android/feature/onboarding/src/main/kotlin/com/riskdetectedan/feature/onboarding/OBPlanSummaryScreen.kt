@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import com.riskdetectedan.core.data.onboarding.OnboardingPersonalPlanContext
 import com.riskdetectedan.core.data.onboarding.OnboardingPersonalPlanStep
 import com.riskdetectedan.core.designsystem.RdButtonStyle
+import com.riskdetectedan.core.designsystem.RdConfettiView
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdFooter
 import com.riskdetectedan.core.designsystem.RdPrimaryButton
@@ -65,14 +66,17 @@ import kotlinx.coroutines.delay
  * Port of OBPlanSummaryView.swift (2026-08-08 visual pass, Faz E). The segment-resolution model
  * (`OnboardingPersonalPlanContext.make`, `core:data`) is a real, faithful port of
  * `OnboardingPersonalPlan.swift` — same 5 segments, same headline/subtitle/step copy per segment,
- * not simplified. UI-layer simplifications, documented: the confetti burst (iOS's
- * `OBPersonalPlanConfettiView` — ~150 lines of `TimelineView`-driven particle physics) is NOT
- * ported, pure decoration; the top bar's real "HAZIR" done-state label is a small inline row here
- * rather than extending `RdTopBar` for a one-screen-only trailing-label variant. Timeline step
- * reveal-in-sequence IS ported (real `LaunchedEffect`+`delay` staged animation, same pattern as
- * PainPoint/Loading — not decorative, it paces the reader). iOS's real copy mentions "App Store"
- * for price verification — translated to "Google Play" per this repo's established platform-copy
- * convention (see DEC-10 / the trial-invite "App Store"->"Google Play" fix earlier this session).
+ * not simplified. The confetti burst (iOS's `OBPersonalPlanConfettiView` — ~150 lines of
+ * `TimelineView`-driven particle physics) now IS real too (2026-08-09 animation pass): reuses
+ * [RdConfettiView], the same real burst `ProfessionalProgressCelebrationSheet` already had,
+ * fired once via [LaunchedEffect] right after the hero card's own entrance rather than rebuilding
+ * particle physics from scratch for this one screen. The top bar's real "HAZIR" done-state label
+ * is a small inline row here rather than extending `RdTopBar` for a one-screen-only trailing-label
+ * variant. Timeline step reveal-in-sequence IS ported (real `LaunchedEffect`+`delay` staged
+ * animation, same pattern as PainPoint/Loading — not decorative, it paces the reader). iOS's real
+ * copy mentions "App Store" for price verification — translated to "Google Play" per this repo's
+ * established platform-copy convention (see DEC-10 / the trial-invite "App Store"->"Google Play"
+ * fix earlier this session).
  */
 @Composable
 fun OBPlanSummaryScreen(state: OnboardingUiState, onNext: () -> Unit) {
@@ -94,10 +98,14 @@ fun OBPlanSummaryScreen(state: OnboardingUiState, onNext: () -> Unit) {
     }
 
     var revealedSteps by remember(context) { mutableStateOf(0) }
+    var confettiActive by remember(context) { mutableStateOf(false) }
     LaunchedEffect(context) {
         revealedSteps = 0
+        confettiActive = false
+        delay(200L)
+        confettiActive = true
         for (i in context.steps.indices) {
-            delay(if (i == 0) 340L else 180L)
+            delay(if (i == 0) 140L else 180L)
             revealedSteps = i + 1
         }
     }
@@ -125,7 +133,13 @@ fun OBPlanSummaryScreen(state: OnboardingUiState, onNext: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = RdSpacing.xl),
         ) {
-            PlanHeroCard(context = context)
+            Box {
+                PlanHeroCard(context = context)
+                RdConfettiView(
+                    isActive = confettiActive,
+                    modifier = Modifier.fillMaxWidth().height(96.dp),
+                )
+            }
 
             Spacer(Modifier.height(12.dp))
             TimelineCard(steps = context.steps, revealedCount = revealedSteps)
