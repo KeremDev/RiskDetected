@@ -9,10 +9,12 @@ import com.riskdetectedan.core.data.analysis.HistoryItem
 import com.riskdetectedan.core.data.analysis.HistoryRepository
 import com.riskdetectedan.core.data.analysis.PhotoRepository
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.company.Company
 import com.riskdetectedan.core.data.company.CompanyRepository
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.profile.ProfileRepository
+import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.reports.PdfReportFileName
 import com.riskdetectedan.core.data.reports.PdfReportGenerator
 import com.riskdetectedan.core.data.reports.PdfReportInput
@@ -76,6 +78,24 @@ class HistoryViewModel @Inject constructor(
     private val _deleteError = MutableStateFlow<AppErrorMessage?>(null)
     val deleteError: StateFlow<AppErrorMessage?> = _deleteError.asStateFlow()
 
+    /** Real gap sweep finding (2026-08-09): `HistoryView.swift`'s company filter
+     * (`companyFilterButton`/`CompanyPickerSheet`, gated `if app.currentTier.isPaid`) was
+     * entirely missing on Android. [companies] feeds the picker list, [userTier] gates whether
+     * the filter entry point shows at all (same paid-only restriction as iOS), both loaded
+     * alongside history so the filter button is ready the moment the list itself is. */
+    private val _companies = MutableStateFlow<List<Company>>(emptyList())
+    val companies: StateFlow<List<Company>> = _companies.asStateFlow()
+
+    private val _userTier = MutableStateFlow(SubscriptionTier.Free)
+    val userTier: StateFlow<SubscriptionTier> = _userTier.asStateFlow()
+
+    private val _selectedCompanyFilter = MutableStateFlow<Company?>(null)
+    val selectedCompanyFilter: StateFlow<Company?> = _selectedCompanyFilter.asStateFlow()
+
+    fun setCompanyFilter(company: Company?) {
+        _selectedCompanyFilter.value = company
+    }
+
     /** Real port of `loadRecentItems()`'s `firstPhotoPaths(analysisIDs:)` call — analysisId ->
      * first (lowest sequence_index) Storage path, feeds [com.riskdetectedan.app.home.
      * RecentAnalysisRingCard]'s thumbnail. Best-effort: a failed fetch just leaves the map empty,
@@ -109,6 +129,9 @@ class HistoryViewModel @Inject constructor(
                     AppErrorMessages.make(result.message, context = REPORTS_CONTEXT),
                 )
             }
+            _companies.value = (companyRepository.listCompanies() as? RdResult.Success)?.value.orEmpty()
+            _userTier.value = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value?.tier
+                ?: SubscriptionTier.Free
         }
     }
 

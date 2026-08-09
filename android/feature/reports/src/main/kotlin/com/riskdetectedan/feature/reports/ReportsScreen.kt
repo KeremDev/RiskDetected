@@ -21,15 +21,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.analysis.HistoryItem
+import com.riskdetectedan.core.data.company.Company
 import com.riskdetectedan.core.designsystem.RdEmptyState
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdListRow
@@ -107,6 +113,7 @@ private fun matchesChip(item: HistoryItem, chip: HistoryFilterChip): Boolean = w
  * hand-off as the Excel button — [HistoryViewModel.reportFile] doesn't distinguish the two, a
  * generated file is a generated file regardless of which flow produced it.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hiltViewModel()) {
     val colors = RdTheme.colors
@@ -120,6 +127,10 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
     var itemPendingDelete by remember { mutableStateOf<HistoryItem?>(null) }
     var search by remember { mutableStateOf("") }
     var activeChip by remember { mutableStateOf(HistoryFilterChip.All) }
+    val companies by viewModel.companies.collectAsState()
+    val userTier by viewModel.userTier.collectAsState()
+    val selectedCompany by viewModel.selectedCompanyFilter.collectAsState()
+    var showCompanyFilter by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     LaunchedEffect(reportFile) {
@@ -167,10 +178,14 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
                             val matchesSearch = needle.isEmpty() ||
                                 item.title.lowercase().contains(needle) ||
                                 item.kind.lowercase().contains(needle)
-                            matchesSearch && matchesChip(item, activeChip)
+                            val matchesCompany = selectedCompany == null || item.companyId == selectedCompany?.id
+                            matchesSearch && matchesChip(item, activeChip) && matchesCompany
                         }
 
                         HistoryFilterSurface(
+                            showCompanyButton = userTier.isPaid,
+                            companySelected = selectedCompany != null,
+                            onCompanyButtonClick = { showCompanyFilter = true },
                             search = search,
                             onSearchChange = { search = it },
                             activeChip = activeChip,
@@ -246,10 +261,61 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
             },
         )
     }
+
+    if (showCompanyFilter) {
+        val sheetState = rememberModalBottomSheetState()
+        ModalBottomSheet(onDismissRequest = { showCompanyFilter = false }, sheetState = sheetState) {
+            CompanyFilterSheet(
+                companies = companies,
+                selected = selectedCompany,
+                onSelect = { company ->
+                    viewModel.setCompanyFilter(company)
+                    showCompanyFilter = false
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompanyFilterSheet(
+    companies: List<Company>,
+    selected: Company?,
+    onSelect: (Company?) -> Unit,
+) {
+    val colors = RdTheme.colors
+    Column(modifier = Modifier.fillMaxWidth().padding(RdSpacing.lg)) {
+        Text("Analiz firma filtresi", style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
+        Spacer(Modifier.height(RdSpacing.sm))
+        RdListRow(
+            title = "Tümü",
+            onClick = { onSelect(null) },
+            trailing = if (selected == null) {
+                { Icon(Icons.Filled.Check, contentDescription = null, tint = colors.green) }
+            } else {
+                null
+            },
+        )
+        companies.forEach { company ->
+            RdListRow(
+                title = company.name,
+                onClick = { onSelect(company) },
+                trailing = if (selected?.id == company.id) {
+                    { Icon(Icons.Filled.Check, contentDescription = null, tint = colors.green) }
+                } else {
+                    null
+                },
+            )
+        }
+        Spacer(Modifier.height(RdSpacing.lg))
+    }
 }
 
 @Composable
 private fun HistoryFilterSurface(
+    showCompanyButton: Boolean,
+    companySelected: Boolean,
+    onCompanyButtonClick: () -> Unit,
     search: String,
     onSearchChange: (String) -> Unit,
     activeChip: HistoryFilterChip,
@@ -264,28 +330,48 @@ private fun HistoryFilterSurface(
             .padding(RdSpacing.sm),
         verticalArrangement = Arrangement.spacedBy(RdSpacing.sm),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(colors.fog)
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Filled.Search, contentDescription = null, tint = colors.slate, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(8.dp))
-            Box(modifier = Modifier.fillMaxWidth()) {
-                if (search.isEmpty()) {
-                    Text("Analiz ara", style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colors.fog)
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Search, contentDescription = null, tint = colors.slate, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    if (search.isEmpty()) {
+                        Text("Analiz ara", style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
+                    }
+                    BasicTextField(
+                        value = search,
+                        onValueChange = onSearchChange,
+                        singleLine = true,
+                        textStyle = RdFontStyle.Callout.toTextStyle().copy(color = colors.black),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
-                BasicTextField(
-                    value = search,
-                    onValueChange = onSearchChange,
-                    singleLine = true,
-                    textStyle = RdFontStyle.Callout.toTextStyle().copy(color = colors.black),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+            }
+
+            if (showCompanyButton) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (companySelected) colors.greenSoft else colors.fog)
+                        .clickable(onClick = onCompanyButtonClick),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Business,
+                        contentDescription = "Firma filtresi",
+                        tint = if (companySelected) colors.greenDark else colors.black,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
             }
         }
 
