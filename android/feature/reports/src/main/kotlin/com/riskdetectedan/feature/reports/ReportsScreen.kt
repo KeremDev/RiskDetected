@@ -2,18 +2,28 @@ package com.riskdetectedan.feature.reports
 
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -29,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -41,9 +52,48 @@ import com.riskdetectedan.core.designsystem.RdRiskChip
 import com.riskdetectedan.core.designsystem.RdScreenHeader
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
+import com.riskdetectedan.core.designsystem.RiskLevel
 import com.riskdetectedan.core.designsystem.riskLevelFromRaw
 import com.riskdetectedan.core.designsystem.toTextStyle
 import java.io.File
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
+
+/** Real port of `HistoryView.swift`'s search field + filter-chip row — was entirely missing on
+ * Android before this (2026-08-09 gap sweep): tümü/bu hafta/kritik/KKD/genel, same semantics as
+ * `filteredItems` (search matches title/kind, "bu hafta" = last 7 days same as iOS's
+ * `isThisWeek`, "kritik" = highest risk band, KKD/genel match `item.kind`). iOS's advanced
+ * `FilterSheet` (date range/risk-level/kind multi-select behind the funnel icon) is deliberately
+ * NOT ported — checked its source: `onConfirm()` never reads back any of the sheet's own
+ * `@State` (`dateFilter`/`selectedLevels`/`selectedKinds`), so it's decorative on iOS itself, not
+ * a real feature to port faithfully. The company filter (`CompanyPickerSheet`, Plus/Pro-gated)
+ * is also not ported this pass — real, but lower-priority than the chips/search that
+ * `filteredItems` actually uses; a genuine follow-up, not silently dropped. */
+private enum class HistoryFilterChip(val label: String) {
+    All("Tümü"),
+    ThisWeek("Bu hafta"),
+    Critical("Kritik"),
+    Ppe("KKD"),
+    General("Genel"),
+}
+
+private fun isWithinLastWeek(createdAt: String?): Boolean {
+    val raw = createdAt ?: return false
+    return try {
+        OffsetDateTime.parse(raw).toInstant().isAfter(Instant.now().minus(7, ChronoUnit.DAYS))
+    } catch (t: Throwable) {
+        false
+    }
+}
+
+private fun matchesChip(item: HistoryItem, chip: HistoryFilterChip): Boolean = when (chip) {
+    HistoryFilterChip.All -> true
+    HistoryFilterChip.ThisWeek -> isWithinLastWeek(item.createdAt)
+    HistoryFilterChip.Critical -> riskLevelFromRaw(item.riskBand) == RiskLevel.Critical
+    HistoryFilterChip.Ppe -> item.kind.contains("KKD", ignoreCase = true)
+    HistoryFilterChip.General -> item.kind.contains("Genel", ignoreCase = true)
+}
 
 /** Port of the analysis history list (2026-08-08 visual pass, Faz J of the core-flow redesign —
  * see [com.riskdetectedan.core.data.analysis.HistoryItem]'s doc comment for the mirrored iOS
@@ -68,6 +118,8 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
     val deletingId by viewModel.deletingId.collectAsState()
     val deleteError by viewModel.deleteError.collectAsState()
     var itemPendingDelete by remember { mutableStateOf<HistoryItem?>(null) }
+    var search by remember { mutableStateOf("") }
+    var activeChip by remember { mutableStateOf(HistoryFilterChip.All) }
     val context = LocalContext.current
 
     LaunchedEffect(reportFile) {
@@ -110,11 +162,34 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
                             subtitle = "İlk fotoğrafını çekince analizlerin burada listelenecek.",
                         )
                     } else {
+                        val needle = search.trim().lowercase()
+                        val filtered = current.items.filter { item ->
+                            val matchesSearch = needle.isEmpty() ||
+                                item.title.lowercase().contains(needle) ||
+                                item.kind.lowercase().contains(needle)
+                            matchesSearch && matchesChip(item, activeChip)
+                        }
+
+                        HistoryFilterSurface(
+                            search = search,
+                            onSearchChange = { search = it },
+                            activeChip = activeChip,
+                            onChipSelect = { activeChip = it },
+                        )
+                        Spacer(Modifier.height(RdSpacing.sm))
+
+                        if (filtered.isEmpty()) {
+                            RdEmptyState(
+                                icon = Icons.Filled.History,
+                                title = "Analiz bulunamadı",
+                                subtitle = "Filtreyi değiştir veya yeni bir saha taraması başlat.",
+                            )
+                        } else {
                         LazyColumn(
                             modifier = Modifier.padding(top = RdSpacing.sm),
                             verticalArrangement = Arrangement.spacedBy(RdSpacing.xs),
                         ) {
-                            items(current.items, key = { it.id }) { item ->
+                            items(filtered, key = { it.id }) { item ->
                                 HistoryRow(
                                     item = item,
                                     isGenerating = generatingId == item.id,
@@ -125,6 +200,7 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
                                     onDelete = { itemPendingDelete = item },
                                 )
                             }
+                        }
                         }
                     }
                 }
@@ -169,6 +245,70 @@ fun ReportsScreen(onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hi
                 TextButton(onClick = viewModel::clearDeleteError) { Text("Tamam") }
             },
         )
+    }
+}
+
+@Composable
+private fun HistoryFilterSurface(
+    search: String,
+    onSearchChange: (String) -> Unit,
+    activeChip: HistoryFilterChip,
+    onChipSelect: (HistoryFilterChip) -> Unit,
+) {
+    val colors = RdTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(colors.white)
+            .padding(RdSpacing.sm),
+        verticalArrangement = Arrangement.spacedBy(RdSpacing.sm),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(colors.fog)
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Search, contentDescription = null, tint = colors.slate, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            Box(modifier = Modifier.fillMaxWidth()) {
+                if (search.isEmpty()) {
+                    Text("Analiz ara", style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
+                }
+                BasicTextField(
+                    value = search,
+                    onValueChange = onSearchChange,
+                    singleLine = true,
+                    textStyle = RdFontStyle.Callout.toTextStyle().copy(color = colors.black),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(HistoryFilterChip.entries) { chip ->
+                val active = chip == activeChip
+                Box(
+                    modifier = Modifier
+                        .height(32.dp)
+                        .clip(CircleShape)
+                        .background(if (active) colors.selected else colors.fog)
+                        .clickable { onChipSelect(chip) }
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        chip.label,
+                        style = RdFontStyle.Caption.toTextStyle(),
+                        color = if (active) colors.white else colors.charcoal,
+                    )
+                }
+            }
+        }
     }
 }
 
