@@ -35,17 +35,22 @@ private data class MultiPhotoFlagsValue(
     @SerialName("max_photo_count_pro") val maxPhotoCountPro: Int? = null,
 ) {
     /**
-     * Android-safe reinterpretation of `isReleaseGateOpenForCurrentBuild` — the real flag row
-     * (checked live: `rollout_mode: "build_allowlist"`, `enabled_ios_builds: [...up to "81"]`,
-     * `min_ios_build: 80`) has no Android-scoped allowlist field at all, it was never designed
-     * with a second platform in mind. Porting the iOS build-number comparison verbatim would
-     * either always fail closed (Android version codes never match iOS build numbers) or, worse,
-     * accidentally succeed on a coincidental numeric match — the exact bug class F3 already found
-     * and fixed once this session for `LocalizationRolloutContext` (13 flags reachable by a
-     * colliding Android versionCode). Staying honest here: only `rollout_mode == "all"`
-     * (genuinely platform-agnostic) opens the gate for Android; `build_allowlist`/`min_build`
-     * modes stay closed since neither has an Android-meaningful field to check. Currently closed
-     * in production for both platforms either way (mode is `build_allowlist`, not `all`).
+     * Android-safe reinterpretation of `isReleaseGateOpenForCurrentBuild`. The real, server-side
+     * authority for this flag — `analyze/index.ts`'s `releaseGateDecision` — now has its own
+     * `enabled_android_builds`/`min_android_build` fields mirroring iOS's (added alongside this
+     * comment update), so `build_allowlist`/`min_build` modes *can* open for Android there once
+     * an owner populates those fields with a real Android versionCode. This client-side capability
+     * read (UI photo-slot count only — never the actual submit-time gate) deliberately does NOT
+     * consume those fields yet: it only reflects `rollout_mode == "all"` (genuinely
+     * platform-agnostic, no build comparison needed). That's a known, current asymmetry, not
+     * "no Android field exists" (the previous state this comment described, before the server
+     * got its own field) — if `enabled_android_builds` is ever populated to open the server gate
+     * for a real Android build, this UI capability check needs the matching versionCode-compare
+     * update too, or the picker just won't offer the extra slots the backend would already
+     * accept. Originally written to avoid the exact bug class F3 found and fixed once this
+     * session for `LocalizationRolloutContext` (13 flags reachable by a colliding Android
+     * versionCode) — still the right caution, just now solved server-side with Android's own
+     * field instead of by fail-closed default.
      */
     private val isReleaseGateOpenForAndroid: Boolean
         get() = killSwitch != true && rolloutMode?.lowercase() == "all"

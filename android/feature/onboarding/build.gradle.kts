@@ -26,6 +26,11 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.google.id)
 
+    // OBTimelinePaywallViewModel imports com.revenuecat.purchases types directly (same reason
+    // feature:paywall declares this too — core:data's own RevenueCat dependency is
+    // `implementation`, not `api`, so it doesn't transit to this module's own imports).
+    implementation(libs.revenuecat.purchases)
+
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)

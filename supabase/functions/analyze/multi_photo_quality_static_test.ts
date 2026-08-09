@@ -176,6 +176,42 @@ Deno.test("multi-photo prompt asks for complete evidence-backed findings", async
   );
 });
 
+Deno.test("atomic finding contract keeps independently correctable hazards separate", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(
+    source,
+    'const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v1"',
+  );
+  assertStringIncludes(
+    source,
+    "Her bulgu yalnızca bağımsız olarak düzeltilebilen tek bir fiziksel tehlikeyi anlatsın",
+  );
+  assertStringIncludes(
+    source,
+    "korkuluk eksikliği ile sabitlenmemiş merdiven aynı yüksekte çalışma katmanında olsa da ayrı fiziksel tehlikelerdir",
+  );
+  assertStringIncludes(
+    source,
+    "A shared category, inspection layer or root cause alone never justifies merging",
+  );
+  assertStringIncludes(
+    source,
+    "Exactly one independently correctable physical hazard; never join distinct hazards in one title.",
+  );
+  assertStringIncludes(
+    source,
+    "atomic_finding_policy_version: ATOMIC_FINDING_POLICY_VERSION",
+  );
+  assert(
+    !source.includes("Aynı kök nedenli riskleri tek bulguda topla."),
+    "legacy root-cause-only merge rule must not return",
+  );
+});
+
 Deno.test("fire equipment obstruction prompt does not treat people as material", async () => {
   const source = await readTextIfAllowed(
     new URL("./index.ts", import.meta.url),
@@ -746,4 +782,56 @@ Deno.test("iOS result model and UI preserve field verification flag", async () =
   assertStringIncludes(riskDetailSource, "var photoIndex: Int = 1");
   assertStringIncludes(riskDetailSource, "result.detail.photo_index.");
   assertStringIncludes(riskDetailSource, "RDCard(showsShadow: false)");
+});
+
+Deno.test("Android build-allowlist gate mirrors iOS's, closed by default", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  // Schema: an Android counterpart to enabled_ios_builds/min_ios_build, defaulting to
+  // empty/null so an unpopulated flag row keeps every platform closed exactly as before
+  // this field existed (real deploy target: behavior-neutral until an owner explicitly
+  // populates enabled_android_builds/min_android_build for a real Android build).
+  assertStringIncludes(source, "enabled_android_builds: string[]");
+  assertStringIncludes(source, "min_android_build: number | null");
+  assertStringIncludes(source, "enabled_android_builds: [],\n  min_android_build: null,");
+  assertStringIncludes(
+    source,
+    "enabled_android_builds: asStringArray(record.enabled_android_builds)",
+  );
+  assertStringIncludes(
+    source,
+    "min_android_build: asOptionalPositiveInt(record.min_android_build)",
+  );
+
+  // Gate: androidBuildMatches/androidBuildAtLeast only ever match platform === "android" —
+  // same F3 fail-closed discipline as clientBuildMatches/clientBuildAtLeast for iOS, kept as
+  // separate functions so the existing iOS-only call sites (multi_photo_layer_audit,
+  // thinking-budget overrides) stay untouched by this addition.
+  assertStringIncludes(source, "function androidBuildMatches(");
+  assertStringIncludes(source, 'if (client.platform !== "android") return false;');
+  assertStringIncludes(source, "function androidBuildAtLeast(");
+  assertStringIncludes(source, 'client.platform === "android" &&');
+
+  // releaseGateDecision: "all" stays iOS-only (opting Android into a full "all" rollout is a
+  // separate, not-yet-made decision); build_allowlist/min_build branch by platform and use
+  // Android's own fields, never iOS's.
+  assertStringIncludes(
+    source,
+    'client.platform !== "ios" && client.platform !== "android"',
+  );
+  assertStringIncludes(
+    source,
+    'return client.platform === "ios"\n        ? { open: true, reason: "all" }\n        : { open: false, reason: "platform" };',
+  );
+  assertStringIncludes(
+    source,
+    "androidBuildMatches(flags.enabled_android_builds, client)",
+  );
+  assertStringIncludes(
+    source,
+    "androidBuildAtLeast(flags.min_android_build, client)",
+  );
 });

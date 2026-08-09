@@ -215,6 +215,13 @@ type MultiPhotoFeatureFlags = {
   rollout_mode: ReleaseRolloutMode;
   enabled_ios_builds: string[];
   min_ios_build: number | null;
+  // Android allowlist mirror of enabled_ios_builds/min_ios_build — added so build_allowlist/
+  // min_build modes can open for Android too, same rollout_mode value covering both platforms'
+  // own build fields (never each other's, matching the existing ios_builds-vs-platform
+  // fail-closed discipline this file already applies everywhere else). Defaults empty/null,
+  // so an unpopulated flag row keeps every platform closed exactly as before this field existed.
+  enabled_android_builds: string[];
+  min_android_build: number | null;
   rollout_gate_open: boolean;
   rollout_reason: string;
   enable_multi_photo_analysis: boolean;
@@ -370,6 +377,19 @@ type OnboardingContext = {
 
 const PROMPT_VERSION = "isg-photo-policy-v2026-07-single-multi-targets";
 const PERSONALIZATION_VERSION = "onboarding-v1";
+const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v1";
+// localization-inventory: machine-prompt-begin
+const ATOMIC_FINDING_PROMPT_TR =
+  "Her bulgu yalnızca bağımsız olarak düzeltilebilen tek bir fiziksel tehlikeyi anlatsın. Yalnız aynı fiziksel tehlike, aynı görsel kanıt, aynı anlık düzeltici önlem ve aynı önleyici kontrol söz konusuysa tek bulguda birleştir. Ortak kategori, denetim katmanı veya benzer kök neden tek başına birleştirme gerekçesi değildir. Örneğin korkuluk eksikliği ile sabitlenmemiş merdiven aynı yüksekte çalışma katmanında olsa da ayrı fiziksel tehlikelerdir ve ayrı bulgu olmalıdır.";
+const ATOMIC_FINDING_PROMPT_EN =
+  "Each finding must contain exactly one independently correctable physical hazard. Merge only the same physical hazard with the same visual evidence, immediate corrective action and preventive control. A shared category, inspection layer or root cause alone never justifies merging distinct hazards. For example, missing edge protection and an unsecured ladder are separate findings.";
+const ATOMIC_FINDING_TITLE_SCHEMA_DESCRIPTION =
+  "Exactly one independently correctable physical hazard; never join distinct hazards in one title.";
+const ATOMIC_FINDING_EVIDENCE_SCHEMA_DESCRIPTION =
+  "Visible evidence for that one physical hazard only; distinct physical conditions require separate findings.";
+const ATOMIC_FINDING_ACTION_SCHEMA_DESCRIPTION =
+  "The immediate corrective action for that one physical hazard only.";
+// localization-inventory: machine-prompt-end
 const BUSINESS_TIME_ZONE = "Europe/Istanbul";
 
 const PLAN_LIMITS: Record<PlanTier, {
@@ -398,6 +418,8 @@ const DEFAULT_MULTI_PHOTO_FLAGS: MultiPhotoFeatureFlags = {
   rollout_mode: "off",
   enabled_ios_builds: [],
   min_ios_build: null,
+  enabled_android_builds: [],
+  min_android_build: null,
   rollout_gate_open: false,
   rollout_reason: "default_off",
   enable_multi_photo_analysis: false,
@@ -566,7 +588,7 @@ KALİTE FİLTRESİ — KAÇIN:
 - Genel ifade ("güvenlik önlemleri alınmalı") yerine somut önlem / kontrol tedbiri yaz.
 - Görselde olmayan riski uydurma.
 - Geçici insan varlığını sabit engel/malzeme gibi yorumlama. Yangın dolabı, yangın söndürücü, acil çıkış veya pano önünde sadece bir kişi duruyorsa "önünde malzeme var", "erişim kapalı" veya "ulaşım engelli" bulgusu üretme. Ancak kişinin yanında/arkasında depolanmış malzeme, araç, ekipman, palet, istif, kablo yığını veya fiziksel kapatma net görünüyorsa erişim engeli yaz.
-- Aynı kök nedenli riskleri tek bulguda topla.
+- ${ATOMIC_FINDING_PROMPT_TR}
 - Hassas ölçü uydurma; "yaklaşık 3m" veya "1 kat yüksekliğinde" yaz.
 - "Eğitim verilmeli" jenerik aksiyonundan kaçın; hangi iş/ekipman/risk için ne doğrulanacağını söyle.
 - Kullanıcı profili veya firma bağlamı görsel kanıtı filtrelemez; profili yalnızca ton, öncelik ve açıklama derinliği için kullan.
@@ -788,6 +810,8 @@ function normalizeMultiPhotoFlags(value: unknown): MultiPhotoFeatureFlags {
     rollout_mode: normalizeRolloutMode(record.rollout_mode),
     enabled_ios_builds: asStringArray(record.enabled_ios_builds),
     min_ios_build: asOptionalPositiveInt(record.min_ios_build),
+    enabled_android_builds: asStringArray(record.enabled_android_builds),
+    min_android_build: asOptionalPositiveInt(record.min_android_build),
     rollout_gate_open: false,
     rollout_reason: "not_evaluated",
     enable_multi_photo_analysis: asBoolean(
@@ -961,6 +985,24 @@ function clientBuildMatches(
     .some((build) => build === client.appBuildNumber);
 }
 
+// Android mirror of clientBuildMatches above, same fail-closed discipline (only ever matches an
+// Android client against enabled_android_builds — never iOS, never any other *_ios_builds list).
+// Kept as its own function rather than a platform parameter on clientBuildMatches so every
+// existing ios-only call site (multi_photo_layer_audit, thinking-budget overrides) stays
+// byte-for-byte unchanged and unaffected by this addition.
+function androidBuildMatches(
+  builds: string[],
+  client: ClientReleaseContext,
+): boolean {
+  if (client.platform !== "android") return false;
+  if (!client.appBuild) return false;
+  if (builds.includes(client.appBuild)) return true;
+  if (client.appBuildNumber == null) return false;
+  return builds
+    .map((build) => asOptionalPositiveInt(build))
+    .some((build) => build === client.appBuildNumber);
+}
+
 function thinkingBudgetOverrideForBuild(
   overrides: Record<string, number>,
   client: ClientReleaseContext,
@@ -989,12 +1031,25 @@ function clientBuildAtLeast(
     client.appBuildNumber >= minimumBuild;
 }
 
+// Android mirror of clientBuildAtLeast, same reasoning as androidBuildMatches above.
+function androidBuildAtLeast(
+  minimumBuild: number | null,
+  client: ClientReleaseContext,
+): boolean {
+  return client.platform === "android" &&
+    minimumBuild != null &&
+    client.appBuildNumber != null &&
+    client.appBuildNumber >= minimumBuild;
+}
+
 function releaseGateDecision(
   flags: MultiPhotoFeatureFlags,
   client: ClientReleaseContext,
 ): { open: boolean; reason: string } {
   if (flags.kill_switch) return { open: false, reason: "kill_switch" };
-  if (client.platform !== "ios") return { open: false, reason: "platform" };
+  if (client.platform !== "ios" && client.platform !== "android") {
+    return { open: false, reason: "platform" };
+  }
   if (client.apiContractVersion < 2) {
     return { open: false, reason: "api_contract" };
   }
@@ -1002,18 +1057,38 @@ function releaseGateDecision(
 
   switch (flags.rollout_mode) {
     case "all":
-      return { open: true, reason: "all" };
+      // "all" stays ios-only until a platform-agnostic full rollout is its own explicit
+      // decision — adding Android's own build_allowlist/min_build fields below doesn't imply
+      // opting Android into "all" too.
+      return client.platform === "ios"
+        ? { open: true, reason: "all" }
+        : { open: false, reason: "platform" };
     case "build_allowlist":
-      return clientBuildMatches(flags.enabled_ios_builds, client)
+      if (client.platform === "ios") {
+        return clientBuildMatches(flags.enabled_ios_builds, client)
+          ? { open: true, reason: "build_allowlist" }
+          : clientBuildAtLeast(flags.min_ios_build, client)
+          ? { open: true, reason: "build_min_allowlist_floor" }
+          : { open: false, reason: "build_not_allowed" };
+      }
+      return androidBuildMatches(flags.enabled_android_builds, client)
         ? { open: true, reason: "build_allowlist" }
-        : clientBuildAtLeast(flags.min_ios_build, client)
+        : androidBuildAtLeast(flags.min_android_build, client)
         ? { open: true, reason: "build_min_allowlist_floor" }
         : { open: false, reason: "build_not_allowed" };
     case "min_build":
-      if (client.appBuildNumber == null || flags.min_ios_build == null) {
+      if (client.platform === "ios") {
+        if (client.appBuildNumber == null || flags.min_ios_build == null) {
+          return { open: false, reason: "missing_min_build" };
+        }
+        return client.appBuildNumber >= flags.min_ios_build
+          ? { open: true, reason: "min_build" }
+          : { open: false, reason: "build_below_min" };
+      }
+      if (client.appBuildNumber == null || flags.min_android_build == null) {
         return { open: false, reason: "missing_min_build" };
       }
-      return client.appBuildNumber >= flags.min_ios_build
+      return client.appBuildNumber >= flags.min_android_build
         ? { open: true, reason: "min_build" }
         : { open: false, reason: "build_below_min" };
     default:
@@ -2334,7 +2409,7 @@ Yalnız şu fotoğraflar için ikinci kısa tarama yap: ${
     photoIndices.map((index) => `FOTO_${index}`).join(", ")
   }.
 Amaç: bulgusu eksik görünen fotoğraflarda yalnız yeni, kanıtlı ve duplicate olmayan bulguları eklemek; fotoğraf başına üst sınır ${policy.targetMax}.
-Mevcut bulguları tekrar etme; aynı kök neden + aynı kontrol tedbiri + aynı görsel kanıt varsa yeni bulgu sayma. Minimumu doldurmak için bulgu üretme.
+Her bulgu bağımsız olarak düzeltilebilen tek bir fiziksel tehlikeyi anlatsın. Mevcut bulguları tekrar etme; yalnız aynı fiziksel tehlike + aynı görsel kanıt + aynı anlık düzeltici önlem + aynı önleyici kontrol söz konusuysa yeni bulgu sayma. Ortak kategori, denetim katmanı veya kök neden tek başına birleştirme gerekçesi değildir. Minimumu doldurmak için bulgu üretme.
 Temiz, ilgisiz veya düşük kaliteli fotoğrafta risk uydurma; coverage_status değerini "no_actionable_hazard" veya "low_quality" yap ve coverage_gap_reason yaz.
 Yanıtı yine photo_findings[] formatında üret; sadece istenen fotoğraf indekslerini döndür.
 <mevcut_bulgular>
@@ -2387,12 +2462,21 @@ function responseSchema(
     expectedPhotoIndices: options.expectedPhotoIndices,
   });
   const hazardProperties: Record<string, unknown> = {
-    title: { type: "STRING" },
+    title: {
+      type: "STRING",
+      description: ATOMIC_FINDING_TITLE_SCHEMA_DESCRIPTION,
+    },
     category: { type: "STRING" },
-    observed_evidence: { type: "STRING" },
+    observed_evidence: {
+      type: "STRING",
+      description: ATOMIC_FINDING_EVIDENCE_SCHEMA_DESCRIPTION,
+    },
     description: { type: "STRING" },
     root_cause: { type: "STRING" },
-    corrective_action: { type: "STRING" },
+    corrective_action: {
+      type: "STRING",
+      description: ATOMIC_FINDING_ACTION_SCHEMA_DESCRIPTION,
+    },
     preventive_control: { type: "STRING" },
     confidence: { type: "NUMBER" },
     needs_field_verification: { type: "BOOLEAN" },
@@ -2736,6 +2820,10 @@ inspection_layers her fotoğraf için TAM 12 kayıt içermeli; her layer_key tam
           INSPECTION_LAYER_STATUSES.join(", ")
         }. Her bulguyu inspection_layer_keys ile en az bir katmana bağla.`
         : ""
+    }${
+      outputLanguage === "en"
+        ? `\n${ATOMIC_FINDING_PROMPT_EN}`
+        : `\n${ATOMIC_FINDING_PROMPT_TR}`
     }${exactCoverageInstruction}`;
   }
   return `Aşağıdaki JSON yapısına birebir uy. Markdown, açıklama veya kod bloğu ekleme:
@@ -3079,7 +3167,7 @@ function layerAuditPromptRule(policy: AnalysisFindingPolicy): string {
   }
   return `Her fotoğrafı tek çağrıda şu sırayla incele: önce ön planı, orta alanı, arka planı, dört kenarı, geçiş yollarını, kişileri, ekipmanları, yüzeyleri ve işaretleri tara; görünen temel nesne ve bölgeleri scene_elements içine çıkar; sonra 12 denetim katmanının HER BİRİNİ inspection_layers içinde tam bir kez değerlendir; ancak bundan sonra bağımsız bulguları üret. layer_key ve inspection_layer_keys alanlarında yalnızca şu kanonik değerleri aynen kullan, Türkçe karşılık veya yeni anahtar üretme: ${
     INSPECTION_LAYER_KEYS.join(", ")
-  }. Bir katman görünmüyorsa not_visible, yeterince görünür ve tehlike yoksa checked_no_hazard, doğrudan görsel kanıtlı tehlike varsa actionable, görünür bir dayanak var fakat kesin hüküm verilemiyorsa uncertain yaz. Kırpma, kadraj dışında kalma, bulanıklık, düşük çözünürlük veya görüntü kalitesi nedeniyle bir KKD, donanım ya da bölge görülemiyorsa bu durum not_visible olmalı; actionable veya uncertain işaretleme ve bu görünmezlikten finding üretme. Her actionable veya uncertain bulguyu inspection_layer_keys ile ilgili katmana bağla. 12 katman tamamlanmadan yanıtı bitirme. Katmanları tamamlamak bulgu sayısını yapay olarak artırma zorunluluğu değildir; yalnız bir doğrulanabilir tehlike varsa bir bulgu geçerlidir. Eğitim, güvenlik kültürü, prosedür, yetkinlik, periyodik kontrol, gürültü seviyesi, havalandırma performansı veya kapalı alan sınıflandırması için doğrudan görünür belge, ölçüm, etiket, fiziksel belirti ya da saha koşulu yoksa bulgu üretme. Bir ekipman veya işaretin yokluğunu ancak bulunması gereken ilgili alan bütünüyle ve yeterli netlikte görünüyorsa bulgu yap. Aynı fiziksel tehlike birden fazla katmanla ilişkiliyse ayrı maddeler oluşturma; tek bulguyu ilgili tüm inspection_layer_keys değerlerine bağla. `;
+  }. Bir katman görünmüyorsa not_visible, yeterince görünür ve tehlike yoksa checked_no_hazard, doğrudan görsel kanıtlı tehlike varsa actionable, görünür bir dayanak var fakat kesin hüküm verilemiyorsa uncertain yaz. Kırpma, kadraj dışında kalma, bulanıklık, düşük çözünürlük veya görüntü kalitesi nedeniyle bir KKD, donanım ya da bölge görülemiyorsa bu durum not_visible olmalı; actionable veya uncertain işaretleme ve bu görünmezlikten finding üretme. Her actionable veya uncertain bulguyu inspection_layer_keys ile ilgili katmana bağla. 12 katman tamamlanmadan yanıtı bitirme. Katmanları tamamlamak bulgu sayısını yapay olarak artırma zorunluluğu değildir; yalnız bir doğrulanabilir tehlike varsa bir bulgu geçerlidir. Eğitim, güvenlik kültürü, prosedür, yetkinlik, periyodik kontrol, gürültü seviyesi, havalandırma performansı veya kapalı alan sınıflandırması için doğrudan görünür belge, ölçüm, etiket, fiziksel belirti ya da saha koşulu yoksa bulgu üretme. Bir ekipman veya işaretin yokluğunu ancak bulunması gereken ilgili alan bütünüyle ve yeterli netlikte görünüyorsa bulgu yap. ${ATOMIC_FINDING_PROMPT_TR} Aynı fiziksel tehlike birden fazla katmanla ilişkiliyse ayrı maddeler oluşturma; tek bulguyu ilgili tüm inspection_layer_keys değerlerine bağla. `;
 }
 
 function buildSubscriptionContext(
@@ -3092,8 +3180,11 @@ function buildSubscriptionContext(
     ? findingPolicy.coverageV2Enabled
       ? `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Çıktıyı photo_findings[] formatında fotoğraf bazlı üret. Her fotoğraf için coverage_status alanını "actionable", "no_actionable_hazard" veya "low_quality" olarak yaz. ${
         layerAuditPromptRule(findingPolicy)
-      }Aksiyonlanabilir risk kanıtı olan her fotoğrafta yalnız kanıta dayalı ve duplicate olmayan bulguları üret; fotoğraf başına üst sınır ${findingPolicy.targetFindingsPerPhotoMax}, toplam final bulgu üst sınırı ${findingPolicy.maxFindingsTotal}. Temiz, ilgisiz, çok bulanık veya risk kanıtı zayıf fotoğrafta bulgu uydurma; listeyi doldurmak için aynı tehlikeyi farklı başlıklarla tekrar yazma; coverage_gap_reason alanında neden düşük kaldığını açıkla. Aynı tehlikeyi yalnız aynı fiziksel tehlike, aynı kök neden, aynı kontrol tedbiri ve aynı görsel kanıt varsa birleştir. Farklı görsel kanıt, farklı kök neden, farklı anlık düzeltici önlem, farklı önleyici kontrol veya farklı inspection_layer_keys varsa bulguları ayrı tut; farklı fiziksel tehlikeleri yalnız sayıyı azaltmak için birleştirme. Her bulguda source_photo_indices, per_photo_observations ve fotoğraf özeti alanlarını doldur.`
-      : `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Her fotoğraf için photo_summaries içinde ayrı özet üret. Her fotoğraf için 12 katmanlı taramadan çıkan tüm anlamlı bulgu adaylarını yaz; fotoğraf başına en fazla ${findingPolicy.maxFindingsPerPhoto}, toplamda en fazla ${findingPolicy.maxFindingsTotal} final bulgu üret. Kanıt varsa listeyi gereksiz kısaltma: çok fotoğraflı bir analizde tehlike kanıtı güçlü olan her fotoğraftan genellikle birden fazla bulgu beklenir. Risk kanıtı zayıfsa bulgu uydurma. Aynı tehlikeyi yalnız aynı kök neden ve aynı kontrol tedbiri olduğunda birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. source_photo_indices ve per_photo_observations alanlarını doldur.`
+      }Aksiyonlanabilir risk kanıtı olan her fotoğrafta yalnız kanıta dayalı ve duplicate olmayan bulguları üret; fotoğraf başına üst sınır ${findingPolicy.targetFindingsPerPhotoMax}, toplam final bulgu üst sınırı ${findingPolicy.maxFindingsTotal}. Temiz, ilgisiz, çok bulanık veya risk kanıtı zayıf fotoğrafta bulgu uydurma; listeyi doldurmak için aynı tehlikeyi farklı başlıklarla tekrar yazma; coverage_gap_reason alanında neden düşük kaldığını açıkla. Birleştirmeyi yalnız tek ve aynı fiziksel tehlikenin tekrarına uygula: görsel kanıt, anlık düzeltici önlem ve önleyici kontrol de aynı olmalı. Ortak kategori, inspection_layer_keys veya kök neden tek başına birleştirme gerekçesi değildir. Farklı görsel kanıt, farklı anlık düzeltici önlem, farklı önleyici kontrol veya farklı inspection_layer_keys varsa bulguları ayrı tut; farklı fiziksel tehlikeleri yalnız sayıyı azaltmak için birleştirme. Her bulguda source_photo_indices, per_photo_observations ve fotoğraf özeti alanlarını doldur.`
+      : [
+        `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Her fotoğraf için photo_summaries içinde ayrı özet üret. Her fotoğraf için 12 katmanlı taramadan çıkan tüm anlamlı bulgu adaylarını yaz; fotoğraf başına en fazla ${findingPolicy.maxFindingsPerPhoto}, toplamda en fazla ${findingPolicy.maxFindingsTotal} final bulgu üret. Kanıt varsa listeyi gereksiz kısaltma: çok fotoğraflı bir analizde tehlike kanıtı güçlü olan her fotoğraftan genellikle birden fazla bulgu beklenir. Risk kanıtı zayıfsa bulgu uydurma. Aynı tehlikeyi yalnız aynı kök neden ve aynı kontrol tedbiri olduğunda birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. source_photo_indices ve per_photo_observations alanlarını doldur.`,
+        ATOMIC_FINDING_PROMPT_TR,
+      ].join(" ")
     : minHazards && maxHazards
     ? `${minHazards} ile ${maxHazards} arasında tehlike döndür; önem sırasına göre sırala.`
     : maxHazards
@@ -3141,6 +3232,7 @@ function englishLayerAuditPromptRule(policy: AnalysisFindingPolicy): string {
     "Do not create a finding from something that is outside the frame or not visible. Do not turn non-visibility, missing measurements, assumed training gaps, assumed noise levels, assumed ventilation performance or assumed confined-space classification into findings without direct visible evidence, labels, documents, physical indicators or site conditions.",
     "Link every actionable or uncertain finding to inspection_layer_keys. Do not finish the response until all 12 layers are complete. Completing all layers does not require inventing findings.",
     "Do not merge distinct physical hazards into one finding when they have different visual evidence, different root causes, different immediate controls, different preventive controls or different inspection_layer_keys. Keep separate hazards separate even if they appear in the same image or location.",
+    ATOMIC_FINDING_PROMPT_EN,
     "If one physical hazard is relevant to multiple layers, create one finding and attach all applicable inspection_layer_keys. Do not split the same root cause and same control measure only to increase the count.",
   ].join(" ") + " ";
 }
@@ -3167,6 +3259,7 @@ function buildEnglishSubscriptionContext(
         "Produce a separate photo_summaries entry for every image and populate source_photo_indices and per_photo_observations.",
         `Return at most ${findingPolicy.maxFindingsPerPhoto} distinct findings per image and ${findingPolicy.maxFindingsTotal} in total.`,
         "Do not invent findings when visible evidence is weak.",
+        ATOMIC_FINDING_PROMPT_EN,
       ].join(" ")
     : minHazards && maxHazards
     ? `Return between ${minHazards} and ${maxHazards} evidence-based findings, ordered by priority.`
@@ -7647,6 +7740,7 @@ serve(async (req: Request) => {
     prompt_contract_version: systemPromptContract.contract.contractVersion,
     prompt_layer_ids: systemPromptContract.contract.layerIDs,
     prompt_contract_hash: systemPromptHash,
+    atomic_finding_policy_version: ATOMIC_FINDING_POLICY_VERSION,
     min_hazards: imageBase64Parts.length > 0
       ? null
       : PLAN_LIMITS[planTier].minHazards ?? null,
