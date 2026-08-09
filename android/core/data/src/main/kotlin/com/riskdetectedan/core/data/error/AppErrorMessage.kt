@@ -224,6 +224,32 @@ object AppErrorMessages {
             )
         }
 
+        // Real bug caught live (2026-08-09): auth-send-email-hook (Supabase Edge Function that
+        // actually delivers OTP/login-code emails) failing — a transient DB/network blip claiming
+        // its idempotency lease, see the function's own doc comment — surfaces here as GoTrue's
+        // generic 500 wrapper message, "...Service currently unavailable due to hook...", which
+        // contains both "503"-adjacent wording and literally "unavailable". Without this check
+        // that message falls through to the AI-provider classifier below (line ~353's bare
+        // "unavailable"/"503"/"timeout" substring match, meant for the *analyze* pipeline) and
+        // shows a wildly wrong "Analiz modeli şu anda yoğun..." message for what is actually a
+        // failed login-code send — same bug *class* as the OTP-timeout/token-expired collision
+        // documented in the client-side-timeout check above, same fix: a narrower, more specific
+        // check runs first so a broad downstream substring match never gets the chance to
+        // mislabel it. Real, honest fallback message this time (not the OTP-specific one above,
+        // since this is the sender failing, not an entered code being wrong/expired).
+        if (lower.contains("unavailable due to hook") ||
+            lower.contains("error running hook") ||
+            (lower.contains("hook") && (lower.contains("503") || lower.contains("unavailable")))
+        ) {
+            return AppErrorMessage(
+                title = context ?: "Kod gönderilemedi",
+                message = "Doğrulama kodu gönderilirken sunucu tarafında geçici bir sorun oluştu.",
+                action = "Birkaç saniye bekleyip tekrar dene.",
+                category = AppErrorCategory.Unknown,
+                supportID = supportID,
+            )
+        }
+
         if (isFreeRiskAnalysisTrialExhausted(rawMessage)) {
             return AppErrorMessage(
                 title = "Risk analizi hakkı kullanıldı",

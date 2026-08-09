@@ -52,6 +52,21 @@ class AppErrorMessageTest {
     }
 
     @Test
+    fun `auth email hook failure is not misclassified as ai unavailable`() {
+        // Real bug caught live (2026-08-09): auth-send-email-hook (OTP/login-code sender)
+        // failing surfaces GoTrue's generic wrapper message containing "unavailable" — without
+        // this check it fell through to the ai-unavailable branch above and showed a wildly
+        // wrong "Analiz modeli şu anda yoğun..." message for a failed login-code send.
+        val result = AppErrorMessages.make(
+            "500: Service currently unavailable due to hook",
+            context = "Kod gönderilemedi",
+        )
+        assertEquals(AppErrorCategory.Unknown, result.category)
+        assertEquals("Kod gönderilemedi", result.title)
+        assertTrue(result.message.contains("kod"))
+    }
+
+    @Test
     fun `network keyword is classified as network unavailable`() {
         val result = AppErrorMessages.make("network connection lost")
         assertEquals(AppErrorCategory.NetworkUnavailable, result.category)

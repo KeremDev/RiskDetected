@@ -113,10 +113,29 @@ serve(async (req) => {
     p_delivery_index: 0,
     p_request_body_sha256: requestBodyHash,
   });
-  const [{ data: profile }, firstClaimResponse] = await Promise.all([
+  const [{ data: profile }, firstClaimResponseInitial] = await Promise.all([
     profileFetchPromise,
     firstClaimPromise,
   ]);
+  // Real incident (2026-08-09, staging): a single transient network/DB blip on this RPC call
+  // (no Postgres-side error logged, no delivery row ever inserted — consistent with the request
+  // never reaching Postgres, not a logical rejection) surfaced as an immediate 503
+  // `auth_email_delivery_claim_failed` with no retry, failing a real login-code send outright.
+  // The RPC is safe to retry as-is: it's already idempotent on
+  // `(webhook_id_sha256, delivery_index)` via `on conflict do nothing` + an explicit row
+  // recheck, so calling it again with the exact same arguments either claims cleanly (the first
+  // call never actually reached the DB) or correctly reports the row another concurrent attempt
+  // already claimed (`status: "processing"`/`"sent"`) — never a duplicate claim. One retry after
+  // a short delay, not a loop — GoTrue's own 5s Auth Hook timeout budget doesn't allow more.
+  let firstClaimResponse = firstClaimResponseInitial;
+  if (firstClaimResponse.error) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    firstClaimResponse = await supabase.rpc("claim_auth_email_delivery_v1", {
+      p_webhook_id_sha256: webhookIDHash,
+      p_delivery_index: 0,
+      p_request_body_sha256: requestBodyHash,
+    });
+  }
   const firstClaim = (firstClaimResponse.data ?? {}) as DeliveryClaim;
   const firstClaimWasMade = !firstClaimResponse.error &&
     firstClaim.status === "claimed" &&
