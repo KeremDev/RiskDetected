@@ -23,9 +23,10 @@ import javax.inject.Singleton
  * drift between the Swift enum and the DB constraint, not something this port needs to fix) —
  * skipped for that reason too, sending them would just fail the CHECK.
  *
- * `source` is always `"in_app"` (Android's paywall is only reachable from Profile → "Planı
- * yükselt", never embedded in onboarding — matches DEC-14/#20's note that onboarding has no
- * RevenueCat Android pricing yet). `variant_id` is `"android_default_v1"` — a real, honest label
+ * `source` is `"in_app"` for Profile → "Planı yükselt" (feature #20) and `"onboarding_v2"` for
+ * the onboarding-step-11 paywall (feature:onboarding's `OBTimelinePaywallScreen`, wired to real
+ * purchases once Android caught up to iOS's live onboarding pricing) — both values are already
+ * allowed by `paywall_events_source_check`. `variant_id` is `"android_default_v1"` — a real, honest label
  * for "the one layout Android has," not a fabricated A/B-test variant; Android has no paywall
  * variant-testing infrastructure the way iOS's `PaywallSource`/segment system does, so
  * `segment_key` is always null rather than guessing at a sector segment.
@@ -76,13 +77,14 @@ class PaywallEventRepository @Inject constructor(private val client: SupabaseCli
         billing: String?,
         productIdentifier: String?,
         metadata: PaywallEventMetadata,
+        source: String = SOURCE,
     ) {
         try {
             client.postgrest.from("paywall_events").insert(
                 PaywallEventPayload(
                     userId = userId,
                     funnelSessionId = funnelSessionId,
-                    source = SOURCE,
+                    source = source,
                     variantId = VARIANT_ID,
                     eventName = event.wireValue,
                     selectedTier = selectedTier,

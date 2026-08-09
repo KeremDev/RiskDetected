@@ -1,5 +1,8 @@
 package com.riskdetectedan.feature.onboarding
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,11 +29,13 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,9 +45,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdPrimaryButton
@@ -70,22 +78,30 @@ private val plusFeatures = listOf(
  * local composable rather than reusing `feature:paywall`'s PaywallScreen, same module-boundary
  * reasoning as before this pass (`feature:onboarding` doesn't depend on `feature:paywall`).
  *
- * No live RevenueCat packages/pricing here — deliberate, not a leftover gap: this onboarding
- * screen never fetched live offerings even before this visual pass, and the *real* post-onboarding
- * Paywall screen (feature #20, `feature:paywall`) already owns the live package-fetch+purchase
- * flow with its own loading/error states. Gating this screen's CTA on a price load that never
- * happens would just soft-lock it forever, so the price line and CTA are static Google Play
- * copy instead of iOS's dynamic `priceLine`/`primaryButtonTitle` (which react to a real
- * `SubscriptionOfferingsLoadState`). "Devam et"/"Şimdilik ücretsiz devam et" both end onboarding —
- * there's no purchase outcome to branch on here, matching this screen's pre-existing behavior.
- * Not ported: the processing overlay (App Store purchase-in-flight modal — no purchase flow to
- * show it for) and the timeline connector's flowing-gradient animation (decorative, static
- * connector line kept instead).
+ * Real RevenueCat purchase now, via [OBTimelinePaywallViewModel]/[com.riskdetectedan.core.data.billing.BillingRepository]
+ * (previously the real gap this doc comment used to justify away: this screen never fetched live
+ * offerings, so "Devam et" always just skipped past a fake plans page). While packages are
+ * loading or unavailable the price line/CTA fall back to the pre-existing static Google Play
+ * copy — same honest degrade `feature:paywall`'s empty-packages state uses, not a soft-lock.
+ * "Devam et" now attempts a real purchase for the selected plan and only continues onboarding on
+ * success (or on the free "Şimdilik ücretsiz devam et" tap, which still always continues).
+ * Not ported: the processing overlay's own visual chrome (borrowed as a disabled/"İşleniyor..."
+ * button state instead) and the timeline connector's flowing-gradient animation (decorative,
+ * static connector line kept instead).
  */
 @Composable
-fun OBTimelinePaywallScreen(onDismiss: () -> Unit) {
+fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallViewModel = hiltViewModel()) {
     val colors = RdTheme.colors
     var selectedPlan by remember { mutableStateOf(TimelinePlan.Yearly) }
+    val state by viewModel.state.collectAsState()
+    val isPurchasing by viewModel.isPurchasing.collectAsState()
+    val purchaseError by viewModel.purchaseError.collectAsState()
+    val activity = LocalContext.current.findActivity()
+
+    val loaded = state as? OBTimelinePaywallUiState.Loaded
+    val selectedPackage = loaded?.packages?.let {
+        if (selectedPlan == TimelinePlan.Yearly) it.yearly else it.monthly
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(colors.paper)) {
         Column(
@@ -135,12 +151,24 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit) {
         ) {
             RdPrimaryButton(
                 text = if (selectedPlan == TimelinePlan.Yearly) "Devam et" else "Aboneliği başlat",
-                onClick = onDismiss,
+                onClick = {
+                    val activityRef = activity
+                    if (selectedPackage != null && activityRef != null) {
+                        viewModel.purchase(activityRef, selectedPackage, onPurchased = onDismiss)
+                    } else {
+                        // Unavailable/loading fallback — no real package to purchase yet,
+                        // matches this screen's pre-existing behavior.
+                        onDismiss()
+                    }
+                },
+                enabled = !isPurchasing,
+                loading = isPurchasing,
+                loadingLabel = "İşleniyor...",
                 style = RdButtonStyle.Onyx,
             )
 
             Spacer(Modifier.height(8.dp))
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss, enabled = !isPurchasing) {
                 Text("Şimdilik ücretsiz devam et", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
             }
 
@@ -155,11 +183,7 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit) {
 
             Spacer(Modifier.height(6.dp))
             Text(
-                if (selectedPlan == TimelinePlan.Yearly) {
-                    "Yıllık plan · fiyat ve varsa uygun teklif Google Play'de gösterilir"
-                } else {
-                    "Aylık plan · istediğin zaman iptal · fiyat Google Play'de gösterilir"
-                },
+                priceLine(selectedPlan, selectedPackage),
                 style = RdFontStyle.Caption.toTextStyle(),
                 color = colors.slate,
                 textAlign = TextAlign.Center,
@@ -167,6 +191,48 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit) {
             Spacer(Modifier.height(6.dp))
         }
     }
+
+    purchaseError?.let { error ->
+        AlertDialog(
+            onDismissRequest = viewModel::clearPurchaseError,
+            title = { Text(error.title) },
+            text = {
+                Column {
+                    Text(error.message)
+                    if (error.action.isNotEmpty()) Text(error.action)
+                    Text(error.supportID)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::clearPurchaseError) { Text("Tamam") }
+            },
+        )
+    }
+}
+
+/** Real price when the package loaded, otherwise the pre-existing static Google Play copy
+ * (loading, signed-out, offerings-fetch-failed, or no Plus package configured on this offering
+ * yet — all fold into the same honest fallback). */
+private fun priceLine(plan: TimelinePlan, billingPackage: BillingPackage?): String = when {
+    plan == TimelinePlan.Yearly && billingPackage != null ->
+        "Yıllık plan · ${billingPackage.formattedPrice}/yıl"
+    plan == TimelinePlan.Yearly ->
+        "Yıllık plan · fiyat ve varsa uygun teklif Google Play'de gösterilir"
+    billingPackage != null ->
+        "Aylık plan · istediğin zaman iptal · ${billingPackage.formattedPrice}/ay"
+    else ->
+        "Aylık plan · istediğin zaman iptal · fiyat Google Play'de gösterilir"
+}
+
+/** RevenueCat's `PurchaseParams.Builder` needs an Activity (to launch Google Play's billing
+ * sheet) — `LocalContext.current` in a Composable is often an Activity already but isn't
+ * guaranteed to be one (can be wrapped), so unwrap defensively rather than force-casting. Same
+ * pattern as `feature:paywall`'s `PaywallScreen.findActivity`; kept local rather than shared
+ * since neither module depends on the other. */
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 @Composable
