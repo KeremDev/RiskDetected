@@ -2,6 +2,7 @@ package com.riskdetectedan.feature.onboarding
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,15 +20,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -35,8 +45,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdFontStyle
+import com.riskdetectedan.core.designsystem.RdLegalDocument
+import com.riskdetectedan.core.designsystem.RdLegalDocumentSheet
 import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
@@ -48,14 +61,18 @@ import com.riskdetectedan.core.designsystem.toTextStyle
  * step). The 3-phone auto-swapping deck (continuous scale/rotate/offset loop every 2.4s) is
  * simplified to one static phone bezel showing the same fallback preview content (mini risk rows
  * + "Rapor hazır") — the deck's motion is decorative, the screen content inside it is real and
- * kept. Footer links (Gizlilik Politikası/Geri Yükle/Şartlar) are static, non-interactive text —
- * same policy as the Auth screen's legal notice; a real restore-purchases call already exists on
- * the post-onboarding Paywall screen (feature #20), wiring it here too is a separate, deliberate
- * follow-up, not an oversight of this pass.
+ * kept. Footer links: "Gizlilik Politikası"/"Şartlar" now open the real [RdLegalDocumentSheet]
+ * (2026-08-09 gap sweep — were static, non-interactive text before). "Geri Yükle" stays
+ * static/non-interactive — a real restore-purchases call already exists on the post-onboarding
+ * Paywall screen (feature #20), wiring it here too is a separate, deliberate follow-up, not an
+ * oversight of this pass.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OBTrialInviteScreen(onContinue: () -> Unit) {
     val colors = RdTheme.colors
+    val context = LocalContext.current
+    var legalDocumentKind by remember { mutableStateOf<String?>(null) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -103,11 +120,37 @@ fun OBTrialInviteScreen(onContinue: () -> Unit) {
 
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                listOf("Gizlilik Politikası", "Geri Yükle", "Şartlar").forEach { label ->
-                    Text(label, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
-                }
+                Text(
+                    "Gizlilik Politikası",
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.clickable { legalDocumentKind = "privacy" },
+                )
+                Text("Geri Yükle", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                Text(
+                    "Şartlar",
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.clickable { legalDocumentKind = "terms" },
+                )
             }
             Spacer(Modifier.height(24.dp))
+        }
+    }
+
+    if (legalDocumentKind != null) {
+        var legalDocuments by remember { mutableStateOf<List<RdLegalDocument>>(emptyList()) }
+        LaunchedEffect(Unit) {
+            legalDocuments = LegalDocumentAssets.load(context)
+                .map { RdLegalDocument(kind = it.kind, title = it.title, text = it.text) }
+        }
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(onDismissRequest = { legalDocumentKind = null }, sheetState = sheetState) {
+            RdLegalDocumentSheet(
+                documents = legalDocuments,
+                initialKind = legalDocumentKind,
+                onClose = { legalDocumentKind = null },
+            )
         }
     }
 }

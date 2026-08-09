@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShowChart
@@ -58,10 +59,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.profile.RiskMethodWire
 import com.riskdetectedan.core.data.profile.UserProfile
+import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.data.progress.ProfessionalProgressBadge
 import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdFontStyle
+import com.riskdetectedan.core.designsystem.RdLegalDocument
+import com.riskdetectedan.core.designsystem.RdLegalDocumentSheet
 import com.riskdetectedan.core.designsystem.RdListRow
 import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdRadius
@@ -118,6 +122,7 @@ fun ProfileScreen(
                 val progress by viewModel.progress.collectAsState()
                 var showBadges by remember { mutableStateOf(false) }
                 var showCompetencies by remember { mutableStateOf(false) }
+                var showLegal by remember { mutableStateOf(false) }
                 var pendingCelebrationBadge by remember { mutableStateOf<ProfessionalProgressBadge?>(null) }
 
                 // Real port of ProfessionalProgressProfileSection.swift's `.task(id:
@@ -158,6 +163,7 @@ fun ProfileScreen(
                         RdListRow(title = "Firmalarım", icon = Icons.Filled.Business, onClick = onManageCompanies)
                         RdListRow(title = "Destek", icon = Icons.Filled.SupportAgent, onClick = onSupport)
                         RdListRow(title = "Bildirim ayarları", icon = Icons.Filled.Notifications, onClick = onNotificationSettings)
+                        RdListRow(title = "Yasal Bilgilendirme", icon = Icons.Filled.Gavel, onClick = { showLegal = true })
                         RdListRow(
                             title = "Hesabı sil",
                             icon = Icons.Filled.DeleteForever,
@@ -189,6 +195,22 @@ fun ProfileScreen(
                                 ProfessionalProgressCompetencyMapView(competencies = summary.competencies, compact = false)
                             }
                         }
+                    }
+                }
+                if (showLegal) {
+                    val context = LocalContext.current
+                    var legalDocuments by remember { mutableStateOf<List<RdLegalDocument>>(emptyList()) }
+                    LaunchedEffect(Unit) {
+                        legalDocuments = LegalDocumentAssets.load(context)
+                            .map { RdLegalDocument(kind = it.kind, title = it.title, text = it.text) }
+                    }
+                    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                    ModalBottomSheet(onDismissRequest = { showLegal = false }, sheetState = sheetState) {
+                        RdLegalDocumentSheet(
+                            documents = legalDocuments,
+                            initialKind = null,
+                            onClose = { showLegal = false },
+                        )
                     }
                 }
                 // Real port of the Swift `onClose` closure — marks the badge seen and refreshes

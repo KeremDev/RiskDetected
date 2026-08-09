@@ -52,17 +52,28 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.auth.RdAppLanguage
+import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdHeroTile
 import com.riskdetectedan.core.designsystem.RdHeroTint
+import com.riskdetectedan.core.designsystem.RdLegalDocument
+import com.riskdetectedan.core.designsystem.RdLegalDocumentSheet
 import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
@@ -85,9 +96,11 @@ private enum class EmailPhase { Hidden, Email, Otp }
  *   field, standard Android behavior.
  * - Google's real 4-color "G" logo (iOS draws it with `Canvas` arc segments) simplified to a
  *   plain "G" letter in Google blue — no custom Canvas drawing, matching this pass's policy.
- * - Legal notice is static informational text, not iOS's tappable `LegalAcceptanceNotice` links —
- *   the legal-document-viewer integration is a separate, larger, not-yet-built surface.
+ * - Legal notice ("Devam ederek...") now uses real per-phrase tappable links (2026-08-09 gap
+ *   sweep) into the same [RdLegalDocumentSheet] the Profile screen's "Yasal Bilgilendirme" row
+ *   opens — closes the "static informational text only" gap this comment used to describe.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthScreen(
     onAuthenticated: () -> Unit,
@@ -104,6 +117,7 @@ fun AuthScreen(
     var email by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }
     var sentTo by remember { mutableStateOf("") }
+    var legalDocumentKind by remember { mutableStateOf<String?>(null) }
 
     val isLoading = state is AuthUiState.Loading
     val normalizedEmail = email.trim().lowercase()
@@ -246,15 +260,70 @@ fun AuthScreen(
             }
 
             Spacer(Modifier.height(20.dp))
-            Text(
-                "Devam ederek Kullanım Koşulları ve Gizlilik Politikası'nı kabul etmiş olursun.",
-                style = RdFontStyle.Caption.toTextStyle(),
-                color = colors.slate.copy(alpha = 0.85f),
-                textAlign = TextAlign.Center,
-            )
+            LegalAcceptanceNotice(onOpenDocument = { kind -> legalDocumentKind = kind })
             Spacer(Modifier.height(16.dp))
         }
     }
+
+    if (legalDocumentKind != null) {
+        var legalDocuments by remember { mutableStateOf<List<RdLegalDocument>>(emptyList()) }
+        LaunchedEffect(Unit) {
+            legalDocuments = LegalDocumentAssets.load(context)
+                .map { RdLegalDocument(kind = it.kind, title = it.title, text = it.text) }
+        }
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(onDismissRequest = { legalDocumentKind = null }, sheetState = sheetState) {
+            RdLegalDocumentSheet(
+                documents = legalDocuments,
+                initialKind = legalDocumentKind,
+                onClose = { legalDocumentKind = null },
+            )
+        }
+    }
+}
+
+/** Real, per-phrase tappable version of the static notice this screen used to show — mirrors
+ * `LegalAcceptanceNotice.swift`'s `AttributedString` link-building (`.link` on each phrase span)
+ * closely enough to keep the exact same Turkish sentence and phrase boundaries, just built with
+ * Compose's `ClickableText`/annotation offsets instead of SwiftUI's `openURL` environment action. */
+@Composable
+private fun LegalAcceptanceNotice(onOpenDocument: (String) -> Unit) {
+    val colors = RdTheme.colors
+    val prefix = "Devam ederek "
+    val termsLabel = "Kullanım Koşulları"
+    val joiner = " ve "
+    val privacyLabel = "Gizlilik Politikası"
+    val suffix = "'nı kabul etmiş olursun."
+
+    val annotated = buildAnnotatedString {
+        append(prefix)
+        pushStringAnnotation(tag = "legal", annotation = "terms")
+        withStyle(SpanStyle(color = colors.onyx, textDecoration = TextDecoration.Underline)) {
+            append(termsLabel)
+        }
+        pop()
+        append(joiner)
+        pushStringAnnotation(tag = "legal", annotation = "privacy")
+        withStyle(SpanStyle(color = colors.onyx, textDecoration = TextDecoration.Underline)) {
+            append(privacyLabel)
+        }
+        pop()
+        append(suffix)
+    }
+
+    ClickableText(
+        text = annotated,
+        style = RdFontStyle.Caption.toTextStyle().copy(
+            color = colors.slate.copy(alpha = 0.85f),
+            textAlign = TextAlign.Center,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+        onClick = { offset ->
+            annotated.getStringAnnotations(tag = "legal", start = offset, end = offset)
+                .firstOrNull()
+                ?.let { onOpenDocument(it.item) }
+        },
+    )
 }
 
 @Composable

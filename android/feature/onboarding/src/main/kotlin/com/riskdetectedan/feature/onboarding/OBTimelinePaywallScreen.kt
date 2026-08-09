@@ -30,11 +30,15 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,8 +55,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.riskdetectedan.core.data.billing.BillingPackage
+import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdFontStyle
+import com.riskdetectedan.core.designsystem.RdLegalDocument
+import com.riskdetectedan.core.designsystem.RdLegalDocumentSheet
 import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
@@ -89,10 +96,12 @@ private val plusFeatures = listOf(
  * button state instead) and the timeline connector's flowing-gradient animation (decorative,
  * static connector line kept instead).
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallViewModel = hiltViewModel()) {
     val colors = RdTheme.colors
     var selectedPlan by remember { mutableStateOf(TimelinePlan.Yearly) }
+    var legalDocumentKind by remember { mutableStateOf<String?>(null) }
     val state by viewModel.state.collectAsState()
     val isPurchasing by viewModel.isPurchasing.collectAsState()
     val purchaseError by viewModel.purchaseError.collectAsState()
@@ -176,9 +185,19 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("Geri yükle", style = RdFontStyle.Caption.toTextStyle(), color = colors.black)
                 Box(modifier = Modifier.size(3.dp).clip(CircleShape).background(colors.slate.copy(alpha = 0.35f)))
-                Text("Kullanım Şartları", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                Text(
+                    "Kullanım Şartları",
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.clickable { legalDocumentKind = "terms" },
+                )
                 Box(modifier = Modifier.size(3.dp).clip(CircleShape).background(colors.slate.copy(alpha = 0.35f)))
-                Text("Gizlilik Politikası", style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                Text(
+                    "Gizlilik Politikası",
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.clickable { legalDocumentKind = "privacy" },
+                )
             }
 
             Spacer(Modifier.height(6.dp))
@@ -207,6 +226,23 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
                 TextButton(onClick = viewModel::clearPurchaseError) { Text("Tamam") }
             },
         )
+    }
+
+    if (legalDocumentKind != null) {
+        val legalContext = LocalContext.current
+        var legalDocuments by remember { mutableStateOf<List<RdLegalDocument>>(emptyList()) }
+        LaunchedEffect(Unit) {
+            legalDocuments = LegalDocumentAssets.load(legalContext)
+                .map { RdLegalDocument(kind = it.kind, title = it.title, text = it.text) }
+        }
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(onDismissRequest = { legalDocumentKind = null }, sheetState = sheetState) {
+            RdLegalDocumentSheet(
+                documents = legalDocuments,
+                initialKind = legalDocumentKind,
+                onClose = { legalDocumentKind = null },
+            )
+        }
     }
 }
 
