@@ -1,9 +1,16 @@
 package com.riskdetectedan.feature.onboarding
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -67,9 +75,9 @@ private val pains = listOf(
  * sequentially ~0.6-1.5s after the screen appears (mirrors `runCheckSequence`'s staggered
  * `DispatchQueue` timers via a Compose `LaunchedEffect` + `delay` loop — a real feature, not a
  * decoration, worth keeping). The "Bunu **birlikte** değiştireceğiz." mirror banner is ported as
- * a static dark card; iOS's diagonal shimmer sweep across it is NOT ported (a repeating
- * `DispatchQueue`-driven animation loop, same "priciest micro-animations dropped" bar as
- * everything else this pass). `RdTopBar`'s "01 / 05" numbering is real and intentionally
+ * a dark card with a real diagonal shimmer sweep (2026-08-09 animation pass — was a static card
+ * before, matching iOS's repeating `DispatchQueue`-driven sweep with an `infiniteTransition`
+ * instead). `RdTopBar`'s "01 / 05" numbering is real and intentionally
  * different from the choice screens' separate "01-04 / 04" counter — iOS itself has two
  * back-to-back progress indicators here, not a bug to reconcile. */
 @Composable
@@ -166,7 +174,7 @@ private fun PainCard(pain: PainItem, isChecked: Boolean) {
 @Composable
 private fun MirrorBanner() {
     val colors = RdTheme.colors
-    Row(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
@@ -176,12 +184,50 @@ private fun MirrorBanner() {
                     center = Offset(1f, 0f),
                     radius = 500f,
                 ),
-            )
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            ),
     ) {
-        Text("Bunu ", style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
-        Text("birlikte", style = RdFontStyle.Callout.toTextStyle(), color = Color(0xFF4FE07E))
-        Text(" değiştireceğiz.", style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
+        val bannerWidthPx = constraints.maxWidth.toFloat()
+        val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
+        // Diagonal shimmer sweep — real port of iOS's repeating DispatchQueue-driven sweep, same
+        // mechanism as everywhere else in this pass: an infiniteTransition drives a translation,
+        // not a decorative one-shot. Sweeps left-to-right every 2.2s with a pause between passes
+        // (matches a real "sheen" cadence, not a distracting continuous scroll).
+        val sweep by infiniteTransition.animateFloat(
+            initialValue = -0.6f,
+            targetValue = 1.6f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(2200, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+            label = "sweepOffset",
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    translationX = bannerWidthPx * sweep
+                    rotationZ = 18f
+                }
+                .width(60.dp)
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.16f),
+                            Color.Transparent,
+                        ),
+                    ),
+                ),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Bunu ", style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
+            Text("birlikte", style = RdFontStyle.Callout.toTextStyle(), color = Color(0xFF4FE07E))
+            Text(" değiştireceğiz.", style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
+        }
     }
 }

@@ -2,6 +2,8 @@ package com.riskdetectedan.feature.onboarding
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.StartOffset
+import androidx.compose.animation.core.StartOffsetType
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -39,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -56,11 +59,11 @@ import kotlinx.coroutines.delay
  * as iOS (`runSequence`'s `DispatchQueue` timers, ported via a `LaunchedEffect` + `delay` chain),
  * not the previous flat "spinner + 2s" stand-in. Step lines now reference the user's real
  * sector/hazards/certificate labels (mirrors `state.primarySectorLabel`/`hazardsLabel`/
- * `certificateLabel`) instead of generic text. Loader simplified: iOS's core has a continuous
- * pulse + two staggered expanding-ring pulses layered under a rotating arc; ported here as just
- * the rotating arc (cheap, `rememberInfiniteTransition`) over two static faint rings — the
- * pulsing-ring layers are dropped as decorative, same "priciest micro-animations" bar as
- * elsewhere this pass.
+ * `certificateLabel`) instead of generic text. Loader now has iOS's two staggered expanding-ring
+ * pulses too (2026-08-09 animation pass — previously two static faint rings under just the
+ * rotating arc): each ring scales up while fading out on its own `infiniteRepeatable`, the
+ * second offset via `StartOffset` so they pulse staggered, not in lockstep, same real "radar
+ * pulse" cadence as iOS's paired `DispatchQueue` timers.
  */
 @Composable
 fun OBLoadingScreen(
@@ -115,8 +118,26 @@ private fun Loader() {
         animationSpec = infiniteRepeatable(tween(1400, easing = LinearEasing), repeatMode = RepeatMode.Restart),
         label = "loading-arc-rotation",
     )
+    val pulse1 by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing), repeatMode = RepeatMode.Restart),
+        label = "loading-pulse-1",
+    )
+    val pulse2 by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            tween(1800, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+            initialStartOffset = StartOffset(900, StartOffsetType.FastForward),
+        ),
+        label = "loading-pulse-2",
+    )
 
     Box(modifier = Modifier.size(112.dp), contentAlignment = Alignment.Center) {
+        PulseRing(colors.onyx, pulse1)
+        PulseRing(colors.onyx, pulse2)
         Box(
             modifier = Modifier.size(112.dp).clip(CircleShape).border(1.5.dp, colors.onyx.copy(alpha = 0.07f), CircleShape),
         )
@@ -136,6 +157,24 @@ private fun Loader() {
             Icon(Icons.Filled.Description, contentDescription = null, tint = colors.white, modifier = Modifier.size(20.dp))
         }
     }
+}
+
+/** One radar-style expanding/fading ring — [progress] runs 0..1 once per loop, scale grows
+ * 0.72x..1x while alpha fades to 0, so the ring appears to expand outward and vanish. */
+@Composable
+private fun PulseRing(color: Color, progress: Float) {
+    Box(
+        modifier = Modifier
+            .size(84.dp)
+            .graphicsLayer {
+                val scale = 0.72f + 0.28f * progress
+                scaleX = scale
+                scaleY = scale
+                alpha = (1f - progress) * 0.35f
+            }
+            .clip(CircleShape)
+            .border(1.5.dp, color, CircleShape),
+    )
 }
 
 @Composable

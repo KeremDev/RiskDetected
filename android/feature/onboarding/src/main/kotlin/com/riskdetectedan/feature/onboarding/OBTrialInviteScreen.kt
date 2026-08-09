@@ -1,5 +1,8 @@
 package com.riskdetectedan.feature.onboarding
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +32,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,14 +42,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import kotlinx.coroutines.delay
 import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdFontStyle
@@ -58,10 +67,15 @@ import com.riskdetectedan.core.designsystem.toTextStyle
 /**
  * Port of OBTrialInviteView.swift (2026-08-08 visual pass, Faz E). Real RevenueCat pricing not
  * shown here either way (matches this screen's pre-existing scope note — same gap as the paywall
- * step). The 3-phone auto-swapping deck (continuous scale/rotate/offset loop every 2.4s) is
- * simplified to one static phone bezel showing the same fallback preview content (mini risk rows
- * + "Rapor hazır") — the deck's motion is decorative, the screen content inside it is real and
- * kept. Footer links: "Gizlilik Politikası"/"Şartlar" now open the real [RdLegalDocumentSheet]
+ * step). The 3-phone auto-swapping deck now really swaps (2026-08-09 animation pass — was one
+ * static phone bezel before): 3 stacked [PhoneCard]s cycle which one is in front every 2.4s
+ * (`LaunchedEffect` index loop, same staged-timer pattern as every other real animation this
+ * pass), each card's scale/rotation/offset/alpha animating smoothly between front/mid/back depth
+ * via `animate*AsState` rather than iOS's continuous loop — a discrete cycle reads the same to a
+ * user glancing at an onboarding screen for a few seconds, cheaper than perpetually-running
+ * per-frame math for 3 stacked cards. All 3 share the same real preview content (mini risk rows +
+ * "Rapor hazır") — the deck is a depth/ordering animation, not 3 different screens. Footer links:
+ * "Gizlilik Politikası"/"Şartlar" now open the real [RdLegalDocumentSheet]
  * (2026-08-09 gap sweep — were static, non-interactive text before). "Geri Yükle" stays
  * static/non-interactive — a real restore-purchases call already exists on the post-onboarding
  * Paywall screen (feature #20), wiring it here too is a separate, deliberate follow-up, not an
@@ -98,7 +112,7 @@ fun OBTrialInviteScreen(onContinue: () -> Unit) {
             Text("birlikte seçelim", style = RdFontStyle.Title1.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
 
             Spacer(Modifier.height(24.dp))
-            PhonePreview()
+            PhoneDeck()
 
             Spacer(Modifier.height(28.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -160,10 +174,52 @@ private fun buildAnnotatedTitle(onyx: Color, green: Color) = buildAnnotatedStrin
     withStyle(SpanStyle(color = green)) { append("planı") }
 }
 
+/** Depth-ordered target values for the deck effect — index 0 is front (full size, no tilt), 2 is
+ * furthest back (smallest, most tilted, dimmest). */
+private data class DeckDepth(val scale: Float, val rotation: Float, val offsetY: Dp, val alpha: Float, val z: Float)
+
+private val deckDepths = listOf(
+    DeckDepth(scale = 1f, rotation = 0f, offsetY = 0.dp, alpha = 1f, z = 3f),
+    DeckDepth(scale = 0.94f, rotation = -6f, offsetY = 14.dp, alpha = 0.85f, z = 2f),
+    DeckDepth(scale = 0.88f, rotation = 6f, offsetY = 26.dp, alpha = 0.6f, z = 1f),
+)
+
 @Composable
-private fun PhonePreview() {
+private fun PhoneDeck() {
+    var frontIndex by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(2400L)
+            frontIndex = (frontIndex + 1) % 3
+        }
+    }
+
+    Box(modifier = Modifier.width(210.dp).height(446.dp), contentAlignment = Alignment.TopCenter) {
+        for (cardIndex in 0 until 3) {
+            val depthOrder = (cardIndex - frontIndex).mod(3)
+            val depth = deckDepths[depthOrder]
+            PhoneCard(depth)
+        }
+    }
+}
+
+@Composable
+private fun PhoneCard(depth: DeckDepth) {
+    val scale by animateFloatAsState(depth.scale, animationSpec = tween(700), label = "deck-scale")
+    val rotation by animateFloatAsState(depth.rotation, animationSpec = tween(700), label = "deck-rotation")
+    val offsetY by animateDpAsState(depth.offsetY, animationSpec = tween(700), label = "deck-offset")
+    val alpha by animateFloatAsState(depth.alpha, animationSpec = tween(700), label = "deck-alpha")
+
     Box(
         modifier = Modifier
+            .zIndex(depth.z)
+            .offset(y = offsetY)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                rotationZ = rotation
+                this.alpha = alpha
+            }
             .width(210.dp)
             .height(420.dp)
             .clip(RoundedCornerShape(38.dp))

@@ -3,11 +3,18 @@ package com.riskdetectedan.feature.onboarding
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,10 +54,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -93,8 +103,10 @@ private val plusFeatures = listOf(
  * "Devam et" now attempts a real purchase for the selected plan and only continues onboarding on
  * success (or on the free "Şimdilik ücretsiz devam et" tap, which still always continues).
  * Not ported: the processing overlay's own visual chrome (borrowed as a disabled/"İşleniyor..."
- * button state instead) and the timeline connector's flowing-gradient animation (decorative,
- * static connector line kept instead).
+ * button state instead). The timeline connector's flowing-gradient animation now IS real
+ * (2026-08-09 animation pass — was a static translucent line before): a brighter highlight band
+ * travels down each connector on its own `infiniteTransition`, clipped to the connector's own
+ * rounded shape so it reads as light flowing through the line, not a separate overlay.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -331,6 +343,40 @@ private fun TimelineCard(plan: TimelinePlan) {
     }
 }
 
+/** Real port of the timeline connector's flowing-gradient — base translucent line + a brighter
+ * band that travels top-to-bottom on a loop, clipped to the same rounded shape as the line so it
+ * reads as light moving through the connector, not a separate floating overlay. */
+@Composable
+private fun FlowingConnector(accent: Color, height: Dp) {
+    BoxWithConstraints(
+        modifier = Modifier
+            .width(4.dp)
+            .height(height)
+            .clip(RoundedCornerShape(50))
+            .background(accent.copy(alpha = 0.18f)),
+    ) {
+        val heightPx = constraints.maxHeight.toFloat()
+        val infiniteTransition = rememberInfiniteTransition(label = "connector-flow")
+        val flow by infiniteTransition.animateFloat(
+            initialValue = -0.4f,
+            targetValue = 1.4f,
+            animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), repeatMode = RepeatMode.Restart),
+            label = "connector-flow-offset",
+        )
+        Box(
+            modifier = Modifier
+                .width(4.dp)
+                .height(28.dp)
+                .graphicsLayer { translationY = heightPx * flow }
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Transparent, accent.copy(alpha = 0.9f), Color.Transparent),
+                    ),
+                ),
+        )
+    }
+}
+
 @Composable
 private fun TimelineStep(
     icon: ImageVector,
@@ -354,12 +400,9 @@ private fun TimelineStep(
                 Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
             }
             if (!isLast) {
-                Box(
-                    modifier = Modifier
-                        .width(4.dp)
-                        .height(if (features.isNotEmpty()) (102 + maxOf(0, features.size - 3) * 19).dp else 50.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(accent.copy(alpha = 0.18f)),
+                FlowingConnector(
+                    accent = accent,
+                    height = if (features.isNotEmpty()) (102 + maxOf(0, features.size - 3) * 19).dp else 50.dp,
                 )
             }
         }

@@ -1,5 +1,10 @@
 package com.riskdetectedan.feature.onboarding
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -28,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +47,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate as drawRotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -325,15 +332,32 @@ private fun OBSplashSpinnerGlyph(color: Color) {
 }
 
 /** Mirrors OBSplashProgressDots: one filled pill (current step) + 5 dim dots (5 more onboarding
- * steps ahead) — static, matches this pass's "no per-segment animation" policy already used by
- * [com.riskdetectedan.core.designsystem.RdProgress]. */
+ * steps ahead). The dots themselves stay static, matches this pass's "no per-segment animation"
+ * policy already used by [com.riskdetectedan.core.designsystem.RdProgress] (the shared bar the
+ * 4 choice screens use — touching per-segment fill animation only here would look inconsistent
+ * with those). The active pill breathes with a subtle scale+alpha pulse instead (2026-08-09
+ * animation pass) — a "you are here" cue, its own real motion, not a per-segment fill/reveal so
+ * it doesn't collide with `RdProgress`'s documented static policy. */
 @Composable
 private fun OBSplashProgressDots() {
     val colors = RdTheme.colors
+    val infiniteTransition = rememberInfiniteTransition(label = "splash-progress-pill")
+    val breathe by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1100, easing = androidx.compose.animation.core.FastOutSlowInEasing), repeatMode = RepeatMode.Reverse),
+        label = "splash-progress-pill-breathe",
+    )
     Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
                 .size(width = 20.dp, height = 6.dp)
+                .graphicsLayer {
+                    val scale = 1f + 0.12f * breathe
+                    scaleX = scale
+                    scaleY = scale
+                    alpha = 0.82f + 0.18f * breathe
+                }
                 .clip(RoundedCornerShape(50))
                 .background(colors.onyx),
         )
