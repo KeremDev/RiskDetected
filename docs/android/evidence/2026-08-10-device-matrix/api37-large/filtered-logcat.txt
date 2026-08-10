@@ -1,0 +1,26 @@
+--------- beginning of system
+08-10 21:09:30.337   649   676 W ActivityTaskManager: callingPackage for (uid=1000, pid=649) is ambiguous: [android, com.android.providers.settings, com.android.server.telecom, com.android.location.fused]
+08-10 21:09:30.342   649   676 W ActivityTaskManager: startActivity called from non-Activity context; forcing Intent.FLAG_ACTIVITY_NEW_TASK for: Intent { dat=packageupdate://task/... flg=0x800000 xflg=0x4 cmp=com.android.systemui/com.android.wm.shell.packageupdate.PackageUpdateActivity (has extras) }
+08-10 21:09:30.347   649   676 I ActivityTaskManager: START u0 {dat=packageupdate://task/... xflg=0x4 cmp=com.android.systemui/com.android.wm.shell.packageupdate.PackageUpdateActivity (has extras)} with LAUNCH_SINGLE_TOP from uid 10194 (com.android.systemui) (realCallingUid=1000) (BAL_ALLOW_PERMISSION [realCaller]) result code=0
+08-10 21:09:30.445   649   676 W ActivityTaskManager: Force removing ActivityRecord{221612835 u0 com.riskdetectedan.app.qa/com.riskdetectedan.app.MainActivity t13 f}}: app died, no saved state
+08-10 21:09:30.875   649   676 W ActivityTaskManager: Activity top resumed state loss timeout for ActivityRecord{221612835 u0 com.riskdetectedan.app.qa/com.riskdetectedan.app.MainActivity t13 f} isExiting}
+08-10 21:09:30.906   649   677 W ActivityTaskManager: Unable to send transaction to client proc com.riskdetectedan.app.qa: no app thread
+08-10 21:09:31.116   649   677 W ActivityTaskManager: Unable to send transaction to client proc com.riskdetectedan.app.qa: no app thread
+08-10 21:09:31.134   649  1395 W ActivityTaskManager: callingPackage for (uid=2000, pid=3668) has no WPC
+08-10 21:09:31.323   649  1395 I ActivityTaskManager: START u0 {flg=0x10000000 xflg=0x5 cmp=com.riskdetectedan.app.qa/com.riskdetectedan.app.MainActivity} with LAUNCH_MULTIPLE from uid 2000 (com.android.shell) (BAL_ALLOW_PERMISSION) result code=0
+08-10 21:09:31.391   649   677 W ActivityTaskManager: Unable to send transaction to client proc com.riskdetectedan.app.qa: no app thread
+08-10 21:09:32.008   649   677 W ActivityTaskManager: Unable to send transaction to client proc com.riskdetectedan.app.qa: no app thread
+08-10 21:09:32.161   649   677 W ActivityTaskManager: callingPackage for (uid=1000, pid=649) is ambiguous: [android, com.android.providers.settings, com.android.server.telecom, com.android.location.fused]
+08-10 21:09:32.162   649   677 W ActivityTaskManager: startActivity called from non-Activity context; forcing Intent.FLAG_ACTIVITY_NEW_TASK for: Intent { flg=0x8000 xflg=0x5 cmp=com.riskdetectedan.app.qa/com.riskdetectedan.app.MainActivity }
+08-10 21:09:32.163   649   677 I ActivityTaskManager: Add Task{f6859b1 #14 type=standard A=10231:com.riskdetectedan.app.qa} to hidden list because adding Task{9216b67 #13 type=standard A=10231:com.riskdetectedan.app.qa}
+08-10 21:09:32.163   649   677 I ActivityTaskManager: START u0 {flg=0x8000 xflg=0x5 cmp=com.riskdetectedan.app.qa/com.riskdetectedan.app.MainActivity} with LAUNCH_MULTIPLE from uid 10194 (com.android.systemui) (realCallingUid=1000) (BAL_ALLOW_PERMISSION [realCaller]) result code=0
+08-10 21:09:32.810   649   960 I ActivityTaskManager: Add Task{9216b67 #13 type=standard A=10231:com.riskdetectedan.app.qa} to hidden list because adding Task{f6859b1 #14 type=standard A=10231:com.riskdetectedan.app.qa}
+--------- beginning of main
+08-10 21:09:33.288   649   673 I ActivityTaskManager: Displayed com.riskdetectedan.app.qa/com.riskdetectedan.app.MainActivity for user 0: +2s151ms
+08-10 21:09:54.660   649  2044 W ActivityTaskManager: Force removing ActivityRecord{245618983 u0 com.riskdetectedan.app.qa/com.riskdetectedan.app.MainActivity t14 f}}: app died, no saved state
+08-10 21:09:54.954   649   677 W ActivityTaskManager: Unable to send transaction to client proc com.riskdetectedan.app.qa: no app thread
+08-10 21:09:55.144   649  2044 W ActivityTaskManager: setRunningRemoteTransition: no process for null
+08-10 21:09:55.145   649  2021 W ActivityTaskManager: callingPackage for (uid=2000, pid=3872) has no WPC
+08-10 21:09:55.204   649  2021 I ActivityTaskManager: Add Task{f6859b1 #14 type=standard A=10231:com.riskdetectedan.app.qa} to hidden list because adding Task{ffee935 #15 type=standard A=10231:com.riskdetectedan.app.qa}
+08-10 21:09:55.204   649  2021 I ActivityTaskManager: START u0 {flg=0x10000000 xflg=0x5 cmp=com.riskdetectedan.app.qa/com.riskdetectedan.app.MainActivity} with LAUNCH_MULTIPLE from uid 2000 (com.android.shell) (BAL_ALLOW_PERMISSION) result code=0
+08-10 21:09:57.054   649   673 I ActivityTaskManager: Displayed com.riskdetectedan.app.qa/com.riskdetectedan.app.MainActivity for user 0: +1s890ms

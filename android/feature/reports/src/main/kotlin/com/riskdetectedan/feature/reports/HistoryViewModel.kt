@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.analysis.AnalysisCanvas
 import com.riskdetectedan.core.data.analysis.FindingsRepository
+import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.analysis.HistoryItem
 import com.riskdetectedan.core.data.analysis.HistoryRepository
 import com.riskdetectedan.core.data.analysis.PhotoRepository
@@ -16,9 +17,11 @@ import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
+import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.data.reports.PdfReportFileName
 import com.riskdetectedan.core.data.reports.PdfReportGenerator
 import com.riskdetectedan.core.data.reports.PdfReportInput
+import com.riskdetectedan.core.data.reports.ReportQuotaUsage
 import com.riskdetectedan.core.data.reports.ReportsRepository
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
@@ -39,6 +42,13 @@ sealed interface HistoryUiState {
     data object SignedOut : HistoryUiState
     data class Loaded(val items: List<HistoryItem>) : HistoryUiState
     data class Failed(val error: AppErrorMessage) : HistoryUiState
+}
+
+sealed interface ReportPreviewUiState {
+    data object Idle : ReportPreviewUiState
+    data object Loading : ReportPreviewUiState
+    data class Loaded(val analysisId: String, val findings: List<Finding>) : ReportPreviewUiState
+    data class Failed(val analysisId: String) : ReportPreviewUiState
 }
 
 /** One-shot payload the screen consumes to hand the downloaded bytes off to a FileProvider +
@@ -97,6 +107,15 @@ class HistoryViewModel @Inject constructor(
     private val _userTier = MutableStateFlow(SubscriptionTier.Free)
     val userTier: StateFlow<SubscriptionTier> = _userTier.asStateFlow()
 
+    private val _profile = MutableStateFlow<UserProfile?>(null)
+    val profile: StateFlow<UserProfile?> = _profile.asStateFlow()
+
+    private val _reportPreview = MutableStateFlow<ReportPreviewUiState>(ReportPreviewUiState.Idle)
+    val reportPreview: StateFlow<ReportPreviewUiState> = _reportPreview.asStateFlow()
+
+    private val _reportQuotaUsage = MutableStateFlow<ReportQuotaUsage?>(null)
+    val reportQuotaUsage: StateFlow<ReportQuotaUsage?> = _reportQuotaUsage.asStateFlow()
+
     private val _selectedCompanyFilter = MutableStateFlow<Company?>(null)
     val selectedCompanyFilter: StateFlow<Company?> = _selectedCompanyFilter.asStateFlow()
 
@@ -141,21 +160,40 @@ class HistoryViewModel @Inject constructor(
                 )
             }
             _companies.value = (companyRepository.listCompanies() as? RdResult.Success)?.value.orEmpty()
-            _userTier.value = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value?.tier
-                ?: SubscriptionTier.Free
+            val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
+            _profile.value = profile
+            val tier = profile?.tier ?: SubscriptionTier.Free
+            _userTier.value = tier
+            _reportQuotaUsage.value = (reportsRepository.fetchQuotaUsage(userId, tier) as? RdResult.Success)?.value
         }
+    }
+
+    fun loadReportPreview(item: HistoryItem) {
+        val loaded = _reportPreview.value as? ReportPreviewUiState.Loaded
+        if (loaded?.analysisId == item.id) return
+        _reportPreview.value = ReportPreviewUiState.Loading
+        viewModelScope.launch {
+            _reportPreview.value = when (val result = findingsRepository.fetchFindings(item.id)) {
+                is RdResult.Success -> ReportPreviewUiState.Loaded(item.id, result.value)
+                is RdResult.Failure -> ReportPreviewUiState.Failed(item.id)
+            }
+        }
+    }
+
+    fun clearReportPreview() {
+        _reportPreview.value = ReportPreviewUiState.Idle
     }
 
     /** Mirrors calling `generate-excel-report` then fetching the resulting file, matching how
      * iOS's report flow both creates the archive row and hands the user a document — the two
      * separate repository calls (generate, then download) are sequential here since the client
      * needs the `storage_path` the first call returns before it can do the second. */
-    fun generateReport(item: HistoryItem) {
+    fun generateReport(item: HistoryItem, method: String = "fine_kinney", companyId: String? = item.companyId) {
         if (_generatingReportForId.value != null) return
         _generatingReportForId.value = item.id
         _reportError.value = null
         viewModelScope.launch {
-            val report = when (val result = reportsRepository.generateExcelReport(item.id)) {
+            val report = when (val result = reportsRepository.generateExcelReport(item.id, method, companyId)) {
                 is RdResult.Success -> result.value
                 is RdResult.Failure -> {
                     _reportError.value = AppErrorMessages.make(
@@ -200,7 +238,15 @@ class HistoryViewModel @Inject constructor(
      * that one optional detail (mirrors this whole port's "never invent, degrade gracefully"
      * pattern rather than failing the entire generation over an optional decoration).
      */
-    fun generatePdfReport(item: HistoryItem, method: String = "fine_kinney", kind: String = "standard") {
+    fun generatePdfReport(
+        item: HistoryItem,
+        method: String = "fine_kinney",
+        kind: String = "standard",
+        companyId: String? = item.companyId,
+        preparedByName: String? = null,
+        preparedByTitle: String? = null,
+        certificateNumber: String? = null,
+    ) {
         if (_generatingPdfForId.value != null) return
         _generatingPdfForId.value = item.id
         _reportError.value = null
@@ -241,8 +287,8 @@ class HistoryViewModel @Inject constructor(
             }
 
             val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
-            val company = item.companyId?.let { companyId ->
-                (companyRepository.listCompanies() as? RdResult.Success)?.value?.firstOrNull { it.id == companyId }
+            val company = companyId?.let { selectedCompanyId ->
+                (companyRepository.listCompanies() as? RdResult.Success)?.value?.firstOrNull { it.id == selectedCompanyId }
             }
             val companyLogoBytes = company?.logoPath?.let { path ->
                 (companyRepository.downloadLogo(path) as? RdResult.Success)?.value
@@ -263,9 +309,13 @@ class HistoryViewModel @Inject constructor(
                             companyName = company?.name,
                             companyAddress = company?.address,
                             companyLogoBytes = companyLogoBytes,
-                            preparedByName = profile?.displayName ?: context.getString(RdR.string.rd_emdash),
-                            preparedByTitle = profile?.title,
-                            certificateNumber = profile?.certificateNumber,
+                            preparedByName = preparedByName?.trim()?.takeIf { it.isNotEmpty() }
+                                ?: profile?.displayName
+                                ?: context.getString(RdR.string.rd_emdash),
+                            preparedByTitle = preparedByTitle?.trim()?.takeIf { it.isNotEmpty() }
+                                ?: profile?.title,
+                            certificateNumber = certificateNumber?.trim()?.takeIf { it.isNotEmpty() }
+                                ?: profile?.certificateNumber,
                             coverPhotoBytes = coverPhotoBytes,
                         ),
                     )
@@ -290,7 +340,7 @@ class HistoryViewModel @Inject constructor(
                     method = method,
                     title = item.title,
                     pageCount = generatedPdf.pageCount,
-                    companyId = item.companyId,
+                    companyId = companyId,
                 )
             ) {
                 is RdResult.Success -> {

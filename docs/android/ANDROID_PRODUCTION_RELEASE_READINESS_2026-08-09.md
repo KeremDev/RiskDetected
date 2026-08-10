@@ -39,7 +39,7 @@ kullanılmadığı owner tarafından doğrulanacak).
 - Profiles RLS politikaları davranışı koruyan tek SELECT/UPDATE/INSERT setine konsolide edildi.
 - Beş SECURITY DEFINER RPC'nin auth/sahiplik/search_path/anon revoke testleri local pgTAP'te
   doğrulandı.
-- Local Supabase reset sonrası 21 pgTAP dosyasında 475 test geçti; Edge Function paketinde 316
+- Local Supabase reset sonrası 21 pgTAP dosyasında 478 test geçti; Edge Function paketinde 316
   Deno testi geçti; schema lint warning üretmedi.
 - AAB içindeki symbol table taşıyan native kütüphaneler Play'in beklediği `lib/<abi>/*.so`
   yapısında ayrı, hash'lenen `native-debug-symbols.zip` artefaktına çıkarılıyor. Uygulamanın kendi
@@ -51,31 +51,31 @@ kullanılmadığı owner tarafından doğrulanacak).
   `0` ile doğrulandı. Backend risk band wire değerleri (`critical/high/medium/low/unknown`)
   fixture'larda da aynen kullanılıyor.
 - `App/` kaynaklarında hem baseline→HEAD hem working-tree diff'i sıfır.
-- Son tam yerel Android kapısı:
-  `lint testDebugUnitTest verifyRoborazziDebug assembleDebug assembleQa bundleQa` toplam 639
-  görevle geçti. Son mekanik API temizliğinden sonra `app:lintDebug app:bundleQa` ayrıca 496
-  görevle tekrar geçti; QA APK source-secret/PII-log/AD_ID taramasından geçti.
+- Son tam yerel Android kapısı; environment isolation, Android legal bundle, unit, exact golden,
+  lint, debug, minified QA APK ve QA AAB dahil toplam 644 görevle geçti. QA APK
+  source-secret/PII-log/AD_ID taramasından geçti.
 - Minified QA AAB, pinned bundletool hash/validate, gerçek JAR imzası, 16 KB zip alignment,
   tüm ELF `LOAD` segmentleri, iOS asset sızıntısı ve paket-içi server-secret taramasından geçti.
+  Son AAB SHA-256 değeri `aafdb3ad6b76e32c6676b40e47c8b10cfb61e0d9fe9248b61aae4b62ad3a0c0e`;
+  son minified QA APK SHA-256 değeri `67931585a5117ac58cf15402bce5a02545ae3dd71ff19e6f8efb66445ec2a39e`.
   Bu kanıt release scriptinin çalıştığını doğrular; owner imzalı release AAB kanıtının yerine
   geçmez.
 
-## Açık yerel parite kanıtları
+## Yerel parite kanıtlarının güncel kapsamı
 
-Anahtar gerektirmeyen altyapı kapıları tamamlanmış olsa da aşağıdaki UI kabul yüzeyleri henüz
-Roborazzi baseline'ına alınmadı; bunlar tamamlanmadan “golden matrisi tamamen yeşil” kabulü
-verilemez:
+Exact-pixel Roborazzi paketi 32 baseline'a genişletildi. Onboarding'e ek olarak bağımsız auth
+idle/e-posta/OTP/hata, fotoğraf tepsisi, sektör grid'i, analiz geçmişi, analiz bekleme/sonuç/bulgu,
+Free/Plus/Pro kimlikleri, profil açık/koyu ve `1.3` font scale, şirket, hesap silme, rapor arşivi,
+gerçek bulgu temelli rapor önizlemesi, rapor kaynak/şirket/kimlik ayarları, Free risk raporu deneme
+hakkının açık/kullanılmış durumları ile PDF/XLSX üretim overlay'leri kapsamdadır. Analizler'deki
+mükerrer PDF/Excel eylemleri kaldırılmış; iOS build-81 gibi rapor üretimi Raporlar tabında özet +
+arşiv + kaynak analizi + önizleme + ayar hiyerarşisine alınmıştır.
 
-- auth idle/e-posta/OTP/hata durumları
-- dört ana tabın dolu ve boş durumları
-- fotoğraf tepsisi, sıra ve işaretleme
-- rapor arşivi/ayarları ve Excel üretim durumu
-- tam Plus/Pro paywall varyantları
-- profil, şirket ve hesap silme akışı
-
-Bu ekranların gerçek veri bağımlı son durumları ayrıca staging E2E kanıtı gerektirir. Mevcut
-12 golden yalnız onboarding ile kritik analiz/bulgu/PDF yüzeylerini korur; tüm ürün için görsel
-parite kanıtı olarak sunulamaz.
+API 26 küçük, API 33 standart ve API 37 büyük emülatörlerde aynı hash'e sahip final QA APK ile UI-tree koordinatlı
+fresh-install/skip/auth/cold-relaunch smoke testi geçti. Tam ürün görsel kabulü için hâlâ gerçek
+veriyle dört tabın offline/hata/boş varyantları, recovery, sistem paylaşım yüzeyi ve fiziksel
+Pixel/Samsung kanıtı gerekir.
+Roborazzi bu dış/cihaz kabulünün yerine geçmez.
 
 ## Owner signing töreni
 

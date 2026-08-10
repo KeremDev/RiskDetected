@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -31,6 +32,7 @@ import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
 import com.riskdetectedan.core.data.auth.AuthDeepLinkHandler
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
+import com.riskdetectedan.core.designsystem.RdTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import androidx.compose.material3.AlertDialog
@@ -87,7 +89,17 @@ class MainActivity : ComponentActivity() {
                     // RdTopBar's "01 / 04" step label was rendering unreadably under the status
                     // bar. Fixed centrally here rather than per-screen, since it affects every
                     // screen in the app, not just onboarding.
-                    Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+                    // Background is intentionally applied before inset padding. On API 26 the
+                    // transparent status bar otherwise reveals the black decor surface while
+                    // light status-bar icons are requested, producing a black strip with no
+                    // readable clock. The app surface now paints through the system insets while
+                    // interactive content still respects the safe area.
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(RdTheme.colors.cloud)
+                            .safeDrawingPadding(),
+                    ) {
                         // No UI of its own — registers/refreshes the FCM token for an already
                         // signed-in session (see its own doc comment for what onNewToken alone
                         // doesn't cover).

@@ -62,3 +62,7 @@ output/snapshot-previews/
 .playwright-cli/
 .asc/
 android/.kotlin/
+
+# Roborazzi diagnostic companions; exact baseline PNG files remain versioned.
+**/src/test/screenshots/**/*.annotated.png
+**/src/test/screenshots/**/*.uitree.json

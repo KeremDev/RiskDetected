@@ -4,7 +4,6 @@ import com.riskdetectedan.core.designsystem.R as RdR
 
 import androidx.compose.ui.res.stringResource
 
-import android.content.Intent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,7 +44,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,9 +56,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.analysis.HistoryItem
 import com.riskdetectedan.core.data.company.Company
@@ -74,7 +70,6 @@ import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.RiskLevel
 import com.riskdetectedan.core.designsystem.riskLevelFromRaw
 import com.riskdetectedan.core.designsystem.toTextStyle
-import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -118,13 +113,8 @@ private fun matchesChip(item: HistoryItem, chip: HistoryFilterChip): Boolean = w
  * see [com.riskdetectedan.core.data.analysis.HistoryItem]'s doc comment for the mirrored iOS
  * mapping). Real structure ported: [RdListRow] + [RdRiskChip] for each row, [RdEmptyState] for
  * the empty-list case (none of the History/Reports/Company screens had one before this pass).
- * Report generation ("Excel oluştur"/"PDF oluştur") and the system-chooser hand-off are unchanged
- * — pure UI-layer pass, same as every other screen in this redesign.
- *
- * "PDF oluştur" (added 2026-08-08, DEC-09): real on-device PDF report generation, see
- * [HistoryViewModel.generatePdfReport]'s doc comment. Uses the same [LaunchedEffect]/FileProvider
- * hand-off as the Excel button — [HistoryViewModel.reportFile] doesn't distinguish the two, a
- * generated file is a generated file regardless of which flow produced it.
+ * Report generation intentionally lives in the Raporlar tab, matching iOS `ReportView`'s
+ * `analysisSelector`; Analizler is now only search/filter/open/delete.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,10 +126,6 @@ fun ReportsScreen(
 ) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
-    val generatingId by viewModel.generatingReportForId.collectAsState()
-    val generatingPdfId by viewModel.generatingPdfForId.collectAsState()
-    val reportError by viewModel.reportError.collectAsState()
-    val reportFile by viewModel.reportFile.collectAsState()
     val deletingId by viewModel.deletingId.collectAsState()
     val deleteError by viewModel.deleteError.collectAsState()
     var itemPendingDelete by remember { mutableStateOf<HistoryItem?>(null) }
@@ -149,24 +135,6 @@ fun ReportsScreen(
     val userTier by viewModel.userTier.collectAsState()
     val selectedCompany by viewModel.selectedCompanyFilter.collectAsState()
     var showCompanyFilter by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    val shareChooserTitle = stringResource(RdR.string.rd_raporu_paylas)
-
-    LaunchedEffect(reportFile) {
-        val file = reportFile ?: return@LaunchedEffect
-        val dir = File(context.cacheDir, "reports").apply { mkdirs() }
-        val target = File(dir, file.fileName)
-        target.writeBytes(file.bytes)
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", target)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = file.mimeType
-            putExtra(Intent.EXTRA_STREAM, uri)
-            clipData = android.content.ClipData.newRawUri(file.fileName, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(Intent.createChooser(intent, shareChooserTitle))
-        viewModel.clearReportFile()
-    }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
         RdScreenHeader(title = stringResource(RdR.string.rd_gecmis_analizler), onBack = onBack)
@@ -238,11 +206,7 @@ fun ReportsScreen(
                                 HistoryRow(
                                     item = item,
                                     onOpen = { onOpenAnalysis?.invoke(item.id) },
-                                    isGenerating = generatingId == item.id,
-                                    isGeneratingPdf = generatingPdfId == item.id,
                                     isDeleting = deletingId == item.id,
-                                    onGenerateReport = { viewModel.generateReport(item) },
-                                    onGeneratePdf = { viewModel.generatePdfReport(item) },
                                     onDelete = { itemPendingDelete = item },
                                 )
                             }
@@ -252,17 +216,6 @@ fun ReportsScreen(
                 }
             }
         }
-    }
-
-    reportError?.let { error ->
-        AlertDialog(
-            onDismissRequest = viewModel::clearReportError,
-            title = { Text(error.title) },
-            text = { Text(error.message) },
-            confirmButton = {
-                TextButton(onClick = viewModel::clearReportError) { Text(stringResource(RdR.string.rd_tamam)) }
-            },
-        )
     }
 
     itemPendingDelete?.let { item ->
@@ -548,11 +501,7 @@ private fun HistoryFilterSurface(
 private fun HistoryRow(
     item: HistoryItem,
     onOpen: () -> Unit,
-    isGenerating: Boolean,
-    isGeneratingPdf: Boolean,
     isDeleting: Boolean,
-    onGenerateReport: () -> Unit,
-    onGeneratePdf: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val colors = RdTheme.colors
@@ -567,45 +516,21 @@ private fun HistoryRow(
         subtitle = stringResource(RdR.string.rd_bulgu_durum_format, item.findingCount, statusLabel),
         onClick = onOpen,
         trailing = {
-            Column(horizontalAlignment = Alignment.End) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RdRiskChip(level = level)
-                    if (isDeleting) {
-                        CircularProgressIndicator(
-                            color = colors.critical,
-                            modifier = Modifier.size(16.dp).padding(start = RdSpacing.xs),
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RdRiskChip(level = level)
+                if (isDeleting) {
+                    CircularProgressIndicator(
+                        color = colors.critical,
+                        modifier = Modifier.size(16.dp).padding(start = RdSpacing.xs),
+                    )
+                } else {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                        Icon(
+                            Icons.Filled.DeleteOutline,
+                            contentDescription = stringResource(RdR.string.rd_analizi_sil),
+                            tint = colors.critical,
+                            modifier = Modifier.size(18.dp),
                         )
-                    } else {
-                        IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                            Icon(
-                                Icons.Filled.DeleteOutline,
-                                contentDescription = stringResource(RdR.string.rd_analizi_sil),
-                                tint = colors.critical,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    }
-                }
-                // Report generation needs a completed, AI-scored analysis to read findings/photos
-                // from — matches the edge function's own `analysis_not_completed`-style rejection
-                // for non-terminal analyses (see generate-excel-report/index.ts and
-                // register-report/index.ts, both real-checked, not assumed to be the same).
-                if (item.status == "completed") {
-                    Row {
-                        if (isGeneratingPdf) {
-                            Text(stringResource(RdR.string.rd_pdf), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
-                        } else {
-                            TextButton(onClick = onGeneratePdf, enabled = !isGenerating) {
-                                Text(stringResource(RdR.string.rd_pdf_olustur), style = RdFontStyle.Caption.toTextStyle())
-                            }
-                        }
-                        if (isGenerating) {
-                            Text(stringResource(RdR.string.rd_olusturuluyor), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
-                        } else {
-                            TextButton(onClick = onGenerateReport, enabled = !isGeneratingPdf) {
-                                Text(stringResource(RdR.string.rd_excel_olustur), style = RdFontStyle.Caption.toTextStyle())
-                            }
-                        }
                     }
                 }
             }
@@ -659,21 +584,13 @@ fun ReportsParityPreviewSurface() {
             HistoryRow(
                 item = completed,
                 onOpen = {},
-                isGenerating = false,
-                isGeneratingPdf = false,
                 isDeleting = false,
-                onGenerateReport = {},
-                onGeneratePdf = {},
                 onDelete = {},
             )
             HistoryRow(
                 item = open,
                 onOpen = {},
-                isGenerating = false,
-                isGeneratingPdf = false,
                 isDeleting = false,
-                onGenerateReport = {},
-                onGeneratePdf = {},
                 onDelete = {},
             )
         }

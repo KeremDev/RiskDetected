@@ -129,7 +129,10 @@ fun MainShellScreen(
                 focusedAnalysisId = focusedAnalysisId,
                 onOpenAnalysis = { analysisId -> navController.navigate(AnalysisResult(analysisId)) },
             )
-            RdTab.Reports -> GeneratedReportsScreen(focusedReportId = focusedReportId)
+            RdTab.Reports -> GeneratedReportsScreen(
+                focusedReportId = focusedReportId,
+                onUpgrade = { navController.navigate(Paywall) },
+            )
             RdTab.Profile -> ProfileScreen(
                 onBack = null,
                 onManageCompanies = { navController.navigate(Companies) },

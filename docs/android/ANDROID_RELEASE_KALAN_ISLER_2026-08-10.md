@@ -25,12 +25,19 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
 - [x] Unit test, lint, environment isolation ve debug build kalite kapıları geçti.
 - [x] Temiz kaynaklardan minified QA APK/AAB yeniden üretildi; `bundletool`, JAR imzası, 16 KB hizalama ve secret/PII taramaları geçti.
 - [x] Temiz QA AAB içinde `.xcassets`, `AppIcon.appiconset` veya `Contents.json` bulunmadığı doğrulandı.
+- [x] Final QA AAB (`SHA-256 aafdb3ad6b76e32c6676b40e47c8b10cfb61e0d9fe9248b61aae4b62ad3a0c0e`) bundletool, JAR imzası, 16 KB/ELF ve QA Firebase allowlist doğrulamasından geçti; final QA APK hash'i `67931585a5117ac58cf15402bce5a02545ae3dd71ff19e6f8efb66445ec2a39e`.
 - [x] Deno Edge Function paketi `316/316`, pgTAP/RLS/RPC paketi `478/478` geçti; local DB lint sonucu sıfır hata.
 - [x] Android staging'e dört additive migration ve repo kaynaklı 20 Edge Function dağıtıldı; uzak hash/deploy kanıtı kaydedildi.
 - [x] Bekleyen owner/hukuk onayının onaylanmış gibi yazılmasına yol açan legal migration düzeltildi; staging approval satırı sıfır ve gate kapalı.
 - [x] Analiz telemetrisi trigger'ında Android platform alanı eklenirken düşen dil doğrulama alanları additive migration ile geri getirildi.
 - [x] Auth e-posta/OTP/hata, fotoğraf tepsisi, Plus/Pro, analiz geçmişi, rapor arşivi, şirket ve hesap silme exact golden kapsamına eklendi.
+- [x] iOS build-81 rapor mimarisi taşındı: Analizler yalnız analiz geçmişini, Raporlar ise özet, arşiv, kaynak analizi, PDF/XLSX seçimlerini ve üretim durumunu yönetiyor.
+- [x] Free risk analizi raporu deneme hakkı `usage_events` üzerinden okunuyor; kullanılmamış hak bilgi bandı, kullanılmış hak Plus kilidi olarak gösteriliyor ve son karar backend'de kalıyor.
+- [x] iOS'taki iki aşamalı rapor akışı taşındı: seçilen analizin gerçek bulgularıyla önizleme, ardından tip/şirket/yöntem/format/hazırlayan/unvan/belge no/dil ayarları açılıyor; şirket ID'si PDF ve XLSX isteklerine, kimlik override'ları cihaz PDF'ine aktarılıyor.
+- [x] Rapor önizlemesi, kaynak ayarları, kullanılmış/kullanılmamış Free denemesi, Plus risk ayarları ve Excel üretim overlay'i exact golden kapsamına eklendi; toplam baseline sayısı 32 oldu.
 - [x] API 36 emülatörde temiz QA APK; onboarding skip, bağımsız auth, cold relaunch, e-posta paneli ve font scale `1.3` ADB kanıtlarıyla geçti.
+- [x] API 26 küçük, API 33 standart ve API 37 büyük AVD'leri kuruldu; final minified QA APK ile UI tree koordinatlı fresh-install/skip/auth/cold-relaunch smoke paketi yeniden üretildi ve üç kanıt aynı APK hash'ine bağlandı.
+- [x] API 26'da yakalanan siyah sistem çubuğu, uygulama yüzeyinin inset arkasını boyamasıyla giderildi; etkileşim içeriği safe-area içinde kaldı.
 - [x] Production ortamına ve iOS `App/` kaynaklarına dokunulmadı.
 
 ## P0 — İlk Play Internal Testing yüklemesi
@@ -125,16 +132,17 @@ Kabul ölçütü: Reddedilmiş izin uygulamayı bozmaz; izin verildiğinde FCM k
 
 ## P1 — Cihaz ve UI parite matrisi
 
-- [ ] API 26 küçük ekran emülatör testi.
-- [ ] API 33 standart ekran emülatör testi.
-- [ ] API 37 büyük ekran emülatör testi.
+- [x] API 26 küçük ekran emülatörde fresh install, skip, auth ve cold-relaunch smoke testi.
+- [x] API 33 standart ekran emülatörde fresh install, skip, auth ve cold-relaunch smoke testi.
+- [x] API 37 büyük ekran emülatörde fresh install, skip, auth ve cold-relaunch smoke testi.
+- [ ] API 26/33/37 üzerinde giriş yapılmış dört tab, analiz ve rapor cihaz akışlarını tamamla.
 - [ ] Fiziksel Pixel testi.
 - [ ] Fiziksel Samsung testi.
 - [ ] Font scale `1.0` ana kabul testi.
 - [ ] Font scale `1.3` erişilebilirlik smoke testi.
 - [ ] Desteklenen ekranlarda açık/koyu tema testi.
-- [ ] Analiz bekleme, recovery, sonuç ve bulgu detay golden'larını onayla.
-- [ ] PDF/XLSX oluşturma ve paylaşım golden'larını onayla.
+- [x] Analiz bekleme, sonuç, Pro bulgu detayı, PDF ve XLSX oluşturma durum golden'larını onayla.
+- [ ] Recovery ve Android sistem paylaşım yüzeyini cihaz kanıtıyla onayla.
 - [ ] Free/Plus/Pro CTA, sarı/yeşil kimlik, kart, tablo, ikon ve risk renklerini iOS referansıyla karşılaştır.
 
 Kabul ölçütü: Android golden threshold `0`; platformlar arası geometri farkı en fazla ±2dp ve beklenmeyen görsel fark yoktur.

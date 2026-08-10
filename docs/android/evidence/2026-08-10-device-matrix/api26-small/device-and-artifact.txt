@@ -1,0 +1,8 @@
+serial=emulator-5560
+api_label=api26-small
+sdk=26
+model=Android SDK built for arm64
+size=Physical size: 768x1280
+density=Physical density: 320
+font_scale=1.0
+67931585a5117ac58cf15402bce5a02545ae3dd71ff19e6f8efb66445ec2a39e  /Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/android/app/build/outputs/apk/qa/app-qa.apk

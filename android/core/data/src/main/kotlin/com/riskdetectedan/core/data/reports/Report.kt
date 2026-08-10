@@ -3,9 +3,12 @@ package com.riskdetectedan.core.data.reports
 import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.data.profile.SubscriptionTier
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
 import io.ktor.client.call.body
@@ -17,6 +20,11 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,16 +49,31 @@ data class Report(
     val kind: String? = null,
     val method: String? = null,
     val title: String? = null,
+    @SerialName("company_id") val companyId: String? = null,
     @SerialName("storage_path") val storagePath: String,
     @SerialName("file_name") val fileName: String? = null,
     @SerialName("mime_type") val mimeType: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
 )
 
+/** Read-only UI guidance matching iOS `monthlyReportQuotaUsage` and
+ * `freeRiskAnalysisTrialUsage`. Inserts remain server-owned and every generation request is still
+ * revalidated by the Edge Function/database trigger. */
+data class ReportQuotaUsage(
+    val standardUsed: Int,
+    val standardLimit: Int,
+    val riskTrialUsed: Boolean,
+) {
+    val isStandardQuotaExhausted: Boolean get() = standardUsed >= standardLimit
+}
+
 @Serializable
 private data class GenerateExcelReportBody(
     @SerialName("analysis_id") val analysisId: String,
     val method: String,
+    @SerialName("report_kind") val reportKind: String,
+    @SerialName("report_language") val reportLanguage: String,
+    @SerialName("company_id") val companyId: String? = null,
     @SerialName("request_id") val requestId: String,
     @SerialName("support_id") val supportId: String,
     @SerialName("client_app_version") val clientAppVersion: String,
@@ -112,6 +135,55 @@ class ReportsRepository @Inject constructor(
     private val client: SupabaseClient,
     private val environmentConfig: RdEnvironmentConfig,
 ) {
+    suspend fun fetchQuotaUsage(userId: String, tier: SubscriptionTier): RdResult<ReportQuotaUsage> = try {
+        coroutineScope {
+            val zone = ZoneId.of("Europe/Istanbul")
+            val today = LocalDate.now(zone)
+            val periodStart = if (tier == SubscriptionTier.Free) {
+                today.atStartOfDay(zone).toInstant()
+            } else {
+                today.withDayOfMonth(1).atStartOfDay(zone).toInstant()
+            }
+            val standard = async {
+                client.postgrest.from("usage_events").select(columns = Columns.list("id")) {
+                    head = true
+                    count(Count.EXACT)
+                    filter {
+                        eq("user_id", userId)
+                        eq("feature", "report_standard")
+                        eq("event_type", "completed")
+                        gte("created_at", DateTimeFormatter.ISO_INSTANT.format(periodStart))
+                    }
+                }.countOrNull()?.toInt() ?: 0
+            }
+            val riskTrial = async {
+                client.postgrest.from("usage_events").select(columns = Columns.list("id")) {
+                    head = true
+                    count(Count.EXACT)
+                    filter {
+                        eq("user_id", userId)
+                        eq("feature", "report_risk_analysis_trial")
+                        eq("event_type", "completed")
+                    }
+                }.countOrNull()?.toInt() ?: 0
+            }
+            val limit = when (tier) {
+                SubscriptionTier.Free -> 1
+                SubscriptionTier.Plus -> 150
+                SubscriptionTier.Pro -> 750
+            }
+            RdResult.Success(
+                ReportQuotaUsage(
+                    standardUsed = standard.await(),
+                    standardLimit = limit,
+                    riskTrialUsed = riskTrial.await() > 0,
+                ),
+            )
+        }
+    } catch (t: Throwable) {
+        RdResult.Failure("report_quota_fetch_failed", t.message ?: "report_quota_fetch_failed", t)
+    }
+
     /**
      * Mirrors the `generate-excel-report` request contract. `method` is the risk-scoring method
      * the report renders under — same two wire values as [com.riskdetectedan.core.data.profile.RiskMethodWire]
@@ -121,12 +193,20 @@ class ReportsRepository @Inject constructor(
      * free_risk_analysis_trial_exhausted, plan-tier gates) surface as plain failures here — this
      * client makes no local entitlement decision, per the "backend is sole authority" invariant.
      */
-    suspend fun generateExcelReport(analysisId: String, method: String = "fine_kinney"): RdResult<Report> = try {
+    suspend fun generateExcelReport(
+        analysisId: String,
+        method: String = "fine_kinney",
+        companyId: String? = null,
+        reportLanguage: String = "tr",
+    ): RdResult<Report> = try {
         val result = client.functions.invoke(
             "generate-excel-report",
             body = GenerateExcelReportBody(
                 analysisId = analysisId,
                 method = method,
+                reportKind = "risk_analysis",
+                reportLanguage = reportLanguage,
+                companyId = companyId,
                 requestId = UUID.randomUUID().toString(),
                 supportId = UUID.randomUUID().toString(),
                 clientAppVersion = environmentConfig.appVersionName,

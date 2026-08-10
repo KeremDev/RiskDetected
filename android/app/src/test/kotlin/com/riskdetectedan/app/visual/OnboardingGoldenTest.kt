@@ -7,7 +7,9 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
@@ -31,7 +33,9 @@ import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
 import com.riskdetectedan.app.home.SectorPickerSheet
 import com.riskdetectedan.app.home.PhotoTraySheet
+import com.riskdetectedan.app.reports.ExcelGenerationOverlayParityPreviewSurface
 import com.riskdetectedan.app.reports.GeneratedReportsParityPreviewSurface
+import com.riskdetectedan.app.reports.ReportSourceSheetParityPreviewSurface
 import com.riskdetectedan.app.navigation.RdTab
 import com.riskdetectedan.app.navigation.RdTabBar
 import com.riskdetectedan.feature.onboarding.OBCertificateScreen
@@ -319,7 +323,7 @@ class OnboardingGoldenTest {
         }
 
         composeRule.onNodeWithText("İskele çalışma alanı").assertIsDisplayed()
-        composeRule.onNodeWithText("Excel oluştur").assertIsDisplayed()
+        assertEquals(0, composeRule.onAllNodesWithText("Excel oluştur").fetchSemanticsNodes().size)
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
@@ -333,6 +337,76 @@ class OnboardingGoldenTest {
 
         composeRule.onNodeWithText("İskele Risk Analizi").assertIsDisplayed()
         composeRule.onNodeWithText("Üretim Hattı Bulguları").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun report_source_preview_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                ReportSourceSheetParityPreviewSurface()
+            }
+        }
+
+        composeRule.onNodeWithText("RAPOR ÖNİZLEMESİ").assertIsDisplayed()
+        composeRule.onNodeWithText("Platform kenarında düşmeye karşı koruma yok").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun report_source_sheet_free_trial_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                ReportSourceSheetParityPreviewSurface()
+            }
+        }
+
+        composeRule.onNodeWithTag("report-source-primary").performClick()
+        composeRule.onNodeWithText("Standart Rapor").assertIsDisplayed()
+        composeRule.onNodeWithText("Risk Analizi Tablosu").assertIsDisplayed()
+        composeRule.onNodeWithText("Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun report_source_sheet_free_trial_used_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                ReportSourceSheetParityPreviewSurface(freeRiskTrialAvailable = false)
+            }
+        }
+
+        composeRule.onNodeWithTag("report-source-primary").performClick()
+        composeRule.onNodeWithText("Bir kez tanımlanan hakkını kullandın. Risk analizi tabloları Plus ile devam eder.").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun report_source_sheet_plus_risk_settings_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                ReportSourceSheetParityPreviewSurface(tier = SubscriptionTier.Plus, freeRiskTrialAvailable = false)
+            }
+        }
+
+        composeRule.onNodeWithTag("report-source-primary").performClick()
+        composeRule.onNodeWithText("Risk Analizi Tablosu").performClick()
+        composeRule.onNodeWithText("Rapor firması").assertIsDisplayed()
+        composeRule.onNodeWithText("Risk yöntemi").assertIsDisplayed()
+        composeRule.onNodeWithTag("report-settings-list").performScrollToIndex(5)
+        composeRule.onNodeWithText("HAZIRLAYAN BİLGİLERİ").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun excel_generation_overlay_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                ExcelGenerationOverlayParityPreviewSurface()
+            }
+        }
+
+        composeRule.onNodeWithText("Excel hazırlanıyor").assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
