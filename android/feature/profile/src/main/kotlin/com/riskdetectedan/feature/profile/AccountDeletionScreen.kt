@@ -152,3 +152,38 @@ private fun DestructiveButton(text: String, onClick: () -> Unit) {
         Text(text, style = RdFontStyle.Callout.toTextStyle(), color = colors.white, textAlign = TextAlign.Center)
     }
 }
+
+/** ViewModel-free account deletion state for the exact-pixel release contract. It deliberately
+ * reuses the production warning treatment and destructive CTA rather than introducing preview-
+ * only styling. */
+@Composable
+fun AccountDeletionParityPreviewSurface() {
+    val colors = RdTheme.colors
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        RdScreenHeader(title = stringResource(RdR.string.rd_hesabi_sil_baslik), onBack = {})
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(RdRadius.lg))
+                    .background(colors.criticalBg.copy(alpha = 0.70f))
+                    .border(1.dp, colors.critical.copy(alpha = 0.22f), RoundedCornerShape(RdRadius.lg))
+                    .padding(RdSpacing.md),
+            ) {
+                Text(
+                    stringResource(RdR.string.rd_hesabini_silmek_uzeresin),
+                    style = RdFontStyle.Callout.toTextStyle(),
+                    color = colors.criticalText,
+                )
+                Spacer(Modifier.height(RdSpacing.xxs))
+                Text(
+                    stringResource(RdR.string.rd_hesap_sil_geri_alinamaz),
+                    style = RdFontStyle.Footnote.toTextStyle(),
+                    color = colors.criticalText,
+                )
+            }
+            Spacer(Modifier.height(RdSpacing.md))
+            DestructiveButton(text = stringResource(RdR.string.rd_hesabimi_sil), onClick = {})
+        }
+    }
+}

@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.company.CompanyDraft
+import com.riskdetectedan.core.data.company.Company
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdEmptyState
 import com.riskdetectedan.core.designsystem.RdFontStyle
@@ -158,6 +159,78 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
                 }
             }
             Spacer(Modifier.height(RdSpacing.lg))
+        }
+    }
+}
+
+/** Deterministic company-management state used by the release golden suite. */
+@Composable
+fun CompanyListParityPreviewSurface() {
+    val colors = RdTheme.colors
+    val companies = listOf(
+        Company(
+            id = "preview-one",
+            userId = "preview-user",
+            name = "RiskDetected İnşaat",
+            hazardClassId = "high",
+        ),
+        Company(
+            id = "preview-two",
+            userId = "preview-user",
+            name = "Anadolu Üretim Tesisi",
+            hazardClassId = "medium",
+        ),
+    )
+
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        RdScreenHeader(title = stringResource(RdR.string.rd_firmalarim), onBack = {})
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = RdSpacing.lg),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
+                companies.forEach { company ->
+                    RdListRow(
+                        title = company.name,
+                        subtitle = company.hazardClass.title,
+                        icon = Icons.Filled.Business,
+                    )
+                }
+            }
+            Spacer(Modifier.height(RdSpacing.lg))
+            Text(
+                stringResource(RdR.string.rd_yeni_firma_ekle),
+                style = RdFontStyle.Title3.toTextStyle(),
+                color = colors.onyx,
+            )
+            Text(
+                stringResource(RdR.string.rd_firma_sayaci_format, companies.size, 5),
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate,
+            )
+            Spacer(Modifier.height(RdSpacing.sm))
+            RdSectionCard {
+                Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
+                    OutlinedTextField(
+                        value = "",
+                        onValueChange = {},
+                        label = { Text(stringResource(RdR.string.rd_firma_adi)) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    TextButton(onClick = {}) {
+                        Text(stringResource(RdR.string.rd_logo_sec_opsiyonel))
+                    }
+                    RdPrimaryButton(
+                        text = stringResource(RdR.string.rd_firma_ekle),
+                        onClick = {},
+                        enabled = false,
+                        style = RdButtonStyle.Onyx,
+                        showArrow = false,
+                    )
+                }
+            }
         }
     }
 }

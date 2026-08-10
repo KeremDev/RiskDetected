@@ -100,7 +100,7 @@ fun Pressable(
 
 // ---- RdPrimaryButton (OBPrimaryButton) ----------------------------------------------------
 
-enum class RdButtonStyle { Onyx, Green }
+enum class RdButtonStyle { Onyx, Green, Gold }
 
 /** Mirrors OBPrimaryButton: 56dp height, 14dp corner, trailing arrow with an infinite nudge
  * loop, disabled/loading states. [loadingLabel] swaps in while [loading] is true, matching the
@@ -120,6 +120,7 @@ fun RdPrimaryButton(
     val bg = when {
         !enabled -> colors.onyx.copy(alpha = 0.08f)
         style == RdButtonStyle.Green -> colors.green
+        style == RdButtonStyle.Gold -> Color(0xFFD4A106)
         else -> colors.onyx
     }
     val contentColor = if (!enabled) colors.onyx.copy(alpha = 0.35f) else colors.white

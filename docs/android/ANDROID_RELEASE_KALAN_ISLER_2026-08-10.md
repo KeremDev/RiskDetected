@@ -1,8 +1,8 @@
 # Android Release Kalan İşler
 
-Tarih: 10 Ağustos 2026  
-Hedef sürüm: `1.5.0`  
-Package ID: `com.riskdetectedan.app`  
+Tarih: 10 Ağustos 2026
+Hedef sürüm: `1.5.0`
+Package ID: `com.riskdetectedan.app`
 Referans iOS sürümü: `app-store-live-1.3.1-build-81-baseline-2026-08-06`
 
 Bu dosya Android production yayını öncesindeki açık işleri, bağımlılıklarını ve kabul ölçütlerini takip eder. `App/` altındaki iOS kaynakları değiştirilmeyecek; production Android runtime kapıları kontrollü canary başlayana kadar kapalı tutulacaktır.
@@ -23,6 +23,11 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
 - [x] Cihazda PDF ve sunucuda XLSX üretimi doğrulandı; gerçek PDF sayfa sayısı backend'e kaydedildi.
 - [x] Android analiz insert yetki hatası ve platform/build telemetrisi düzeltildi.
 - [x] Unit test, lint, environment isolation ve debug build kalite kapıları geçti.
+- [x] Temiz kaynaklardan minified QA APK/AAB yeniden üretildi; `bundletool`, JAR imzası, 16 KB hizalama ve secret/PII taramaları geçti.
+- [x] Temiz QA AAB içinde `.xcassets`, `AppIcon.appiconset` veya `Contents.json` bulunmadığı doğrulandı.
+- [x] Deno Edge Function paketi `316/316`, pgTAP/RLS/RPC paketi `479/479` geçti; local DB lint sonucu sıfır hata.
+- [x] Analiz telemetrisi trigger'ında Android platform alanı eklenirken düşen dil doğrulama alanları additive migration ile geri getirildi.
+- [x] Auth e-posta/OTP/hata, fotoğraf tepsisi, Plus/Pro, analiz geçmişi, rapor arşivi, şirket ve hesap silme exact golden kapsamına eklendi.
 - [x] Production ortamına ve iOS `App/` kaynaklarına dokunulmadı.
 
 ## P0 — İlk Play Internal Testing yüklemesi
@@ -148,20 +153,22 @@ Kabul ölçütü: Play'de kullanılabilecek herkese açık gizlilik ve hesap sil
 
 ## P1 — Backend ve otomatik kalite kapıları
 
-- [ ] Docker disk alanını güvenli biçimde genişlet veya owner onaylı temizlik yap.
-- [ ] Yerel Supabase stack'i tekrar başlat.
-- [ ] Yeni Android platform telemetry pgTAP testleri dahil tüm pgTAP paketini yeniden çalıştır.
-- [ ] Deno Edge Function testlerini çalıştır.
-- [ ] Beş `SECURITY DEFINER` RPC için sahiplik ve çapraz kullanıcı negatif testlerini tamamla.
-- [ ] Supabase advisor warning'lerini düzelt veya test kanıtlı waiver kaydet.
-- [ ] Release lint ve minified R8 build'i geçir.
-- [ ] Roborazzi golden paketini deterministik CI ortamında geçir.
-- [ ] `App/` diff'inin sıfır olduğunu CI'de fail-closed kontrol et.
+- [x] Docker'da yalnız kullanılmayan, yeniden indirilebilir eski Supabase image cache'leri temizlendi; kullanıcı volume'leri korundu.
+- [x] Yerel Supabase stack'i temiz migration replay ile tekrar başlatıldı.
+- [x] Yeni Android platform telemetry testleri dahil pgTAP paketi `479/479` geçti.
+- [x] Deno Edge Function testleri `316/316` geçti.
+- [x] Beş `SECURITY DEFINER` RPC için auth, sahiplik, sabit `search_path`, anon revoke ve çapraz kullanıcı negatif testleri geçti.
+- [x] Local Supabase security/performance advisor sonucu sıfır uyarı.
+- [ ] Staging ve production Supabase advisor warning'lerini düzelt veya test kanıtlı waiver kaydet.
+- [x] Debug lint ve minified QA R8 build'i geçti.
+- [ ] Production public config ve signing secret'larıyla release lint/signed R8 build'i geçir.
+- [x] Roborazzi golden paketi sabit JDK 17, Türkçe locale, İstanbul timezone ve threshold `0` ile geçti.
+- [x] `App/` diff'inin build-81 baseline'a göre sıfır olduğu yerel fail-closed kontrolde doğrulandı; CI kapısı mevcut.
 - [ ] Production Android runtime gate'lerinin kapalı olduğunu CI'de doğrula.
 
 Kabul ölçütü: Unit, golden, lint, R8, Deno ve pgTAP testlerinin tamamı yeşildir; çözülmemiş kritik/yüksek güvenlik bulgusu yoktur.
 
-Not: Docker disk alanı için mevcut image/volume verileri izinsiz silinmeyecektir.
+Not: Docker kullanıcı volume'leri silinmedi. Temizlik yalnız kullanılmayan Supabase image cache sürümleriyle sınırlandı; gerekli sabit CLI sürümleri otomatik yeniden indirildi.
 
 ## P2 — Play Store hazırlığı
 
@@ -217,4 +224,3 @@ Release aşağıdaki koşulların tamamı sağlanmadan hazır kabul edilmeyecekt
 - [ ] Closed test crash-free session oranı en az `%99,5`.
 - [ ] Production gate'leri yalnız kontrollü canary için açılıyor.
 - [ ] iOS build-81 regresyonu temiz ve `App/` diff'i sıfır.
-

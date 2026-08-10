@@ -56,7 +56,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.designsystem.RdButtonStyle
@@ -140,7 +139,7 @@ fun PaywallScreen(
                     Spacer(Modifier.height(26.dp))
                     PlanSelector(selectedPlan, viewModel::selectPlan)
                     Spacer(Modifier.height(12.dp))
-                    ProductHeading(selectedPlan, selectedBilling, selectedPackage)
+                    ProductHeading(selectedPlan, selectedBilling, selectedPackage?.formattedPrice)
                     Spacer(Modifier.height(14.dp))
                     BillingSelector(selectedPlan, selectedBilling, viewModel::selectBilling)
                     Spacer(Modifier.height(14.dp))
@@ -204,11 +203,11 @@ fun PaywallScreen(
                     enabled = !isPurchasing && !currentPlanIncludesSelection && activity != null,
                     loading = isPurchasing,
                     loadingLabel = stringResource(RdR.string.rd_satin_alma_dogrulaniyor),
-                    style = RdButtonStyle.Green,
+                    style = if (selectedPlan == PaywallPlan.Plus) RdButtonStyle.Gold else RdButtonStyle.Green,
                     showArrow = false,
                 )
                 Text(
-                    selectedPackage?.let { packageLegalLine(selectedBilling, it) }
+                    selectedPackage?.let { packageLegalLine(selectedBilling, it.formattedPrice) }
                         ?: stringResource(RdR.string.rd_google_play_fiyat_teklif_dogrulama),
                     style = RdFontStyle.Caption.toTextStyle(),
                     color = colors.slate,
@@ -257,6 +256,66 @@ fun PaywallScreen(
                 documents = documents,
                 initialKind = legalDocumentKind,
                 onClose = { legalDocumentKind = null },
+            )
+        }
+    }
+}
+
+/** Deterministic rendering of the same production paywall components for exact visual QA. */
+@Composable
+fun PaywallParityPreviewSurface(
+    plan: PaywallPlan,
+    billing: PaywallBilling,
+    formattedPrice: String,
+) {
+    val colors = RdTheme.colors
+    Box(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 154.dp),
+        ) {
+            PaywallHero()
+            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                Spacer(Modifier.height(26.dp))
+                PlanSelector(plan, {})
+                Spacer(Modifier.height(12.dp))
+                ProductHeading(plan, billing, formattedPrice)
+                Spacer(Modifier.height(14.dp))
+                BillingSelector(plan, billing, {})
+                Spacer(Modifier.height(14.dp))
+                FeatureCard(plan)
+                Spacer(Modifier.height(12.dp))
+                ComparisonCard(onSelect = {})
+            }
+        }
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(colors.paper)
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            RdPrimaryButton(
+                text = stringResource(
+                    if (plan == PaywallPlan.Plus && billing == PaywallBilling.Yearly) {
+                        RdR.string.rd_devam_et
+                    } else {
+                        RdR.string.rd_aboneligi_baslat
+                    },
+                ),
+                onClick = {},
+                style = if (plan == PaywallPlan.Plus) RdButtonStyle.Gold else RdButtonStyle.Green,
+                showArrow = false,
+            )
+            Text(
+                packageLegalLine(billing, formattedPrice),
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 6.dp),
             )
         }
     }
@@ -348,7 +407,7 @@ private fun PaywallPill(
 }
 
 @Composable
-private fun ProductHeading(plan: PaywallPlan, billing: PaywallBilling, pkg: BillingPackage?) {
+private fun ProductHeading(plan: PaywallPlan, billing: PaywallBilling, formattedPrice: String?) {
     val colors = RdTheme.colors
     Column {
         ProductBadge(plan)
@@ -365,9 +424,9 @@ private fun ProductHeading(plan: PaywallPlan, billing: PaywallBilling, pkg: Bill
         )
         Text(
             when {
-                pkg == null -> stringResource(RdR.string.rd_google_play_fiyati_yukleniyor)
-                billing == PaywallBilling.Yearly -> stringResource(RdR.string.rd_yillik_plan_fiyat_ozellik_format, pkg.formattedPrice, plan.name)
-                else -> stringResource(RdR.string.rd_aylik_plan_fiyat_ozellik_format, plan.name, pkg.formattedPrice)
+                formattedPrice == null -> stringResource(RdR.string.rd_google_play_fiyati_yukleniyor)
+                billing == PaywallBilling.Yearly -> stringResource(RdR.string.rd_yillik_plan_fiyat_ozellik_format, formattedPrice, plan.name)
+                else -> stringResource(RdR.string.rd_aylik_plan_fiyat_ozellik_format, plan.name, formattedPrice)
             },
             style = RdFontStyle.Footnote.toTextStyle(),
             color = colors.slate,
@@ -461,11 +520,11 @@ private fun SubscriptionTier.includes(other: SubscriptionTier): Boolean = when (
 }
 
 @Composable
-private fun packageLegalLine(billing: PaywallBilling, pkg: BillingPackage): String =
+private fun packageLegalLine(billing: PaywallBilling, formattedPrice: String): String =
     stringResource(
         RdR.string.rd_abonelik_yenileme_format,
         stringResource(if (billing == PaywallBilling.Yearly) RdR.string.rd_yillik else RdR.string.rd_aylik),
-        pkg.formattedPrice,
+        formattedPrice,
     )
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {

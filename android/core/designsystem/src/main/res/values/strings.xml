@@ -31,6 +31,10 @@
     <string name="rd_devam">Devam</string>
     <string name="rd_dogrulama_kodu">Doğrulama kodu</string>
     <string name="rd_dosya">Dosya</string>
+    <string name="rd_saha_taramalari">Saha taramaları</string>
+    <string name="rd_saha_taramalari_aciklama">Analizlerini, kritik riskleri ve bulgu sayısını tek yerden takip et.</string>
+    <string name="rd_analiz_sayisi_format">%1$d analiz</string>
+    <string name="rd_bulgu_kisa">Bulgu</string>
     <string name="rd_duzenle">Düzenle</string>
     <string name="rd_e_postayi_degistir">E-postayı değiştir</string>
     <string name="rd_ek">EK</string>

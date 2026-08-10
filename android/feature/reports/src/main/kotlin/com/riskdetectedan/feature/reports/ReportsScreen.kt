@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import android.content.Intent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,10 +28,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,6 +54,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -164,6 +172,14 @@ fun ReportsScreen(
         RdScreenHeader(title = stringResource(RdR.string.rd_gecmis_analizler), onBack = onBack)
 
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
+            val overviewItems = (state as? HistoryUiState.Loaded)?.items.orEmpty()
+            HistoryOverview(
+                analysisCount = overviewItems.size,
+                weekCount = overviewItems.count { isWithinLastWeek(it.createdAt) },
+                criticalCount = overviewItems.count { riskLevelFromRaw(it.riskBand) == RiskLevel.Critical },
+                findingCount = overviewItems.sumOf(HistoryItem::findingCount),
+            )
+            Spacer(Modifier.height(14.dp))
             when (val current = state) {
                 is HistoryUiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = colors.onyx)
@@ -288,6 +304,121 @@ fun ReportsScreen(
                     showCompanyFilter = false
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun HistoryOverview(
+    analysisCount: Int,
+    weekCount: Int,
+    criticalCount: Int,
+    findingCount: Int,
+) {
+    val colors = RdTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = colors.green.copy(alpha = 0.16f),
+                spotColor = colors.onyx.copy(alpha = 0.14f),
+            )
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xFFF7FBFF), Color(0xFFF2F7FA), Color(0xFFEEF8F2)),
+                ),
+            )
+            .border(1.4.dp, colors.onyx, RoundedCornerShape(20.dp))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(colors.greenSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.History, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(18.dp))
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(
+                    stringResource(RdR.string.rd_saha_taramalari),
+                    style = RdFontStyle.Title3.toTextStyle(),
+                    color = colors.black,
+                )
+                Text(
+                    stringResource(RdR.string.rd_saha_taramalari_aciklama),
+                    style = RdFontStyle.Footnote.toTextStyle(),
+                    color = colors.slate,
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .size(width = 58.dp, height = 54.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(colors.onyx),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(analysisCount.toString(), style = RdFontStyle.Title2.toTextStyle(), color = colors.white)
+                Text(stringResource(RdR.string.rd_analiz), style = RdFontStyle.Caption.toTextStyle(), color = colors.white.copy(alpha = 0.72f))
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            HistoryOverviewMetric(
+                icon = Icons.Filled.CalendarMonth,
+                label = stringResource(RdR.string.rd_bu_hafta),
+                value = weekCount,
+                modifier = Modifier.weight(1f),
+            )
+            HistoryOverviewMetric(
+                icon = Icons.Filled.Warning,
+                label = stringResource(RdR.string.rd_kritik),
+                value = criticalCount,
+                modifier = Modifier.weight(1f),
+            )
+            HistoryOverviewMetric(
+                icon = Icons.Filled.CheckCircle,
+                label = stringResource(RdR.string.rd_bulgu_kisa),
+                value = findingCount,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun HistoryOverviewMetric(
+    icon: ImageVector,
+    label: String,
+    value: Int,
+    modifier: Modifier = Modifier,
+) {
+    val colors = RdTheme.colors
+    Row(
+        modifier = modifier
+            .height(48.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(colors.onyx)
+            .padding(9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(colors.white.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = colors.white, modifier = Modifier.size(13.dp))
+        }
+        Column {
+            Text(value.toString(), style = RdFontStyle.Data.toTextStyle(), color = colors.white)
+            Text(label, style = RdFontStyle.Caption.toTextStyle(), color = colors.white.copy(alpha = 0.70f), maxLines = 1)
         }
     }
 }
@@ -480,4 +611,71 @@ private fun HistoryRow(
             }
         },
     )
+}
+
+/** Deterministic visual-contract surface built from the same filter and row composables used by
+ * [ReportsScreen]. This keeps Roborazzi independent from Hilt/network state without maintaining a
+ * second hand-painted version of the production UI. */
+@Composable
+fun ReportsParityPreviewSurface() {
+    val colors = RdTheme.colors
+    val completed = HistoryItem(
+        id = "preview-critical",
+        title = "İskele çalışma alanı",
+        canvas = "general",
+        status = "completed",
+        kind = "Genel",
+        findingCount = 8,
+        highestBandFk = "critical",
+        createdAt = "2026-08-10T10:30:00+03:00",
+    )
+    val open = HistoryItem(
+        id = "preview-ppe",
+        title = "Kişisel koruyucu donanım",
+        canvas = "ppe",
+        status = "processing",
+        kind = "KKD",
+        findingCount = 3,
+        highestBandFk = "high",
+        createdAt = "2026-08-09T14:15:00+03:00",
+    )
+
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        RdScreenHeader(title = stringResource(RdR.string.rd_gecmis_analizler))
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(RdSpacing.sm),
+        ) {
+            HistoryOverview(analysisCount = 2, weekCount = 2, criticalCount = 1, findingCount = 11)
+            HistoryFilterSurface(
+                showCompanyButton = true,
+                companySelected = false,
+                onCompanyButtonClick = {},
+                search = "",
+                onSearchChange = {},
+                activeChip = HistoryFilterChip.All,
+                onChipSelect = {},
+            )
+            HistoryRow(
+                item = completed,
+                onOpen = {},
+                isGenerating = false,
+                isGeneratingPdf = false,
+                isDeleting = false,
+                onGenerateReport = {},
+                onGeneratePdf = {},
+                onDelete = {},
+            )
+            HistoryRow(
+                item = open,
+                onOpen = {},
+                isGenerating = false,
+                isGeneratingPdf = false,
+                isDeleting = false,
+                onGenerateReport = {},
+                onGeneratePdf = {},
+                onDelete = {},
+            )
+        }
+    }
 }

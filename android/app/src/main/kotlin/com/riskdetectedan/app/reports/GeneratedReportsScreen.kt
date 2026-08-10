@@ -372,3 +372,63 @@ private fun ReportRow(
         },
     )
 }
+
+/** Stable golden-test surface that exercises the exact archive filter and report rows used by the
+ * live screen while avoiding a Hilt ViewModel and remote repository in Robolectric. */
+@Composable
+internal fun GeneratedReportsParityPreviewSurface() {
+    val colors = RdTheme.colors
+    val pdfReport = Report(
+        id = "preview-pdf",
+        documentNo = "RD-2026-0810",
+        format = "pdf",
+        kind = "risk_analysis",
+        method = "fine_kinney",
+        title = "İskele Risk Analizi",
+        storagePath = "preview/report.pdf",
+        fileName = "iskele-risk-analizi.pdf",
+        mimeType = "application/pdf",
+        createdAt = "2026-08-10T12:00:00+03:00",
+    )
+    val excelReport = Report(
+        id = "preview-xlsx",
+        documentNo = "RD-2026-0809",
+        format = "xlsx",
+        kind = "standard",
+        method = "matrix_5x5",
+        title = "Üretim Hattı Bulguları",
+        storagePath = "preview/report.xlsx",
+        fileName = "uretim-hatti-bulgulari.xlsx",
+        mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        createdAt = "2026-08-09T15:45:00+03:00",
+    )
+
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        RdScreenHeader(title = stringResource(RdR.string.rd_raporlar))
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(RdSpacing.sm),
+        ) {
+            ReportArchiveFilterSurface(
+                search = "",
+                onSearchChange = {},
+                activeFilter = ReportArchiveFilter.All,
+                onFilterSelect = {},
+            )
+            ReportRow(
+                report = pdfReport,
+                isOpening = false,
+                isDeleting = false,
+                onClick = {},
+                onDelete = {},
+            )
+            ReportRow(
+                report = excelReport,
+                isOpening = false,
+                isDeleting = false,
+                onClick = {},
+                onDelete = {},
+            )
+        }
+    }
+}

@@ -104,7 +104,12 @@ java -jar "$bundletool_path" build-apks \
   --overwrite
 unzip -q "$apks_path" universal.apk -d "$verify_dir"
 
-build_tools_dir="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}/build-tools/37.0.0"
+sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+if [[ -z "$sdk_root" && -f "$script_dir/../local.properties" ]]; then
+  sdk_root=$(sed -n 's/^sdk\.dir=//p' "$script_dir/../local.properties" | head -n 1)
+fi
+[[ -n "$sdk_root" ]] || { echo "ANDROID_HOME/ANDROID_SDK_ROOT or local.properties sdk.dir is required." >&2; exit 6; }
+build_tools_dir="$sdk_root/build-tools/37.0.0"
 zipalign_path="$build_tools_dir/zipalign"
 [[ -x "$zipalign_path" ]] || { echo "zipalign 37.0.0 not found." >&2; exit 6; }
 "$zipalign_path" -c -P 16 -v 4 "$verify_dir/universal.apk" >/dev/null
