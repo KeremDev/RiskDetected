@@ -28,6 +28,7 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
 - [x] Deno Edge Function paketi `316/316`, pgTAP/RLS/RPC paketi `479/479` geçti; local DB lint sonucu sıfır hata.
 - [x] Analiz telemetrisi trigger'ında Android platform alanı eklenirken düşen dil doğrulama alanları additive migration ile geri getirildi.
 - [x] Auth e-posta/OTP/hata, fotoğraf tepsisi, Plus/Pro, analiz geçmişi, rapor arşivi, şirket ve hesap silme exact golden kapsamına eklendi.
+- [x] API 36 emülatörde temiz QA APK; onboarding skip, bağımsız auth, cold relaunch, e-posta paneli ve font scale `1.3` ADB kanıtlarıyla geçti.
 - [x] Production ortamına ve iOS `App/` kaynaklarına dokunulmadı.
 
 ## P0 — İlk Play Internal Testing yüklemesi
