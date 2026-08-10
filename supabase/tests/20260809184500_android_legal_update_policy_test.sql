@@ -1,6 +1,6 @@
 begin;
 
-select plan(9);
+select plan(8);
 
 select is(
   (select value ->> 'enabled' from public.app_feature_flags where key = 'android_legal_policy'),
@@ -16,8 +16,8 @@ select is(
 
 select is(
   (select count(*)::integer from private.approved_legal_documents where document_set_id = 'tr-android-v1'),
-  4,
-  'all four Android legal documents are registered'
+  0,
+  'pending Android legal review is not represented as an approval'
 );
 
 select is(
@@ -32,11 +32,6 @@ select is(
   'existing English registry rows remain unchanged'
 );
 
-select ok(
-  (select bool_and(document_checksum ~ '^[0-9a-f]{64}$') from private.approved_legal_documents where document_set_id = 'tr-android-v1'),
-  'Android registry uses valid SHA-256 document checksums'
-);
-
 select is(
   (select jsonb_array_length(value -> 'documents') from public.app_feature_flags where key = 'android_legal_policy'),
   4,
@@ -44,14 +39,9 @@ select is(
 );
 
 select is(
-  (
-    select count(*)::integer
-    from private.approved_legal_documents
-    where document_set_id = 'tr-android-v1'
-      and change_type = 'info'
-  ),
-  4,
-  'baseline Android documents do not create a material blocking decision'
+  (select value ->> 'manifest_checksum' from public.app_feature_flags where key = 'android_legal_policy'),
+  'aaa169338de3d9425e76cc4d8b9e98047847934c39cf646cb4f87f708c63cfec',
+  'disabled policy still exposes the sanitized bundle checksum for staging verification'
 );
 
 select throws_ok(

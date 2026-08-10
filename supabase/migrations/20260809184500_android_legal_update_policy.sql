@@ -11,59 +11,11 @@ alter table private.approved_legal_documents
   add constraint approved_legal_documents_set_check
   check (document_set_id in ('tr-current', 'en-global-v1', 'tr-android-v1'));
 
-insert into private.approved_legal_documents (
-  document_set_id,
-  document_locale,
-  document_kind,
-  version,
-  document_checksum,
-  change_type,
-  reviewer_name,
-  reviewer_qualification,
-  reviewed_at,
-  approval_record_sha256
-)
-values
-  (
-    'tr-android-v1', 'tr', 'terms', 'terms-android-2026-08-09',
-    'aebbb01c27012192ddf36669b73036889fe8d1f4266a08326aa96e248829e749',
-    'info', 'Kerem',
-    'Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.',
-    '2026-08-09T00:00:00Z'::timestamptz,
-    'd8e66c879b7cd5019706790b323f495740b3ba84fbbe8b995b0124e431fae7dc'
-  ),
-  (
-    'tr-android-v1', 'tr', 'privacy', 'privacy-android-2026-08-09',
-    'ac811bcf95946e4251ebdbf3d2bd71622e94e3753fc0ca68b1fbaeccb9817672',
-    'info', 'Kerem',
-    'Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.',
-    '2026-08-09T00:00:00Z'::timestamptz,
-    'd8e66c879b7cd5019706790b323f495740b3ba84fbbe8b995b0124e431fae7dc'
-  ),
-  (
-    'tr-android-v1', 'tr', 'kvkk', 'kvkk-android-2026-08-09',
-    '7cf16880546a414df03202ea1fd09ff0d7aafa48c9f1adb89f62d897741bb297',
-    'info', 'Kerem',
-    'Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.',
-    '2026-08-09T00:00:00Z'::timestamptz,
-    'd8e66c879b7cd5019706790b323f495740b3ba84fbbe8b995b0124e431fae7dc'
-  ),
-  (
-    'tr-android-v1', 'tr', 'consent', 'consent-android-2026-08-09',
-    '53b380da568e67d6d7406f2a8bad0787b45ddcd2fdf0485f1aaec8f3e517a5c2',
-    'info', 'Kerem',
-    'Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.',
-    '2026-08-09T00:00:00Z'::timestamptz,
-    'd8e66c879b7cd5019706790b323f495740b3ba84fbbe8b995b0124e431fae7dc'
-  )
-on conflict (document_set_id, document_locale, document_kind, version)
-do update set
-  document_checksum = excluded.document_checksum,
-  change_type = excluded.change_type,
-  reviewer_name = excluded.reviewer_name,
-  reviewer_qualification = excluded.reviewer_qualification,
-  reviewed_at = excluded.reviewed_at,
-  approval_record_sha256 = excluded.approval_record_sha256;
+-- Do not register these documents in private.approved_legal_documents yet. The checked-in
+-- approval record is deliberately pending until the public privacy/deletion URLs are verified
+-- and the owner or qualified legal reviewer records a real decision. A follow-up migration must
+-- insert the four approved rows from that signed record; fabricating reviewer metadata here would
+-- make the release evidence misleading.
 
 insert into public.app_feature_flags (key, value)
 values (

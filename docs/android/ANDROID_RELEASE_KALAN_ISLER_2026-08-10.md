@@ -25,7 +25,9 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
 - [x] Unit test, lint, environment isolation ve debug build kalite kapıları geçti.
 - [x] Temiz kaynaklardan minified QA APK/AAB yeniden üretildi; `bundletool`, JAR imzası, 16 KB hizalama ve secret/PII taramaları geçti.
 - [x] Temiz QA AAB içinde `.xcassets`, `AppIcon.appiconset` veya `Contents.json` bulunmadığı doğrulandı.
-- [x] Deno Edge Function paketi `316/316`, pgTAP/RLS/RPC paketi `479/479` geçti; local DB lint sonucu sıfır hata.
+- [x] Deno Edge Function paketi `316/316`, pgTAP/RLS/RPC paketi `478/478` geçti; local DB lint sonucu sıfır hata.
+- [x] Android staging'e dört additive migration ve repo kaynaklı 20 Edge Function dağıtıldı; uzak hash/deploy kanıtı kaydedildi.
+- [x] Bekleyen owner/hukuk onayının onaylanmış gibi yazılmasına yol açan legal migration düzeltildi; staging approval satırı sıfır ve gate kapalı.
 - [x] Analiz telemetrisi trigger'ında Android platform alanı eklenirken düşen dil doğrulama alanları additive migration ile geri getirildi.
 - [x] Auth e-posta/OTP/hata, fotoğraf tepsisi, Plus/Pro, analiz geçmişi, rapor arşivi, şirket ve hesap silme exact golden kapsamına eklendi.
 - [x] API 36 emülatörde temiz QA APK; onboarding skip, bağımsız auth, cold relaunch, e-posta paneli ve font scale `1.3` ADB kanıtlarıyla geçti.
@@ -156,11 +158,13 @@ Kabul ölçütü: Play'de kullanılabilecek herkese açık gizlilik ve hesap sil
 
 - [x] Docker'da yalnız kullanılmayan, yeniden indirilebilir eski Supabase image cache'leri temizlendi; kullanıcı volume'leri korundu.
 - [x] Yerel Supabase stack'i temiz migration replay ile tekrar başlatıldı.
-- [x] Yeni Android platform telemetry testleri dahil pgTAP paketi `479/479` geçti.
+- [x] Yeni Android platform telemetry testleri dahil pgTAP paketi `478/478` geçti.
 - [x] Deno Edge Function testleri `316/316` geçti.
 - [x] Beş `SECURITY DEFINER` RPC için auth, sahiplik, sabit `search_path`, anon revoke ve çapraz kullanıcı negatif testleri geçti.
 - [x] Local Supabase security/performance advisor sonucu sıfır uyarı.
-- [ ] Staging ve production Supabase advisor warning'lerini düzelt veya test kanıtlı waiver kaydet.
+- [x] Staging advisor değerlendirildi; beş istemci RPC'si test kanıtlı waiver'a alındı, deny-by-default INFO kayıtları belgelendi.
+- [ ] Staging leaked-password protection'ı auth regresyonundan sonra aç.
+- [ ] Production Supabase advisor warning'lerini production deploy öncesi tekrar değerlendir.
 - [x] Debug lint ve minified QA R8 build'i geçti.
 - [ ] Production public config ve signing secret'larıyla release lint/signed R8 build'i geçir.
 - [x] Roborazzi golden paketi sabit JDK 17, Türkçe locale, İstanbul timezone ve threshold `0` ile geçti.
