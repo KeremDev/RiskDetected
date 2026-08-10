@@ -16,6 +16,7 @@ import com.riskdetectedan.core.data.reports.PdfReportFileName
 import com.riskdetectedan.core.data.reports.PdfReportGenerator
 import com.riskdetectedan.core.data.reports.PdfReportInput
 import com.riskdetectedan.core.data.reports.ReportsRepository
+import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
 import com.riskdetectedan.core.designsystem.R as RdR
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,6 +43,7 @@ data class ResultReportRequest(
 )
 
 data class ResultReportFile(
+    val reportId: String,
     val bytes: ByteArray,
     val fileName: String,
     val mimeType: String,
@@ -70,6 +72,7 @@ class ResultReportViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val releasePolicyRepository: ReleasePolicyRepository,
     private val pdfReportGenerator: PdfReportGenerator,
+    private val reviewEligibilityRepository: ReviewEligibilityRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ResultReportUiState>(ResultReportUiState.Idle)
@@ -83,12 +86,13 @@ class ResultReportViewModel @Inject constructor(
         viewModelScope.launch {
             val result = when (format) {
                 ResultReportFormat.Pdf -> generatePdf(request, kind, method)
-                ResultReportFormat.Excel -> generateExcel(request.analysisId)
+                ResultReportFormat.Excel -> generateExcel(request.analysisId, method)
             }
             progressJob?.cancel()
             progressJob = null
             when (result) {
                 is RdResult.Success -> {
+                    reviewEligibilityRepository.recordSuccessfulReport(result.value.reportId)
                     _state.value = ResultReportUiState.Generating(format, 1f)
                     delay(480)
                     _state.value = ResultReportUiState.Ready(result.value)
@@ -192,6 +196,7 @@ class ResultReportViewModel @Inject constructor(
         ) {
             is RdResult.Success -> RdResult.Success(
                 ResultReportFile(
+                    reportId = registered.value.id,
                     bytes = generated.bytes,
                     fileName = registered.value.fileName ?: fileName,
                     mimeType = "application/pdf",
@@ -201,14 +206,15 @@ class ResultReportViewModel @Inject constructor(
         }
     }
 
-    private suspend fun generateExcel(analysisId: String): RdResult<ResultReportFile> {
-        val report = when (val generated = reportsRepository.generateExcelReport(analysisId)) {
+    private suspend fun generateExcel(analysisId: String, method: String): RdResult<ResultReportFile> {
+        val report = when (val generated = reportsRepository.generateExcelReport(analysisId, method)) {
             is RdResult.Success -> generated.value
             is RdResult.Failure -> return RdResult.Failure(generated.code, generated.message, generated.cause)
         }
         return when (val downloaded = reportsRepository.downloadReportBytes(report.storagePath)) {
             is RdResult.Success -> RdResult.Success(
                 ResultReportFile(
+                    reportId = report.id,
                     bytes = downloaded.value,
                     fileName = report.fileName ?: "${report.documentNo ?: report.id}.xlsx",
                     mimeType = report.mimeType

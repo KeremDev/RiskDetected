@@ -4,9 +4,14 @@ import com.riskdetectedan.core.common.RdResult
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,6 +21,14 @@ enum class RiskMethodWire(val wireValue: String) {
     FineKinney("fine_kinney"),
     Matrix5x5("matrix_5x5"),
 }
+
+/** Live counters used by the profile hero and menu. Kept independent from professional-progress
+ * tables so an unavailable badge/competency feed cannot hide the user's real analyses/reports. */
+data class ProfileStats(
+    val analysisCount: Int,
+    val reportCount: Int,
+    val weeklyAnalysisCount: Int,
+)
 
 /**
  * Mirrors AuthService.swift's `updateProfile(_:)` / `ProfileUpdatePayload` — same table
@@ -55,6 +68,48 @@ private data class ProfileUpdatePayload(
 class ProfileRepository @Inject constructor(
     private val client: SupabaseClient,
 ) {
+    /** Mirrors iOS `AnalysisService.profileStats()`: completed analyses, all generated reports,
+     * and completed analyses from the rolling previous seven days. */
+    suspend fun fetchStats(userId: String): RdResult<ProfileStats> = try {
+        coroutineScope {
+            val weekStart = Instant.now().minus(7, ChronoUnit.DAYS).toString()
+            val analyses = async {
+                client.postgrest.from("analyses").select(columns = Columns.list("id")) {
+                    head = true
+                    count(Count.EXACT)
+                    filter { eq("user_id", userId); eq("status", "completed") }
+                }.countOrNull()?.toInt() ?: 0
+            }
+            val reports = async {
+                client.postgrest.from("reports").select(columns = Columns.list("id")) {
+                    head = true
+                    count(Count.EXACT)
+                    filter { eq("user_id", userId) }
+                }.countOrNull()?.toInt() ?: 0
+            }
+            val weekly = async {
+                client.postgrest.from("analyses").select(columns = Columns.list("id")) {
+                    head = true
+                    count(Count.EXACT)
+                    filter {
+                        eq("user_id", userId)
+                        eq("status", "completed")
+                        gte("created_at", weekStart)
+                    }
+                }.countOrNull()?.toInt() ?: 0
+            }
+            RdResult.Success(
+                ProfileStats(
+                    analysisCount = analyses.await(),
+                    reportCount = reports.await(),
+                    weeklyAnalysisCount = weekly.await(),
+                ),
+            )
+        }
+    } catch (t: Throwable) {
+        RdResult.Failure("profile_stats_fetch_failed", t.message ?: "profile_stats_fetch_failed", t)
+    }
+
     suspend fun fetchProfile(userId: String): RdResult<UserProfile> = try {
         val profile = client.postgrest.from("profiles")
             .select(Columns.ALL) {

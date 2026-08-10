@@ -15,7 +15,7 @@ Deno.test("retention cleanup validates user and analysis storage binding", async
 
   assertStringIncludes(
     source,
-    ".select(\"id, storage_path, analysis_id, user_id\")",
+    '.select("id, storage_path, analysis_id, user_id")',
   );
   assertStringIncludes(source, "function hasBoundStoragePath");
   assertStringIncludes(source, "photos = allExpiredPhotos.filter");

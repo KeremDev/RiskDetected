@@ -26,4 +26,11 @@ class NotificationDeepLinkParserTest {
             ),
         )
     }
+
+    @Test
+    fun `account update routes to profile without a record identifier`() {
+        val payload = NotificationDeepLinkParser.parse(mapOf("type" to "account_updates"))
+
+        assertEquals(NotificationRouteTarget.Profile, payload?.target)
+    }
 }

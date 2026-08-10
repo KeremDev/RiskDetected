@@ -21,10 +21,10 @@ enum class BootstrapState {
 }
 
 internal object BootstrapReducer {
-    fun initial(hasCompletedOnboarding: Boolean, isAuthenticated: Boolean): BootstrapState = when {
+    fun initial(shouldStartOnboarding: Boolean, isAuthenticated: Boolean): BootstrapState = when {
         isAuthenticated -> BootstrapState.Main
-        hasCompletedOnboarding -> BootstrapState.Auth
-        else -> BootstrapState.Onboarding
+        shouldStartOnboarding -> BootstrapState.Onboarding
+        else -> BootstrapState.Auth
     }
 
     fun sessionChanged(current: BootstrapState, isAuthenticated: Boolean): BootstrapState = when {
@@ -52,13 +52,15 @@ class AppBootstrapViewModel @Inject constructor(
             if (freshInstall && authRepository.currentUserId != null) {
                 authRepository.clearLocalSession()
             }
+            if (authRepository.currentUserId != null) store.markAuthenticated()
 
             _state.value = BootstrapReducer.initial(
-                hasCompletedOnboarding = store.hasCompletedOnboarding,
+                shouldStartOnboarding = store.shouldStartOnboarding,
                 isAuthenticated = authRepository.currentUserId != null,
             )
 
             authRepository.currentUserIdFlow.collectLatest { userId ->
+                if (userId != null) store.markAuthenticated()
                 _state.value = BootstrapReducer.sessionChanged(_state.value, userId != null)
             }
         }

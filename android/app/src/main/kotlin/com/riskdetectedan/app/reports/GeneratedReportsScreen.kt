@@ -49,7 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.reports.Report
 import com.riskdetectedan.core.designsystem.RdEmptyState
 import com.riskdetectedan.core.designsystem.RdFontStyle

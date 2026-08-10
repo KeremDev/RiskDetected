@@ -2,25 +2,47 @@
 // Do not edit manually. Source SHA-256: ae72ae29ac4ed47d6ffbd7aa37dba426e44647066fe70d93d1021e8eefa54ad3
 
 export const safetyProfileManifestVersion = 1 as const;
-export const safetyProfileSourceSHA256 = "ae72ae29ac4ed47d6ffbd7aa37dba426e44647066fe70d93d1021e8eefa54ad3" as const;
+export const safetyProfileSourceSHA256 =
+  "ae72ae29ac4ed47d6ffbd7aa37dba426e44647066fe70d93d1021e8eefa54ad3" as const;
 export const safetyProfileReviewStatus = "machine_draft" as const;
 
-export const appLanguages = ["tr","en"] as const;
+export const appLanguages = ["tr", "en"] as const;
 export type AppLanguage = (typeof appLanguages)[number];
 
-export const contentLocales = ["tr-TR","en-001","en-GB","en-US","en-AU","en-CA"] as const;
+export const contentLocales = [
+  "tr-TR",
+  "en-001",
+  "en-GB",
+  "en-US",
+  "en-AU",
+  "en-CA",
+] as const;
 export type ContentLocale = (typeof contentLocales)[number];
 
-export const jurisdictionCountries = ["TR","INTL","GB","US","AU","CA"] as const;
+export const jurisdictionCountries = [
+  "TR",
+  "INTL",
+  "GB",
+  "US",
+  "AU",
+  "CA",
+] as const;
 export type JurisdictionCountry = (typeof jurisdictionCountries)[number];
 
-export const legalDocumentSetIDs = ["tr-current","en-global-v1"] as const;
+export const legalDocumentSetIDs = ["tr-current", "en-global-v1"] as const;
 export type LegalDocumentSetID = (typeof legalDocumentSetIDs)[number];
 
 export const riskMethods = ["fine_kinney", "matrix_5x5"] as const;
 export type RiskMethod = (typeof riskMethods)[number];
 
-export const safetyProfileIDs = ["tr-tr-current-v1","en-intl-generic-v1","en-gb-generic-v1","en-us-generic-v1","en-au-generic-v1","en-ca-generic-v1"] as const;
+export const safetyProfileIDs = [
+  "tr-tr-current-v1",
+  "en-intl-generic-v1",
+  "en-gb-generic-v1",
+  "en-us-generic-v1",
+  "en-au-generic-v1",
+  "en-ca-generic-v1",
+] as const;
 export type SafetyProfileID = (typeof safetyProfileIDs)[number];
 
 export type RegulatoryReferencePolicy =
@@ -28,17 +50,24 @@ export type RegulatoryReferencePolicy =
   | "none"
   | "explicit_question_only";
 
-export const defaultSafetyProfileID: SafetyProfileID =
-  "tr-tr-current-v1";
+export const defaultSafetyProfileID: SafetyProfileID = "tr-tr-current-v1";
 export const englishFallbackSafetyProfileID: SafetyProfileID =
   "en-intl-generic-v1";
 
-export const hierarchyOfControls = ["elimination","substitution","engineering controls","administrative controls","personal protective equipment (PPE)"] as const;
+export const hierarchyOfControls = [
+  "elimination",
+  "substitution",
+  "engineering controls",
+  "administrative controls",
+  "personal protective equipment (PPE)",
+] as const;
 export const riskMethodDisclaimer = {
   "semantic_key": "risk_method.legal_standard_disclaimer",
   "review_status": "machine_draft",
-  "tr": "Fine-Kinney ve 5×5, riskleri önceliklendirmeye yardımcı olan ürün yöntemleridir; hukuki standart veya mevzuata uygunluk kanıtı değildir.",
-  "en": "Fine-Kinney and 5×5 are product methods for prioritising risk; they are not legal standards or evidence of regulatory compliance."
+  "tr":
+    "Fine-Kinney ve 5×5, riskleri önceliklendirmeye yardımcı olan ürün yöntemleridir; hukuki standart veya mevzuata uygunluk kanıtı değildir.",
+  "en":
+    "Fine-Kinney and 5×5 are product methods for prioritising risk; they are not legal standards or evidence of regulatory compliance.",
 } as const;
 export const riskBandDrafts = {
   "fine_kinney": [
@@ -46,15 +75,15 @@ export const riskBandDrafts = {
     "High",
     "Substantial",
     "Possible",
-    "Trivial"
+    "Trivial",
   ],
   "matrix_5x5": [
     "Intolerable",
     "High",
     "Medium",
     "Low",
-    "Trivial"
-  ]
+    "Trivial",
+  ],
 } as const;
 
 export const safetyProfiles = [
@@ -77,7 +106,7 @@ export const safetyProfiles = [
     "default_risk_method": "fine_kinney",
     "allowed_risk_methods": [
       "fine_kinney",
-      "matrix_5x5"
+      "matrix_5x5",
     ],
     "legislation_canvas_enabled": true,
     "structured_regulatory_references_enabled": true,
@@ -87,7 +116,7 @@ export const safetyProfiles = [
     "prompt_directives": [
       "Mevcut Türkçe analiz ve rapor davranışını koru.",
       "Yalnız görüntüde gözlenebilen kanıta dayan; görünmeyen ölçüm veya maruziyet sonucu uydurma.",
-      "Risk skorunu hukukî uygunluk skoru olarak sunma."
+      "Risk skorunu hukukî uygunluk skoru olarak sunma.",
     ],
     "profile_version": 1,
     "forbidden_terms": [
@@ -99,8 +128,8 @@ export const safetyProfiles = [
       "kesin uyumluluk",
       "kesin mevzuata uygundur",
       "hukukî uygunluğu garanti eder",
-      "resmî denetim yerine geçer"
-    ]
+      "resmî denetim yerine geçer",
+    ],
   },
   {
     "id": "en-intl-generic-v1",
@@ -121,7 +150,7 @@ export const safetyProfiles = [
     "default_risk_method": "matrix_5x5",
     "allowed_risk_methods": [
       "matrix_5x5",
-      "fine_kinney"
+      "fine_kinney",
     ],
     "legislation_canvas_enabled": false,
     "structured_regulatory_references_enabled": false,
@@ -131,7 +160,7 @@ export const safetyProfiles = [
     "prompt_directives": [
       "Use neutral international workplace-safety terminology.",
       "Prefer the hierarchy of controls and on-site verification language.",
-      "Do not name a regulator or infer legal compliance from a photograph."
+      "Do not name a regulator or infer legal compliance from a photograph.",
     ],
     "profile_version": 1,
     "forbidden_terms": [
@@ -145,8 +174,8 @@ export const safetyProfiles = [
       "HSE compliant",
       "WHS compliant",
       "Canadian OHS compliant",
-      "6331 compliant"
-    ]
+      "6331 compliant",
+    ],
   },
   {
     "id": "en-gb-generic-v1",
@@ -167,7 +196,7 @@ export const safetyProfiles = [
     "default_risk_method": "matrix_5x5",
     "allowed_risk_methods": [
       "matrix_5x5",
-      "fine_kinney"
+      "fine_kinney",
     ],
     "legislation_canvas_enabled": false,
     "structured_regulatory_references_enabled": false,
@@ -177,7 +206,7 @@ export const safetyProfiles = [
     "prompt_directives": [
       "Use UK health and safety, risk assessment and control-measure terminology.",
       "Use British spelling such as prioritise and organised.",
-      "Do not imply HSE or HSENI approval, certification or legal compliance."
+      "Do not imply HSE or HSENI approval, certification or legal compliance.",
     ],
     "profile_version": 1,
     "forbidden_terms": [
@@ -190,8 +219,8 @@ export const safetyProfiles = [
       "HSENI compliant",
       "OSHA compliant",
       "WHS Act compliant",
-      "6331 compliant"
-    ]
+      "6331 compliant",
+    ],
   },
   {
     "id": "en-us-generic-v1",
@@ -212,7 +241,7 @@ export const safetyProfiles = [
     "default_risk_method": "matrix_5x5",
     "allowed_risk_methods": [
       "matrix_5x5",
-      "fine_kinney"
+      "fine_kinney",
     ],
     "legislation_canvas_enabled": false,
     "structured_regulatory_references_enabled": false,
@@ -222,7 +251,7 @@ export const safetyProfiles = [
     "prompt_directives": [
       "Use U.S. occupational safety and health, hazard assessment and corrective-action terminology.",
       "Use American spelling such as prioritize and organized.",
-      "Do not call a photo inspection a JHA or JSA without a separate task-based workflow."
+      "Do not call a photo inspection a JHA or JSA without a separate task-based workflow.",
     ],
     "profile_version": 1,
     "forbidden_terms": [
@@ -238,8 +267,8 @@ export const safetyProfiles = [
       "JSA completed",
       "HSE compliant",
       "WHS Act compliant",
-      "6331 compliant"
-    ]
+      "6331 compliant",
+    ],
   },
   {
     "id": "en-au-generic-v1",
@@ -260,7 +289,7 @@ export const safetyProfiles = [
     "default_risk_method": "matrix_5x5",
     "allowed_risk_methods": [
       "matrix_5x5",
-      "fine_kinney"
+      "fine_kinney",
     ],
     "legislation_canvas_enabled": false,
     "structured_regulatory_references_enabled": false,
@@ -270,7 +299,7 @@ export const safetyProfiles = [
     "prompt_directives": [
       "Use Australian WHS, workplace-inspection and control-measure terminology.",
       "Use Australian spelling such as prioritise and organised.",
-      "Do not treat model WHS laws as a single national legal compliance profile."
+      "Do not treat model WHS laws as a single national legal compliance profile.",
     ],
     "profile_version": 1,
     "forbidden_terms": [
@@ -284,8 +313,8 @@ export const safetyProfiles = [
       "model WHS law compliant",
       "OSHA compliant",
       "HSE compliant",
-      "6331 compliant"
-    ]
+      "6331 compliant",
+    ],
   },
   {
     "id": "en-ca-generic-v1",
@@ -306,7 +335,7 @@ export const safetyProfiles = [
     "default_risk_method": "matrix_5x5",
     "allowed_risk_methods": [
       "matrix_5x5",
-      "fine_kinney"
+      "fine_kinney",
     ],
     "legislation_canvas_enabled": false,
     "structured_regulatory_references_enabled": false,
@@ -316,7 +345,7 @@ export const safetyProfiles = [
     "prompt_directives": [
       "Use Canadian OHS, hazard-assessment and workplace-inspection terminology.",
       "Use Canadian spelling and neutral wording across federal, provincial and territorial contexts.",
-      "Do not imply a single Canada-wide OHS legal compliance determination."
+      "Do not imply a single Canada-wide OHS legal compliance determination.",
     ],
     "profile_version": 1,
     "forbidden_terms": [
@@ -331,9 +360,9 @@ export const safetyProfiles = [
       "OSHA compliant",
       "HSE compliant",
       "WHS Act compliant",
-      "6331 compliant"
-    ]
-  }
+      "6331 compliant",
+    ],
+  },
 ] as const;
 export type SafetyProfileDefinition = (typeof safetyProfiles)[number];
 

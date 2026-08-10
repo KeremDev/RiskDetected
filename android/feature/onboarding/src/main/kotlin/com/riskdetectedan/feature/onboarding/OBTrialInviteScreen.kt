@@ -4,7 +4,6 @@ import com.riskdetectedan.core.designsystem.R as RdR
 
 import androidx.compose.ui.res.stringResource
 
-import android.graphics.BitmapFactory
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -24,12 +23,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -52,9 +48,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -74,7 +70,7 @@ import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 /**
  * Port of OBTrialInviteView.swift (2026-08-08 visual pass, Faz E). Real RevenueCat pricing not
@@ -232,27 +228,21 @@ private fun PhoneDeck() {
     }
 
     Box(modifier = Modifier.width(210.dp).height(446.dp), contentAlignment = Alignment.TopCenter) {
-        val previewAssets = listOf(
-            "TrialPreviewA.imageset/TrialPreviewA.png",
-            "TrialPreviewB.imageset/TrialPreviewB.png",
-            "TrialPreviewC.imageset/TrialPreviewC.png",
+        val previewResources = listOf(
+            R.drawable.ob_trial_preview_a,
+            R.drawable.ob_trial_preview_b,
+            R.drawable.ob_trial_preview_c,
         )
         for (cardIndex in 0 until 3) {
             val depthOrder = (cardIndex - frontIndex).mod(3)
             val depth = deckDepths[depthOrder]
-            PhoneCard(depth, previewAssets[cardIndex])
+            PhoneCard(depth, previewResources[cardIndex])
         }
     }
 }
 
 @Composable
-private fun PhoneCard(depth: DeckDepth, previewAsset: String) {
-    val context = LocalContext.current
-    val preview = remember(previewAsset) {
-        runCatching {
-            context.assets.open(previewAsset).use(BitmapFactory::decodeStream)?.asImageBitmap()
-        }.getOrNull()
-    }
+private fun PhoneCard(depth: DeckDepth, previewResource: Int) {
     val scale by animateFloatAsState(depth.scale, animationSpec = tween(700), label = "deck-scale")
     val rotation by animateFloatAsState(depth.rotation, animationSpec = tween(700), label = "deck-rotation")
     val offsetY by animateDpAsState(depth.offsetY, animationSpec = tween(700), label = "deck-offset")
@@ -281,43 +271,12 @@ private fun PhoneCard(depth: DeckDepth, previewAsset: String) {
                 .clip(RoundedCornerShape(30.dp))
                 .background(Color(0xFF0B0D0E)),
         ) {
-            if (preview != null) {
-                Image(
-                    bitmap = preview,
-                    contentDescription = stringResource(RdR.string.rd_riskdetected_uygulama_onizlemesi),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else Column(
-                modifier = Modifier.fillMaxSize().padding(vertical = 24.dp, horizontal = 14.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(Icons.Filled.Shield, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.weight(1f))
-                MiniRiskRow(
-                    Color(0xFFB42318),
-                    stringResource(RdR.string.rd_yuksekte_calisma),
-                    stringResource(RdR.string.rd_kritik_upper),
-                )
-                Spacer(Modifier.height(8.dp))
-                MiniRiskRow(
-                    Color(0xFFC76A00),
-                    stringResource(RdR.string.rd_kkd_eksikligi),
-                    stringResource(RdR.string.rd_yuksek_upper),
-                )
-                Spacer(Modifier.height(8.dp))
-                MiniRiskRow(
-                    Color(0xFFD4A106),
-                    stringResource(RdR.string.rd_aydinlatma),
-                    stringResource(RdR.string.rd_orta_upper),
-                )
-                Spacer(Modifier.weight(1f))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Verified, contentDescription = null, tint = Color(0xFF00B82E), modifier = Modifier.size(15.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(RdR.string.rd_rapor_hazir), style = RdFontStyle.Footnote.toTextStyle().copy(fontSize = 12.sp), color = Color(0xFF00B82E))
-                }
-            }
+            Image(
+                painter = painterResource(previewResource),
+                contentDescription = stringResource(RdR.string.rd_riskdetected_uygulama_onizlemesi),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
         Box(
             modifier = Modifier
@@ -327,29 +286,5 @@ private fun PhoneCard(depth: DeckDepth, previewAsset: String) {
                 .clip(RoundedCornerShape(50))
                 .background(Color.Black),
         )
-    }
-}
-
-@Composable
-private fun MiniRiskRow(dotColor: Color, label: String, badge: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.White.copy(alpha = 0.04f))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(dotColor))
-        Spacer(Modifier.width(10.dp))
-        Text(label, style = RdFontStyle.Caption.toTextStyle(), color = Color.White, modifier = Modifier.weight(1f))
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .background(dotColor.copy(alpha = 0.18f))
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-        ) {
-            Text(badge, style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 9.sp), color = dotColor, fontWeight = FontWeight.Bold)
-        }
     }
 }

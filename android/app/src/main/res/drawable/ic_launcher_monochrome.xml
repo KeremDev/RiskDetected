@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Single-color hard-hat silhouette for Android 13+ themed icons. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M26,66 L26,61 C26,48 34,37 46,33 L46,27 C46,24 49,22 52,22 L56,22 C59,22 62,24 62,27 L62,33 C74,37 82,48 82,61 L82,66 L87,69 L87,75 L21,75 L21,69 Z M31,61 L77,61 C77,50 71,42 62,38 L62,55 L58,55 L58,34 L50,34 L50,55 L46,55 L46,38 C37,42 31,50 31,61 Z" />
+</vector>

@@ -1,11 +1,11 @@
 package com.riskdetectedan.app.release
 
+import android.content.Intent
+import android.net.Uri
 import com.riskdetectedan.core.designsystem.R as RdR
 
 import androidx.compose.ui.res.stringResource
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,7 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.designsystem.RdLegalDocument
 import com.riskdetectedan.core.designsystem.RdLegalDocumentSheet
@@ -40,11 +40,35 @@ import com.riskdetectedan.core.designsystem.RdSpacing
  * dismissable dialog on top of the normal app, and a clear policy renders [content] untouched.
  */
 @Composable
-fun ReleaseGate(viewModel: ReleaseGateViewModel = hiltViewModel(), content: @Composable () -> Unit) {
+fun ReleaseGate(
+    viewModel: ReleaseGateViewModel = hiltViewModel(),
+    onRequestUpdate: ((immediate: Boolean, storeUrl: String) -> Unit)? = null,
+    content: @Composable () -> Unit,
+) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
     when (val current = state) {
+        ReleaseGateState.Checking -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        is ReleaseGateState.ClientBlocked -> {
+            Box(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(stringResource(RdR.string.rd_android_erisim_hazir_degil))
+                    Text(
+                        stringResource(RdR.string.rd_android_erisim_gecici_kapali),
+                        modifier = Modifier.padding(top = RdSpacing.sm),
+                    )
+                    Button(
+                        onClick = { viewModel.refresh() },
+                        modifier = Modifier.padding(top = RdSpacing.md),
+                    ) { Text(stringResource(RdR.string.rd_tekrar_dene)) }
+                }
+            }
+        }
         is ReleaseGateState.Hard -> {
             Box(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg), contentAlignment = Alignment.Center) {
                 Column {
@@ -54,7 +78,8 @@ fun ReleaseGate(viewModel: ReleaseGateViewModel = hiltViewModel(), content: @Com
                         onClick = {
                             val url = current.policy.playStoreUrl
                                 ?: "https://play.google.com/store/apps/details?id=${context.packageName}"
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                            if (onRequestUpdate != null) onRequestUpdate(true, url)
+                            else context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                         },
                         modifier = Modifier.padding(top = RdSpacing.md),
                     ) { Text(stringResource(RdR.string.rd_google_play_de_ac)) }
@@ -69,7 +94,8 @@ fun ReleaseGate(viewModel: ReleaseGateViewModel = hiltViewModel(), content: @Com
                     Button(
                         onClick = {
                             val url = "https://play.google.com/store/apps/details?id=${context.packageName}"
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                            if (onRequestUpdate != null) onRequestUpdate(true, url)
+                            else context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                         },
                         modifier = Modifier.padding(top = RdSpacing.md),
                     ) { Text(stringResource(RdR.string.rd_google_play_de_ac)) }
@@ -88,7 +114,8 @@ fun ReleaseGate(viewModel: ReleaseGateViewModel = hiltViewModel(), content: @Com
                             onClick = {
                                 val url = current.policy.playStoreUrl
                                     ?: "https://play.google.com/store/apps/details?id=${context.packageName}"
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                if (onRequestUpdate != null) onRequestUpdate(false, url)
+                                else context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                             },
                         ) { Text(stringResource(RdR.string.rd_google_play_de_ac)) }
                     },

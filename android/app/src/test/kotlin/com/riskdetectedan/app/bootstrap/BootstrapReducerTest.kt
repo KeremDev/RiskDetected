@@ -5,15 +5,15 @@ import org.junit.Test
 
 class BootstrapReducerTest {
     @Test fun freshSignedOutInstallStartsOnboarding() {
-        assertEquals(BootstrapState.Onboarding, BootstrapReducer.initial(false, false))
+        assertEquals(BootstrapState.Onboarding, BootstrapReducer.initial(true, false))
     }
 
-    @Test fun completedSignedOutInstallStartsAuth() {
-        assertEquals(BootstrapState.Auth, BootstrapReducer.initial(true, false))
+    @Test fun completedOrReturningSignedOutInstallStartsAuth() {
+        assertEquals(BootstrapState.Auth, BootstrapReducer.initial(false, false))
     }
 
     @Test fun authenticatedSessionStartsMain() {
-        assertEquals(BootstrapState.Main, BootstrapReducer.initial(false, true))
+        assertEquals(BootstrapState.Main, BootstrapReducer.initial(true, true))
     }
 
     @Test fun authSessionTransitionOpensMain() {

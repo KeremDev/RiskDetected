@@ -29,7 +29,7 @@ Firma yönetimi verileri: firma adı, tehlike sınıfı, logo, adres, ilgili ki�
 Abonelik ve kota verileri: Free/Plus/Pro plan durumu, hak/kota kullanımı, RevenueCat/Google Play ürün ve işlem bilgileri, deneme hakkı ve yenileme/iptal olayları. Kart bilgileri RiskDetected tarafından saklanmaz.
 Mesleki ilerleme verileri: MDP puanı, uygulama içi ünvan, rozet, yetkinlik alanları, bulgu sınıflandırmaları, haftalık takip, aktif gün, başarı mesajları ve ilgili istatistikler.
 Bildirim verileri: FCM cihaz tokenı, bildirim tercihleri, gönderim durumu, hata kayıtları ve bildirim olayları.
-Teknik ve işlem güvenliği verileri: IP adresi, cihaz/uygulama bilgisi, oturum kayıtları, destek ID, request ID, hata kodları, performans, model/provider, token sayısı, fallback ve AI kullanım logları.
+Teknik ve işlem güvenliği verileri: IP adresi, cihaz/uygulama bilgisi, oturum kayıtları, destek ID, request ID, hata kodları, çökme/diagnostik bilgileri, performans, model/provider, token sayısı, fallback ve AI kullanım logları. Firebase Crashlytics kayıtlarına e-posta, Supabase kullanıcı kimliği, token, fotoğraf yolu, ham analiz/FCM içeriği veya sunucu hata gövdesi bilerek eklenmez.
 Hukuki işlem verileri: KVKK/sözleşme/onay kayıtları, başvuru, uyuşmazlık, hesap silme ve veri imha kayıtları.
 
 Fotoğraflar özel nitelikli kişisel veri içerebilir. Örneğin sağlık durumu, yaralanma, engellilik, dini/siyasi/sendikal semboller, çocuk görüntüsü veya benzeri hassas bilgiler görünebilir. RiskDetected bu verileri özellikle talep etmez; ancak kullanıcı tarafından yüklenen içerikte bulunursa analiz ve raporlama amacıyla sınırlı şekilde işlenebilir.
@@ -75,6 +75,7 @@ Supabase: kimlik doğrulama, veri tabanı, dosya saklama, edge functions ve tekn
 Google Gemini/Google AI ve gerektiğinde Groq: AI analiz yanıtı üretimi ve süreklilik/fallback.
 Google Play ve RevenueCat: abonelik, satın alma, deneme, entitlement ve ödeme doğrulama.
 Firebase Cloud Messaging (FCM): bildirim gönderimi.
+Firebase Crashlytics: uygulama çökmeleri ve teknik hata teşhisi.
 Google Sign-In: tercih edilen giriş yöntemi kullanıldığında kimlik doğrulama.
 Teknik destek, güvenlik, hukuki ve mali danışmanlar.
 Yetkili kamu kurumları, mahkemeler ve düzenleyici otoriteler.
@@ -103,7 +104,7 @@ Destek, başvuru ve hesap silme kayıtları: talebin niteliğine göre yasal zam
 
 Süre dolduğunda veya kullanıcı silme talebi verdiğinde veriler silinir, yok edilir veya anonim hale getirilir. Teknik yedekler ve güvenlik logları makul sürelerle kalabilir.
 
-Hesap silme işlemi uygulama içinde Profil > Hesabımı sil / Delete Account yolundan başlatılır ve tamamlanır. E-posta, destek kanalı veya web sitesi hesap silme için zorunlu değildir. Aktif Google Play abonelikleri Google Play Abonelikler ayarlarından yönetilir.
+Hesap silme işlemi uygulama içinde Profil > Hesabımı sil yolundan anında veya https://riskdetected.com/hesap-silme adresinde e-posta OTP doğrulamasıyla başlatılabilir. Web üzerinden oluşturulan doğrulanmış talepler en geç 24 saat içinde tamamlanır. Aktif Google Play abonelikleri Google Play Abonelikler ayarlarından yönetilir.
 
 9. Kullanıcıların üçüncü kişi verileri bakımından sorumluluğu
 
@@ -115,7 +116,7 @@ KVKK'nın 11. maddesi uyarınca kişisel verilerinizin işlenip işlenmediğini 
 
 KVKK kapsamındaki başvuru, bilgi, düzeltme, itiraz, rıza geri çekme, veri erişimi ve hukuki taleplerinizi info@riskdetected.com adresine veya Eskişehir adresine iletebilirsiniz. Uygulama içinde genel destek ve KVKK başvuruları için Profil > Destek kanalı da kullanılabilir.
 
-Hesap silme işlemi bu destek başvurularından ayrı olarak uygulama içinde Profil > Hesabımı sil / Delete Account yolundan başlatılır ve tamamlanır. E-posta, destek kanalı veya web sitesi hesap silme için zorunlu değildir.
+Hesap silme işlemi bu destek başvurularından ayrı olarak uygulama içinde Profil > Hesabımı sil yolundan veya https://riskdetected.com/hesap-silme adresinden başlatılır.
 
 11. Otomatik işlem ve AI karar desteği
 
@@ -125,7 +126,7 @@ AI analizleri otomatik sistemlerle üretilir; ancak çıktı karar destek niteli
 
 Açık rızaya dayalı işlemlerde rızanızı dilediğiniz zaman info@riskdetected.com üzerinden veya uygulama içi destek/ayar kanallarıyla geri çekebilirsiniz. Rızanın geri çekilmesi, geri çekmeden önceki hukuka uygun işlemleri etkilemez.
 
-Rıza geri çekme işlemi hesap silme işleminden ayrıdır. Hesabınızı ve hesabınıza bağlı uygulama verilerini silmek isterseniz, uygulama içinde Profil > Hesabımı sil / Delete Account yolunu kullanabilirsiniz. Bu işlem için e-posta, destek kanalı veya web sitesi zorunlu değildir.
+Rıza geri çekme işlemi hesap silme işleminden ayrıdır. Hesabınızı ve hesabınıza bağlı uygulama verilerini silmek isterseniz, uygulama içinde Profil > Hesabımı sil yolunu veya https://riskdetected.com/hesap-silme adresini kullanabilirsiniz.
 
 13. İletişim
 
@@ -136,4 +137,4 @@ Adres: Eskişehir
 Web sitesi: https://riskdetected.com
 Uygulama içi destek ve KVKK başvuru kanalı: Profil > Destek
 
-Hesap silme, bu iletişim kanalları üzerinden yürütülen bir destek talebi değildir. Hesabınızı ve hesabınıza bağlı uygulama verilerini silmek için uygulama içinde Profil > Hesabımı sil / Delete Account yolunu kullanabilirsiniz. E-posta, destek kanalı veya web sitesi hesap silme için zorunlu değildir.
+Hesabınızı ve hesabınıza bağlı uygulama verilerini silmek için uygulama içinde Profil > Hesabımı sil yolunu veya https://riskdetected.com/hesap-silme adresini kullanabilirsiniz. Web talebinin durumu, işlem sırasında verilen destek koduyla takip edilebilir.

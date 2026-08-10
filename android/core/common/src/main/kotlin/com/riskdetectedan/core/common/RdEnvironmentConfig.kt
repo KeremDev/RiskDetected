@@ -34,8 +34,10 @@ data class RdEnvironmentConfig(
     // server-side via the RevenueCat webhook, this key alone can't grant entitlements).
     // Registered against the real Play Console app (com.riskdetectedan.app) 2026-08-07.
     val revenueCatPublicKey: String,
-    // Matches RDConfig.Subscription.offeringIdentifier's default — "" would mean "use
-    // whatever RevenueCat marks as current", but iOS pins an explicit id, so Android does too.
+    // Production matches RDConfig.Subscription.offeringIdentifier's `default`. Staging uses
+    // the RevenueCat Test Store-only `qa_test_store`, supplied by the app build type; keeping
+    // this explicit prevents a Test Store SDK key from selecting an offering with no Test Store
+    // products while release continues to pin the live offering.
     val revenueCatOfferingIdentifier: String = "default",
     // Firebase project id (from google-services.json's project_info.project_id) — same shared
     // "riskdetected" Firebase project iOS already uses (its own APNs/phone-verification setup

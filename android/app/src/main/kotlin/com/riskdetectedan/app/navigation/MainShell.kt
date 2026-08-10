@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.app.home.HomeScreen
 import com.riskdetectedan.app.push.NotificationRouteTarget
 import com.riskdetectedan.app.push.NotificationRouteViewModel
@@ -133,6 +133,8 @@ fun MainShellScreen(
             RdTab.Profile -> ProfileScreen(
                 onBack = null,
                 onManageCompanies = { navController.navigate(Companies) },
+                onAnalyses = { selectTab(RdTab.Analyses) },
+                onReports = { selectTab(RdTab.Reports) },
                 onSupport = { navController.navigate(Support) },
                 onNotificationSettings = { navController.navigate(NotificationSettings) },
                 onAppearanceSettings = { navController.navigate(AppearanceSettings) },

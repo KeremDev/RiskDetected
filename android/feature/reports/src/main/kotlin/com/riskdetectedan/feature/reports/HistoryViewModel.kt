@@ -22,6 +22,7 @@ import com.riskdetectedan.core.data.reports.PdfReportInput
 import com.riskdetectedan.core.data.reports.ReportsRepository
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
+import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
 import com.riskdetectedan.core.designsystem.R as RdR
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -58,6 +59,7 @@ class HistoryViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val releasePolicyRepository: ReleasePolicyRepository,
     private val pdfReportGenerator: PdfReportGenerator,
+    private val reviewEligibilityRepository: ReviewEligibilityRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
@@ -165,12 +167,15 @@ class HistoryViewModel @Inject constructor(
                 }
             }
             when (val download = reportsRepository.downloadReportBytes(report.storagePath)) {
-                is RdResult.Success -> _reportFile.value = ReportFile(
-                    bytes = download.value,
-                    fileName = report.fileName ?: "${report.documentNo ?: report.id}.xlsx",
-                    mimeType = report.mimeType
-                        ?: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                )
+                is RdResult.Success -> {
+                    _reportFile.value = ReportFile(
+                        bytes = download.value,
+                        fileName = report.fileName ?: "${report.documentNo ?: report.id}.xlsx",
+                        mimeType = report.mimeType
+                            ?: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    )
+                    reviewEligibilityRepository.recordSuccessfulReport(report.id)
+                }
                 is RdResult.Failure -> _reportError.value = AppErrorMessages.make(
                     download.message,
                     context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
@@ -288,11 +293,14 @@ class HistoryViewModel @Inject constructor(
                     companyId = item.companyId,
                 )
             ) {
-                is RdResult.Success -> _reportFile.value = ReportFile(
-                    bytes = generatedPdf.bytes,
-                    fileName = registered.value.fileName ?: fileNameSlug,
-                    mimeType = "application/pdf",
-                )
+                is RdResult.Success -> {
+                    _reportFile.value = ReportFile(
+                        bytes = generatedPdf.bytes,
+                        fileName = registered.value.fileName ?: fileNameSlug,
+                        mimeType = "application/pdf",
+                    )
+                    reviewEligibilityRepository.recordSuccessfulReport(registered.value.id)
+                }
                 is RdResult.Failure -> _reportError.value = AppErrorMessages.make(
                     registered.message,
                     context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),

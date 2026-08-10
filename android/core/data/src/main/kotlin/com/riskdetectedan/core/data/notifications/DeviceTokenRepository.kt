@@ -27,16 +27,19 @@ import javax.inject.Singleton
  * backend, which is the same build-type boundary APNs sandbox/production tracks on iOS).
  */
 @Serializable
-private data class PushDeviceTokenPayload(
+internal data class PushDeviceTokenPayload(
     @SerialName("user_id") val userId: String,
     val token: String,
-    val platform: String = "android",
+    // Do not give these two fields Kotlin defaults. Supabase's serializer omits default-valued
+    // properties when encodeDefaults=false; the database would then apply its legacy iOS/APNs
+    // defaults and make a valid Android token invisible to the FCM dispatcher.
+    val platform: String,
     val environment: String,
     @SerialName("app_version") val appVersion: String?,
     @SerialName("device_model") val deviceModel: String?,
     @SerialName("notifications_enabled") val notificationsEnabled: Boolean,
     @SerialName("last_registered_at") val lastRegisteredAt: String,
-    val provider: String = "fcm",
+    val provider: String,
     @SerialName("provider_environment") val providerEnvironment: String,
     @SerialName("application_id") val applicationId: String,
     @SerialName("installation_id") val installationId: String,
@@ -77,11 +80,13 @@ class DeviceTokenRepository @Inject constructor(
             PushDeviceTokenPayload(
                 userId = userId,
                 token = token,
+                platform = "android",
                 environment = environment,
                 appVersion = environmentConfig.appVersionName,
                 deviceModel = Build.MODEL,
                 notificationsEnabled = notificationsEnabled,
                 lastRegisteredAt = Instant.now().toString(),
+                provider = "fcm",
                 providerEnvironment = environmentConfig.firebaseProjectId,
                 applicationId = environmentConfig.applicationId,
                 installationId = installationId(),

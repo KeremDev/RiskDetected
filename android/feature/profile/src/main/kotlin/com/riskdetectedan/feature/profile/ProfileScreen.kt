@@ -6,6 +6,7 @@ import androidx.compose.ui.res.stringResource
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,29 +15,40 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Gavel
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.WorkspacePremium
@@ -46,6 +58,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -57,24 +70,37 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.profile.RiskMethodWire
+import com.riskdetectedan.core.data.profile.SubscriptionTier
+import com.riskdetectedan.core.data.profile.ProfileStats
 import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.data.progress.ProfessionalProgressBadge
+import com.riskdetectedan.core.data.progress.ProfessionalProgressCompetencyStat
+import com.riskdetectedan.core.data.progress.ProfessionalProgressProfileRow
 import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdLegalDocument
 import com.riskdetectedan.core.designsystem.RdLegalDocumentSheet
-import com.riskdetectedan.core.designsystem.RdListRow
 import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdRadius
 import com.riskdetectedan.core.designsystem.RdScreenHeader
@@ -84,6 +110,16 @@ import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
 import com.riskdetectedan.core.designsystem.professionalProgressTitleLabel
 import java.io.ByteArrayOutputStream
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Reads the actual `profiles` row for the signed-in user via [ProfileViewModel]/
@@ -98,6 +134,8 @@ import java.io.ByteArrayOutputStream
 fun ProfileScreen(
     onBack: (() -> Unit)? = null,
     onManageCompanies: () -> Unit = {},
+    onAnalyses: () -> Unit = {},
+    onReports: () -> Unit = {},
     onSupport: () -> Unit = {},
     onNotificationSettings: () -> Unit = {},
     onAppearanceSettings: () -> Unit = {},
@@ -113,7 +151,9 @@ fun ProfileScreen(
     var showSignOutConfirmation by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
-        RdScreenHeader(title = stringResource(RdR.string.rd_profil), onBack = onBack)
+        if (onBack != null) {
+            RdScreenHeader(title = stringResource(RdR.string.rd_profil), onBack = onBack)
+        }
 
         when (val current = state) {
             is ProfileUiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -133,8 +173,10 @@ fun ProfileScreen(
                 )
             } else {
                 val progress by viewModel.progress.collectAsState()
+                val stats by viewModel.stats.collectAsState()
                 var showBadges by remember { mutableStateOf(false) }
                 var showCompetencies by remember { mutableStateOf(false) }
+                var showTitles by remember { mutableStateOf(false) }
                 var showLegal by remember { mutableStateOf(false) }
                 var pendingCelebrationBadge by remember { mutableStateOf<ProfessionalProgressBadge?>(null) }
 
@@ -149,55 +191,31 @@ fun ProfileScreen(
                     }
                 }
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = RdSpacing.lg),
-                ) {
-                    ProfileHero(
-                        profile = current.profile,
-                        viewModel = viewModel,
-                        progress = progress,
-                        onShowBadges = { showBadges = true },
-                    )
-
-                    progress?.let {
-                        Spacer(Modifier.height(RdSpacing.md))
-                        RdSectionCard(title = stringResource(RdR.string.rd_ilerleme)) {
-                            ProfessionalProgressSection(it, onShowCompetencies = { showCompetencies = true })
-                        }
-                    }
-
-                    Spacer(Modifier.height(RdSpacing.md))
-                    Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
-                        RdListRow(title = stringResource(RdR.string.rd_profili_duzenle), icon = Icons.Filled.Edit, onClick = { isEditing = true })
-                        RdListRow(title = stringResource(RdR.string.rd_plani_yukselt), icon = Icons.Filled.WorkspacePremium, onClick = onPaywall)
-                        RdListRow(
-                            title = stringResource(
-                                if (restoreState is ProfileRestoreState.Restoring) RdR.string.rd_satin_alimlar_geri_yukleniyor
-                                else RdR.string.rd_satin_alimlari_geri_yukle,
-                            ),
-                            icon = Icons.Filled.Restore,
-                            onClick = viewModel::restorePurchases,
-                        )
-                        RdListRow(title = stringResource(RdR.string.rd_firmalarim), icon = Icons.Filled.Business, onClick = onManageCompanies)
-                        RdListRow(title = stringResource(RdR.string.rd_destek), icon = Icons.Filled.SupportAgent, onClick = onSupport)
-                        RdListRow(title = stringResource(RdR.string.rd_bildirim_ayarlari), icon = Icons.Filled.Notifications, onClick = onNotificationSettings)
-                        RdListRow(title = stringResource(RdR.string.rd_gorunum), icon = Icons.Filled.ColorLens, onClick = onAppearanceSettings)
-                        RdListRow(title = stringResource(RdR.string.rd_verilerim), icon = Icons.Filled.Storage, onClick = onDataManagement)
-                        RdListRow(title = stringResource(RdR.string.rd_yasal_bilgilendirme), icon = Icons.Filled.Gavel, onClick = { showLegal = true })
-                        RdListRow(title = stringResource(RdR.string.rd_cikis_yap), icon = Icons.Filled.Logout, onClick = { showSignOutConfirmation = true })
-                        RdListRow(
-                            title = stringResource(RdR.string.rd_hesabimi_sil),
-                            icon = Icons.Filled.DeleteForever,
-                            iconTint = colors.critical,
-                            iconBackground = colors.criticalBg,
-                            onClick = onDeleteAccount,
-                        )
-                    }
-                    Spacer(Modifier.height(RdSpacing.lg))
-                }
+                ProfileLoadedSurface(
+                    profile = current.profile,
+                    stats = stats,
+                    progress = progress,
+                    restoreInProgress = restoreState is ProfileRestoreState.Restoring,
+                    isSavingAvatar = viewModel.isSavingAvatar.collectAsState().value,
+                    avatarErrorMessage = viewModel.avatarError.collectAsState().value?.message,
+                    onAvatarBytes = viewModel::updateAvatar,
+                    onShowBadges = { showBadges = true },
+                    onShowCompetencies = { showCompetencies = true },
+                    onShowTitles = { showTitles = true },
+                    onEdit = { isEditing = true },
+                    onManageCompanies = onManageCompanies,
+                    onAnalyses = onAnalyses,
+                    onReports = onReports,
+                    onNotificationSettings = onNotificationSettings,
+                    onPaywall = onPaywall,
+                    onAppearanceSettings = onAppearanceSettings,
+                    onRestorePurchases = viewModel::restorePurchases,
+                    onDataManagement = onDataManagement,
+                    onShowLegal = { showLegal = true },
+                    onSupport = onSupport,
+                    onDeleteAccount = onDeleteAccount,
+                    onSignOut = { showSignOutConfirmation = true },
+                )
 
                 if (showBadges) {
                     progress?.let { summary ->
@@ -218,6 +236,14 @@ fun ProfileScreen(
                             ) {
                                 ProfessionalProgressCompetencyMapView(competencies = summary.competencies, compact = false)
                             }
+                        }
+                    }
+                }
+                if (showTitles) {
+                    progress?.let { summary ->
+                        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                        ModalBottomSheet(onDismissRequest = { showTitles = false }, sheetState = sheetState) {
+                            ProfessionalProgressTitlesSheet(summary = summary, onDismiss = { showTitles = false })
                         }
                     }
                 }
@@ -290,6 +316,146 @@ fun ProfileScreen(
     }
 }
 
+/** The real loaded-state body shared by [ProfileScreen] and deterministic visual tests. */
+@Composable
+fun ProfileLoadedSurface(
+    profile: UserProfile,
+    stats: ProfileStats?,
+    progress: ProfessionalProgressSummary?,
+    restoreInProgress: Boolean = false,
+    isSavingAvatar: Boolean = false,
+    avatarErrorMessage: String? = null,
+    onAvatarBytes: (ByteArray) -> Unit = {},
+    onShowBadges: () -> Unit = {},
+    onShowCompetencies: () -> Unit = {},
+    onShowTitles: () -> Unit = {},
+    onEdit: () -> Unit = {},
+    onManageCompanies: () -> Unit = {},
+    onAnalyses: () -> Unit = {},
+    onReports: () -> Unit = {},
+    onNotificationSettings: () -> Unit = {},
+    onPaywall: () -> Unit = {},
+    onAppearanceSettings: () -> Unit = {},
+    onRestorePurchases: () -> Unit = {},
+    onDataManagement: () -> Unit = {},
+    onShowLegal: () -> Unit = {},
+    onSupport: () -> Unit = {},
+    onDeleteAccount: () -> Unit = {},
+    onSignOut: () -> Unit = {},
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = RdSpacing.lg)
+            .padding(bottom = 112.dp),
+    ) {
+        ProfileHero(
+            profile = profile,
+            stats = stats,
+            progress = progress,
+            isSavingAvatar = isSavingAvatar,
+            avatarErrorMessage = avatarErrorMessage,
+            onAvatarBytes = onAvatarBytes,
+            onShowBadges = onShowBadges,
+            onShowTitles = onShowTitles,
+            onAnalyses = onAnalyses,
+            onReports = onReports,
+        )
+        progress?.let {
+            Spacer(Modifier.height(14.dp))
+            ProfessionalProgressSection(it, onShowCompetencies = onShowCompetencies)
+        }
+        Spacer(Modifier.height(14.dp))
+        SubscriptionStatusCard(profile = profile, onPaywall = onPaywall)
+        Spacer(Modifier.height(14.dp))
+        ProfileMenuSection(title = stringResource(RdR.string.rd_hesap_upper)) {
+            ProfileMenuRow(stringResource(RdR.string.rd_profil_bilgileri), Icons.Filled.Edit, onClick = onEdit)
+            ProfileMenuDivider()
+            ProfileMenuRow(
+                stringResource(RdR.string.rd_firmalarim),
+                Icons.Filled.Business,
+                detail = if (profile.isPaid) stringResource(RdR.string.rd_yonet) else stringResource(RdR.string.rd_plus_pro),
+                onClick = onManageCompanies,
+            )
+            ProfileMenuDivider()
+            ProfileMenuRow(stringResource(RdR.string.rd_gecmis_analizler), Icons.Filled.Assessment, detail = stats?.analysisCount?.toString() ?: "—", onClick = onAnalyses)
+            ProfileMenuDivider()
+            ProfileMenuRow(stringResource(RdR.string.rd_raporlarim), Icons.Filled.Description, detail = stats?.reportCount?.toString() ?: "—", onClick = onReports)
+            ProfileMenuDivider()
+            ProfileMenuRow(stringResource(RdR.string.rd_bildirimler), Icons.Filled.Notifications, onClick = onNotificationSettings)
+        }
+        Spacer(Modifier.height(14.dp))
+        ProfileMenuSection(title = stringResource(RdR.string.rd_ayarlar_upper)) {
+            ProfileMenuRow(stringResource(RdR.string.rd_tercihler), Icons.Filled.ColorLens, onClick = onAppearanceSettings)
+            ProfileMenuDivider()
+            ProfileMenuRow(
+                stringResource(if (restoreInProgress) RdR.string.rd_satin_alimlar_geri_yukleniyor else RdR.string.rd_satin_alimlari_geri_yukle),
+                Icons.Filled.Restore,
+                onClick = onRestorePurchases,
+            )
+            ProfileMenuDivider()
+            ProfileMenuRow(stringResource(RdR.string.rd_verilerim), Icons.Filled.Storage, onClick = onDataManagement)
+            ProfileMenuDivider()
+            ProfileMenuRow(stringResource(RdR.string.rd_guvenlik_gizlilik), Icons.Filled.Gavel, onClick = onShowLegal)
+            ProfileMenuDivider()
+            ProfileMenuRow(stringResource(RdR.string.rd_destek), Icons.Filled.SupportAgent, onClick = onSupport)
+        }
+        Spacer(Modifier.height(14.dp))
+        ProfileStandaloneRow(stringResource(RdR.string.rd_hesabimi_sil), Icons.Filled.DeleteForever, danger = true, onClick = onDeleteAccount)
+        Spacer(Modifier.height(10.dp))
+        ProfileStandaloneRow(stringResource(RdR.string.rd_cikis_yap), Icons.AutoMirrored.Filled.Logout, danger = true, onClick = onSignOut)
+    }
+}
+
+/** Deterministic data fixture for Roborazzi; the rendered body is [ProfileLoadedSurface]. */
+@Composable
+fun ProfileParityPreviewSurface(
+    onAnalyses: () -> Unit = {},
+    onReports: () -> Unit = {},
+    onShowTitles: () -> Unit = {},
+) {
+    val colors = RdTheme.colors
+    val profile = UserProfile(
+        id = "visual-contract",
+        email = "uzman@riskdetected.com",
+        fullName = "Kerem Kayalar",
+        title = "A Sınıfı İş Güvenliği Uzmanı",
+        tier = SubscriptionTier.Pro,
+        subscriptionPeriod = "yearly",
+        subscriptionRenewalAt = "2026-12-10T09:00:00Z",
+    )
+    val progress = ProfessionalProgressSummary(
+        profile = ProfessionalProgressProfileRow(
+            userId = profile.id,
+            totalMdp = 375,
+            totalAnalyses = 12,
+            totalReports = 8,
+            highFindings = 7,
+            criticalFindings = 2,
+            activeDays = 6,
+        ),
+        competencies = listOf(
+            ProfessionalProgressCompetencyStat(userId = profile.id, competencyKey = "working_at_height", findingCount = 8, reportCount = 2),
+            ProfessionalProgressCompetencyStat(userId = profile.id, competencyKey = "construction", findingCount = 2, reportCount = 1),
+        ),
+        badges = emptyList(),
+        messages = emptyList(),
+        weeklySummary = null,
+    )
+    val stats = ProfileStats(analysisCount = 12, reportCount = 8, weeklyAnalysisCount = 3)
+    Box(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        ProfileLoadedSurface(
+            profile = profile,
+            stats = stats,
+            progress = progress,
+            onAnalyses = onAnalyses,
+            onReports = onReports,
+            onShowTitles = onShowTitles,
+        )
+    }
+}
+
 /**
  * Real port of `ProfileView.swift`'s avatar picker (`selectedProfileAvatarItem`/
  * `handleProfileAvatarSelection`) — closes a real gap: `UserProfile.avatarUrl` decoded a real
@@ -301,118 +467,320 @@ fun ProfileScreen(
 @Composable
 private fun ProfileHero(
     profile: UserProfile,
-    viewModel: ProfileViewModel,
+    stats: ProfileStats? = null,
     progress: ProfessionalProgressSummary? = null,
+    isSavingAvatar: Boolean = false,
+    avatarErrorMessage: String? = null,
+    onAvatarBytes: (ByteArray) -> Unit = {},
     onShowBadges: () -> Unit = {},
+    onShowTitles: () -> Unit = {},
+    onAnalyses: () -> Unit = {},
+    onReports: () -> Unit = {},
 ) {
     val colors = RdTheme.colors
     val context = LocalContext.current
-    val isSavingAvatar by viewModel.isSavingAvatar.collectAsState()
-    val avatarError by viewModel.avatarError.collectAsState()
+    val scope = rememberCoroutineScope()
+    val avatarReadError = stringResource(RdR.string.rd_fotograf_okunamadi)
+    var localAvatarError by remember { mutableStateOf<String?>(null) }
 
     val pickAvatar = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        context.contentResolver.openInputStream(uri)?.use { stream ->
-            val bitmap = BitmapFactory.decodeStream(stream) ?: return@use
-            val side = 512
-            val scale = maxOf(side.toFloat() / bitmap.width, side.toFloat() / bitmap.height)
-            val scaled = Bitmap.createScaledBitmap(
-                bitmap,
-                (bitmap.width * scale).toInt(),
-                (bitmap.height * scale).toInt(),
+        localAvatarError = null
+        scope.launch {
+            try {
+                onAvatarBytes(prepareAvatarJpeg(context, uri))
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Throwable) {
+                localAvatarError = avatarReadError
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(30.dp))
+            .background(colors.white)
+            .border(1.dp, colors.line, RoundedCornerShape(30.dp)),
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(148.dp)
+                    .background(
+                        Brush.linearGradient(
+                            if (colors.paper.luminance() < 0.5f) {
+                                listOf(Color(0xFF1A2529), Color(0xFF202C31), Color(0xFF0D1514))
+                            } else {
+                                listOf(Color(0xFFC8E0EF), Color(0xFFE0EFF7), Color(0xFFAFCFE4))
+                            },
+                        ),
+                    ),
+            ) {
+                Box(
+                    Modifier
+                        .size(150.dp)
+                        .offset(x = 238.dp, y = (-38).dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = if (colors.paper.luminance() < 0.5f) 0.10f else 0.42f)),
+                )
+                Box(
+                    Modifier
+                        .width(196.dp)
+                        .height(56.dp)
+                        .offset(x = 124.dp, y = 58.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.White.copy(alpha = if (colors.paper.luminance() < 0.5f) 0.24f else 0.80f)),
+                )
+                Box(
+                    Modifier
+                        .size(92.dp)
+                        .offset(x = 92.dp, y = 34.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = if (colors.paper.luminance() < 0.5f) 0.34f else 0.94f)),
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 24.dp, end = 24.dp, top = 48.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    profile.displayName,
+                    style = RdFontStyle.Title2.toTextStyle().copy(fontSize = 21.sp, fontWeight = FontWeight.Bold),
+                    color = colors.black,
+                    maxLines = 1,
+                )
+                Text(
+                    profile.title?.takeIf { it.isNotBlank() } ?: stringResource(RdR.string.rd_isg_uzmani),
+                    style = RdFontStyle.Footnote.toTextStyle().copy(fontSize = 12.5.sp),
+                    color = colors.slate,
+                    maxLines = 2,
+                )
+                if (progress != null) {
+                    Row(
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                            .clip(RoundedCornerShape(50))
+                            .clickable(onClick = onShowBadges)
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.MilitaryTech, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(RdR.string.rd_basarilarim), style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
+                    }
+                }
+            }
+
+            ProfileHeroStats(stats = stats, progress = progress, onAnalyses = onAnalyses, onReports = onReports)
+        }
+
+        Box(
+            modifier = Modifier
+                .padding(start = 28.dp, top = 96.dp)
+                .size(96.dp)
+                .clickable(enabled = !isSavingAvatar) {
+                    pickAvatar.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .shadow(12.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(colors.onyx)
+                    .border(5.dp, colors.white, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(profile.displayInitials, style = RdFontStyle.Title1.toTextStyle(), color = Color.White)
+                profile.avatarUrl?.let { path ->
+                    ProfileAvatarImage(path = path, modifier = Modifier.fillMaxSize().clip(CircleShape))
+                }
+                if (isSavingAvatar) {
+                    Box(modifier = Modifier.fillMaxSize().background(colors.onyx.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(27.dp)
+                    .offset(x = 3.dp, y = 3.dp)
+                    .clip(CircleShape)
+                    .background(colors.onyx)
+                    .border(3.dp, colors.white, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.CameraAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+            }
+        }
+
+        if (profile.tier != SubscriptionTier.Free) {
+            val tierColor = if (profile.tier == SubscriptionTier.Plus) colors.planPlus else colors.green
+            Box(
+                modifier = Modifier
+                    .padding(start = 100.dp, top = 91.dp)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(tierColor)
+                    .border(3.dp, colors.white, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+            }
+        }
+
+        if (progress != null) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(end = 16.dp, top = 172.dp)
+                    .widthIn(max = 155.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(colors.white.copy(alpha = 0.94f))
+                    .border(1.dp, colors.greenDark.copy(alpha = 0.22f), RoundedCornerShape(50))
+                    .clickable(onClick = onShowTitles)
+                    .padding(start = 6.dp, end = 9.dp, top = 5.dp, bottom = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.size(21.dp).clip(CircleShape).background(colors.greenDark), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.MilitaryTech, contentDescription = null, tint = Color.White, modifier = Modifier.size(11.dp))
+                }
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    professionalProgressTitleLabel(progress.currentTitle.key),
+                    style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                    color = colors.black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+
+        (avatarErrorMessage ?: localAvatarError)?.let { error ->
+            Text(
+                error,
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.critical,
+                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+            )
+        }
+    }
+}
+
+private suspend fun prepareAvatarJpeg(context: android.content.Context, uri: Uri): ByteArray =
+    withContext(Dispatchers.IO) {
+        val resolver = context.contentResolver
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+            ?: error("avatar_stream_unavailable")
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) error("avatar_decode_failed")
+
+        var sampleSize = 1
+        while (bounds.outWidth / sampleSize > 1_024 || bounds.outHeight / sampleSize > 1_024) {
+            sampleSize *= 2
+        }
+        val decoded = resolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sampleSize })
+        } ?: error("avatar_decode_failed")
+
+        val side = 512
+        var scaled: Bitmap? = null
+        var cropped: Bitmap? = null
+        try {
+            val scale = maxOf(side.toFloat() / decoded.width, side.toFloat() / decoded.height)
+            scaled = Bitmap.createScaledBitmap(
+                decoded,
+                (decoded.width * scale).toInt(),
+                (decoded.height * scale).toInt(),
                 true,
             )
-            val cropped = Bitmap.createBitmap(
+            cropped = Bitmap.createBitmap(
                 scaled,
                 maxOf(0, (scaled.width - side) / 2),
                 maxOf(0, (scaled.height - side) / 2),
                 side,
                 side,
             )
-            val output = ByteArrayOutputStream()
-            cropped.compress(Bitmap.CompressFormat.JPEG, 86, output)
-            viewModel.updateAvatar(output.toByteArray())
+            ByteArrayOutputStream().use { output ->
+                check(cropped.compress(Bitmap.CompressFormat.JPEG, 86, output))
+                output.toByteArray()
+            }
+        } finally {
+            if (cropped !== scaled && cropped !== decoded) cropped?.recycle()
+            if (scaled !== decoded) scaled?.recycle()
+            decoded.recycle()
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = RdSpacing.md)
-            .clip(RoundedCornerShape(RdRadius.lg))
-            .background(colors.white)
-            .border(1.dp, colors.onyx.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg))
-            .padding(RdSpacing.md),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
-                .background(colors.onyx)
-                .clickable {
-                    pickAvatar.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                profile.displayName.take(1).uppercase(),
-                style = RdFontStyle.Title2.toTextStyle(),
-                color = colors.white,
-            )
-            ProfileAvatarImage(path = profile.avatarUrl, modifier = Modifier.clip(CircleShape))
-            if (isSavingAvatar) {
-                Box(modifier = Modifier.fillMaxSize().background(colors.onyx.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = colors.white, modifier = Modifier.size(20.dp))
+@Composable
+private fun ProfileHeroStats(
+    stats: ProfileStats?,
+    progress: ProfessionalProgressSummary?,
+    onAnalyses: () -> Unit,
+    onReports: () -> Unit,
+) {
+    val colors = RdTheme.colors
+    val items = listOf(
+        Triple(stats?.analysisCount?.toString() ?: "—", stringResource(RdR.string.rd_analiz), Icons.Filled.Assessment),
+        Triple(stats?.reportCount?.toString() ?: "—", stringResource(RdR.string.rd_rapor), Icons.Filled.Description),
+        Triple(progress?.weeklyTracking?.reportsCount?.toString() ?: stats?.weeklyAnalysisCount?.toString() ?: "—", stringResource(RdR.string.rd_bu_hafta), Icons.Filled.CalendarMonth),
+        Triple(progress?.profile?.let { (it.highFindings + it.criticalFindings).toString() } ?: "—", stringResource(RdR.string.rd_yuksek_kritik), Icons.Filled.WorkspacePremium),
+    )
+    BoxWithConstraints {
+        val compact = maxWidth < 340.dp || LocalDensity.current.fontScale > 1.15f
+        val cellHeight = if (compact) 76.dp else 54.dp
+        Row(modifier = Modifier.fillMaxWidth().border(0.5.dp, colors.line)) {
+            items.forEachIndexed { index, item ->
+                if (index > 0) Box(Modifier.width(1.dp).height(cellHeight).background(colors.line))
+                val accent = when (index) { 0 -> colors.info; 1 -> colors.green; 2 -> colors.planPlus; else -> colors.critical }
+                val action = when (index) { 0 -> onAnalyses; 1 -> onReports; else -> null }
+                if (compact) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(cellHeight)
+                            .clickable(enabled = action != null) { action?.invoke() }
+                            .padding(horizontal = 3.dp, vertical = 5.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(22.dp).clip(RoundedCornerShape(7.dp)).background(accent.copy(alpha = 0.10f)), contentAlignment = Alignment.Center) {
+                                Icon(item.third, contentDescription = null, tint = accent, modifier = Modifier.size(13.dp))
+                            }
+                            Spacer(Modifier.width(4.dp))
+                            Text(item.first, style = RdFontStyle.Data.toTextStyle().copy(fontSize = 14.sp, fontWeight = FontWeight.Bold), color = colors.black, maxLines = 1)
+                        }
+                        Text(item.second, style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 8.sp), color = colors.slate, maxLines = 2, textAlign = TextAlign.Center, overflow = TextOverflow.Ellipsis)
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(cellHeight)
+                            .clickable(enabled = action != null) { action?.invoke() }
+                            .padding(horizontal = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Box(Modifier.size(22.dp).clip(RoundedCornerShape(7.dp)).background(accent.copy(alpha = 0.10f)), contentAlignment = Alignment.Center) {
+                            Icon(item.third, contentDescription = null, tint = accent, modifier = Modifier.size(13.dp))
+                        }
+                        Spacer(Modifier.width(5.dp))
+                        Column {
+                            Text(item.first, style = RdFontStyle.Data.toTextStyle().copy(fontSize = 15.sp, fontWeight = FontWeight.Bold), color = colors.black, maxLines = 1)
+                            Text(item.second, style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 8.5.sp), color = colors.slate, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
                 }
-            }
-        }
-        avatarError?.let { error ->
-            Text(
-                error.message,
-                style = RdFontStyle.Caption.toTextStyle(),
-                color = colors.critical,
-                modifier = Modifier.padding(top = RdSpacing.xxs),
-            )
-        }
-        Spacer(Modifier.height(RdSpacing.xs))
-        Text(profile.displayName, style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
-        profile.email?.let {
-            Text(it, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
-        }
-        Spacer(Modifier.height(4.dp))
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .background(colors.fog)
-                .padding(horizontal = RdSpacing.sm, vertical = 4.dp),
-        ) {
-            Text(profile.tier.name, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
-        }
-        profile.subscriptionRenewalAt?.takeIf(String::isNotBlank)?.let { renewal ->
-            Text(
-                stringResource(RdR.string.rd_uyelik_donemi_format, renewal.take(10)),
-                style = RdFontStyle.Caption.toTextStyle(),
-                color = colors.slate,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
-        // Real port of ProfileView.swift's "Başarılarım" rosette button under the display name
-        // (`showProfileBadges(professionalProgressSummary)`) — the only real trigger for the
-        // badges catalog sheet on either platform (`ProfessionalProgressProfileSection`'s own
-        // `showBadges` state is unused dead code on iOS itself, confirmed via source grep).
-        if (progress != null) {
-            Row(
-                modifier = Modifier
-                    .padding(top = RdSpacing.xxs)
-                    .clip(RoundedCornerShape(50))
-                    .clickable(onClick = onShowBadges)
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.MilitaryTech, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(stringResource(RdR.string.rd_basarilarim), style = RdFontStyle.Caption.toTextStyle(), color = colors.greenDark)
             }
         }
     }
@@ -430,44 +798,118 @@ private fun ProfileHero(
 @Composable
 private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, onShowCompetencies: () -> Unit) {
     val colors = RdTheme.colors
-    Column {
-        Text(
-            stringResource(
-                RdR.string.rd_unvan_mdp_format,
-                professionalProgressTitleLabel(progress.currentTitle.key),
-                progress.profile.totalMdp,
-            ),
-            style = RdFontStyle.Callout.toTextStyle(),
-            color = colors.onyx,
-        )
-        progress.nextTitle?.let { next ->
+    Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(5.dp, RoundedCornerShape(RdRadius.lg))
+                .clip(RoundedCornerShape(RdRadius.lg))
+                .background(
+                    Brush.linearGradient(
+                        listOf(colors.white, colors.planPlusSoft.copy(alpha = 0.34f), colors.greenSoft.copy(alpha = 0.22f)),
+                    ),
+                )
+                .border(1.6.dp, colors.black, RoundedCornerShape(RdRadius.lg))
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier
+                    .size(width = 84.dp, height = 92.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(colors.onyx)
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Icon(Icons.Filled.MilitaryTech, contentDescription = null, tint = colors.planPlus, modifier = Modifier.size(22.dp))
+                Text(
+                    professionalProgressTitleLabel(progress.currentTitle.key),
+                    style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                    maxLines = 2,
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        progress.profile.totalMdp.toString(),
+                        style = RdFontStyle.Title1.toTextStyle().copy(fontSize = 25.sp),
+                        color = colors.black,
+                    )
+                    val threshold = progress.nextTitle?.threshold ?: progress.currentTitle.threshold
+                    Text(" / $threshold", style = RdFontStyle.Subheadline.toTextStyle(), color = colors.slate)
+                }
+                Box(Modifier.fillMaxWidth().height(15.dp).clip(RoundedCornerShape(50)).background(colors.black.copy(alpha = 0.10f))) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(progress.titleProgress.toFloat().coerceIn(0f, 1f))
+                            .height(15.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(Brush.horizontalGradient(listOf(colors.black, colors.graphite, colors.black))),
+                    )
+                }
+                Text(
+                    progress.nextTitle?.let { stringResource(RdR.string.rd_siradaki_unvan_format, professionalProgressTitleLabel(it.key)) }
+                        ?: stringResource(RdR.string.rd_en_yuksek_unvan),
+                    style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 10.sp),
+                    color = colors.slate,
+                    maxLines = 1,
+                )
+            }
+        }
+
+        val weekly = progress.weeklyTracking
+        val weeklyAccent = if (weekly.hasActivity) colors.green else colors.info
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(4.dp, RoundedCornerShape(RdRadius.lg))
+                .clip(RoundedCornerShape(RdRadius.lg))
+                .background(
+                    Brush.linearGradient(
+                        if (weekly.hasActivity) listOf(colors.greenSoft, colors.white, colors.planPlusSoft.copy(alpha = 0.46f))
+                        else listOf(Color(0xFFEEF6FF), colors.white, Color(0xFFF6F3FF)),
+                    ),
+                )
+                .border(1.dp, weeklyAccent.copy(alpha = 0.18f), RoundedCornerShape(RdRadius.lg))
+                .padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(weeklyAccent.copy(alpha = 0.13f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (weekly.hasActivity) Icons.Filled.CheckCircle else Icons.Filled.PlayArrow,
+                    contentDescription = null,
+                    tint = weeklyAccent,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
             Text(
-                stringResource(
-                    RdR.string.rd_siradaki_mdp_format,
-                    professionalProgressTitleLabel(next.key),
-                    progress.nextTitleRemaining,
-                ),
-                style = RdFontStyle.Footnote.toTextStyle(),
-                color = colors.slate,
+                weekly.body,
+                style = RdFontStyle.Callout.toTextStyle().copy(fontWeight = FontWeight.SemiBold),
+                color = colors.black,
+                modifier = Modifier.weight(1f),
+                maxLines = 3,
             )
         }
-        Spacer(Modifier.height(RdSpacing.xxs))
-        Text(
-            stringResource(
-                RdR.string.rd_ilerleme_istatistik_format,
-                progress.profile.totalAnalyses,
-                progress.profile.totalReports,
-                progress.profile.activeDays,
-            ),
-            style = RdFontStyle.Caption.toTextStyle(),
-            color = colors.slate,
-        )
 
-        Spacer(Modifier.height(RdSpacing.sm))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(5.dp, RoundedCornerShape(RdRadius.lg))
+                .clip(RoundedCornerShape(RdRadius.lg))
+                .background(colors.white)
+                .border(1.dp, colors.line, RoundedCornerShape(RdRadius.lg))
+                .padding(14.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 stringResource(RdR.string.rd_yetkinlik_haritasi),
-                style = RdFontStyle.Callout.toTextStyle(),
+                style = RdFontStyle.Subheadline.toTextStyle().copy(fontWeight = FontWeight.Bold),
                 color = colors.onyx,
                 modifier = Modifier.weight(1f),
             )
@@ -477,36 +919,182 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
                 color = colors.greenDark,
                 modifier = Modifier.clickable(onClick = onShowCompetencies),
             )
-        }
-        Spacer(Modifier.height(RdSpacing.xxs))
-        if (progress.topCompetencies.isEmpty()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(36.dp).clip(RoundedCornerShape(RdRadius.sm)).background(colors.fog),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Filled.ShowChart, contentDescription = null, tint = colors.slate, modifier = Modifier.size(16.dp))
-                }
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    stringResource(RdR.string.rd_yetkinlik_bos_aciklama),
-                    style = RdFontStyle.Caption.toTextStyle(),
-                    color = colors.slate,
-                )
             }
-        } else {
-            ProfessionalProgressCompetencyMapView(competencies = progress.competencies, compact = true)
+            Spacer(Modifier.height(RdSpacing.sm))
+            if (progress.topCompetencies.isEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(36.dp).clip(RoundedCornerShape(RdRadius.sm)).background(colors.fog),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, tint = colors.slate, modifier = Modifier.size(16.dp))
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Text(stringResource(RdR.string.rd_yetkinlik_bos_aciklama), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                }
+            } else {
+                ProfessionalProgressCompetencyMapView(competencies = progress.competencies, compact = true)
+            }
         }
+    }
+}
 
-        progress.weeklySummary?.let { weekly ->
+@Composable
+private fun SubscriptionStatusCard(profile: UserProfile, onPaywall: () -> Unit) {
+    val colors = RdTheme.colors
+    val paid = profile.tier.isPaid
+    val accent = when (profile.tier) {
+        SubscriptionTier.Plus -> colors.planPlus
+        SubscriptionTier.Pro -> colors.green
+        SubscriptionTier.Free -> colors.onyx
+    }
+    val soft = when (profile.tier) {
+        SubscriptionTier.Plus -> colors.planPlusSoft
+        SubscriptionTier.Pro -> colors.greenSoft
+        SubscriptionTier.Free -> colors.fog
+    }
+    val tierLabel = when (profile.tier) {
+        SubscriptionTier.Free -> stringResource(RdR.string.rd_ucretsiz)
+        SubscriptionTier.Plus -> stringResource(RdR.string.rd_plus)
+        SubscriptionTier.Pro -> stringResource(RdR.string.rd_pro)
+    }
+    val periodLabel = when (val period = subscriptionPeriodValue(profile.subscriptionPeriod)) {
+        SubscriptionPeriodValue.Monthly -> stringResource(RdR.string.rd_aylik_plan)
+        SubscriptionPeriodValue.Yearly -> stringResource(RdR.string.rd_yillik_plan)
+        SubscriptionPeriodValue.Missing -> stringResource(RdR.string.rd_plan_format, tierLabel)
+        is SubscriptionPeriodValue.Unknown -> period.value.replaceFirstChar { it.titlecase(Locale.forLanguageTag("tr-TR")) }
+    }
+    val renewalLabel = formatSubscriptionRenewal(profile.subscriptionRenewalAt)
+        ?: stringResource(RdR.string.rd_google_play_aboneligi_aktif)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(4.dp, RoundedCornerShape(RdRadius.lg))
+            .clip(RoundedCornerShape(RdRadius.lg))
+            .background(Brush.linearGradient(listOf(soft, colors.white)))
+            .border(1.dp, accent.copy(alpha = 0.30f), RoundedCornerShape(RdRadius.lg))
+            .clickable(enabled = !paid, onClick = onPaywall)
+            .padding(horizontal = 14.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier.clip(RoundedCornerShape(50)).background(accent).padding(horizontal = 10.dp, vertical = 5.dp),
+        ) {
+            Text(tierLabel, style = RdFontStyle.Caption.toTextStyle().copy(fontWeight = FontWeight.Bold), color = Color.White)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
             Text(
-                weekly.messageTitle
-                    ?: stringResource(RdR.string.rd_bu_hafta_istatistik_format, weekly.analysesCount, weekly.reportsCount),
+                if (paid) stringResource(RdR.string.rd_plan_aktif_format, tierLabel)
+                else stringResource(RdR.string.rd_planini_yukselt),
                 style = RdFontStyle.Footnote.toTextStyle(),
-                color = colors.greenDark,
-                modifier = Modifier.padding(top = RdSpacing.sm),
+                color = colors.black,
+            )
+            Text(
+                if (paid) stringResource(RdR.string.rd_abonelik_detay_format, periodLabel, renewalLabel)
+                else stringResource(RdR.string.rd_daha_fazla_analiz_rapor),
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate,
             )
         }
+        Icon(if (paid) Icons.Filled.CheckCircle else Icons.Filled.WorkspacePremium, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
+    }
+}
+
+internal sealed interface SubscriptionPeriodValue {
+    data object Monthly : SubscriptionPeriodValue
+    data object Yearly : SubscriptionPeriodValue
+    data object Missing : SubscriptionPeriodValue
+    data class Unknown(val value: String) : SubscriptionPeriodValue
+}
+
+internal fun subscriptionPeriodValue(raw: String?): SubscriptionPeriodValue {
+    val clean = raw?.trim().orEmpty()
+    return when (clean.lowercase(Locale.ROOT)) {
+        "monthly" -> SubscriptionPeriodValue.Monthly
+        "yearly" -> SubscriptionPeriodValue.Yearly
+        "" -> SubscriptionPeriodValue.Missing
+        else -> SubscriptionPeriodValue.Unknown(clean)
+    }
+}
+
+internal fun formatSubscriptionRenewal(raw: String?): String? {
+    val value = raw?.trim().takeUnless { it.isNullOrEmpty() } ?: return null
+    val instant = runCatching { Instant.parse(value) }.getOrElse {
+        runCatching { OffsetDateTime.parse(value).toInstant() }.getOrNull() ?: return null
+    }
+    return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+        .withLocale(Locale.forLanguageTag("tr-TR"))
+        .withZone(ZoneId.of("Europe/Istanbul"))
+        .format(instant)
+}
+
+@Composable
+private fun ProfileMenuSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+    val colors = RdTheme.colors
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            title,
+            style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp),
+            color = colors.slate,
+            modifier = Modifier.padding(start = 4.dp),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(4.dp, RoundedCornerShape(RdRadius.lg))
+                .clip(RoundedCornerShape(RdRadius.lg))
+                .background(colors.white)
+                .border(1.dp, colors.line, RoundedCornerShape(RdRadius.lg)),
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun ProfileMenuRow(
+    title: String,
+    icon: ImageVector,
+    danger: Boolean = false,
+    detail: String? = null,
+    onClick: () -> Unit,
+) {
+    val colors = RdTheme.colors
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val accent = if (danger) colors.criticalText else colors.charcoal
+        Box(Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(if (danger) colors.criticalBg else colors.fog), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(title, style = RdFontStyle.Subheadline.toTextStyle().copy(fontWeight = FontWeight.Medium), color = if (danger) colors.criticalText else colors.black, modifier = Modifier.weight(1f))
+        detail?.let {
+            Text(it, style = RdFontStyle.Data.toTextStyle(), color = colors.slate)
+            Spacer(Modifier.width(8.dp))
+        }
+        Text("›", style = RdFontStyle.Title3.toTextStyle(), color = colors.slate)
+    }
+}
+
+@Composable
+private fun ProfileMenuDivider() {
+    HorizontalDivider(modifier = Modifier.padding(start = 60.dp), thickness = 1.dp, color = RdTheme.colors.line)
+}
+
+@Composable
+private fun ProfileStandaloneRow(title: String, icon: ImageVector, danger: Boolean, onClick: () -> Unit) {
+    val colors = RdTheme.colors
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .shadow(4.dp, RoundedCornerShape(RdRadius.lg))
+            .clip(RoundedCornerShape(RdRadius.lg))
+            .background(colors.white)
+            .border(1.dp, colors.line, RoundedCornerShape(RdRadius.lg)),
+    ) {
+        ProfileMenuRow(title = title, icon = icon, danger = danger, onClick = onClick)
     }
 }
 

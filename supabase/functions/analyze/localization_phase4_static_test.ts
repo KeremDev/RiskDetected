@@ -62,7 +62,10 @@ Deno.test("AI-001 Turkish baseline is preserved byte-for-byte for legacy snapsho
   assertStringIncludes(promptBlock, 'snapshot.source === "legacy_tr_backfill"');
   assertStringIncludes(promptBlock, "CORE_ANALYSIS_PROMPT");
   assertStringIncludes(promptBlock, 'layerIDs: ["legacy_turkish_prompt"]');
-  assertStringIncludes(promptBlock, "buildAILocalizationPromptContract(snapshot)");
+  assertStringIncludes(
+    promptBlock,
+    "buildAILocalizationPromptContract(snapshot)",
+  );
   assertEquals(
     promptBlock.includes("[contract.prompt, legacyTurkishEvidenceBaseline]"),
     false,

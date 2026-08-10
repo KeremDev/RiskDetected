@@ -36,6 +36,8 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
 
     implementation(libs.revenuecat.purchases)
+    implementation(libs.install.referrer)
 
     testImplementation(project(":core:testing"))
+    testImplementation(libs.robolectric)
 }

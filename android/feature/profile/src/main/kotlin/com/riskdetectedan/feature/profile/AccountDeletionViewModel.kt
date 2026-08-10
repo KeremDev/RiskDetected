@@ -7,6 +7,7 @@ import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.account.AccountRepository
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.auth.RdAppLanguage
+import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.designsystem.R as RdR
@@ -31,6 +32,7 @@ class AccountDeletionViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val accountRepository: AccountRepository,
+    private val billingRepository: BillingRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<AccountDeletionUiState>(AccountDeletionUiState.Idle)
@@ -79,6 +81,7 @@ class AccountDeletionViewModel @Inject constructor(
             when (val result = accountRepository.requestAccountDeletion(email)) {
                 is RdResult.Success -> {
                     authRepository.signOut()
+                    billingRepository.clearUserIdentity()
                     _state.value = AccountDeletionUiState.Completed
                 }
                 is RdResult.Failure -> _state.value = AccountDeletionUiState.Failed(

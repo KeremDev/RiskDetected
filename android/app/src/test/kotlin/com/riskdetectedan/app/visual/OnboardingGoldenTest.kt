@@ -1,15 +1,37 @@
 package com.riskdetectedan.app.visual
 
+import android.app.Application
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.riskdetectedan.core.data.onboarding.OnboardingCertificate
 import com.riskdetectedan.core.data.onboarding.OnboardingFrequency
 import com.riskdetectedan.core.data.onboarding.OnboardingHazardClass
 import com.riskdetectedan.core.data.onboarding.OnboardingSector
+import com.riskdetectedan.core.data.analysis.AnalysisSector
+import com.riskdetectedan.core.data.analysis.AnalysisSectorBadge
+import com.riskdetectedan.core.data.analysis.AnalysisSectorPickerItem
+import com.riskdetectedan.core.data.profile.ProfileStats
+import com.riskdetectedan.core.data.profile.SubscriptionTier
+import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
+import com.riskdetectedan.app.home.SectorPickerSheet
+import com.riskdetectedan.app.navigation.RdTab
+import com.riskdetectedan.app.navigation.RdTabBar
 import com.riskdetectedan.feature.onboarding.OBCertificateScreen
 import com.riskdetectedan.feature.onboarding.OBFrequencyScreen
 import com.riskdetectedan.feature.onboarding.OBHazardClassScreen
@@ -18,8 +40,12 @@ import com.riskdetectedan.feature.onboarding.OBNotificationPermissionScreen
 import com.riskdetectedan.feature.onboarding.OBPainPointScreen
 import com.riskdetectedan.feature.onboarding.OBSectorScreen
 import com.riskdetectedan.feature.onboarding.OBSplashScreen
+import com.riskdetectedan.feature.onboarding.LoginScreenContent
+import com.riskdetectedan.feature.profile.ProfileParityPreviewSurface
+import com.riskdetectedan.feature.profile.ProfileLoadedSurface
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Assert.assertEquals
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -27,7 +53,11 @@ import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w393dp-h852dp-xxhdpi")
+@Config(
+    application = Application::class,
+    sdk = [35],
+    qualifiers = "w393dp-h852dp-xxhdpi",
+)
 class OnboardingGoldenTest {
 
     @get:Rule
@@ -157,5 +187,125 @@ class OnboardingGoldenTest {
         }
 
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun standalone_login_options_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                LoginScreenContent()
+            }
+        }
+
+        composeRule.onNodeWithText("E-posta ile giriş yap").assertIsDisplayed()
+        composeRule.onNodeWithText("Google ile devam et").assertIsDisplayed()
+        assertEquals(0, composeRule.onAllNodesWithText("Son adım.").fetchSemanticsNodes().size)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun analysis_sector_picker_three_column_light() {
+        var selectedResult: AnalysisSector? = null
+        val items = AnalysisSector.entries.map { sector ->
+            AnalysisSectorPickerItem(
+                sector = sector,
+                badges = when (sector) {
+                    AnalysisSector.Construction -> setOf(AnalysisSectorBadge.Recommended)
+                    AnalysisSector.Manufacturing -> setOf(AnalysisSectorBadge.LastUsed)
+                    else -> emptySet()
+                },
+            )
+        }
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                SectorPickerSheet(items = items, onSelect = { selectedResult = it })
+            }
+        }
+
+        composeRule.onNodeWithText("İnşaat").assertIsDisplayed()
+        composeRule.onNodeWithText("İmalat / Fabrika").assertIsDisplayed()
+        composeRule.onNodeWithText("İnşaat").performClick()
+        composeRule.onNodeWithText("İnşaat").assertIsSelected()
+        assertEquals(null, selectedResult)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+        composeRule.onNodeWithText("Devam et").performClick()
+        assertEquals(AnalysisSector.Construction, selectedResult)
+    }
+
+    @Test
+    fun profile_ios_parity_light() {
+        var analysesOpened = 0
+        var titlesOpened = 0
+        composeRule.setContent {
+            RiskDetectedTheme(darkTheme = false) {
+                Box(Modifier.fillMaxSize()) {
+                    ProfileParityPreviewSurface(onAnalyses = { analysesOpened += 1 }, onShowTitles = { titlesOpened += 1 })
+                    RdTabBar(active = RdTab.Profile, onTabSelected = {}, onQuickScan = {}, modifier = Modifier.align(Alignment.BottomCenter))
+                }
+            }
+        }
+
+        composeRule.onNodeWithText("Kerem Kayalar").assertIsDisplayed()
+        composeRule.onNodeWithText("Yetkinlik Haritası").assertIsDisplayed()
+        composeRule.onAllNodesWithText("12")[0].performClick()
+        assertEquals(1, analysesOpened)
+        composeRule.onAllNodesWithText("Aday Uzman")[0].performClick()
+        assertEquals(1, titlesOpened)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    @Config(application = Application::class, sdk = [35], qualifiers = "w320dp-h640dp-xhdpi")
+    fun profile_small_font_scale_1_3_light() {
+        composeRule.setContent {
+            RiskDetectedTheme(darkTheme = false) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.3f)) {
+                    Box(Modifier.fillMaxSize()) {
+                        ProfileParityPreviewSurface()
+                        RdTabBar(active = RdTab.Profile, onTabSelected = {}, onQuickScan = {}, modifier = Modifier.align(Alignment.BottomCenter))
+                    }
+                }
+            }
+        }
+
+        composeRule.onNodeWithText("Kerem Kayalar").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun profile_ios_parity_dark() {
+        composeRule.setContent {
+            RiskDetectedTheme(darkTheme = true) {
+                Box(Modifier.fillMaxSize()) {
+                    ProfileParityPreviewSurface()
+                    RdTabBar(active = RdTab.Profile, onTabSelected = {}, onQuickScan = {}, modifier = Modifier.align(Alignment.BottomCenter))
+                }
+            }
+        }
+
+        composeRule.onNodeWithText("Kerem Kayalar").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun profile_live_stats_survive_progress_unavailability() {
+        composeRule.setContent {
+            RiskDetectedTheme(darkTheme = false) {
+                ProfileLoadedSurface(
+                    profile = UserProfile(
+                        id = "stats-contract",
+                        fullName = "Test Uzmanı",
+                        tier = SubscriptionTier.Free,
+                    ),
+                    stats = ProfileStats(analysisCount = 17, reportCount = 6, weeklyAnalysisCount = 4),
+                    progress = null,
+                )
+            }
+        }
+
+        composeRule.onAllNodesWithText("17")[0].assertIsDisplayed()
+        composeRule.onAllNodesWithText("6")[0].assertIsDisplayed()
+        composeRule.onAllNodesWithText("4")[0].assertIsDisplayed()
     }
 }

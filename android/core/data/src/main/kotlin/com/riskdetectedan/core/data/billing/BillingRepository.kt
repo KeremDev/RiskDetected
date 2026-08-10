@@ -6,6 +6,7 @@ import com.riskdetectedan.core.common.RdEnvironment
 import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.profile.SubscriptionTier
+import com.riskdetectedan.core.data.attribution.InstallAttributionRepository
 import com.revenuecat.purchases.CacheFetchPolicy
 import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.LogLevel
@@ -15,6 +16,7 @@ import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
 import com.revenuecat.purchases.awaitCustomerInfo
 import com.revenuecat.purchases.awaitLogIn
+import com.revenuecat.purchases.awaitLogOut
 import com.revenuecat.purchases.awaitOfferings
 import com.revenuecat.purchases.awaitPurchase
 import com.revenuecat.purchases.awaitRestore
@@ -52,6 +54,7 @@ data class BillingPackage(
 class BillingRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val environmentConfig: RdEnvironmentConfig,
+    private val installAttributionRepository: InstallAttributionRepository,
 ) {
     private var isConfigured = false
     private var currentAppUserId: String? = null
@@ -78,12 +81,14 @@ class BillingRepository @Inject constructor(
             )
             isConfigured = true
             currentAppUserId = appUserId
+            installAttributionRepository.applyToRevenueCatIfConfigured()
             return RdResult.Success(Unit)
         }
         if (currentAppUserId == appUserId) return RdResult.Success(Unit)
         return try {
             Purchases.sharedInstance.awaitLogIn(appUserId)
             currentAppUserId = appUserId
+            installAttributionRepository.applyToRevenueCatIfConfigured()
             RdResult.Success(Unit)
         } catch (t: Throwable) {
             RdResult.Failure("billing_login_failed", t.message ?: "billing_login_failed", t)
@@ -172,6 +177,19 @@ class BillingRepository @Inject constructor(
         validateReceiptOwner(customerInfo, tier) ?: RdResult.Success(tier)
     } catch (t: Throwable) {
         RdResult.Failure("billing_customer_info_failed", t.message ?: "billing_customer_info_failed", t)
+    }
+
+    /** Clears the identified Supabase user after sign-out/account deletion so an anonymous
+     * screen cannot retain the previous account's cached entitlement presentation. */
+    suspend fun clearUserIdentity(): RdResult<Unit> {
+        if (!isConfigured || currentAppUserId == null) return RdResult.Success(Unit)
+        return try {
+            Purchases.sharedInstance.awaitLogOut()
+            currentAppUserId = null
+            RdResult.Success(Unit)
+        } catch (t: Throwable) {
+            RdResult.Failure("billing_logout_failed", t.message ?: "billing_logout_failed", t)
+        }
     }
 
     /**

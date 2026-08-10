@@ -112,37 +112,37 @@ const DEFAULT_ANDROID_LEGAL_POLICY: AndroidLegalPolicy = {
   enabled: false,
   document_set_id: "tr-android-v1",
   manifest_checksum:
-    "b56396d22e1d8ca03d8f402f619c7f694acc944a31cc0c592bb041547462f83b",
-  policy_version: "android-legal-2026-08-07",
+    "aaa169338de3d9425e76cc4d8b9e98047847934c39cf646cb4f87f708c63cfec",
+  policy_version: "android-legal-2026-08-09",
   message_tr:
     "Hukuki metinlerimiz güncellendi. Devam etmeden önce güncel metinleri inceleyin.",
   documents: [
     {
       kind: "terms",
-      version: "terms-android-2026-08-07",
+      version: "terms-android-2026-08-09",
       checksum:
-        "0d55c5cb1257afea527a1fd49633fcbbdd3e561ef6d63c6739f6d9b372703db8",
+        "aebbb01c27012192ddf36669b73036889fe8d1f4266a08326aa96e248829e749",
       change_type: "info",
     },
     {
       kind: "privacy",
-      version: "privacy-android-2026-08-07",
+      version: "privacy-android-2026-08-09",
       checksum:
-        "72a4f78f1abbfb64c03b0a932cfe48a3bafe711a7aa1395fa1f0217cf58c44ce",
+        "ac811bcf95946e4251ebdbf3d2bd71622e94e3753fc0ca68b1fbaeccb9817672",
       change_type: "info",
     },
     {
       kind: "kvkk",
-      version: "kvkk-android-2026-08-07",
+      version: "kvkk-android-2026-08-09",
       checksum:
-        "a60c019472990142f1ad0642678a7086f9459d5e583b97fa647a13b52575a730",
+        "7cf16880546a414df03202ea1fd09ff0d7aafa48c9f1adb89f62d897741bb297",
       change_type: "info",
     },
     {
       kind: "consent",
-      version: "consent-android-2026-08-07",
+      version: "consent-android-2026-08-09",
       checksum:
-        "973932b929f6d58b78d63441f45d8b72c2877c3e7ae0177d458b47487d23677f",
+        "53b380da568e67d6d7406f2a8bad0787b45ddcd2fdf0485f1aaec8f3e517a5c2",
       change_type: "info",
     },
   ],

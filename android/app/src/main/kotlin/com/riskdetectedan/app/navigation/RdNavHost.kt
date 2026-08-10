@@ -5,7 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -18,7 +18,7 @@ import com.riskdetectedan.app.settings.AppearanceSettingsScreen
 import com.riskdetectedan.app.home.PhotoTrayViewModel
 import com.riskdetectedan.feature.analysis.AnalysisScreen
 import com.riskdetectedan.feature.capture.CaptureScreen
-import com.riskdetectedan.feature.onboarding.AuthScreen
+import com.riskdetectedan.feature.onboarding.LoginScreen
 import com.riskdetectedan.feature.onboarding.OnboardingFlow
 import com.riskdetectedan.feature.paywall.PaywallScreen
 import com.riskdetectedan.feature.paywall.PaywallPlan
@@ -34,10 +34,9 @@ import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
  * Root routing mirrors AppState.bootstrap/finishOnboarding: Splash resolves persisted onboarding
  * and the Supabase session, and every root transition clears the complete navigation stack.
  * Onboarding (0-11, matching OnboardingViewV2.swift's step switch — see OnboardingFlow) embeds
- * Auth as step 8 internally, same as iOS. The separate `Auth` destination below (2026-08-09) is
- * now also reachable from Onboarding's "Atla" skip — mirrors `AppState.finishOnboarding()`'s
- * `auth.isAuthenticated ? .main : .auth` branch, which always resolves to `.auth` at skip time
- * since skip fires before step 8 ever runs.
+ * Auth as step 8 internally, same as iOS. The separate `Auth` destination renders LoginScreen,
+ * the iOS AuthView counterpart: skip and a returning signed-out user must never see onboarding's
+ * plan recap / "Son adım" screen.
  *
  * `MainShell` (Faz M, 2026-08-08) replaces the old separate `Home`/`Reports`/`Profile` top-level
  * destinations — it's the persistent 4-tab shell (mirrors MainTabView.swift), Capture/Analysis/
@@ -86,7 +85,7 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
         composable<Auth> {
             // AuthView.swift is also explicitly light-only on iOS.
             RiskDetectedLightOnlyTheme {
-                AuthScreen(onAuthenticated = viewModel::authenticated)
+                LoginScreen(onAuthenticated = viewModel::authenticated)
             }
         }
         composable<MainShell> { MainShellScreen(navController) }

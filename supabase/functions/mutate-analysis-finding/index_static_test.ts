@@ -79,7 +79,10 @@ Deno.test("finding update and audit are committed in one database transaction", 
   if (migration == null) return;
   const sql = migration.toLowerCase().replace(/\s+/g, " ");
 
-  assertStringIncludes(sql, "create function public.apply_finding_mutation_atomic");
+  assertStringIncludes(
+    sql,
+    "create function public.apply_finding_mutation_atomic",
+  );
   assertStringIncludes(sql, "for update;");
   assertStringIncludes(sql, "and finding_version = p_expected_version");
   assertStringIncludes(sql, "insert into public.finding_edit_events");

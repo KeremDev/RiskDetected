@@ -59,7 +59,7 @@ class AppearanceViewModel @Inject constructor(private val preferences: Appearanc
 @Composable
 fun AppearanceSettingsScreen(
     onBack: () -> Unit,
-    viewModel: AppearanceViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
+    viewModel: AppearanceViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val selected by viewModel.mode.collectAsState()

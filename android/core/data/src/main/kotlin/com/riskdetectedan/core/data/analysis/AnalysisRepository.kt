@@ -35,8 +35,6 @@ private data class CreateAnalysisPayload(
     @SerialName("analysis_sector_source") val analysisSectorSource: String? = null,
     @SerialName("analysis_sector_prompt_version") val analysisSectorPromptVersion: String? = null,
     @SerialName("primary_method") val primaryMethod: String? = null,
-    @SerialName("client_platform") val clientPlatform: String,
-    @SerialName("client_build") val clientBuild: String,
     @SerialName("client_submission_id") val clientSubmissionId: String,
 )
 
@@ -191,8 +189,6 @@ class AnalysisRepository @Inject constructor(
                     analysisSectorSource = request.sector?.let { "user_selected" },
                     analysisSectorPromptVersion = request.sector?.let { ANALYSIS_SECTOR_PROMPT_VERSION },
                     primaryMethod = request.primaryMethod,
-                    clientPlatform = RdClientMetadata.PLATFORM,
-                    clientBuild = environmentConfig.appVersionCode.toString(),
                     clientSubmissionId = request.clientSubmissionId,
                 ),
             ) {

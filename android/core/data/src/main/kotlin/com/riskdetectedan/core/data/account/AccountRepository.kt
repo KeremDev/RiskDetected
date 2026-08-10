@@ -31,6 +31,8 @@ private data class AccountDeletionRequestBody(
     val email: String?,
     @SerialName("request_id") val requestId: String,
     @SerialName("support_id") val supportId: String,
+    @SerialName("client_platform") val clientPlatform: String = "android",
+    @SerialName("completion_mode") val completionMode: String = "immediate",
 )
 
 @Singleton

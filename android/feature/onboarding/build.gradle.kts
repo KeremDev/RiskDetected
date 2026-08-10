@@ -11,11 +11,6 @@ android {
     compileSdk = 37
     defaultConfig { minSdk = 26 }
     buildFeatures { compose = true }
-    sourceSets {
-        getByName("main") {
-            assets.srcDir(file("../../../App/Assets.xcassets"))
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

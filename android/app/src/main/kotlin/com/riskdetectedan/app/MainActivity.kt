@@ -2,7 +2,9 @@ package com.riskdetectedan.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -23,10 +25,19 @@ import com.riskdetectedan.app.push.NotificationDeepLinkHandler
 import com.riskdetectedan.app.release.ReleaseGate
 import com.riskdetectedan.app.settings.AppearanceMode
 import com.riskdetectedan.app.settings.AppearanceViewModel
+import com.riskdetectedan.app.store.PlayUpdateController
+import com.riskdetectedan.app.store.StoreReviewCoordinator
+import com.riskdetectedan.core.common.RdEnvironmentConfig
+import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
 import com.riskdetectedan.core.data.auth.AuthDeepLinkHandler
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -36,12 +47,20 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var authDeepLinkHandler: AuthDeepLinkHandler
 
     @Inject lateinit var notificationDeepLinkHandler: NotificationDeepLinkHandler
+    @Inject lateinit var reviewEligibilityRepository: ReviewEligibilityRepository
+    @Inject lateinit var environmentConfig: RdEnvironmentConfig
+
+    private val updateResultLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult(),
+    ) { }
+    private lateinit var playUpdateController: PlayUpdateController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        playUpdateController = PlayUpdateController(this, updateResultLauncher)
         enableEdgeToEdge()
         handleAuthDeepLink(intent)
-        notificationDeepLinkHandler.handle(intent)
+        handleNotificationDeepLink(intent)
         setContent {
             val appearanceMode by appearanceViewModel.mode.collectAsState()
             val systemDark = isSystemInDarkTheme()
@@ -55,7 +74,7 @@ class MainActivity : ComponentActivity() {
                 // Mirrors AppState.swift: the release-policy gate wraps the whole app, checked
                 // before anything else renders — a hard-update requirement replaces the nav
                 // graph entirely, not just one screen inside it.
-                ReleaseGate {
+                ReleaseGate(onRequestUpdate = playUpdateController::request) {
                     // Box, not a bare sibling stack — NetworkStatusBanner needs BoxScope's
                     // `align` to overlay on top of RdNavHost the way RootView.swift's offline
                     // banner overlays the rest of the app (zIndex above the nav content, not a
@@ -82,9 +101,28 @@ class MainActivity : ComponentActivity() {
                         // No UI — mirrors AppState.swift's sendWelcomeEmailIfPossible(), fires
                         // (server-deduped) on every authenticated session.
                         WelcomeEmailSender()
+                        StoreReviewCoordinator(reviewEligibilityRepository, environmentConfig)
                         RdNavHost()
                         NetworkStatusBanner(modifier = Modifier.align(Alignment.TopCenter))
                     }
+                }
+                val flexibleUpdateReady by playUpdateController.flexibleUpdateReady.collectAsState()
+                if (flexibleUpdateReady) {
+                    AlertDialog(
+                        onDismissRequest = {},
+                        title = { Text(stringResource(R.string.update_ready_title)) },
+                        text = { Text(stringResource(R.string.update_ready_message)) },
+                        confirmButton = {
+                            Button(onClick = playUpdateController::completeFlexibleUpdate) {
+                                Text(stringResource(R.string.restart_and_update))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = playUpdateController::postponeFlexibleUpdate) {
+                                Text(stringResource(R.string.later))
+                            }
+                        },
+                    )
                 }
             }
         }
@@ -94,10 +132,32 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleAuthDeepLink(intent)
-        notificationDeepLinkHandler.handle(intent)
+        handleNotificationDeepLink(intent)
     }
 
     private fun handleAuthDeepLink(intent: Intent) {
         authDeepLinkHandler.handle(intent)
+    }
+
+    private fun handleNotificationDeepLink(intent: Intent) {
+        val payload = notificationDeepLinkHandler.handle(intent)
+        if (BuildConfig.DEBUG) {
+            // Typed route only; never log token, IDs, title/body or the raw FCM payload.
+            Log.d(
+                "RdNotificationRoute",
+                "parsed=${payload?.type ?: "none"}:${payload?.target?.name ?: "none"};" +
+                    " hasType=${intent.hasExtra("type")}",
+            )
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::playUpdateController.isInitialized) playUpdateController.resumeInterruptedImmediateUpdate()
+    }
+
+    override fun onDestroy() {
+        if (::playUpdateController.isInitialized) playUpdateController.close()
+        super.onDestroy()
     }
 }

@@ -2,52 +2,55 @@
   "schema_version": 1,
   "document_set_id": "tr-android-v1",
   "locale": "tr",
-  "release_status": "approved",
-  "counsel_review_status": "approved",
-  "reviewed_by": "Kerem",
-  "reviewer_qualification": "Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.",
-  "reviewed_at": "2026-08-08T00:00:00Z",
-  "counsel_approval_record_path": null,
-  "counsel_approval_record_sha256": null,
+  "release_status": "pending_owner_approval",
+  "counsel_review_status": "pending",
+  "reviewed_by": null,
+  "reviewer_qualification": null,
+  "reviewed_at": null,
+  "counsel_approval_record_path": "docs/android/ANDROID_LEGAL_APPROVAL_RECORD_2026-08-09.json",
+  "counsel_approval_record_sha256": "e3b32e63419b0767d4f56c07dd8ffba7225ed2a90c89f881d7c8d6b59a46a654",
   "public_urls_verified_at": null,
-  "public_urls": null,
+  "public_urls": {
+    "privacy": "https://riskdetected.com/gizlilik",
+    "account_deletion": "https://riskdetected.com/hesap-silme"
+  },
   "adapted_from": {
     "source": "https://riskdetected.com (kullanim-kosullari, gizlilik, kvkk, acik-riza-beyani)",
     "fetched_at": "2026-08-07T20:45:00Z",
-    "adaptation_note": "Mechanical platform substitution only, no new substantive legal terms: Apple App Store/App Store -> Google Play, Apple ID abonelik ayarlari -> Google Play Abonelikler ayarlari, APNs/Apple Push Notification service -> Firebase Cloud Messaging (FCM), Apple Sign-In references dropped (Android build has no Apple Sign-In), Apple App Tracking Transparency mention dropped (no Android equivalent claimed), 'iOS ayarlarindan' -> 'Android ayarlarindan', 'App Store kurallari' -> 'Google Play kurallari'. Every other clause (company identity, KVKK legal grounds, retention periods, data categories, purposes, rights) is verbatim from the owner-approved website text. Not yet reviewed by the owner in this adapted form -- release_status/counsel_review_status must flip to 'approved' only after that review."
+    "adaptation_note": "Android mağaza ve platform uyarlamasına ek olarak owner talimatıyla web hesap silme yolu, 24 saatlik silme SLA'sı ve PII-minimum Firebase Crashlytics açıklaması eklendi. Şirket kimliği, KVKK hukuki sebepleri, saklama süreleri, temel veri kategorileri ve kullanıcı hakları değiştirilmedi. Public URL yayını ayrı release kapısıdır."
   },
   "documents": [
     {
       "kind": "terms",
       "title": "Kullanım Koşulları",
-      "version": "terms-android-2026-08-07",
+      "version": "terms-android-2026-08-09",
       "path": "Kullanim-Kosullari.md",
-      "hash": "0d55c5cb1257afea527a1fd49633fcbbdd3e561ef6d63c6739f6d9b372703db8",
-      "updated_at": "2026-08-07T00:00:00Z"
+      "hash": "aebbb01c27012192ddf36669b73036889fe8d1f4266a08326aa96e248829e749",
+      "updated_at": "2026-08-09T00:00:00Z"
     },
     {
       "kind": "privacy",
       "title": "Gizlilik Politikası",
-      "version": "privacy-android-2026-08-07",
+      "version": "privacy-android-2026-08-09",
       "path": "Gizlilik-Politikasi.md",
-      "hash": "72a4f78f1abbfb64c03b0a932cfe48a3bafe711a7aa1395fa1f0217cf58c44ce",
-      "updated_at": "2026-08-07T00:00:00Z"
+      "hash": "ac811bcf95946e4251ebdbf3d2bd71622e94e3753fc0ca68b1fbaeccb9817672",
+      "updated_at": "2026-08-09T00:00:00Z"
     },
     {
       "kind": "kvkk",
       "title": "KVKK Aydınlatma Metni",
-      "version": "kvkk-android-2026-08-07",
+      "version": "kvkk-android-2026-08-09",
       "path": "KVKK-Aydinlatma-ve-Acik-Riza-Metni.md",
-      "hash": "a60c019472990142f1ad0642678a7086f9459d5e583b97fa647a13b52575a730",
-      "updated_at": "2026-08-07T00:00:00Z"
+      "hash": "7cf16880546a414df03202ea1fd09ff0d7aafa48c9f1adb89f62d897741bb297",
+      "updated_at": "2026-08-09T00:00:00Z"
     },
     {
       "kind": "consent",
       "title": "Açık Rıza Beyanı",
-      "version": "consent-android-2026-08-07",
+      "version": "consent-android-2026-08-09",
       "path": "Acik-Riza-Beyani.md",
-      "hash": "973932b929f6d58b78d63441f45d8b72c2877c3e7ae0177d458b47487d23677f",
-      "updated_at": "2026-08-07T00:00:00Z"
+      "hash": "53b380da568e67d6d7406f2a8bad0787b45ddcd2fdf0485f1aaec8f3e517a5c2",
+      "updated_at": "2026-08-09T00:00:00Z"
     }
   ]
 }

@@ -25,36 +25,36 @@ insert into private.approved_legal_documents (
 )
 values
   (
-    'tr-android-v1', 'tr', 'terms', 'terms-android-2026-08-07',
-    '0d55c5cb1257afea527a1fd49633fcbbdd3e561ef6d63c6739f6d9b372703db8',
+    'tr-android-v1', 'tr', 'terms', 'terms-android-2026-08-09',
+    'aebbb01c27012192ddf36669b73036889fe8d1f4266a08326aa96e248829e749',
     'info', 'Kerem',
     'Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.',
-    '2026-08-08T00:00:00Z'::timestamptz,
-    '96b0d2f805f2eac6e46b8709d779a81e7e4d91874203f896f3dbe94a84811ee1'
+    '2026-08-09T00:00:00Z'::timestamptz,
+    'd8e66c879b7cd5019706790b323f495740b3ba84fbbe8b995b0124e431fae7dc'
   ),
   (
-    'tr-android-v1', 'tr', 'privacy', 'privacy-android-2026-08-07',
-    '72a4f78f1abbfb64c03b0a932cfe48a3bafe711a7aa1395fa1f0217cf58c44ce',
+    'tr-android-v1', 'tr', 'privacy', 'privacy-android-2026-08-09',
+    'ac811bcf95946e4251ebdbf3d2bd71622e94e3753fc0ca68b1fbaeccb9817672',
     'info', 'Kerem',
     'Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.',
-    '2026-08-08T00:00:00Z'::timestamptz,
-    '96b0d2f805f2eac6e46b8709d779a81e7e4d91874203f896f3dbe94a84811ee1'
+    '2026-08-09T00:00:00Z'::timestamptz,
+    'd8e66c879b7cd5019706790b323f495740b3ba84fbbe8b995b0124e431fae7dc'
   ),
   (
-    'tr-android-v1', 'tr', 'kvkk', 'kvkk-android-2026-08-07',
-    'a60c019472990142f1ad0642678a7086f9459d5e583b97fa647a13b52575a730',
+    'tr-android-v1', 'tr', 'kvkk', 'kvkk-android-2026-08-09',
+    '7cf16880546a414df03202ea1fd09ff0d7aafa48c9f1adb89f62d897741bb297',
     'info', 'Kerem',
     'Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.',
-    '2026-08-08T00:00:00Z'::timestamptz,
-    '96b0d2f805f2eac6e46b8709d779a81e7e4d91874203f896f3dbe94a84811ee1'
+    '2026-08-09T00:00:00Z'::timestamptz,
+    'd8e66c879b7cd5019706790b323f495740b3ba84fbbe8b995b0124e431fae7dc'
   ),
   (
-    'tr-android-v1', 'tr', 'consent', 'consent-android-2026-08-07',
-    '973932b929f6d58b78d63441f45d8b72c2877c3e7ae0177d458b47487d23677f',
+    'tr-android-v1', 'tr', 'consent', 'consent-android-2026-08-09',
+    '53b380da568e67d6d7406f2a8bad0787b45ddcd2fdf0485f1aaec8f3e517a5c2',
     'info', 'Kerem',
     'Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.',
-    '2026-08-08T00:00:00Z'::timestamptz,
-    '96b0d2f805f2eac6e46b8709d779a81e7e4d91874203f896f3dbe94a84811ee1'
+    '2026-08-09T00:00:00Z'::timestamptz,
+    'd8e66c879b7cd5019706790b323f495740b3ba84fbbe8b995b0124e431fae7dc'
   )
 on conflict (document_set_id, document_locale, document_kind, version)
 do update set
@@ -72,32 +72,32 @@ values (
     'schema_version', 1,
     'enabled', false,
     'document_set_id', 'tr-android-v1',
-    'manifest_checksum', 'b56396d22e1d8ca03d8f402f619c7f694acc944a31cc0c592bb041547462f83b',
-    'policy_version', 'android-legal-2026-08-07',
+    'manifest_checksum', 'aaa169338de3d9425e76cc4d8b9e98047847934c39cf646cb4f87f708c63cfec',
+    'policy_version', 'android-legal-2026-08-09',
     'message_tr', 'Hukuki metinlerimiz güncellendi. Devam etmeden önce güncel metinleri inceleyin.',
     'documents', jsonb_build_array(
       jsonb_build_object(
         'kind', 'terms',
-        'version', 'terms-android-2026-08-07',
-        'checksum', '0d55c5cb1257afea527a1fd49633fcbbdd3e561ef6d63c6739f6d9b372703db8',
+        'version', 'terms-android-2026-08-09',
+        'checksum', 'aebbb01c27012192ddf36669b73036889fe8d1f4266a08326aa96e248829e749',
         'change_type', 'info'
       ),
       jsonb_build_object(
         'kind', 'privacy',
-        'version', 'privacy-android-2026-08-07',
-        'checksum', '72a4f78f1abbfb64c03b0a932cfe48a3bafe711a7aa1395fa1f0217cf58c44ce',
+        'version', 'privacy-android-2026-08-09',
+        'checksum', 'ac811bcf95946e4251ebdbf3d2bd71622e94e3753fc0ca68b1fbaeccb9817672',
         'change_type', 'info'
       ),
       jsonb_build_object(
         'kind', 'kvkk',
-        'version', 'kvkk-android-2026-08-07',
-        'checksum', 'a60c019472990142f1ad0642678a7086f9459d5e583b97fa647a13b52575a730',
+        'version', 'kvkk-android-2026-08-09',
+        'checksum', '7cf16880546a414df03202ea1fd09ff0d7aafa48c9f1adb89f62d897741bb297',
         'change_type', 'info'
       ),
       jsonb_build_object(
         'kind', 'consent',
-        'version', 'consent-android-2026-08-07',
-        'checksum', '973932b929f6d58b78d63441f45d8b72c2877c3e7ae0177d458b47487d23677f',
+        'version', 'consent-android-2026-08-09',
+        'checksum', '53b380da568e67d6d7406f2a8bad0787b45ddcd2fdf0485f1aaec8f3e517a5c2',
         'change_type', 'info'
       )
     )

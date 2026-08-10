@@ -13,6 +13,7 @@ on:
       - "supabase/functions/**"
       - "supabase/migrations/**"
       - "supabase/tests/**"
+      - "docs/android/**"
       - ".github/workflows/android-ci.yml"
   push:
     branches: [main]
@@ -22,6 +23,7 @@ on:
       - "supabase/functions/**"
       - "supabase/migrations/**"
       - "supabase/tests/**"
+      - "docs/android/**"
 
 defaults:
   run:
@@ -33,7 +35,13 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: macos-14
+    runs-on: ubuntu-24.04
+    env:
+      RD_STAGING_SUPABASE_URL: ${{ secrets.RD_STAGING_SUPABASE_URL }}
+      RD_STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.RD_STAGING_SUPABASE_PUBLISHABLE_KEY }}
+      RD_STAGING_FIREBASE_PROJECT_ID: ${{ secrets.RD_STAGING_FIREBASE_PROJECT_ID }}
+      RD_STAGING_GOOGLE_WEB_CLIENT_ID: ${{ secrets.RD_STAGING_GOOGLE_WEB_CLIENT_ID }}
+      RD_STAGING_REVENUECAT_PUBLIC_KEY: ${{ secrets.RD_STAGING_REVENUECAT_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -52,8 +60,18 @@ jobs:
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Pin screenshot-test environment
+        run: |
+          echo "LANG=C.UTF-8" >> "$GITHUB_ENV"
+          echo "LC_ALL=C.UTF-8" >> "$GITHUB_ENV"
+          echo "TZ=Europe/Istanbul" >> "$GITHUB_ENV"
+          echo "JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8 -Duser.language=tr -Duser.country=TR -Duser.timezone=Europe/Istanbul" >> "$GITHUB_ENV"
+
       - name: Verify environment isolation
         run: ./gradlew :app:verifyEnvironmentIsolation --stacktrace
+
+      - name: Source secret, PII log and AD_ID scan
+        run: bash scripts/scan-source-secrets-and-pii.sh
 
       - name: Lint
         run: ./gradlew lint --stacktrace
@@ -62,7 +80,7 @@ jobs:
         run: ./gradlew testDebugUnitTest --stacktrace
 
       - name: Verify Android screenshot goldens
-        run: ./gradlew :app:verifyRoborazziDebug -Proborazzi.dumpUiTree=true --stacktrace
+        run: ./gradlew verifyRoborazziDebug -Proborazzi.dumpUiTree=true --stacktrace
 
       - name: Assemble debug
         run: ./gradlew :app:assembleDebug --stacktrace
@@ -70,12 +88,26 @@ jobs:
       - name: Assemble QA
         run: ./gradlew :app:assembleQa --stacktrace
 
+      - name: Verify merged QA permissions
+        run: bash scripts/scan-source-secrets-and-pii.sh app/build/outputs/apk/qa/app-qa.apk
+
       - name: Upload debug APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: warn
+
+      - name: Upload minified QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-qa-minified
+          path: |
+            android/app/build/outputs/apk/qa/app-qa.apk
+            android/app/build/outputs/mapping/qa/configuration.txt
+            android/app/build/outputs/mapping/qa/mapping.txt
           if-no-files-found: warn
 
       - name: Upload lint report
@@ -92,9 +124,9 @@ jobs:
         with:
           name: android-screenshot-regression
           path: |
-            android/app/build/reports/roborazzi
-            android/app/build/outputs/roborazzi
-            android/app/build/test-results/roborazzi
+            android/**/build/reports/roborazzi
+            android/**/build/outputs/roborazzi
+            android/**/build/test-results/roborazzi
           if-no-files-found: ignore
 
   # Release is intentionally not assembled here until the CI secret store contains production

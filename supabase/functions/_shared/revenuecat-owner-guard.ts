@@ -1,9 +1,13 @@
-export function normalizeRevenueCatAppUserID(value: string | null | undefined): string | null {
+export function normalizeRevenueCatAppUserID(
+  value: string | null | undefined,
+): string | null {
   const normalized = value?.trim().toLowerCase() ?? "";
   return normalized ? normalized : null;
 }
 
-export function isRevenueCatAnonymousAppUserID(value: string | null | undefined): boolean {
+export function isRevenueCatAnonymousAppUserID(
+  value: string | null | undefined,
+): boolean {
   const normalized = normalizeRevenueCatAppUserID(value);
   return normalized?.startsWith("$rcanonymousid:") ?? false;
 }

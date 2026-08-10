@@ -24,7 +24,7 @@ Firma modülü verileri: firma adı, tehlike sınıfı, adres, ilgili kişi, dep
 Mesleki ilerleme verileri: MDP, uygulama içi ünvanlar, rozetler, yetkinlik haritası, haftalık takip, aktif gün, kategori/risk sayıları ve başarı mesajları.
 Abonelik/kota verileri: Free/Plus/Pro durumu, günlük/aylık kota, ücretsiz deneme, tek seferlik risk analizi tablosu hakkı, RevenueCat/Google Play entitlement ve işlem olayları.
 Bildirim verileri: bildirim tercihleri, FCM cihaz tokenı, gönderim/başarı/hata kayıtları.
-Teknik veriler: IP adresi, cihaz modeli, işletim sistemi, uygulama sürümü, request ID, support ID, hata kodları, performans, AI sağlayıcı/model, token sayıları ve fallback bilgileri.
+Teknik veriler: IP adresi, cihaz modeli, işletim sistemi, uygulama sürümü, request ID, support ID, hata kodları, çökme/diagnostik bilgileri, performans, AI sağlayıcı/model, token sayıları ve fallback bilgileri. Firebase Crashlytics kayıtlarına e-posta, Supabase kullanıcı kimliği, token, fotoğraf yolu, ham analiz/FCM içeriği veya sunucu hata gövdesi bilerek eklenmez.
 Hukuki/onay kayıtları: KVKK, açık rıza, kullanım koşulları, gizlilik politikası kabul sürümleri ve zamanları.
 
 RiskDetected ödeme kartı bilgilerinizi doğrudan almaz veya saklamaz. Google Play ödemeleri Google tarafından yürütülür.
@@ -70,6 +70,7 @@ Google Gemini/Google AI: fotoğraf analizi.
 Groq: AI fallback veya kalite karşılaştırma süreçleri.
 RevenueCat ve Google Play: abonelik, deneme, satın alma ve entitlement doğrulama.
 Firebase Cloud Messaging (FCM): bildirim gönderimi.
+Firebase Crashlytics: uygulama çökmeleri ve teknik hata teşhisi.
 Google Sign-In: giriş yöntemi olarak seçildiğinde kimlik doğrulama.
 
 Bu taraflar Türkiye dışında bulunabilir veya verileri yurt dışında işleyebilir. Ayrıntılı hukuki açıklama KVKK Aydınlatma Metni ve Açık Rıza Beyanı içinde yer alır.
@@ -88,7 +89,7 @@ Silme talepleri uygulanırken yasal yükümlülükler, güvenlik kayıtları, uy
 
 8. Hesap Silme
 
-Hesap silme işlemi uygulama içinde Profil > Hesabımı sil / Delete Account yolundan başlatılır ve tamamlanır. E-posta, destek kanalı veya web sitesi hesap silme için zorunlu değildir.
+Hesap silme işlemi uygulama içinde Profil > Hesabımı sil yolundan anında veya https://riskdetected.com/hesap-silme adresinde e-posta OTP doğrulamasıyla başlatılabilir. Web üzerinden oluşturulan doğrulanmış talepler en geç 24 saat içinde tamamlanır.
 
 Hesap silme onaylandığında hesap kaydı ve hesaba bağlı uygulama verileri kalıcı olarak silinir. Yasal saklama yükümlülükleri, uyuşmazlıklar, güvenlik kayıtları ve teknik yedekleme süreleri saklı kalabilir.
 
@@ -111,11 +112,11 @@ Kullanıcılar:
 Kamera, fotoğraf ve bildirim izinlerini Android ayarlarından yönetebilir.
 Analiz, rapor, firma ve avatar verilerini uygulama içinden silebilir veya güncelleyebilir.
 Veri dışa aktarma işlemini uygulama içinden başlatabilir.
-Hesap silme işlemini uygulama içinde Profil > Hesabımı sil / Delete Account yolundan başlatabilir ve tamamlayabilir.
+Hesap silme işlemini uygulama içinde Profil > Hesabımı sil yolundan veya https://riskdetected.com/hesap-silme adresinden başlatabilir.
 KVKK kapsamındaki haklarını kullanabilir.
 Açık rızaya dayalı işlemlerde rızasını geri çekebilir.
 
-Hesap silme için e-posta, destek kanalı veya web sitesi zorunlu değildir. Genel gizlilik, KVKK, veri erişimi, rıza geri çekme ve destek talepleri için info@riskdetected.com adresi veya Profil > Destek kullanılabilir.
+Web silme talebinde hesap sahipliğini doğrulamak için e-posta OTP kullanılır. Genel gizlilik, KVKK, veri erişimi, rıza geri çekme ve destek talepleri için info@riskdetected.com adresi veya Profil > Destek kullanılabilir.
 
 12. Güvenlik
 
@@ -139,4 +140,4 @@ Adres: Eskişehir
 Web sitesi: https://riskdetected.com
 Uygulama içi destek: Profil > Destek
 
-Hesap silme, destek veya iletişim talebi olarak yürütülmez. Hesabınızı ve hesabınıza bağlı uygulama verilerini silmek için uygulama içinde Profil > Hesabımı sil / Delete Account yolunu kullanabilirsiniz. E-posta, destek kanalı veya web sitesi hesap silme için zorunlu değildir.
+Hesabınızı ve hesabınıza bağlı uygulama verilerini silmek için uygulama içinde Profil > Hesabımı sil yolunu veya https://riskdetected.com/hesap-silme adresini kullanabilirsiniz. Web talebinin durumu, işlem sırasında verilen destek koduyla takip edilebilir.

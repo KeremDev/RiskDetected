@@ -54,8 +54,10 @@ class PendingNotificationRouteStore @Inject constructor() {
     private val _pending = MutableStateFlow<NotificationDeepLinkPayload?>(null)
     val pending: StateFlow<NotificationDeepLinkPayload?> = _pending.asStateFlow()
 
-    fun accept(data: Map<String, String>) {
-        NotificationDeepLinkParser.parse(data)?.let { _pending.value = it }
+    fun accept(data: Map<String, String>): NotificationDeepLinkPayload? {
+        val payload = NotificationDeepLinkParser.parse(data) ?: return null
+        _pending.value = payload
+        return payload
     }
 
     fun consume() {
@@ -67,14 +69,14 @@ class PendingNotificationRouteStore @Inject constructor() {
 class NotificationDeepLinkHandler @Inject constructor(
     private val store: PendingNotificationRouteStore,
 ) {
-    fun handle(intent: Intent) {
-        val extras = intent.extras ?: return
+    fun handle(intent: Intent): NotificationDeepLinkPayload? {
+        val extras = intent.extras ?: return null
         val data = buildMap {
             for (key in listOf("type", "analysis_id", "report_id")) {
                 extras.getString(key)?.let { put(key, it) }
             }
         }
-        store.accept(data)
+        return store.accept(data)
     }
 
     fun putIntoIntent(message: RemoteMessage, intent: Intent) {

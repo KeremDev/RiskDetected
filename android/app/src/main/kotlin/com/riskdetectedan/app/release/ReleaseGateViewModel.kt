@@ -7,6 +7,7 @@ import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.legal.LegalAcceptanceRepository
 import com.riskdetectedan.core.data.release.AndroidLegalPolicy
+import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.AppReleasePolicy
 import com.riskdetectedan.core.data.release.ReleasePolicySnapshot
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
@@ -19,7 +20,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed interface ReleaseGateState {
+    data object Checking : ReleaseGateState
     data object Clear : ReleaseGateState
+    data class ClientBlocked(val reason: String) : ReleaseGateState
     data class Hard(val policy: AppReleasePolicy) : ReleaseGateState
     data class Soft(val policy: AppReleasePolicy) : ReleaseGateState
     data class Legal(
@@ -48,7 +51,7 @@ class ReleaseGateViewModel @Inject constructor(
 
     private val currentBuild = environmentConfig.appVersionCode
 
-    private val _state = MutableStateFlow<ReleaseGateState>(ReleaseGateState.Clear)
+    private val _state = MutableStateFlow<ReleaseGateState>(ReleaseGateState.Checking)
     val state: StateFlow<ReleaseGateState> = _state.asStateFlow()
     private var currentUserId: String? = null
 
@@ -63,11 +66,13 @@ class ReleaseGateViewModel @Inject constructor(
         }
     }
 
-    private fun applyCachedHardPolicyIfNeeded() {
-        val cached = repository.cachedHardPolicy() ?: return
+    private fun applyCachedHardPolicyIfNeeded(): Boolean {
+        val cached = repository.cachedHardPolicy() ?: return false
         if (cached.requiresHardUpdate(currentBuild)) {
             _state.value = ReleaseGateState.Hard(cached)
+            return true
         }
+        return false
     }
 
     fun refresh(userId: String? = currentUserId) {
@@ -81,8 +86,9 @@ class ReleaseGateViewModel @Inject constructor(
                             isSubmitting = false,
                             errorCode = "release_policy_refresh_failed",
                         )
+                    } else if (current !is ReleaseGateState.Hard && !applyCachedHardPolicyIfNeeded()) {
+                        _state.value = ReleaseGateState.ClientBlocked("unavailable")
                     }
-                    applyCachedHardPolicyIfNeeded()
                 }
             }
         }
@@ -96,6 +102,12 @@ class ReleaseGateViewModel @Inject constructor(
             return
         }
         repository.clearCachedHardPolicy()
+
+        val clientGate = repository.gate(AndroidRuntimeGateName.Client)
+        if (!clientGate.enabled) {
+            _state.value = ReleaseGateState.ClientBlocked(clientGate.reason)
+            return
+        }
 
         val legalPolicy = snapshot.androidLegalPolicy
         if (userId != null && legalPolicy?.requiresAppUpdate == true) {

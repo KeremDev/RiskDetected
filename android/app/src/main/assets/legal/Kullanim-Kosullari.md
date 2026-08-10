@@ -104,7 +104,7 @@ RiskDetected Hizmeti geliştirebilir, değiştirebilir, bazı özellikleri kald�
 
 Kullanıcı analiz, rapor, firma ve avatar gibi içeriklerini uygulama içindeki ilgili ekranlardan silebilir veya güncelleyebilir.
 
-Hesap silme işlemi uygulama içinde Profil > Hesabımı sil / Delete Account yolundan başlatılır ve tamamlanır. E-posta, destek kanalı veya web sitesi hesap silme için zorunlu değildir.
+Hesap silme işlemi uygulama içinde Profil > Hesabımı sil yolundan anında veya https://riskdetected.com/hesap-silme adresinde e-posta OTP doğrulamasıyla başlatılabilir. Web üzerinden oluşturulan doğrulanmış talepler en geç 24 saat içinde tamamlanır.
 
 Hesap silme onaylandığında hesap kaydı ve hesaba bağlı uygulama verileri kalıcı olarak silinir. Yasal saklama yükümlülükleri, uyuşmazlıklar, güvenlik kayıtları ve teknik yedekleme süreleri saklı kalabilir.
 
@@ -112,7 +112,7 @@ Aktif Google Play abonelikleri Google Play Abonelikler ayarlarından yönetilir.
 
 14. Üçüncü taraf hizmetleri
 
-Hizmet; Supabase, AI sağlayıcıları, RevenueCat, Google Play, Google giriş servisi, Firebase Cloud Messaging (FCM) ve destek/güvenlik altyapıları gibi üçüncü taraflardan yararlanabilir. Bu taraflar yalnızca Hizmetin sunulması için gerekli ölçüde veri işleyebilir.
+Hizmet; Supabase, AI sağlayıcıları, RevenueCat, Google Play, Google giriş servisi, Firebase Cloud Messaging (FCM), Firebase Crashlytics ve destek/güvenlik altyapıları gibi üçüncü taraflardan yararlanabilir. Crashlytics yalnız çökme ve teknik hata teşhisi için kullanılır; e-posta, kullanıcı kimliği, token, fotoğraf yolu, ham analiz/FCM içeriği veya sunucu hata gövdesi bilerek eklenmez. Bu taraflar yalnızca Hizmetin sunulması için gerekli ölçüde veri işleyebilir.
 
 15. Sorumluluk sınırı
 
@@ -132,4 +132,4 @@ Adres: Eskişehir
 Web sitesi: https://riskdetected.com
 Uygulama içi destek: Profil > Destek
 
-Hesap silme, destek veya iletişim talebi olarak yürütülmez. Hesabınızı ve hesabınıza bağlı uygulama verilerini silmek için uygulama içinde Profil > Hesabımı sil / Delete Account yolunu kullanabilirsiniz. E-posta, destek kanalı veya web sitesi hesap silme için zorunlu değildir.
+Hesabınızı ve hesabınıza bağlı uygulama verilerini silmek için uygulama içinde Profil > Hesabımı sil yolunu veya https://riskdetected.com/hesap-silme adresini kullanabilirsiniz. Web talebinin durumu, işlem sırasında verilen destek koduyla takip edilebilir.

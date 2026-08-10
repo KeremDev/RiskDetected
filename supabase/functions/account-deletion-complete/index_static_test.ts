@@ -38,19 +38,54 @@ Deno.test("account-deletion-complete records DB/Auth/Storage completion markers"
     'const BUCKETS = ["photos", "reports", "logos", "avatars"]',
   );
   assertStringIncludes(source, "await removeBucketPrefix(");
+  assertStringIncludes(source, ".getUserById(targetUserID)");
+  assertStringIncludes(source, "lookupStatus !== 404");
   assertStringIncludes(source, "supabase.auth.admin.deleteUser");
   assertStringIncludes(source, 'status: "completed"');
   assertStringIncludes(source, "completed_at: completedAt");
   assertStringIncludes(source, "auth_user_deleted: true");
   assertStringIncludes(source, "completion_error: null");
   assertStringIncludes(source, "target_user_hash");
+  assertStringIncludes(source, "stale_claim_recovered");
+  assertStringIncludes(source, 'request.status === "processing"');
+  assertStringIncludes(source, '.lte("processing_started_at", staleBefore)');
+  assertStringIncludes(source, "!request.user_id && !request.target_user_hash");
+  assertStringIncludes(source, "sendCompletionEmail");
+  assertStringIncludes(source, "target_email: null");
   assertStringIncludes(source, 'status: "pending"');
-  assertStringIncludes(source, "completion_error: message.slice(0, 1000)");
+  assertStringIncludes(source, "attempt_count: attemptCount");
+  assertStringIncludes(source, "last_error_code: failureCode");
+  assertStringIncludes(source, "next_attempt_at: nextAttemptAt");
   assertStringIncludes(source, 'error: "request_already_processing"');
   assertStringIncludes(source, '.eq("status", "pending")');
-  assertStringIncludes(source, ".select(\"id\")");
+  assertStringIncludes(source, '.select("id")');
   assertStringIncludes(source, ".maybeSingle()");
   assertStringIncludes(source, '.eq("completion_support_id", supportID)');
+});
+
+Deno.test("request-account-deletion preserves immediate mobile behavior and queues web requests", async () => {
+  const source = await readTextIfAllowed(
+    new URL("../request-account-deletion/index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, '"immediate", "request_only"');
+  assertStringIncludes(source, 'clientPlatform !== "web"');
+  assertStringIncludes(source, "sendRequestAcceptedEmail");
+  assertStringIncludes(source, "return json(req, 202");
+  assertStringIncludes(source, "estimated_completion_at");
+  assertStringIncludes(source, "alignOpenRequest");
+  assertStringIncludes(source, "targetUserHash: await sha256Hex(user.id)");
+  assertStringIncludes(source, 'error: "invalid_request_id"');
+  assertStringIncludes(source, "failure_code: safeErrorCode(error)");
+  assertStringIncludes(source, 'completionMode === "request_only" ? 24');
+  assertStringIncludes(source, "ACCOUNT_DELETION_ALLOWED_ORIGINS");
+  assertStringIncludes(source, '"https://riskdetected.com"');
+  if (source.includes("http://localhost")) {
+    throw new Error(
+      "Production account-deletion CORS defaults must not allow localhost.",
+    );
+  }
 });
 
 Deno.test("account deletion migration keeps editable finding audit from blocking auth delete", async () => {

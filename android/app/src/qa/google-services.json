@@ -1,22 +1,52 @@
 {
   "project_info": {
-    "project_number": "0",
-    "project_id": "riskdetected-android-staging-unconfigured",
-    "storage_bucket": "riskdetected-android-staging-unconfigured.invalid"
+    "project_number": "672800014637",
+    "project_id": "riskdetected-android-staging",
+    "storage_bucket": "riskdetected-android-staging.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:0:android:unconfiguredqa",
+        "mobilesdk_app_id": "1:672800014637:android:5a5e2d4f0e740aaa3c53a4",
+        "android_client_info": {
+          "package_name": "com.riskdetectedan.app.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGETO4Pev2hoWqU4ZhlCHAzhq32tZwotU"
+        },
+        {
+          "current_key": "AIzaSyBp8h-X2g5tlJ_uIZfL6pw_z3p29LDN--Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:672800014637:android:cfb5956d14bac4303c53a4",
         "android_client_info": {
           "package_name": "com.riskdetectedan.app.qa"
         }
       },
+      "oauth_client": [],
       "api_key": [
-        { "current_key": "UNCONFIGURED_STAGING_FIREBASE" }
+        {
+          "current_key": "AIzaSyCGETO4Pev2hoWqU4ZhlCHAzhq32tZwotU"
+        },
+        {
+          "current_key": "AIzaSyBp8h-X2g5tlJ_uIZfL6pw_z3p29LDN--Y"
+        }
       ],
       "services": {
-        "appinvite_service": { "other_platform_oauth_client": [] }
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
       }
     }
   ],

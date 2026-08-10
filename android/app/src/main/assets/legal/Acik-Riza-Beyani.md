@@ -14,7 +14,7 @@ Yüklediğim fotoğrafın sağlık durumu, yaralanma, engellilik, iş kıyafeti/
 
 RiskDetected'in AI analizi, bulut altyapısı, dosya saklama, kimlik doğrulama, abonelik doğrulama, bildirim, güvenlik, teknik destek ve hata giderme süreçlerinde kişisel verilerimi Türkiye dışında bulunan hizmet sağlayıcılarına aktarabileceğini ve bu sağlayıcıların verileri yurt dışında işleyebileceğini anladım. Bu aktarıma açık rıza veriyorum.
 
-Kullanılabilecek hizmet sağlayıcı grupları Supabase, Google Gemini/Google AI, Groq, Google Play, RevenueCat, Google giriş servisi ve Firebase Cloud Messaging (FCM) gibi altyapıları içerebilir.
+Kullanılabilecek hizmet sağlayıcı grupları Supabase, Google Gemini/Google AI, Groq, Google Play, RevenueCat, Google giriş servisi, Firebase Cloud Messaging (FCM) ve Firebase Crashlytics gibi altyapıları içerebilir. Crashlytics yalnız çökme ve teknik hata teşhisi için kullanılır; e-posta, kullanıcı kimliği, token, fotoğraf yolu, ham analiz/FCM içeriği veya sunucu hata gövdesi bilerek eklenmez.
 
 4. Profil, firma ve rapor görselleri
 
@@ -34,4 +34,4 @@ RiskDetected'in kampanya, ürün duyurusu veya pazarlama iletişimi göndermesin
 
 Açık rızamı dilediğim zaman info@riskdetected.com üzerinden veya uygulama içi destek/ayar kanallarıyla geri çekebilirim. Rızanın geri çekilmesi, geri çekmeden önce yapılan işlemlerin hukuka uygunluğunu etkilemez. Rıza geri çekildiğinde fotoğraf analizi, rapor üretimi, avatar/logo gösterimi, bildirim veya mesleki ilerleme gibi bazı özellikler teknik olarak sunulamayabilir.
 
-Rıza geri çekme işlemi hesap silme işleminden ayrıdır. Hesabımı ve hesabıma bağlı uygulama verilerini silmek istersem, uygulama içinde Profil > Hesabımı sil / Delete Account yolunu kullanabilirim. Hesap silme işlemi uygulama içinde başlatılır ve tamamlanır; e-posta, destek kanalı veya web sitesi hesap silme için zorunlu değildir.
+Rıza geri çekme işlemi hesap silme işleminden ayrıdır. Hesabımı ve hesabıma bağlı uygulama verilerini silmek istersem, uygulama içinde Profil > Hesabımı sil yolunu veya https://riskdetected.com/hesap-silme adresini kullanabilirim. Web üzerinden oluşturulan doğrulanmış talepler en geç 24 saat içinde tamamlanır.

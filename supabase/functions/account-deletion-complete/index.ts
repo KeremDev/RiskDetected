@@ -21,6 +21,9 @@ type AccountDeletionRequest = {
   requested_scope: string;
   target_user_id: string | null;
   target_email: string | null;
+  target_user_hash: string | null;
+  attempt_count: number;
+  processing_started_at: string | null;
 };
 
 type CompletionBody = {
@@ -55,15 +58,11 @@ function cleanText(value: unknown, fallback: string, maxLength = 120): string {
   return clean.length > 0 ? clean : fallback;
 }
 
-function safeErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message.replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
-      .slice(0, 240);
-  }
-  return String(error).replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]").slice(
-    0,
-    240,
-  );
+function safeErrorCode(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  const category = raw.split(":", 1)[0].toLowerCase();
+  const sanitized = category.replace(/[^a-z0-9_]/g, "_").slice(0, 80);
+  return sanitized || "unknown_failure";
 }
 
 function isUUID(value: unknown): value is string {
@@ -78,6 +77,32 @@ async function sha256Hex(value: string): Promise<string> {
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
+}
+
+async function sendCompletionEmail(
+  email: string | null,
+  supportID: string,
+): Promise<void> {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  const from = Deno.env.get("RESEND_FROM_EMAIL") ??
+    "RiskDetected <info@riskdetected.com>";
+  if (!apiKey || !email) return;
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [email],
+      subject: "RiskDetected hesabın ve verilerin silindi",
+      text:
+        "Hesabın ve RiskDetected verilerin silindi. Aktif Google Play veya App Store aboneliğin varsa mağaza abonelik ayarlarından ayrıca yönetmelisin.\n\n" +
+        `Destek kodu: ${supportID}`,
+    }),
+  }).catch(() => undefined);
 }
 
 async function listBucketPaths(
@@ -144,7 +169,7 @@ async function findRequest(
     const { data, error } = await supabase
       .from("account_deletion_requests")
       .select(
-        "id,user_id,email,status,requested_scope,target_user_id,target_email",
+        "id,user_id,email,status,requested_scope,target_user_id,target_email,target_user_hash,attempt_count,processing_started_at",
       )
       .eq("id", body.request_id)
       .maybeSingle();
@@ -157,7 +182,7 @@ async function findRequest(
   const { data, error } = await supabase
     .from("account_deletion_requests")
     .select(
-      "id,user_id,email,status,requested_scope,target_user_id,target_email",
+      "id,user_id,email,status,requested_scope,target_user_id,target_email,target_user_hash,attempt_count,processing_started_at",
     )
     .eq("user_id", body.user_id)
     .in("status", ["pending", "processing"])
@@ -215,7 +240,7 @@ serve(async (req) => {
   } catch (error) {
     return json(400, {
       error: "request_lookup_failed",
-      message: safeErrorMessage(error),
+      failure_code: safeErrorCode(error),
       support_id: supportID,
     });
   }
@@ -233,13 +258,46 @@ serve(async (req) => {
     });
   }
 
+  const now = new Date().toISOString();
   if (request.status === "processing") {
-    return json(409, {
-      error: "request_already_processing",
-      status: request.status,
-      request_id: request.id,
-      support_id: supportID,
-    });
+    const staleBefore = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const startedAt = request.processing_started_at;
+    if (!startedAt || startedAt > staleBefore) {
+      return json(409, {
+        error: "request_already_processing",
+        status: request.status,
+        request_id: request.id,
+        support_id: supportID,
+      });
+    }
+    const recoveredAttemptCount = Math.min(request.attempt_count + 1, 10);
+    const { data: recovered, error: recoveryError } = await supabase
+      .from("account_deletion_requests")
+      .update({
+        status: "pending",
+        attempt_count: recoveredAttemptCount,
+        completion_error: "stale_claim_recovered",
+        last_error_code: "stale_claim_recovered",
+        next_attempt_at: null,
+        updated_at: now,
+      })
+      .eq("id", request.id)
+      .eq("status", "processing")
+      .lte("processing_started_at", staleBefore)
+      .select("id")
+      .maybeSingle();
+    if (recoveryError || !recovered) {
+      return json(409, {
+        error: "request_recovery_conflict",
+        request_id: request.id,
+        support_id: supportID,
+      });
+    }
+    request = {
+      ...request,
+      status: "pending",
+      attempt_count: recoveredAttemptCount,
+    };
   }
 
   if (request.status !== "pending") {
@@ -252,8 +310,9 @@ serve(async (req) => {
   }
 
   if (
-    !request.user_id ||
-    (request.target_user_id && request.target_user_id !== request.user_id)
+    (!request.user_id && !request.target_user_hash) ||
+    (request.user_id && request.target_user_id &&
+      request.target_user_id !== request.user_id)
   ) {
     return json(409, {
       error: "target_user_mismatch",
@@ -272,7 +331,6 @@ serve(async (req) => {
     });
   }
 
-  const now = new Date().toISOString();
   const processedBy = cleanText(
     body.processed_by,
     "edge:function:account-deletion-complete",
@@ -300,6 +358,9 @@ serve(async (req) => {
     target_email: targetEmail,
     target_user_hash: targetHash,
     processing_started_at: now,
+    last_attempt_at: now,
+    last_error_code: null,
+    next_attempt_at: null,
     updated_at: now,
   };
 
@@ -314,7 +375,6 @@ serve(async (req) => {
   if (processingError) {
     return json(500, {
       error: "request_lock_failed",
-      message: processingError.message,
       request_id: request.id,
       support_id: supportID,
     });
@@ -338,11 +398,22 @@ serve(async (req) => {
       );
     }
 
-    const { error: authDeleteError } = await supabase.auth.admin.deleteUser(
-      targetUserID,
+    const { data: authLookup, error: authLookupError } = await supabase.auth
+      .admin
+      .getUserById(targetUserID);
+    const lookupStatus = Number(
+      (authLookupError as { status?: number } | null)?.status ?? 0,
     );
-    if (authDeleteError) {
-      throw new Error(`auth_delete_failed:${authDeleteError.message}`);
+    if (authLookupError && lookupStatus !== 404) {
+      throw new Error(`auth_lookup_failed:${authLookupError.message}`);
+    }
+    if (authLookup?.user) {
+      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(
+        targetUserID,
+      );
+      if (authDeleteError) {
+        throw new Error(`auth_delete_failed:${authDeleteError.message}`);
+      }
     }
 
     const completedAt = new Date().toISOString();
@@ -353,11 +424,17 @@ serve(async (req) => {
         completed_at: completedAt,
         completion_support_id: supportID,
         completion_error: null,
+        last_error_code: null,
+        next_attempt_at: null,
         deleted_photo_objects: removed.photos ?? 0,
         deleted_report_objects: removed.reports ?? 0,
         deleted_logo_objects: removed.logos ?? 0,
         deleted_avatar_objects: removed.avatars ?? 0,
         auth_user_deleted: true,
+        user_id: null,
+        email: null,
+        target_user_id: null,
+        target_email: null,
         updated_at: completedAt,
       })
       .eq("id", request.id)
@@ -374,6 +451,8 @@ serve(async (req) => {
       );
     }
 
+    await sendCompletionEmail(targetEmail, supportID);
+
     return json(200, {
       ok: true,
       request_id: request.id,
@@ -384,13 +463,22 @@ serve(async (req) => {
     });
   } catch (error) {
     const failedAt = new Date().toISOString();
-    const message = safeErrorMessage(error);
+    const failureCode = safeErrorCode(error);
+    const attemptCount = Math.min((request.attempt_count ?? 0) + 1, 10);
+    const retryDelayMinutes = Math.min(15 * 2 ** (attemptCount - 1), 360);
+    const nextAttemptAt = new Date(
+      Date.now() + retryDelayMinutes * 60 * 1000,
+    ).toISOString();
     await supabase
       .from("account_deletion_requests")
       .update({
         status: "pending",
-        completion_error: message.slice(0, 1000),
+        completion_error: failureCode,
         completion_support_id: supportID,
+        attempt_count: attemptCount,
+        last_attempt_at: failedAt,
+        last_error_code: failureCode,
+        next_attempt_at: nextAttemptAt,
         updated_at: failedAt,
       })
       .eq("id", request.id)
@@ -399,7 +487,7 @@ serve(async (req) => {
 
     return json(500, {
       error: "account_deletion_failed",
-      message,
+      failure_code: failureCode,
       request_id: request.id,
       support_id: supportID,
     });

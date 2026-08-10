@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -54,8 +57,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -69,7 +76,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.auth.RdAppLanguage
 import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.designsystem.RdButtonStyle
@@ -82,8 +89,351 @@ import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
+import com.riskdetectedan.feature.onboarding.R as OnboardingR
 
-private enum class EmailPhase { Hidden, Email, Otp }
+enum class EmailPhase { Hidden, Email, Otp }
+
+/**
+ * Standalone sign-in surface used by the root Auth destination. This is intentionally separate
+ * from [AuthScreen], which is OBAuthView's "Son adım" and belongs only to onboarding step 8.
+ *
+ * Visual source: live iOS `AuthView.swift` / `AuthHero`. Android keeps the agreed v1 provider
+ * policy (email OTP + Google; no Apple CTA) while preserving the photo, logo, type scale,
+ * gradients, button geometry and legal-link hierarchy of the iOS screen.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginScreen(
+    onAuthenticated: () -> Unit,
+    viewModel: AuthViewModel = hiltViewModel(),
+) {
+    val context = LocalContext.current
+    val state by viewModel.state.collectAsState()
+    var phase by remember { mutableStateOf(EmailPhase.Hidden) }
+    var email by remember { mutableStateOf("") }
+    var otp by remember { mutableStateOf("") }
+    var sentTo by remember { mutableStateOf("") }
+    var legalDocumentKind by remember { mutableStateOf<String?>(null) }
+
+    val isLoading = state is AuthUiState.Loading
+    val normalizedEmail = email.trim().lowercase()
+    val failure = (state as? AuthUiState.Failed)?.error?.message
+
+    LaunchedEffect(state) {
+        when (state) {
+            is AuthUiState.SignedIn -> onAuthenticated()
+            is AuthUiState.OtpSent -> {
+                sentTo = normalizedEmail
+                otp = ""
+                phase = EmailPhase.Otp
+            }
+            else -> Unit
+        }
+    }
+    LaunchedEffect(otp) {
+        if (phase == EmailPhase.Otp && otp.length == 6 && !isLoading) {
+            viewModel.verifyEmailOtp(sentTo, otp)
+        }
+    }
+
+    LoginScreenContent(
+        phase = phase,
+        email = email,
+        onEmailChange = { email = it },
+        otp = otp,
+        onOtpChange = { otp = it },
+        sentTo = sentTo,
+        isLoading = isLoading,
+        error = failure,
+        onStartEmail = { phase = EmailPhase.Email },
+        onGoogle = { viewModel.signInWithGoogle(context) },
+        onSendCode = { viewModel.sendEmailOtp(normalizedEmail, resolveAppLanguage()) },
+        onVerifyCode = { viewModel.verifyEmailOtp(sentTo, otp) },
+        onResend = { viewModel.sendEmailOtp(sentTo, resolveAppLanguage()) },
+        onChangeEmail = { phase = EmailPhase.Email; otp = "" },
+        onCloseEmail = { phase = EmailPhase.Hidden },
+        onOpenDocument = { legalDocumentKind = it },
+    )
+
+    if (legalDocumentKind != null) {
+        var legalDocuments by remember { mutableStateOf<List<RdLegalDocument>>(emptyList()) }
+        LaunchedEffect(Unit) {
+            legalDocuments = LegalDocumentAssets.load(context)
+                .map { RdLegalDocument(kind = it.kind, title = it.title, text = it.text) }
+        }
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(onDismissRequest = { legalDocumentKind = null }, sheetState = sheetState) {
+            RdLegalDocumentSheet(
+                documents = legalDocuments,
+                initialKind = legalDocumentKind,
+                onClose = { legalDocumentKind = null },
+            )
+        }
+    }
+}
+
+@Composable
+fun LoginScreenContent(
+    phase: EmailPhase = EmailPhase.Hidden,
+    email: String = "",
+    onEmailChange: (String) -> Unit = {},
+    otp: String = "",
+    onOtpChange: (String) -> Unit = {},
+    sentTo: String = "",
+    isLoading: Boolean = false,
+    error: String? = null,
+    onStartEmail: () -> Unit = {},
+    onGoogle: () -> Unit = {},
+    onSendCode: () -> Unit = {},
+    onVerifyCode: () -> Unit = {},
+    onResend: () -> Unit = {},
+    onChangeEmail: () -> Unit = {},
+    onCloseEmail: () -> Unit = {},
+    onOpenDocument: (String) -> Unit = {},
+) {
+    val colors = RdTheme.colors
+    val normalizedEmail = email.trim().lowercase()
+    val canSendCode = normalizedEmail.contains("@") && normalizedEmail.contains(".") && !isLoading
+    val canVerifyCode = otp.length == 6 && !isLoading
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.paper),
+    ) {
+        Image(
+            painter = painterResource(OnboardingR.drawable.auth_hero),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colorStops = arrayOf(
+                            0.00f to Color.Transparent,
+                            0.30f to Color.Transparent,
+                            0.45f to colors.greenSoft.copy(alpha = 0.16f),
+                            0.58f to colors.paper.copy(alpha = 0.28f),
+                            0.72f to colors.paper.copy(alpha = 0.68f),
+                            0.86f to colors.paper.copy(alpha = 0.94f),
+                            0.96f to colors.paper,
+                        ),
+                    ),
+                ),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(116.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colorStops = arrayOf(
+                            0.00f to colors.paper.copy(alpha = 0.72f),
+                            0.43f to colors.paper.copy(alpha = 0.30f),
+                            1.00f to Color.Transparent,
+                        ),
+                    ),
+                ),
+        )
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .imePadding()
+                .navigationBarsPadding()
+                .padding(bottom = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.horizontalGradient(
+                            colorStops = arrayOf(
+                                0.00f to Color.Transparent,
+                                0.22f to colors.white.copy(alpha = 0.52f),
+                                0.50f to colors.white.copy(alpha = 0.70f),
+                                0.78f to colors.white.copy(alpha = 0.52f),
+                                1.00f to Color.Transparent,
+                            ),
+                        ),
+                    )
+                    .padding(vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Image(
+                    painter = painterResource(OnboardingR.drawable.auth_logo),
+                    contentDescription = stringResource(RdR.string.rd_riskdetected),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.width(242.dp).height(68.dp),
+                )
+                Text(
+                    text = stringResource(RdR.string.rd_auth_standalone_tagline),
+                    style = RdFontStyle.Footnote.toTextStyle(),
+                    color = colors.graphite,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.widthIn(max = 270.dp),
+                )
+            }
+
+            Spacer(Modifier.height(if (phase == EmailPhase.Hidden) 18.dp else 12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (phase == EmailPhase.Hidden) {
+                    LoginOptionButton(
+                        text = stringResource(RdR.string.rd_eposta_ile_giris_yap),
+                        onClick = onStartEmail,
+                        enabled = !isLoading,
+                        icon = {
+                            Icon(
+                                Icons.Filled.Email,
+                                contentDescription = null,
+                                tint = colors.onyx,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        },
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = colors.slate.copy(alpha = 0.22f))
+                        Text(
+                            stringResource(RdR.string.rd_veya),
+                            style = RdFontStyle.Caption.toTextStyle(),
+                            color = colors.graphite.copy(alpha = 0.78f),
+                        )
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = colors.slate.copy(alpha = 0.22f))
+                    }
+
+                    LoginOptionButton(
+                        text = stringResource(
+                            if (isLoading) RdR.string.rd_google_baglaniyor else RdR.string.rd_google_devam,
+                        ),
+                        onClick = onGoogle,
+                        enabled = !isLoading,
+                        icon = {
+                            Image(
+                                painter = painterResource(OnboardingR.drawable.google_mark),
+                                contentDescription = null,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        },
+                    )
+                    if (error != null) {
+                        Spacer(Modifier.height(10.dp))
+                        AuthErrorBanner(error)
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    StandaloneLegalNotice(onOpenDocument)
+                } else {
+                    EmailAuthPanel(
+                        phase = phase,
+                        email = email,
+                        onEmailChange = onEmailChange,
+                        otp = otp,
+                        onOtpChange = onOtpChange,
+                        sentTo = sentTo,
+                        canSendCode = canSendCode,
+                        canVerifyCode = canVerifyCode,
+                        isLoading = isLoading,
+                        error = error,
+                        onSendCode = onSendCode,
+                        onVerifyCode = onVerifyCode,
+                        onResend = onResend,
+                        onChangeEmail = onChangeEmail,
+                        onClose = onCloseEmail,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    StandaloneLegalNotice(onOpenDocument)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoginOptionButton(
+    text: String,
+    onClick: () -> Unit,
+    enabled: Boolean,
+    icon: @Composable () -> Unit,
+) {
+    val colors = RdTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(colors.white)
+            .border(1.dp, colors.line, RoundedCornerShape(14.dp))
+            .clickable(enabled = enabled, onClick = onClick)
+            .alpha(if (enabled) 1f else 0.75f)
+            .padding(horizontal = 18.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        icon()
+        Spacer(Modifier.width(9.dp))
+        Text(
+            text,
+            style = RdFontStyle.Body.toTextStyle().copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
+            color = colors.onyx,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun StandaloneLegalNotice(onOpenDocument: (String) -> Unit) {
+    val colors = RdTheme.colors
+    val annotated = buildAnnotatedString {
+        append(stringResource(RdR.string.rd_auth_legal_standalone_prefix))
+        append(" ")
+        fun legalLink(label: String, kind: String) {
+            pushStringAnnotation(tag = "legal", annotation = kind)
+            withStyle(SpanStyle(color = colors.greenDark, textDecoration = TextDecoration.Underline)) {
+                append(label)
+            }
+            pop()
+        }
+        legalLink(stringResource(RdR.string.rd_hizmet_sartlarimiz), "terms")
+        append(", ")
+        legalLink(stringResource(RdR.string.rd_gizlilik_politikamiz), "privacy")
+        append(", ")
+        legalLink(stringResource(RdR.string.rd_kvkk_aydinlatma_metnini), "kvkk")
+        append(" ve ")
+        legalLink(stringResource(RdR.string.rd_acik_riza_beyanini), "consent")
+        append(" ")
+        append(stringResource(RdR.string.rd_auth_legal_standalone_suffix))
+    }
+    ClickableText(
+        text = annotated,
+        style = RdFontStyle.Caption.toTextStyle().copy(
+            fontSize = 10.sp,
+            lineHeight = 14.sp,
+            color = colors.slate,
+            textAlign = TextAlign.Center,
+        ),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+        onClick = { offset ->
+            annotated.getStringAnnotations("legal", offset, offset)
+                .firstOrNull()
+                ?.let { onOpenDocument(it.item) }
+        },
+    )
+}
 
 /**
  * Port of App/Views/Onboarding/V2/Screens/OBAuthView.swift (2026-08-08 visual pass, Faz D) —
@@ -206,18 +556,11 @@ fun AuthScreen(
                 )
             }
 
+            // Android launch policy: Google and e-mail OTP are the visible sign-in methods.
+            // Keep the Apple OAuth implementation below the UI layer for a future, explicitly
+            // gated iOS-account recovery path; exposing it here would make an unconfigured
+            // staging Apple client secret a release dependency without helping new Android users.
             Spacer(Modifier.height(14.dp))
-            RdPrimaryButton(
-                text = stringResource(
-                    if (isLoading && emailPhase == EmailPhase.Hidden) RdR.string.rd_apple_baglaniyor else RdR.string.rd_apple_devam,
-                ),
-                onClick = viewModel::signInWithApple,
-                enabled = !isLoading,
-                showArrow = false,
-                style = RdButtonStyle.Onyx,
-            )
-
-            Spacer(Modifier.height(10.dp))
             RdPrimaryButton(
                 text = stringResource(
                     if (isLoading && emailPhase == EmailPhase.Hidden) RdR.string.rd_google_baglaniyor else RdR.string.rd_google_devam,

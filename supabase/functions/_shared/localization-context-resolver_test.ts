@@ -522,10 +522,13 @@ Deno.test("localization rollout requires compiled capability and all global gate
   // F3 end-to-end: platform=android with the exact same build+user hash that unlocks
   // everything under baseContext must come back fully closed through the real loader,
   // not just the leaf localizationFlagEnabled() check above.
-  const androidSameBuildAndHash = await loadLocalizationRolloutPolicy(supabase, {
-    ...baseContext,
-    platform: "android",
-  });
+  const androidSameBuildAndHash = await loadLocalizationRolloutPolicy(
+    supabase,
+    {
+      ...baseContext,
+      platform: "android",
+    },
+  );
   assertEquals([...androidSameBuildAndHash.enabledProfileIDs], []);
   assertEquals(androidSameBuildAndHash.queueSnapshotAuthorityEnabled, false);
 });

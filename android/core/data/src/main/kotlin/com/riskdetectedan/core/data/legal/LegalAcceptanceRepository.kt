@@ -31,10 +31,10 @@ import kotlin.math.pow
  * entry anyway, same discipline LegalAcceptanceService.swift's own version constants follow.
  */
 object LegalAndroidVersions {
-    const val KVKK = "kvkk-android-2026-08-07"
-    const val TERMS = "terms-android-2026-08-07"
-    const val PRIVACY = "privacy-android-2026-08-07"
-    const val CONSENT = "consent-android-2026-08-07"
+    const val KVKK = "kvkk-android-2026-08-09"
+    const val TERMS = "terms-android-2026-08-09"
+    const val PRIVACY = "privacy-android-2026-08-09"
+    const val CONSENT = "consent-android-2026-08-09"
 }
 
 /** Mirrors RDLegalSetAuditMetadata (LegalDocumentService.swift). */
@@ -251,7 +251,8 @@ class LegalAcceptanceRepository @Inject constructor(
             nextRetryAtMillis[userId] = now + (retryDelaySeconds * 1000).toLong()
             Log.e(
                 TAG,
-                "Consent audit record failed. attempt=$attempts retryDelay=${retryDelaySeconds}s error=${t.message}",
+                "Consent audit record failed. attempt=$attempts retryDelay=${retryDelaySeconds}s " +
+                    "errorClass=${t.javaClass.simpleName}",
             )
         } finally {
             recordingUsers -= userId

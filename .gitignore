@@ -29,6 +29,8 @@ Packages/
 *.env
 *.p8
 AuthKey_*.p8
+*.jks
+*.keystore
 App/GoogleService-Info.plist
 App/GoogleService-Info.plist.local
 backups/

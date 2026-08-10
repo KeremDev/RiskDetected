@@ -9,6 +9,7 @@ import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.profile.ProfileRepository
+import com.riskdetectedan.core.data.profile.ProfileStats
 import com.riskdetectedan.core.data.profile.RiskMethodWire
 import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.data.progress.ProfessionalProgressBadge
@@ -58,6 +59,9 @@ class ProfileViewModel @Inject constructor(
     private val _progress = MutableStateFlow<ProfessionalProgressSummary?>(null)
     val progress: StateFlow<ProfessionalProgressSummary?> = _progress.asStateFlow()
 
+    private val _stats = MutableStateFlow<ProfileStats?>(null)
+    val stats: StateFlow<ProfileStats?> = _stats.asStateFlow()
+
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
@@ -99,6 +103,12 @@ class ProfileViewModel @Inject constructor(
             }
         }
         viewModelScope.launch { refreshProgress(userId) }
+        viewModelScope.launch {
+            when (val result = profileRepository.fetchStats(userId)) {
+                is RdResult.Success -> _stats.value = result.value
+                is RdResult.Failure -> Unit
+            }
+        }
     }
 
     private suspend fun refreshProgress(userId: String) {
@@ -273,7 +283,10 @@ class ProfileViewModel @Inject constructor(
     fun signOut() {
         viewModelScope.launch {
             when (val result = authRepository.signOut()) {
-                is RdResult.Success -> _state.value = ProfileUiState.SignedOut
+                is RdResult.Success -> {
+                    billingRepository.clearUserIdentity()
+                    _state.value = ProfileUiState.SignedOut
+                }
                 is RdResult.Failure -> _saveError.value = AppErrorMessages.make(
                     result.message,
                     context = context.getString(RdR.string.rd_cikis_yapilamadi),

@@ -1,6 +1,4 @@
-import {
-  assertEquals,
-} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
   isIdentifiedRevenueCatOwnerMismatch,
   isRevenueCatAnonymousAppUserID,
@@ -20,7 +18,10 @@ Deno.test("RevenueCat anonymous original app user id is not owner mismatch", () 
 
 Deno.test("Same identified original app user id is accepted", () => {
   assertEquals(
-    isIdentifiedRevenueCatOwnerMismatch(currentUserID.toUpperCase(), currentUserID),
+    isIdentifiedRevenueCatOwnerMismatch(
+      currentUserID.toUpperCase(),
+      currentUserID,
+    ),
     false,
   );
 });

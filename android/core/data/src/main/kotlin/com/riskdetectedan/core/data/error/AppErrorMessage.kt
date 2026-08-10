@@ -400,8 +400,7 @@ object AppErrorMessages {
 
         if (lower.contains("yanıtı işlenemedi") ||
             lower.contains("yaniti islenemedi") ||
-            lower.contains("ai_invalid_response") ||
-            (lower.contains("json") && lower.contains("ai"))
+            lower.contains("ai_invalid_response")
         ) {
             return AppErrorMessage(
                 title = "AI yanıtı işlenemedi",

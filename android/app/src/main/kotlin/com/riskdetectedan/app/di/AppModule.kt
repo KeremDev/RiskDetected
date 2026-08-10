@@ -37,6 +37,7 @@ object AppModule {
         clientCapabilities = RdClientMetadata.capabilities,
         googleWebClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID,
         revenueCatPublicKey = BuildConfig.REVENUECAT_PUBLIC_KEY,
+        revenueCatOfferingIdentifier = BuildConfig.REVENUECAT_OFFERING_ID,
         firebaseProjectId = BuildConfig.FIREBASE_PROJECT_ID,
     )
 }

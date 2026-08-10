@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "ceremony_date": "2026-08-10",
+  "alias": "riskdetected-upload",
+  "algorithm": "RSA-4096",
+  "validity_days": 10000,
+  "keystore_location": "owner-controlled Application Support/RiskDetected/Signing directory (outside repository)",
+  "keystore_file_sha256": "49b18d2b48d89ae8dbf7880843c631c51a0e1a5a1747f627cffc55dd168e06f4",
+  "upload_certificate_sha1": "88:8A:2F:A6:15:5D:96:29:9B:69:08:05:A9:4B:83:3C:11:42:CE:31",
+  "upload_certificate_sha256": "96:AA:19:F1:1E:5A:98:8D:47:AA:83:60:11:E3:2C:CA:66:5D:20:88:AA:51:F6:02:8F:33:19:4C:E4:F7:D1:6D",
+  "firebase_release_fingerprints_registered": true,
+  "github_environment": "android-production-release",
+  "github_secret_names": [
+    "ANDROID_UPLOAD_KEYSTORE_BASE64",
+    "ANDROID_UPLOAD_STORE_PASSWORD",
+    "ANDROID_UPLOAD_KEY_ALIAS",
+    "ANDROID_UPLOAD_KEY_PASSWORD",
+    "ANDROID_UPLOAD_CERT_SHA256"
+  ],
+  "private_material_in_repository": false,
+  "play_app_signing_status": "pending_first_aab_upload",
+  "play_app_signing_sha1": null,
+  "play_app_signing_sha256": null
+}

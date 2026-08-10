@@ -4,4 +4,8 @@
          (App/Localization/*.xcstrings -> Generated/) — see master §23.1. This is a
          placeholder so the app has a label before that pipeline exists. -->
     <string name="app_name">RiskDetected</string>
+    <string name="update_ready_title">Güncelleme hazır</string>
+    <string name="update_ready_message">Yeni sürüm indirildi. Güncellemeyi tamamlamak için uygulamayı yeniden başlat.</string>
+    <string name="restart_and_update">Yeniden başlat ve güncelle</string>
+    <string name="later">Daha sonra</string>
 </resources>

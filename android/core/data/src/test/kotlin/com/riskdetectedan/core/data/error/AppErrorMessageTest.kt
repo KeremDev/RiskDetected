@@ -82,6 +82,14 @@ class AppErrorMessageTest {
     }
 
     @Test
+    fun `database json mentioning analyses is not classified as an ai response failure`() {
+        val result = AppErrorMessages.make(
+            """{"code":"42501","message":"permission denied for table analyses","details":"JSON request"}""",
+        )
+        assertTrue(result.category != AppErrorCategory.AiInvalidResponse)
+    }
+
+    @Test
     fun `auth email hook failure is not misclassified as ai unavailable`() {
         // Real bug caught live (2026-08-09): auth-send-email-hook (OTP/login-code sender)
         // failing surfaces GoTrue's generic wrapper message containing "unavailable" — without

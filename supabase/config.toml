@@ -75,6 +75,9 @@ verify_jwt = false
 [functions.account-deletion-complete]
 verify_jwt = false
 
+[functions.process-account-deletion-queue]
+verify_jwt = false
+
 [functions.retention-cleanup]
 verify_jwt = false
 
