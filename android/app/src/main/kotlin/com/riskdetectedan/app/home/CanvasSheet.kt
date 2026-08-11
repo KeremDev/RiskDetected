@@ -48,6 +48,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -152,21 +154,29 @@ fun CanvasSheet(
 @Composable
 private fun CanvasCard(canvas: AnalysisCanvas, isActive: Boolean, isLocked: Boolean, onClick: () -> Unit) {
     val colors = RdTheme.colors
-    val accent = colors.planPlus
-    val accentSoft = colors.planPlusSoft
+    val accent = if (canvas.minTier == SubscriptionTier.Pro) colors.green else colors.planPlus
+    val accentDark = if (canvas.minTier == SubscriptionTier.Pro) colors.greenDark else colors.planPlusDark
+    val accentSoft = if (canvas.minTier == SubscriptionTier.Pro) colors.greenSoft else colors.planPlusSoft
     val background = if (isActive) colors.onyx else colors.white
     val textColor = if (isActive) colors.white else colors.black
     val borderColor = if (isActive) colors.onyx else if (canvas.isPaid) accent.copy(alpha = 0.55f) else colors.line
     val iconBg = if (isActive) colors.green else if (canvas.isPaid) accentSoft else colors.fog
-    val iconTint = if (isActive) colors.white else if (canvas.isPaid) colors.planPlusDark else colors.black
+    val iconTint = if (isActive) colors.white else if (canvas.isPaid) accentDark else colors.black
 
     Box(
         modifier = Modifier
             .width(106.dp)
             .height(82.dp)
+            .shadow(
+                elevation = if (canvas.isPaid && !isActive) 4.dp else 0.dp,
+                shape = RoundedCornerShape(14.dp),
+                ambientColor = accent.copy(alpha = 0.14f),
+                spotColor = accent.copy(alpha = 0.14f),
+            )
             .clip(RoundedCornerShape(14.dp))
             .background(background)
             .border(if (canvas.isPaid && !isActive) 1.5.dp else 1.dp, borderColor, RoundedCornerShape(14.dp))
+            .alpha(if (isLocked) 0.86f else 1f)
             .clickable(onClick = onClick),
     ) {
         Column(modifier = Modifier.padding(9.dp)) {
@@ -195,17 +205,25 @@ private fun CanvasCard(canvas: AnalysisCanvas, isActive: Boolean, isLocked: Bool
 @Composable
 private fun TierBadge(tier: SubscriptionTier) {
     val colors = RdTheme.colors
+    val isPro = tier == SubscriptionTier.Pro
+    val accent = if (isPro) colors.green else colors.planPlus
+    // Material Icons has no licensed/system crown counterpart in this Compose set. The premium
+    // medal is the closest optically safe Android equivalent to iOS `crown.fill`; Pro keeps the
+    // distinct `star.fill` identity from the iOS tier contract.
+    val badgeIcon = if (isPro) Icons.Filled.Star else Icons.Filled.WorkspacePremium
+    val badgeLabel = stringResource(if (isPro) RdR.string.rd_pro else RdR.string.rd_plus).uppercase()
     Row(
         modifier = Modifier
+            .height(16.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(colors.planPlus)
+            .background(accent)
             .padding(horizontal = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Filled.WorkspacePremium, contentDescription = null, tint = colors.white, modifier = Modifier.size(8.dp))
+        Icon(badgeIcon, contentDescription = null, tint = colors.white, modifier = Modifier.size(8.dp))
         Spacer(Modifier.width(2.dp))
         Text(
-            if (tier == SubscriptionTier.Pro) "PRO" else "PLUS",
+            badgeLabel,
             style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 8.sp),
             color = colors.white,
         )
@@ -216,6 +234,7 @@ private fun TierBadge(tier: SubscriptionTier) {
 private fun LockedBadge() {
     Row(
         modifier = Modifier
+            .height(15.dp)
             .clip(RoundedCornerShape(4.dp))
             .background(Color(0xFFFFF1B8))
             .padding(horizontal = 5.dp),
