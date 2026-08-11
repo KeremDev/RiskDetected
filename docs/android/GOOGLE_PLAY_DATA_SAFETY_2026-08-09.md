@@ -1,7 +1,8 @@
-# Google Play Data Safety çalışma kâğıdı
+# Google Play Data Safety owner onay paketi
 
-Bu belge Play Console'a kopyalanacak nihai beyan değildir. Beyan, Internal Testing AAB'sinin
-SDK ve ağ envanteri tekrar tarandıktan sonra owner tarafından onaylanır.
+İmzalı release AAB'nin SDK, merged manifest ve ağ envanteri tarandı. Aşağıdaki kapsam Play
+Console formuna girilecek owner onay paketidir; form gönderimi ve Google'ın güncel soru akışındaki
+son seçimler Play Console'da ayrıca kaydedilecektir.
 
 | Veri sınıfı | Kullanım | Aktarım/işleyici | Beyan notu |
 | --- | --- | --- | --- |
@@ -27,14 +28,21 @@ SDK ve ağ envanteri tekrar tarandıktan sonra owner tarafından onaylanır.
 - İletim HTTPS üzerinden yapılır; uygulama ağ güvenliği cleartext trafiği kapatır.
 - Uygulama veri satışı yapmaz.
 
-## Play Console öncesi doğrulama
+## Tamamlanan doğrulama
 
-- Dependency tree ve merged manifest, Internal AAB ile yeniden çıkarılır.
-- Google Play SDK Index uyarıları kontrol edilir.
+- Release dependency tree, merged manifest ve AAB secret/PII/`AD_ID` taraması geçti.
+- Google Play SDK Index uyarıları AAB yüklendikten sonra Pre-launch aşamasında tekrar kontrol edilir.
 - Her SDK için “collected/shared”, amaç, zorunlu/opsiyonel ve ephemeral alanları owner ile
   doğrulanır.
 - Privacy URL `https://riskdetected.com/gizlilik`, hesap silme URL'si
-  `https://riskdetected.com/hesap-silme` olarak canlı ve mobil uyumlu doğrulanır.
-- Hesap silme bağlantısı login gerektirmeden açıklama/OTP başlangıç ekranını açar.
-- Veri saklama süreleri Free 7 gün, Plus 30 gün, Pro süresiz backend gerçekliğiyle yeniden
-  karşılaştırılır.
+  `https://riskdetected.com/hesap-silme` olarak canlı ve mobil uyumlu doğrulandı.
+- Hesap silme bağlantısının login gerektirmeden açıklama/OTP başlangıç ekranını açtığı doğrulandı.
+- Veri saklama süreleri Free 7 gün, Plus 30 gün, Pro süresiz backend sözleşmesiyle eşleşiyor.
+
+## Play Console'da kalan owner gönderimi
+
+- Her veri sınıfı için “collected/shared”, amaç, zorunlu/opsiyonel ve ephemeral seçeneklerini
+  yukarıdaki envantere göre işaretle.
+- Google Play/RevenueCat/FCM/Crashlytics'in Play formunda üçüncü taraf işleyici olarak güncel
+  sınıflandırmasını son kez gözden geçir.
+- Form önizlemesini bu belgeyle karşılaştırıp owner onayıyla gönder.

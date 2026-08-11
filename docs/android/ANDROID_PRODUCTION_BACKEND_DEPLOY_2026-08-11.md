@@ -15,6 +15,7 @@ Production'a aşağıdaki additive migration'lar uygulandı:
 7. Tam localization telemetry trigger sözleşmesinin restorasyonu
 8. Account-deletion cron reconciliation
 9. Owner onaylı Android hukuk belge registry kaydı (gate kapalı)
+10. Android FCM token rotation için kurulum kimliği unique index'i
 
 Repository'deki 20 kanonik Edge Function aynı production projesine dağıtıldı. Yeni
 `process-account-deletion-queue` worker'ı `ACTIVE` durumundadır.
@@ -32,13 +33,15 @@ Repository'deki 20 kanonik Edge Function aynı production projesine dağıtıld�
   kapılarının tamamı kapalıdır.
 - Android legal policy kapalıdır; owner onayı registry'ye kaydedilmiş olsa da acknowledgement canary kapısı açılmadan zorlanmaz.
 - iOS build-81 policy çağrısı başarılıdır ve iOS yanıtına `android_runtime_gates` eklenmemiştir.
-- Production DB lint: sıfır warning/error.
+- Production DB lint: yeni schema warning/error üretmedi. Beş istemci `SECURITY DEFINER` RPC'si
+  test kanıtlı waiver kapsamındadır; leaked-password protection Supabase Free plan sınırı nedeniyle
+  açılamadı.
 - CORS: production site origin `200`; bilinmeyen origin `403`; oturumsuz silme isteği `401`.
 
 ## Yerel regresyon paketi
 
 - Deno: `316/316`
-- pgTAP/RLS/RPC: `481/481`
+- pgTAP/RLS/RPC: `485/485`
 - Local DB lint: sıfır warning/error
 - iOS `App/` source diff: sıfır
 

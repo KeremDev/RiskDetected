@@ -4,8 +4,8 @@ Branch: `codex/android-release-readiness`
 
 Referans: `app-store-live-1.3.1-build-81-baseline-2026-08-06`
 
-Package/version: `com.riskdetectedan.app`, `1.5.0`, versionCode `1` (Play Console'da
-kullanılmadığı owner tarafından doğrulanacak).
+Package/version: `com.riskdetectedan.app`, `1.5.0`, versionCode `1` (Play Console release
+geçmişi boş; kullanılabilirliği doğrulandı).
 
 ## Bu dalda tamamlanan anahtarsız işler
 
@@ -40,7 +40,7 @@ kullanılmadığı owner tarafından doğrulanacak).
 - Profiles RLS politikaları davranışı koruyan tek SELECT/UPDATE/INSERT setine konsolide edildi.
 - Beş SECURITY DEFINER RPC'nin auth/sahiplik/search_path/anon revoke testleri local pgTAP'te
   doğrulandı.
-- Local Supabase reset sonrası 21 pgTAP dosyasında 478 test geçti; Edge Function paketinde 316
+- Local Supabase reset sonrası 21 pgTAP dosyasında 485 test geçti; Edge Function paketinde 316
   Deno testi geçti; schema lint warning üretmedi.
 - AAB içindeki symbol table taşıyan native kütüphaneler Play'in beklediği `lib/<abi>/*.so`
   yapısında ayrı, hash'lenen `native-debug-symbols.zip` artefaktına çıkarılıyor. Uygulamanın kendi
@@ -60,8 +60,9 @@ kullanılmadığı owner tarafından doğrulanacak).
   Kullanıcı onaylı launcher ikonuyla yenilenen AAB SHA-256 değeri
   `a61cb977a909b53d7150080334a8ac9c5a6f8864b67e817fad10b12f38a228a7`;
   minified QA APK SHA-256 değeri `011a57af4b4230ceecb7bd8e614e067073054d80fb86e2a4d28a853b970b4c34`.
-  Bu kanıt release scriptinin çalıştığını doğrular; owner imzalı release AAB kanıtının yerine
-  geçmez.
+  Bu QA kanıtına ek olarak owner upload key'iyle imzalı release AAB üretildi. Release AAB
+  SHA-256 değeri `5706ec4b61b257973d1b271b7c27a229c3db677d9e44a82958b3ac247c256bb2`;
+  bundletool, signature, 16 KB, R8/native symbols ve secret/PII kontrolleri geçti.
 
 ## Yerel parite kanıtlarının güncel kapsamı
 
@@ -103,25 +104,26 @@ Törende aşağıdaki kanıtlar kaydedilir:
 
 | Kapı | Durum | Açılma kanıtı |
 | --- | --- | --- |
-| Upload key / Play App Signing | PARTIAL | upload key/CI/Firebase fingerprint tamam; ilk AAB sonrası Play App Signing fingerprint'i bekliyor |
+| Upload key / Play App Signing | PARTIAL | upload key, CI, signed AAB ve Play App Signing tamam; AAB upload sonrası app-signing fingerprint'i bekliyor |
 | Staging Firebase/FCM | PASS | debug/QA Firebase app'leri, `google-services.json`, server credential ve foreground/background/killed gerçek FCM teslimi tamam; killed bildirimi Profil deep-link'ini açtı |
 | Google OAuth | PARTIAL | staging web + debug/QA Android client'ları ve Supabase provider tamam; Credential Manager doğru client ile açılıyor, hesaplı cihaz E2E bekliyor |
 | Apple OAuth | N/A | Android v1 kapsamından çıkarıldı; görünür CTA yok, iOS canlı akışı değişmedi |
 | RevenueCat Android | PARTIAL | Play app, `default`, `plus`/`pro`, dört ürün, `qa_test_store`, Plus/Pro Test Store satın alma ve staging webhook→DB plan aktivasyonu tamam; ilk Play AAB sonrası gerçek Play transaction/RTDN bekliyor |
-| Gemini gerçek analiz | PARTIAL | gerçek yüksekte çalışma fotoğrafında Android bekleme→2 bulgu→sonuç→PDF/XLSX zinciri geçti; 10 fotoğraf corpus ve İSG uzman kabulü bekliyor |
+| Gemini gerçek analiz | PARTIAL | kullanıcı kapsamındaki gerçek 1/2/3 fotoğraf analizleri ve sonuç→PDF/XLSX zinciri geçti; İSG uzman kabulü bekliyor |
 | Resend | PARTIAL | staging + production secret adları doğrulandı ve gerçek staging OTP e-postası teslim edildi; hesap silme talep/tamamlanma teslimi ile domain operasyon kanıtı bekliyor |
-| Production canonical backend deploy | BLOCKED | canlı `app-release-policy` henüz `android_runtime_gates` döndürmüyor; staging E2E sonrası gate'ler kapalı additive deploy |
-| Web `/hesap-silme` | BLOCKED | ayrı web repo deploy'u ve web kabul testleri |
-| Web `/gizlilik` | BLOCKED | yayınlanmış Android metni ve erişilebilirlik kontrolü |
-| Android hukuk/owner onayı | BLOCKED | pending kayıt gerçek reviewer ve tarih ile owner tarafından onaylanmalı |
+| Production canonical backend deploy | PASS | additive paket ve FCM rotation migration'ı canlıda; altı Android gate kapalı |
+| Web `/hesap-silme` | PASS | production rota ve staging queue/worker E2E tamam |
+| Web `/gizlilik` | PASS | production rota ve Android metni yayında |
+| Android hukuk/owner onayı | PASS | owner onayı, manifest/checksum ve registry kaydı tamam |
 | Play store icon | PASS | kullanıcı onaylı opak/full-bleed master ve 512×512 Play çıktısı üretildi |
 | Adaptive launcher görsel kabulü | PARTIAL | circle/squircle/rounded-square ön kabulü geçti; fiziksel Pixel/Samsung maske kanıtı bekliyor |
-| Feature graphic/screenshots | BLOCKED | 1024×500 + sekiz gerçek Android store görseli |
-| versionCode 1 | BLOCKED | Play Console'da hiç kullanılmadığının owner kanıtı |
+| Feature graphic/screenshots | PARTIAL | 1024×500 feature graphic hazır; sekiz Android ekran kompozisyonunu owner ayrıca tasarlatacak |
+| versionCode 1 | PASS | Play Console release geçmişi boş |
 | Play owner cihaz doğrulaması | BLOCKED | yeni kişisel hesapsa owner, Play Console mobil uygulamasıyla gerçek Android cihaz erişimini doğrulamalı |
 | Fiziksel cihaz matrisi | BLOCKED | Pixel + Samsung, API 26/33/37 kanıt paketi |
 | Closed testing | BLOCKED | 12 tester × kesintisiz 14 gün |
-| Pre-launch/Data Safety | BLOCKED | blocker'sız rapor ve owner onaylı beyan |
+| Play içerik derecelendirme | PASS | IARC anketi kaydedildi; Avrupa `PEGI 3`, uygulama içi satın alma etiketi mevcut |
+| Pre-launch/Data Safety | BLOCKED | blocker'sız rapor ve owner onaylı Data Safety beyanı |
 
 Production Gemini anahtarı iOS/Android ortak backend havuzunda kullanılabilir; anahtar Android
 istemciye veya staging APK'ya konulamaz. Resend secret'ı yalnız Edge Function ortamında kalır.
@@ -130,13 +132,14 @@ istemciye veya staging APK'ya konulamaz. Resend secret'ı yalnız Edge Function 
 
 ## Anahtarlar geldikten sonraki kapı sırası
 
-1. Staging `client/auth`; gerçek OTP tamamlandı; Google hesaplı cihaz, fresh install ve process-death bekliyor.
+1. Staging `client/auth`; gerçek OTP tamamlandı; fiziksel cihaz Auth E2E owner isteğiyle sonraya ertelendi.
 2. Profil ve salt-okuma.
 3. `pdf_reports`; gerçek analizden cihaz PDF'i, 2 gerçek sayfa, arşiv ve paylaşım tamamlandı; silme ve şirket snapshot varyantı bekliyor.
-4. Tek fotoğraf standart gerçek analiz tamamlandı; detaylı analiz ve kalan corpus bekliyor.
+4. Kullanıcı kapsamındaki gerçek 1/2/3 fotoğraf analizleri tamamlandı; detaylı analiz bekliyor.
 5. Multi-photo; sıra, işaretleme, idempotency ve recovery.
 6. RevenueCat Test Store Plus/Pro satın alma ve webhook aktivasyonu tamamlandı; gerçek Play dört ürün, pending/cancel/refund/owner conflict ve cross-platform bekliyor.
-7. FCM foreground/background/killed ve deep-link tamamlandı; reddedilmiş izin senaryosu bekliyor.
+7. FCM foreground/background/killed, reddedilmiş izin, Profil'den etkinleştirme, deep-link ve
+   sign-out temizliği tamamlandı; gerçek `onNewToken` yenilenmiş-token teslimi dış cihaz regresyonu olarak kaldı.
 8. Minified signed Internal AAB üzerinde tüm akış smoke testi.
 
 Her staging kapısı test sonrasında tekrar kapatılabilir. Production Android kapıları additive
@@ -160,8 +163,8 @@ backend dağıtımı boyunca kapalı kalır.
   audit'inden güvenli trigger ile türetiliyor ve kayıt `client_platform=android`, `client_build=1`
   olarak doğrulandı.
 
-- En az 10 sabit saha fotoğrafı; dosya hash'i, sektör, beklenen kritik tehlikeler ve uzman kabulü
-  PII içermeyen corpus manifestinde tutulur.
+- Kullanıcının belirlediği 1/2/3 fotoğraflı sabit saha koşuları; dosya hash'i, sektör, beklenen
+  kritik tehlikeler ve uzman kabulü PII içermeyen manifestte tutulur.
 - Android ve iOS aynı backend prompt/capability ile çalıştırılır.
 - Kritik tehlike atlama veya platform kaynaklı semantik fark kabul edilmez.
 - Bekleme/recovery, sonuç, bulgu detay, PDF ve XLSX her koşuda ekran görüntüsü + UI tree +

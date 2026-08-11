@@ -103,8 +103,8 @@ sonrasındaki Play test şeridinde doğrulanacaktır.
 - RevenueCat: `qa_test_store` Plus/Pro satın alma, webhook HTTP 200 ve DB entitlement aktivasyonu
   PASS. Gerçek Play transaction/RTDN ilk AAB'yi bekliyor.
 - Analiz/rapor: gerçek saha fotoğrafı, bekleme ekranı, iki bulgu, sonuç, 2 sayfalık cihaz PDF'i ve
-  beş çalışma sayfalı sunucu XLSX dosyası PASS. Bu tek koşu 10 fotoğraflık uzman corpus kabulinin
-  yerine geçmez.
+  beş çalışma sayfalı sunucu XLSX dosyası PASS. Kullanıcının belirlediği 1/2/3 fotoğraflı kalite
+  kapsamının uzman kabulü ayrıca kaydedilir.
 
 Analiz koşusu iki sözleşme hatasını ortaya çıkardı ve kapattı: create isteği server-owned
 `analyses.client_platform/client_build` alanlarını doğrudan göndermiyor; `client_platform` artık

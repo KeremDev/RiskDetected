@@ -17,7 +17,9 @@ import javax.inject.Singleton
 
 /**
  * Mirrors NotificationService.swift's `saveDeviceToken(_:)` — same `push_device_tokens` table,
- * same `upsert(onConflict: "user_id,token")`. `provider`/`provider_environment`/
+ * Android registrations are upserted by their stable installation identity so an FCM token
+ * rotation replaces the old token instead of leaving a second active row. `provider`/
+ * `provider_environment`/
  * `application_id`/`installation_id`/`client_build` are the Android/FCM-only columns F1/F2
  * added this session (`20260806220000_android_push_device_tokens.sql`) — iOS rows never set
  * these (provider defaults to `"apns"` there), Android rows always do. `environment` reuses the
@@ -93,7 +95,7 @@ class DeviceTokenRepository @Inject constructor(
                 clientBuild = environmentConfig.appVersionCode.toString(),
             ),
         ) {
-            onConflict = "user_id,token"
+            onConflict = "user_id,provider,application_id,installation_id"
         }
         RdResult.Success(Unit)
     } catch (t: Throwable) {

@@ -26,7 +26,7 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
 - [x] Temiz kaynaklardan minified QA APK/AAB yeniden üretildi; `bundletool`, JAR imzası, 16 KB hizalama ve secret/PII taramaları geçti.
 - [x] Temiz QA AAB içinde `.xcassets`, `AppIcon.appiconset` veya `Contents.json` bulunmadığı doğrulandı.
 - [x] Yeni launcher ikonunu içeren temiz QA AAB (`SHA-256 a61cb977a909b53d7150080334a8ac9c5a6f8864b67e817fad10b12f38a228a7`) bundletool, JAR imzası, 16 KB/ELF ve QA Firebase allowlist doğrulamasından geçti; QA APK hash'i `011a57af4b4230ceecb7bd8e614e067073054d80fb86e2a4d28a853b970b4c34`, native symbol paketi hash'i `13f93498c65e6a23f7327b62e52b2c62e7c017a0ec0dc5f1aeac2d2fd8a798a1`.
-- [x] Deno Edge Function paketi `316/316`, pgTAP/RLS/RPC paketi `479/479` geçti; local DB lint sonucu sıfır hata.
+- [x] Deno Edge Function paketi `316/316`, pgTAP/RLS/RPC paketi `485/485` geçti; local DB lint sonucu sıfır hata.
 - [x] Android staging'e dört additive migration ve repo kaynaklı 20 Edge Function dağıtıldı; uzak hash/deploy kanıtı kaydedildi.
 - [x] Bekleyen owner/hukuk onayının onaylanmış gibi yazılmasına yol açan legal migration düzeltildi; staging approval satırı sıfır ve gate kapalı.
 - [x] Analiz telemetrisi trigger'ında Android platform alanı eklenirken düşen dil doğrulama alanları additive migration ile geri getirildi.
@@ -43,21 +43,33 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
 - [x] `/gizlilik` ve `/hesap-silme` production web sitesinde yayınlandı; OTP, enumeration koruması ve staging queue E2E geçti.
 - [x] Gerçek saha fotoğraflarıyla 1, 2 ve 3 fotoğraflı analiz; sonuç, PDF ve XLSX zinciri doğrulandı.
 - [x] Bildirim izni reddi/sonradan etkinleştirme, kayıt-ID deep-link'leri ve sign-out token temizliği doğrulandı.
-- [x] Sekiz additive migration ve 20 kanonik Edge Function production'a Android kapıları kapalıyken dağıtıldı; production DB lint temiz.
+- [x] Dokuz additive migration ve 20 kanonik Edge Function production'a Android kapıları kapalıyken dağıtıldı; son ek FCM token rotation migration'ı yeni schema warning/error üretmedi.
+- [x] FCM token yenilemesinde aynı kurulum için eski/yeni token çoğalması giderildi; local test,
+  staging ve production unique index doğrulaması tamamlandı.
+- [x] İmzalı/minified release AAB üretildi; hash, signature, `bundletool`, 16 KB, R8/native symbols,
+  secret/PII ve iOS asset kontrolleri release kanıtına kaydedildi.
+- [x] Play Console'da `versionCode=1` kullanılabilir, Play App Signing etkin ve Internal Testing
+  draft release oluşturulmuş durumda.
+- [x] Türkçe listing metadata'sı, privacy URL, Business kategorisi ve temel uygulama beyanları
+  Play Console taslağına kaydedildi.
+- [x] IARC içerik derecelendirme anketi kaydedildi; Avrupa sonucu `PEGI 3`, dijital ürünler için
+  uygulama içi satın alma etiketi etkin.
+- [x] 512×512 ikon ve 1024×500 feature graphic hazırlandı.
+- [ ] Sekiz Türkçe telefon mağaza görseli owner tarafından ayrıca tasarlatılacak.
 
 ## P0 — İlk Play Internal Testing yüklemesi
 
 Bu bölüm sonraki Play ve RevenueCat testlerinin ön koşuludur.
 
-- [ ] İmzalı ve minified release AAB üret.
-- [ ] `bundletool validate` çalıştır.
-- [ ] AAB imzasını ve upload sertifikasını doğrula.
-- [ ] 16 KB native library/alignment kontrolünü çalıştır.
-- [ ] R8 mapping ve varsa native symbol artifact'larını sakla.
-- [ ] Secret/PII taramasını release artifact üzerinde çalıştır.
-- [ ] Play Console'da `versionCode=1` kullanılabilirliğini doğrula; kullanılmışsa bir sonraki boş code'a yükselt.
+- [x] İmzalı ve minified release AAB üret.
+- [x] `bundletool validate` çalıştır.
+- [x] AAB imzasını ve upload sertifikasını doğrula.
+- [x] 16 KB native library/alignment kontrolünü çalıştır.
+- [x] R8 mapping ve varsa native symbol artifact'larını sakla.
+- [x] Secret/PII taramasını release artifact üzerinde çalıştır.
+- [x] Play Console'da `versionCode=1` kullanılabilirliğini doğrula; release geçmişi boş.
 - [ ] AAB'yi owner hesabıyla Internal Testing'e manuel yükle.
-- [ ] Play App Signing'i etkinleştir.
+- [x] Play App Signing'i etkinleştir.
 - [ ] Play App Signing SHA-1/SHA-256 fingerprint'lerini kaydet.
 - [ ] App-signing fingerprint'lerini production Firebase Android uygulamasına ekle.
 - [ ] Gerekliyse app-signing fingerprint'i için Google OAuth Android client oluştur/güncelle.
@@ -95,6 +107,9 @@ Kabul ölçütü: RevenueCat App User ID her durumda Supabase `auth.uid()` olur;
 
 ## P0 — Auth E2E
 
+Owner kararı (11 Ağustos 2026): fiziksel cihaz Auth E2E bu teslimin dışında tutuldu ve sonraki
+cihaz oturumuna ertelendi. Aşağıdaki maddeler bilinen ertelenmiş kapılardır.
+
 - [ ] Google hesabı eklenmiş fiziksel Android cihazda Credential Manager girişini tamamla.
 - [ ] Google callback sonrasında doğru Supabase session ve profil oluştuğunu doğrula.
 - [ ] Duplicate identity/account linking senaryosunu test et.
@@ -115,7 +130,7 @@ Kabul ölçütü: Google ve OTP girişleri fiziksel cihazda tamamlanır; çıkı
 - [ ] Detaylı analiz akışını test et.
 - [x] Üç fotoğraflı analiz ve fotoğraf sıralamasını test et.
 - [ ] Ağ kesintisi ve polling recovery akışını test et.
-- [ ] Duplicate tap ve aynı submission ID ile idempotency testini tamamla.
+- [x] Duplicate tap UI guard ve aynı submission ID owner-scoped unique/upsert sözleşmesini otomatik testlerle doğrula.
 - [ ] Process death sonrasında bekleyen analize geri dönüşü test et.
 - [ ] Bulgu ekleme yetkisi, düzenleme ve silme akışlarını planlara göre test et.
 - [ ] FK/M5 görünümü ve remote capability davranışını test et.
@@ -134,6 +149,9 @@ Kabul ölçütü: Corpus'ta kritik tehlike atlama yoktur; aynı submission ikinc
 - [x] Sign-out sonrası yalnız mevcut kurulumun token temizliğini doğrula.
 - [x] Payload ve loglarda PII/ham mesaj bulunmadığını doğrula.
 - [ ] FCM token rotation (`onNewToken`) senaryosunu gerçek yenilenmiş token ile tekrar doğrula.
+
+Not: istemci upsert kimliği düzeltildi; local pgTAP, staging ve production migration/index
+doğrulaması geçti. Bu madde yalnız aktif oturumlu cihazda gerçek yenilenmiş token teslimini kapsar.
 
 Kabul ölçütü: Reddedilmiş izin uygulamayı bozmaz; izin verildiğinde FCM kaydı ve tüm tipli rotalar çalışır.
 
@@ -174,15 +192,15 @@ Kabul ölçütü: Play'de kullanılabilecek herkese açık gizlilik ve hesap sil
 
 - [x] Docker'da yalnız kullanılmayan, yeniden indirilebilir eski Supabase image cache'leri temizlendi; kullanıcı volume'leri korundu.
 - [x] Yerel Supabase stack'i temiz migration replay ile tekrar başlatıldı.
-- [x] Yeni Android/web queue testleri dahil pgTAP paketi `479/479` geçti.
+- [x] Yeni Android/web/FCM rotation testleri dahil pgTAP paketi `485/485` geçti.
 - [x] Deno Edge Function testleri `316/316` geçti.
 - [x] Beş `SECURITY DEFINER` RPC için auth, sahiplik, sabit `search_path`, anon revoke ve çapraz kullanıcı negatif testleri geçti.
 - [x] Local Supabase security/performance advisor sonucu sıfır uyarı.
 - [x] Staging advisor değerlendirildi; beş istemci RPC'si test kanıtlı waiver'a alındı, deny-by-default INFO kayıtları belgelendi.
-- [ ] Staging leaked-password protection'ı auth regresyonundan sonra aç.
-- [x] Production Supabase DB lint/advisor warning'lerini tekrar değerlendir; sıfır schema warning/error.
+- [ ] Supabase leaked-password protection'ı plan erişimi sağlandığında staging'de aç, auth regresyonu sonrası production'a taşı.
+- [x] Production Supabase DB lint/advisor warning'lerini tekrar değerlendir; yeni schema warning/error yok. Beş RPC testli waiver, leaked-password protection plan-tier blocker olarak kayıtlı.
 - [x] Debug lint ve minified QA R8 build'i geçti.
-- [ ] Production public config ve signing secret'larıyla release lint/signed R8 build'i geçir.
+- [x] Production public config ve signing secret'larıyla release lint/signed R8 build'i geçir.
 - [x] Roborazzi golden paketi sabit JDK 17, Türkçe locale, İstanbul timezone ve threshold `0` ile geçti.
 - [x] `App/` diff'inin build-81 baseline'a göre sıfır olduğu yerel fail-closed kontrolde doğrulandı; CI kapısı mevcut.
 - [x] Production Android runtime gate'lerinin altı işlev kapısında kapalı olduğunu canlı policy çağrısıyla doğrula.
@@ -193,13 +211,15 @@ Not: Docker kullanıcı volume'leri silinmedi. Temizlik yalnız kullanılmayan S
 
 ## P2 — Play Store hazırlığı
 
-- [ ] Türkçe kısa ve uzun açıklamaları son kez gözden geçir.
+- [x] Türkçe kısa ve uzun açıklamaları son kez gözden geçir ve Play taslağına kaydet.
 - [x] Kullanıcı onaylı full-bleed master'dan adaptive/round/monochrome kaynaklarını ve 512×512 Play ikonunu üret.
-- [ ] 1024×500 feature graphic'i yükle.
-- [ ] Küçük/standart/büyük telefonlardan sekiz Türkçe ekran görüntüsü hazırla.
-- [ ] Business kategorisi ve 18+ profesyonel hedef kitle ayarlarını tamamla.
+- [x] 1024×500 feature graphic'i hazırla.
+- [ ] Owner tasarımından sekiz Türkçe, PII'siz telefon ekran görüntüsünü teslim al ve Play'e yükle.
+- [ ] Business kategorisini kaydet; login-access adımı açıldıktan sonra 18+ profesyonel hedef kitleyi tamamla. (Kategori tamam, hedef kitle bekliyor.)
 - [ ] Data Safety formunu gerçek SDK/veri envanterine göre doldur.
-- [ ] Content rating, target audience, subscription ve restricted-access beyanlarını tamamla.
+- [x] Content rating beyanını tamamla.
+- [ ] Review erişim bilgileri tamamlandıktan sonra 18+ hedef kitle, subscription ve
+  restricted-access beyanlarını tamamla.
 - [ ] Dedicated review hesabı ve inceleme adımlarını hazırla.
 - [ ] Play Pre-launch Report'u çalıştır ve blocker'ları kapat.
 
@@ -222,14 +242,14 @@ Kabul ölçütü: Closed test şartı tamamlanmış, sağlık metrikleri yeşil 
 
 ## Dış bağımlılıklar ve owner işlemleri
 
-- [ ] İlk AAB'yi Play Console'a owner hesabıyla yüklemek.
+- [ ] İlk AAB'yi Play Console'a yüklemek. Codex Chrome uzantısında “Allow access to file URLs” açıldıktan sonra mevcut draft release'e devam edilebilir.
 - [ ] Upload keystore'un şifreli yedeğini owner kasasına almak ve kurtarma prosedürünü kaydetmek.
 - [ ] Play App Signing fingerprint'lerini ilgili Firebase/OAuth kayıtlarına onaylamak.
 - [ ] Fiziksel Google hesaplı cihaz sağlamak.
 - [ ] Play lisans test kullanıcılarını tanımlamak.
 - [ ] En az 12 closed-test kullanıcısını yönetmek.
-- [ ] Docker disk temizliği/genişletmesi için owner onayı vermek.
-- [ ] Hukuk metinleri, Data Safety ve mağaza içeriğine nihai owner onayı vermek.
+- [x] Hukuk metinlerine nihai owner onayı vermek.
+- [ ] Data Safety ve mağaza içeriğine nihai owner onayı vermek.
 
 ## Release tamamlanma tanımı
 

@@ -7,7 +7,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select extensions.plan(10);
+select extensions.plan(14);
 
 select has_column('public', 'push_device_tokens', 'provider', 'provider column exists');
 select has_column('public', 'push_device_tokens', 'provider_environment', 'provider_environment column exists');
@@ -61,6 +61,77 @@ select lives_ok(
     )
   $$,
   'Android/FCM row with the full new column set is insertable'
+);
+
+select lives_ok(
+  $$
+    insert into public.push_device_tokens
+      (user_id, token, platform, environment, provider, provider_environment, application_id, installation_id, client_build)
+    values (
+      '00000000-0000-4000-8000-000000000701'::uuid,
+      'fcm-token-before-rotation',
+      'android',
+      'production',
+      'fcm',
+      'riskdetected',
+      'com.riskdetectedan.app',
+      '00000000-0000-4000-8000-000000000711'::uuid,
+      '1'
+    )
+    on conflict (user_id, provider, application_id, installation_id)
+    do update set token = excluded.token
+  $$,
+  'first Android registration can target the installation identity'
+);
+
+select lives_ok(
+  $$
+    insert into public.push_device_tokens
+      (user_id, token, platform, environment, provider, provider_environment, application_id, installation_id, client_build)
+    values (
+      '00000000-0000-4000-8000-000000000701'::uuid,
+      'fcm-token-after-rotation',
+      'android',
+      'production',
+      'fcm',
+      'riskdetected',
+      'com.riskdetectedan.app',
+      '00000000-0000-4000-8000-000000000711'::uuid,
+      '2'
+    )
+    on conflict (user_id, provider, application_id, installation_id)
+    do update set
+      token = excluded.token,
+      client_build = excluded.client_build,
+      last_registered_at = now()
+  $$,
+  'rotated FCM token updates the same installation row'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.push_device_tokens
+    where user_id = '00000000-0000-4000-8000-000000000701'::uuid
+      and provider = 'fcm'
+      and application_id = 'com.riskdetectedan.app'
+      and installation_id = '00000000-0000-4000-8000-000000000711'::uuid
+  ),
+  1,
+  'token rotation leaves exactly one active row for the installation'
+);
+
+select is(
+  (
+    select token
+    from public.push_device_tokens
+    where user_id = '00000000-0000-4000-8000-000000000701'::uuid
+      and provider = 'fcm'
+      and application_id = 'com.riskdetectedan.app'
+      and installation_id = '00000000-0000-4000-8000-000000000711'::uuid
+  ),
+  'fcm-token-after-rotation',
+  'the surviving registration contains the renewed FCM token'
 );
 
 select throws_ok(

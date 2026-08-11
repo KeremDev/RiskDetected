@@ -1,11 +1,13 @@
 # RiskDetected Google Play Türkçe listing paketi
 
-Durum: metadata taslağı hazır; görsel ve Play Console kanıtları release blocker'dır.
+Durum: iOS `1.3.1/tr` ile eşlenen metadata Play Console taslağına kaydedildi; ikon ve feature
+graphic hazır. Sekiz telefon görselini owner ayrıca tasarlatacak. Play'e varlık yükleme ile
+zorunlu formlar release blocker'dır.
 
 ## Metadata
 
-- Uygulama adı (26/30): `RiskDetected: İSG Analizi`
-- Kısa açıklama (75/80): `Fotoğraftan tehlike tespiti, Fine-Kinney ve 5x5 ile PDF/Excel İSG raporu.`
+- Uygulama adı (30/30): `RiskDetected: İş Güvenliği İSG`
+- Kısa açıklama (28/80): `Risk Analizi ve iş güvenliği`
 - Kategori: Business
 - Hedef kitle: 18+ iş güvenliği uzmanları, OSGB ekipleri, saha mühendisleri ve denetim ekipleri
 - Birincil terimler: iş güvenliği, İSG risk analizi, tehlike tespiti, risk değerlendirme,
@@ -13,44 +15,42 @@ Durum: metadata taslağı hazır; görsel ve Play Console kanıtları release bl
 
 ## Tam açıklama
 
-RiskDetected, saha fotoğraflarından yapay zekâ destekli iş güvenliği ve İSG risk analizi
-hazırlamana yardımcı olur. Tehlike tespiti, risk değerlendirme ve raporlama adımlarını tek bir
-akışta birleştirir; denetim notlarını düzenli çıktılara dönüştürür.
+RiskDetected, iş güvenliği ve İSG risk analizi süreçlerinde saha fotoğrafı ile tehlike,
+uygunsuzluk ve riskleri değerlendirip PDF/Excel risk raporu hazırlamanıza yardımcı olur.
 
-Fotoğrafını yükle, çalışma alanını seç ve tespit edilen bulguları gözden geçir. RiskDetected;
-bulguları Fine-Kinney veya 5x5 Matris yöntemiyle önceliklendirmen, kontrol tedbirlerini
-incelemen ve saha doğrulaması yapman için yapılandırılmış bir sonuç sunar.
+İş güvenliği uzmanları, OSGB ekipleri, işveren vekilleri ve saha sorumluları için geliştirilen
+RiskDetected; Fine-Kinney ve 5x5 Matris yöntemleriyle riskleri önceliklendirmeyi, kontrol
+tedbirlerini netleştirmeyi ve raporları arşivlemeyi kolaylaştırır.
 
 Öne çıkan özellikler:
 
-• Fotoğraftan tehlike tespiti: Saha görüntülerindeki olası tehlike ve uygunsuzlukları düzenli
-bir bulgu listesinde incele.
+• Fotoğraf ile İSG risk analizi
+• Fine-Kinney ve 5x5 Matris risk değerlendirme çıktıları
+• PDF ve Excel risk raporu oluşturma
+• Tehlike, uygunsuzluk ve kontrol tedbiri önerileri
+• Rapor arşivi, indirme ve paylaşım
+• Firma bilgisi, hazırlayan bilgisi ve logo ile rapor özelleştirme
+• OSGB ve iş güvenliği uzmanları için saha denetim akışı
+• KVKK ve gizlilik hassasiyetiyle veri yönetimi
 
-• İSG risk analizi: Olasılık, şiddet ve maruziyet bilgileriyle risk seviyelerini karşılaştır.
+RiskDetected; iş sağlığı ve güvenliği, risk değerlendirme, saha denetimi ve risk raporlama
+süreçlerinde zaman kazanmak isteyen profesyoneller için tasarlanmıştır.
 
-• Fine-Kinney ve 5x5 Matris: Kurumunda kullanılan risk değerlendirme yöntemini seç.
+Uygulama yapay zeka destekli analizler sunar. AI çıktıları profesyonel değerlendirme, mevzuat
+yorumu veya saha kontrolünün yerine geçmez. Nihai karar, kontrol ve uygunluk değerlendirmesi
+yetkili iş güvenliği uzmanı veya sorumlu kişi tarafından yapılmalıdır.
 
-• Kontrol tedbirleri: Her bulgu için önerilen aksiyonları ve saha doğrulama bilgilerini gör.
+Bazı gelişmiş özellikler uygulama içi abonelik gerektirebilir. Abonelikler Google Play üzerinden
+yönetilir.
 
-• PDF ve Excel raporu: Analiz sonuçlarını paylaşılabilir raporlara dönüştür.
+Kullanım Koşulları: https://riskdetected.com/kullanim-kosullari
+Gizlilik Politikası: https://riskdetected.com/gizlilik
 
-• Şirket ve arşiv yönetimi: Analizleri, raporları ve şirket bilgilerini tek yerde düzenle.
+## iOS anahtar kelime eşlemesi
 
-• Çoklu fotoğraf: Plus ve Pro planlarında aynı analiz içinde birden fazla saha görüntüsünü
-değerlendir.
-
-• Plan seçenekleri: Free, Plus ve Pro sınırlarını uygulama içinde karşılaştır; satın alma
-ekranında güncel Google Play fiyatlarını gör.
-
-RiskDetected; iş güvenliği uzmanları, OSGB ekipleri, saha sorumluları, üretim ve depo ekipleri
-ile düzenli saha denetimi yapan profesyoneller için tasarlanmıştır. İş güvenliği raporu
-hazırlarken fotoğraf, bulgu, risk skoru ve şirket bilgilerini aynı süreçte yönetmeyi amaçlar.
-
-Yapay zekâ çıktıları profesyonel İSG değerlendirmesinin, saha incelemesinin veya mevzuat
-kontrolünün yerine geçmez. Kullanıcı tüm bulguları ve kontrol tedbirlerini doğrulamalıdır.
-
-RiskDetected'i indir; fotoğraftan tehlike tespiti ile başlayan İSG risk analizi sürecini PDF ve
-Excel raporuna kadar tek yerde yönet.
+Google Play'de ayrı anahtar kelime alanı yoktur. iOS `1.3.1/tr` keyword seti
+`osgb,is güvenliği,is guvenligi,isg,değerlendirme,uzmanı,sağlığı,tehlike,tespit,5x5,matris`
+başlık, kısa açıklama ve uzun açıklama içinde doğal biçimde kapsanır; spam amaçlı tekrar eklenmez.
 
 ## Sekiz ekranlık yaratıcı plan
 
@@ -59,35 +59,31 @@ gerçek Android release UI ve anonimleştirilmiş gerçek içerik kullanır.
 
 | Slot | Başlık | Ekran | Durum |
 | ---: | --- | --- | --- |
-| 1 | Fotoğraftan tehlikeleri gör | Kaynak fotoğraf + analiz sonucu | gerçek corpus sonrası çekilecek |
-| 2 | Riskleri doğru sırala | Risk dağılımı ve bulgu listesi | UI kanıtı var, store kompozisyonu bekliyor |
-| 3 | Fine-Kinney ve 5x5 birlikte | Bulgu detay/risk yöntemi | UI kanıtı var, store kompozisyonu bekliyor |
-| 4 | Raporun düzenli ve hazır | Rapor oluşturma sonucu | UI kanıtı var, gerçek PDF sonrası çekilecek |
-| 5 | PDF ve Excel olarak paylaş | Rapor arşivi/paylaşım | gerçek E2E bekliyor |
-| 6 | Birden fazla fotoğrafı incele | Fotoğraf tepsisi/sıralama | staging multi-photo E2E bekliyor |
-| 7 | Şirketlerine göre arşivle | Şirket ve rapor filtresi | gerçek E2E bekliyor |
-| 8 | İhtiyacına uygun planı seç | Free/Plus/Pro karşılaştırma | UI kanıtı var, store fiyatlı E2E bekliyor |
+| 1 | Fotoğraftan saha risklerini görün | Gerçek analiz sonucu | owner tasarımı bekliyor |
+| 2 | Kanıta dayalı bulgular oluşturun | Bulgu/risk detayı | owner tasarımı bekliyor |
+| 3 | Fine-Kinney veya 5×5 ile önceliklendirin | Yöntem/risk dağılımı | owner tasarımı bekliyor |
+| 4 | Analizi adım adım takip edin | Waiting/polling | owner tasarımı bekliyor |
+| 5 | Birden fazla fotoğrafı inceleyin | Fotoğraf tepsisi/sonuç | owner tasarımı bekliyor |
+| 6 | Profesyonel PDF ve Excel raporları hazırlayın | Rapor oluşturma | owner tasarımı bekliyor |
+| 7 | Raporu firma bilgileriyle özelleştirin | Şirket/yöntem/format | owner tasarımı bekliyor |
+| 8 | Tüm raporları tek yerde yönetin | Rapor arşivi | owner tasarımı bekliyor |
 
 Görseller küçük, standart ve büyük Android telefonlarda doğrulanacak. Üst metin 4–6 kelime,
 yüksek kontrast ve tek tip sistem sans kullanacak; fiyatlar görsele sabit yazılmayacak.
 
 ## Görsel kapılar
 
-- Play icon: `android/app/src/main/res/drawable-nodpi/rd_app_icon.png` 512×512, alfa yok; ancak
-  kaynak görsel önceden yuvarlatılmış köşe taşıdığı için yayınlanamaz. Tasarım kaynağından
-  köşesiz/full-bleed Play master üretilmeli.
-- Adaptive foreground/background ve Android 13 monochrome kaynakları uygulamada mevcut; ancak
-  foreground mevcut ön-yuvarlatılmış bitmap'i kullandığından yeni full-bleed master ile Pixel ve
-  Samsung maskelerinde görsel kabul tamamlanmadan yayın kapısı açılamaz.
-- Feature graphic 1024×500 henüz onaylı değil.
-- Sekiz ekran görüntüsünün nihai store kompozisyonu henüz üretilmedi.
+- Play icon: `android/play-store/riskdetected-play-store-icon-512.png`; 512×512, opak,
+  full-bleed ve önceden yuvarlatılmamış.
+- Adaptive foreground/background, round ve Android 13 monochrome kaynakları aynı onaylı master'dan
+  üretildi. Fiziksel Pixel/Samsung maske kabulü dış cihaz kapısı olarak kalır.
+- Feature graphic: `android/play-store/riskdetected-feature-graphic-1024x500.png`.
+- Sekiz telefon ekranı owner tasarım tesliminden sonra eklenecek.
 - Görsellerde e-posta, UID, gerçek kişi/şirket adı veya hassas saha verisi bulunamaz.
 
 Mevcut ikon denetimi: küçük boyutta tanınırlık `8/10`, açık/koyu zeminde kontrast `8/10`,
-sadelik `6/10`, marka uyumu `9/10`; kategori farklılaşması Play rakip seti görülmeden
-puanlanmadı. En önemli düzeltme, mağazanın uygulayacağı maskeden önce dosyaya gömülmüş beyaz
-köşe/yuvarlatmayı kaldırmaktır. Merkezdeki baret ve kontrol panosu üretken yapay zekâ ile
-yeniden çizilmeyecek.
+sadelik `6/10`, marka uyumu `9/10`. Gömülü köşe/yuvarlatma kaldırıldı; merkezdeki onaylı baret ve
+kontrol panosu uygulama ikonunda değiştirilmedi.
 
 ## İlk mağaza deneyi
 
