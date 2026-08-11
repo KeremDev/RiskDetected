@@ -29,8 +29,9 @@ kullanılmadığı owner tarafından doğrulanacak).
   update kararı önceliğini koruyor. Böylece backend gate modelinin yalnız veri katmanında kalıp
   istemci tarafından atlanması engellendi.
 - Adaptive launcher, round ve Android 13 monochrome kaynakları eklendi; onboarding'in iOS
-  asset path bağı kaldırıldı. Mevcut adaptive foreground aynı ön-yuvarlatılmış bitmap'i kullandığı
-  için gerçek cihaz ikon görsel kabulü yeni full-bleed marka master'ı gelene kadar açık kapıdır.
+  asset path bağı kaldırıldı. Kullanıcı onaylı opak/full-bleed master launcher ve Play 512×512
+  çıktısına dönüştürüldü; circle, squircle, rounded-square ve 60 px ön kabul kanıtı temizdir.
+  Fiziksel Pixel/Samsung launcher maskesi son cihaz kabul kapısı olarak kalır.
 - Android legal bundle, pending review record, migration ve release-policy checksum'ları build
   sırasında birlikte doğrulanıyor; gerçek owner/hukuk onayı yalnız release varyantının ayrı
   fail-closed kapısında zorunlu.
@@ -56,8 +57,9 @@ kullanılmadığı owner tarafından doğrulanacak).
   source-secret/PII-log/AD_ID taramasından geçti.
 - Minified QA AAB, pinned bundletool hash/validate, gerçek JAR imzası, 16 KB zip alignment,
   tüm ELF `LOAD` segmentleri, iOS asset sızıntısı ve paket-içi server-secret taramasından geçti.
-  Son AAB SHA-256 değeri `aafdb3ad6b76e32c6676b40e47c8b10cfb61e0d9fe9248b61aae4b62ad3a0c0e`;
-  son minified QA APK SHA-256 değeri `67931585a5117ac58cf15402bce5a02545ae3dd71ff19e6f8efb66445ec2a39e`.
+  Kullanıcı onaylı launcher ikonuyla yenilenen AAB SHA-256 değeri
+  `a61cb977a909b53d7150080334a8ac9c5a6f8864b67e817fad10b12f38a228a7`;
+  minified QA APK SHA-256 değeri `011a57af4b4230ceecb7bd8e614e067073054d80fb86e2a4d28a853b970b4c34`.
   Bu kanıt release scriptinin çalıştığını doğrular; owner imzalı release AAB kanıtının yerine
   geçmez.
 
@@ -112,8 +114,8 @@ Törende aşağıdaki kanıtlar kaydedilir:
 | Web `/hesap-silme` | BLOCKED | ayrı web repo deploy'u ve web kabul testleri |
 | Web `/gizlilik` | BLOCKED | yayınlanmış Android metni ve erişilebilirlik kontrolü |
 | Android hukuk/owner onayı | BLOCKED | pending kayıt gerçek reviewer ve tarih ile owner tarafından onaylanmalı |
-| Play store icon | BLOCKED | ön-yuvarlatmasız 512×512 full-bleed master |
-| Adaptive launcher görsel kabulü | BLOCKED | aynı full-bleed master ile Pixel/Samsung maske kanıtı |
+| Play store icon | PASS | kullanıcı onaylı opak/full-bleed master ve 512×512 Play çıktısı üretildi |
+| Adaptive launcher görsel kabulü | PARTIAL | circle/squircle/rounded-square ön kabulü geçti; fiziksel Pixel/Samsung maske kanıtı bekliyor |
 | Feature graphic/screenshots | BLOCKED | 1024×500 + sekiz gerçek Android store görseli |
 | versionCode 1 | BLOCKED | Play Console'da hiç kullanılmadığının owner kanıtı |
 | Play owner cihaz doğrulaması | BLOCKED | yeni kişisel hesapsa owner, Play Console mobil uygulamasıyla gerçek Android cihaz erişimini doğrulamalı |

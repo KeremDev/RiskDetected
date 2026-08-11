@@ -25,7 +25,7 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
 - [x] Unit test, lint, environment isolation ve debug build kalite kapıları geçti.
 - [x] Temiz kaynaklardan minified QA APK/AAB yeniden üretildi; `bundletool`, JAR imzası, 16 KB hizalama ve secret/PII taramaları geçti.
 - [x] Temiz QA AAB içinde `.xcassets`, `AppIcon.appiconset` veya `Contents.json` bulunmadığı doğrulandı.
-- [x] Final QA AAB (`SHA-256 aafdb3ad6b76e32c6676b40e47c8b10cfb61e0d9fe9248b61aae4b62ad3a0c0e`) bundletool, JAR imzası, 16 KB/ELF ve QA Firebase allowlist doğrulamasından geçti; final QA APK hash'i `67931585a5117ac58cf15402bce5a02545ae3dd71ff19e6f8efb66445ec2a39e`.
+- [x] Yeni launcher ikonunu içeren temiz QA AAB (`SHA-256 a61cb977a909b53d7150080334a8ac9c5a6f8864b67e817fad10b12f38a228a7`) bundletool, JAR imzası, 16 KB/ELF ve QA Firebase allowlist doğrulamasından geçti; QA APK hash'i `011a57af4b4230ceecb7bd8e614e067073054d80fb86e2a4d28a853b970b4c34`, native symbol paketi hash'i `13f93498c65e6a23f7327b62e52b2c62e7c017a0ec0dc5f1aeac2d2fd8a798a1`.
 - [x] Deno Edge Function paketi `316/316`, pgTAP/RLS/RPC paketi `478/478` geçti; local DB lint sonucu sıfır hata.
 - [x] Android staging'e dört additive migration ve repo kaynaklı 20 Edge Function dağıtıldı; uzak hash/deploy kanıtı kaydedildi.
 - [x] Bekleyen owner/hukuk onayının onaylanmış gibi yazılmasına yol açan legal migration düzeltildi; staging approval satırı sıfır ve gate kapalı.
@@ -186,7 +186,8 @@ Not: Docker kullanıcı volume'leri silinmedi. Temizlik yalnız kullanılmayan S
 ## P2 — Play Store hazırlığı
 
 - [ ] Türkçe kısa ve uzun açıklamaları son kez gözden geçir.
-- [ ] 512×512 uygulama ikonu ve 1024×500 feature graphic'i yükle.
+- [x] Kullanıcı onaylı full-bleed master'dan adaptive/round/monochrome kaynaklarını ve 512×512 Play ikonunu üret.
+- [ ] 1024×500 feature graphic'i yükle.
 - [ ] Küçük/standart/büyük telefonlardan sekiz Türkçe ekran görüntüsü hazırla.
 - [ ] Business kategorisi ve 18+ profesyonel hedef kitle ayarlarını tamamla.
 - [ ] Data Safety formunu gerçek SDK/veri envanterine göre doldur.

@@ -1,11 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Single-color hard-hat silhouette for Android 13+ themed icons. -->
+<!-- Single-color hard-hat + inspection-board mark for Android 13+ themed icons. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="4"
+        android:pathData="M67,26 L86,26 Q90,26 90,30 L90,63 Q90,67 86,67 L67,67 Q63,67 63,63 L63,30 Q63,26 67,26 Z" />
+    <path
         android:fillColor="#FF000000"
+        android:pathData="M72,22 L72,19 Q72,16 75,16 L78,16 Q81,16 81,19 L81,22 L85,22 L85,29 L68,29 L68,22 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeLineCap="round"
+        android:strokeWidth="3"
+        android:pathData="M69,38 L78,38 M69,46 L80,46 M69,55 L82,55 M81,38 L84,41 L89,34" />
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
         android:pathData="M26,66 L26,61 C26,48 34,37 46,33 L46,27 C46,24 49,22 52,22 L56,22 C59,22 62,24 62,27 L62,33 C74,37 82,48 82,61 L82,66 L87,69 L87,75 L21,75 L21,69 Z M31,61 L77,61 C77,50 71,42 62,38 L62,55 L58,55 L58,34 L50,34 L50,55 L46,55 L46,38 C37,42 31,50 31,61 Z" />
 </vector>
