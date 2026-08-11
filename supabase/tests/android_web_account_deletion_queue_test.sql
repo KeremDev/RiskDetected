@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select extensions.plan(16);
+select extensions.plan(17);
 
 select extensions.has_column(
   'public', 'account_deletion_requests', 'requested_via',
@@ -73,6 +73,16 @@ select extensions.ok(
   and not has_table_privilege('anon', 'public.account_deletion_requests', 'INSERT')
   and not has_table_privilege('anon', 'public.account_deletion_requests', 'UPDATE'),
   'anonymous clients have no deletion queue privileges'
+);
+
+select extensions.is(
+  (
+    select count(*)::bigint
+    from cron.job
+    where jobname = 'riskdetected-account-deletion-hourly'
+  ),
+  0::bigint,
+  'hourly deletion worker remains unscheduled when local Vault secrets are absent'
 );
 
 select * from extensions.finish();

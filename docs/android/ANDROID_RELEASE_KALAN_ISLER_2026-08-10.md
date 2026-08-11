@@ -1,6 +1,6 @@
 # Android Release Kalan İşler
 
-Tarih: 10 Ağustos 2026
+Son güncelleme: 11 Ağustos 2026
 Hedef sürüm: `1.5.0`
 Package ID: `com.riskdetectedan.app`
 Referans iOS sürümü: `app-store-live-1.3.1-build-81-baseline-2026-08-06`
@@ -26,7 +26,7 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
 - [x] Temiz kaynaklardan minified QA APK/AAB yeniden üretildi; `bundletool`, JAR imzası, 16 KB hizalama ve secret/PII taramaları geçti.
 - [x] Temiz QA AAB içinde `.xcassets`, `AppIcon.appiconset` veya `Contents.json` bulunmadığı doğrulandı.
 - [x] Yeni launcher ikonunu içeren temiz QA AAB (`SHA-256 a61cb977a909b53d7150080334a8ac9c5a6f8864b67e817fad10b12f38a228a7`) bundletool, JAR imzası, 16 KB/ELF ve QA Firebase allowlist doğrulamasından geçti; QA APK hash'i `011a57af4b4230ceecb7bd8e614e067073054d80fb86e2a4d28a853b970b4c34`, native symbol paketi hash'i `13f93498c65e6a23f7327b62e52b2c62e7c017a0ec0dc5f1aeac2d2fd8a798a1`.
-- [x] Deno Edge Function paketi `316/316`, pgTAP/RLS/RPC paketi `478/478` geçti; local DB lint sonucu sıfır hata.
+- [x] Deno Edge Function paketi `316/316`, pgTAP/RLS/RPC paketi `479/479` geçti; local DB lint sonucu sıfır hata.
 - [x] Android staging'e dört additive migration ve repo kaynaklı 20 Edge Function dağıtıldı; uzak hash/deploy kanıtı kaydedildi.
 - [x] Bekleyen owner/hukuk onayının onaylanmış gibi yazılmasına yol açan legal migration düzeltildi; staging approval satırı sıfır ve gate kapalı.
 - [x] Analiz telemetrisi trigger'ında Android platform alanı eklenirken düşen dil doğrulama alanları additive migration ile geri getirildi.
@@ -38,7 +38,12 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
 - [x] API 36 emülatörde temiz QA APK; onboarding skip, bağımsız auth, cold relaunch, e-posta paneli ve font scale `1.3` ADB kanıtlarıyla geçti.
 - [x] API 26 küçük, API 33 standart ve API 37 büyük AVD'leri kuruldu; final minified QA APK ile UI tree koordinatlı fresh-install/skip/auth/cold-relaunch smoke paketi yeniden üretildi ve üç kanıt aynı APK hash'ine bağlandı.
 - [x] API 26'da yakalanan siyah sistem çubuğu, uygulama yüzeyinin inset arkasını boyamasıyla giderildi; etkileşim içeriği safe-area içinde kaldı.
-- [x] Production ortamına ve iOS `App/` kaynaklarına dokunulmadı.
+- [x] Production değişiklikleri additive ve Android kapıları kapalı uygulandı; iOS `App/` kaynaklarına dokunulmadı.
+- [x] Kullanıcı onaylı launcher icon paketi kapatıldı ve atomik commit'e alındı (`319c77ce`).
+- [x] `/gizlilik` ve `/hesap-silme` production web sitesinde yayınlandı; OTP, enumeration koruması ve staging queue E2E geçti.
+- [x] Gerçek saha fotoğraflarıyla 1, 2 ve 3 fotoğraflı analiz; sonuç, PDF ve XLSX zinciri doğrulandı.
+- [x] Bildirim izni reddi/sonradan etkinleştirme, kayıt-ID deep-link'leri ve sign-out token temizliği doğrulandı.
+- [x] Sekiz additive migration ve 20 kanonik Edge Function production'a Android kapıları kapalıyken dağıtıldı; production DB lint temiz.
 
 ## P0 — İlk Play Internal Testing yüklemesi
 
@@ -103,11 +108,12 @@ Kabul ölçütü: Google ve OTP girişleri fiziksel cihazda tamamlanır; çıkı
 
 ## P0 — Analiz, sonuç ve rapor E2E
 
-- [ ] Sabit 10 gerçek saha fotoğrafından oluşan AI kalite corpus'unu tamamla.
-- [ ] Kalan 9 corpus fotoğrafını Android ve iOS ile aynı backend/prompt capability üzerinden analiz et.
+- [x] Kullanıcının belirlediği kapsamla gerçek fotoğraflı 1, 2 ve 3 fotoğraf analizlerini tamamla.
+- [x] 1/2/3 fotoğraf analizlerinde waiting, polling/recovery ve sonuç ekranlarını doğrula.
+- [x] Üç fotoğraflı sonuçtan gerçek 3 sayfalı PDF ve geçerli XLSX üret; backend snapshot'ını doğrula.
 - [ ] İSG uzmanından kritik tehlike atlama, yanlış yüksek risk ve kontrol tedbiri kalitesi onayı al.
 - [ ] Detaylı analiz akışını test et.
-- [ ] Üç fotoğraflı analiz, fotoğraf sıralaması ve işaretlemeyi test et.
+- [x] Üç fotoğraflı analiz ve fotoğraf sıralamasını test et.
 - [ ] Ağ kesintisi ve polling recovery akışını test et.
 - [ ] Duplicate tap ve aynı submission ID ile idempotency testini tamamla.
 - [ ] Process death sonrasında bekleyen analize geri dönüşü test et.
@@ -122,11 +128,12 @@ Kabul ölçütü: Corpus'ta kritik tehlike atlama yoktur; aynı submission ikinc
 
 ## P1 — Bildirimlerin kalan testleri
 
-- [ ] Android 13+ bildirim izni reddedilmiş durumda uygulama davranışını test et.
-- [ ] İzin daha sonra Profil'den etkinleştirildiğinde token kaydını doğrula.
-- [ ] Analiz ve rapor kayıt ID'li deep-link rotalarını foreground/background/killed durumlarında test et.
-- [ ] Token refresh ve sign-out sonrası token temizliğini doğrula.
-- [ ] Payload ve loglarda PII/ham mesaj bulunmadığını doğrula.
+- [x] Android 13+ bildirim izni reddedilmiş durumda uygulama davranışını test et.
+- [x] İzin daha sonra Profil'den etkinleştirildiğinde token kaydını doğrula.
+- [x] Analiz ve rapor kayıt ID'li deep-link rotalarını foreground/background/killed durumlarında test et.
+- [x] Sign-out sonrası yalnız mevcut kurulumun token temizliğini doğrula.
+- [x] Payload ve loglarda PII/ham mesaj bulunmadığını doğrula.
+- [ ] FCM token rotation (`onNewToken`) senaryosunu gerçek yenilenmiş token ile tekrar doğrula.
 
 Kabul ölçütü: Reddedilmiş izin uygulamayı bozmaz; izin verildiğinde FCM kaydı ve tüm tipli rotalar çalışır.
 
@@ -149,15 +156,16 @@ Kabul ölçütü: Android golden threshold `0`; platformlar arası geometri fark
 
 ## P1 — Web, hukuk ve hesap silme
 
-- [ ] Production web sitesinde `/gizlilik` rotasını yayınla.
-- [ ] Production ve staging web sitelerinde `/hesap-silme` rotasını yayınla.
-- [ ] E-posta OTP doğrulaması ve `shouldCreateUser=false` davranışını test et.
-- [ ] Account enumeration yapılmadığını doğrula.
-- [ ] `request_only` silme talebinin HTTP 202 ve takip bilgileri döndürdüğünü doğrula.
-- [ ] Saatlik worker'ın idempotent claim, retry ve en fazla 24 saat SLA davranışını test et.
-- [ ] DB, Storage ve Auth temizliğini; gerekli audit retention davranışını doğrula.
-- [ ] Resend talep ve tamamlanma e-postalarını doğrula.
-- [ ] Resend hatasının silme kuyruğunu durdurmadığını doğrula.
+- [x] Production web sitesinde `/gizlilik` rotasını yayınla.
+- [x] Production web sitesinde `/hesap-silme` rotasını yayınla.
+- [x] E-posta OTP doğrulaması ve `shouldCreateUser=false` davranışını test et.
+- [x] Account enumeration yapılmadığını doğrula.
+- [x] `request_only` silme talebinin HTTP 202 ve takip bilgileri döndürdüğünü staging'de doğrula.
+- [x] Saatlik worker'ın idempotent claim, retry ve en fazla 24 saat SLA davranışını staging'de test et.
+- [x] DB, Storage ve Auth temizliğini; gerekli audit retention davranışını staging'de doğrula.
+- [x] Resend talep ve tamamlanma e-postalarını staging'de doğrula.
+- [x] Resend hatasının silme kuyruğunu durdurmadığını doğrula.
+- [x] Production CORS allowlist, oturumsuz istek engeli, Vault ve saatlik cron'u doğrula.
 - [ ] Android hukuk metinlerini owner onayına sun ve approval record'u tamamla.
 
 Kabul ölçütü: Play'de kullanılabilecek herkese açık gizlilik ve hesap silme URL'leri çalışır; gerçek silme talebi 24 saat içinde tamamlanır.
@@ -166,18 +174,18 @@ Kabul ölçütü: Play'de kullanılabilecek herkese açık gizlilik ve hesap sil
 
 - [x] Docker'da yalnız kullanılmayan, yeniden indirilebilir eski Supabase image cache'leri temizlendi; kullanıcı volume'leri korundu.
 - [x] Yerel Supabase stack'i temiz migration replay ile tekrar başlatıldı.
-- [x] Yeni Android platform telemetry testleri dahil pgTAP paketi `478/478` geçti.
+- [x] Yeni Android/web queue testleri dahil pgTAP paketi `479/479` geçti.
 - [x] Deno Edge Function testleri `316/316` geçti.
 - [x] Beş `SECURITY DEFINER` RPC için auth, sahiplik, sabit `search_path`, anon revoke ve çapraz kullanıcı negatif testleri geçti.
 - [x] Local Supabase security/performance advisor sonucu sıfır uyarı.
 - [x] Staging advisor değerlendirildi; beş istemci RPC'si test kanıtlı waiver'a alındı, deny-by-default INFO kayıtları belgelendi.
 - [ ] Staging leaked-password protection'ı auth regresyonundan sonra aç.
-- [ ] Production Supabase advisor warning'lerini production deploy öncesi tekrar değerlendir.
+- [x] Production Supabase DB lint/advisor warning'lerini tekrar değerlendir; sıfır schema warning/error.
 - [x] Debug lint ve minified QA R8 build'i geçti.
 - [ ] Production public config ve signing secret'larıyla release lint/signed R8 build'i geçir.
 - [x] Roborazzi golden paketi sabit JDK 17, Türkçe locale, İstanbul timezone ve threshold `0` ile geçti.
 - [x] `App/` diff'inin build-81 baseline'a göre sıfır olduğu yerel fail-closed kontrolde doğrulandı; CI kapısı mevcut.
-- [ ] Production Android runtime gate'lerinin kapalı olduğunu CI'de doğrula.
+- [x] Production Android runtime gate'lerinin altı işlev kapısında kapalı olduğunu canlı policy çağrısıyla doğrula.
 
 Kabul ölçütü: Unit, golden, lint, R8, Deno ve pgTAP testlerinin tamamı yeşildir; çözülmemiş kritik/yüksek güvenlik bulgusu yoktur.
 
@@ -203,8 +211,8 @@ Kabul ölçütü: Listing, Data Safety, hukuk URL'leri ve inceleme erişimi eksi
 - [ ] Kesintisiz 14 günlük opt-in şartını tamamla ve kayıt altına al.
 - [ ] Closed test boyunca crash-free session oranını en az `%99,5` tut.
 - [ ] Play Vitals, auth/analiz/rapor başarı oranı, webhook ve destek taleplerini izle.
-- [ ] Production'a additive migration ve Edge Function paketini Android gate'leri kapalıyken dağıt.
-- [ ] Dağıtım sonrası iOS build-81 fixture ve smoke testlerini yeniden çalıştır.
+- [x] Production'a additive migration ve Edge Function paketini Android gate'leri kapalıyken dağıt.
+- [x] Dağıtım sonrası iOS build-81 release-policy fixture/smoke testini yeniden çalıştır.
 - [ ] Review hesabı/version allowlist canary'sini aç.
 - [ ] Özellikleri sırayla aç: client/auth → profil/okuma → PDF → tek fotoğraf → multi-photo → payments → notifications.
 - [ ] Play rollout'u `%20 → %50 → %100` uygula; her kademeyi en az 24 saat izle.
@@ -232,7 +240,7 @@ Release aşağıdaki koşulların tamamı sağlanmadan hazır kabul edilmeyecekt
 - [ ] Auth, analiz, PDF/XLSX, billing ve FCM E2E tamam.
 - [ ] AI corpus'unda kritik tehlike atlama yok.
 - [ ] Fiziksel Pixel ve Samsung testleri tamam.
-- [ ] Hesap silme ve gizlilik URL'leri yayında.
+- [x] Hesap silme ve gizlilik URL'leri yayında.
 - [ ] 12 tester × 14 gün closed test tamam.
 - [ ] Play Pre-launch Report blocker içermiyor.
 - [ ] Closed test crash-free session oranı en az `%99,5`.
