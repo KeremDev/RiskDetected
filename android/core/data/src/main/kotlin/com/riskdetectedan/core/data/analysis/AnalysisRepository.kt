@@ -4,6 +4,7 @@ import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.common.RdResult
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
@@ -330,9 +331,40 @@ class AnalysisRepository @Inject constructor(
             try {
                 client.functions.invoke("analyze", body = body)
                 return RdResult.Success(Unit)
-            } catch (e: ResponseException) {
-                val code = e.response.status.value
-                val payload = parseFunctionErrorPayload(e.response.bodyAsText(), fallbackSupportId = supportId)
+            } catch (t: Throwable) {
+                // supabase-kt 3.x converts non-success Edge Function responses to RestException
+                // after parsing the response. Keep ResponseException support as a defensive
+                // fallback for direct Ktor failures, but do not let the SDK's real exception
+                // type fall through to the generic network-error branch (which previously hid
+                // quota/gate/auth errors behind "Beklenmeyen bir sorun").
+                val httpResponse = when (t) {
+                    is RestException -> t.response
+                    is ResponseException -> t.response
+                    else -> null
+                }
+                if (httpResponse == null) {
+                    if (attempt < maxAttempts) {
+                        delay(1_000)
+                        continue
+                    }
+                    val fallback = "Analiz isteği sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."
+                    return RdResult.Failure("network_failed", appendSupportId(supportId, fallback), t)
+                }
+
+                val code = httpResponse.status.value
+                val responseBody = runCatching { httpResponse.bodyAsText() }.getOrNull()
+                val payload = if (responseBody != null) {
+                    parseFunctionErrorPayload(responseBody, fallbackSupportId = supportId)
+                } else if (t is RestException) {
+                    FunctionErrorPayload(
+                        message = t.description?.takeIf { it.isNotBlank() } ?: t.error,
+                        supportId = supportId,
+                        code = null,
+                        tier = null,
+                    )
+                } else {
+                    FunctionErrorPayload("", supportId, null, null)
+                }
                 val msg = payload.message
                 val errorCode = payload.code ?: ""
 
@@ -340,18 +372,18 @@ class AnalysisRepository @Inject constructor(
                     (msg.contains("günlük kota", ignoreCase = true) || msg.contains("analiz/gün", ignoreCase = true) || errorCode == "quota_exceeded")
                 ) {
                     val fallback = msg.ifEmpty { "Analiz kotan doldu." }
-                    return RdResult.Failure("quota_exceeded", appendSupportId(payload.supportId, fallback), e)
+                    return RdResult.Failure("quota_exceeded", appendSupportId(payload.supportId, fallback), t)
                 }
                 if (code == 409) {
-                    return RdResult.Failure("already_completed", "Bu analiz zaten tamamlanmış.", e)
+                    return RdResult.Failure("already_completed", "Bu analiz zaten tamamlanmış.", t)
                 }
                 if (errorCode == "PHOTO_LIMIT_EXCEEDED") {
                     val fallback = msg.ifEmpty { "Bu plan için fotoğraf limiti aşıldı." }
-                    return RdResult.Failure("photo_limit_exceeded", appendSupportId(payload.supportId, fallback), e)
+                    return RdResult.Failure("photo_limit_exceeded", appendSupportId(payload.supportId, fallback), t)
                 }
                 if (errorCode == "OUTPUT_LANGUAGE_CONTRACT_FAILED") {
                     val fallback = "Analiz, seçilen çıktı diliyle güvenli biçimde tamamlanamadı. Lütfen tekrar dene."
-                    return RdResult.Failure("output_language_contract_failed", appendSupportId(payload.supportId, fallback), e)
+                    return RdResult.Failure("output_language_contract_failed", appendSupportId(payload.supportId, fallback), t)
                 }
 
                 val retryable = code in intArrayOf(429, 500, 502, 503, 504)
@@ -366,14 +398,7 @@ class AnalysisRepository @Inject constructor(
                     503 -> messageWithSupport.ifEmpty { appendSupportId(payload.supportId, "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.") }
                     else -> messageWithSupport.ifEmpty { appendSupportId(payload.supportId, "HTTP $code") }
                 }
-                return RdResult.Failure("ai_failed", finalMessage, e)
-            } catch (t: Throwable) {
-                if (attempt < maxAttempts) {
-                    delay(1_000)
-                    continue
-                }
-                val fallback = "Analiz isteği sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."
-                return RdResult.Failure("network_failed", appendSupportId(supportId, fallback), t)
+                return RdResult.Failure("ai_failed", finalMessage, t)
             }
         }
         // Unreachable — every branch above returns; kept for exhaustiveness.

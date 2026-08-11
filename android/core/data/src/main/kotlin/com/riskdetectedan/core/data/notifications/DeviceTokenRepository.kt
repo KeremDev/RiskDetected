@@ -100,6 +100,26 @@ class DeviceTokenRepository @Inject constructor(
         RdResult.Failure("device_token_register_failed", t.message ?: "device_token_register_failed", t)
     }
 
+    /**
+     * Removes only this installation's FCM registration for the authenticated owner. This must
+     * run before Supabase sign-out because the table's delete policy is owner-scoped. Filtering
+     * by installation and application prevents a sign-out on one device/build from disabling
+     * notifications on the user's other devices.
+     */
+    suspend fun unregisterCurrentInstallation(userId: String): RdResult<Unit> = try {
+        client.postgrest.from("push_device_tokens").delete {
+            filter {
+                eq("user_id", userId)
+                eq("provider", "fcm")
+                eq("application_id", environmentConfig.applicationId)
+                eq("installation_id", installationId())
+            }
+        }
+        RdResult.Success(Unit)
+    } catch (t: Throwable) {
+        RdResult.Failure("device_token_unregister_failed", "device_token_unregister_failed", t)
+    }
+
     private companion object {
         const val KEY_INSTALLATION_ID = "installation_id"
     }

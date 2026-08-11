@@ -1,0 +1,3 @@
+token_count_before=1
+token_count_after=0
+cleanup_scope=current_installation

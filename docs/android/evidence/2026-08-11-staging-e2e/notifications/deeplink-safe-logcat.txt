@@ -1,0 +1,3 @@
+--------- beginning of main
+08-11 10:31:34.966  6945  6945 D RdNotificationRoute: parsed=analysis_complete:Analyses; hasType=true
+08-11 10:31:43.987  7076  7076 D RdNotificationRoute: parsed=analysis_complete:Analyses; hasType=true

@@ -1,6 +1,7 @@
 package com.riskdetectedan.core.data.auth
 
 import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.data.notifications.DeviceTokenRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
@@ -58,6 +59,7 @@ enum class RdAppLanguage(val code: String, val contentLocale: String) {
 @Singleton
 class AuthRepository @Inject constructor(
     private val client: SupabaseClient,
+    private val deviceTokenRepository: DeviceTokenRepository,
 ) {
     /** Guards [recordFirstSeenDeviceRegionIfNeeded] against re-firing every sign-in within the
      * same process — a simpler single-slot version of iOS's `Set<UUID>` in-flight/completed
@@ -262,6 +264,11 @@ class AuthRepository @Inject constructor(
         .ifEmpty { null }
 
     suspend fun signOut(): RdResult<Unit> = try {
+        // Best effort: logout must remain available offline, while an online logout removes this
+        // installation's owner-scoped FCM token before the RLS-authenticated session disappears.
+        client.auth.currentUserOrNull()?.id?.let { userId ->
+            deviceTokenRepository.unregisterCurrentInstallation(userId)
+        }
         client.auth.signOut()
         RdResult.Success(Unit)
     } catch (t: Throwable) {
