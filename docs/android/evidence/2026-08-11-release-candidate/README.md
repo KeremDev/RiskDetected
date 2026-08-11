@@ -77,28 +77,66 @@ regresyon olarak kalır.
 ## Play Console durumu
 
 - Play App Signing ve otomatik koruma etkin.
-- Release geçmişi boş; `versionCode=1` kullanılabilir.
-- Internal Testing için boş draft release oluşturuldu.
+- `versionCode=1` içeren `1.5.0 (1) — Internal` sürümü 11 Ağustos 2026 21:20'de
+  Internal Testing'e yayınlandı.
+- Internal test katılım bağlantısı:
+  `https://play.google.com/apps/internaltest/4700704956127404530`
+- Play app-signing sertifikası SHA-1:
+  `58:B2:63:04:BC:28:E5:66:58:48:D7:79:04:50:80:05:4F:9B:56:7E`
+- Play app-signing sertifikası SHA-256:
+  `E9:34:C9:C2:6D:B9:47:B4:C6:BD:D0:DE:03:B8:1D:55:0B:70:88:99:0B:D0:0C:2A:18:E7:C1:3E:C4:EB:04:6F`
+- Upload ve Play app-signing SHA-1/SHA-256 değerleri production Firebase Android
+  uygulamasına eklendi; Firebase dört fingerprint'i de döndürüyor.
 - Privacy URL, reklam, resmi kurum, finans/sağlık, Business kategorisi, iletişim ve Türkçe listing
   metadata'sı kaydedildi.
 - IARC içerik derecelendirmesi kaydedildi: Avrupa `PEGI 3`; dijital ürünler için uygulama içi
   satın alma etiketi gösteriliyor.
-- Play yüklemesi, Codex Chrome uzantısında yerel dosya erişimi kapalı olduğu için bekliyor.
+- Reklam Kimliği beyanı `Hayır` olarak kaydedildi; release manifesti ve artifact taraması
+  `com.google.android.gms.permission.AD_ID` içermiyor.
+- Closed Alpha kanalı Türkiye, `RiskDetected Internal` test listesi ve
+  `https://riskdetected.com/destek` geri bildirim URL'siyle yapılandırıldı.
+- `1.5.0 (1) — Closed Alpha` release'i aynı doğrulanmış AAB ile taslak olarak kaydedildi.
+
+## RevenueCat ve Google Play RTDN
+
+- RevenueCat Android uygulaması: `appf46487b575`, package `com.riskdetectedan.app`.
+- Google Play service-account kimlik bilgileri RevenueCat'te `Valid credentials` durumunda.
+- `default` offering; Plus/Pro aylık ve yıllık dört paketi içeriyor. `plus` ve `pro`
+  entitlement'ları doğrulandı; iOS uyumluluğu için eski `Riskdetected Pro` entitlement'ına
+  dokunulmadı.
+- Pub/Sub topic:
+  `projects/riskdetected-play/topics/Play-Store-Notifications`.
+- `google-play-developer-notifications@system.gserviceaccount.com` hesabına yalnız topic
+  seviyesinde `Pub/Sub Publisher` rolü verildi.
+- Play test bildirimi başarılı oldu; RevenueCat son alımı `2026-08-11 18:46 UTC` olarak
+  kaydetti ve `Connected to Google` gösteriyor.
+- Play'de dört abonelik ürün kaydı oluşturuldu. Temel plan kaydı ise doğru dönem, yalnız Türkiye
+  kullanılabilirliği ve vergi dahil doğrulanmış fiyatla iki farklı üründe tekrarlandığı halde
+  Play tarafından yalnız `Değişiklikleriniz kaydedilemedi` yanıtıyla reddedildi. Geliştirici
+  ödeme profili mevcut, ancak payout yöntemi eklenmemiş. Banka/payout bilgisi owner tarafından
+  tamamlanmadan bu dış finans kapısı Codex tarafından geçilemez.
 
 ## Store varlıkları
 
 - `android/play-store/riskdetected-play-store-icon-512.png`
 - `android/play-store/riskdetected-feature-graphic-1024x500.png`
+- Her iki varlık Play Console'daki varsayılan Türkçe mağaza girişine yüklendi; sayfa yeniden
+  yüklenerek `1/1` durumları doğrulandı ve taslak kalıcı olarak kaydedildi.
 - Telefon mağaza ekran kompozisyonları owner tarafından ayrıca tasarlatılacak; Codex'in geçici
   mockup çıktıları çalışma alanından geri alındı.
 
 ## Bilinçli ertelenen/dış kapılar
 
 - Fiziksel cihaz Google/Auth E2E: owner isteğiyle sonraya bırakıldı.
-- AAB upload ve Play'den yeniden imzalı build smoke testi
-- App-signing fingerprint'lerinin Firebase/OAuth'a eklenmesi
-- Gerçek Play Billing/RTDN ve dört ürün E2E
-- Dedicated review hesabı parolasıyla Play inceleme erişimi
-- Owner onaylı Data Safety formunun gönderimi
-- Review erişim bilgileri sonrası 18+ target audience ve restricted-access beyanları
-- Fiziksel Pixel/Samsung, İSG uzman kabulü, Pre-launch Report, 12 tester × 14 gün closed test
+- Play'den yeniden imzalı build smoke testi fiziksel cihaz oturumuna bırakıldı.
+- Google OAuth Android client'ın Play app-signing fingerprint'iyle son provider kontrolü fiziksel
+  Credential Manager testiyle birlikte yapılacak.
+- Dört Play temel planı, deneme ve gerçek Billing E2E; payout yöntemi/Play tarafındaki genel
+  kaydetme hatası giderildikten sonra yapılacak.
+- Dedicated Fastmail review mailbox parolası repo'da tutulmuyor. Play oturum açma beyanı,
+  parola owner tarafından doğrudan Console'a girilince tamamlanacak; buna bağlı 18+ hedef kitle
+  beyanı da o adımın ardından açılıyor.
+- Data Safety'de 15 veri türü kaydedildi. `https://riskdetected.com/hesap-silme` doğrudan 200
+  döndüğü halde Play doğrulayıcısı 403 görüyor; owner Google desteğine kayıt açtı.
+- Fiziksel Pixel/Samsung, İSG uzman kabulü, Pre-launch Report ve 12 tester × 14 gün closed test.
+- Owner tarafından hazırlanacak sekiz mağaza ekran görüntüsü.

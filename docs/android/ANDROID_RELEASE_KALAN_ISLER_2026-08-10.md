@@ -48,13 +48,21 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
   staging ve production unique index doğrulaması tamamlandı.
 - [x] İmzalı/minified release AAB üretildi; hash, signature, `bundletool`, 16 KB, R8/native symbols,
   secret/PII ve iOS asset kontrolleri release kanıtına kaydedildi.
-- [x] Play Console'da `versionCode=1` kullanılabilir, Play App Signing etkin ve Internal Testing
-  draft release oluşturulmuş durumda.
+- [x] Play Console'da `versionCode=1` kullanılarak Play App Signing etkinleştirildi ve Internal
+  Testing release'i yayınlandı.
+- [x] Play app-signing SHA-1/SHA-256 production Firebase'e eklendi; upload ve app-signing
+  fingerprint'lerinin tamamı doğrulandı.
+- [x] RevenueCat Google Play service-account credentials doğrulandı; Play RTDN test bildirimi
+  Pub/Sub üzerinden RevenueCat'e ulaştı.
+- [x] Play'de Plus/Pro aylık ve yıllık dört abonelik ürün kaydı oluşturuldu.
 - [x] Türkçe listing metadata'sı, privacy URL, Business kategorisi ve temel uygulama beyanları
   Play Console taslağına kaydedildi.
 - [x] IARC içerik derecelendirme anketi kaydedildi; Avrupa sonucu `PEGI 3`, dijital ürünler için
   uygulama içi satın alma etiketi etkin.
-- [x] 512×512 ikon ve 1024×500 feature graphic hazırlandı.
+- [x] 512×512 ikon ve 1024×500 feature graphic hazırlandı, Play Console'a yüklendi ve mağaza
+  taslağına kalıcı olarak kaydedildi.
+- [x] Closed Alpha kanalı Türkiye, `RiskDetected Internal` test listesi ve destek URL'siyle
+  yapılandırıldı; `1.5.0 (1) — Closed Alpha` sürümü taslak olarak kaydedildi.
 - [ ] Sekiz Türkçe telefon mağaza görseli owner tarafından ayrıca tasarlatılacak.
 
 ## P0 — İlk Play Internal Testing yüklemesi
@@ -67,11 +75,12 @@ Bu bölüm sonraki Play ve RevenueCat testlerinin ön koşuludur.
 - [x] 16 KB native library/alignment kontrolünü çalıştır.
 - [x] R8 mapping ve varsa native symbol artifact'larını sakla.
 - [x] Secret/PII taramasını release artifact üzerinde çalıştır.
-- [x] Play Console'da `versionCode=1` kullanılabilirliğini doğrula; release geçmişi boş.
-- [ ] AAB'yi owner hesabıyla Internal Testing'e manuel yükle.
+- [x] Play Console'da `versionCode=1` kullanılabilirliğini doğrula ve bu kodla ilk Internal
+  Testing release'ini yayınla.
+- [x] AAB'yi owner hesabıyla Internal Testing'e manuel yükle.
 - [x] Play App Signing'i etkinleştir.
-- [ ] Play App Signing SHA-1/SHA-256 fingerprint'lerini kaydet.
-- [ ] App-signing fingerprint'lerini production Firebase Android uygulamasına ekle.
+- [x] Play App Signing SHA-1/SHA-256 fingerprint'lerini kaydet.
+- [x] App-signing fingerprint'lerini production Firebase Android uygulamasına ekle.
 - [ ] Gerekliyse app-signing fingerprint'i için Google OAuth Android client oluştur/güncelle.
 - [ ] Play tarafından yeniden imzalanmış uygulamayı Internal Testing üzerinden indirip temel smoke testi yap.
 
@@ -81,9 +90,9 @@ Kabul ölçütü: Play'den indirilen build açılıyor, backend environment kont
 
 İlk AAB yüklemesinden sonra uygulanacaktır.
 
-- [ ] RevenueCat Google Play credentials uyarısının kalktığını doğrula.
+- [x] RevenueCat Google Play credentials uyarısının kalktığını doğrula.
 - [ ] Google Play ürünlerinin ve base plan'ların RevenueCat tarafından eksiksiz okunduğunu doğrula.
-- [ ] RTDN/Pub/Sub topic bağlantısını tamamla ve test bildirimi doğrula.
+- [x] RTDN/Pub/Sub topic bağlantısını tamamla ve test bildirimi doğrula.
 - [ ] `default` offering içindeki dört paketin store fiyatlarını uygulamada doğrula:
   - [ ] `riskdetected_plus_monthly`
   - [ ] `riskdetected_plus_yearly`
@@ -105,6 +114,13 @@ Kabul ölçütü: Play'den indirilen build açılıyor, backend environment kont
 
 Kabul ölçütü: RevenueCat App User ID her durumda Supabase `auth.uid()` olur; store fiyatları tek kaynak olur; webhook ve profil planı tutarlı kalır.
 
+Blokaj (11 Ağustos 2026): Dört ürün nesnesi Play'de oluşturuldu. Plus aylık ve Pro yıllık
+temel planları; doğru aylık/yıllık dönem, yalnız Türkiye kullanılabilirliği ve KDV dahil hedef
+fiyatlar doğrulanarak denendi. Play her iki denemede de ayrıntısız
+`Değişiklikleriniz kaydedilemedi` yanıtı verdi. Ödeme profili mevcut ancak payout yöntemi yok.
+Owner banka/payout yöntemini ekledikten veya Play bu hesap hatasını kaldırdıktan sonra temel
+planlar, yedi günlük Plus yıllık deneme ve gerçek satın alma matrisi tamamlanabilir.
+
 ## P0 — Auth E2E
 
 Owner kararı (11 Ağustos 2026): fiziksel cihaz Auth E2E bu teslimin dışında tutuldu ve sonraki
@@ -115,9 +131,9 @@ cihaz oturumuna ertelendi. Aşağıdaki maddeler bilinen ertelenmiş kapılardı
 - [ ] Duplicate identity/account linking senaryosunu test et.
 - [ ] Giriş sırasında process death ve geri dönüşü test et.
 - [ ] Fresh install, yedekten dönüş ve eski session senaryolarını test et.
-- [ ] Sign-out sonrası back stack temizliğini doğrula.
+- [x] Sign-out sonrası back stack temizliğini emülatör ve bildirim E2E kanıtıyla doğrula.
 - [ ] E-posta OTP yanlış, süresi geçmiş ve tekrar gönderim durumlarını test et.
-- [ ] Android v1 ekranlarında Apple giriş CTA'sının bulunmadığını golden ve UI testleriyle sabitle.
+- [x] Android v1 ekranlarında Apple giriş CTA'sının bulunmadığını golden ve UI testleriyle sabitle.
 
 Kabul ölçütü: Google ve OTP girişleri fiziksel cihazda tamamlanır; çıkıştan sonra korumalı ekranlara geri dönülemez.
 
@@ -214,10 +230,16 @@ Not: Docker kullanıcı volume'leri silinmedi. Temizlik yalnız kullanılmayan S
 - [x] Türkçe kısa ve uzun açıklamaları son kez gözden geçir ve Play taslağına kaydet.
 - [x] Kullanıcı onaylı full-bleed master'dan adaptive/round/monochrome kaynaklarını ve 512×512 Play ikonunu üret.
 - [x] 1024×500 feature graphic'i hazırla.
+- [x] Play 512×512 ikonunu ve 1024×500 feature graphic'i varsayılan Türkçe mağaza girişine
+  yükle ve taslak olarak kaydet.
 - [ ] Owner tasarımından sekiz Türkçe, PII'siz telefon ekran görüntüsünü teslim al ve Play'e yükle.
-- [ ] Business kategorisini kaydet; login-access adımı açıldıktan sonra 18+ profesyonel hedef kitleyi tamamla. (Kategori tamam, hedef kitle bekliyor.)
-- [ ] Data Safety formunu gerçek SDK/veri envanterine göre doldur.
+- [ ] Business kategorisini kaydet; login-access adımı açıldıktan sonra 18+ profesyonel hedef kitleyi tamamla. (Kategori tamam, hedef kitle Play oturum açma beyanına bağımlı.)
+- [x] Data Safety formunda gerçek SDK/veri envanterine göre 15 veri türünü ve veri işleme
+  amaçlarını kaydet.
+- [ ] Data Safety hesap silme URL doğrulamasını tamamla. (`/hesap-silme` doğrudan 200 döndüğü
+  halde Play crawler 403 görüyor ve owner destek kaydı açık.)
 - [x] Content rating beyanını tamamla.
+- [x] Reklam Kimliği beyanını `Hayır` olarak kaydet; AAB'de `AD_ID` olmadığını doğrula.
 - [ ] Review erişim bilgileri tamamlandıktan sonra 18+ hedef kitle, subscription ve
   restricted-access beyanlarını tamamla.
 - [ ] Dedicated review hesabı ve inceleme adımlarını hazırla.
@@ -227,6 +249,8 @@ Kabul ölçütü: Listing, Data Safety, hukuk URL'leri ve inceleme erişimi eksi
 
 ## P2 — Closed test ve production rollout
 
+- [x] Closed Alpha kanalında Türkiye'yi, test listesini, geri bildirim URL'sini ve versionCode 1
+  sürüm taslağını yapılandır.
 - [ ] En az 12 test kullanıcısını Closed Testing'e dahil et.
 - [ ] Kesintisiz 14 günlük opt-in şartını tamamla ve kayıt altına al.
 - [ ] Closed test boyunca crash-free session oranını en az `%99,5` tut.
@@ -242,9 +266,13 @@ Kabul ölçütü: Closed test şartı tamamlanmış, sağlık metrikleri yeşil 
 
 ## Dış bağımlılıklar ve owner işlemleri
 
-- [ ] İlk AAB'yi Play Console'a yüklemek. Codex Chrome uzantısında “Allow access to file URLs” açıldıktan sonra mevcut draft release'e devam edilebilir.
+- [x] İlk AAB'yi Play Console Internal Testing'e yüklemek ve yayınlamak.
 - [ ] Upload keystore'un şifreli yedeğini owner kasasına almak ve kurtarma prosedürünü kaydetmek.
-- [ ] Play App Signing fingerprint'lerini ilgili Firebase/OAuth kayıtlarına onaylamak.
+- [x] Play App Signing fingerprint'lerini production Firebase kaydına eklemek.
+- [ ] Google OAuth Android client'ta Play app-signing fingerprint'ini son kez doğrulamak.
+- [ ] Geliştirici ödeme profiline payout/banka yöntemi eklemek; ardından dört base plan'ı kaydetmek.
+- [ ] Dedicated Fastmail review mailbox parolasını doğrudan Play oturum açma beyanına girmek.
+- [ ] Açık Google destek kaydında Data Safety hesap-silme URL doğrulayıcı 403 sonucunu takip etmek.
 - [ ] Fiziksel Google hesaplı cihaz sağlamak.
 - [ ] Play lisans test kullanıcılarını tanımlamak.
 - [ ] En az 12 closed-test kullanıcısını yönetmek.
@@ -256,7 +284,7 @@ Kabul ölçütü: Closed test şartı tamamlanmış, sağlık metrikleri yeşil 
 Release aşağıdaki koşulların tamamı sağlanmadan hazır kabul edilmeyecektir:
 
 - [ ] Play'den indirilen imzalı release kritik akışları geçiyor.
-- [ ] Otomatik kalite kapıları tamamen yeşil.
+- [x] Otomatik kalite kapıları tamamen yeşil.
 - [ ] Auth, analiz, PDF/XLSX, billing ve FCM E2E tamam.
 - [ ] AI corpus'unda kritik tehlike atlama yok.
 - [ ] Fiziksel Pixel ve Samsung testleri tamam.
