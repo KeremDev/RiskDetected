@@ -3,6 +3,8 @@ package com.riskdetectedan.feature.analysis
 import android.content.ClipData
 import android.content.Intent
 import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -31,11 +33,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowCircleUp
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -49,8 +55,11 @@ import androidx.compose.material.icons.filled.GppGood
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.Tune
@@ -69,6 +78,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -102,7 +112,9 @@ import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.analysis.FindingPatch
 import com.riskdetectedan.core.data.analysis.PlanCapabilities
+import com.riskdetectedan.core.data.company.Company
 import com.riskdetectedan.core.data.profile.SubscriptionTier
+import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.designsystem.R as RdR
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdRadius
@@ -354,6 +366,7 @@ internal fun IosParityResultView(
     photoBytes: List<ByteArray>,
     capabilities: PlanCapabilities,
     reportState: ResultReportUiState,
+    reportSetup: ResultReportSetup,
     onGenerateReport: (ResultReportRequest, String, String, ResultReportFormat) -> Unit,
     onReportFileConsumed: () -> Unit,
     onReportErrorDismiss: () -> Unit,
@@ -481,16 +494,26 @@ internal fun IosParityResultView(
             onMethodChange = { method = it },
             onClose = { showReportSheet = false },
             onOpenCompanies = onOpenCompanies,
-            onGenerate = { kind, output ->
+            onUpgrade = { onUpgradeTier(SubscriptionTier.Plus) },
+            companies = reportSetup.companies,
+            profile = reportSetup.profile,
+            initialCompanyId = summary?.companyId,
+            onGenerate = { kind, output, customization ->
                 showReportSheet = false
                 val request = ResultReportRequest(
                     analysisId = analysisId,
                     title = summary?.title ?: fallbackAnalysisTitle,
                     canvasLabel = canvasLabel,
                     createdAt = summary?.createdAt,
-                    companyId = summary?.companyId,
+                    companyId = customization.companyId,
                     findings = findings,
                     coverPhotoBytes = photoBytes.firstOrNull(),
+                    companyNameOverride = customization.companyName,
+                    companyInfoOverride = customization.companyInfo,
+                    companyLogoOverrideBytes = customization.companyLogoBytes,
+                    preparedByOverride = customization.preparedBy,
+                    preparedTitleOverride = customization.preparedTitle,
+                    certificateNumberOverride = customization.certificateNumber,
                 )
                 onGenerateReport(
                     request,
@@ -1121,6 +1144,16 @@ private fun DetailTextSection(
     }
 }
 
+private data class ResultReportCustomization(
+    val companyId: String?,
+    val companyName: String,
+    val companyInfo: String,
+    val companyLogoBytes: ByteArray?,
+    val preparedBy: String,
+    val preparedTitle: String,
+    val certificateNumber: String,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ResultReportSettingsSheet(
@@ -1129,11 +1162,31 @@ private fun ResultReportSettingsSheet(
     onMethodChange: (ParityRiskMethod) -> Unit,
     onClose: () -> Unit,
     onOpenCompanies: () -> Unit,
-    onGenerate: (ParityReportKind, ResultReportFormat) -> Unit,
+    onUpgrade: () -> Unit,
+    companies: List<Company>,
+    profile: UserProfile?,
+    initialCompanyId: String?,
+    onGenerate: (ParityReportKind, ResultReportFormat, ResultReportCustomization) -> Unit,
 ) {
     val colors = RdTheme.colors
     var kind by remember { mutableStateOf(ParityReportKind.Standard) }
     var format by remember { mutableStateOf(ResultReportFormat.Pdf) }
+    var selectedCompanyId by remember(initialCompanyId) { mutableStateOf(initialCompanyId) }
+    val selectedCompany = companies.firstOrNull { it.id == selectedCompanyId }
+    var companyName by remember(selectedCompany?.id, profile?.id) { mutableStateOf(selectedCompany?.name ?: profile?.companyName.orEmpty()) }
+    var companyInfo by remember(selectedCompany?.id, profile?.id) { mutableStateOf(selectedCompany?.reportInfoText() ?: profile?.phone.orEmpty()) }
+    var companyLogoBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var preparedBy by remember(profile?.id) { mutableStateOf(profile?.displayName.orEmpty()) }
+    var preparedTitle by remember(profile?.id) { mutableStateOf(profile?.title.orEmpty()) }
+    var certificateNumber by remember(profile?.id) { mutableStateOf(profile?.certificateNumber.orEmpty()) }
+    var showOverrides by remember { mutableStateOf(false) }
+    var showCompanyPicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val logoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        companyLogoBytes = uri?.let { selected ->
+            runCatching { context.contentResolver.openInputStream(selected)?.use { it.readBytes() } }.getOrNull()
+        }
+    }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onClose,
@@ -1141,18 +1194,61 @@ private fun ResultReportSettingsSheet(
         containerColor = colors.paper,
         dragHandle = { Box(Modifier.padding(top = 8.dp).size(38.dp, 5.dp).clip(CircleShape).background(colors.line)) },
     ) {
-        Column(
-            Modifier.fillMaxWidth()
-                .height(if (kind == ParityReportKind.Standard) 430.dp else 680.dp)
-                .padding(horizontal = 14.dp),
-        ) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight(.92f).padding(horizontal = 14.dp)) {
             Box(Modifier.fillMaxWidth().height(46.dp)) {
-                Text(stringResource(RdR.string.rd_rapor_olustur), style = iosRounded(15f, FontWeight.SemiBold), color = colors.onyx, modifier = Modifier.align(Alignment.Center))
+                Text(
+                    stringResource(if (showCompanyPicker) RdR.string.rd_rapor_firmasi else RdR.string.rd_rapor_olustur),
+                    style = iosRounded(15f, FontWeight.SemiBold),
+                    color = colors.onyx,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+                if (showCompanyPicker) {
+                    IconButton(onClick = { showCompanyPicker = false }, modifier = Modifier.align(Alignment.CenterStart).size(34.dp).clip(CircleShape).background(colors.fog)) {
+                        Icon(Icons.Filled.KeyboardArrowLeft, stringResource(RdR.string.rd_geri), tint = colors.onyx)
+                    }
+                }
                 IconButton(onClick = onClose, modifier = Modifier.align(Alignment.CenterEnd).size(34.dp).clip(CircleShape).background(colors.fog)) {
                     Icon(Icons.Filled.Close, stringResource(RdR.string.rd_kapat), tint = colors.onyx, modifier = Modifier.size(18.dp))
                 }
             }
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (showCompanyPicker) {
+                LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        CompanyPickerRow(
+                            title = stringResource(RdR.string.rd_firma_secmeden_devam_et),
+                            subtitle = stringResource(RdR.string.rd_kisisel_profil_bilgileri_kullanilir),
+                            selected = selectedCompanyId == null,
+                            onClick = {
+                                selectedCompanyId = null
+                                companyName = profile?.companyName.orEmpty()
+                                companyInfo = profile?.phone.orEmpty()
+                                showCompanyPicker = false
+                            },
+                        )
+                    }
+                    items(companies, key = Company::id) { company ->
+                        CompanyPickerRow(
+                            title = company.name,
+                            subtitle = company.reportInfoText().ifBlank { company.hazardClass.title },
+                            selected = selectedCompanyId == company.id,
+                            onClick = {
+                                selectedCompanyId = company.id
+                                companyName = company.name
+                                companyInfo = company.reportInfoText()
+                                companyLogoBytes = null
+                                showCompanyPicker = false
+                            },
+                        )
+                    }
+                    item {
+                        TextButton(onClick = { onClose(); onOpenCompanies() }, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Filled.Add, null, tint = colors.greenDark)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(RdR.string.rd_yeni_firma_ekle), color = colors.greenDark, style = iosRounded(14f, FontWeight.Bold))
+                        }
+                    }
+                }
+            } else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 item {
                     ReportOptionCard(
                         selected = kind == ParityReportKind.Standard,
@@ -1178,6 +1274,18 @@ private fun ResultReportSettingsSheet(
                 }
                 if (kind == ParityReportKind.RiskAnalysis) {
                     item {
+                        ReportSectionLabel(stringResource(RdR.string.rd_rapor_firmasi))
+                        Spacer(Modifier.height(7.dp))
+                        if (tier.isPaid) {
+                            CompanySelectionCard(
+                                company = selectedCompany,
+                                onClick = { showCompanyPicker = true },
+                            )
+                        } else {
+                            LockedCompanyCard(onUpgrade)
+                        }
+                    }
+                    item {
                         Text(stringResource(RdR.string.rd_risk_yontemi).uppercase(Locale.forLanguageTag("tr-TR")), style = RdFontStyle.SectionHeader.toTextStyle(), color = colors.slate)
                         Spacer(Modifier.height(7.dp))
                         ResultMethodSelector(method, onMethodChange)
@@ -1190,13 +1298,49 @@ private fun ResultReportSettingsSheet(
                             ReportFormatCard(ResultReportFormat.Excel, format == ResultReportFormat.Excel, Modifier.weight(1f)) { format = ResultReportFormat.Excel }
                         }
                     }
-                    if (tier.isPaid) {
-                        item { TextButton(onClick = onOpenCompanies, modifier = Modifier.fillMaxWidth()) { Text(stringResource(RdR.string.rd_sirket_bilgilerini_yonet), color = colors.onyx) } }
+                    item {
+                        ReportIdentityCard(
+                            preparedBy = preparedBy,
+                            onPreparedByChange = { preparedBy = it },
+                            preparedTitle = preparedTitle,
+                            onPreparedTitleChange = { preparedTitle = it },
+                            certificateNumber = certificateNumber,
+                            onCertificateNumberChange = { certificateNumber = it },
+                        )
+                    }
+                    item {
+                        ReportSectionLabel(stringResource(RdR.string.rd_bu_rapora_ozel_duzenle))
+                        Spacer(Modifier.height(7.dp))
+                        ReportOverridesCard(
+                            expanded = showOverrides,
+                            hasSelectedCompany = selectedCompany != null,
+                            companyName = companyName,
+                            onCompanyNameChange = { companyName = it },
+                            companyInfo = companyInfo,
+                            onCompanyInfoChange = { companyInfo = it },
+                            companyLogoBytes = companyLogoBytes,
+                            onToggle = { showOverrides = !showOverrides },
+                            onPickLogo = { logoPicker.launch("image/*") },
+                        )
                     }
                 }
             }
-            Button(
-                onClick = { onGenerate(kind, format) },
+            if (!showCompanyPicker) Button(
+                onClick = {
+                    onGenerate(
+                        kind,
+                        format,
+                        ResultReportCustomization(
+                            companyId = selectedCompanyId,
+                            companyName = companyName,
+                            companyInfo = companyInfo,
+                            companyLogoBytes = companyLogoBytes,
+                            preparedBy = preparedBy,
+                            preparedTitle = preparedTitle,
+                            certificateNumber = certificateNumber,
+                        ),
+                    )
+                },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).height(56.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.onyx, contentColor = colors.white),
@@ -1217,6 +1361,209 @@ private fun ResultReportSettingsSheet(
                 }
             }
         }
+    }
+}
+
+private fun Company.reportInfoText(): String = listOfNotNull(
+    address?.takeIf(String::isNotBlank),
+    contactPerson?.takeIf(String::isNotBlank),
+    department?.takeIf(String::isNotBlank),
+).joinToString(" · ")
+
+@Composable
+private fun ReportSectionLabel(title: String) {
+    val colors = RdTheme.colors
+    Text(
+        title.uppercase(Locale.forLanguageTag("tr-TR")),
+        style = iosRounded(11f, FontWeight.Bold, tracking = .8f),
+        color = colors.slate,
+        modifier = Modifier.padding(start = 4.dp),
+    )
+}
+
+@Composable
+private fun CompanySelectionCard(company: Company?, onClick: () -> Unit) {
+    val colors = RdTheme.colors
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.white)
+            .border(1.dp, colors.line, RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                .background(if (company == null) colors.fog else colors.greenSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Business, null, tint = if (company == null) colors.slate else colors.greenDark, modifier = Modifier.size(18.dp))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                company?.name ?: stringResource(RdR.string.rd_firma_secmeden_devam_et),
+                style = iosRounded(14f, FontWeight.Bold),
+                color = colors.onyx,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                company?.reportInfoText()?.takeIf(String::isNotBlank)
+                    ?: stringResource(RdR.string.rd_arsiv_filtre_firma_aciklama),
+                style = iosRounded(12f),
+                color = colors.slate,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (company != null) Text(stringResource(RdR.string.rd_degistir), style = iosRounded(12f, FontWeight.Bold), color = colors.greenDark)
+        Icon(Icons.Filled.KeyboardArrowRight, null, tint = colors.slate, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun LockedCompanyCard(onUpgrade: () -> Unit) {
+    val colors = RdTheme.colors
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.white)
+            .border(1.dp, colors.planPlus.copy(.28f), RoundedCornerShape(14.dp))
+            .clickable(onClick = onUpgrade).padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(colors.planPlusSoft), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.Lock, null, tint = colors.planPlusDark, modifier = Modifier.size(16.dp))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(stringResource(RdR.string.rd_firma_bazli_rapor_plus_pro), style = iosRounded(14f, FontWeight.Bold), color = colors.onyx)
+            Text(stringResource(RdR.string.rd_logo_tehlike_firma_arsivi_yukselt), style = iosRounded(12f), color = colors.slate)
+        }
+        Icon(Icons.Filled.ArrowCircleUp, null, tint = colors.planPlusDark, modifier = Modifier.size(19.dp))
+    }
+}
+
+@Composable
+private fun ReportOverridesCard(
+    expanded: Boolean,
+    hasSelectedCompany: Boolean,
+    companyName: String,
+    onCompanyNameChange: (String) -> Unit,
+    companyInfo: String,
+    onCompanyInfoChange: (String) -> Unit,
+    companyLogoBytes: ByteArray?,
+    onToggle: () -> Unit,
+    onPickLogo: () -> Unit,
+) {
+    val colors = RdTheme.colors
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.white)
+                .border(1.dp, colors.line, RoundedCornerShape(14.dp)).clickable(onClick = onToggle).padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(colors.greenSoft), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Tune, null, tint = colors.greenDark, modifier = Modifier.size(16.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(stringResource(RdR.string.rd_tek_seferlik_firma_logo), style = iosRounded(14f, FontWeight.Bold), color = colors.onyx)
+                Text(
+                    stringResource(if (hasSelectedCompany) RdR.string.rd_secili_firma_korunur else RdR.string.rd_firma_eklemeden_rapora_ozel),
+                    style = iosRounded(12f), color = colors.slate, maxLines = 2,
+                )
+            }
+            Icon(
+                Icons.Filled.ExpandMore,
+                null,
+                tint = colors.slate,
+                modifier = Modifier.size(20.dp).scale(scaleX = 1f, scaleY = if (expanded) -1f else 1f),
+            )
+        }
+        if (expanded) {
+            ReportLabeledField(stringResource(RdR.string.rd_firma_adi), companyName, onCompanyNameChange)
+            ReportLabeledField(stringResource(RdR.string.rd_firma_bilgisi), companyInfo, onCompanyInfoChange)
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.white)
+                    .border(1.dp, colors.line, RoundedCornerShape(14.dp)).padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(Modifier.size(width = 68.dp, height = 58.dp).clip(RoundedCornerShape(12.dp)).background(colors.white).border(1.dp, colors.line, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                    val bitmap = remember(companyLogoBytes) { companyLogoBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }?.asImageBitmap() }
+                    if (bitmap != null) Image(bitmap, null, Modifier.padding(8.dp).fillMaxSize(), contentScale = ContentScale.Fit)
+                    else Icon(Icons.Filled.Business, null, tint = colors.slate, modifier = Modifier.size(25.dp))
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(stringResource(if (companyLogoBytes == null) RdR.string.rd_logo_secilmedi else RdR.string.rd_logo_rapora_eklenecek), style = iosRounded(13f, FontWeight.Bold), color = colors.onyx)
+                    Text(stringResource(if (hasSelectedCompany) RdR.string.rd_secili_firma_logosu_korunur else RdR.string.rd_firma_eklemeden_logo_sec), style = iosRounded(12f), color = colors.slate)
+                }
+                Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(colors.greenSoft).clickable(onClick = onPickLogo), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Add, stringResource(RdR.string.rd_logo_sec), tint = colors.greenDark, modifier = Modifier.size(16.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReportIdentityCard(
+    preparedBy: String,
+    onPreparedByChange: (String) -> Unit,
+    preparedTitle: String,
+    onPreparedTitleChange: (String) -> Unit,
+    certificateNumber: String,
+    onCertificateNumberChange: (String) -> Unit,
+) {
+    val colors = RdTheme.colors
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.white)
+            .border(1.dp, colors.line, RoundedCornerShape(18.dp)).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(colors.greenSoft), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Person, null, tint = colors.greenDark, modifier = Modifier.size(15.dp))
+            }
+            Text(stringResource(RdR.string.rd_hazirlayan_bilgileri), style = iosRounded(14f, FontWeight.Bold), color = colors.onyx)
+        }
+        ReportLabeledField(stringResource(RdR.string.rd_hazirlayan), preparedBy, onPreparedByChange)
+        ReportLabeledField(stringResource(RdR.string.rd_unvan), preparedTitle, onPreparedTitleChange)
+        ReportLabeledField(stringResource(RdR.string.rd_belge_no), certificateNumber, onCertificateNumberChange)
+    }
+}
+
+@Composable
+private fun ReportLabeledField(label: String, value: String, onValueChange: (String) -> Unit) {
+    val colors = RdTheme.colors
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Text(label, style = iosRounded(12f, FontWeight.SemiBold), color = colors.slate)
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            textStyle = iosRounded(14f, FontWeight.Medium).copy(color = colors.onyx),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(12.dp))
+                .background(colors.white).border(1.dp, colors.line, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 12.dp),
+        )
+    }
+}
+
+@Composable
+private fun CompanyPickerRow(title: String, subtitle: String, selected: Boolean, onClick: () -> Unit) {
+    val colors = RdTheme.colors
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.white)
+            .border(if (selected) 1.5.dp else 1.dp, if (selected) colors.green else colors.line, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick).padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(if (selected) colors.greenSoft else colors.fog), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.Business, null, tint = if (selected) colors.greenDark else colors.slate, modifier = Modifier.size(18.dp))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, style = iosRounded(14f, FontWeight.Bold), color = colors.onyx)
+            Text(subtitle, style = iosRounded(12f), color = colors.slate, maxLines = 2)
+        }
+        Icon(if (selected) Icons.Filled.CheckCircle else Icons.Filled.KeyboardArrowRight, null, tint = if (selected) colors.green else colors.slate, modifier = Modifier.size(19.dp))
     }
 }
 

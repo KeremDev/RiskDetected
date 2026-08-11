@@ -8,13 +8,16 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.assertIsDisplayed
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.riskdetectedan.core.data.analysis.AnalysisResultSummary
 import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.analysis.FindingMeasure
 import com.riskdetectedan.core.data.analysis.PlanCapabilities
+import com.riskdetectedan.core.data.company.Company
 import com.riskdetectedan.core.data.profile.SubscriptionTier
+import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import org.junit.Rule
 import org.junit.Test
@@ -89,9 +92,35 @@ class AnalysisParityGoldenTest {
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
+    @Test
+    fun pro_risk_report_company_settings_light() {
+        setResultContent(
+            capabilities = proCapabilities(),
+            reportState = ResultReportUiState.Idle,
+            reportSetup = reportSetup,
+        )
+        composeRule.onNodeWithText("Rapor Oluştur").performClick()
+        composeRule.onNodeWithText("Risk Analizi Tablosu").performClick()
+        composeRule.onAllNodes(hasScrollAction())[1].performScrollToNode(hasText("RAPOR FİRMASI"))
+
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun report_company_picker_can_continue_without_company() {
+        setResultContent(proCapabilities(), ResultReportUiState.Idle, reportSetup)
+        composeRule.onNodeWithText("Rapor Oluştur").performClick()
+        composeRule.onNodeWithText("Risk Analizi Tablosu").performClick()
+        composeRule.onAllNodes(hasScrollAction())[1].performScrollToNode(hasText("RAPOR FİRMASI"))
+        composeRule.onNodeWithText("Değiştir").performClick()
+        composeRule.onNodeWithText("Firma seçmeden devam et").performClick()
+        composeRule.onNodeWithText("Firma seçmeden devam et").assertIsDisplayed()
+    }
+
     private fun setResultContent(
         capabilities: PlanCapabilities,
         reportState: ResultReportUiState,
+        reportSetup: ResultReportSetup = ResultReportSetup(),
     ) {
         composeRule.setContent {
             RiskDetectedTheme(darkTheme = false) {
@@ -102,6 +131,7 @@ class AnalysisParityGoldenTest {
                     photoBytes = emptyList(),
                     capabilities = capabilities,
                     reportState = reportState,
+                    reportSetup = reportSetup,
                     onGenerateReport = { _, _, _, _ -> },
                     onReportFileConsumed = {},
                     onReportErrorDismiss = {},
@@ -129,7 +159,30 @@ class AnalysisParityGoldenTest {
         canvas = "general",
         createdAt = "2026-08-09T10:30:00+03:00",
         analysisSector = "manufacturing",
+        companyId = "company-1",
         primaryMethod = "fine_kinney",
+    )
+
+    private val reportSetup = ResultReportSetup(
+        profile = UserProfile(
+            id = "user-1",
+            email = "uzman@example.com",
+            fullName = "Ayşe Yılmaz",
+            title = "A Sınıfı İSG Uzmanı",
+            certificateNumber = "A-12345",
+            companyName = "RiskDetected Saha",
+            tier = SubscriptionTier.Pro,
+        ),
+        companies = listOf(
+            Company(
+                id = "company-1",
+                userId = "user-1",
+                name = "Örnek Üretim A.Ş.",
+                hazardClassId = "high",
+                address = "İstanbul Fabrikası",
+                contactPerson = "Saha Sorumlusu",
+            ),
+        ),
     )
 
     private val findings = listOf(

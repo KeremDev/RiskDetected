@@ -233,46 +233,15 @@ fun HomeScreen(
             .padding(horizontal = RdSpacing.lg),
     ) {
         Spacer(Modifier.height(RdSpacing.lg))
-        // Port of HomeHeader.swift: real RDLogo asset (the exact wordmark PNG from
-        // Assets.xcassets/RDLogo.imageset — a text approximation read visibly different from the
-        // real sparkle+magnifying-glass mark, so this uses the actual asset), "Yükselt" pill
-        // (RDHeaderAccountCTA — hidden once paid, real icon+gradient+shadow), avatar (RDAvatar).
-        // Avatar's real dropdown menu not ported, taps onProfile directly instead — see
-        // HomeHeaderAvatar's doc comment.
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Real image height ≈ size / capHeightRatio(0.44) in RDLogo.swift's own math — 34dp
-            // puts the wordmark's cap-height roughly level with the 36dp avatar, sparkle poking
-            // above, matching the reference screenshot's proportions (a flat 20dp read visibly
-            // smaller/thinner than real iOS).
-            Image(
-                painter = painterResource(R.drawable.rd_logo),
-                contentDescription = stringResource(RdR.string.rd_riskdetected),
-                contentScale = ContentScale.FillHeight,
-                modifier = Modifier.height(34.dp),
-                alignment = Alignment.CenterStart,
-            )
-            Spacer(Modifier.weight(1f))
-            if (!userTier.isPaid) {
-                Row(
-                    modifier = Modifier
-                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(7.dp), ambientColor = colors.green.copy(alpha = 0.24f), spotColor = colors.green.copy(alpha = 0.24f))
-                        .clip(RoundedCornerShape(7.dp))
-                        .background(colors.green)
-                        .clickable(onClick = onUpgrade)
-                        .padding(horizontal = RdSpacing.sm)
-                        .height(24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Filled.ArrowCircleUp, contentDescription = null, tint = colors.white, modifier = Modifier.size(12.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(RdR.string.rd_yukselt), style = RdFontStyle.Caption.toTextStyle(), color = colors.white)
-                }
-                Spacer(Modifier.width(RdSpacing.sm))
-            }
-            Box(modifier = Modifier.clickable(onClick = onProfile)) {
-                HomeHeaderAvatar(initials = initials, tier = userTier, avatarPath = fetchedProfile?.avatarUrl)
-            }
-        }
+        AppMainHeader(
+            profile = fetchedProfile,
+            onLogo = {},
+            onProfile = onProfile,
+            onUpgradeTier = { onUpgrade() },
+            horizontalPadding = 0.dp,
+            topPadding = 0.dp,
+            bottomPadding = 0.dp,
+        )
 
         // Exact iOS gaps from here down (HomeView.swift body's real .padding values, not
         // approximated RdSpacing tokens): weekly→photoUpload 12, photoUpload→quotaHint 10,

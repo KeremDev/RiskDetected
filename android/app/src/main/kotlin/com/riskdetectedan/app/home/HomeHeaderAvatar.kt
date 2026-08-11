@@ -44,7 +44,9 @@ fun HomeHeaderAvatar(initials: String, tier: SubscriptionTier, avatarPath: Strin
             contentAlignment = Alignment.Center,
         ) {
             Text(initials, style = RdFontStyle.Caption.toTextStyle(), color = colors.white)
-            HomeAvatarImage(path = avatarPath, modifier = Modifier.clip(CircleShape))
+            if (!avatarPath.isNullOrBlank()) {
+                HomeAvatarImage(path = avatarPath, modifier = Modifier.clip(CircleShape))
+            }
         }
         if (tier.isPaid) {
             val badgeColor = if (tier == SubscriptionTier.Pro) colors.green else colors.planPlus

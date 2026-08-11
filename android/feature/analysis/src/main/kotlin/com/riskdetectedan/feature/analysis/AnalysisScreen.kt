@@ -122,6 +122,7 @@ fun AnalysisScreen(
     val resultSummary by viewModel.resultSummary.collectAsState()
     val resultPhotoBytes by viewModel.resultPhotoBytes.collectAsState()
     val reportState by reportViewModel.state.collectAsState()
+    val reportSetup by reportViewModel.setup.collectAsState()
     val preSelectedSector = remember(preSelectedSectorId) { preSelectedSectorId?.let(AnalysisSector::fromId) }
     var selectedSector by remember { mutableStateOf(preSelectedSector) }
 
@@ -152,6 +153,7 @@ fun AnalysisScreen(
 
     val completed = state as? CreateAnalysisUiState.Completed
     if (completed != null) {
+        LaunchedEffect(completed.analysisId) { reportViewModel.loadSetup() }
         val findings by viewModel.findings.collectAsState()
         val deleteError by viewModel.deleteError.collectAsState()
         val updateError by viewModel.updateError.collectAsState()
@@ -162,6 +164,7 @@ fun AnalysisScreen(
             photoBytes = resultPhotoBytes,
             capabilities = capabilities,
             reportState = reportState,
+            reportSetup = reportSetup,
             onGenerateReport = reportViewModel::generate,
             onReportFileConsumed = reportViewModel::clearReadyFile,
             onReportErrorDismiss = reportViewModel::clearError,

@@ -7,9 +7,11 @@ import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.company.CompanyRepository
+import com.riskdetectedan.core.data.company.Company
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.profile.ProfileRepository
+import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
 import com.riskdetectedan.core.data.reports.PdfReportFileName
@@ -40,6 +42,17 @@ data class ResultReportRequest(
     val companyId: String?,
     val findings: List<Finding>,
     val coverPhotoBytes: ByteArray?,
+    val companyNameOverride: String? = null,
+    val companyInfoOverride: String? = null,
+    val companyLogoOverrideBytes: ByteArray? = null,
+    val preparedByOverride: String? = null,
+    val preparedTitleOverride: String? = null,
+    val certificateNumberOverride: String? = null,
+)
+
+data class ResultReportSetup(
+    val profile: UserProfile? = null,
+    val companies: List<Company> = emptyList(),
 )
 
 data class ResultReportFile(
@@ -77,7 +90,19 @@ class ResultReportViewModel @Inject constructor(
 
     private val _state = MutableStateFlow<ResultReportUiState>(ResultReportUiState.Idle)
     val state: StateFlow<ResultReportUiState> = _state.asStateFlow()
+    private val _setup = MutableStateFlow(ResultReportSetup())
+    val setup: StateFlow<ResultReportSetup> = _setup.asStateFlow()
     private var progressJob: Job? = null
+
+    fun loadSetup() {
+        val userId = authRepository.currentUserId ?: return
+        viewModelScope.launch {
+            val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
+            val companies = (companyRepository.listCompanies(includeArchived = false) as? RdResult.Success)
+                ?.value.orEmpty()
+            _setup.value = ResultReportSetup(profile = profile, companies = companies)
+        }
+    }
 
     fun generate(request: ResultReportRequest, kind: String, method: String, format: ResultReportFormat) {
         if (_state.value is ResultReportUiState.Generating) return
@@ -86,7 +111,7 @@ class ResultReportViewModel @Inject constructor(
         viewModelScope.launch {
             val result = when (format) {
                 ResultReportFormat.Pdf -> generatePdf(request, kind, method)
-                ResultReportFormat.Excel -> generateExcel(request.analysisId, method)
+                ResultReportFormat.Excel -> generateExcel(request.analysisId, method, request.companyId)
             }
             progressJob?.cancel()
             progressJob = null
@@ -153,7 +178,7 @@ class ResultReportViewModel @Inject constructor(
             (companyRepository.listCompanies(includeArchived = true) as? RdResult.Success)
                 ?.value?.firstOrNull { it.id == companyId }
         }
-        val companyLogoBytes = company?.logoPath?.let { path ->
+        val companyLogoBytes = request.companyLogoOverrideBytes ?: company?.logoPath?.let { path ->
             (companyRepository.downloadLogo(path) as? RdResult.Success)?.value
         }
         val generated = try {
@@ -166,12 +191,17 @@ class ResultReportViewModel @Inject constructor(
                         canvasLabel = request.canvasLabel,
                         createdAt = request.createdAt,
                         findings = request.findings,
-                        companyName = company?.name ?: profile?.companyName,
-                        companyAddress = company?.address,
+                        companyName = request.companyNameOverride?.takeIf { it.isNotBlank() }
+                            ?: company?.name ?: profile?.companyName,
+                        companyAddress = request.companyInfoOverride?.takeIf { it.isNotBlank() }
+                            ?: company?.address ?: profile?.phone,
                         companyLogoBytes = companyLogoBytes,
-                        preparedByName = profile?.displayName ?: context.getString(RdR.string.rd_emdash),
-                        preparedByTitle = profile?.title,
-                        certificateNumber = profile?.certificateNumber,
+                        preparedByName = request.preparedByOverride?.takeIf { it.isNotBlank() }
+                            ?: profile?.displayName ?: context.getString(RdR.string.rd_emdash),
+                        preparedByTitle = request.preparedTitleOverride?.takeIf { it.isNotBlank() }
+                            ?: profile?.title,
+                        certificateNumber = request.certificateNumberOverride?.takeIf { it.isNotBlank() }
+                            ?: profile?.certificateNumber,
                         coverPhotoBytes = request.coverPhotoBytes,
                     ),
                 )
@@ -206,8 +236,8 @@ class ResultReportViewModel @Inject constructor(
         }
     }
 
-    private suspend fun generateExcel(analysisId: String, method: String): RdResult<ResultReportFile> {
-        val report = when (val generated = reportsRepository.generateExcelReport(analysisId, method)) {
+    private suspend fun generateExcel(analysisId: String, method: String, companyId: String?): RdResult<ResultReportFile> {
+        val report = when (val generated = reportsRepository.generateExcelReport(analysisId, method, companyId)) {
             is RdResult.Success -> generated.value
             is RdResult.Failure -> return RdResult.Failure(generated.code, generated.message, generated.cause)
         }

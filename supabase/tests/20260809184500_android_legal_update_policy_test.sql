@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(10);
 
 select is(
   (select value ->> 'enabled' from public.app_feature_flags where key = 'android_legal_policy'),
@@ -16,8 +16,25 @@ select is(
 
 select is(
   (select count(*)::integer from private.approved_legal_documents where document_set_id = 'tr-android-v1'),
-  0,
-  'pending Android legal review is not represented as an approval'
+  4,
+  'owner-approved Android legal set is completely registered'
+);
+
+select is(
+  (select count(*)::integer from private.approved_legal_documents
+   where document_set_id = 'tr-android-v1'
+     and reviewer_name = 'Kerem Kayalar'
+     and approval_record_sha256 = '528210d9f74f23c05bd03b1b9444b590de75eef27e4c37daf6fa6617f87ab89d'),
+  4,
+  'all Android legal rows are bound to the explicit owner approval record'
+);
+
+select is(
+  (select count(*)::integer from private.approved_legal_documents
+   where document_set_id = 'tr-android-v1'
+     and change_type in ('material_terms', 'material_privacy', 'explicit_consent')),
+  4,
+  'Android documents retain fail-closed material change classifications'
 );
 
 select is(

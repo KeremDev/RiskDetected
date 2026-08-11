@@ -161,6 +161,7 @@ private fun reportSearchText(report: Report): String = listOfNotNull(
 fun GeneratedReportsScreen(
     focusedReportId: String? = null,
     onUpgrade: () -> Unit = {},
+    embeddedInMainShell: Boolean = false,
     viewModel: GeneratedReportsViewModel = hiltViewModel(),
     historyViewModel: HistoryViewModel = hiltViewModel(),
 ) {
@@ -251,7 +252,9 @@ fun GeneratedReportsScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(colors.cloud)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            RdScreenHeader(title = stringResource(RdR.string.rd_raporlar))
+            if (!embeddedInMainShell) {
+                RdScreenHeader(title = stringResource(RdR.string.rd_raporlar))
+            }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),

@@ -3,6 +3,7 @@ package com.riskdetectedan.app.navigation
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,9 +14,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.app.home.HomeScreen
+import com.riskdetectedan.app.home.AppMainHeader
+import com.riskdetectedan.app.home.HomeTierViewModel
 import com.riskdetectedan.app.push.NotificationRouteTarget
 import com.riskdetectedan.app.push.NotificationRouteViewModel
 import com.riskdetectedan.app.reports.GeneratedReportsScreen
@@ -41,6 +45,7 @@ import com.riskdetectedan.feature.reports.ReportsScreen
 fun MainShellScreen(
     navController: NavHostController,
     notificationRouteViewModel: NotificationRouteViewModel = hiltViewModel(),
+    homeTierViewModel: HomeTierViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     // rememberSaveable (not remember) — MainShellScreen's composition is disposed while a
@@ -56,6 +61,9 @@ fun MainShellScreen(
     var focusedReportId by rememberSaveable { mutableStateOf<String?>(null) }
     var quickScanRequestKey by rememberSaveable { mutableStateOf(0) }
     val pendingNotification by notificationRouteViewModel.pending.collectAsState()
+    val headerProfile by homeTierViewModel.profile.collectAsState()
+
+    LaunchedEffect(Unit) { homeTierViewModel.refresh() }
 
     fun selectTab(target: RdTab) {
         val snapshot = TabHistoryReducer.select(
@@ -124,15 +132,38 @@ fun MainShellScreen(
                 onUpgrade = { navController.navigate(Paywall) },
                 quickScanRequestKey = quickScanRequestKey,
             )
-            RdTab.Analyses -> ReportsScreen(
-                onBack = null,
-                focusedAnalysisId = focusedAnalysisId,
-                onOpenAnalysis = { analysisId -> navController.navigate(AnalysisResult(analysisId)) },
-            )
-            RdTab.Reports -> GeneratedReportsScreen(
-                focusedReportId = focusedReportId,
-                onUpgrade = { navController.navigate(Paywall) },
-            )
+            RdTab.Analyses -> Column {
+                AppMainHeader(
+                    profile = headerProfile,
+                    onLogo = { selectTab(RdTab.Home) },
+                    onProfile = { selectTab(RdTab.Profile) },
+                    onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+                )
+                Box(Modifier.weight(1f)) {
+                    ReportsScreen(
+                        onBack = null,
+                        embeddedInMainShell = true,
+                        focusedAnalysisId = focusedAnalysisId,
+                        onOpenAnalysis = { analysisId -> navController.navigate(AnalysisResult(analysisId)) },
+                    )
+                }
+            }
+            RdTab.Reports -> Column {
+                AppMainHeader(
+                    profile = headerProfile,
+                    onLogo = { selectTab(RdTab.Home) },
+                    onProfile = { selectTab(RdTab.Profile) },
+                    onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+                    bottomPadding = 10.dp,
+                )
+                Box(Modifier.weight(1f)) {
+                    GeneratedReportsScreen(
+                        focusedReportId = focusedReportId,
+                        onUpgrade = { navController.navigate(Paywall) },
+                        embeddedInMainShell = true,
+                    )
+                }
+            }
             RdTab.Profile -> ProfileScreen(
                 onBack = null,
                 onManageCompanies = { navController.navigate(Companies) },

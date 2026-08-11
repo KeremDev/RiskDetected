@@ -27,7 +27,7 @@ Bu dağıtım yalnız Android staging projesine yapıldı. Production projesine 
 Uzak doğrulama sonucu:
 
 - `android_legal_policy.enabled=false`
-- `private.approved_legal_documents` içinde `tr-android-v1` satır sayısı: `0`
+- `private.approved_legal_documents` içinde `tr-android-v1` satır sayısı: `4`; owner approval hash ile 4/4 bağlı, Android gate kapalı.
 - Web queue alanları: 7/7 mevcut.
 - `riskdetected-account-deletion-hourly` cron sayısı: `0`; staging Vault secret'ları tanımlanana kadar bilinçli olarak planlanmıyor.
 - Profil politikaları: `profiles_select_own`, `profiles_insert_own`, `profiles_update_own`.
@@ -79,6 +79,5 @@ Production'a yalnız okunur smoke çağrısı yapıldı. Production function hen
 - Staging Vault: `project_url` ve `account_deletion_queue_secret`; ardından saatlik cron doğrulaması.
 - Staging Auth: leaked-password protection, auth regresyonundan sonra dashboard'da açılacak.
 - Web `/gizlilik` ve `/hesap-silme` yayını.
-- Owner/hukuk onayı; ardından ayrı, imzalı approval migration'ı.
+- Owner nihai onayı ve ayrı additive approval migration'ı 2026-08-11 tarihinde tamamlandı; gate canary'ye kadar kapalı.
 - Production additive deploy; iOS fixture/smoke geçmeden uygulanmayacak.
-

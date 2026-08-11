@@ -120,6 +120,7 @@ private fun matchesChip(item: HistoryItem, chip: HistoryFilterChip): Boolean = w
 @Composable
 fun ReportsScreen(
     onBack: (() -> Unit)? = null,
+    embeddedInMainShell: Boolean = false,
     focusedAnalysisId: String? = null,
     onOpenAnalysis: ((String) -> Unit)? = null,
     viewModel: HistoryViewModel = hiltViewModel(),
@@ -137,7 +138,9 @@ fun ReportsScreen(
     var showCompanyFilter by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
-        RdScreenHeader(title = stringResource(RdR.string.rd_gecmis_analizler), onBack = onBack)
+        if (!embeddedInMainShell) {
+            RdScreenHeader(title = stringResource(RdR.string.rd_gecmis_analizler), onBack = onBack)
+        }
 
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
             val overviewItems = (state as? HistoryUiState.Loaded)?.items.orEmpty()

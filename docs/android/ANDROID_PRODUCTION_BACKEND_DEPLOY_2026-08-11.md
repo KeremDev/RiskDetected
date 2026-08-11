@@ -14,6 +14,7 @@ Production'a aşağıdaki additive migration'lar uygulandı:
 6. Analysis client-platform telemetrisi
 7. Tam localization telemetry trigger sözleşmesinin restorasyonu
 8. Account-deletion cron reconciliation
+9. Owner onaylı Android hukuk belge registry kaydı (gate kapalı)
 
 Repository'deki 20 kanonik Edge Function aynı production projesine dağıtıldı. Yeni
 `process-account-deletion-queue` worker'ı `ACTIVE` durumundadır.
@@ -29,7 +30,7 @@ Repository'deki 20 kanonik Edge Function aynı production projesine dağıtıld�
   `processed=0`.
 - Android `client`, `auth`, `analysis_submit`, `payments`, `notifications` ve `pdf_reports`
   kapılarının tamamı kapalıdır.
-- Android legal policy kapalıdır; owner/hukuk onayı olmadan acknowledgement zorlanmaz.
+- Android legal policy kapalıdır; owner onayı registry'ye kaydedilmiş olsa da acknowledgement canary kapısı açılmadan zorlanmaz.
 - iOS build-81 policy çağrısı başarılıdır ve iOS yanıtına `android_runtime_gates` eklenmemiştir.
 - Production DB lint: sıfır warning/error.
 - CORS: production site origin `200`; bilinmeyen origin `403`; oturumsuz silme isteği `401`.
@@ -37,13 +38,13 @@ Repository'deki 20 kanonik Edge Function aynı production projesine dağıtıld�
 ## Yerel regresyon paketi
 
 - Deno: `316/316`
-- pgTAP/RLS/RPC: `479/479`
+- pgTAP/RLS/RPC: `481/481`
 - Local DB lint: sıfır warning/error
 - iOS `App/` source diff: sıfır
 
 ## Açık operasyon kapıları
 
-- Gerçek owner/hukuk onayı approval record'a henüz yazılmayacaktır.
+- Owner nihai onayı `ANDROID_LEGAL_APPROVAL_RECORD_2026-08-09.json` dosyasına ve Android legal registry migration'ına 2026-08-11 tarihinde kaydedildi; bağımsız hukuk danışmanlığı iddiası yoktur.
 - Play listing oluştuğunda Android release policy'deki `pending-play-listing` gerçek URL ve policy
   sürümüyle değiştirilecektir.
 - Android kapıları yalnız review hesabı/version allowlist canary sırasında sırayla açılacaktır.

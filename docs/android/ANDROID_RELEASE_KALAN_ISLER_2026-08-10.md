@@ -166,7 +166,7 @@ Kabul ölçütü: Android golden threshold `0`; platformlar arası geometri fark
 - [x] Resend talep ve tamamlanma e-postalarını staging'de doğrula.
 - [x] Resend hatasının silme kuyruğunu durdurmadığını doğrula.
 - [x] Production CORS allowlist, oturumsuz istek engeli, Vault ve saatlik cron'u doğrula.
-- [ ] Android hukuk metinlerini owner onayına sun ve approval record'u tamamla.
+- [x] Android hukuk metinleri owner tarafından nihai olarak onaylandı; approval record, uygulama manifesti ve additive registry migration'ı tamamlandı (2026-08-11).
 
 Kabul ölçütü: Play'de kullanılabilecek herkese açık gizlilik ve hesap silme URL'leri çalışır; gerçek silme talebi 24 saat içinde tamamlanır.
 
