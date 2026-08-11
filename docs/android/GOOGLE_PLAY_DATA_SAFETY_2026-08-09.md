@@ -39,10 +39,39 @@ son seçimler Play Console'da ayrıca kaydedilecektir.
 - Hesap silme bağlantısının login gerektirmeden açıklama/OTP başlangıç ekranını açtığı doğrulandı.
 - Veri saklama süreleri Free 7 gün, Plus 30 gün, Pro süresiz backend sözleşmesiyle eşleşiyor.
 
-## Play Console'da kalan owner gönderimi
+## Play Console taslak durumu — 2026-08-11
 
-- Her veri sınıfı için “collected/shared”, amaç, zorunlu/opsiyonel ve ephemeral seçeneklerini
-  yukarıdaki envantere göre işaretle.
-- Google Play/RevenueCat/FCM/Crashlytics'in Play formunda üçüncü taraf işleyici olarak güncel
-  sınıflandırmasını son kez gözden geçir.
-- Form önizlemesini bu belgeyle karşılaştırıp owner onayıyla gönder.
+Play Console Veri Güvenliği taslağına aşağıdaki 15 veri türü kaydedildi:
+
+- Ad, e-posta adresi, kullanıcı kimliği, adres, telefon numarası ve diğer kişisel bilgiler.
+- İşlem geçmişi.
+- Fotoğraflar ile dosya ve dokümanlar.
+- Kilitlenme günlükleri ve performans teşhisleri.
+- Uygulama işlemleri, kullanıcı tarafından oluşturulan içerik ve diğer uygulama etkinliği.
+- Cihaz veya diğer kimlikler.
+
+Supabase, Resend, Google/Firebase, RevenueCat, Crashlytics ve AI sağlayıcısı; veriyi geliştirici
+talimatıyla işleyen hizmet sağlayıcılar olduğundan Google Play'in hizmet sağlayıcı istisnasına göre
+bu aktarım “toplandı” olarak, “paylaşıldı” olmadan beyan edildi. Reklam veya pazarlama amacı
+işaretlenmedi. Seçimler, amaçlar, zorunlu/opsiyonel durumlar ve `ephemeral=false` yanıtları Play'den
+yeniden dışa aktarılan CSV ile doğrulandı.
+
+Tek açık Play Console blokajı hesap silme URL doğrulayıcısıdır. Taslakta doğru URL
+`https://riskdetected.com/hesap-silme` kayıtlıdır ve URL; normal istemci, Googlebot, IPv4 ve IPv6
+isteklerinde HTTP 200 döndürmektedir. Buna rağmen Play Console doğrulayıcısı aynı oturumda bu URL,
+Vercel production alias'ı ve kontrol amacıyla denenen bağımsız çalışan URL'ler için HTTP 403
+bildirmiştir. Yanlış URL veya hesap silme beyanını kaldırarak bu kontrol atlanmayacaktır.
+
+Tekrar üretilebilir içe aktarma dosyası şu komutla hazırlanır:
+
+```sh
+node scripts/generate_play_data_safety_csv.mjs \
+  ~/Downloads/data_safety_export.csv \
+  ~/Downloads/riskdetected_data_safety_ready.csv
+```
+
+## Kalan owner gönderimi
+
+- Play URL doğrulayıcısı düzeldiğinde “İleri” ile önizlemeye geç.
+- Önizlemeyi bu belge ve yeniden dışa aktarılan CSV ile karşılaştır.
+- Son gönderim/ilan işlemini owner hesabından tamamla.
