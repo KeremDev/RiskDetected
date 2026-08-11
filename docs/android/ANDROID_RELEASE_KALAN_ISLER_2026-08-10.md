@@ -63,7 +63,8 @@ Bu dosya Android production yayını öncesindeki açık işleri, bağımlılık
   taslağına kalıcı olarak kaydedildi.
 - [x] Closed Alpha kanalı Türkiye, `RiskDetected Internal` test listesi ve destek URL'siyle
   yapılandırıldı; `1.5.0 (1) — Closed Alpha` sürümü taslak olarak kaydedildi.
-- [ ] Sekiz Türkçe telefon mağaza görseli owner tarafından ayrıca tasarlatılacak.
+- [x] Sekiz Türkçe 1080×1920 telefon mağaza görseli Play Console'a `01–08` sırasıyla
+  yüklendi ve varsayılan Türkçe mağaza girişine kaydedildi.
 
 ## P0 — İlk Play Internal Testing yüklemesi
 
@@ -232,7 +233,7 @@ Not: Docker kullanıcı volume'leri silinmedi. Temizlik yalnız kullanılmayan S
 - [x] 1024×500 feature graphic'i hazırla.
 - [x] Play 512×512 ikonunu ve 1024×500 feature graphic'i varsayılan Türkçe mağaza girişine
   yükle ve taslak olarak kaydet.
-- [ ] Owner tasarımından sekiz Türkçe, PII'siz telefon ekran görüntüsünü teslim al ve Play'e yükle.
+- [x] Owner tasarımından sekiz Türkçe, PII'siz telefon ekran görüntüsünü teslim al ve Play'e yükle.
 - [ ] Business kategorisini kaydet; login-access adımı açıldıktan sonra 18+ profesyonel hedef kitleyi tamamla. (Kategori tamam, hedef kitle Play oturum açma beyanına bağımlı.)
 - [x] Data Safety formunda gerçek SDK/veri envanterine göre 15 veri türünü ve veri işleme
   amaçlarını kaydet.

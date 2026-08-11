@@ -122,8 +122,12 @@ regresyon olarak kalır.
 - `android/play-store/riskdetected-feature-graphic-1024x500.png`
 - Her iki varlık Play Console'daki varsayılan Türkçe mağaza girişine yüklendi; sayfa yeniden
   yüklenerek `1/1` durumları doğrulandı ve taslak kalıcı olarak kaydedildi.
-- Telefon mağaza ekran kompozisyonları owner tarafından ayrıca tasarlatılacak; Codex'in geçici
-  mockup çıktıları çalışma alanından geri alındı.
+- `output/google-play/screenshots-tr/01-*.png` ile `08-*.png` arasındaki sekiz Türkçe telefon
+  görseli 1080×1920, 9:16 ve görsel başına 8 MB sınırının altında doğrulandı.
+- Sekiz görsel Play Console'a numara sırasıyla eklendi; mağaza girişinde `8/8` durumu ve
+  `Yaptığınız değişiklik kaydedildi` sonucu alındı.
+- `09-uzmanligini-ilerledikce-goster.png`, Play'in telefon başına en fazla sekiz görsel sınırı
+  nedeniyle yerelde yedek alternatif olarak korundu.
 
 ## Bilinçli ertelenen/dış kapılar
 
@@ -139,4 +143,3 @@ regresyon olarak kalır.
 - Data Safety'de 15 veri türü kaydedildi. `https://riskdetected.com/hesap-silme` doğrudan 200
   döndüğü halde Play doğrulayıcısı 403 görüyor; owner Google desteğine kayıt açtı.
 - Fiziksel Pixel/Samsung, İSG uzman kabulü, Pre-launch Report ve 12 tester × 14 gün closed test.
-- Owner tarafından hazırlanacak sekiz mağaza ekran görüntüsü.
