@@ -159,8 +159,12 @@ Kabul ölçütü: Google ve OTP girişleri fiziksel cihazda tamamlanır; çıkı
   remote capability fail-closed matrisiyle birlikte doğrula.
 - [x] Free/Plus/Pro yerel kota sözleşmesini ve rapor dönem başlangıcını `Europe/Istanbul` gün/ay
   sınırında deterministik test et; backend son karar otoritesi olarak kaldı.
-- [ ] Standart ve detaylı PDF içerik/sıra/renk semantiğini iOS raporuyla karşılaştır.
-- [ ] XLSX bölüm, bulgu, risk skoru, şirket ve filtre verilerini iOS semantiğiyle karşılaştır.
+- [x] Standart PDF'nin gerçek 3 sayfalı çıktısını görsel/semantik doğrula; detaylı PDF'nin iOS bölüm
+  sırasını `yöntem referansı → risk değerlendirme tablosu` olarak sabitle, standart kapak/bulgu
+  sayfalarının detaylı rapora karışmasını engelle ve tabloda açıklama, skor/band, önlem, kök neden ile
+  mevzuat alanlarını koru. Gerçek detaylı PDF cihaz artefaktı son cihaz akışında yeniden açılacak.
+- [x] Gerçek XLSX'in beş sayfasını, 5 bulgusunu, Fine-Kinney skor/dağılımını, şirket/hazırlayan
+  alanlarını ve filtrelenebilir tablo semantiğini doğrula; formül hata taraması sıfır.
 - [ ] Rapor açma, paylaşma, snapshot ve silme cihaz akışlarını test et. Geçmiş analiz arama,
   hafta/risk/tür/şirket/focused-ID filtre birleşimi otomatik testle kapatıldı.
 

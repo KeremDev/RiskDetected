@@ -34,6 +34,10 @@
     <string name="rd_pdf_column_severity">Şiddet</string>
     <string name="rd_pdf_column_score">Skor</string>
     <string name="rd_pdf_column_level">Seviye</string>
+    <string name="rd_pdf_column_controls">Önlem / kök neden</string>
+    <string name="rd_pdf_column_references">Mevzuat / referans</string>
+    <string name="rd_pdf_root_cause_row">Kök neden: %1$s</string>
+    <string name="rd_pdf_reference_metadata">Analiz: %1$s\nFirma: %2$s\nHazırlayan: %3$s</string>
     <string name="rd_pdf_matrix_reference">5x5 Risk Matrisi Referansı</string>
     <string name="rd_pdf_fine_kinney_reference">Fine-Kinney Referansı</string>
     <string name="rd_pdf_matrix_legend">Skor = Olasılık × Şiddet (1-5 ölçek her ikisi için de). 1-4: Düşük, 5-9: Orta, 10-14: Yüksek, 15-25: Kritik.</string>

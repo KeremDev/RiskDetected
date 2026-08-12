@@ -45,6 +45,20 @@ data class GeneratedPdf(
     val pageCount: Int,
 )
 
+internal enum class PdfReportSection {
+    Cover,
+    FindingDetails,
+    MethodReference,
+    RiskAssessmentTable,
+}
+
+internal fun pdfReportSectionOrder(kind: String): List<PdfReportSection> =
+    if (kind == "risk_analysis") {
+        listOf(PdfReportSection.MethodReference, PdfReportSection.RiskAssessmentTable)
+    } else {
+        listOf(PdfReportSection.Cover, PdfReportSection.FindingDetails)
+    }
+
 /**
  * Real on-device PDF report generator (DEC-09) — Android's `android.graphics.pdf.PdfDocument`
  * counterpart to `PDFReportService.swift`. That file is 1642 lines of hand-tuned Core Graphics
@@ -100,10 +114,13 @@ class PdfReportGenerator @Inject constructor(
         val document = PdfDocument()
         var nextPageNumber = 1
 
-        nextPageNumber = drawCoverPage(document, input, nextPageNumber)
-        nextPageNumber = drawFindingPages(document, input, nextPageNumber)
-        if (input.kind == "risk_analysis") {
-            nextPageNumber = drawRiskAssessmentPages(document, input, nextPageNumber)
+        pdfReportSectionOrder(input.kind).forEach { section ->
+            nextPageNumber = when (section) {
+                PdfReportSection.Cover -> drawCoverPage(document, input, nextPageNumber)
+                PdfReportSection.FindingDetails -> drawFindingPages(document, input, nextPageNumber)
+                PdfReportSection.MethodReference -> drawRiskMethodReferencePage(document, input, nextPageNumber)
+                PdfReportSection.RiskAssessmentTable -> drawRiskAssessmentTablePages(document, input, nextPageNumber)
+            }
         }
 
         val output = ByteArrayOutputStream()
@@ -315,12 +332,52 @@ class PdfReportGenerator @Inject constructor(
         return pageNumber + 1
     }
 
-    /** `kind="risk_analysis"` only — real assessment table (ordinal/title/method
-     * values/score/band per finding) + a reference legend page using the real
-     * [com.riskdetectedan.core.data.analysis.FineKinneyValues] option sets for Fine-Kinney, or a
-     * short 1-5 scale description for the 5x5 matrix — not iOS's full multi-page illustrated
-     * legend, a real but condensed reference. */
-    private fun drawRiskAssessmentPages(document: PdfDocument, input: PdfReportInput, startPage: Int): Int {
+    /** First page of the iOS risk-analysis contract: selected method and its scoring reference. */
+    private fun drawRiskMethodReferencePage(document: PdfDocument, input: PdfReportInput, startPage: Int): Int {
+        var pageNumber = startPage
+        val page = newPage(document, pageNumber)
+        val canvas = page.canvas
+        var y = MARGIN
+
+        val isMatrix = input.method == "matrix_5x5"
+        val title = TextPaint().apply { color = COLOR_ONYX; textSize = 30f; isFakeBoldText = true }
+        canvas.drawText(
+            context.getString(if (isMatrix) R.string.rd_pdf_matrix_reference else R.string.rd_pdf_fine_kinney_reference),
+            MARGIN,
+            y,
+            title,
+        )
+        y += 60f
+
+        val metaPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 18f }
+        val company = input.companyName?.takeIf { it.isNotBlank() } ?: "—"
+        y = drawWrapped(
+            canvas,
+            context.getString(R.string.rd_pdf_reference_metadata, input.title, company, input.preparedByName),
+            MARGIN,
+            y,
+            PAGE_WIDTH - 2 * MARGIN,
+            metaPaint,
+        ) + 50f
+
+        val bodyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 20f }
+        val legendText = if (isMatrix) {
+            context.getString(R.string.rd_pdf_matrix_legend)
+        } else {
+            val p = FineKinneyValues.PROBABILITY.joinToString(", ")
+            val f = FineKinneyValues.FREQUENCY.joinToString(", ")
+            val s = FineKinneyValues.SEVERITY.joinToString(", ")
+            context.getString(R.string.rd_pdf_fine_kinney_legend, p, f, s)
+        }
+        drawWrapped(canvas, legendText, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, bodyPaint)
+
+        drawFooter(canvas, pageNumber)
+        document.finishPage(page)
+        return pageNumber + 1
+    }
+
+    /** Remaining pages of the iOS risk-analysis contract: assessment rows and audit context. */
+    private fun drawRiskAssessmentTablePages(document: PdfDocument, input: PdfReportInput, startPage: Int): Int {
         var pageNumber = startPage
         var page = newPage(document, pageNumber)
         var canvas = page.canvas
@@ -339,6 +396,8 @@ class PdfReportGenerator @Inject constructor(
                 context.getString(R.string.rd_pdf_column_severity),
                 context.getString(R.string.rd_pdf_column_score),
                 context.getString(R.string.rd_pdf_column_level),
+                context.getString(R.string.rd_pdf_column_controls),
+                context.getString(R.string.rd_pdf_column_references),
             )
         } else {
             listOf(
@@ -349,18 +408,53 @@ class PdfReportGenerator @Inject constructor(
                 "Ş",
                 context.getString(R.string.rd_pdf_column_score),
                 context.getString(R.string.rd_pdf_column_level),
+                context.getString(R.string.rd_pdf_column_controls),
+                context.getString(R.string.rd_pdf_column_references),
             )
         }
         val widths = if (isMatrix) {
-            listOf(0.06f, 0.44f, 0.12f, 0.12f, 0.12f, 0.14f)
+            listOf(0.04f, 0.24f, 0.07f, 0.07f, 0.08f, 0.10f, 0.25f, 0.15f)
         } else {
-            listOf(0.05f, 0.37f, 0.09f, 0.09f, 0.09f, 0.13f, 0.18f)
+            listOf(0.04f, 0.20f, 0.055f, 0.055f, 0.055f, 0.075f, 0.10f, 0.265f, 0.155f)
         }
         val tableWidth = PAGE_WIDTH - 2 * MARGIN
         y = drawTableRow(canvas, MARGIN, y, tableWidth, widths, headers, isHeader = true)
 
         input.findings.forEachIndexed { index, finding ->
-            if (y > PAGE_HEIGHT - MARGIN - 40f) {
+            val findingText = listOfNotNull(finding.title, finding.description?.takeIf { it.isNotBlank() })
+                .joinToString("\n")
+            val controls = buildList {
+                finding.recommendedMeasures.orEmpty().filter { it.text.isNotBlank() }.forEach { add(it.text) }
+                if (isEmpty()) finding.recommendedAction?.takeIf { it.isNotBlank() }?.let(::add)
+                finding.rootCauseText?.takeIf { it.isNotBlank() }?.let {
+                    add(context.getString(R.string.rd_pdf_root_cause_row, it))
+                }
+            }.joinToString("\n")
+            val references = finding.referencesText?.takeIf { it.isNotBlank() } ?: "—"
+            val band = if (isMatrix) finding.m5Band else finding.fkBand
+            val score = if (isMatrix) finding.m5Score?.toString() else finding.fkScore?.let { "%.1f".format(it) }
+            val values = if (isMatrix) {
+                listOf(
+                    "${index + 1}", findingText,
+                    finding.m5Probability?.toString() ?: "—",
+                    finding.m5Severity?.toString() ?: "—",
+                    score ?: "—", bandLabel(band), controls, references,
+                )
+            } else {
+                listOf(
+                    "${index + 1}", findingText,
+                    finding.fkProbability?.let { "%.1f".format(it) } ?: "—",
+                    finding.fkFrequency?.let { "%.1f".format(it) } ?: "—",
+                    finding.fkSeverity?.let { "%.1f".format(it) } ?: "—",
+                    score ?: "—", bandLabel(band), controls, references,
+                )
+            }
+            val estimatedRowHeight = estimateTableRowHeight(
+                totalWidth = tableWidth,
+                weights = widths,
+                values = values,
+            )
+            if (y + estimatedRowHeight > PAGE_HEIGHT - MARGIN - 30f) {
                 drawFooter(canvas, pageNumber)
                 document.finishPage(page)
                 pageNumber += 1
@@ -369,49 +463,8 @@ class PdfReportGenerator @Inject constructor(
                 y = MARGIN
                 y = drawTableRow(canvas, MARGIN, y, tableWidth, widths, headers, isHeader = true)
             }
-            val band = if (isMatrix) finding.m5Band else finding.fkBand
-            val score = if (isMatrix) finding.m5Score?.toString() else finding.fkScore?.let { "%.1f".format(it) }
-            val values = if (isMatrix) {
-                listOf(
-                    "${index + 1}", truncateWithEllipsis(finding.title, 40),
-                    finding.m5Probability?.toString() ?: "—",
-                    finding.m5Severity?.toString() ?: "—",
-                    score ?: "—", bandLabel(band),
-                )
-            } else {
-                listOf(
-                    "${index + 1}", truncateWithEllipsis(finding.title, 32),
-                    finding.fkProbability?.let { "%.1f".format(it) } ?: "—",
-                    finding.fkFrequency?.let { "%.1f".format(it) } ?: "—",
-                    finding.fkSeverity?.let { "%.1f".format(it) } ?: "—",
-                    score ?: "—", bandLabel(band),
-                )
-            }
             y = drawTableRow(canvas, MARGIN, y, tableWidth, widths, values, isHeader = false, bandForRow = band)
         }
-
-        y += 40f
-        val legendTitle = TextPaint().apply { color = COLOR_ONYX; textSize = 22f; isFakeBoldText = true }
-        if (y > PAGE_HEIGHT - MARGIN - 200f) {
-            drawFooter(canvas, pageNumber)
-            document.finishPage(page)
-            pageNumber += 1
-            page = newPage(document, pageNumber)
-            canvas = page.canvas
-            y = MARGIN
-        }
-        canvas.drawText(context.getString(if (isMatrix) R.string.rd_pdf_matrix_reference else R.string.rd_pdf_fine_kinney_reference), MARGIN, y, legendTitle)
-        y += 40f
-        val bodyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 17f }
-        val legendText = if (isMatrix) {
-            context.getString(R.string.rd_pdf_matrix_legend)
-        } else {
-            val p = FineKinneyValues.PROBABILITY.joinToString(", ")
-            val f = FineKinneyValues.FREQUENCY.joinToString(", ")
-            val s = FineKinneyValues.SEVERITY.joinToString(", ")
-            context.getString(R.string.rd_pdf_fine_kinney_legend, p, f, s)
-        }
-        drawWrapped(canvas, legendText, MARGIN, y, tableWidth, bodyPaint)
 
         drawFooter(canvas, pageNumber)
         document.finishPage(page)
@@ -428,7 +481,7 @@ class PdfReportGenerator @Inject constructor(
         isHeader: Boolean,
         bandForRow: String? = null,
     ): Float {
-        val rowHeight = 40f
+        val rowHeight = if (isHeader) 48f else estimateTableRowHeight(totalWidth, weights, values)
         if (isHeader) {
             canvas.drawRect(RectF(x, y, x + totalWidth, y + rowHeight), Paint().apply { color = COLOR_ONYX })
         } else if (bandForRow != null) {
@@ -442,11 +495,37 @@ class PdfReportGenerator @Inject constructor(
         }
         values.forEachIndexed { i, value ->
             val cellWidth = totalWidth * weights[i]
-            canvas.drawText(value, cellX + 8f, y + rowHeight - 12f, paint)
+            val cellLayout = StaticLayout.Builder
+                .obtain(value, 0, value.length, paint, (cellWidth - 16f).coerceAtLeast(1f).toInt())
+                .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                .setMaxLines(if (isHeader) 2 else 8)
+                .setEllipsize(android.text.TextUtils.TruncateAt.END)
+                .build()
+            canvas.save()
+            canvas.translate(cellX + 8f, y + 8f)
+            cellLayout.draw(canvas)
+            canvas.restore()
+            canvas.drawLine(cellX + cellWidth, y, cellX + cellWidth, y + rowHeight, Paint().apply { color = COLOR_LINE; strokeWidth = 1f })
             cellX += cellWidth
         }
         canvas.drawLine(x, y + rowHeight, x + totalWidth, y + rowHeight, Paint().apply { color = COLOR_LINE; strokeWidth = 1f })
         return y + rowHeight
+    }
+
+    private fun estimateTableRowHeight(totalWidth: Float, weights: List<Float>, values: List<String>): Float {
+        val paint = TextPaint().apply { textSize = 14f }
+        val tallest = values.mapIndexed { index, value ->
+            val cellWidth = (totalWidth * weights.getOrElse(index) { weights.last() } - 16f)
+                .coerceAtLeast(1f)
+                .toInt()
+            StaticLayout.Builder
+                .obtain(value, 0, value.length, paint, cellWidth)
+                .setMaxLines(8)
+                .setEllipsize(android.text.TextUtils.TruncateAt.END)
+                .build()
+                .height
+        }.maxOrNull() ?: 0
+        return (tallest + 18f).coerceIn(48f, 260f)
     }
 
     /** Wraps [text] to [maxWidth] via [StaticLayout] (Android's real word-wrap engine, not a

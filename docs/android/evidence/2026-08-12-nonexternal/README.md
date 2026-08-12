@@ -27,6 +27,10 @@ Yeni otomatik kapsam:
 - bulgu düzenleme/silme capability kapısı ile metin, FK, 5×5 ve önlem patch doğrulaması
 - Free günlük ve Plus/Pro aylık rapor kotasının `Europe/Istanbul` sınırı
 - geçmiş analiz arama, kritik/KKD/hafta, şirket ve focused-ID filtre birleşimi
+- risk analizi PDF bölüm sırası: yöntem referansı → risk değerlendirme tablosu; standart rapor
+  kapak/bulgu sayfalarının bu rapora karışmaması
+- risk tablosunda bulgu açıklaması, O/F/Ş veya O/Ş, server skoru/bandı, önlemler, kök neden ve
+  mevzuat/referans alanlarının korunması
 
 ## API 36 emülatör smoke
 
@@ -37,6 +41,35 @@ APK: temiz kaynaklardan bu turda üretilen `app-debug.apk`.
 - font scale `1.3`, koyu sistem teması; auth ekranının bilinçli açık-tema iOS paritesi korunuyor
 - iki auth durumunda da e-posta ve Google CTA'ları ile dört hukuk bağlantısı UI tree'de mevcut
 - crash buffer: boş
+
+## Gerçek rapor artefaktı incelemesi
+
+Yeni analiz veya ücretli API çağrısı yapılmadan, 11 Ağustos üç fotoğraf staging E2E'sinde üretilen
+gerçek artefaktlar yeniden doğrulandı.
+
+### Standart PDF
+
+- Kaynak: `2026-08-11-staging-e2e/three-photo/generated-standard.pdf`
+- Geçerli PDF, 3 gerçek sayfa, 915.412 byte
+- Üç sayfanın tamamı PNG'ye rasterize edilip görsel incelendi
+- Kapak, hazırlayan/odak/yöntem/tarih, 5 bulgu ve `2 kritik + 2 yüksek + 1 orta` dağılımı tutarlı
+- Bulgu açıklaması, kaynak fotoğraf, AI güveni, kök neden ve önlemler eksiksiz
+- Sayfa numaraları `1/2/3`; kırpılma, taşma veya bozuk karakter yok
+
+Raster kanıtları `pdf-render/` altındadır.
+
+### Risk analizi XLSX
+
+- Kaynak: `2026-08-11-staging-e2e/three-photo/generated-risk-analysis.xlsx`
+- Beş sayfa: Kapak ve Özet, Risk Analiz Tablosu, Risk Dağılımı, Metot Referansı, Rapor Bilgileri
+- 5 bulgu, Fine-Kinney toplam skoru 4.950 ve `2 kritik + 2 yüksek + 1 orta` dağılımı tutarlı
+- Ana tabloda O/F/Ş, skor, risk seviyesi, önlem/kontrol, kök neden, mevzuat/referans, termin ve durum
+  alanları mevcut
+- Firma ve hazırlayan metadata alanları mevcut; bu E2E firmasız üretildiği için firma değeri bilinçli boş
+- Formül hata taraması sıfır; beş sayfanın tamamı render edilip görsel incelendi
+
+Raster kanıtları ve PII içermeyen formül tarama sonucu `xlsx-render/` altındadır. İnceleme aracının
+test kullanıcı/analiz kimliklerini içeren geçici özet çıktıları kanıt paketine alınmadı.
 
 Dosyalar:
 
