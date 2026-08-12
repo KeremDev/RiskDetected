@@ -81,10 +81,9 @@ import java.time.temporal.ChronoUnit
  * `FilterSheet` (date range/risk-level/kind multi-select behind the funnel icon) is deliberately
  * NOT ported — checked its source: `onConfirm()` never reads back any of the sheet's own
  * `@State` (`dateFilter`/`selectedLevels`/`selectedKinds`), so it's decorative on iOS itself, not
- * a real feature to port faithfully. The company filter (`CompanyPickerSheet`, Plus/Pro-gated)
- * is also not ported this pass — real, but lower-priority than the chips/search that
- * `filteredItems` actually uses; a genuine follow-up, not silently dropped. */
-private enum class HistoryFilterChip(@StringRes val labelRes: Int) {
+ * a real feature to port faithfully. The real Plus/Pro-gated company filter is included and
+ * composes with search, chips and a focused notification analysis ID. */
+internal enum class HistoryFilterChip(@StringRes val labelRes: Int) {
     All(RdR.string.rd_tumu),
     ThisWeek(RdR.string.rd_bu_hafta),
     Critical(RdR.string.rd_kritik),
@@ -92,21 +91,45 @@ private enum class HistoryFilterChip(@StringRes val labelRes: Int) {
     General(RdR.string.rd_genel),
 }
 
-private fun isWithinLastWeek(createdAt: String?): Boolean {
+internal fun isWithinLastWeek(createdAt: String?, now: Instant = Instant.now()): Boolean {
     val raw = createdAt ?: return false
     return try {
-        OffsetDateTime.parse(raw).toInstant().isAfter(Instant.now().minus(7, ChronoUnit.DAYS))
+        val created = OffsetDateTime.parse(raw).toInstant()
+        !created.isBefore(now.minus(7, ChronoUnit.DAYS)) && !created.isAfter(now)
     } catch (t: Throwable) {
         false
     }
 }
 
-private fun matchesChip(item: HistoryItem, chip: HistoryFilterChip): Boolean = when (chip) {
+internal fun matchesChip(
+    item: HistoryItem,
+    chip: HistoryFilterChip,
+    now: Instant = Instant.now(),
+): Boolean = when (chip) {
     HistoryFilterChip.All -> true
-    HistoryFilterChip.ThisWeek -> isWithinLastWeek(item.createdAt)
+    HistoryFilterChip.ThisWeek -> isWithinLastWeek(item.createdAt, now)
     HistoryFilterChip.Critical -> riskLevelFromRaw(item.riskBand) == RiskLevel.Critical
     HistoryFilterChip.Ppe -> item.kind.contains("KKD", ignoreCase = true)
     HistoryFilterChip.General -> item.kind.contains("Genel", ignoreCase = true)
+}
+
+internal fun filterHistoryItems(
+    items: List<HistoryItem>,
+    search: String,
+    chip: HistoryFilterChip,
+    focusedAnalysisId: String? = null,
+    selectedCompanyId: String? = null,
+    now: Instant = Instant.now(),
+): List<HistoryItem> {
+    val needle = search.trim().lowercase()
+    return items.filter { item ->
+        val matchesFocused = focusedAnalysisId == null || item.id == focusedAnalysisId
+        val matchesSearch = needle.isEmpty() ||
+            item.title.lowercase().contains(needle) ||
+            item.kind.lowercase().contains(needle)
+        val matchesCompany = selectedCompanyId == null || item.companyId == selectedCompanyId
+        matchesFocused && matchesSearch && matchesChip(item, chip, now) && matchesCompany
+    }
 }
 
 /** Port of the analysis history list (2026-08-08 visual pass, Faz J of the core-flow redesign —
@@ -173,15 +196,13 @@ fun ReportsScreen(
                             subtitle = stringResource(RdR.string.rd_ilk_fotograf_analiz_aciklama),
                         )
                     } else {
-                        val needle = search.trim().lowercase()
-                        val filtered = current.items.filter { item ->
-                            val matchesFocused = focusedAnalysisId == null || item.id == focusedAnalysisId
-                            val matchesSearch = needle.isEmpty() ||
-                                item.title.lowercase().contains(needle) ||
-                                item.kind.lowercase().contains(needle)
-                            val matchesCompany = selectedCompany == null || item.companyId == selectedCompany?.id
-                            matchesFocused && matchesSearch && matchesChip(item, activeChip) && matchesCompany
-                        }
+                        val filtered = filterHistoryItems(
+                            items = current.items,
+                            search = search,
+                            chip = activeChip,
+                            focusedAnalysisId = focusedAnalysisId,
+                            selectedCompanyId = selectedCompany?.id,
+                        )
 
                         HistoryFilterSurface(
                             showCompanyButton = userTier.isPaid,

@@ -22,7 +22,6 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -65,6 +64,20 @@ data class ReportQuotaUsage(
     val riskTrialUsed: Boolean,
 ) {
     val isStandardQuotaExhausted: Boolean get() = standardUsed >= standardLimit
+}
+
+internal object ReportQuotaWindow {
+    private val istanbul = ZoneId.of("Europe/Istanbul")
+
+    fun periodStart(
+        tier: SubscriptionTier,
+        now: java.time.Instant = java.time.Instant.now(),
+        zone: ZoneId = istanbul,
+    ): java.time.Instant {
+        val today = now.atZone(zone).toLocalDate()
+        val startDate = if (tier == SubscriptionTier.Free) today else today.withDayOfMonth(1)
+        return startDate.atStartOfDay(zone).toInstant()
+    }
 }
 
 @Serializable
@@ -137,13 +150,7 @@ class ReportsRepository @Inject constructor(
 ) {
     suspend fun fetchQuotaUsage(userId: String, tier: SubscriptionTier): RdResult<ReportQuotaUsage> = try {
         coroutineScope {
-            val zone = ZoneId.of("Europe/Istanbul")
-            val today = LocalDate.now(zone)
-            val periodStart = if (tier == SubscriptionTier.Free) {
-                today.atStartOfDay(zone).toInstant()
-            } else {
-                today.withDayOfMonth(1).atStartOfDay(zone).toInstant()
-            }
+            val periodStart = ReportQuotaWindow.periodStart(tier)
             val standard = async {
                 client.postgrest.from("usage_events").select(columns = Columns.list("id")) {
                     head = true

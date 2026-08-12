@@ -447,18 +447,18 @@ private fun FindingsList(
     }
 }
 
-private enum class ResultRiskMethod { FineKinney, Matrix5x5 }
+internal enum class ResultRiskMethod { FineKinney, Matrix5x5 }
 
-private fun resultRiskLevel(finding: Finding, method: ResultRiskMethod): RiskLevel = riskLevelFromRaw(
+internal fun resultRiskLevel(finding: Finding, method: ResultRiskMethod): RiskLevel = riskLevelFromRaw(
     if (method == ResultRiskMethod.FineKinney) finding.fkBand else finding.m5Band,
 )
 
-private fun resultScore(finding: Finding, method: ResultRiskMethod): Double = when (method) {
+internal fun resultScore(finding: Finding, method: ResultRiskMethod): Double = when (method) {
     ResultRiskMethod.FineKinney -> finding.fkScore ?: 0.0
     ResultRiskMethod.Matrix5x5 -> finding.m5Score?.toDouble() ?: 0.0
 }
 
-private fun riskRank(level: RiskLevel): Int = when (level) {
+internal fun riskRank(level: RiskLevel): Int = when (level) {
     RiskLevel.Critical -> 4
     RiskLevel.High -> 3
     RiskLevel.Medium -> 2

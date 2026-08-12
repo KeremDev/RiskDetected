@@ -11,6 +11,7 @@ android {
     compileSdk = 37
     defaultConfig { minSdk = 26 }
     buildFeatures { compose = true }
+    testOptions { unitTests.isIncludeAndroidResources = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -33,5 +34,7 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
+    testImplementation(project(":core:testing"))
+    testImplementation(libs.robolectric)
     debugImplementation(libs.compose.ui.tooling)
 }

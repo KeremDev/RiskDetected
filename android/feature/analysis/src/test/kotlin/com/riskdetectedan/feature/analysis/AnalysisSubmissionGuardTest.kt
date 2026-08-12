@@ -1,6 +1,8 @@
 package com.riskdetectedan.feature.analysis
 
 import com.riskdetectedan.core.data.error.AppErrorMessages
+import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.data.analysis.AnalysisStatus
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -25,5 +27,19 @@ class AnalysisSubmissionGuardTest {
                 CreateAnalysisUiState.Failed(AppErrorMessages.make("Tekrar denenebilir")),
             ),
         )
+    }
+
+    @Test fun `only terminal server statuses clear process death recovery record`() {
+        assertTrue(AnalysisRecoveryPolicy.shouldClearInFlight(AnalysisStatus.Completed))
+        assertTrue(AnalysisRecoveryPolicy.shouldClearInFlight(AnalysisStatus.Failed("failed")))
+        assertFalse(AnalysisRecoveryPolicy.shouldClearInFlight(AnalysisStatus.TimedOut))
+        assertFalse(AnalysisRecoveryPolicy.shouldClearInFlight(AnalysisStatus.InProgress("processing")))
+    }
+
+    @Test fun `submit network failure recovers only after readable non pending status`() {
+        assertFalse(AnalysisRecoveryPolicy.serverAcceptedSubmission(RdResult.Success("pending")))
+        assertTrue(AnalysisRecoveryPolicy.serverAcceptedSubmission(RdResult.Success("processing")))
+        assertTrue(AnalysisRecoveryPolicy.serverAcceptedSubmission(RdResult.Success("completed")))
+        assertFalse(AnalysisRecoveryPolicy.serverAcceptedSubmission(RdResult.Failure("network", "offline")))
     }
 }

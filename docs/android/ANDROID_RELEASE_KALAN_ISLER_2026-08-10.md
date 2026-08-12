@@ -146,15 +146,23 @@ Kabul ölçütü: Google ve OTP girişleri fiziksel cihazda tamamlanır; çıkı
 - [ ] İSG uzmanından kritik tehlike atlama, yanlış yüksek risk ve kontrol tedbiri kalitesi onayı al.
 - [ ] Detaylı analiz akışını test et.
 - [x] Üç fotoğraflı analiz ve fotoğraf sıralamasını test et.
-- [ ] Ağ kesintisi ve polling recovery akışını test et.
+- [x] Ağ/timeout sonrası submit recovery kararını otomatik test et: yalnız okunabilir ve `pending`
+  dışı server durumu polling'e devam ediyor; terminal durumlar in-flight kaydını temizlerken
+  timeout/in-progress süreç öldürme recovery kaydını koruyor.
 - [x] Duplicate tap UI guard ve aynı submission ID owner-scoped unique/upsert sözleşmesini otomatik testlerle doğrula.
-- [ ] Process death sonrasında bekleyen analize geri dönüşü test et.
-- [ ] Bulgu ekleme yetkisi, düzenleme ve silme akışlarını planlara göre test et.
-- [ ] FK/M5 görünümü ve remote capability davranışını test et.
-- [ ] Free/Plus/Pro kota sınırlarını `Europe/Istanbul` gün sınırında doğrula.
+- [x] Process death sonrasında in-flight/pending kaydın store recreation ile devamını; süre aşımı,
+  bozuk kayıt, farklı hesap ve fingerprint uyuşmazlığı negatif senaryolarını Robolectric ile test et.
+- [x] Manuel bulgu ekleme fail-closed yetkisini, düzenleme/silme capability kapısını ve bulgu
+  metin/FK/M5/önlem patch doğrulamasını plan sözleşmesine göre otomatik test et; gerçek backend
+  mutation yetkisi mevcut pgTAP owner/cross-user negatif paketiyle korunuyor.
+- [x] FK/M5 görünümünün server tarafından hesaplanan doğru skor ve band alanını seçmesini test et;
+  remote capability fail-closed matrisiyle birlikte doğrula.
+- [x] Free/Plus/Pro yerel kota sözleşmesini ve rapor dönem başlangıcını `Europe/Istanbul` gün/ay
+  sınırında deterministik test et; backend son karar otoritesi olarak kaldı.
 - [ ] Standart ve detaylı PDF içerik/sıra/renk semantiğini iOS raporuyla karşılaştır.
 - [ ] XLSX bölüm, bulgu, risk skoru, şirket ve filtre verilerini iOS semantiğiyle karşılaştır.
-- [ ] Rapor açma, paylaşma, snapshot, filtreleme ve silme akışlarını test et.
+- [ ] Rapor açma, paylaşma, snapshot ve silme cihaz akışlarını test et. Geçmiş analiz arama,
+  hafta/risk/tür/şirket/focused-ID filtre birleşimi otomatik testle kapatıldı.
 
 Kabul ölçütü: Corpus'ta kritik tehlike atlama yoktur; aynı submission ikinci analiz oluşturmaz; PDF/XLSX semantik paritesi sağlanır.
 
@@ -180,12 +188,14 @@ Kabul ölçütü: Reddedilmiş izin uygulamayı bozmaz; izin verildiğinde FCM k
 - [ ] API 26/33/37 üzerinde giriş yapılmış dört tab, analiz ve rapor cihaz akışlarını tamamla.
 - [ ] Fiziksel Pixel testi.
 - [ ] Fiziksel Samsung testi.
-- [ ] Font scale `1.0` ana kabul testi.
-- [ ] Font scale `1.3` erişilebilirlik smoke testi.
-- [ ] Desteklenen ekranlarda açık/koyu tema testi.
+- [x] Font scale `1.0` ana kabul testini temiz debug APK ve UI tree kanıtıyla tamamla.
+- [x] Font scale `1.3` erişilebilirlik smoke testini auth ekranında UI tree/crash buffer ile tamamla.
+- [x] Desteklenen ekranlarda açık/koyu sistem teması smoke testi; auth yüzeyinin iOS paritesi için
+  bilinçli açık tema kalması ve sistem barı adaptasyonu doğrulandı.
 - [x] Analiz bekleme, sonuç, Pro bulgu detayı, PDF ve XLSX oluşturma durum golden'larını onayla.
 - [ ] Recovery ve Android sistem paylaşım yüzeyini cihaz kanıtıyla onayla.
-- [ ] Free/Plus/Pro CTA, sarı/yeşil kimlik, kart, tablo, ikon ve risk renklerini iOS referansıyla karşılaştır.
+- [x] Free/Plus/Pro CTA, Plus sarı/Pro yeşil kimliği, kart, tablo, ikon ve risk renklerini iOS
+  referansı ve threshold `0` golden paketiyle karşılaştır.
 
 Kabul ölçütü: Android golden threshold `0`; platformlar arası geometri farkı en fazla ±2dp ve beklenmeyen görsel fark yoktur.
 
@@ -294,4 +304,4 @@ Release aşağıdaki koşulların tamamı sağlanmadan hazır kabul edilmeyecekt
 - [ ] Play Pre-launch Report blocker içermiyor.
 - [ ] Closed test crash-free session oranı en az `%99,5`.
 - [ ] Production gate'leri yalnız kontrollü canary için açılıyor.
-- [ ] iOS build-81 regresyonu temiz ve `App/` diff'i sıfır.
+- [x] iOS build-81 regresyonu temiz ve `App/` diff'i sıfır.

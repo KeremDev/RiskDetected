@@ -338,7 +338,7 @@ class AnalysisViewModel @Inject constructor(
         // record lets a later relaunch pick the poll back up (matches waitForCompletedResult
         // exactly: its post-loop timeout throw has no clear() call, unlike the completed/failed
         // branches inside the loop).
-        if (status is AnalysisStatus.Completed || status is AnalysisStatus.Failed) {
+        if (AnalysisRecoveryPolicy.shouldClearInFlight(status)) {
             inFlightStore.clear(analysisId)
         }
         val nextState = when (status) {
@@ -446,7 +446,7 @@ class AnalysisViewModel @Inject constructor(
         for (delayMillis in probeDelaysMillis) {
             delay(delayMillis)
             val result = analysisRepository.fetchAnalysisStatus(analysisId)
-            if (result is RdResult.Success && result.value != "pending") return true
+            if (AnalysisRecoveryPolicy.serverAcceptedSubmission(result)) return true
         }
         return false
     }
@@ -561,4 +561,12 @@ class AnalysisViewModel @Inject constructor(
         return (planCapabilitiesRepository.fetchCapabilities(tier) as? RdResult.Success)?.value
             ?: PlanCapabilities.forTier(tier)
     }
+}
+
+internal object AnalysisRecoveryPolicy {
+    fun shouldClearInFlight(status: AnalysisStatus): Boolean =
+        status is AnalysisStatus.Completed || status is AnalysisStatus.Failed
+
+    fun serverAcceptedSubmission(status: RdResult<String>): Boolean =
+        status is RdResult.Success && status.value != "pending"
 }

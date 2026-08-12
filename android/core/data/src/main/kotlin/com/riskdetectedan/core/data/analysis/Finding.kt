@@ -118,6 +118,28 @@ object FineKinneyValues {
     val SEVERITY = listOf(1.0, 3.0, 7.0, 15.0, 40.0, 100.0)
 }
 
+internal object FindingPatchValidator {
+    fun validate(patch: FindingPatch): RdResult.Failure? = when {
+        patch.title != null && patch.title.isBlank() ->
+            RdResult.Failure("validation_failed", "Başlık boş olamaz.")
+        patch.description != null && patch.description.isBlank() ->
+            RdResult.Failure("validation_failed", "Açıklama boş olamaz.")
+        patch.fkProbability != null && patch.fkProbability !in FineKinneyValues.PROBABILITY ->
+            RdResult.Failure("validation_failed", "Geçersiz olasılık değeri.")
+        patch.fkFrequency != null && patch.fkFrequency !in FineKinneyValues.FREQUENCY ->
+            RdResult.Failure("validation_failed", "Geçersiz frekans değeri.")
+        patch.fkSeverity != null && patch.fkSeverity !in FineKinneyValues.SEVERITY ->
+            RdResult.Failure("validation_failed", "Geçersiz şiddet değeri.")
+        patch.m5Probability != null && patch.m5Probability !in 1..5 ->
+            RdResult.Failure("validation_failed", "Olasılık 1-5 arasında olmalı.")
+        patch.m5Severity != null && patch.m5Severity !in 1..5 ->
+            RdResult.Failure("validation_failed", "Şiddet 1-5 arasında olmalı.")
+        patch.recommendedMeasures != null && patch.recommendedMeasures.none { it.text.isNotBlank() } ->
+            RdResult.Failure("validation_failed", "En az bir önlem metni girilmeli.")
+        else -> null
+    }
+}
+
 @Singleton
 class FindingsRepository @Inject constructor(
     private val client: SupabaseClient,
@@ -197,33 +219,7 @@ class FindingsRepository @Inject constructor(
         expectedFindingVersion: Int,
         patch: FindingPatch,
     ): RdResult<Unit> {
-        if (patch.title != null && patch.title.isBlank()) {
-            return RdResult.Failure("validation_failed", "Başlık boş olamaz.")
-        }
-        if (patch.description != null && patch.description.isBlank()) {
-            return RdResult.Failure("validation_failed", "Açıklama boş olamaz.")
-        }
-        if (patch.fkProbability != null && patch.fkProbability !in FineKinneyValues.PROBABILITY) {
-            return RdResult.Failure("validation_failed", "Geçersiz olasılık değeri.")
-        }
-        if (patch.fkFrequency != null && patch.fkFrequency !in FineKinneyValues.FREQUENCY) {
-            return RdResult.Failure("validation_failed", "Geçersiz frekans değeri.")
-        }
-        if (patch.fkSeverity != null && patch.fkSeverity !in FineKinneyValues.SEVERITY) {
-            return RdResult.Failure("validation_failed", "Geçersiz şiddet değeri.")
-        }
-        if (patch.m5Probability != null && patch.m5Probability !in 1..5) {
-            return RdResult.Failure("validation_failed", "Olasılık 1-5 arasında olmalı.")
-        }
-        if (patch.m5Severity != null && patch.m5Severity !in 1..5) {
-            return RdResult.Failure("validation_failed", "Şiddet 1-5 arasında olmalı.")
-        }
-        // Mirrors normalizeMeasures()'s own "measures.length === 0 after filtering blanks"
-        // rejection — an all-blank-text list is a guaranteed 400, same reasoning as the other
-        // fast-fail checks above.
-        if (patch.recommendedMeasures != null && patch.recommendedMeasures.none { it.text.isNotBlank() }) {
-            return RdResult.Failure("validation_failed", "En az bir önlem metni girilmeli.")
-        }
+        FindingPatchValidator.validate(patch)?.let { return it }
         return try {
             val result = client.functions.invoke(
                 "mutate-analysis-finding",
