@@ -1,5 +1,5 @@
--- Covers ADR-005 kill switches (20260806230000_android_feature_flag_kill_switches.sql):
--- every android_* flag exists and starts fully closed.
+-- Covers the current Android release-gate state. The original ADR-005 migration creates every
+-- flag closed; the later build-3 notification migration deliberately opens only notifications.
 
 begin;
 
@@ -25,11 +25,18 @@ select ok(
       'android_auth_enabled',
       'android_analysis_submit_enabled',
       'android_payments_enabled',
-      'android_notifications_enabled',
       'android_pdf_reports_enabled'
     )
+  )
+  and exists (
+    select 1
+    from public.app_feature_flags
+    where key = 'android_notifications_enabled'
+      and coalesce((value->>'kill_switch')::boolean, true) = false
+      and value->>'rollout_mode' = 'allowlist'
+      and value->'enabled_android_version_codes' @> '[3]'::jsonb
   ),
-  'every android_*_enabled flag starts with kill_switch=true, rollout_mode=off'
+  'only notifications are open, and only for Android build 3'
 );
 
 select is(
