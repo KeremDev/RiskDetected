@@ -53,7 +53,7 @@ jobs:
             supabase/functions/process-account-deletion-queue/index.ts
 
       - name: Edge Function tests
-        run: rg --files supabase/functions | rg '(test\.ts$|static_test\.ts$)' | sort | xargs deno test --allow-read
+        run: find supabase/functions -type f \( -name '*test.ts' -o -name '*static_test.ts' \) -print0 | sort -z | xargs -0 --no-run-if-empty deno test --allow-read
 
       - uses: supabase/setup-cli@v2
         with:
