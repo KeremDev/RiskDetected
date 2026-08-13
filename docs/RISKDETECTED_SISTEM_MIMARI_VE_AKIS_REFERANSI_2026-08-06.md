@@ -508,6 +508,13 @@ Uygunluk koşulları (hepsi gerekli): tier `plus`; status `active`/`trialing`/`g
 bitmemiş; bitişler arasında en fazla 5 dakika fark; `cancelled_plus_trial_free_routing`
 flag'i açık. Eksik veya çelişkili metadata Paid route'ta kalır (fail-safe).
 
+Store doğrulaması: App Store legacy satırları mevcut sözleşmeyle uyumludur. Google Play
+satırlarında ayrıca `store=PLAY_STORE`, `base_plan_id=yearly` ve doğrulanmış
+`period_type=TRIAL|INTRO` gerekir. RevenueCat'in Play kimliği
+`riskdetected_plus_yearly:yearly` canonical ürün ve base plan olarak ayrı saklanır;
+`offer_id` audit amacıyla saklanır ama RevenueCat her snapshot'ta vermediği için tek başına
+uygunluk koşulu değildir.
+
 ---
 
 ## 10. Fotoğraf girdi hattı
@@ -710,11 +717,15 @@ flowchart TD
 | Route | Kullanıcı | Output quality | Havuz |
 | --- | --- | --- | --- |
 | `free_legacy` | Normal Free | Free | Free Gemini → Free Groq |
-| `free_paid_trial` | Free süreklilik denemesi | Plus | Paid Gemini → Free Gemini → Free Groq |
+| `free_paid_trial` | Kullanıcının hesap ömründeki ilk Free standart analizi | Plus | Paid Gemini → Free Gemini → Free Groq |
 | `paid_plan` | Plus / Pro | Plan tier | Paid Gemini → Paid Groq |
 | `cancelled_plus_trial_free` | İptal edilmiş aktif Plus yıllık trial | Plus | **Yalnız** Free Gemini → Free Groq |
 
 `cancelled_plus_trial_free` hiçbir koşulda paid alias'a geçmemelidir — kritik invariant.
+İlk analiz uygunluğu, günlük kotayla aynı advisory lock içinde atomik olarak ayrılır;
+aynı analiz worker retry'larında karar değişmez ve eşzamanlı iki gönderim Paid hakkı
+çoğaltamaz. İptal edilmiş aktif Plus trial route'u bu ilk analiz hakkından önce gelir ve
+daima Free sağlayıcı havuzunu kullanır.
 
 ### 13.4 Logical iş vs fiziksel istek
 
@@ -1363,7 +1374,9 @@ Groq: free ve plus/pro key + model alias'ları
 Resend: `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (`RESEND_REPLY_TO_EMAIL` yok → kod
 `info@riskdetected.com`'a düşer)
 Auth hook: `SEND_EMAIL_HOOK_SECRET`
-RevenueCat: `REVENUECAT_REST_API_KEY`, `REVENUECAT_WEBHOOK_AUTHORIZATION`
+RevenueCat: `REVENUECAT_REST_API_KEY`, `REVENUECAT_WEBHOOK_AUTHORIZATION`;
+REST key yoksa store-specific subscriber lookup fallback'ları
+`REVENUECAT_IOS_PUBLIC_API_KEY` / `REVENUECAT_ANDROID_PUBLIC_API_KEY`
 APNs: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_BUNDLE_ID`, `APNS_ENV`
 Job secret'ları: `PROCESS_ANALYSIS_JOBS_SECRET`, `NOTIFICATION_AUTOMATION_SECRET`,
 `RETENTION_CLEANUP_SECRET`, `TRIAL_REMINDER_SECRET`

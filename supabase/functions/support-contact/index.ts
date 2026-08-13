@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  type NormalizedSupportAttachment,
+  normalizeSupportAttachments,
+  type SupportAttachmentInput,
+} from "../_shared/support-attachment-validation.ts";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -8,28 +13,14 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type SupportAttachment = {
-  filename?: string;
-  mime_type?: string;
-  data?: string;
-  size_bytes?: number;
-};
-
 type SupportRequestBody = {
   subject?: string;
   message?: string;
-  attachments?: SupportAttachment[];
+  attachments?: SupportAttachmentInput[];
   app_language?: string;
   content_locale?: string;
   user_message_language?: string;
   preferred_response_language?: string;
-};
-
-type NormalizedAttachment = {
-  filename: string;
-  mime_type: string;
-  data: string;
-  size_bytes: number;
 };
 
 type SupportRateLimitResult = {
@@ -37,10 +28,6 @@ type SupportRateLimitResult = {
   code?: string;
   retry_after_seconds?: number;
 };
-
-const MAX_ATTACHMENT_COUNT = 3;
-const MAX_ATTACHMENT_BYTES = 5_000_000;
-const MAX_ATTACHMENT_TOTAL_BYTES = 15_000_000;
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -91,99 +78,7 @@ function verifiedTierFromSubscription(
   return "free";
 }
 
-function decodedBase64ByteLength(base64: string): number {
-  const normalized = base64.replace(/\s/g, "");
-  const padding = normalized.endsWith("==")
-    ? 2
-    : normalized.endsWith("=")
-    ? 1
-    : 0;
-  return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding);
-}
-
-function isValidStandardBase64(value: string): boolean {
-  const normalized = value.replace(/\s/g, "");
-  return normalized.length > 0 &&
-    normalized.length % 4 !== 1 &&
-    /^[A-Za-z0-9+/]*={0,2}$/.test(normalized);
-}
-
-function normalizeAttachments(value: unknown): {
-  attachments: NormalizedAttachment[];
-  error?: { code: string; message: string };
-} {
-  if (value === undefined || value === null) return { attachments: [] };
-  if (!Array.isArray(value)) {
-    return {
-      attachments: [],
-      error: {
-        code: "invalid_attachments",
-        message: "Ek dosya verisi geçersiz.",
-      },
-    };
-  }
-  if (value.length > MAX_ATTACHMENT_COUNT) {
-    return {
-      attachments: [],
-      error: {
-        code: "too_many_attachments",
-        message: `En fazla ${MAX_ATTACHMENT_COUNT} ek dosya gönderebilirsin.`,
-      },
-    };
-  }
-
-  let totalBytes = 0;
-  const attachments: NormalizedAttachment[] = [];
-  for (const item of value) {
-    const source = item as SupportAttachment;
-    const data = typeof source?.data === "string"
-      ? source.data.replace(/\s/g, "")
-      : "";
-    if (!isValidStandardBase64(data)) {
-      return {
-        attachments: [],
-        error: {
-          code: "invalid_attachment_data",
-          message: "Ek dosya verisi geçersiz.",
-        },
-      };
-    }
-
-    const decodedBytes = decodedBase64ByteLength(data);
-    if (decodedBytes > MAX_ATTACHMENT_BYTES) {
-      return {
-        attachments: [],
-        error: {
-          code: "attachment_too_large",
-          message: "Ek dosya 5 MB'dan küçük olmalı.",
-        },
-      };
-    }
-
-    totalBytes += decodedBytes;
-    if (totalBytes > MAX_ATTACHMENT_TOTAL_BYTES) {
-      return {
-        attachments: [],
-        error: {
-          code: "attachments_too_large",
-          message: "Ek dosyaların toplam boyutu çok büyük.",
-        },
-      };
-    }
-
-    attachments.push({
-      filename: cleanText(source.filename, 120) || "ek-dosya",
-      mime_type: cleanText(source.mime_type, 80) ||
-        "application/octet-stream",
-      data,
-      size_bytes: decodedBytes,
-    });
-  }
-
-  return { attachments };
-}
-
-function attachmentMetadata(attachments: NormalizedAttachment[]) {
+function attachmentMetadata(attachments: NormalizedSupportAttachment[]) {
   return attachments.map((attachment) => ({
     filename: attachment.filename,
     mime_type: attachment.mime_type,
@@ -208,7 +103,7 @@ async function saveSupportRequest(
     contentLocale: string;
     userMessageLanguage: "tr" | "en" | "und";
     preferredResponseLanguage: "tr" | "en";
-    attachments: NormalizedAttachment[];
+    attachments: NormalizedSupportAttachment[];
     deliveryStatus: "sent" | "stored" | "email_failed";
     deliveryError?: string;
   },
@@ -337,7 +232,7 @@ serve(async (req) => {
       support_id: supportID,
     });
   }
-  const attachmentResult = normalizeAttachments(body.attachments);
+  const attachmentResult = normalizeSupportAttachments(body.attachments);
   if (attachmentResult.error) {
     return json(400, {
       error: attachmentResult.error.code,

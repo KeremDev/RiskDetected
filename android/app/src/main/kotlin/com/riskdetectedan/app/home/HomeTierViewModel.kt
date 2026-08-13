@@ -6,6 +6,7 @@ import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.analysis.PlanCapabilitiesRepository
 import com.riskdetectedan.core.data.analysis.PlanCapabilities
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.profile.UserProfile
@@ -33,6 +34,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeTierViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val billingRepository: BillingRepository,
     private val profileRepository: ProfileRepository,
     private val planCapabilitiesRepository: PlanCapabilitiesRepository,
 ) : ViewModel() {
@@ -46,6 +48,10 @@ class HomeTierViewModel @Inject constructor(
     fun refresh() {
         val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
+            // Same passive reconciliation as iOS app entry: refreshes RevenueCat
+            // cancellation intent, while the following profile read remains the
+            // only authority that can unlock paid UI/capabilities.
+            billingRepository.reconcileBackendSubscription()
             when (val result = profileRepository.fetchProfile(userId)) {
                 is RdResult.Success -> {
                     _profile.value = result.value

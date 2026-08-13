@@ -77,7 +77,7 @@ struct SupportContactSheet: View {
         }
         .fileImporter(
             isPresented: $showFileImporter,
-            allowedContentTypes: [.item],
+            allowedContentTypes: [.jpeg, .png, .pdf],
             allowsMultipleSelection: false
         ) { result in
             Task { await handleImportedFile(result) }

@@ -60,7 +60,41 @@ Deno.test("cancelled Plus trial routing remains fail-closed behind a database fl
   );
   assertStringIncludes(
     source,
-    '"tier,status,product_id,current_period_ends_at,trial_started_at,trial_ends_at,trial_product_id,will_renew"',
+    "trial_product_id,will_renew,store,base_plan_id,offer_id,period_type",
+  );
+});
+
+Deno.test("paid Free introduction is limited to the atomically reserved first analysis", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, "firstPaidAIEligible = false");
+  assertStringIncludes(
+    source,
+    'analysisMode === "standard" &&\n    firstPaidAIEligible',
+  );
+  assertStringIncludes(
+    source,
+    "quotaReservation.first_paid_ai_eligible === true",
+  );
+  assert(
+    source.indexOf("quotaReservation.first_paid_ai_eligible === true") >
+      source.indexOf('.rpc("reserve_analysis_quota"'),
+  );
+  assertStringIncludes(
+    source,
+    "cancelledTrialRouting.enabled,\n    firstPaidAIEligible",
+  );
+  const resolver = source.slice(
+    source.indexOf("function resolveAIExecutionRoute("),
+    source.indexOf("function usesFreeGeminiProviderPool("),
+  );
+  assert(
+    resolver.indexOf("cancelledTrialRoutingEnabled") <
+      resolver.indexOf("firstPaidAIEligible &&"),
+    "cancelled Plus trial routing must take precedence over first-analysis paid AI",
   );
 });
 

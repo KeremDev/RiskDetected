@@ -3,7 +3,12 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_FILE="$ROOT_DIR/App/Services/RDConfig.swift"
-HOST="$(grep -E 'static let supabaseURL' "$CONFIG_FILE" | sed -E 's#.*https://([^"/]+).*#\1#')"
+HOST="$(
+  sed -nE \
+    's#.*productionSupabaseURLString[[:space:]]*=[[:space:]]*"https://([^"/]+).*#\1#p' \
+    "$CONFIG_FILE" \
+    | head -n 1
+)"
 
 if [[ -z "$HOST" ]]; then
   echo "Could not read Supabase host from RDConfig.swift" >&2
@@ -31,6 +36,7 @@ echo | openssl s_client -servername "$HOST" -connect "$HOST:443" -showcerts 2>/d
   | /usr/bin/perl -ne 'if (/BEGIN CERTIFICATE/) {$i++; open F, ">", sprintf("'"$WORKDIR"'/cert%02d.pem", $i)} print F if $i; if (/END CERTIFICATE/) {close F}'
 
 LIVE_HASHES=()
+shopt -s nullglob
 for cert in "$WORKDIR"/cert*.pem; do
   hash="$(
     openssl x509 -in "$cert" -outform der \
@@ -39,6 +45,12 @@ for cert in "$WORKDIR"/cert*.pem; do
   )"
   LIVE_HASHES+=("$hash")
 done
+shopt -u nullglob
+
+if [[ ${#LIVE_HASHES[@]} -eq 0 ]]; then
+  echo "Could not read the live certificate chain for $HOST" >&2
+  exit 2
+fi
 
 echo "Supabase host: $HOST"
 echo "Live chain SHA-256 certificate hashes:"

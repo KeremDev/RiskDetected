@@ -1159,19 +1159,20 @@ final class AnalysisService {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             let data = try encoder.encode(payload)
-            let documentsURL = try FileManager.default.url(
-                for: .documentDirectory,
-                in: .userDomainMask,
-                appropriateFor: nil,
-                create: true
-            )
-            let exportDirectory = documentsURL.appendingPathComponent("RiskDetected", isDirectory: true)
+            var exportDirectory = FileManager.default.temporaryDirectory
+                .appendingPathComponent("RiskDetected-SensitiveExports", isDirectory: true)
+            if FileManager.default.fileExists(atPath: exportDirectory.path) {
+                try FileManager.default.removeItem(at: exportDirectory)
+            }
             try FileManager.default.createDirectory(at: exportDirectory, withIntermediateDirectories: true)
+            var resourceValues = URLResourceValues()
+            resourceValues.isExcludedFromBackup = true
+            try exportDirectory.setResourceValues(resourceValues)
 
             let timestamp = DateFormatter.rdExportFileStamp.string(from: Date())
             let url = exportDirectory
                 .appendingPathComponent("RiskDetected_Verilerim_\(String(userID.uuidString.prefix(8)))_\(timestamp).json")
-            try data.write(to: url, options: .atomic)
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
             return url
         } catch let error as AnalysisError {
             throw error
@@ -1179,6 +1180,16 @@ final class AnalysisService {
             Self.logger.error("Data export failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
             throw AnalysisError.databaseFailed(RDLocalization.format("analysis.analysis.service.veri.disa.aktarimi.olusturulamadi.destek.kodu.1.49e26b28", table: .analysis, fallback: "Veri dışa aktarımı oluşturulamadı. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
+    }
+
+    func removeUserDataExport(at url: URL) {
+        let exportRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("RiskDetected-SensitiveExports", isDirectory: true)
+            .standardizedFileURL
+        let candidate = url.standardizedFileURL
+        let rootPrefix = exportRoot.path.hasSuffix("/") ? exportRoot.path : exportRoot.path + "/"
+        guard candidate.path.hasPrefix(rootPrefix) else { return }
+        try? FileManager.default.removeItem(at: candidate)
     }
 
     /// Kullanıcının tüm PDF raporlarını ve Storage dosyalarını siler.

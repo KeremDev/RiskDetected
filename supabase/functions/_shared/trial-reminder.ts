@@ -86,7 +86,8 @@ function stringValue(
 }
 
 export function isPlusYearlyProduct(productID: string | null | undefined) {
-  return productID?.trim().toLowerCase() === PLUS_YEARLY_PRODUCT_ID;
+  return productID?.trim().toLowerCase().split(":", 1)[0] ===
+    PLUS_YEARLY_PRODUCT_ID;
 }
 
 export function revenueCatEventProductID(

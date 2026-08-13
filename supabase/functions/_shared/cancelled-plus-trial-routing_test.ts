@@ -139,6 +139,49 @@ Deno.test("missing or inconsistent trial metadata fails closed to paid", () => {
   );
 });
 
+Deno.test("verified Google Play yearly trial is eligible after cancellation", () => {
+  assertEquals(
+    cancelledPlusTrialEligibilityReason(
+      {
+        ...cancelledTrial,
+        store: "PLAY_STORE",
+        base_plan_id: "yearly",
+        offer_id: "seven-day-trial",
+        period_type: "TRIAL",
+      },
+      new Date(startedAt.getTime() + 60 * 60 * 1000),
+    ),
+    "enabled",
+  );
+});
+
+Deno.test("Google Play routing requires verified base plan and trial period", () => {
+  assertEquals(
+    cancelledPlusTrialEligibilityReason(
+      {
+        ...cancelledTrial,
+        store: "PLAY_STORE",
+        base_plan_id: null,
+        period_type: "TRIAL",
+      },
+      startedAt,
+    ),
+    "invalid_play_base_plan",
+  );
+  assertEquals(
+    cancelledPlusTrialEligibilityReason(
+      {
+        ...cancelledTrial,
+        store: "PLAY_STORE",
+        base_plan_id: "yearly",
+        period_type: "NORMAL",
+      },
+      startedAt,
+    ),
+    "not_trial_period",
+  );
+});
+
 Deno.test("routing flag defaults off and validates anonymous hashes", () => {
   assertEquals(normalizeCancelledPlusTrialRoutingFlag(null), {
     mode: "off",

@@ -6,6 +6,7 @@ on:
       expected_version_code:
         description: "Play Console'da kullanılmamış versionCode"
         required: true
+        type: string
         default: "1"
 
 permissions:
@@ -16,6 +17,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-release-inputs:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validate expected versionCode
+        env:
+          EXPECTED_VERSION_CODE: ${{ inputs.expected_version_code }}
+        run: |
+          if [[ ! "$EXPECTED_VERSION_CODE" =~ ^[1-9][0-9]*$ ]]; then
+            echo "expected_version_code must be a positive decimal integer" >&2
+            exit 2
+          fi
+
   backend-contracts:
     runs-on: ubuntu-24.04
     steps:
@@ -110,7 +123,7 @@ jobs:
           if-no-files-found: ignore
 
   signed-aab:
-    needs: [backend-contracts, android-quality]
+    needs: [validate-release-inputs, backend-contracts, android-quality]
     runs-on: ubuntu-24.04
     environment: android-production-release
     defaults:
@@ -150,9 +163,12 @@ jobs:
           echo "ANDROID_UPLOAD_STORE_FILE=$RUNNER_TEMP/riskdetected-upload.jks" >> "$GITHUB_ENV"
 
       - name: Verify unused versionCode input
+        env:
+          EXPECTED_VERSION_CODE: ${{ inputs.expected_version_code }}
         run: |
           actual=$(sed -n 's/^[[:space:]]*versionCode = \([0-9][0-9]*\)$/\1/p' app/build.gradle.kts)
-          test "$actual" = "${{ inputs.expected_version_code }}"
+          [[ "$EXPECTED_VERSION_CODE" =~ ^[1-9][0-9]*$ ]]
+          test "$actual" = "$EXPECTED_VERSION_CODE"
 
       - name: Verify owner upload certificate fingerprint
         run: |

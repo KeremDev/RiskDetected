@@ -105,3 +105,22 @@ Deno.test("register-report enforces the additive Android PDF runtime gate", asyn
   assertStringIncludes(source, "runtimeGates?.pdf_reports");
   assertStringIncludes(source, "android_pdf_reports_disabled");
 });
+
+Deno.test("register-report rejects exhausted quota before Storage download", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  const quotaIndex = source.indexOf(
+    '.rpc("check_report_quota_eligibility"',
+  );
+  const downloadIndex = source.indexOf(".download(storagePath)");
+  assert(quotaIndex >= 0 && quotaIndex < downloadIndex);
+  assertStringIncludes(source, 'error: "report_quota_check_failed"');
+  assertStringIncludes(source, "if (quotaDecision.allowed !== true)");
+  assertStringIncludes(
+    source,
+    'await supabase.storage.from("reports").remove([storagePath]);',
+  );
+});

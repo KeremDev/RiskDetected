@@ -5,6 +5,12 @@ import {
   AUTH_EMAIL_LOCALES,
   buildAuthEmail,
 } from "../_shared/auth-email-localization.ts";
+import {
+  readBoundedRequestText,
+  RequestBodyTooLargeError,
+} from "../_shared/bounded-request-body.ts";
+
+const MAX_AUTH_EMAIL_HOOK_BODY_BYTES = 256 * 1024;
 
 type HookPayload = {
   user?: {
@@ -66,7 +72,18 @@ serve(async (req) => {
     return json(500, { error: "auth_email_hook_not_configured" });
   }
 
-  const rawBody = await req.text();
+  let rawBody: string;
+  try {
+    rawBody = await readBoundedRequestText(
+      req,
+      MAX_AUTH_EMAIL_HOOK_BODY_BYTES,
+    );
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return json(413, { error: "auth_email_hook_payload_too_large" });
+    }
+    return json(400, { error: "auth_email_hook_body_unreadable" });
+  }
   let payload: HookPayload;
   try {
     const secret = hookSecret

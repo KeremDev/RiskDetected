@@ -19,6 +19,10 @@ import {
   normalizeRevenueCatAppUserID,
 } from "../_shared/revenuecat-owner-guard.ts";
 import {
+  revenueCatNullableText,
+  revenueCatProductIdentity,
+} from "../_shared/revenuecat-store.ts";
+import {
   isApproximatelySevenDayTrial,
   isPlusYearlyProduct,
   revenueCatSubscriptionRenewalIntent,
@@ -38,6 +42,9 @@ type RevenueCatSubscription = {
   product_identifier?: string | null;
   purchase_date?: string | null;
   unsubscribe_detected_at?: string | null;
+  store?: string | null;
+  store_transaction_id?: string | null;
+  offer_code?: string | null;
 };
 
 type ResolvedRevenueCatSubscription = {
@@ -49,6 +56,10 @@ type ResolvedRevenueCatSubscription = {
   originalPurchaseDate: string | null;
   periodType: string | null;
   renewalIntent: boolean | null;
+  store: string | null;
+  basePlanID: string | null;
+  offerID: string | null;
+  storeTransactionID: string | null;
 };
 
 type BackendSubscriptionSnapshot = {
@@ -62,6 +73,11 @@ type BackendSubscriptionSnapshot = {
   trial_ends_at?: string | null;
   trial_product_id?: string | null;
   will_renew?: boolean | null;
+  store?: string | null;
+  base_plan_id?: string | null;
+  offer_id?: string | null;
+  store_transaction_id?: string | null;
+  period_type?: string | null;
 };
 
 type RevenueCatSubscriberResponse = {
@@ -75,6 +91,7 @@ type RevenueCatSubscriberResponse = {
 type SyncRequestBody = {
   expected_tier?: string | null;
   expected_entitlement_id?: string | null;
+  client_platform?: string | null;
 };
 
 type SubscriptionTestOverride = {
@@ -127,6 +144,10 @@ function entitlementTier(
       originalPurchaseDate: productResolved.purchaseDate,
       periodType: null,
       renewalIntent: null,
+      store: null,
+      basePlanID: null,
+      offerID: null,
+      storeTransactionID: null,
     };
   }
 
@@ -141,6 +162,10 @@ function entitlementTier(
       originalPurchaseDate: pro?.purchase_date ?? null,
       periodType: null,
       renewalIntent: null,
+      store: null,
+      basePlanID: null,
+      offerID: null,
+      storeTransactionID: null,
     };
   }
 
@@ -155,6 +180,10 @@ function entitlementTier(
       originalPurchaseDate: plus?.purchase_date ?? null,
       periodType: null,
       renewalIntent: null,
+      store: null,
+      basePlanID: null,
+      offerID: null,
+      storeTransactionID: null,
     };
   }
 
@@ -167,6 +196,10 @@ function entitlementTier(
     originalPurchaseDate: null,
     periodType: null,
     renewalIntent: null,
+    store: null,
+    basePlanID: null,
+    offerID: null,
+    storeTransactionID: null,
   };
 }
 
@@ -174,20 +207,32 @@ function subscriptionTier(
   subscriptions: Record<string, RevenueCatSubscription>,
 ): ResolvedRevenueCatSubscription | null {
   const active = Object.entries(subscriptions)
-    .map(([productID, value]) => ({
-      productID,
-      tier: tierFromProductIdentifier(productID),
-      expiration: value.expires_date ?? null,
-      purchaseDate: value.purchase_date ?? null,
-      originalPurchaseDate: value.original_purchase_date ??
-        value.purchase_date ??
-        null,
-      periodType: value.period_type ?? null,
-      renewalIntent: revenueCatSubscriptionRenewalIntent(
-        value as unknown as Record<string, unknown>,
-      ),
-      purchaseTime: Date.parse(value.purchase_date ?? ""),
-    }))
+    .map(([mapProductID, value]) => {
+      const identity = revenueCatProductIdentity(
+        value.product_identifier ?? mapProductID,
+        value.store,
+      );
+      return {
+        productID: identity.productID,
+        tier: tierFromProductIdentifier(identity.productID),
+        expiration: value.expires_date ?? null,
+        purchaseDate: value.purchase_date ?? null,
+        originalPurchaseDate: value.original_purchase_date ??
+          value.purchase_date ??
+          null,
+        periodType: value.period_type?.trim().toUpperCase() ?? null,
+        renewalIntent: revenueCatSubscriptionRenewalIntent(
+          value as unknown as Record<string, unknown>,
+        ),
+        store: identity.store,
+        basePlanID: identity.basePlanID,
+        offerID: revenueCatNullableText(value.offer_code),
+        storeTransactionID: revenueCatNullableText(
+          value.store_transaction_id,
+        ),
+        purchaseTime: Date.parse(value.purchase_date ?? ""),
+      };
+    })
     .filter((item) =>
       item.tier && isActiveEntitlement({ expires_date: item.expiration })
     )
@@ -212,6 +257,10 @@ function subscriptionTier(
     originalPurchaseDate: current.originalPurchaseDate,
     periodType: current.periodType,
     renewalIntent: current.renewalIntent,
+    store: current.store,
+    basePlanID: current.basePlanID,
+    offerID: current.offerID,
+    storeTransactionID: current.storeTransactionID,
   };
 }
 
@@ -295,18 +344,27 @@ async function activeOwnerForResolvedSubscription(
   resolved: {
     productID: string | null;
     expiration: string | null;
+    store: string | null;
+    storeTransactionID: string | null;
   },
 ): Promise<string | null> {
   if (!resolved.productID || !resolved.expiration) return null;
 
-  const { data } = await supabase
+  let ownerQuery = supabase
     .from("user_subscriptions")
-    .select("user_id,tier,status,current_period_ends_at")
-    .eq("product_id", resolved.productID)
+    .select(
+      "user_id,tier,status,current_period_ends_at,store,store_transaction_id",
+    )
     .neq("user_id", currentUserID)
     .in("tier", ["plus", "pro"])
     .in("status", ["active", "trialing", "grace_period"])
     .limit(10);
+  ownerQuery = resolved.storeTransactionID
+    ? ownerQuery
+      .eq("store", resolved.store)
+      .eq("store_transaction_id", resolved.storeTransactionID)
+    : ownerQuery.eq("product_id", resolved.productID);
+  const { data } = await ownerQuery;
 
   const resolvedExpiration = Date.parse(resolved.expiration);
   if (!Number.isFinite(resolvedExpiration)) return null;
@@ -340,6 +398,11 @@ async function writeFreeSubscriptionState(
     entitlement_id: null,
     entitlement_ids: [],
     current_period_ends_at: null,
+    store: null,
+    base_plan_id: null,
+    offer_id: null,
+    store_transaction_id: null,
+    period_type: null,
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id" });
 
@@ -409,6 +472,11 @@ async function writeTestOverrideSubscriptionState(
     entitlement_ids: [override.tier],
     environment: "test_override",
     current_period_ends_at: override.expires_at,
+    store: "TEST_STORE",
+    base_plan_id: null,
+    offer_id: null,
+    store_transaction_id: null,
+    period_type: null,
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id" });
 
@@ -425,11 +493,8 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const revenueCatAPIKey = Deno.env.get("REVENUECAT_REST_API_KEY") ??
-    Deno.env.get("REVENUECAT_PUBLIC_API_KEY") ??
-    PUBLIC_REVENUECAT_API_KEY;
 
-  if (!supabaseUrl || !serviceRoleKey || !revenueCatAPIKey) {
+  if (!supabaseUrl || !serviceRoleKey) {
     return json(500, { error: "sync_not_configured" });
   }
 
@@ -439,6 +504,19 @@ serve(async (req) => {
   }
 
   const body = await req.json().catch(() => ({})) as SyncRequestBody;
+  const clientPlatform = body.client_platform?.trim().toLowerCase() ?? "ios";
+  const revenueCatAPIKey = Deno.env.get("REVENUECAT_REST_API_KEY") ??
+    (clientPlatform === "android"
+      ? Deno.env.get("REVENUECAT_ANDROID_PUBLIC_API_KEY")
+      : Deno.env.get("REVENUECAT_IOS_PUBLIC_API_KEY") ??
+        Deno.env.get("REVENUECAT_PUBLIC_API_KEY") ??
+        PUBLIC_REVENUECAT_API_KEY);
+  if (!revenueCatAPIKey) {
+    return json(500, {
+      error: "sync_not_configured",
+      client_platform: clientPlatform,
+    });
+  }
   const expectedTier = normalizeTier(body.expected_tier);
   const expectedEntitlementID = typeof body.expected_entitlement_id === "string"
     ? body.expected_entitlement_id.trim().toLowerCase()
@@ -457,7 +535,7 @@ serve(async (req) => {
   let { data: previousSubscription } = await supabase
     .from("user_subscriptions")
     .select(
-      "tier,status,current_period_ends_at,entitlement_id,product_id,source,trial_started_at,trial_ends_at,trial_product_id,will_renew",
+      "tier,status,current_period_ends_at,entitlement_id,product_id,source,trial_started_at,trial_ends_at,trial_product_id,will_renew,store,base_plan_id,offer_id,store_transaction_id,period_type",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -511,6 +589,11 @@ serve(async (req) => {
       trial_ends_at: null,
       trial_product_id: null,
       will_renew: null,
+      store: null,
+      base_plan_id: null,
+      offer_id: null,
+      store_transaction_id: null,
+      period_type: null,
     };
   }
 
@@ -673,6 +756,11 @@ serve(async (req) => {
         .from("user_subscriptions")
         .update({
           ...verifiedPatch,
+          store: resolved.store,
+          base_plan_id: resolved.basePlanID,
+          offer_id: resolved.offerID,
+          store_transaction_id: resolved.storeTransactionID,
+          period_type: resolved.periodType,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", user.id);
@@ -690,6 +778,9 @@ serve(async (req) => {
         renewal_intent_synced: true,
         will_renew: verifiedPatch.will_renew ??
           previousSnapshot?.will_renew ?? null,
+        store: resolved.store,
+        base_plan_id: resolved.basePlanID,
+        period_type: resolved.periodType,
       });
     }
     return json(409, {
@@ -741,6 +832,11 @@ serve(async (req) => {
     entitlement_id: resolved.entitlementID,
     entitlement_ids: entitlementIDs,
     current_period_ends_at: resolved.expiration,
+    store: resolved.store,
+    base_plan_id: resolved.basePlanID,
+    offer_id: resolved.offerID,
+    store_transaction_id: resolved.storeTransactionID,
+    period_type: resolved.periodType,
     ...(verifiedTrialPatch ?? {}),
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id" });
@@ -757,5 +853,8 @@ serve(async (req) => {
     entitlement_id: resolved.entitlementID,
     product_id: resolved.productID,
     current_period_ends_at: resolved.expiration,
+    store: resolved.store,
+    base_plan_id: resolved.basePlanID,
+    period_type: resolved.periodType,
   });
 });

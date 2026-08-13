@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import com.riskdetectedan.core.common.RdEnvironment
 import com.riskdetectedan.core.common.RdEnvironmentConfig
+import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.attribution.InstallAttributionRepository
@@ -21,8 +22,45 @@ import com.revenuecat.purchases.awaitOfferings
 import com.revenuecat.purchases.awaitPurchase
 import com.revenuecat.purchases.awaitRestore
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.functions.functions
+import io.ktor.client.call.body
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import javax.inject.Inject
 import javax.inject.Singleton
+
+@Serializable
+internal data class BackendSubscriptionSyncRequest(
+    @SerialName("expected_tier") val expectedTier: SubscriptionTier? = null,
+    @SerialName("expected_entitlement_id") val expectedEntitlementId: String? = null,
+    @SerialName("client_platform") val clientPlatform: String,
+)
+
+@Serializable
+private data class BackendSubscriptionSyncResponse(
+    val tier: SubscriptionTier? = null,
+    @SerialName("entitlement_id") val entitlementId: String? = null,
+    val status: String? = null,
+)
+
+internal fun validateBackendSubscriptionTier(
+    expected: SubscriptionTier,
+    resolved: SubscriptionTier?,
+): RdResult<SubscriptionTier> = when {
+    resolved == null -> RdResult.Failure(
+        code = "billing_backend_response_invalid",
+        message = "Abonelik doğrulama yanıtı okunamadı.",
+    )
+    resolved != expected -> RdResult.Failure(
+        code = "billing_backend_tier_mismatch",
+        message = "RevenueCat backend doğrulaması seçilen planı henüz doğrulamadı.",
+    )
+    else -> RdResult.Success(resolved)
+}
 
 /** A purchasable package as this client actually needs it — trimmed mirror of
  * SubscriptionManager.swift's `SubscriptionPlanPackage`. [revenueCatPackage] is kept alongside
@@ -55,9 +93,11 @@ class BillingRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val environmentConfig: RdEnvironmentConfig,
     private val installAttributionRepository: InstallAttributionRepository,
+    private val supabaseClient: SupabaseClient,
 ) {
     private var isConfigured = false
     private var currentAppUserId: String? = null
+    private val backendSyncMutex = Mutex()
 
     /** Idempotent, same shape as `configureIfNeeded(appUserID:)` — configures once per process
      * with the signed-in user's id as the RevenueCat appUserID, or logs in if a different user
@@ -120,13 +160,25 @@ class BillingRepository @Inject constructor(
      * reasoning as `GoogleAuthClient.requestIdToken(context)` in feature:onboarding: the
      * Activity is supplied by the caller at the point of use, not held or injected here. */
     suspend fun purchase(activity: Activity, billingPackage: BillingPackage): RdResult<SubscriptionTier> = try {
-        preCheckAlreadyEntitled(billingPackage.tier)?.let { return it }
+        preCheckAlreadyEntitled(billingPackage.tier)?.let { preCheck ->
+            return when (preCheck) {
+                is RdResult.Failure -> preCheck
+                is RdResult.Success -> syncBackendSubscriptionWithRetry(preCheck.value)
+            }
+        }
 
         val result = Purchases.sharedInstance.awaitPurchase(
             PurchaseParams.Builder(activity, billingPackage.revenueCatPackage).build(),
         )
         val tier = tierFromCustomerInfo(result.customerInfo)
-        validateReceiptOwner(result.customerInfo, tier) ?: RdResult.Success(tier)
+        validateReceiptOwner(result.customerInfo, tier)?.let { return it }
+        if (tier != billingPackage.tier) {
+            return RdResult.Failure(
+                code = "billing_tier_mismatch",
+                message = "Seçilen plan ile Google Play tarafından doğrulanan plan eşleşmedi.",
+            )
+        }
+        syncBackendSubscriptionWithRetry(tier)
     } catch (t: Throwable) {
         RdResult.Failure("billing_purchase_failed", t.message ?: "billing_purchase_failed", t)
     }
@@ -166,7 +218,13 @@ class BillingRepository @Inject constructor(
     suspend fun restorePurchases(): RdResult<SubscriptionTier> = try {
         val customerInfo = Purchases.sharedInstance.awaitRestore()
         val tier = tierFromCustomerInfo(customerInfo)
-        validateReceiptOwner(customerInfo, tier) ?: RdResult.Success(tier)
+        validateReceiptOwner(customerInfo, tier)?.let { return it }
+        if (!tier.isPaid) {
+            reconcileBackendSubscription()
+            RdResult.Success(SubscriptionTier.Free)
+        } else {
+            syncBackendSubscriptionWithRetry(tier)
+        }
     } catch (t: Throwable) {
         RdResult.Failure("billing_restore_failed", t.message ?: "billing_restore_failed", t)
     }
@@ -177,6 +235,78 @@ class BillingRepository @Inject constructor(
         validateReceiptOwner(customerInfo, tier) ?: RdResult.Success(tier)
     } catch (t: Throwable) {
         RdResult.Failure("billing_customer_info_failed", t.message ?: "billing_customer_info_failed", t)
+    }
+
+    /**
+     * Mirrors iOS's passive app-entry reconciliation. It may repair cancellation
+     * intent and stale Free state, but callers deliberately ignore the returned
+     * tier and continue to gate features from the Supabase profile snapshot.
+     */
+    suspend fun reconcileBackendSubscription(): RdResult<Unit> = try {
+        backendSyncMutex.withLock {
+            supabaseClient.functions.invoke(
+                "sync-revenuecat-subscription",
+                body = BackendSubscriptionSyncRequest(
+                    clientPlatform = RdClientMetadata.PLATFORM,
+                ),
+            ).body<BackendSubscriptionSyncResponse>()
+        }
+        RdResult.Success(Unit)
+    } catch (t: Throwable) {
+        RdResult.Failure(
+            code = "billing_backend_reconcile_failed",
+            message = t.message ?: "billing_backend_reconcile_failed",
+            cause = t,
+        )
+    }
+
+    private suspend fun syncBackendSubscriptionWithRetry(
+        expectedTier: SubscriptionTier,
+    ): RdResult<SubscriptionTier> {
+        var lastFailure: RdResult.Failure? = null
+        for (delayMillis in listOf(0L, 500L, 1_000L, 2_000L)) {
+            if (delayMillis > 0) delay(delayMillis)
+            when (val result = syncBackendSubscription(expectedTier)) {
+                is RdResult.Success -> return result
+                is RdResult.Failure -> {
+                    lastFailure = result
+                    if (result.code != "billing_backend_tier_mismatch") return result
+                }
+            }
+        }
+        return lastFailure ?: RdResult.Failure(
+            code = "billing_backend_sync_failed",
+            message = "Abonelik backend tarafında doğrulanamadı.",
+        )
+    }
+
+    private suspend fun syncBackendSubscription(
+        expectedTier: SubscriptionTier,
+    ): RdResult<SubscriptionTier> = try {
+        val response = backendSyncMutex.withLock {
+            supabaseClient.functions.invoke(
+                "sync-revenuecat-subscription",
+                body = BackendSubscriptionSyncRequest(
+                    expectedTier = expectedTier,
+                    expectedEntitlementId = when (expectedTier) {
+                        SubscriptionTier.Plus -> PLUS_ENTITLEMENT_ID
+                        SubscriptionTier.Pro -> PRO_ENTITLEMENT_ID
+                        SubscriptionTier.Free -> null
+                    },
+                    clientPlatform = RdClientMetadata.PLATFORM,
+                ),
+            ).body<BackendSubscriptionSyncResponse>()
+        }
+        validateBackendSubscriptionTier(expectedTier, response.tier)
+    } catch (t: Throwable) {
+        val rawMessage = t.message ?: "Abonelik backend tarafında doğrulanamadı."
+        val isTierMismatch = rawMessage.contains("revenuecat_tier_mismatch", ignoreCase = true) ||
+            rawMessage.contains("backend_tier_mismatch", ignoreCase = true)
+        RdResult.Failure(
+            code = if (isTierMismatch) "billing_backend_tier_mismatch" else "billing_backend_sync_failed",
+            message = rawMessage,
+            cause = t,
+        )
     }
 
     /** Clears the identified Supabase user after sign-out/account deletion so an anonymous

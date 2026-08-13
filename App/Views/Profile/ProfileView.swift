@@ -113,7 +113,7 @@ struct ProfileView: View {
                         })
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .sheet(isPresented: $showDataControls) {
+        .sheet(isPresented: $showDataControls, onDismiss: cleanupExportedDataFile) {
             ProfileDataControlsSheet(
                 stats: stats,
                 actionInProgress: dataActionInProgress,
@@ -1200,7 +1200,7 @@ struct ProfileView: View {
         pendingDataAction = nil
         shouldSignOutAfterDataMessageDismiss = false
         if action == .exportData {
-            exportedDataFile = nil
+            cleanupExportedDataFile()
         }
 
         guard let userID = app.auth.session?.user.id else {
@@ -1261,6 +1261,12 @@ struct ProfileView: View {
             }
             dataActionInProgress = nil
         }
+    }
+
+    private func cleanupExportedDataFile() {
+        guard let item = exportedDataFile else { return }
+        AnalysisService.shared.removeUserDataExport(at: item.url)
+        exportedDataFile = nil
     }
 }
 
@@ -2006,6 +2012,7 @@ private struct ProfileDataControlsSheet: View {
     let onDeleteAnalyses: () -> Void
     let onRequestAccountDeletion: () -> Void
     let onClose: () -> Void
+    @State private var presentedExportURL: URL?
 
     var body: some View {
         NavigationStack {
@@ -2068,9 +2075,21 @@ private struct ProfileDataControlsSheet: View {
                 }
             }
         }
-        .sheet(item: $exportedFile) { item in
+        .onChange(of: exportedFile?.url) { url in
+            if let url {
+                presentedExportURL = url
+            }
+        }
+        .sheet(item: $exportedFile, onDismiss: cleanupPresentedExport) { item in
             DocumentPreview(url: item.url)
         }
+    }
+
+    private func cleanupPresentedExport() {
+        guard let url = presentedExportURL else { return }
+        AnalysisService.shared.removeUserDataExport(at: url)
+        presentedExportURL = nil
+        exportedFile = nil
     }
 
     private var summaryCard: some View {

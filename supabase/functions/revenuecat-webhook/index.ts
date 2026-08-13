@@ -17,6 +17,11 @@ import {
   revenueCatTransferIDs,
 } from "../_shared/revenuecat-event.ts";
 import {
+  normalizeRevenueCatStore,
+  revenueCatNullableText,
+  revenueCatProductIdentity,
+} from "../_shared/revenuecat-store.ts";
+import {
   clearTrialReminderMetadataPatch,
   mergeTrialMetadataPatches,
   revenueCatSubscriptionRenewalIntent,
@@ -58,6 +63,9 @@ type RevenueCatSubscription = {
   product_identifier?: string | null;
   purchase_date?: string | null;
   unsubscribe_detected_at?: string | null;
+  store?: string | null;
+  store_transaction_id?: string | null;
+  offer_code?: string | null;
 };
 
 type RevenueCatSubscriberResponse = {
@@ -78,6 +86,10 @@ type ResolvedSubscriberState = {
   originalPurchaseDate: string | null;
   periodType: string | null;
   renewalIntent: boolean | null;
+  store: string | null;
+  basePlanID: string | null;
+  offerID: string | null;
+  storeTransactionID: string | null;
 };
 
 function json(status: number, body: Record<string, unknown>) {
@@ -118,6 +130,10 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
   originalPurchaseDate: string | null;
   periodType: string | null;
   renewalIntent: boolean | null;
+  store: string | null;
+  basePlanID: string | null;
+  offerID: string | null;
+  storeTransactionID: string | null;
 } {
   const activeEntitlements = Object.entries(entitlements)
     .filter(([, value]) => isActiveEntitlement(value));
@@ -140,6 +156,10 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       originalPurchaseDate: productResolved.purchaseDate,
       periodType: null,
       renewalIntent: null,
+      store: null,
+      basePlanID: null,
+      offerID: null,
+      storeTransactionID: null,
     };
   }
 
@@ -154,6 +174,10 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       originalPurchaseDate: pro?.purchase_date ?? null,
       periodType: null,
       renewalIntent: null,
+      store: null,
+      basePlanID: null,
+      offerID: null,
+      storeTransactionID: null,
     };
   }
 
@@ -168,6 +192,10 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
       originalPurchaseDate: plus?.purchase_date ?? null,
       periodType: null,
       renewalIntent: null,
+      store: null,
+      basePlanID: null,
+      offerID: null,
+      storeTransactionID: null,
     };
   }
 
@@ -180,6 +208,10 @@ function entitlementTier(entitlements: Record<string, RevenueCatEntitlement>): {
     originalPurchaseDate: null,
     periodType: null,
     renewalIntent: null,
+    store: null,
+    basePlanID: null,
+    offerID: null,
+    storeTransactionID: null,
   };
 }
 
@@ -194,22 +226,38 @@ function subscriptionTier(
   originalPurchaseDate: string | null;
   periodType: string | null;
   renewalIntent: boolean | null;
+  store: string | null;
+  basePlanID: string | null;
+  offerID: string | null;
+  storeTransactionID: string | null;
 } | null {
   const active = Object.entries(subscriptions)
-    .map(([productID, value]) => ({
-      productID,
-      tier: tierFromProductIdentifier(productID),
-      expiration: value.expires_date ?? null,
-      purchaseDate: value.purchase_date ?? null,
-      originalPurchaseDate: value.original_purchase_date ??
-        value.purchase_date ??
-        null,
-      periodType: value.period_type ?? null,
-      renewalIntent: revenueCatSubscriptionRenewalIntent(
-        value as unknown as Record<string, unknown>,
-      ),
-      purchaseTime: Date.parse(value.purchase_date ?? ""),
-    }))
+    .map(([mapProductID, value]) => {
+      const identity = revenueCatProductIdentity(
+        value.product_identifier ?? mapProductID,
+        value.store,
+      );
+      return {
+        productID: identity.productID,
+        tier: tierFromProductIdentifier(identity.productID),
+        expiration: value.expires_date ?? null,
+        purchaseDate: value.purchase_date ?? null,
+        originalPurchaseDate: value.original_purchase_date ??
+          value.purchase_date ??
+          null,
+        periodType: value.period_type?.trim().toUpperCase() ?? null,
+        renewalIntent: revenueCatSubscriptionRenewalIntent(
+          value as unknown as Record<string, unknown>,
+        ),
+        store: identity.store,
+        basePlanID: identity.basePlanID,
+        offerID: revenueCatNullableText(value.offer_code),
+        storeTransactionID: revenueCatNullableText(
+          value.store_transaction_id,
+        ),
+        purchaseTime: Date.parse(value.purchase_date ?? ""),
+      };
+    })
     .filter((item) =>
       item.tier && isActiveEntitlement({ expires_date: item.expiration })
     )
@@ -234,6 +282,10 @@ function subscriptionTier(
     originalPurchaseDate: current.originalPurchaseDate,
     periodType: current.periodType,
     renewalIntent: current.renewalIntent,
+    store: current.store,
+    basePlanID: current.basePlanID,
+    offerID: current.offerID,
+    storeTransactionID: current.storeTransactionID,
   };
 }
 
@@ -259,6 +311,10 @@ function resolvedStateFromSubscriber(
     originalPurchaseDate: resolved.originalPurchaseDate,
     periodType: resolved.periodType,
     renewalIntent: resolved.renewalIntent,
+    store: resolved.store,
+    basePlanID: resolved.basePlanID,
+    offerID: resolved.offerID,
+    storeTransactionID: resolved.storeTransactionID,
   };
 }
 
@@ -274,6 +330,10 @@ function freeSubscriberState(): ResolvedSubscriberState {
     originalPurchaseDate: null,
     periodType: null,
     renewalIntent: null,
+    store: null,
+    basePlanID: null,
+    offerID: null,
+    storeTransactionID: null,
   };
 }
 
@@ -439,6 +499,11 @@ async function writeSubscriptionState(params: {
     entitlement_ids: params.state.entitlementIDs,
     environment: params.environment,
     current_period_ends_at: params.state.expiration,
+    store: params.state.store,
+    base_plan_id: params.state.basePlanID,
+    offer_id: params.state.offerID,
+    store_transaction_id: params.state.storeTransactionID,
+    period_type: params.state.periodType,
     last_event_id: params.eventID,
     updated_at: new Date().toISOString(),
   };
@@ -478,6 +543,11 @@ async function deactivateTransferredFromUser(params: {
     entitlement_ids: [],
     environment: params.environment,
     current_period_ends_at: null,
+    store: null,
+    base_plan_id: null,
+    offer_id: null,
+    store_transaction_id: null,
+    period_type: null,
     last_event_id: params.eventID,
     ...clearTrialReminderMetadataPatch(),
     updated_at: new Date().toISOString(),
@@ -674,17 +744,11 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const revenueCatAPIKey = Deno.env.get("REVENUECAT_REST_API_KEY") ??
-    Deno.env.get("REVENUECAT_PUBLIC_API_KEY") ??
-    PUBLIC_REVENUECAT_API_KEY;
   const expectedAuthorization = Deno.env.get(
     "REVENUECAT_WEBHOOK_AUTHORIZATION",
   );
 
-  if (
-    !supabaseUrl || !serviceRoleKey || !expectedAuthorization ||
-    !revenueCatAPIKey
-  ) {
+  if (!supabaseUrl || !serviceRoleKey || !expectedAuthorization) {
     return json(500, { error: "RevenueCat webhook is not configured" });
   }
 
@@ -711,6 +775,19 @@ serve(async (req) => {
   const environment = typeof event.environment === "string"
     ? event.environment
     : null;
+  const eventStore = normalizeRevenueCatStore(event.store);
+  const revenueCatAPIKey = Deno.env.get("REVENUECAT_REST_API_KEY") ??
+    (eventStore === "PLAY_STORE"
+      ? Deno.env.get("REVENUECAT_ANDROID_PUBLIC_API_KEY")
+      : Deno.env.get("REVENUECAT_IOS_PUBLIC_API_KEY") ??
+        Deno.env.get("REVENUECAT_PUBLIC_API_KEY") ??
+        PUBLIC_REVENUECAT_API_KEY);
+  if (!revenueCatAPIKey) {
+    return json(500, {
+      error: "RevenueCat webhook is not configured for event store",
+      store: eventStore,
+    });
+  }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },

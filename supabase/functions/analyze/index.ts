@@ -119,6 +119,10 @@ import {
   productionFindingNeedsFieldVerification,
 } from "../_shared/finding-confidence.ts";
 import { readAndroidRuntimeGates } from "../_shared/android-runtime-gates.ts";
+import {
+  readBoundedRequestText,
+  RequestBodyTooLargeError,
+} from "../_shared/bounded-request-body.ts";
 
 declare const EdgeRuntime: {
   waitUntil: (promise: Promise<unknown>) => void;
@@ -143,6 +147,7 @@ const MAX_ANALYSIS_IMAGE_PARTS = 5;
 const MAX_INLINE_PHOTO_BASE64_BYTES = 2_100_000;
 const MAX_INLINE_PHOTO_DECODED_BYTES = 1_500_000;
 const MAX_INLINE_PHOTO_TOTAL_BASE64_BYTES = 8_000_000;
+const MAX_ANALYZE_REQUEST_BODY_BYTES = 9 * 1024 * 1024;
 const LEGACY_PHOTO_POLICY_VERSION = "evidence-first-soft-min-v2";
 const LAYER_AUDIT_POLICY_VERSION = "single-pass-12-layer-audit-v4";
 const SINGLE_PHOTO_TARGET_MIN = 1;
@@ -4455,6 +4460,7 @@ function resolveAIExecutionRoute(
   planTier: PlanTier,
   analysisMode: AnalysisMode,
   cancelledTrialRoutingEnabled = false,
+  firstPaidAIEligible = false,
 ): AIExecutionRoute {
   if (planTier === "plus" && cancelledTrialRoutingEnabled) {
     return CANCELLED_PLUS_TRIAL_ROUTE;
@@ -4462,6 +4468,7 @@ function resolveAIExecutionRoute(
   if (planTier !== "free") return "paid_plan";
   if (
     analysisMode === "standard" &&
+    firstPaidAIEligible &&
     freeStandardAnalysisRouteFlag() === "paid_trial"
   ) {
     return "free_paid_trial";
@@ -5987,11 +5994,46 @@ serve(async (req: Request) => {
     newSupportID(),
   );
 
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return errorResponse(401, "Authorization header eksik.", {
+      code: "auth_required",
+      requestID,
+      supportID,
+    });
+  }
+
+  const hasServiceRoleAuth = authHeader === `Bearer ${serviceRoleKey}`;
+  let authenticatedUser: { id: string } | null = null;
+  if (!hasServiceRoleAuth) {
+    const { data: { user: authUser }, error: authErr } = await supabase.auth
+      .getUser(
+        authHeader.replace("Bearer ", ""),
+      );
+    if (authErr || !authUser) {
+      return errorResponse(401, "Geçersiz token.", {
+        code: "auth_invalid",
+        requestID,
+        supportID,
+      });
+    }
+    authenticatedUser = { id: authUser.id };
+  }
+
   // deno-lint-ignore no-explicit-any
   let body: any;
   try {
-    body = await req.json();
-  } catch {
+    body = JSON.parse(
+      await readBoundedRequestText(req, MAX_ANALYZE_REQUEST_BODY_BYTES),
+    );
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return errorResponse(413, "İstek gövdesi çok büyük.", {
+        code: "request_body_too_large",
+        requestID,
+        supportID,
+      });
+    }
     return errorResponse(400, "Geçersiz JSON body.", {
       code: "invalid_json",
       requestID,
@@ -6005,16 +6047,7 @@ serve(async (req: Request) => {
     ? "repair"
     : "analysis";
 
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return errorResponse(401, "Authorization header eksik.", {
-      code: "auth_required",
-      requestID,
-      supportID,
-    });
-  }
-
-  const isWorkerInvocation = authHeader === `Bearer ${serviceRoleKey}` &&
+  const isWorkerInvocation = hasServiceRoleAuth &&
     body.__worker === true &&
     typeof body.user_id === "string" &&
     body.user_id.length > 0;
@@ -6022,19 +6055,14 @@ serve(async (req: Request) => {
   let user: { id: string };
   if (isWorkerInvocation) {
     user = { id: body.user_id };
+  } else if (authenticatedUser) {
+    user = authenticatedUser;
   } else {
-    const { data: { user: authUser }, error: authErr } = await supabase.auth
-      .getUser(
-        authHeader.replace("Bearer ", ""),
-      );
-    if (authErr || !authUser) {
-      return errorResponse(401, "Geçersiz token.", {
-        code: "auth_invalid",
-        requestID,
-        supportID,
-      });
-    }
-    user = { id: authUser.id };
+    return errorResponse(401, "Geçersiz worker isteği.", {
+      code: "auth_invalid",
+      requestID,
+      supportID,
+    });
   }
 
   const {
@@ -6698,7 +6726,7 @@ serve(async (req: Request) => {
   const { data: subscription, error: subscriptionError } = await supabase
     .from("user_subscriptions")
     .select(
-      "tier,status,product_id,current_period_ends_at,trial_started_at,trial_ends_at,trial_product_id,will_renew",
+      "tier,status,product_id,current_period_ends_at,trial_started_at,trial_ends_at,trial_product_id,will_renew,store,base_plan_id,offer_id,period_type",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -6776,17 +6804,6 @@ serve(async (req: Request) => {
       },
     );
   }
-  const aiExecutionRoute = resolveAIExecutionRoute(
-    planTier,
-    analysisMode,
-    cancelledTrialRouting.enabled,
-  );
-  const qualityTier = resolveQualityTier(planTier, aiExecutionRoute);
-  const geminiKeys = geminiKeyPoolForRoute(aiExecutionRoute);
-  const freeFallbackGeminiKeys = aiExecutionRoute === "free_paid_trial"
-    ? freeGeminiKeyPool()
-    : [];
-  const expectedGeminiPool = expectedGeminiPoolForRoute(aiExecutionRoute);
   let company: CompanyRow | null = null;
   let onboardingAnswers: OnboardingAnswersRow | null = null;
 
@@ -6808,43 +6825,6 @@ serve(async (req: Request) => {
     );
   } else {
     onboardingAnswers = onboardingRow as OnboardingAnswersRow | null;
-  }
-
-  if (
-    isWorkerInvocation &&
-    (geminiKeys.length === 0 ||
-      geminiKeys.some((item) => item.pool !== expectedGeminiPool))
-  ) {
-    console.error(
-      "Gemini key pool misconfigured",
-      JSON.stringify({
-        request_id: requestID,
-        support_id: supportID,
-        user_plan: planTier,
-        quality_tier: qualityTier,
-        ai_execution_route: aiExecutionRoute,
-        expected_pool: expectedGeminiPool,
-        available_aliases: geminiKeys.map((item) => item.alias),
-        required_secret: geminiRequiredSecretNameForRoute(aiExecutionRoute),
-      }),
-    );
-    await updateOwnedAnalysis({
-      status: "failed",
-      failure_category: "technical",
-      failure_code: "missing_ai_secret",
-      status_message:
-        `AI servis anahtarı yapılandırılmamış. Destek kodu: ${supportID}`,
-    });
-    return errorResponse(
-      500,
-      "AI servisi yapılandırılmamış. Lütfen destek ile iletişime geç.",
-      {
-        code: "missing_ai_secret",
-        requestID,
-        supportID,
-        tier: planTier,
-      },
-    );
   }
 
   if (requestedCompanyID.length > 0) {
@@ -7060,6 +7040,57 @@ serve(async (req: Request) => {
         limit: quotaReservation?.limit,
         used: quotaReservation?.used,
         feature: quotaReservation?.feature,
+      },
+    );
+  }
+
+  const firstPaidAIEligible = quotaReservation.first_paid_ai_eligible === true;
+  const aiExecutionRoute = resolveAIExecutionRoute(
+    planTier,
+    analysisMode,
+    cancelledTrialRouting.enabled,
+    firstPaidAIEligible,
+  );
+  const qualityTier = resolveQualityTier(planTier, aiExecutionRoute);
+  const geminiKeys = geminiKeyPoolForRoute(aiExecutionRoute);
+  const freeFallbackGeminiKeys = aiExecutionRoute === "free_paid_trial"
+    ? freeGeminiKeyPool()
+    : [];
+  const expectedGeminiPool = expectedGeminiPoolForRoute(aiExecutionRoute);
+
+  if (
+    isWorkerInvocation &&
+    (geminiKeys.length === 0 ||
+      geminiKeys.some((item) => item.pool !== expectedGeminiPool))
+  ) {
+    console.error(
+      "Gemini key pool misconfigured",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        user_plan: planTier,
+        quality_tier: qualityTier,
+        ai_execution_route: aiExecutionRoute,
+        expected_pool: expectedGeminiPool,
+        available_aliases: geminiKeys.map((item) => item.alias),
+        required_secret: geminiRequiredSecretNameForRoute(aiExecutionRoute),
+      }),
+    );
+    await updateOwnedAnalysis({
+      status: "failed",
+      failure_category: "technical",
+      failure_code: "missing_ai_secret",
+      status_message:
+        `AI servis anahtarı yapılandırılmamış. Destek kodu: ${supportID}`,
+    });
+    return errorResponse(
+      500,
+      "AI servisi yapılandırılmamış. Lütfen destek ile iletişime geç.",
+      {
+        code: "missing_ai_secret",
+        requestID,
+        supportID,
+        tier: planTier,
       },
     );
   }
@@ -7796,6 +7827,7 @@ serve(async (req: Request) => {
     user_plan: planTier,
     quality_tier: qualityTier,
     ai_execution_route: aiExecutionRoute,
+    first_paid_ai_eligible: firstPaidAIEligible,
     cancelled_plus_trial_free_candidate: cancelledTrialRouting.eligible,
     cancelled_plus_trial_free_enabled: cancelledTrialRouting.enabled,
     cancelled_plus_trial_routing_mode: cancelledTrialRouting.mode,

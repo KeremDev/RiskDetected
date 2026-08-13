@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,6 +32,8 @@ import com.riskdetectedan.app.store.StoreReviewCoordinator
 import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
 import com.riskdetectedan.core.data.auth.AuthDeepLinkHandler
+import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import com.riskdetectedan.core.designsystem.RdTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -40,6 +43,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.stringResource
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -51,6 +55,8 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var notificationDeepLinkHandler: NotificationDeepLinkHandler
     @Inject lateinit var reviewEligibilityRepository: ReviewEligibilityRepository
     @Inject lateinit var environmentConfig: RdEnvironmentConfig
+    @Inject lateinit var authRepository: AuthRepository
+    @Inject lateinit var billingRepository: BillingRepository
 
     private val updateResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -166,6 +172,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::playUpdateController.isInitialized) playUpdateController.resumeInterruptedImmediateUpdate()
+        if (authRepository.currentUserId != null) {
+            // Detect renewal-intent changes immediately after returning from
+            // Google Play subscription management; the backend remains the
+            // only authority and this passive call never unlocks paid access.
+            lifecycleScope.launch { billingRepository.reconcileBackendSubscription() }
+        }
     }
 
     override fun onDestroy() {

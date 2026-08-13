@@ -30,6 +30,10 @@ export type CancelledPlusTrialSubscription = {
   trial_ends_at?: string | null;
   trial_product_id?: string | null;
   will_renew?: boolean | null;
+  store?: string | null;
+  base_plan_id?: string | null;
+  offer_id?: string | null;
+  period_type?: string | null;
 };
 
 export type CancelledPlusTrialRoutingReason =
@@ -40,6 +44,9 @@ export type CancelledPlusTrialRoutingReason =
   | "not_plus"
   | "inactive_subscription"
   | "not_plus_yearly_product"
+  | "unsupported_store"
+  | "invalid_play_base_plan"
+  | "not_trial_period"
   | "not_cancelled"
   | "invalid_trial_dates"
   | "not_seven_day_trial"
@@ -110,6 +117,28 @@ export function cancelledPlusTrialEligibilityReason(
     subscription.trial_product_id !== PLUS_YEARLY_PRODUCT_ID
   ) {
     return "not_plus_yearly_product";
+  }
+  const store = subscription.store?.trim().toUpperCase() ?? null;
+  if (
+    store &&
+    !["APP_STORE", "MAC_APP_STORE", "PLAY_STORE", "TEST_STORE"].includes(
+      store,
+    )
+  ) {
+    return "unsupported_store";
+  }
+  if (
+    store === "PLAY_STORE" &&
+    subscription.base_plan_id?.trim().toLowerCase() !== "yearly"
+  ) {
+    return "invalid_play_base_plan";
+  }
+  const periodType = subscription.period_type?.trim().toUpperCase() ?? null;
+  if (
+    (store === "PLAY_STORE" || store === "TEST_STORE") &&
+    periodType !== "TRIAL" && periodType !== "INTRO"
+  ) {
+    return "not_trial_period";
   }
   if (subscription.will_renew !== false) return "not_cancelled";
 

@@ -42,6 +42,11 @@ type RegisterReportBody = {
   support_id?: string;
 };
 
+type ReportQuotaEligibility = {
+  allowed?: boolean;
+  error_code?: string | null;
+};
+
 type AnalysisRow = {
   id: string;
   user_id: string;
@@ -534,6 +539,41 @@ serve(async (req) => {
     company = companyRow as CompanyRow;
   }
 
+  const kind = normalizeKind(body.kind);
+  const method = normalizeMethod(body.method);
+  const { data: quotaEligibility, error: quotaEligibilityError } =
+    await supabase
+      .rpc("check_report_quota_eligibility", {
+        p_user_id: user.id,
+        p_kind: kind,
+        p_format: "pdf",
+      });
+  if (quotaEligibilityError || !quotaEligibility) {
+    return json(500, {
+      error: "report_quota_check_failed",
+      message: "Rapor kotası kontrol edilemedi.",
+      request_id: requestID,
+      support_id: supportID,
+    });
+  }
+
+  const quotaDecision = quotaEligibility as ReportQuotaEligibility;
+  if (quotaDecision.allowed !== true) {
+    await supabase.storage.from("reports").remove([storagePath]);
+    const quotaCode = quotaDecision.error_code ===
+        "free_risk_analysis_trial_exhausted"
+      ? "free_risk_analysis_trial_exhausted"
+      : "report_quota_exceeded";
+    return json(429, {
+      error: quotaCode,
+      message: quotaCode === "free_risk_analysis_trial_exhausted"
+        ? "Bir kez tanımlanan risk analizi tablosu hakkını kullandın."
+        : "Rapor kotan doldu.",
+      request_id: requestID,
+      support_id: supportID,
+    });
+  }
+
   const { data: storedFile, error: storageError } = await supabase.storage
     .from("reports")
     .download(storagePath);
@@ -607,8 +647,6 @@ serve(async (req) => {
     });
   }
 
-  const kind = normalizeKind(body.kind);
-  const method = normalizeMethod(body.method);
   const { data: report, error: reportError } = await supabase
     .from("reports")
     .insert({

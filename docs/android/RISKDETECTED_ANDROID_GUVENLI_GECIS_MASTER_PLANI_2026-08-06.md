@@ -1250,8 +1250,9 @@ flowchart LR
     P --> RC["RevenueCat backend"]
     RC --> WH["revenuecat-webhook"]
     RCSDK --> UI["Android paywall/UI snapshot"]
+    UI --> SYNC["sync-revenuecat-subscription"]
     WH --> SUB["user_subscriptions"]
-    SYNC["sync-revenuecat-subscription"] --> SUB
+    SYNC --> SUB
     SUB --> CAP["Backend capability"]
     CAP --> UI
 ```
@@ -1265,6 +1266,10 @@ Bağlayıcı kurallar:
 - Fiyat hiçbir yerde hardcode edilmez; localized store price gösterilir.
 - Satın alma butonu gerçek package/store state’i hazır değilse disabled + retry olur; sahte fiyat gösterilmez.
 - Satın alma başarı ekranı backend sync tamamlanmadan “haklar kesin açıldı” demez.
+- Satın alma ve paid restore, beklenen tier/entitlement ile doğrulanmış sync yapar ve
+  backend eşleşmezse fail-closed kalır.
+- Uygulama girişinde pasif sync çalışır; iptal/yenileme niyetini onarabilir fakat istemci
+  snapshot'ından paid capability açamaz. Sonraki `profiles.tier` okuması tek UI otoritesidir.
 
 ### 14.2 RevenueCat proje modeli
 
@@ -1393,12 +1398,15 @@ Apple:
 Google Play:
   product_id == riskdetected_plus_yearly
   base_plan_id == yearly
-  offer_id == trial-7d-v1
   store == PLAY_STORE
-  doğrulanmış trial phase
+  period_type == TRIAL veya INTRO
+  doğrulanmış yaklaşık 7 günlük trial tarihleri
 ```
 
-Eksik/çelişkili Google metadata’sı paid route’ta kalır; yanlışlıkla Free route’a taşınmaz. Ancak paid alias kullanımını engelleyen kritik testler hem Apple hem Play fixture’larıyla çalışır.
+`offer_id` (`trial-7d-v1`) mevcutsa audit için saklanır; RevenueCat snapshot'ında opsiyonel
+olduğu için eligibility yalnız buna bağlanmaz. Eksik/çelişkili Google metadata’sı paid
+route’ta kalır; yanlışlıkla Free route’a taşınmaz. Ancak paid alias kullanımını engelleyen
+kritik testler hem Apple hem Play fixture’larıyla çalışır.
 
 ### 14.8 Paywall ekranı
 
@@ -1758,11 +1766,14 @@ Android istemcisi AI provider/model seçmez. Yalnız plan, mode, canvas, locale 
 | Route | Kullanıcı | Havuz |
 |---|---|---|
 | `free_legacy` | Normal Free | Free Gemini → Free Groq |
-| `free_paid_trial` | Free süreklilik denemesi | Paid Gemini → Free Gemini → Free Groq |
+| `free_paid_trial` | Hesap ömründeki ilk Free standart analiz | Paid Gemini → Free Gemini → Free Groq |
 | `paid_plan` | Plus/Pro | Paid Gemini → Paid Groq |
 | `cancelled_plus_trial_free` | İptal edilmiş aktif Plus yıllık trial | Yalnız Free Gemini → Free Groq |
 
 Android hiçbir API key alias/model parametresi göndermez. Gönderse bile backend yok sayar/reddeder.
+İlk analiz kararı günlük kota rezervasyonuyla aynı atomik backend kilidinde verilir. İptal
+edilmiş aktif Plus trial kuralı ilk analizden önceliklidir; bu durumda Android de iOS gibi
+yalnız Free sağlayıcı havuzunu kullanır.
 
 ### 18.2 Exact coverage
 

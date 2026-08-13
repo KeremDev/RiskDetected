@@ -574,6 +574,12 @@ Kesin uygunluk koşulları:
 Eksik veya çelişkili metadata Paid route'ta kalır. Bu kaliteyi koruyan
 fail-safe davranıştır.
 
+Google Play için ek doğrulama `store=PLAY_STORE`, `base_plan_id=yearly` ve
+`period_type=TRIAL|INTRO` alanlarını gerektirir. RevenueCat'in
+`riskdetected_plus_yearly:yearly` kimliği canonical ürün/base plan alanlarına ayrılır;
+opsiyonel `offer_id` audit için saklanır. App Store ve store alanı oluşmadan önceki
+legacy iOS satırları mevcut ürün/tarih sözleşmesiyle uyumludur.
+
 ## 10. Fotoğraf girdi hattı
 
 ### 10.1 Aktif ürün kuralı
@@ -863,12 +869,14 @@ flowchart TD
 | Route | Kullanıcı | Output quality | Provider havuzu |
 | --- | --- | --- | --- |
 | `free_legacy` | Normal Free legacy route | Free | Free Gemini → Free Groq |
-| `free_paid_trial` | Free standart continuity denemesi | Plus | Paid Gemini → Free Gemini → Free Groq |
+| `free_paid_trial` | Hesap ömründeki ilk Free standart analiz | Plus | Paid Gemini → Free Gemini → Free Groq |
 | `paid_plan` | Plus/Pro | Plan tier | Paid Gemini → Paid Groq |
 | `cancelled_plus_trial_free` | İptal edilmiş aktif Plus yıllık trial | Plus | Yalnız Free Gemini → Free Groq |
 
 `cancelled_plus_trial_free` hiçbir koşulda paid alias'a geçmemelidir. Bu,
 telemetri ve rollout için kritik invariant'tır.
+İlk analiz hakkı kota rezervasyonuyla aynı atomik kilitte belirlenir; worker retry aynı
+kararı kullanır. İptal edilmiş aktif Plus trial route'u bu haktan önce gelir.
 
 ### 13.5 Fiziksel istek ve logical çağrı farkı
 

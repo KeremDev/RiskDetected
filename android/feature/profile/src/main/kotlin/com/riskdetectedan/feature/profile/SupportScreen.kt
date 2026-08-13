@@ -61,9 +61,8 @@ import kotlin.math.min
  * "not ported" gap): real port of [SupportContactSheet.swift]'s `PhotosPicker`+`fileImporter`
  * pair — `PickVisualMedia` for photos (resized/compressed client-side, same 1600px-max-dimension/
  * 0.78-quality budget as iOS's `supportJPEG`, since a raw camera photo would blow the 5MB
- * per-attachment cap `support-contact` enforces), `OpenDocument` for arbitrary files (mime type +
- * display name read straight from the `ContentResolver`, no re-encoding — same as iOS's
- * `Data(contentsOf:)` passthrough). */
+ * per-attachment cap `support-contact` enforces), `OpenDocument` for the server-approved JPEG,
+ * PNG and PDF types (mime type + display name read from the `ContentResolver`). */
 @Composable
 fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hiltViewModel()) {
     val colors = RdTheme.colors
@@ -172,7 +171,9 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
                                 Spacer(Modifier.width(RdSpacing.xs))
                                 Text(stringResource(RdR.string.rd_fotograf))
                             }
-                            TextButton(onClick = { pickFile.launch(arrayOf("*/*")) }) {
+                            TextButton(onClick = {
+                                pickFile.launch(arrayOf("image/jpeg", "image/png", "application/pdf"))
+                            }) {
                                 Icon(Icons.Filled.AttachFile, contentDescription = null, tint = colors.onyx)
                                 Spacer(Modifier.width(RdSpacing.xs))
                                 Text(stringResource(RdR.string.rd_dosya))

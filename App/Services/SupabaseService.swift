@@ -28,7 +28,7 @@ final class SupabaseService {
             options: SupabaseClientOptions(
                 auth: .init(
                     redirectToURL: RDConfig.Auth.redirectURL,
-                    flowType: .implicit,
+                    flowType: .pkce,
                     emitLocalSessionAsInitialSession: true
                 ),
                 global: .init(session: pinnedSession)
@@ -55,6 +55,14 @@ final class SupabaseService {
         let expected = RDConfig.Auth.redirectURL
         guard url.scheme == expected.scheme else { return false }
         guard url.host == expected.host else { return false }
-        return url.path == expected.path
+        guard url.path == expected.path else { return false }
+
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let queryNames = Set(components?.queryItems?.map(\.name) ?? [])
+        let fragment = components?.fragment?.lowercased() ?? ""
+        guard !fragment.contains("access_token=") else { return false }
+        guard !fragment.contains("refresh_token=") else { return false }
+        return queryNames.contains("code") || queryNames.contains("error") ||
+            queryNames.contains("error_description") || queryNames.contains("error_code")
     }
 }

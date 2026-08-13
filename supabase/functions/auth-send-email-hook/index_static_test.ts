@@ -14,6 +14,22 @@ Deno.test("auth send-email hook verifies the exact Supabase secret format", asyn
   assertEquals(source.includes("console.error"), false);
 });
 
+Deno.test("auth send-email hook bounds the raw body before signature verification", async () => {
+  const source = await Deno.readTextFile(
+    new URL("./index.ts", import.meta.url),
+  );
+  const boundedReadIndex = source.indexOf("readBoundedRequestText(");
+  const signatureIndex = source.indexOf("new Webhook(secret).verify");
+
+  assertStringIncludes(source, "MAX_AUTH_EMAIL_HOOK_BODY_BYTES");
+  assertStringIncludes(source, 'error: "auth_email_hook_payload_too_large"');
+  assertEquals(
+    boundedReadIndex >= 0 && boundedReadIndex < signatureIndex,
+    true,
+  );
+  assertEquals(source.includes("await req.text()"), false);
+});
+
 Deno.test("secure email change routes both exact OTPs without fallback", async () => {
   const source = await Deno.readTextFile(
     new URL("./index.ts", import.meta.url),
