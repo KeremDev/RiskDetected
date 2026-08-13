@@ -33,10 +33,10 @@ select ok(
     from public.app_feature_flags
     where key = 'android_notifications_enabled'
       and coalesce((value->>'kill_switch')::boolean, true) = false
-      and value->>'rollout_mode' = 'allowlist'
-      and value->'enabled_android_version_codes' @> '[3]'::jsonb
+      and value->>'rollout_mode' = 'off'
+      and value->'enabled_android_version_codes' @> '[2, 3]'::jsonb
   ),
-  'only notifications are open, and only for Android build 3'
+  'only the notification kill switch is open, with builds 2 and 3 admitted'
 );
 
 select is(
