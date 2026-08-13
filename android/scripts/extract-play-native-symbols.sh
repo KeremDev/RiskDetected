@@ -27,7 +27,9 @@ unzip -q "$aab_path" 'base/lib/*/*.so' -d "$work_dir/aab" 2>/dev/null || true
 symbol_count=0
 while IFS= read -r library; do
   if has_symbol_table "$library"; then
-    relative_path="${library#"$work_dir/aab/base/"}"
+    # Play expects ABI directories at the archive root (for example,
+    # arm64-v8a/libexample.so), not the AAB's intermediate lib/ prefix.
+    relative_path="${library#"$work_dir/aab/base/lib/"}"
     destination="$work_dir/archive/$relative_path"
     mkdir -p "$(dirname "$destination")"
     cp "$library" "$destination"
@@ -45,8 +47,15 @@ output_path="$(cd "$(dirname "$output_path")" && pwd)/$(basename "$output_path")
 rm -f "$output_path"
 (
   cd "$work_dir/archive"
-  zip -q -r "$output_path" lib
+  zip -q -r "$output_path" .
 )
 unzip -tq "$output_path" >/dev/null
+if ! unzip -Z1 "$output_path" | awk -F/ '
+  $1 !~ /^(armeabi-v7a|arm64-v8a|x86|x86_64)$/ { invalid = 1 }
+  END { exit invalid }
+'; then
+  echo "Native symbol archive must contain Android ABI directories at its root." >&2
+  exit 5
+fi
 sha256sum "$output_path"
 echo "Packaged $symbol_count symbol-bearing native libraries for Play."
