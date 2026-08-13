@@ -7,7 +7,7 @@ on:
         description: "Play Console'da kullanılmamış versionCode"
         required: true
         type: string
-        default: "1"
+        default: "2"
 
 permissions:
   contents: read
