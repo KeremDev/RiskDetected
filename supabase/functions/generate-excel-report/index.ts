@@ -41,6 +41,12 @@ type RequestBody = {
   report_kind?: "risk_analysis" | "standard";
   report_language?: "tr" | "en";
   company_id?: string | null;
+  company_name_override?: string | null;
+  company_info_override?: string | null;
+  prepared_by_override?: string | null;
+  prepared_title_override?: string | null;
+  certificate_number_override?: string | null;
+  company_logo_base64?: string | null;
   client_app_version?: string;
   client_app_build?: string;
   client_platform?: string;
@@ -762,6 +768,24 @@ async function loadCompanyLogo(
     bytes: new Uint8Array(await data.arrayBuffer()),
     extension,
   };
+}
+
+function inlineCompanyLogo(
+  value: unknown,
+): { bytes: Uint8Array; extension: "jpg" | "png" } | null {
+  if (typeof value !== "string" || value.length === 0 || value.length > 4_000_000) return null;
+  try {
+    const binary = atob(value);
+    if (binary.length === 0 || binary.length > 3_000_000) return null;
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const png = bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 &&
+      bytes[2] === 0x4e && bytes[3] === 0x47;
+    const jpeg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    if (!png && !jpeg) return null;
+    return { bytes, extension: png ? "png" : "jpg" };
+  } catch {
+    return null;
+  }
 }
 
 function appendXmlRelationship(
@@ -3105,10 +3129,25 @@ export async function handleGenerateExcelReportRequest(req: Request) {
     company = companyRow as CompanyRow;
   }
 
-  const effectiveProfile = profileWithCompany(
+  const companyProfile = profileWithCompany(
     profile as ProfileRow | null,
     company,
   );
+  const overrideText = (value: unknown, maxLength: number): string | null => {
+    if (typeof value !== "string") return null;
+    const normalized = value.trim().slice(0, maxLength);
+    return normalized.length > 0 ? normalized : null;
+  };
+  const effectiveProfile: ProfileRow = {
+    ...(companyProfile ?? {}),
+    company_name: overrideText(body.company_name_override, 180) ?? companyProfile?.company_name ?? null,
+    phone: overrideText(body.company_info_override, 500) ?? companyProfile?.phone ?? null,
+    display_name: overrideText(body.prepared_by_override, 160) ?? companyProfile?.display_name ?? null,
+    full_name: overrideText(body.prepared_by_override, 160) ?? companyProfile?.full_name ?? null,
+    title: overrideText(body.prepared_title_override, 120) ?? companyProfile?.title ?? null,
+    certificate_number: overrideText(body.certificate_number_override, 120) ??
+      companyProfile?.certificate_number ?? null,
+  };
 
   let freeRiskAnalysisTrialAvailable = false;
   if (planTier === "free") {
@@ -3194,7 +3233,8 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       supportID,
       documentNo,
     );
-  const logo = await loadCompanyLogo(supabase, effectiveProfile, user.id);
+  const logo = inlineCompanyLogo(body.company_logo_base64) ??
+    await loadCompanyLogo(supabase, effectiveProfile, user.id);
   const rawBytes = workbookBuffer(workbook);
   const bytes = logo ? await embedCompanyLogo(rawBytes, logo) : rawBytes;
   const fileStem = reportLocalization.context.language === "en"

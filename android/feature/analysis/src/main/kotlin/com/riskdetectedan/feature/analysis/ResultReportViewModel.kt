@@ -111,7 +111,7 @@ class ResultReportViewModel @Inject constructor(
         viewModelScope.launch {
             val result = when (format) {
                 ResultReportFormat.Pdf -> generatePdf(request, kind, method)
-                ResultReportFormat.Excel -> generateExcel(request.analysisId, method, request.companyId)
+                ResultReportFormat.Excel -> generateExcel(request, method)
             }
             progressJob?.cancel()
             progressJob = null
@@ -236,8 +236,20 @@ class ResultReportViewModel @Inject constructor(
         }
     }
 
-    private suspend fun generateExcel(analysisId: String, method: String, companyId: String?): RdResult<ResultReportFile> {
-        val report = when (val generated = reportsRepository.generateExcelReport(analysisId, method, companyId)) {
+    private suspend fun generateExcel(request: ResultReportRequest, method: String): RdResult<ResultReportFile> {
+        val report = when (
+            val generated = reportsRepository.generateExcelReport(
+                analysisId = request.analysisId,
+                method = method,
+                companyId = request.companyId,
+                companyNameOverride = request.companyNameOverride,
+                companyInfoOverride = request.companyInfoOverride,
+                preparedByOverride = request.preparedByOverride,
+                preparedTitleOverride = request.preparedTitleOverride,
+                certificateNumberOverride = request.certificateNumberOverride,
+                companyLogoOverrideBytes = request.companyLogoOverrideBytes,
+            )
+        ) {
             is RdResult.Success -> generated.value
             is RdResult.Failure -> return RdResult.Failure(generated.code, generated.message, generated.cause)
         }

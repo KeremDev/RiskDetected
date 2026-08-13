@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -75,6 +76,7 @@ import com.riskdetectedan.core.data.analysis.FindingMeasure
 import com.riskdetectedan.core.data.analysis.FindingPatch
 import com.riskdetectedan.core.data.analysis.FineKinneyValues
 import com.riskdetectedan.core.data.analysis.PlanCapabilities
+import com.riskdetectedan.core.data.error.AppErrorCategory
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.designsystem.RdCard
 import com.riskdetectedan.core.designsystem.RdEmptyState
@@ -284,7 +286,10 @@ fun AnalysisScreen(
                         color = colors.slate,
                         modifier = Modifier.padding(top = RdSpacing.md),
                     )
-                is CreateAnalysisUiState.Failed -> AnalysisErrorCard(current.error)
+                is CreateAnalysisUiState.Failed -> AnalysisErrorCard(
+                    error = current.error,
+                    onUpgrade = if (current.error.category == AppErrorCategory.QuotaExceeded) onUpgrade else null,
+                )
             }
         }
     }
@@ -343,7 +348,10 @@ private fun LabeledProgress(label: String) {
 }
 
 @Composable
-private fun AnalysisErrorCard(error: com.riskdetectedan.core.data.error.AppErrorMessage) {
+private fun AnalysisErrorCard(
+    error: com.riskdetectedan.core.data.error.AppErrorMessage,
+    onUpgrade: (() -> Unit)? = null,
+) {
     val colors = RdTheme.colors
     Column(
         modifier = Modifier
@@ -358,6 +366,18 @@ private fun AnalysisErrorCard(error: com.riskdetectedan.core.data.error.AppError
         Text(error.message, style = RdFontStyle.Footnote.toTextStyle(), color = colors.criticalText)
         if (error.action.isNotEmpty()) {
             Text(error.action, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+        }
+        if (onUpgrade != null) {
+            Button(
+                onClick = onUpgrade,
+                modifier = Modifier.fillMaxWidth().padding(top = RdSpacing.sm),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.onyx,
+                    contentColor = colors.white,
+                ),
+            ) {
+                Text(stringResource(RdR.string.rd_plan_seceneklerini_gor))
+            }
         }
         Text(error.supportID, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
     }

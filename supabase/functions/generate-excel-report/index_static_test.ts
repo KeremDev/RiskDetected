@@ -62,3 +62,17 @@ Deno.test("generate-excel-report derives language from analysis snapshot", async
   assertStringIncludes(source, "regulatory_sections_enabled:");
   assertStringIncludes(source, "localization_snapshot:");
 });
+
+Deno.test("generate-excel-report applies authenticated report customization", async () => {
+  const source = await readTextIfAllowed(new URL("./index.ts", import.meta.url));
+  if (source == null) return;
+
+  assertStringIncludes(source, "company_name_override?: string | null");
+  assertStringIncludes(source, "prepared_by_override?: string | null");
+  assertStringIncludes(source, "certificate_number_override?: string | null");
+  assertStringIncludes(source, "company_logo_base64?: string | null");
+  assertStringIncludes(source, "function inlineCompanyLogo(");
+  assertStringIncludes(source, "value.length > 4_000_000");
+  assertStringIncludes(source, "const effectiveProfile: ProfileRow");
+  assertStringIncludes(source, "inlineCompanyLogo(body.company_logo_base64)");
+});

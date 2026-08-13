@@ -3,6 +3,7 @@ package com.riskdetectedan.feature.analysis
 import android.app.Application
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -77,6 +78,20 @@ class AnalysisParityGoldenTest {
             reportState = ResultReportUiState.Idle,
         )
         composeRule.onNodeWithText("Koruyucusuz hareketli makine parçası").performClick()
+
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun pro_finding_editor_matches_ios_sheet_light() {
+        setResultContent(
+            capabilities = proCapabilities(),
+            reportState = ResultReportUiState.Idle,
+        )
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Koruyucusuz hareketli makine parçası"))
+        composeRule.onAllNodes(hasContentDescription("Bulguyu düzenle"))[0].performClick()
+        composeRule.onNodeWithText("Düzeltici faaliyet").assertIsDisplayed()
+        composeRule.onNodeWithText("Önleyici kontrol").assertIsDisplayed()
 
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }

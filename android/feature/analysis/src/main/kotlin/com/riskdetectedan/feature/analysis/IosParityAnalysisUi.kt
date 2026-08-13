@@ -17,6 +17,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -75,6 +77,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -110,7 +113,9 @@ import com.riskdetectedan.core.data.analysis.AnalysisCanvas
 import com.riskdetectedan.core.data.analysis.AnalysisResultSummary
 import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.data.analysis.Finding
+import com.riskdetectedan.core.data.analysis.FindingMeasure
 import com.riskdetectedan.core.data.analysis.FindingPatch
+import com.riskdetectedan.core.data.analysis.FineKinneyValues
 import com.riskdetectedan.core.data.analysis.PlanCapabilities
 import com.riskdetectedan.core.data.company.Company
 import com.riskdetectedan.core.data.profile.SubscriptionTier
@@ -127,6 +132,7 @@ import com.riskdetectedan.core.designsystem.rdFontScale
 import com.riskdetectedan.core.designsystem.riskLevelFromRaw
 import com.riskdetectedan.core.designsystem.toTextStyle
 import java.io.File
+import java.io.ByteArrayOutputStream
 import java.text.NumberFormat
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -526,10 +532,16 @@ internal fun IosParityResultView(
     }
 
     editingFinding?.let { finding ->
-        FindingEditDialog(finding, onDismiss = { editingFinding = null }) { patch ->
-            editingFinding = null
-            onUpdate(finding, patch)
-        }
+        IosParityFindingEditorSheet(
+            finding = finding,
+            method = method,
+            onDismiss = { editingFinding = null },
+            onDelete = { deletingFinding = finding; editingFinding = null },
+            onSave = { patch ->
+                editingFinding = null
+                onUpdate(finding, patch)
+            },
+        )
     }
     deletingFinding?.let { finding ->
         AlertDialog(
@@ -550,6 +562,172 @@ internal fun IosParityResultView(
     }
     (reportState as? ResultReportUiState.Generating)?.let { generating ->
         ReportGenerationOverlay(generating.format, generating.progress)
+    }
+}
+
+/** iOS `FindingEditorSheet` parity: tall sheet, pinned actions and method-first scoring. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun IosParityFindingEditorSheet(
+    finding: Finding,
+    method: ParityRiskMethod,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    onSave: (FindingPatch) -> Unit,
+) {
+    val colors = RdTheme.colors
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var title by remember(finding.id) { mutableStateOf(finding.title) }
+    var description by remember(finding.id) { mutableStateOf(finding.description.orEmpty()) }
+    var corrective by remember(finding.id) {
+        mutableStateOf(
+            finding.recommendedMeasures.orEmpty().firstOrNull { it.kind == "corrective" }?.text
+                ?: finding.recommendedAction.orEmpty(),
+        )
+    }
+    var preventive by remember(finding.id) {
+        mutableStateOf(finding.recommendedMeasures.orEmpty().firstOrNull { it.kind == "preventive" }?.text.orEmpty())
+    }
+    var references by remember(finding.id) { mutableStateOf(finding.referencesText.orEmpty()) }
+    var rootCause by remember(finding.id) { mutableStateOf(finding.rootCauseText.orEmpty()) }
+    var fkProbability by remember(finding.id) { mutableStateOf(finding.fkProbability) }
+    var fkFrequency by remember(finding.id) { mutableStateOf(finding.fkFrequency) }
+    var fkSeverity by remember(finding.id) { mutableStateOf(finding.fkSeverity) }
+    var m5Probability by remember(finding.id) { mutableStateOf(finding.m5Probability) }
+    var m5Severity by remember(finding.id) { mutableStateOf(finding.m5Severity) }
+    val canSave = title.isNotBlank() && description.isNotBlank() && corrective.isNotBlank()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = colors.paper,
+        dragHandle = null,
+    ) {
+        Column(Modifier.fillMaxHeight(0.94f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, null, tint = colors.onyx) }
+                Text(
+                    stringResource(RdR.string.rd_bulguyu_duzenle),
+                    style = iosRounded(20f, FontWeight.Bold),
+                    color = colors.onyx,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.size(48.dp))
+            }
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                item {
+                    Column(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
+                            .background(colors.fog).padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text(
+                            if (method == ParityRiskMethod.FineKinney) "Fine-Kinney Risk Puanı" else "5×5 Risk Puanı",
+                            style = iosRounded(15f, FontWeight.Bold),
+                            color = colors.onyx,
+                        )
+                        if (method == ParityRiskMethod.FineKinney) {
+                            FindingScorePicker("Olasılık", FineKinneyValues.PROBABILITY, fkProbability) { fkProbability = it }
+                            FindingScorePicker("Frekans", FineKinneyValues.FREQUENCY, fkFrequency) { fkFrequency = it }
+                            FindingScorePicker("Şiddet", FineKinneyValues.SEVERITY, fkSeverity) { fkSeverity = it }
+                        } else {
+                            FindingScorePicker("Olasılık", (1..5).map(Int::toDouble), m5Probability?.toDouble()) { m5Probability = it.toInt() }
+                            FindingScorePicker("Şiddet", (1..5).map(Int::toDouble), m5Severity?.toDouble()) { m5Severity = it.toInt() }
+                        }
+                    }
+                }
+                item { FindingEditorTextField(title, { title = it }, stringResource(RdR.string.rd_bulgu_kisa), true) }
+                item { FindingEditorTextField(description, { description = it }, stringResource(RdR.string.rd_gozlenen_durum)) }
+                item { FindingEditorTextField(corrective, { corrective = it }, "Düzeltici faaliyet") }
+                item { FindingEditorTextField(preventive, { preventive = it }, "Önleyici kontrol") }
+                item { FindingEditorTextField(references, { references = it }, stringResource(RdR.string.rd_kaynak_ve_standartlar)) }
+                item { FindingEditorTextField(rootCause, { rootCause = it }, stringResource(RdR.string.rd_kok_neden)) }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().background(colors.paper)
+                    .border(1.dp, colors.line.copy(alpha = .55f), RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(colors.criticalBg),
+                ) { Icon(Icons.Filled.DeleteOutline, null, tint = colors.critical) }
+                TextButton(onClick = onDismiss, modifier = Modifier.height(52.dp)) {
+                    Text(stringResource(RdR.string.rd_vazgec), color = colors.slate)
+                }
+                Button(
+                    onClick = {
+                        val measures = buildList {
+                            if (corrective.isNotBlank()) add(FindingMeasure("corrective", "Düzeltici faaliyet", corrective.trim()))
+                            if (preventive.isNotBlank()) add(FindingMeasure("preventive", "Önleyici kontrol", preventive.trim()))
+                        }
+                        onSave(
+                            FindingPatch(
+                                title = title.trim(), description = description.trim(),
+                                recommendedAction = corrective.trim(), recommendedMeasures = measures,
+                                referencesText = references.trim(), rootCauseText = rootCause.trim(),
+                                fkProbability = fkProbability, fkFrequency = fkFrequency, fkSeverity = fkSeverity,
+                                m5Probability = m5Probability, m5Severity = m5Severity,
+                            ),
+                        )
+                    },
+                    enabled = canSave,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.onyx, contentColor = colors.white),
+                ) { Text(stringResource(RdR.string.rd_kaydet), style = iosRounded(15f, FontWeight.Bold)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FindingEditorTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    singleLine: Boolean = false,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else 3,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+    )
+}
+
+@Composable
+private fun FindingScorePicker(label: String, options: List<Double>, selected: Double?, onSelect: (Double) -> Unit) {
+    val colors = RdTheme.colors
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, style = iosRounded(12f, FontWeight.SemiBold), color = colors.slate)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            options.forEach { value ->
+                val active = selected == value
+                Text(
+                    if (value % 1.0 == 0.0) value.toInt().toString() else value.toString(),
+                    style = iosRounded(12.5f, FontWeight.SemiBold),
+                    color = if (active) colors.white else colors.onyx,
+                    modifier = Modifier.clip(RoundedCornerShape(10.dp))
+                        .background(if (active) colors.onyx else colors.white)
+                        .border(1.dp, if (active) colors.onyx else colors.line, RoundedCornerShape(10.dp))
+                        .clickable { onSelect(value) }.padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+            }
+        }
     }
 }
 
@@ -780,8 +958,12 @@ private fun RichFindingCard(
             )
             Text(finding.title, style = iosRounded(15f, FontWeight.SemiBold), color = colors.onyx, modifier = Modifier.weight(1f))
             if (canEdit) {
-                SmallFindingAction(onEdit, colors.planPlusSoft, colors.planPlus.copy(.55f)) { Icon(Icons.Filled.Edit, null, tint = colors.onyx, modifier = Modifier.size(15.dp)) }
-                SmallFindingAction(onDelete, colors.criticalBg, Color.Transparent) { Icon(Icons.Filled.DeleteOutline, null, tint = colors.criticalText, modifier = Modifier.size(16.dp)) }
+                SmallFindingAction(onEdit, colors.planPlusSoft, colors.planPlus.copy(.55f)) {
+                    Icon(Icons.Filled.Edit, stringResource(RdR.string.rd_bulguyu_duzenle), tint = colors.onyx, modifier = Modifier.size(15.dp))
+                }
+                SmallFindingAction(onDelete, colors.criticalBg, Color.Transparent) {
+                    Icon(Icons.Filled.DeleteOutline, stringResource(RdR.string.rd_bulguyu_sil), tint = colors.criticalText, modifier = Modifier.size(16.dp))
+                }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -1184,7 +1366,26 @@ private fun ResultReportSettingsSheet(
     val context = LocalContext.current
     val logoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         companyLogoBytes = uri?.let { selected ->
-            runCatching { context.contentResolver.openInputStream(selected)?.use { it.readBytes() } }.getOrNull()
+            runCatching {
+                context.contentResolver.openInputStream(selected)?.use(BitmapFactory::decodeStream)?.let { bitmap ->
+                    val scale = minOf(1f, 1000f / maxOf(bitmap.width, bitmap.height).toFloat())
+                    val resized = if (scale < 1f) {
+                        android.graphics.Bitmap.createScaledBitmap(
+                            bitmap,
+                            (bitmap.width * scale).toInt().coerceAtLeast(1),
+                            (bitmap.height * scale).toInt().coerceAtLeast(1),
+                            true,
+                        )
+                    } else bitmap
+                    ByteArrayOutputStream().use { output ->
+                        resized.compress(android.graphics.Bitmap.CompressFormat.JPEG, 88, output)
+                        output.toByteArray()
+                    }.also {
+                        if (resized !== bitmap) resized.recycle()
+                        bitmap.recycle()
+                    }
+                }
+            }.getOrNull()
         }
     }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
