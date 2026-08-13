@@ -924,6 +924,7 @@ serve(async (req) => {
   // the FCM data map. APNs remains byte-for-byte compatible with the existing iOS payload.
   const fcmDataPayload: Record<string, string> = {
     type: notificationKind,
+    event_id: eventID,
   };
   for (const key of ["analysis_id", "report_id"] as const) {
     const value = payloadData[key];

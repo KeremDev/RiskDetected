@@ -15,9 +15,9 @@ Deno.test("Android FCM data contains only typed record identifiers", () => {
   const contract = source.slice(contractStart, contractEnd);
 
   assertStringIncludes(contract, "type: notificationKind");
+  assertStringIncludes(contract, "event_id: eventID");
   assertStringIncludes(contract, '["analysis_id", "report_id"]');
   assertStringIncludes(contract, "fcmDataPayload[key] = value");
-  assertFalse(contract.includes("event_id"));
   assertFalse(contract.includes("title"));
   assertFalse(contract.includes("body"));
   assertFalse(contract.includes("payloadData,"));

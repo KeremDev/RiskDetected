@@ -299,8 +299,8 @@ android {
         applicationId = "com.riskdetectedan.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 2
-        versionName = "1.5.0"
+        versionCode = 3
+        versionName = "1.5.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

@@ -24,6 +24,7 @@ import com.riskdetectedan.app.navigation.RdNavHost
 import com.riskdetectedan.app.network.NetworkStatusBanner
 import com.riskdetectedan.app.push.PushTokenRegistrar
 import com.riskdetectedan.app.push.NotificationDeepLinkHandler
+import com.riskdetectedan.app.push.NotificationEngagementRegistrar
 import com.riskdetectedan.app.release.ReleaseGate
 import com.riskdetectedan.app.settings.AppearanceMode
 import com.riskdetectedan.app.settings.AppearanceViewModel
@@ -34,6 +35,7 @@ import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
 import com.riskdetectedan.core.data.auth.AuthDeepLinkHandler
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.billing.BillingRepository
+import com.riskdetectedan.core.data.notifications.NotificationEngagementRepository
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import com.riskdetectedan.core.designsystem.RdTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -57,6 +59,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var environmentConfig: RdEnvironmentConfig
     @Inject lateinit var authRepository: AuthRepository
     @Inject lateinit var billingRepository: BillingRepository
+    @Inject lateinit var notificationEngagementRepository: NotificationEngagementRepository
 
     private val updateResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -110,6 +113,9 @@ class MainActivity : ComponentActivity() {
                         // signed-in session (see its own doc comment for what onNewToken alone
                         // doesn't cover).
                         PushTokenRegistrar()
+                        // Supplies the authorization + foreground heartbeat used by the shared
+                        // notification automation eligibility engine.
+                        NotificationEngagementRegistrar()
                         // No UI — records a background legal-acceptance audit row (consents
                         // table) for the Turkish document set once signed in. Mirrors
                         // AppState.swift's session-sink call to LegalAcceptanceService; there is
@@ -159,6 +165,9 @@ class MainActivity : ComponentActivity() {
 
     private fun handleNotificationDeepLink(intent: Intent) {
         val payload = notificationDeepLinkHandler.handle(intent)
+        payload?.eventId?.let { eventId ->
+            lifecycleScope.launch { notificationEngagementRepository.recordOpen(eventId) }
+        }
         if (BuildConfig.DEBUG) {
             // Typed route only; never log token, IDs, title/body or the raw FCM payload.
             Log.d(

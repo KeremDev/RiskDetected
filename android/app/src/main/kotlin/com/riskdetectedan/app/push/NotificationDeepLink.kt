@@ -22,6 +22,7 @@ data class NotificationDeepLinkPayload(
     val target: NotificationRouteTarget,
     val analysisId: String? = null,
     val reportId: String? = null,
+    val eventId: String? = null,
 )
 
 object NotificationDeepLinkParser {
@@ -34,6 +35,7 @@ object NotificationDeepLinkParser {
         val type = data["type"]?.trim()?.lowercase() ?: return null
         val analysisId = data["analysis_id"]?.takeIf(uuid::matches)
         val reportId = data["report_id"]?.takeIf(uuid::matches)
+        val eventId = data["event_id"]?.takeIf(uuid::matches)
         val target = when (type) {
             "analysis_complete" -> NotificationRouteTarget.Analyses
             "report_ready" -> NotificationRouteTarget.Reports
@@ -45,7 +47,7 @@ object NotificationDeepLinkParser {
         }
         if (target == NotificationRouteTarget.Analyses && analysisId == null) return null
         if (target == NotificationRouteTarget.Reports && reportId == null) return null
-        return NotificationDeepLinkPayload(type, target, analysisId, reportId)
+        return NotificationDeepLinkPayload(type, target, analysisId, reportId, eventId)
     }
 }
 
@@ -72,7 +74,7 @@ class NotificationDeepLinkHandler @Inject constructor(
     fun handle(intent: Intent): NotificationDeepLinkPayload? {
         val extras = intent.extras ?: return null
         val data = buildMap {
-            for (key in listOf("type", "analysis_id", "report_id")) {
+            for (key in listOf("type", "analysis_id", "report_id", "event_id")) {
                 extras.getString(key)?.let { put(key, it) }
             }
         }
@@ -80,7 +82,7 @@ class NotificationDeepLinkHandler @Inject constructor(
     }
 
     fun putIntoIntent(message: RemoteMessage, intent: Intent) {
-        for (key in listOf("type", "analysis_id", "report_id")) {
+        for (key in listOf("type", "analysis_id", "report_id", "event_id")) {
             message.data[key]?.let { intent.putExtra(key, it) }
         }
     }

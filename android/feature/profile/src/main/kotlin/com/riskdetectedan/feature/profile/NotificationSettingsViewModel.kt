@@ -9,6 +9,7 @@ import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.notifications.NotificationPreferences
 import com.riskdetectedan.core.data.notifications.NotificationPreferencesRepository
+import com.riskdetectedan.core.data.notifications.NotificationEngagementRepository
 import com.riskdetectedan.core.data.notifications.ProgressPreference
 import com.riskdetectedan.core.designsystem.R as RdR
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -31,6 +32,7 @@ class NotificationSettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val preferencesRepository: NotificationPreferencesRepository,
+    private val engagementRepository: NotificationEngagementRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<NotificationSettingsUiState>(NotificationSettingsUiState.Loading)
@@ -65,6 +67,7 @@ class NotificationSettingsViewModel @Inject constructor(
     fun setMaster(enabled: Boolean) {
         viewModelScope.launch {
             preferencesRepository.setMasterPreference(enabled)
+            authRepository.currentUserId?.let { engagementRepository.sync(it, force = true) }
             load()
         }
     }

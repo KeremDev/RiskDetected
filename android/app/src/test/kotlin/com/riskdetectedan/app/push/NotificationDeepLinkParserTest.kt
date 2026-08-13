@@ -33,4 +33,18 @@ class NotificationDeepLinkParserTest {
 
         assertEquals(NotificationRouteTarget.Profile, payload?.target)
     }
+
+    @Test
+    fun `valid event id is retained for open tracking and malformed value is discarded`() {
+        val eventId = "123e4567-e89b-42d3-a456-426614174000"
+        val valid = NotificationDeepLinkParser.parse(
+            mapOf("type" to "first_analysis_reminder", "event_id" to eventId),
+        )
+        val malformed = NotificationDeepLinkParser.parse(
+            mapOf("type" to "first_analysis_reminder", "event_id" to "not-an-id"),
+        )
+
+        assertEquals(eventId, valid?.eventId)
+        assertNull(malformed?.eventId)
+    }
 }
