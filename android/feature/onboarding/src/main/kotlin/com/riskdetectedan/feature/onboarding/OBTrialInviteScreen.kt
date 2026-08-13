@@ -4,9 +4,14 @@ import com.riskdetectedan.core.designsystem.R as RdR
 
 import androidx.compose.ui.res.stringResource
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,16 +24,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,19 +55,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.designsystem.RdButtonStyle
@@ -74,15 +76,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 /**
  * Port of OBTrialInviteView.swift (2026-08-08 visual pass, Faz E). Real RevenueCat pricing not
- * shown here either way (matches this screen's pre-existing scope note — same gap as the paywall
- * step). The 3-phone auto-swapping deck now really swaps (2026-08-09 animation pass — was one
- * static phone bezel before): 3 stacked [PhoneCard]s cycle which one is in front every 2.4s
- * (`LaunchedEffect` index loop, same staged-timer pattern as every other real animation this
- * pass), each card's scale/rotation/offset/alpha animating smoothly between front/mid/back depth
- * via `animate*AsState` rather than iOS's continuous loop — a discrete cycle reads the same to a
- * user glancing at an onboarding screen for a few seconds, cheaper than perpetually-running
- * per-frame math for 3 stacked cards. All 3 share the same real preview content (mini risk rows +
- * "Rapor hazır") — the deck is a depth/ordering animation, not 3 different screens. Footer links:
+ * shown on this invitation step; the following timeline paywall fetches the real store price.
+ * A single realistically proportioned Samsung-style device stays centered while three preview
+ * screens slide and cross-fade inside it every 2.8 seconds. Keeping the hardware frame fixed
+ * avoids the distorted stacked-phone effect while still revealing successive product screens.
+ * Footer links:
  * "Gizlilik Politikası"/"Şartlar" open the real [RdLegalDocumentSheet]. "Geri Yükle" uses
  * the same RevenueCat owner checks and backend-authoritative entitlement flow as the final
  * onboarding paywall; an active subscription completes onboarding exactly like iOS.
@@ -92,89 +90,20 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 fun OBTrialInviteScreen(
     onContinue: () -> Unit,
     onRestored: () -> Unit,
+    onDismiss: () -> Unit,
     viewModel: OBTimelinePaywallViewModel = hiltViewModel(),
 ) {
-    val colors = RdTheme.colors
     val context = LocalContext.current
     var legalDocumentKind by remember { mutableStateOf<String?>(null) }
     val isRestoring by viewModel.isPurchasing.collectAsState()
     val restoreError by viewModel.purchaseError.collectAsState()
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(colors.green.copy(alpha = 0.10f), colors.paper),
-                    center = Offset(0.5f, 0f),
-                    radius = 900f,
-                ),
-            ),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.xl),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(Modifier.height(32.dp))
-
-            Text(
-                buildAnnotatedTitle(
-                    colors.onyx,
-                    colors.green,
-                    stringResource(RdR.string.rd_trial_title_prefix),
-                    stringResource(RdR.string.rd_trial_title_emphasis),
-                ),
-                style = RdFontStyle.Title1.toTextStyle(),
-                textAlign = TextAlign.Center,
-            )
-            Text(stringResource(RdR.string.rd_birlikte_secelim), style = RdFontStyle.Title1.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
-
-            Spacer(Modifier.height(24.dp))
-            PhoneDeck()
-
-            Spacer(Modifier.height(28.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Check, contentDescription = null, tint = colors.onyx, modifier = Modifier.size(15.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    stringResource(RdR.string.rd_fiyat_google_play),
-                    style = RdFontStyle.Callout.toTextStyle(),
-                    color = colors.onyx,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            Spacer(Modifier.height(14.dp))
-            RdPrimaryButton(text = stringResource(RdR.string.rd_plan_seceneklerini_gor), onClick = onContinue, style = RdButtonStyle.Onyx)
-
-            Spacer(Modifier.height(10.dp))
-            Text(stringResource(RdR.string.rd_taahhut_yok_istedigin_zaman_iptal), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
-
-            Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(
-                    stringResource(RdR.string.rd_gizlilik_politikasi),
-                    style = RdFontStyle.Caption.toTextStyle(),
-                    color = colors.slate,
-                    modifier = Modifier.clickable { legalDocumentKind = "privacy" },
-                )
-                Text(
-                    if (isRestoring) stringResource(RdR.string.rd_geri_yukleniyor) else stringResource(RdR.string.rd_geri_yukle),
-                    style = RdFontStyle.Caption.toTextStyle(),
-                    color = colors.slate,
-                    modifier = Modifier.clickable(enabled = !isRestoring) {
-                        viewModel.restorePurchases(onRestored)
-                    },
-                )
-                Text(
-                    stringResource(RdR.string.rd_sartlar),
-                    style = RdFontStyle.Caption.toTextStyle(),
-                    color = colors.slate,
-                    modifier = Modifier.clickable { legalDocumentKind = "terms" },
-                )
-            }
-            Spacer(Modifier.height(24.dp))
-        }
-    }
+    OBTrialInviteContent(
+        isRestoring = isRestoring,
+        onContinue = onContinue,
+        onDismiss = onDismiss,
+        onRestore = { viewModel.restorePurchases(onRestored) },
+        onOpenLegal = { legalDocumentKind = it },
+    )
 
     if (legalDocumentKind != null) {
         var legalDocuments by remember { mutableStateOf<List<RdLegalDocument>>(emptyList()) }
@@ -202,89 +131,175 @@ fun OBTrialInviteScreen(
     }
 }
 
-private fun buildAnnotatedTitle(onyx: Color, green: Color, prefix: String, emphasis: String) = buildAnnotatedString {
-    withStyle(SpanStyle(color = onyx)) { append(prefix) }
-    withStyle(SpanStyle(color = green)) { append(emphasis) }
+@Composable
+fun OBTrialInvitePreviewSurface() {
+    OBTrialInviteContent(false, {}, {}, {}, {})
 }
 
-/** Depth-ordered target values for the deck effect — index 0 is front (full size, no tilt), 2 is
- * furthest back (smallest, most tilted, dimmest). */
-private data class DeckDepth(val scale: Float, val rotation: Float, val offsetY: Dp, val alpha: Float, val z: Float)
+@Composable
+private fun OBTrialInviteContent(
+    isRestoring: Boolean,
+    onContinue: () -> Unit,
+    onDismiss: () -> Unit,
+    onRestore: () -> Unit,
+    onOpenLegal: (String) -> Unit,
+) {
+    val colors = RdTheme.colors
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(colors.green.copy(alpha = 0.10f), colors.paper),
+                    center = Offset(0.5f, 0f),
+                    radius = 900f,
+                ),
+            ),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = RdSpacing.xl),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(28.dp))
 
-private val deckDepths = listOf(
-    DeckDepth(scale = 1f, rotation = 0f, offsetY = 0.dp, alpha = 1f, z = 3f),
-    DeckDepth(scale = 0.94f, rotation = -6f, offsetY = 14.dp, alpha = 0.85f, z = 2f),
-    DeckDepth(scale = 0.88f, rotation = 6f, offsetY = 26.dp, alpha = 0.6f, z = 1f),
-)
+            Text(
+                stringResource(RdR.string.rd_trial_free_title),
+                style = RdFontStyle.Title1.toTextStyle(),
+                textAlign = TextAlign.Center,
+                color = colors.onyx,
+            )
+
+            Spacer(Modifier.height(8.dp))
+            Box(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                PhoneDeck()
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Check, contentDescription = null, tint = colors.onyx, modifier = Modifier.size(15.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(RdR.string.rd_bu_asamada_odeme_alinmaz),
+                    style = RdFontStyle.Callout.toTextStyle(),
+                    color = colors.onyx,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            Spacer(Modifier.height(14.dp))
+            RdPrimaryButton(text = stringResource(RdR.string.rd_sifir_tl_dene), onClick = onContinue, style = RdButtonStyle.Onyx)
+
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(RdR.string.rd_taahhut_yok_istedigin_zaman_iptal), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
+
+            Spacer(Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    stringResource(RdR.string.rd_gizlilik_politikasi),
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.clickable { onOpenLegal("privacy") },
+                )
+                Text(
+                    if (isRestoring) stringResource(RdR.string.rd_geri_yukleniyor) else stringResource(RdR.string.rd_geri_yukle),
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.clickable(enabled = !isRestoring) {
+                        onRestore()
+                    },
+                )
+                Text(
+                    stringResource(RdR.string.rd_sartlar),
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.clickable { onOpenLegal("terms") },
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+        }
+
+        IconButton(
+            onClick = onDismiss,
+            modifier = Modifier.align(Alignment.TopEnd).padding(top = 18.dp, end = 14.dp).size(38.dp),
+        ) {
+            Icon(
+                Icons.Filled.Close,
+                contentDescription = stringResource(RdR.string.rd_kapat),
+                tint = colors.slate.copy(alpha = 0.62f),
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+
+}
 
 @Composable
 private fun PhoneDeck() {
-    var frontIndex by remember { mutableIntStateOf(0) }
+    var previewIndex by remember { mutableIntStateOf(0) }
+    val previewResources = listOf(
+        R.drawable.ob_trial_preview_a,
+        R.drawable.ob_trial_preview_b,
+        R.drawable.ob_trial_preview_c,
+    )
     LaunchedEffect(Unit) {
         while (true) {
-            delay(2400L)
-            frontIndex = (frontIndex + 1) % 3
+            delay(2_800L)
+            previewIndex = (previewIndex + 1) % previewResources.size
         }
     }
-
-    Box(modifier = Modifier.width(210.dp).height(446.dp), contentAlignment = Alignment.TopCenter) {
-        val previewResources = listOf(
-            R.drawable.ob_trial_preview_a,
-            R.drawable.ob_trial_preview_b,
-            R.drawable.ob_trial_preview_c,
-        )
-        for (cardIndex in 0 until 3) {
-            val depthOrder = (cardIndex - frontIndex).mod(3)
-            val depth = deckDepths[depthOrder]
-            PhoneCard(depth, previewResources[cardIndex])
-        }
-    }
+    SamsungPhone(previewResources, previewIndex)
 }
 
 @Composable
-private fun PhoneCard(depth: DeckDepth, previewResource: Int) {
-    val scale by animateFloatAsState(depth.scale, animationSpec = tween(700), label = "deck-scale")
-    val rotation by animateFloatAsState(depth.rotation, animationSpec = tween(700), label = "deck-rotation")
-    val offsetY by animateDpAsState(depth.offsetY, animationSpec = tween(700), label = "deck-offset")
-    val alpha by animateFloatAsState(depth.alpha, animationSpec = tween(700), label = "deck-alpha")
-
+private fun SamsungPhone(previewResources: List<Int>, previewIndex: Int) {
     Box(
         modifier = Modifier
-            .zIndex(depth.z)
-            .offset(y = offsetY)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                rotationZ = rotation
-                this.alpha = alpha
-            }
-            .width(210.dp)
-            .height(420.dp)
-            .clip(RoundedCornerShape(38.dp))
-            .background(Color(0xFF16191A)),
+            .width(218.dp)
+            .height(457.dp)
+            .clip(RoundedCornerShape(21.dp))
+            .background(Color(0xFF17191A)),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .width(190.dp)
-                .height(400.dp)
-                .clip(RoundedCornerShape(30.dp))
+                .width(210.dp)
+                .height(449.dp)
+                .clip(RoundedCornerShape(17.dp))
                 .background(Color(0xFF0B0D0E)),
         ) {
-            Image(
-                painter = painterResource(previewResource),
-                contentDescription = stringResource(RdR.string.rd_riskdetected_uygulama_onizlemesi),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
+            AnimatedContent(
+                targetState = previewIndex,
+                transitionSpec = {
+                    (fadeIn(tween(900)) + slideInVertically(tween(1_250, easing = FastOutSlowInEasing)) { it / 14 })
+                        .togetherWith(fadeOut(tween(700)) + slideOutVertically(tween(1_050, easing = FastOutSlowInEasing)) { -it / 14 })
+                },
+                label = "samsung-preview",
+            ) { index ->
+                Image(
+                    painter = painterResource(previewResources[index]),
+                    contentDescription = stringResource(RdR.string.rd_riskdetected_uygulama_onizlemesi),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 10.dp)
-                .size(width = 76.dp, height = 20.dp)
-                .clip(RoundedCornerShape(50))
+                .padding(top = 8.dp)
+                .size(7.dp)
+                .clip(CircleShape)
                 .background(Color.Black),
+        )
+        Box(
+            modifier = Modifier.align(Alignment.CenterEnd).padding(top = 64.dp).size(width = 2.dp, height = 48.dp)
+                .clip(RoundedCornerShape(1.dp)).background(Color(0xFF383B3D)),
+        )
+        Box(
+            modifier = Modifier.align(Alignment.CenterEnd).padding(bottom = 62.dp).size(width = 2.dp, height = 34.dp)
+                .clip(RoundedCornerShape(1.dp)).background(Color(0xFF383B3D)),
         )
     }
 }

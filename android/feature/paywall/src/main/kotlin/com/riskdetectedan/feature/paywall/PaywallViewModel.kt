@@ -9,6 +9,7 @@ import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.billing.BillingRepository
+import com.riskdetectedan.core.data.billing.BillingSubscriptionState
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
@@ -30,13 +31,28 @@ import javax.inject.Inject
 sealed interface PaywallUiState {
     data object Loading : PaywallUiState
     data object SignedOut : PaywallUiState
-    data class Loaded(val packages: List<BillingPackage>, val currentTier: SubscriptionTier) : PaywallUiState
+    data class Loaded(
+        val packages: List<BillingPackage>,
+        val currentTier: SubscriptionTier,
+        val currentProductId: String? = null,
+    ) : PaywallUiState
     data class Failed(val error: AppErrorMessage) : PaywallUiState
 }
 
 enum class PaywallPlan(val tier: SubscriptionTier) {
     Plus(SubscriptionTier.Plus),
     Pro(SubscriptionTier.Pro),
+}
+
+internal fun selectionIsUnavailableAsCurrentOrLower(
+    currentTier: SubscriptionTier,
+    currentProductId: String?,
+    targetTier: SubscriptionTier,
+    targetProductId: String,
+): Boolean {
+    if (currentTier.rank > targetTier.rank) return true
+    return currentTier == targetTier && currentProductId != null &&
+        currentProductId.substringBefore(':') == targetProductId.substringBefore(':')
 }
 
 enum class PaywallBilling(val wireValue: String) {
@@ -127,15 +143,16 @@ class PaywallViewModel @Inject constructor(
                     return@launch
                 }
             }
-            val tier = when (val result = billingRepository.currentTier()) {
+            val subscriptionState = when (val result = billingRepository.currentSubscriptionState()) {
                 is RdResult.Success -> result.value
                 // A completed offerings fetch with an unreadable customer-info read is still
                 // worth showing — surface Free rather than fail the whole paywall over what's
                 // likely a transient read error (same reasoning as AnalysisViewModel's findings
                 // fallback).
-                is RdResult.Failure -> SubscriptionTier.Free
+                is RdResult.Failure -> BillingSubscriptionState(SubscriptionTier.Free, null)
             }
-            _state.value = PaywallUiState.Loaded(packages, tier)
+            val tier = subscriptionState.tier
+            _state.value = PaywallUiState.Loaded(packages, tier, subscriptionState.activeProductId)
             _selectedPlan.value = if (tier == SubscriptionTier.Free) PaywallPlan.Plus else PaywallPlan.Pro
             alignBillingWithAvailablePackage(packages)
             recordEvent(userId, PaywallEventName.View, selectedTier = _selectedPlan.value.tier)
@@ -203,7 +220,13 @@ class PaywallViewModel @Inject constructor(
                 is RdResult.Success -> {
                     _isPurchasing.value = false
                     val current = _state.value as? PaywallUiState.Loaded
-                    if (current != null) _state.value = current.copy(currentTier = result.value)
+                    if (current != null) {
+                        val refreshed = (billingRepository.currentSubscriptionState() as? RdResult.Success)?.value
+                        _state.value = current.copy(
+                            currentTier = refreshed?.tier ?: result.value,
+                            currentProductId = refreshed?.activeProductId,
+                        )
+                    }
                     recordEvent(
                         userId,
                         PaywallEventName.PurchaseSucceeded,
@@ -321,5 +344,17 @@ class PaywallViewModel @Inject constructor(
     private fun BillingPackage.matches(billing: PaywallBilling): Boolean = when (billing) {
         PaywallBilling.Monthly -> productId.contains("monthly", ignoreCase = true)
         PaywallBilling.Yearly -> productId.contains("yearly", ignoreCase = true) || productId.contains("annual", ignoreCase = true)
+    }
+
+
+    fun selectionIsCurrentPlan(): Boolean {
+        val loaded = _state.value as? PaywallUiState.Loaded ?: return false
+        val selectedPackage = selectedPackage() ?: return false
+        return selectionIsUnavailableAsCurrentOrLower(
+            currentTier = loaded.currentTier,
+            currentProductId = loaded.currentProductId,
+            targetTier = selectedPackage.tier,
+            targetProductId = selectedPackage.productId,
+        )
     }
 }

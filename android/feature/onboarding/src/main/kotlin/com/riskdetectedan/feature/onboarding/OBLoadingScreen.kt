@@ -215,7 +215,8 @@ private fun StepRow(done: Boolean, revealed: Boolean, highlight: String, suffix:
         Text(
             buildAnnotatedString {
                 withStyle(SpanStyle(color = colors.onyx, fontWeight = FontWeight.SemiBold)) { append(highlight) }
-                withStyle(SpanStyle(color = if (done) colors.onyx else colors.slate)) { append(suffix) }
+                append(" ")
+                withStyle(SpanStyle(color = if (done) colors.onyx else colors.slate)) { append(suffix.trim()) }
             },
             style = RdFontStyle.Footnote.toTextStyle(),
         )

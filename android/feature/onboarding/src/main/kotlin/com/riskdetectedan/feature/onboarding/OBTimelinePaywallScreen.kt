@@ -67,6 +67,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.text.NumberFormat
+import java.util.Currency
+import java.util.Locale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.legal.LegalDocumentAssets
@@ -128,6 +131,8 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
     val selectedPackage = loaded?.packages?.let {
         if (selectedPlan == TimelinePlan.Yearly) it.yearly else it.monthly
     }
+    val hasVerifiedSevenDayTrial = selectedPlan == TimelinePlan.Yearly &&
+        isSevenDayTrialPeriod(selectedPackage?.freeTrialPeriodIso8601)
 
     Box(modifier = Modifier.fillMaxSize().background(colors.paper)) {
         Column(
@@ -147,11 +152,22 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
                 modifier = Modifier.padding(end = 52.dp),
             )
 
-            Spacer(Modifier.height(18.dp))
+            if (selectedPlan == TimelinePlan.Yearly) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    yearlyMonthlyPrice(selectedPackage)
+                        ?: stringResource(RdR.string.rd_yillik_google_play_fiyat),
+                    style = RdFontStyle.Footnote.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.padding(end = 52.dp),
+                )
+            }
+
+            Spacer(Modifier.height(14.dp))
             PlanToggle(selectedPlan = selectedPlan, onSelect = { selectedPlan = it })
 
             Spacer(Modifier.height(15.dp))
-            TimelineCard(selectedPlan)
+            TimelineCard(selectedPlan, hasVerifiedSevenDayTrial)
 
             Spacer(Modifier.height(160.dp))
         }
@@ -179,9 +195,11 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             RdPrimaryButton(
-                text = stringResource(
-                    if (selectedPlan == TimelinePlan.Yearly) RdR.string.rd_devam_et else RdR.string.rd_aboneligi_baslat,
-                ),
+                text = when {
+                    state is OBTimelinePaywallUiState.Loading -> stringResource(RdR.string.rd_google_play_fiyati_yukleniyor)
+                    hasVerifiedSevenDayTrial -> stringResource(RdR.string.rd_yedi_gun_ucretsiz_dene)
+                    else -> stringResource(RdR.string.rd_aboneligi_baslat)
+                },
                 onClick = {
                     val activityRef = activity
                     if (selectedPackage != null && activityRef != null) {
@@ -271,6 +289,56 @@ fun OBTimelinePaywallScreen(onDismiss: () -> Unit, viewModel: OBTimelinePaywallV
     }
 }
 
+/** Deterministic store-loaded surface for screenshot regression tests. Production still uses
+ * [OBTimelinePaywallScreen] and a real RevenueCat package/purchase callback. */
+@Composable
+fun OBTimelinePaywallPreviewSurface() {
+    val colors = RdTheme.colors
+    Box(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = RdSpacing.lg),
+        ) {
+            Spacer(Modifier.height(48.dp))
+            Text(
+                stringResource(RdR.string.rd_yillik_plan_nasil_calisir),
+                style = RdFontStyle.Title1.toTextStyle(),
+                color = colors.black,
+                modifier = Modifier.padding(end = 52.dp),
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                stringResource(RdR.string.rd_iki_ay_ucretsiz_aylik_format, "₺208,33"),
+                style = RdFontStyle.Footnote.toTextStyle(),
+                color = colors.slate,
+            )
+            Spacer(Modifier.height(14.dp))
+            PlanToggle(TimelinePlan.Yearly, {})
+            Spacer(Modifier.height(15.dp))
+            TimelineCard(TimelinePlan.Yearly, hasVerifiedSevenDayTrial = true)
+            Spacer(Modifier.height(160.dp))
+        }
+        IconButton(
+            onClick = {},
+            modifier = Modifier.align(Alignment.TopEnd).padding(top = 52.dp, end = 18.dp).size(38.dp)
+                .clip(CircleShape).background(colors.white).border(1.dp, colors.line, CircleShape),
+        ) {
+            Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kapat), modifier = Modifier.size(15.dp))
+        }
+        Column(
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(colors.paper)
+                .padding(horizontal = RdSpacing.lg).padding(top = 12.dp, bottom = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            RdPrimaryButton(text = stringResource(RdR.string.rd_yedi_gun_ucretsiz_dene), onClick = {}, style = RdButtonStyle.Onyx)
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(RdR.string.rd_simdilik_ucretsiz_devam_et), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(RdR.string.rd_yillik_fiyat_format, "₺2.499,99"), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+            Spacer(Modifier.height(6.dp))
+        }
+    }
+}
+
 /** Real price when the package loaded, otherwise the pre-existing static Google Play copy
  * (loading, signed-out, offerings-fetch-failed, or no Plus package configured on this offering
  * yet — all fold into the same honest fallback). */
@@ -285,6 +353,33 @@ private fun priceLine(plan: TimelinePlan, billingPackage: BillingPackage?): Stri
     else ->
         stringResource(RdR.string.rd_aylik_google_play_fiyat)
 }
+
+/** Store-backed effective monthly price. The annual base plan is priced as ten monthly
+ * payments, so the user sees the requested two-month saving without hard-coded currency. */
+@Composable
+private fun yearlyMonthlyPrice(billingPackage: BillingPackage?): String? {
+    val monthly = effectiveMonthlyPrice(billingPackage) ?: return null
+    return stringResource(RdR.string.rd_iki_ay_ucretsiz_aylik_format, monthly)
+}
+
+internal fun effectiveMonthlyPrice(billingPackage: BillingPackage?): String? {
+    val micros = billingPackage?.priceAmountMicros ?: return null
+    val currencyCode = billingPackage.currencyCode?.takeIf { it.isNotBlank() } ?: return null
+    return effectiveMonthlyPrice(micros, currencyCode)
+}
+
+internal fun effectiveMonthlyPrice(priceAmountMicros: Long, currencyCode: String): String? {
+    if (priceAmountMicros < 0 || currencyCode.isBlank()) return null
+    return runCatching {
+        NumberFormat.getCurrencyInstance(Locale.forLanguageTag("tr-TR")).apply {
+            currency = Currency.getInstance(currencyCode)
+            maximumFractionDigits = 2
+            minimumFractionDigits = 2
+        }.format(priceAmountMicros / 1_000_000.0 / 12.0)
+    }.getOrNull()
+}
+
+internal fun isSevenDayTrialPeriod(periodIso8601: String?): Boolean = periodIso8601 in setOf("P7D", "P1W")
 
 /** RevenueCat's `PurchaseParams.Builder` needs an Activity (to launch Google Play's billing
  * sheet) — `LocalContext.current` in a Composable is often an Activity already but isn't
@@ -314,7 +409,7 @@ private fun PlanToggle(selectedPlan: TimelinePlan, onSelect: (TimelinePlan) -> U
         }
         if (selectedPlan == TimelinePlan.Yearly) {
             Spacer(Modifier.height(7.dp))
-            Text(stringResource(RdR.string.rd_yuzde_17_i_ndirim), style = RdFontStyle.Caption.toTextStyle(), color = colors.green)
+            Text(stringResource(RdR.string.rd_iki_ay_ucretsiz), style = RdFontStyle.Caption.toTextStyle(), color = colors.green)
         }
     }
 }
@@ -336,7 +431,7 @@ private fun PlanPill(label: String, selected: Boolean, onClick: () -> Unit, modi
 }
 
 @Composable
-private fun TimelineCard(plan: TimelinePlan) {
+private fun TimelineCard(plan: TimelinePlan, hasVerifiedSevenDayTrial: Boolean = false) {
     val colors = RdTheme.colors
     val features = plusFeatures()
     Column(
@@ -347,10 +442,13 @@ private fun TimelineCard(plan: TimelinePlan) {
             .border(1.dp, colors.line, RoundedCornerShape(24.dp))
             .padding(14.dp),
     ) {
-        if (plan == TimelinePlan.Yearly) {
+        if (plan == TimelinePlan.Yearly && hasVerifiedSevenDayTrial) {
             TimelineStep(Icons.Filled.Lock, colors.green, stringResource(RdR.string.rd_bugun), stringResource(RdR.string.rd_yillik_plus_incele), features, isLast = false)
             TimelineStep(Icons.Filled.Notifications, Color(0xFFF0A400), stringResource(RdR.string.rd_bes_gun), stringResource(RdR.string.rd_deneme_hatirlatma), emptyList(), isLast = false)
             TimelineStep(Icons.Filled.WorkspacePremium, Color(0xFFF0A400), stringResource(RdR.string.rd_yedi_gun_yenileme), stringResource(RdR.string.rd_yillik_plan_baslar), emptyList(), isLast = true)
+        } else if (plan == TimelinePlan.Yearly) {
+            TimelineStep(Icons.Filled.Lock, Color(0xFFF0A400), stringResource(RdR.string.rd_bugun), stringResource(RdR.string.rd_ozellikler_aktif_yillik_odeme_baslar), features, isLast = false)
+            TimelineStep(Icons.Filled.CalendarMonth, colors.green, stringResource(RdR.string.rd_her_yil), stringResource(RdR.string.rd_yillik_plan_yenilenir), emptyList(), isLast = true)
         } else {
             TimelineStep(Icons.Filled.Lock, Color(0xFFF0A400), stringResource(RdR.string.rd_bugun), stringResource(RdR.string.rd_ozellikler_aktif_odeme_baslar), features, isLast = false)
             TimelineStep(Icons.Filled.CalendarMonth, colors.green, stringResource(RdR.string.rd_her_ay), stringResource(RdR.string.rd_aylik_plan_yenilenir), emptyList(), isLast = true)

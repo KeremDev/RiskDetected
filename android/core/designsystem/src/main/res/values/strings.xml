@@ -162,6 +162,7 @@
     <string name="rd_yukselt">Yükselt</string>
     <string name="rd_yukselt_1bfd44dd">Yükselt ›</string>
     <string name="rd_yuzde_17_i_ndirim" formatted="false">%17 İndirim</string>
+    <string name="rd_iki_ay_ucretsiz">2 ay ücretsiz</string>
     <string name="rd_zaten_hesabim_var">Zaten hesabım var · </string>
     <string name="rd_profil_yuklenemedi_format">Profil yüklenemedi: %1$s</string>
     <string name="rd_analiz_kapsami_format">Analiz kapsamı: %1$s</string>
@@ -219,7 +220,7 @@
     <string name="rd_coklu_fotograf_analizi">Çoklu Fotoğraf Analizi</string>
     <string name="rd_yeni">Yeni</string>
     <string name="rd_sektor_bazli_analiz">Sektör Bazlı Analiz</string>
-    <string name="rd_yillik_plan_nasil_calisir">Yıllık Plan Nasıl Çalışır</string>
+    <string name="rd_yillik_plan_nasil_calisir">Yıllık Plan Nasıl Çalışır?</string>
     <string name="rd_plus_gucunu_hemen_kullanin">Plus Aboneliğin Gücünü Hemen Kullanın</string>
     <string name="rd_isleniyor">İşleniyor…</string>
     <string name="rd_kullanim_sartlari">Kullanım Şartları</string>
@@ -235,6 +236,9 @@
     <string name="rd_yedi_gun_yenileme">7 gün · Yenileme</string>
     <string name="rd_yillik_plan_baslar">Devam edersen yıllık plan başlar; istediğin zaman iptal edebilirsin.</string>
     <string name="rd_ozellikler_aktif_odeme_baslar">Tüm özellikler hemen aktif olur, ödeme başlar.</string>
+    <string name="rd_ozellikler_aktif_yillik_odeme_baslar">Plus özelliklerin hemen aktif olur; yıllık ödeme bugün başlar.</string>
+    <string name="rd_her_yil">Her yıl</string>
+    <string name="rd_yillik_plan_yenilenir">Yıllık planın, iptal etmediğin sürece her yıl yenilenir.</string>
     <string name="rd_her_ay">Her ay</string>
     <string name="rd_aylik_plan_yenilenir">Aylık plan otomatik yenilenir. İstediğin zaman iptal edebilirsin.</string>
     <string name="rd_profil">Profil</string>
@@ -421,13 +425,14 @@
     <string name="rd_saha_aksam_ofis_soru">Sahada gördüklerini akşam ofiste mi yazıyorsun?</string>
     <string name="rd_kurulum_hazirlaniyor">Sana özel kurulum hazırlanıyor…</string>
     <string name="rd_plan_hazir_nokta">Plan hazır.</string>
-    <string name="rd_loading_sector_suffix"> için risk analiz şablonları yükleniyor…</string>
-    <string name="rd_loading_hazard_suffix"> sınıfı için kontrol listesi hazırlanıyor…</string>
-    <string name="rd_loading_certificate_suffix"> için rapor formatı kişiselleştiriliyor…</string>
+    <string name="rd_loading_sector_suffix">için risk analiz şablonları yükleniyor…</string>
+    <string name="rd_loading_hazard_suffix">sınıfı için kontrol listesi hazırlanıyor…</string>
+    <string name="rd_loading_certificate_suffix">için rapor formatı kişiselleştiriliyor…</string>
     <string name="rd_plan_kaydet_google_play">Planını hesabına kaydedelim; fiyat ve uygun teklifleri Google Play\'de doğrula.</string>
     <string name="rd_bildirim_plan_teklif_baslik">Plan ve teklif bilgilerini bildirimlerden takip edebilirsin</string>
     <string name="rd_bildirim_plan_teklif_aciklama">Plan, teklif ve uygulama hatırlatmaları için bildirimleri aç.</string>
     <string name="rd_ucretsiz_devam_et">Ücretsiz devam et</string>
+    <string name="rd_bildirimleri_ac">Bildirimleri Aç</string>
     <string name="rd_auth_plan_kaydet">Hazırladığın planı kaydedebilmen için hesabını oluşturalım.</string>
     <string name="rd_auth_on_saniye">Planın hesabına kilitlensin diye 10 saniyeni alacağız</string>
     <string name="rd_apple_baglaniyor">Apple ile bağlanıyor…</string>
@@ -522,6 +527,11 @@
     <string name="rd_geri_yukleniyor">Geri yükleniyor…</string>
     <string name="rd_trial_title_prefix">Sana uygun </string>
     <string name="rd_trial_title_emphasis">planı</string>
+    <string name="rd_trial_free_title">Uygulamamızı ücretsiz denemenizi istiyoruz</string>
+    <string name="rd_bu_asamada_odeme_alinmaz">Bu aşamada ödeme alınmaz</string>
+    <string name="rd_sifir_tl_dene">0,00 TL\'ye dene</string>
+    <string name="rd_iki_ay_ucretsiz_aylik_format">2 ay ücretsiz · %1$s/ay</string>
+    <string name="rd_yedi_gun_ucretsiz_dene">7 Gün Ücretsiz Dene</string>
     <string name="rd_yuksekte_calisma">Yüksekte çalışma</string>
     <string name="rd_kkd_eksikligi">KKD eksikliği</string>
     <string name="rd_aydinlatma">Aydınlatma</string>

@@ -120,10 +120,10 @@ fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
             textAlign = TextAlign.Center,
         )
 
-        Spacer(Modifier.height(46.dp))
+        Spacer(Modifier.height(38.dp))
         Box(
             modifier = Modifier
-                .size(200.dp)
+                .size(238.dp)
                 .scale(glowScale)
                 .background(
                     Brush.radialGradient(listOf(colors.green.copy(alpha = 0.16f), colors.green.copy(alpha = 0f))),
@@ -135,7 +135,7 @@ fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
                 Icons.Filled.NotificationsActive,
                 contentDescription = null,
                 tint = colors.green,
-                modifier = Modifier.size(84.dp).rotate(wiggle),
+                modifier = Modifier.size(118.dp).rotate(wiggle),
             )
         }
 
@@ -148,7 +148,7 @@ fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
             modifier = Modifier.widthIn(max = 320.dp),
         )
 
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.weight(1f))
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier.size(20.dp).clip(CircleShape).background(colors.greenSoft),
@@ -162,7 +162,7 @@ fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
 
         Spacer(Modifier.height(16.dp))
         RdPrimaryButton(
-            text = stringResource(RdR.string.rd_ucretsiz_devam_et),
+            text = stringResource(RdR.string.rd_bildirimleri_ac),
             onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -173,6 +173,6 @@ fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
             showArrow = false,
             style = RdButtonStyle.Onyx,
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
     }
 }

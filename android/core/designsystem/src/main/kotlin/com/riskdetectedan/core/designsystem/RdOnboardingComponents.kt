@@ -286,6 +286,7 @@ fun RdCard(
     iconBackground: Color? = null,
     selected: Boolean = false,
     multi: Boolean = false,
+    titleStyle: RdFontStyle = RdFontStyle.Callout,
 ) {
     val colors = RdTheme.colors
     val borderWidth = if (selected) 2.dp else 1.dp
@@ -325,7 +326,7 @@ fun RdCard(
                 Spacer(Modifier.width(RdSpacing.sm))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx)
+                Text(title, style = titleStyle.toTextStyle(), color = colors.onyx)
                 if (subtitle != null) {
                     Text(subtitle, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
                 }

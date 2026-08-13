@@ -3,8 +3,6 @@ package com.riskdetectedan.feature.onboarding
 import com.riskdetectedan.core.designsystem.R as RdR
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocalHospital
-import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.runtime.Composable
@@ -19,11 +17,8 @@ import com.riskdetectedan.core.designsystem.RdHeroTint
  * per class, not an SF Symbol — substituted with a Material icon per this pass's documented
  * simplification policy. A/B/C reuse iOS's real `hatColor` values (amber/blue/green) as the icon
  * tint — a real, cheap detail to keep even without the full badge illustration. iOS's screen
- * itself only offers A/B/C (`helmetItems` has 3 entries); Doctor/OtherHealth exist in the shared
- * `OBCertificate` enum but aren't rendered as options there — Android's screen already showed
- * all 5 before this pass (a pre-existing scope difference, not something this icon-only change
- * should silently narrow), so they get a sensible icon each too, just no iOS hat-color source
- * to draw from. */
+ * itself only offers A/B/C (`helmetItems` has 3 entries). Android intentionally presents that
+ * same specialist-only set while keeping legacy enum values readable for existing profiles. */
 @Composable
 fun OBCertificateScreen(
     selected: OnboardingCertificate?,
@@ -33,7 +28,7 @@ fun OBCertificateScreen(
 ) {
     OnboardingChoiceScreen(
         title = stringResource(RdR.string.rd_sertifika_sinifi_soru),
-        items = OnboardingCertificate.entries,
+        items = specialistCertificates,
         isSelected = { it == selected },
         label = { certificateLabel(it) },
         onToggle = onSelect,
@@ -47,6 +42,12 @@ fun OBCertificateScreen(
         itemIconTint = { certificateTint(it) },
     )
 }
+
+internal val specialistCertificates = listOf(
+    OnboardingCertificate.A,
+    OnboardingCertificate.B,
+    OnboardingCertificate.C,
+)
 
 @Composable
 internal fun certificateLabel(certificate: OnboardingCertificate): String = stringResource(
@@ -63,8 +64,7 @@ private fun certificateIcon(certificate: OnboardingCertificate): ImageVector = w
     OnboardingCertificate.A -> Icons.Filled.WorkspacePremium
     OnboardingCertificate.B -> Icons.Filled.Shield
     OnboardingCertificate.C -> Icons.Filled.Shield
-    OnboardingCertificate.Doctor -> Icons.Filled.MedicalServices
-    OnboardingCertificate.OtherHealth -> Icons.Filled.LocalHospital
+    OnboardingCertificate.Doctor, OnboardingCertificate.OtherHealth -> Icons.Filled.Shield
 }
 
 /** A/B/C reuse OBCertificateView.swift's real `hatColor` values verbatim (#FFB300/#4F86E0/

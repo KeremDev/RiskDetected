@@ -123,7 +123,8 @@ fun OBPlanSummaryScreen(state: OnboardingUiState, onNext: () -> Unit) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+    Box(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+    Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = RdSpacing.lg, vertical = RdSpacing.md),
             verticalAlignment = Alignment.CenterVertically,
@@ -146,13 +147,7 @@ fun OBPlanSummaryScreen(state: OnboardingUiState, onNext: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = RdSpacing.xl),
         ) {
-            Box {
-                PlanHeroCard(context = context)
-                RdConfettiView(
-                    isActive = confettiActive,
-                    modifier = Modifier.fillMaxWidth().height(96.dp),
-                )
-            }
+            PlanHeroCard(context = context)
 
             Spacer(Modifier.height(12.dp))
             TimelineCard(steps = context.steps, revealedCount = revealedSteps)
@@ -180,6 +175,13 @@ fun OBPlanSummaryScreen(state: OnboardingUiState, onNext: () -> Unit) {
         RdFooter {
             RdPrimaryButton(text = stringResource(RdR.string.rd_hesabimi_olustur), onClick = onNext, style = RdButtonStyle.Onyx)
         }
+    }
+        RdConfettiView(
+            isActive = confettiActive,
+            dense = true,
+            durationMillis = 2_100,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 

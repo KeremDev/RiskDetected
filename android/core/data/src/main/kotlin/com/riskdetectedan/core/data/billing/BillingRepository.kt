@@ -15,6 +15,7 @@ import com.revenuecat.purchases.Package
 import com.revenuecat.purchases.PurchaseParams
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
+import com.revenuecat.purchases.models.StoreReplacementMode
 import com.revenuecat.purchases.awaitCustomerInfo
 import com.revenuecat.purchases.awaitLogIn
 import com.revenuecat.purchases.awaitLogOut
@@ -71,7 +72,28 @@ data class BillingPackage(
     val productId: String,
     val formattedPrice: String,
     val revenueCatPackage: Package,
+    val priceAmountMicros: Long? = null,
+    val currencyCode: String? = null,
+    /** Google Play only returns an eligible free-trial option for the current Play account. */
+    val freeTrialPeriodIso8601: String? = null,
 )
+
+data class BillingSubscriptionState(
+    val tier: SubscriptionTier,
+    val activeProductId: String?,
+)
+
+internal fun sameStoreProduct(left: String, right: String): Boolean =
+    left.substringBefore(':') == right.substringBefore(':')
+
+internal fun replacementModeFor(
+    currentTier: SubscriptionTier,
+    targetTier: SubscriptionTier,
+): StoreReplacementMode = if (currentTier == targetTier) {
+    StoreReplacementMode.DEFERRED
+} else {
+    StoreReplacementMode.CHARGE_PRORATED_PRICE
+}
 
 /**
  * Wraps the RevenueCat Android SDK, mirroring `SubscriptionManager.swift`'s contract closely
@@ -148,6 +170,14 @@ class BillingRepository @Inject constructor(
                 productId = pkg.product.id,
                 formattedPrice = pkg.product.price.formatted,
                 revenueCatPackage = pkg,
+                priceAmountMicros = pkg.product.price.amountMicros,
+                currencyCode = pkg.product.price.currencyCode,
+                freeTrialPeriodIso8601 = pkg.product.subscriptionOptions
+                    ?.freeTrial
+                    ?.pricingPhases
+                    ?.firstOrNull()
+                    ?.billingPeriod
+                    ?.iso8601,
             )
         }
         RdResult.Success(packages)
@@ -160,16 +190,25 @@ class BillingRepository @Inject constructor(
      * reasoning as `GoogleAuthClient.requestIdToken(context)` in feature:onboarding: the
      * Activity is supplied by the caller at the point of use, not held or injected here. */
     suspend fun purchase(activity: Activity, billingPackage: BillingPackage): RdResult<SubscriptionTier> = try {
-        preCheckAlreadyEntitled(billingPackage.tier)?.let { preCheck ->
+        val customerInfo = runCatching {
+            Purchases.sharedInstance.awaitCustomerInfo(CacheFetchPolicy.FETCH_CURRENT)
+        }.getOrNull()
+        preCheckAlreadyEntitled(billingPackage, customerInfo)?.let { preCheck ->
             return when (preCheck) {
                 is RdResult.Failure -> preCheck
                 is RdResult.Success -> syncBackendSubscriptionWithRetry(preCheck.value)
             }
         }
 
-        val result = Purchases.sharedInstance.awaitPurchase(
-            PurchaseParams.Builder(activity, billingPackage.revenueCatPackage).build(),
-        )
+        val purchaseBuilder = PurchaseParams.Builder(activity, billingPackage.revenueCatPackage)
+        val currentState = customerInfo?.let(::subscriptionStateFromCustomerInfo)
+        val oldProductId = currentState?.activeProductId
+        if (oldProductId != null && !sameStoreProduct(oldProductId, billingPackage.productId)) {
+            purchaseBuilder
+                .oldProductId(oldProductId)
+                .replacementMode(replacementModeFor(currentState.tier, billingPackage.tier))
+        }
+        val result = Purchases.sharedInstance.awaitPurchase(purchaseBuilder.build())
         val tier = tierFromCustomerInfo(result.customerInfo)
         validateReceiptOwner(result.customerInfo, tier)?.let { return it }
         if (tier != billingPackage.tier) {
@@ -195,18 +234,23 @@ class BillingRepository @Inject constructor(
      * into [validateReceiptOwner] — that one validates *after* a purchase/restore attempt
      * resolves; this one runs *before*, deciding whether to attempt the purchase call at all.
      */
-    private suspend fun preCheckAlreadyEntitled(expectedTier: SubscriptionTier): RdResult<SubscriptionTier>? {
-        val customerInfo = try {
-            Purchases.sharedInstance.awaitCustomerInfo(CacheFetchPolicy.FETCH_CURRENT)
-        } catch (t: Throwable) {
-            return null
-        }
+    private fun preCheckAlreadyEntitled(
+        targetPackage: BillingPackage,
+        customerInfo: CustomerInfo?,
+    ): RdResult<SubscriptionTier>? {
+        customerInfo ?: return null
         val currentTier = tierFromCustomerInfo(customerInfo)
         if (!currentTier.isPaid) return null
         validateReceiptOwner(customerInfo, currentTier)?.let { return it }
 
-        if (currentTier == expectedTier) return RdResult.Success(currentTier)
-        if (currentTier.rank > expectedTier.rank) {
+        val activeProductId = subscriptionStateFromCustomerInfo(customerInfo).activeProductId
+        if (currentTier == targetPackage.tier &&
+            activeProductId != null &&
+            sameStoreProduct(activeProductId, targetPackage.productId)
+        ) {
+            return RdResult.Success(currentTier)
+        }
+        if (currentTier.rank > targetPackage.tier.rank) {
             return RdResult.Failure(
                 code = "billing_higher_tier_already_active",
                 message = "Bu Google Play hesabında zaten daha üst bir RiskDetected aboneliği (${currentTier.name}) aktif.",
@@ -233,6 +277,12 @@ class BillingRepository @Inject constructor(
         val customerInfo = Purchases.sharedInstance.awaitCustomerInfo()
         val tier = tierFromCustomerInfo(customerInfo)
         validateReceiptOwner(customerInfo, tier) ?: RdResult.Success(tier)
+    } catch (t: Throwable) {
+        RdResult.Failure("billing_customer_info_failed", t.message ?: "billing_customer_info_failed", t)
+    }
+
+    suspend fun currentSubscriptionState(): RdResult<BillingSubscriptionState> = try {
+        RdResult.Success(subscriptionStateFromCustomerInfo(Purchases.sharedInstance.awaitCustomerInfo()))
     } catch (t: Throwable) {
         RdResult.Failure("billing_customer_info_failed", t.message ?: "billing_customer_info_failed", t)
     }
@@ -363,6 +413,14 @@ class BillingRepository @Inject constructor(
         customerInfo.entitlements.active.containsKey(PRO_ENTITLEMENT_ID) -> SubscriptionTier.Pro
         customerInfo.entitlements.active.containsKey(PLUS_ENTITLEMENT_ID) -> SubscriptionTier.Plus
         else -> SubscriptionTier.Free
+    }
+
+    private fun subscriptionStateFromCustomerInfo(customerInfo: CustomerInfo): BillingSubscriptionState {
+        val tier = tierFromCustomerInfo(customerInfo)
+        val activeProductId = customerInfo.activeSubscriptions.firstOrNull { productId ->
+            tierForProductId(productId) == tier
+        }
+        return BillingSubscriptionState(tier = tier, activeProductId = activeProductId)
     }
 
     /** Prefix match, not exact — Android Billing Library 5+ subscriptions have base plans, and

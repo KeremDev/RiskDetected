@@ -36,6 +36,7 @@ import com.riskdetectedan.core.data.auth.AuthDeepLinkHandler
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.notifications.NotificationEngagementRepository
+import com.riskdetectedan.core.data.onboarding.OnboardingAnswersRepository
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import com.riskdetectedan.core.designsystem.RdTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -60,6 +61,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var authRepository: AuthRepository
     @Inject lateinit var billingRepository: BillingRepository
     @Inject lateinit var notificationEngagementRepository: NotificationEngagementRepository
+    @Inject lateinit var onboardingAnswersRepository: OnboardingAnswersRepository
 
     private val updateResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -186,6 +188,9 @@ class MainActivity : ComponentActivity() {
             // Google Play subscription management; the backend remains the
             // only authority and this passive call never unlocks paid access.
             lifecycleScope.launch { billingRepository.reconcileBackendSubscription() }
+            // The onboarding hand-off keeps its draft until the authenticated RPC succeeds.
+            // Retrying here closes the offline/interrupted-login gap without blocking app entry.
+            lifecycleScope.launch { onboardingAnswersRepository.syncPending() }
         }
     }
 

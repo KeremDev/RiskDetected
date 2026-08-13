@@ -30,7 +30,7 @@ import kotlinx.coroutines.delay
 private data class RdConfettiPiece(
     val x: Float,
     val startY: Float,
-    val endY: Float,
+    val endYFraction: Float,
     val delayMs: Long,
     val width: Dp,
     val height: Dp,
@@ -39,38 +39,48 @@ private data class RdConfettiPiece(
 )
 
 @Composable
-fun RdConfettiView(isActive: Boolean, modifier: Modifier = Modifier) {
+fun RdConfettiView(
+    isActive: Boolean,
+    modifier: Modifier = Modifier,
+    dense: Boolean = false,
+    durationMillis: Int = 620,
+) {
     val colors = RdTheme.colors
-    val pieces = remember(colors) {
-        listOf(
-            RdConfettiPiece(0.10f, -20f, 76f, 0L, 6.dp, 14.dp, colors.green, 92f),
-            RdConfettiPiece(0.20f, -36f, 108f, 50L, 8.dp, 8.dp, colors.planPlus, -140f),
-            RdConfettiPiece(0.32f, -26f, 70f, 80L, 5.dp, 13.dp, colors.medium, 120f),
-            RdConfettiPiece(0.44f, -44f, 118f, 20L, 7.dp, 12.dp, colors.greenDark, -98f),
-            RdConfettiPiece(0.57f, -24f, 86f, 110L, 7.dp, 7.dp, colors.low, 170f),
-            RdConfettiPiece(0.68f, -38f, 104f, 60L, 5.dp, 14.dp, colors.high, -126f),
-            RdConfettiPiece(0.79f, -18f, 74f, 130L, 9.dp, 9.dp, colors.planPlus, 104f),
-            RdConfettiPiece(0.90f, -34f, 112f, 40L, 6.dp, 13.dp, colors.green, -152f),
-        )
+    val pieces = remember(colors, dense) {
+        val palette = listOf(colors.green, colors.planPlus, colors.medium, colors.greenDark, colors.low, colors.high)
+        val count = if (dense) 44 else 8
+        List(count) { index ->
+            RdConfettiPiece(
+                x = ((index * 37) % 97 + 2) / 100f,
+                startY = -18f - ((index * 17) % 82),
+                endYFraction = 0.82f + ((index * 13) % 22) / 100f,
+                delayMs = if (dense) ((index * 67) % 900).toLong() else ((index * 37) % 140).toLong(),
+                width = (5 + (index * 3) % 8).dp,
+                height = (7 + (index * 5) % 12).dp,
+                color = palette[index % palette.size],
+                rotation = if (index % 2 == 0) 210f + index * 17f else -190f - index * 13f,
+            )
+        }
     }
 
     BoxWithConstraints(modifier = modifier) {
         val widthPx = constraints.maxWidth.toFloat()
+        val heightPx = constraints.maxHeight.toFloat()
         pieces.forEachIndexed { index, piece ->
             key(index) {
                 val progress = remember { Animatable(0f) }
                 LaunchedEffect(isActive) {
                     if (isActive) {
                         delay(100 + piece.delayMs)
-                        progress.animateTo(1f, animationSpec = tween(durationMillis = 620))
+                        progress.animateTo(1f, animationSpec = tween(durationMillis = durationMillis))
                     } else {
                         progress.snapTo(0f)
                     }
                 }
-                val y = lerp(piece.startY, piece.endY, progress.value)
+                val y = lerp(piece.startY, heightPx * piece.endYFraction, progress.value)
                 Box(
                     modifier = Modifier
-                        .offset { IntOffset((widthPx * piece.x).toInt(), y.dp.roundToPx()) }
+                        .offset { IntOffset((widthPx * piece.x).toInt(), y.toInt()) }
                         .size(piece.width, piece.height)
                         .graphicsLayer {
                             rotationZ = piece.rotation * progress.value

@@ -38,10 +38,9 @@ sealed interface OBTimelinePaywallUiState {
     data class Loaded(val packages: OBTimelinePackages) : OBTimelinePaywallUiState
 
     /** Signed out, offerings fetch failed, or RevenueCat has no Plus package configured on this
-     * offering — the screen falls back to its pre-existing static Google-Play-shows-price copy
-     * and both CTAs just continue onboarding, same as before this real-purchase wiring. Not
-     * surfaced as an error to the user: this is an onboarding upsell, not a paywall the user is
-     * blocked behind. */
+     * offering. The purchase CTA remains disabled so a missing store product can never be
+     * mistaken for a successful subscription; the explicit free-continuation action remains
+     * available because this onboarding upsell does not block access to the free tier. */
     data object Unavailable : OBTimelinePaywallUiState
 }
 

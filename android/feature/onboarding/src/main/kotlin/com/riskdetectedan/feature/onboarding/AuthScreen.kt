@@ -561,24 +561,22 @@ fun AuthScreen(
             // gated iOS-account recovery path; exposing it here would make an unconfigured
             // staging Apple client secret a release dependency without helping new Android users.
             Spacer(Modifier.height(14.dp))
-            RdPrimaryButton(
+            OnboardingAuthButton(
                 text = stringResource(
                     if (isLoading && emailPhase == EmailPhase.Hidden) RdR.string.rd_google_baglaniyor else RdR.string.rd_google_devam,
                 ),
                 onClick = { viewModel.signInWithGoogle(context) },
                 enabled = !isLoading,
-                showArrow = false,
-                style = RdButtonStyle.Onyx,
+                google = true,
             )
 
             Spacer(Modifier.height(10.dp))
             if (emailPhase == EmailPhase.Hidden) {
-                RdPrimaryButton(
+                OnboardingAuthButton(
                     text = stringResource(RdR.string.rd_eposta_devam),
                     onClick = { emailPhase = EmailPhase.Email },
                     enabled = !isLoading,
-                    showArrow = false,
-                    style = RdButtonStyle.Onyx,
+                    google = false,
                 )
             } else {
                 EmailAuthPanel(
@@ -616,6 +614,7 @@ fun AuthScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(stringResource(RdR.string.rd_zaten_hesabim_var), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                Spacer(Modifier.width(4.dp))
                 Text(stringResource(RdR.string.rd_giris_yap), style = RdFontStyle.Caption.toTextStyle(), color = colors.onyx)
             }
 
@@ -642,6 +641,99 @@ fun AuthScreen(
     }
 }
 
+@Composable
+fun AuthOnboardingPreviewSurface() {
+    val colors = RdTheme.colors
+    Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        IconButton(onClick = {}, modifier = Modifier.padding(start = 12.dp, top = 8.dp).size(40.dp)) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = colors.onyx)
+        }
+        Column(
+            modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = RdSpacing.xl),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            RdHeroTile(tint = RdHeroTint.Green) {
+                Icon(Icons.Filled.VerifiedUser, contentDescription = null, tint = colors.green, modifier = Modifier.size(28.dp))
+            }
+            Spacer(Modifier.height(24.dp))
+            Text(stringResource(RdR.string.rd_son_adim), style = RdFontStyle.Title1.toTextStyle(), color = colors.onyx)
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(RdR.string.rd_auth_plan_kaydet), style = RdFontStyle.Subheadline.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(24.dp))
+            PlanRecapCard(primarySectorLabel = "İnşaat", certificateLabel = "A Sınıfı")
+            Spacer(Modifier.height(24.dp))
+            HorizontalDivider(color = colors.line)
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(colors.greenSoft.copy(alpha = 0.5f))
+                    .border(1.dp, colors.green.copy(alpha = 0.18f), RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Lock, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(RdR.string.rd_auth_on_saniye), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+            }
+            Spacer(Modifier.height(14.dp))
+            OnboardingAuthButton(stringResource(RdR.string.rd_google_devam), {}, true, google = true)
+            Spacer(Modifier.height(10.dp))
+            OnboardingAuthButton(stringResource(RdR.string.rd_eposta_devam), {}, true, google = false)
+            Spacer(Modifier.height(18.dp))
+            Row(
+                modifier = Modifier.clip(CircleShape).background(colors.fog.copy(alpha = 0.6f)).border(1.dp, colors.line, CircleShape)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(RdR.string.rd_zaten_hesabim_var), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(RdR.string.rd_giris_yap), style = RdFontStyle.Caption.toTextStyle(), color = colors.onyx)
+            }
+            Spacer(Modifier.height(20.dp))
+            LegalAcceptanceNotice(onOpenDocument = {})
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun OnboardingAuthButton(
+    text: String,
+    onClick: () -> Unit,
+    enabled: Boolean,
+    google: Boolean,
+) {
+    val colors = RdTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (google) colors.white else colors.onyx)
+            .border(1.dp, if (google) colors.line else colors.onyx, RoundedCornerShape(16.dp))
+            .clickable(enabled = enabled, onClick = onClick)
+            .alpha(if (enabled) 1f else 0.55f)
+            .padding(horizontal = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        if (google) {
+            Image(
+                painter = painterResource(OnboardingR.drawable.google_mark),
+                contentDescription = null,
+                modifier = Modifier.size(23.dp),
+            )
+        } else {
+            Icon(Icons.Filled.Email, contentDescription = null, tint = colors.white, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = text,
+            style = RdFontStyle.Body.toTextStyle(),
+            color = if (google) colors.onyx else colors.white,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
 /** Real, per-phrase tappable version of the static notice this screen used to show — mirrors
  * `LegalAcceptanceNotice.swift`'s `AttributedString` link-building (`.link` on each phrase span)
  * closely enough to keep the exact same Turkish sentence and phrase boundaries, just built with
@@ -656,19 +748,22 @@ private fun LegalAcceptanceNotice(onOpenDocument: (String) -> Unit) {
     val suffix = stringResource(RdR.string.rd_legal_suffix)
 
     val annotated = buildAnnotatedString {
-        append(prefix)
+        append(prefix.trimEnd())
+        append(" ")
         pushStringAnnotation(tag = "legal", annotation = "terms")
         withStyle(SpanStyle(color = colors.onyx, textDecoration = TextDecoration.Underline)) {
             append(termsLabel)
         }
         pop()
-        append(joiner)
+        append(" ")
+        append(joiner.trim())
+        append(" ")
         pushStringAnnotation(tag = "legal", annotation = "privacy")
         withStyle(SpanStyle(color = colors.onyx, textDecoration = TextDecoration.Underline)) {
             append(privacyLabel)
         }
         pop()
-        append(suffix)
+        append(suffix.trimStart())
     }
 
     ClickableText(

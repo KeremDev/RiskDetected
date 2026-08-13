@@ -84,6 +84,7 @@ val productionGoogleServicesHasPackage = productionGoogleServicesText.contains(
 val knownProductionMarkers = setOf(
     expectedProductionSupabaseUrl,
     "200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com",
+    "195728384880-hl9phpirnluits33j3lvvdfcgrlmnrbk.apps.googleusercontent.com",
     "goog_IloQRDmtxistmNayBpPfwNbIoYa",
     "riskdetected",
 )

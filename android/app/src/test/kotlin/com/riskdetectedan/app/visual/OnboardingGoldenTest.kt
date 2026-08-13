@@ -43,6 +43,11 @@ import com.riskdetectedan.feature.onboarding.OBFrequencyScreen
 import com.riskdetectedan.feature.onboarding.OBHazardClassScreen
 import com.riskdetectedan.feature.onboarding.OBLoadingScreen
 import com.riskdetectedan.feature.onboarding.OBNotificationPermissionScreen
+import com.riskdetectedan.feature.onboarding.OBPlanSummaryScreen
+import com.riskdetectedan.feature.onboarding.OBTrialInvitePreviewSurface
+import com.riskdetectedan.feature.onboarding.OBTimelinePaywallPreviewSurface
+import com.riskdetectedan.feature.onboarding.AuthOnboardingPreviewSurface
+import com.riskdetectedan.feature.onboarding.OnboardingUiState
 import com.riskdetectedan.feature.onboarding.OBPainPointScreen
 import com.riskdetectedan.feature.onboarding.OBSectorScreen
 import com.riskdetectedan.feature.onboarding.OBSplashScreen
@@ -118,6 +123,8 @@ class OnboardingGoldenTest {
         }
 
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+        assertEquals(0, composeRule.onAllNodesWithText("İşyeri Hekimi").fetchSemanticsNodes().size)
+        assertEquals(0, composeRule.onAllNodesWithText("Sağlık personeli").fetchSemanticsNodes().size)
     }
 
     @Test
@@ -199,6 +206,50 @@ class OnboardingGoldenTest {
             }
         }
 
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun plan_summary_confetti_light() {
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                OBPlanSummaryScreen(
+                    state = OnboardingUiState(
+                        certificate = OnboardingCertificate.A,
+                        hazards = setOf(OnboardingHazardClass.Critical, OnboardingHazardClass.High),
+                        sectors = listOf(OnboardingSector.Construction),
+                        frequency = OnboardingFrequency.TwoToFive,
+                    ),
+                    onNext = {},
+                )
+            }
+        }
+        composeRule.mainClock.advanceTimeBy(1_400L)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun onboarding_auth_provider_buttons_light() {
+        composeRule.setContent { RiskDetectedLightOnlyTheme { AuthOnboardingPreviewSurface() } }
+        composeRule.onNodeWithText("Google ile devam et").assertIsDisplayed()
+        composeRule.onNodeWithText("E-posta ile devam et").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun trial_invite_light() {
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent { RiskDetectedLightOnlyTheme { OBTrialInvitePreviewSurface() } }
+        composeRule.mainClock.advanceTimeBy(900L)
+        composeRule.onNodeWithText("0,00 TL'ye dene").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun onboarding_timeline_yearly_store_loaded_light() {
+        composeRule.setContent { RiskDetectedLightOnlyTheme { OBTimelinePaywallPreviewSurface() } }
+        composeRule.onNodeWithText("7 Gün Ücretsiz Dene").assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 

@@ -108,7 +108,7 @@ fun PaywallScreen(
 
     val loaded = state as? PaywallUiState.Loaded
     val selectedPackage = loaded?.let { viewModel.selectedPackage() }
-    val currentPlanIncludesSelection = loaded?.currentTier?.includes(selectedPlan.tier) == true
+    val currentPlanIncludesSelection = loaded != null && viewModel.selectionIsCurrentPlan()
 
     Box(modifier = Modifier.fillMaxSize().background(colors.paper)) {
         when (val current = state) {

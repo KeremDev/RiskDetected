@@ -124,7 +124,7 @@ fun OnboardingFlow(
                 primarySectorLabel = state.sectors.firstOrNull()?.let { onboardingSectorLabel(it) },
                 certificateLabel = state.certificate?.let { certificateLabel(it) },
             )
-            9 -> OBTrialInviteScreen(onContinue = viewModel::next, onRestored = onFinished)
+            9 -> OBTrialInviteScreen(onContinue = viewModel::next, onRestored = onFinished, onDismiss = onFinished)
             10 -> OBNotificationPermissionScreen(onContinue = viewModel::next)
             11 -> OBTimelinePaywallScreen(onDismiss = onFinished)
             else -> onFinished()

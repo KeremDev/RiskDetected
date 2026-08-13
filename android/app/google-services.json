@@ -12,7 +12,28 @@
           "package_name": "com.riskdetectedan.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "195728384880-4mlqd5ge90c9npup788312m5rcdp3chv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.riskdetectedan.app",
+            "certificate_hash": "888a2fa6155d96299b690805a94b833c1142ce31"
+          }
+        },
+        {
+          "client_id": "195728384880-tv9qeuvmco7m3g1hg90uk0sclfccp7rg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.riskdetectedan.app",
+            "certificate_hash": "58b26304bc28e5665848d779045080054f9b567e"
+          }
+        },
+        {
+          "client_id": "195728384880-hl9phpirnluits33j3lvvdfcgrlmnrbk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAG7v0AXyCuA0zkvs-IdKPS4A89RCpC7JI"
@@ -20,7 +41,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "195728384880-hl9phpirnluits33j3lvvdfcgrlmnrbk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     },
@@ -31,7 +57,12 @@
           "package_name": "com.riskdetectedan.app.debug"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "195728384880-hl9phpirnluits33j3lvvdfcgrlmnrbk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAG7v0AXyCuA0zkvs-IdKPS4A89RCpC7JI"
@@ -39,7 +70,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "195728384880-hl9phpirnluits33j3lvvdfcgrlmnrbk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

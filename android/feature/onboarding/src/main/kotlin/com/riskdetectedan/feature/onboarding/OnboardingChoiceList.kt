@@ -29,6 +29,7 @@ import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdCard
 import com.riskdetectedan.core.designsystem.RdChipTile
 import com.riskdetectedan.core.designsystem.RdFooter
+import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdHeroTile
 import com.riskdetectedan.core.designsystem.RdHeroTint
 import com.riskdetectedan.core.designsystem.RdOnboardingSubtitle
@@ -83,6 +84,7 @@ fun <T> OnboardingChoiceScreen(
     itemSubtitle: @Composable (T) -> String? = { null },
     itemIconTint: (T) -> Color? = { null },
     itemIconBackground: (T) -> Color? = { null },
+    itemTitleStyle: RdFontStyle = RdFontStyle.Callout,
 ) {
     val resolvedContinueLabel = continueLabel ?: stringResource(RdR.string.rd_devam)
     val resolvedSelectionCounterSuffix = selectionCounterSuffix ?: stringResource(RdR.string.rd_secildi)
@@ -133,6 +135,7 @@ fun <T> OnboardingChoiceScreen(
                         iconBackground = itemIconBackground(item),
                         selected = isSelected(item),
                         multi = multi,
+                        titleStyle = itemTitleStyle,
                     )
                 }
             }

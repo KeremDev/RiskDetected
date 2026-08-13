@@ -34,7 +34,7 @@ client_id = "com.riskdetected.app.service,com.riskdetected.app"
 
 [auth.external.google]
 enabled = true
-client_id = "200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com"
+client_id = "200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com,195728384880-hl9phpirnluits33j3lvvdfcgrlmnrbk.apps.googleusercontent.com"
 
 [functions.analyze]
 verify_jwt = false

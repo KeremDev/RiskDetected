@@ -71,6 +71,15 @@ Deno.test("English XLSX parser sees localized sheets and no TR regulatory templa
     },
   );
 
+  const summaryTitle = workbook.Sheets["Summary"]["A1"] as XLSX.CellObject;
+  const registerHeader = workbook
+    .Sheets["Risk register"]["A1"] as XLSX.CellObject;
+  const registerNumber = workbook
+    .Sheets["Risk register"]["E2"] as XLSX.CellObject;
+  assertEquals(summaryTitle.s?.fill?.fgColor?.rgb, "E8F8EE");
+  assertEquals(registerHeader.s?.fill?.fgColor?.rgb, "DDF3FB");
+  assertEquals(registerNumber.s?.fill?.fgColor?.rgb, "FFFFFF");
+
   const bytes = XLSX.write(workbook, {
     bookType: "xlsx",
     type: "buffer",
