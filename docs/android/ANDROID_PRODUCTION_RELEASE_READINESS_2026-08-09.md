@@ -43,8 +43,10 @@ geçmişi boş; kullanılabilirliği doğrulandı).
 - Local Supabase reset sonrası 21 pgTAP dosyasında 485 test geçti; Edge Function paketinde 316
   Deno testi geçti; schema lint warning üretmedi.
 - AAB içindeki symbol table taşıyan native kütüphaneler Play'in beklediği `lib/<abi>/*.so`
-  yapısında ayrı, hash'lenen `native-debug-symbols.zip` artefaktına çıkarılıyor. Uygulamanın kendi
-  NDK kodu eklenirse AGP `SYMBOL_TABLE` üretimi de açık.
+  yapısında ayrı, hash'lenen `native-debug-symbols.zip` artefaktına çıkarılıyor. Hiçbir native
+  kütüphane symbol table sunmuyorsa Play için geçersiz/boş bir zip üretilmiyor; bunun yerine
+  açıklayıcı `native-debug-symbols-unavailable.txt` kanıtı bırakılıyor. Uygulamanın kendi NDK kodu
+  eklenirse AGP `SYMBOL_TABLE` üretimi de açık.
 - Onboarding Roborazzi baseline'ları sekiz ekran için görsel inceleme sonrası JDK 17 tabanına
   yenilendi ve change threshold `0` ile geçti.
 - Analiz bekleme/polling, Free sonuçtaki sarı Plus ve yeşil Pro CTA'ları, Pro bulgu detayı ve

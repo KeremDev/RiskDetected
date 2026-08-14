@@ -8,6 +8,7 @@ fi
 
 aab_path="$1"
 output_path="$2"
+unavailable_marker="${output_path%.zip}-unavailable.txt"
 
 [[ -f "$aab_path" ]] || { echo "AAB not found: $aab_path" >&2; exit 2; }
 if command -v readelf >/dev/null; then
@@ -19,6 +20,9 @@ else
   exit 3
 fi
 command -v zip >/dev/null || { echo "zip is required to package native symbols." >&2; exit 3; }
+
+mkdir -p "$(dirname "$output_path")"
+rm -f "$output_path" "$unavailable_marker"
 
 work_dir="$(mktemp -d "${TMPDIR:-/tmp}/riskdetected-native-symbols.XXXXXX")"
 trap 'rm -rf "$work_dir"' EXIT
@@ -38,13 +42,14 @@ while IFS= read -r library; do
 done < <(find "$work_dir/aab/base/lib" -type f -name '*.so' -print 2>/dev/null | sort)
 
 if (( symbol_count == 0 )); then
-  echo "The AAB contains no native library with an available ELF symbol table." >&2
-  exit 4
+  printf '%s\n' \
+    "No native library in this AAB exposes an ELF symbol table; no Play native-debug-symbols archive was produced." \
+    > "$unavailable_marker"
+  echo "The AAB contains no native library with an available ELF symbol table; skipping the optional Play symbols archive."
+  exit 0
 fi
 
-mkdir -p "$(dirname "$output_path")"
 output_path="$(cd "$(dirname "$output_path")" && pwd)/$(basename "$output_path")"
-rm -f "$output_path"
 (
   cd "$work_dir/archive"
   zip -q -r "$output_path" .
