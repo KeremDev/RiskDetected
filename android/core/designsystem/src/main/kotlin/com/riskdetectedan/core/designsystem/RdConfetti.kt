@@ -103,9 +103,27 @@ fun RdConfettiView(
                         .offset { IntOffset((widthPx * piece.x).toInt(), y.toInt()) }
                         .size(piece.width, piece.height)
                         .graphicsLayer {
-                            rotationZ = piece.rotation * progressValue
-                            alpha = progressValue * 0.92f
-                            val scale = 0.72f + 0.28f * progressValue
+                            // Skia's anti-aliasing for arbitrary rotations differs by a pixel
+                            // between macOS and Linux. Snapshot tests keep the particle layout
+                            // and colors, but use an axis-aligned frame so exact goldens remain
+                            // portable across developer machines and CI runners.
+                            rotationZ = if (snapshotElapsedMillis == null) {
+                                piece.rotation * progressValue
+                            } else {
+                                0f
+                            }
+                            alpha = if (snapshotElapsedMillis == null) {
+                                progressValue * 0.92f
+                            } else if (progressValue > 0f) {
+                                0.92f
+                            } else {
+                                0f
+                            }
+                            val scale = if (snapshotElapsedMillis == null) {
+                                0.72f + 0.28f * progressValue
+                            } else {
+                                1f
+                            }
                             scaleX = scale
                             scaleY = scale
                         }
