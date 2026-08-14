@@ -15,6 +15,7 @@ import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
 import com.riskdetectedan.core.data.paywall.PaywallEventName
 import com.riskdetectedan.core.data.paywall.PaywallEventRepository
+import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
@@ -72,6 +73,7 @@ class PaywallViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val billingRepository: BillingRepository,
+    private val profileRepository: ProfileRepository,
     private val paywallEventRepository: PaywallEventRepository,
     private val releasePolicyRepository: ReleasePolicyRepository,
 ) : ViewModel() {
@@ -151,9 +153,19 @@ class PaywallViewModel @Inject constructor(
                 // fallback).
                 is RdResult.Failure -> BillingSubscriptionState(SubscriptionTier.Free, null)
             }
-            val tier = subscriptionState.tier
-            _state.value = PaywallUiState.Loaded(packages, tier, subscriptionState.activeProductId)
-            _selectedPlan.value = if (tier == SubscriptionTier.Free) PaywallPlan.Plus else PaywallPlan.Pro
+            // Supabase is the entitlement authority throughout the app. RevenueCat remains the
+            // store-product authority, but its CustomerInfo can briefly lag the server webhook
+            // (or legitimately differ under a staging test override). Reading only CustomerInfo
+            // here made a backend-verified Plus/Pro user look Free inside the paywall even while
+            // the rest of the app correctly unlocked paid capabilities.
+            val backendTier = when (val profile = profileRepository.fetchProfile(userId)) {
+                is RdResult.Success -> profile.value.tier
+                is RdResult.Failure -> subscriptionState.tier
+            }
+            val activeProductId = subscriptionState.activeProductId
+                ?.takeIf { subscriptionState.tier == backendTier }
+            _state.value = PaywallUiState.Loaded(packages, backendTier, activeProductId)
+            _selectedPlan.value = if (backendTier == SubscriptionTier.Free) PaywallPlan.Plus else PaywallPlan.Pro
             alignBillingWithAvailablePackage(packages)
             recordEvent(userId, PaywallEventName.View, selectedTier = _selectedPlan.value.tier)
         }

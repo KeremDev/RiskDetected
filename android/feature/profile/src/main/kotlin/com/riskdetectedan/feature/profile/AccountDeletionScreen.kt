@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -149,7 +150,7 @@ private fun DestructiveButton(text: String, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = RdFontStyle.Callout.toTextStyle(), color = colors.white, textAlign = TextAlign.Center)
+        Text(text, style = RdFontStyle.Callout.toTextStyle(), color = Color.White, textAlign = TextAlign.Center)
     }
 }
 

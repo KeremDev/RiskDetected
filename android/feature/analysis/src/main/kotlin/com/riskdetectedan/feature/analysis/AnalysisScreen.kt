@@ -62,6 +62,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.asImageBitmap
@@ -252,7 +253,7 @@ fun AnalysisScreen(
                         modifier = Modifier.padding(bottom = RdSpacing.sm),
                     )
                 }
-                Text(stringResource(RdR.string.rd_sektor_sec), style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
+                Text(stringResource(RdR.string.rd_sektor_sec), style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
                 Column(
                     modifier = Modifier.padding(top = RdSpacing.sm, bottom = RdSpacing.md),
                     verticalArrangement = Arrangement.spacedBy(RdSpacing.xs),
@@ -341,7 +342,7 @@ private fun LabeledProgress(label: String) {
         modifier = Modifier.fillMaxWidth().padding(top = RdSpacing.xl),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CircularProgressIndicator(color = colors.onyx)
+        CircularProgressIndicator(color = colors.black)
         Spacer(Modifier.height(RdSpacing.sm))
         Text(label, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
     }
@@ -373,7 +374,7 @@ private fun AnalysisErrorCard(
                 modifier = Modifier.fillMaxWidth().padding(top = RdSpacing.sm),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colors.onyx,
-                    contentColor = colors.white,
+                    contentColor = Color.White,
                 ),
             ) {
                 Text(stringResource(RdR.string.rd_plan_seceneklerini_gor))
@@ -530,7 +531,7 @@ private fun ResultMetaCard(
                 }
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(summary?.title ?: stringResource(RdR.string.rd_analiz_sonucu), style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
+                Text(summary?.title ?: stringResource(RdR.string.rd_analiz_sonucu), style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
                 val canvasLabel = summary?.canvas?.let { canvasId ->
                     AnalysisCanvas.all.firstOrNull { it.id == canvasId }?.title ?: canvasId
                 }
@@ -587,7 +588,7 @@ private fun ResultMethodSelector(method: ResultRiskMethod, onSelect: (ResultRisk
                     .clickable { onSelect(option) }.padding(vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(stringResource(if (option == ResultRiskMethod.FineKinney) RdR.string.rd_fine_kinney else RdR.string.rd_bes_carp_bes_matris), style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx)
+                Text(stringResource(if (option == ResultRiskMethod.FineKinney) RdR.string.rd_fine_kinney else RdR.string.rd_bes_carp_bes_matris), style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
                 Text(stringResource(if (option == ResultRiskMethod.FineKinney) RdR.string.rd_fk_formula else RdR.string.rd_matrix_formula), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
             }
         }
@@ -609,7 +610,7 @@ private fun ResultDistributionCard(findings: List<Finding>, method: ResultRiskMe
         Text(stringResource(if (method == ResultRiskMethod.FineKinney) RdR.string.rd_fk_upper else RdR.string.rd_matrix_upper), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(topScore.let { if (it % 1.0 == 0.0) it.toInt().toString() else "%.1f".format(it) }, style = RdFontStyle.LargeTitle.toTextStyle(), color = colors.onyx)
+                Text(topScore.let { if (it % 1.0 == 0.0) it.toInt().toString() else "%.1f".format(it) }, style = RdFontStyle.LargeTitle.toTextStyle(), color = colors.black)
                 Text(stringResource(RdR.string.rd_en_yuksek_risk), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                 RdRiskChip(topLevel)
             }
@@ -620,7 +621,7 @@ private fun ResultDistributionCard(findings: List<Finding>, method: ResultRiskMe
                         Box(modifier = Modifier.width(22.dp).height(50.dp).clip(RoundedCornerShape(4.dp)).background(colors.fog), contentAlignment = Alignment.BottomCenter) {
                             Box(modifier = Modifier.fillMaxWidth().height((count.coerceAtMost(5) * 10).coerceAtLeast(2).dp).background(riskColor(level)))
                         }
-                        Text(count.toString(), style = RdFontStyle.Caption.toTextStyle(), color = colors.onyx)
+                        Text(count.toString(), style = RdFontStyle.Caption.toTextStyle(), color = colors.black)
                         Text(riskShortLabel(level), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                     }
                 }
@@ -675,14 +676,14 @@ private fun FindingRow(
             Text(
                 finding.ordinal.toString(),
                 style = RdFontStyle.Data.toTextStyle(),
-                color = colors.onyx,
+                color = colors.black,
                 modifier = Modifier.size(25.dp).clip(RoundedCornerShape(8.dp)).background(colors.fog)
                     .padding(top = 5.dp),
             )
             Spacer(Modifier.width(RdSpacing.xs))
             RdRiskChip(level = level)
             Spacer(Modifier.width(RdSpacing.xs))
-            Text(finding.title, style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx, modifier = Modifier.weight(1f))
+            Text(finding.title, style = RdFontStyle.Callout.toTextStyle(), color = colors.black, modifier = Modifier.weight(1f))
         }
         finding.description?.let {
             Text(it, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, modifier = Modifier.padding(top = RdSpacing.xxs))
@@ -769,19 +770,19 @@ private fun FindingRow(
             text = {
                 Column(modifier = Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState())) {
                     finding.description?.takeIf(String::isNotBlank)?.let {
-                        Text(stringResource(RdR.string.rd_gozlenen_durum), style = RdFontStyle.SectionHeader.toTextStyle(), color = colors.onyx)
+                        Text(stringResource(RdR.string.rd_gozlenen_durum), style = RdFontStyle.SectionHeader.toTextStyle(), color = colors.black)
                         Text(it, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
                     }
                     finding.rootCauseText?.takeIf(String::isNotBlank)?.let {
-                        Text(stringResource(RdR.string.rd_kok_neden), style = RdFontStyle.SectionHeader.toTextStyle(), color = colors.onyx, modifier = Modifier.padding(top = RdSpacing.sm))
+                        Text(stringResource(RdR.string.rd_kok_neden), style = RdFontStyle.SectionHeader.toTextStyle(), color = colors.black, modifier = Modifier.padding(top = RdSpacing.sm))
                         Text(it, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
                     }
                     finding.recommendedMeasures.orEmpty().forEach { measure ->
-                        Text(measure.title.ifBlank { stringResource(RdR.string.rd_onerilen_tedbir) }, style = RdFontStyle.SectionHeader.toTextStyle(), color = colors.onyx, modifier = Modifier.padding(top = RdSpacing.sm))
+                        Text(measure.title.ifBlank { stringResource(RdR.string.rd_onerilen_tedbir) }, style = RdFontStyle.SectionHeader.toTextStyle(), color = colors.black, modifier = Modifier.padding(top = RdSpacing.sm))
                         Text(measure.text, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
                     }
                     finding.referencesText?.takeIf(String::isNotBlank)?.let {
-                        Text(stringResource(RdR.string.rd_kaynak_ve_standartlar), style = RdFontStyle.SectionHeader.toTextStyle(), color = colors.onyx, modifier = Modifier.padding(top = RdSpacing.sm))
+                        Text(stringResource(RdR.string.rd_kaynak_ve_standartlar), style = RdFontStyle.SectionHeader.toTextStyle(), color = colors.black, modifier = Modifier.padding(top = RdSpacing.sm))
                         Text(it, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
                     }
                 }
@@ -902,12 +903,12 @@ private fun NumberOptionRow(options: List<Double>, selected: Double?, onSelect: 
             val isSelected = selected == value
             Text(
                 text = label,
-                color = if (isSelected) colors.white else colors.onyx,
+                color = if (isSelected) Color.White else colors.black,
                 style = RdFontStyle.Caption.toTextStyle(),
                 modifier = Modifier
                     .padding(end = RdSpacing.xs)
                     .clip(RoundedCornerShape(RdRadius.xs))
-                    .background(if (isSelected) colors.onyx else colors.fog)
+                    .background(if (isSelected) colors.selected else colors.fog)
                     .clickable { onSelect(value) }
                     .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xxs),
             )
@@ -938,12 +939,12 @@ private fun MeasureEditor(measure: FindingMeasure, onChange: (FindingMeasure) ->
                 val isSelected = measure.kind == kind
                 Text(
                     text = label,
-                    color = if (isSelected) colors.white else colors.onyx,
+                    color = if (isSelected) Color.White else colors.black,
                     style = RdFontStyle.Caption.toTextStyle(),
                     modifier = Modifier
                         .padding(end = RdSpacing.xs)
                         .clip(RoundedCornerShape(RdRadius.xs))
-                        .background(if (isSelected) colors.onyx else colors.white)
+                        .background(if (isSelected) colors.selected else colors.white)
                         .clickable { onChange(measure.copy(kind = kind)) }
                         .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xxs),
                 )

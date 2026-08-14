@@ -93,7 +93,7 @@ private fun TabButton(tab: RdTab, isActive: Boolean, onClick: () -> Unit, modifi
         Icon(
             tab.icon,
             contentDescription = null,
-            tint = if (isActive) colors.onyx else colors.graphite.copy(alpha = 0.82f),
+            tint = if (isActive) colors.black else colors.graphite.copy(alpha = 0.82f),
             modifier = Modifier.size(21.dp),
         )
     }

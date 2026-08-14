@@ -36,8 +36,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: iOS build-81 source freeze
-        run: git diff --exit-code app-store-live-1.3.1-build-81-baseline-2026-08-06...HEAD -- App
+      - name: iOS source freeze after approved security hardening
+        run: git diff --exit-code ios-security-baseline-2026-08-14...HEAD -- App
 
       - uses: denoland/setup-deno@v2
         with:

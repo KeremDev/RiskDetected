@@ -106,6 +106,10 @@ val LocalRdColors = staticCompositionLocalOf { LightRdColors }
 object RdTheme {
     val colors: RdColors
         @Composable get() = LocalRdColors.current
+
+    /** The resolved app appearance, including an explicit in-app override. */
+    val isDark: Boolean
+        @Composable get() = LocalRdDarkTheme.current
 }
 
 enum class RiskLevel { Critical, High, Medium, Low, Unknown }

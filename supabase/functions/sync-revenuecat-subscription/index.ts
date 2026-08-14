@@ -23,6 +23,7 @@ import {
   revenueCatProductIdentity,
 } from "../_shared/revenuecat-store.ts";
 import {
+  clearTrialReminderMetadataPatch,
   isApproximatelySevenDayTrial,
   isPlusYearlyProduct,
   revenueCatSubscriptionRenewalIntent,
@@ -397,12 +398,14 @@ async function writeFreeSubscriptionState(
     product_id: null,
     entitlement_id: null,
     entitlement_ids: [],
+    environment: null,
     current_period_ends_at: null,
     store: null,
     base_plan_id: null,
     offer_id: null,
     store_transaction_id: null,
     period_type: null,
+    ...clearTrialReminderMetadataPatch(),
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id" });
 

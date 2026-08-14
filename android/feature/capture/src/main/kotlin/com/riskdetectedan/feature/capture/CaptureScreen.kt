@@ -100,7 +100,7 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
         ) {
             if (onBack != null) {
                 IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(RdR.string.rd_geri), tint = colors.onyx)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(RdR.string.rd_geri), tint = colors.black)
                 }
             }
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -112,7 +112,7 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
                         Icon(Icons.Filled.CameraAlt, contentDescription = null, tint = colors.slate, modifier = Modifier.size(36.dp))
                     }
                     Spacer(Modifier.height(RdSpacing.sm))
-                    Text(stringResource(RdR.string.rd_kameraya_erisim_gerekiyor), style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
+                    Text(stringResource(RdR.string.rd_kameraya_erisim_gerekiyor), style = RdFontStyle.Title3.toTextStyle(), color = colors.black, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(RdSpacing.sm))
                     Text(
                         stringResource(RdR.string.rd_kamera_izin_aciklama),

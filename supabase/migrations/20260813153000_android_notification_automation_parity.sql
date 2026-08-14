@@ -134,6 +134,12 @@ as $$
 declare
   v_user_id uuid := auth.uid();
   v_timezone text := btrim(coalesce(p_timezone, ''));
+  v_locale text := nullif(left(btrim(coalesce(p_locale, '')), 35), '');
+  v_language text := case
+    when p_locale = 'tr-TR' then 'tr'
+    when p_locale in ('en-001', 'en-GB', 'en-US', 'en-AU', 'en-CA') then 'en'
+    else null
+  end;
   v_status text := lower(btrim(coalesce(p_authorization_status, '')));
   v_application_id text := left(btrim(coalesce(p_application_id, '')), 200);
   v_now timestamptz := now();
@@ -149,6 +155,17 @@ begin
   end if;
   if v_application_id = '' then raise exception 'invalid_application_id' using errcode = '22023'; end if;
 
+  -- Older accounts may predate the exact-locale profile columns. Android's authenticated
+  -- foreground heartbeat is the first reliable opportunity to repair only missing values;
+  -- existing profile choices and every iOS/APNs field remain untouched.
+  if v_language is not null then
+    update public.profiles
+    set app_language = coalesce(app_language, v_language),
+        preferred_content_locale = coalesce(preferred_content_locale, v_locale)
+    where id = v_user_id
+      and (app_language is null or preferred_content_locale is null);
+  end if;
+
   select * into v_existing from public.user_engagement_state where user_id = v_user_id;
   if found and v_existing.android_authorization_status = v_status
      and v_existing.updated_at > v_now - interval '1 minute' then
@@ -160,7 +177,7 @@ begin
     authorization_synced_at, app_version, app_build, created_at, updated_at,
     android_authorization_status, android_last_foreground_at
   ) values (
-    v_user_id, v_now, v_timezone, nullif(left(btrim(coalesce(p_locale, '')), 35), ''),
+    v_user_id, v_now, v_timezone, v_locale,
     v_status, v_now, nullif(left(btrim(coalesce(p_app_version, '')), 40), ''),
     nullif(left(btrim(coalesce(p_app_build, '')), 40), ''), v_now, v_now, v_status, v_now
   )

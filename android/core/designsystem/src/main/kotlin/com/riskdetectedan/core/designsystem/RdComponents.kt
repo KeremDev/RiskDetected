@@ -53,11 +53,11 @@ fun RdScreenHeader(title: String, onBack: (() -> Unit)? = null, modifier: Modifi
     ) {
         if (onBack != null) {
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.rd_geri), tint = RdTheme.colors.onyx)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.rd_geri), tint = RdTheme.colors.black)
             }
             Spacer(Modifier.width(RdSpacing.xs))
         }
-        Text(title, style = RdFontStyle.Title2.toTextStyle(), color = RdTheme.colors.onyx)
+        Text(title, style = RdFontStyle.Title2.toTextStyle(), color = RdTheme.colors.black)
     }
 }
 
@@ -105,7 +105,7 @@ fun RdListRow(
                 Spacer(Modifier.width(RdSpacing.sm))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx)
+                Text(title, style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
                 if (subtitle != null) {
                     Text(subtitle, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
                 }
@@ -213,7 +213,9 @@ fun RdEmptyState(icon: ImageVector, title: String, modifier: Modifier = Modifier
             Icon(icon, contentDescription = null, tint = colors.slate, modifier = Modifier.size(28.dp))
         }
         Spacer(Modifier.height(RdSpacing.sm))
-        Text(title, style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx, textAlign = TextAlign.Center)
+        // `onyx` is intentionally fixed black for inverse surfaces. Empty states sit directly
+        // on the dynamic paper background, so their title must use the dynamic foreground token.
+        Text(title, style = RdFontStyle.Callout.toTextStyle(), color = colors.black, textAlign = TextAlign.Center)
         if (subtitle != null) {
             Spacer(Modifier.height(RdSpacing.xxs))
             Text(subtitle, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)

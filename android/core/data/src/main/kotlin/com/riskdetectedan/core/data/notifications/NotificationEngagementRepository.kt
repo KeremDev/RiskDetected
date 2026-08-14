@@ -2,6 +2,7 @@ package com.riskdetectedan.core.data.notifications
 
 import android.app.NotificationManager
 import android.content.Context
+import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.common.RdResult
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -14,7 +15,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.Locale
 import java.util.TimeZone
 import java.util.UUID
 import javax.inject.Inject
@@ -51,7 +51,20 @@ class NotificationEngagementRepository @Inject constructor(
             val manager = context.getSystemService(NotificationManager::class.java)
             val authorizationStatus = if (manager.areNotificationsEnabled()) "authorized" else "denied"
             val timezone = TimeZone.getDefault().id
-            val signature = "$timezone|$authorizationStatus"
+            // Android is Turkish-only in this release. Device locale may be en-US even while
+            // the app/report contract is tr-TR (for example on Play review devices), so using
+            // Locale.getDefault() here leaves transactional notifications without a matching
+            // profile locale. Keep this heartbeat bound to the same explicit client contract
+            // used by auth, analysis and reports.
+            val contentLocale = RdClientMetadata.CONTENT_LOCALE
+            val signature = listOf(
+                timezone,
+                contentLocale,
+                authorizationStatus,
+                environmentConfig.appVersionName,
+                environmentConfig.appVersionCode.toString(),
+                environmentConfig.applicationId,
+            ).joinToString("|")
             val timestampKey = "last_sync.$userId"
             val signatureKey = "signature.$userId"
             val lastSyncMillis = prefs.getLong(timestampKey, 0L)
@@ -64,7 +77,7 @@ class NotificationEngagementRepository @Inject constructor(
                 val params = Json.encodeToJsonElement(
                     AndroidEngagementStatePayload(
                         timezone = timezone,
-                        locale = Locale.getDefault().toLanguageTag(),
+                        locale = contentLocale,
                         authorizationStatus = authorizationStatus,
                         appVersion = environmentConfig.appVersionName,
                         appBuild = environmentConfig.appVersionCode.toString(),

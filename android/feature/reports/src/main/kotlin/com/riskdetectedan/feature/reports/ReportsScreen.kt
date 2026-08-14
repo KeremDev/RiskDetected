@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +74,8 @@ import com.riskdetectedan.core.designsystem.toTextStyle
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
+import java.text.Normalizer
+import java.util.Locale
 
 /** Real port of `HistoryView.swift`'s search field + filter-chip row — was entirely missing on
  * Android before this (2026-08-09 gap sweep): tümü/bu hafta/kritik/KKD/genel, same semantics as
@@ -121,16 +124,21 @@ internal fun filterHistoryItems(
     selectedCompanyId: String? = null,
     now: Instant = Instant.now(),
 ): List<HistoryItem> {
-    val needle = search.trim().lowercase()
+    val needle = normalizeSearch(search)
     return items.filter { item ->
         val matchesFocused = focusedAnalysisId == null || item.id == focusedAnalysisId
         val matchesSearch = needle.isEmpty() ||
-            item.title.lowercase().contains(needle) ||
-            item.kind.lowercase().contains(needle)
+            normalizeSearch(item.title).contains(needle) ||
+            normalizeSearch(item.kind).contains(needle)
         val matchesCompany = selectedCompanyId == null || item.companyId == selectedCompanyId
         matchesFocused && matchesSearch && matchesChip(item, chip, now) && matchesCompany
     }
 }
+
+/** Lets Turkish users find “İnşaat” with either a Turkish keyboard or plain “Insaat”. */
+internal fun normalizeSearch(value: String): String = Normalizer
+    .normalize(value.trim().lowercase(Locale.forLanguageTag("tr-TR")).replace('ı', 'i'), Normalizer.Form.NFD)
+    .replace(Regex("\\p{Mn}+"), "")
 
 /** Port of the analysis history list (2026-08-08 visual pass, Faz J of the core-flow redesign —
  * see [com.riskdetectedan.core.data.analysis.HistoryItem]'s doc comment for the mirrored iOS
@@ -160,6 +168,11 @@ fun ReportsScreen(
     val selectedCompany by viewModel.selectedCompanyFilter.collectAsState()
     var showCompanyFilter by remember { mutableStateOf(false) }
 
+    // MainShell keeps this ViewModel alive while a pushed analysis/result route is open. Reload
+    // whenever the tab is actually entered so the just-completed analysis is not hidden behind
+    // the stale pre-analysis list.
+    LaunchedEffect(Unit) { viewModel.load() }
+
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
         if (!embeddedInMainShell) {
             RdScreenHeader(title = stringResource(RdR.string.rd_gecmis_analizler), onBack = onBack)
@@ -176,7 +189,7 @@ fun ReportsScreen(
             Spacer(Modifier.height(14.dp))
             when (val current = state) {
                 is HistoryUiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = colors.onyx)
+                    CircularProgressIndicator(color = colors.black)
                 }
                 is HistoryUiState.SignedOut -> RdEmptyState(
                     icon = Icons.Filled.History,
@@ -293,6 +306,9 @@ private fun HistoryOverview(
     findingCount: Int,
 ) {
     val colors = RdTheme.colors
+    val dark = RdTheme.isDark
+    val metricBackground = if (dark) Color(0xFF0B120F) else colors.onyx
+    val metricBorder = if (dark) colors.green.copy(alpha = 0.20f) else colors.onyx
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -305,10 +321,14 @@ private fun HistoryOverview(
             .clip(RoundedCornerShape(20.dp))
             .background(
                 Brush.linearGradient(
-                    listOf(Color(0xFFF7FBFF), Color(0xFFF2F7FA), Color(0xFFEEF8F2)),
+                    if (dark) {
+                        listOf(Color(0xFF151A18), Color(0xFF111615), Color(0xFF0F1D14))
+                    } else {
+                        listOf(Color(0xFFF7FBFF), Color(0xFFF2F7FA), Color(0xFFEEF8F2))
+                    },
                 ),
             )
-            .border(1.4.dp, colors.onyx, RoundedCornerShape(20.dp))
+            .border(1.4.dp, if (dark) Color.White.copy(alpha = 0.10f) else colors.onyx, RoundedCornerShape(20.dp))
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -339,12 +359,13 @@ private fun HistoryOverview(
                 modifier = Modifier
                     .size(width = 58.dp, height = 54.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(colors.onyx),
+                    .background(metricBackground)
+                    .border(1.dp, metricBorder, RoundedCornerShape(16.dp)),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text(analysisCount.toString(), style = RdFontStyle.Title2.toTextStyle(), color = colors.white)
-                Text(stringResource(RdR.string.rd_analiz), style = RdFontStyle.Caption.toTextStyle(), color = colors.white.copy(alpha = 0.72f))
+                Text(analysisCount.toString(), style = RdFontStyle.Title2.toTextStyle(), color = Color.White)
+                Text(stringResource(RdR.string.rd_analiz), style = RdFontStyle.Caption.toTextStyle(), color = Color.White.copy(alpha = 0.72f))
             }
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -352,18 +373,24 @@ private fun HistoryOverview(
                 icon = Icons.Filled.CalendarMonth,
                 label = stringResource(RdR.string.rd_bu_hafta),
                 value = weekCount,
+                background = metricBackground,
+                border = metricBorder,
                 modifier = Modifier.weight(1f),
             )
             HistoryOverviewMetric(
                 icon = Icons.Filled.Warning,
                 label = stringResource(RdR.string.rd_kritik),
                 value = criticalCount,
+                background = metricBackground,
+                border = metricBorder,
                 modifier = Modifier.weight(1f),
             )
             HistoryOverviewMetric(
                 icon = Icons.Filled.CheckCircle,
                 label = stringResource(RdR.string.rd_bulgu_kisa),
                 value = findingCount,
+                background = metricBackground,
+                border = metricBorder,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -375,27 +402,29 @@ private fun HistoryOverviewMetric(
     icon: ImageVector,
     label: String,
     value: Int,
+    background: Color,
+    border: Color,
     modifier: Modifier = Modifier,
 ) {
-    val colors = RdTheme.colors
     Row(
         modifier = modifier
             .height(48.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(colors.onyx)
+            .background(background)
+            .border(1.dp, border, RoundedCornerShape(14.dp))
             .padding(9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Box(
-            modifier = Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(colors.white.copy(alpha = 0.14f)),
+            modifier = Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = colors.white, modifier = Modifier.size(13.dp))
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
         }
         Column {
-            Text(value.toString(), style = RdFontStyle.Data.toTextStyle(), color = colors.white)
-            Text(label, style = RdFontStyle.Caption.toTextStyle(), color = colors.white.copy(alpha = 0.70f), maxLines = 1)
+            Text(value.toString(), style = RdFontStyle.Data.toTextStyle(), color = Color.White)
+            Text(label, style = RdFontStyle.Caption.toTextStyle(), color = Color.White.copy(alpha = 0.70f), maxLines = 1)
         }
     }
 }

@@ -34,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -80,7 +81,7 @@ fun RdLegalDocumentSheet(
     Box(modifier = Modifier.fillMaxSize().background(colors.paper)) {
         if (documents.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = colors.onyx)
+                CircularProgressIndicator(color = colors.black)
             }
         } else {
             Column(modifier = Modifier.fillMaxSize().padding(top = topPadding)) {
@@ -124,7 +125,7 @@ fun RdLegalDocumentSheet(
                             Text(
                                 doc.title,
                                 style = RdFontStyle.Caption.toTextStyle(),
-                                color = if (active) colors.white else colors.black,
+                                color = if (active) Color.White else colors.black,
                             )
                         }
                     }

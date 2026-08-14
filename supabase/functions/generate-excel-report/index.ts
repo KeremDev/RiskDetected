@@ -112,6 +112,7 @@ type ProfileRow = Record<string, unknown> & {
   certificate_number?: string | null;
   company_name?: string | null;
   company_logo_url?: string | null;
+  company_info?: string | null;
   phone?: string | null;
 };
 
@@ -125,6 +126,11 @@ type CompanyRow = {
   name: string;
   hazard_class: CompanyHazardClass;
   logo_path?: string | null;
+  address?: string | null;
+  contact_person?: string | null;
+  department?: string | null;
+  default_responsible?: string | null;
+  default_due_days?: number | null;
   is_archived?: boolean | null;
 };
 
@@ -133,6 +139,11 @@ type CompanySnapshot = {
   name: string;
   hazard_class: CompanyHazardClass;
   logo_path: string | null;
+  address: string | null;
+  contact_person: string | null;
+  department: string | null;
+  default_responsible: string | null;
+  default_due_days: number | null;
 };
 
 const palette = {
@@ -575,6 +586,11 @@ function companySnapshot(company: CompanyRow | null): CompanySnapshot | null {
     name: company.name,
     hazard_class: company.hazard_class,
     logo_path: company.logo_path ?? null,
+    address: company.address ?? null,
+    contact_person: company.contact_person ?? null,
+    department: company.department ?? null,
+    default_responsible: company.default_responsible ?? null,
+    default_due_days: company.default_due_days ?? null,
   };
 }
 
@@ -583,11 +599,27 @@ function profileWithCompany(
   company: CompanyRow | null,
 ): ProfileRow | null {
   if (!company) return profile;
+  const companyInfo = [
+    hazardClassLabel(company.hazard_class),
+    safeText(company.address),
+    safeText(company.contact_person)
+      ? `İrtibat: ${safeText(company.contact_person)}`
+      : "",
+    safeText(company.department)
+      ? `Birim: ${safeText(company.department)}`
+      : "",
+    safeText(company.default_responsible)
+      ? `Sorumlu: ${safeText(company.default_responsible)}`
+      : "",
+    typeof company.default_due_days === "number"
+      ? `Varsayılan termin: ${company.default_due_days} gün`
+      : "",
+  ].filter((value) => value.length > 0).join(" · ");
   return {
     ...(profile ?? {}),
     company_name: company.name,
     company_logo_url: company.logo_path ?? profile?.company_logo_url ?? null,
-    phone: hazardClassLabel(company.hazard_class),
+    company_info: companyInfo,
   };
 }
 
@@ -773,14 +805,20 @@ async function loadCompanyLogo(
 function inlineCompanyLogo(
   value: unknown,
 ): { bytes: Uint8Array; extension: "jpg" | "png" } | null {
-  if (typeof value !== "string" || value.length === 0 || value.length > 4_000_000) return null;
+  if (
+    typeof value !== "string" || value.length === 0 || value.length > 4_000_000
+  ) return null;
   try {
     const binary = atob(value);
     if (binary.length === 0 || binary.length > 3_000_000) return null;
-    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const bytes = Uint8Array.from(
+      binary,
+      (character) => character.charCodeAt(0),
+    );
     const png = bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 &&
       bytes[2] === 0x4e && bytes[3] === 0x47;
-    const jpeg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    const jpeg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 &&
+      bytes[2] === 0xff;
     if (!png && !jpeg) return null;
     return { bytes, extension: png ? "png" : "jpg" };
   } catch {
@@ -1633,7 +1671,7 @@ function appendFineKinneyReferenceSheet(
 ) {
   const preparedBy = profile?.display_name ?? profile?.full_name ?? "Kullanıcı";
   const companyName = profile?.company_name ?? "Firma belirtilmedi";
-  const companyInfo = safeText(profile?.phone);
+  const companyInfo = safeText(profile?.company_info, safeText(profile?.phone));
   const preparedTitle = safeText(profile?.title, "Belirtilmedi");
   const certificateNumber = safeText(
     profile?.certificate_number,
@@ -2083,7 +2121,7 @@ function appendMatrixReferenceSheet(
 ) {
   const preparedBy = profile?.display_name ?? profile?.full_name ?? "Kullanıcı";
   const companyName = profile?.company_name ?? "Firma belirtilmedi";
-  const companyInfo = safeText(profile?.phone);
+  const companyInfo = safeText(profile?.company_info, safeText(profile?.phone));
   const preparedTitle = safeText(profile?.title, "Belirtilmedi");
   const certificateNumber = safeText(
     profile?.certificate_number,
@@ -2483,7 +2521,7 @@ function makeWorkbook(
   const companyName = profile?.company_name ?? "";
   const preparedTitle = safeText(profile?.title);
   const certificateNumber = safeText(profile?.certificate_number);
-  const companyInfo = safeText(profile?.phone);
+  const companyInfo = safeText(profile?.company_info, safeText(profile?.phone));
   const highestBand = method === "matrix_5x5"
     ? analysis.highest_band_m5
     : analysis.highest_band_fk;
@@ -3113,7 +3151,9 @@ export async function handleGenerateExcelReportRequest(req: Request) {
   if (resolvedCompanyID.length > 0) {
     const { data: companyRow, error: companyError } = await supabase
       .from("companies")
-      .select("id,user_id,name,hazard_class,logo_path,is_archived")
+      .select(
+        "id,user_id,name,hazard_class,logo_path,address,contact_person,department,default_responsible,default_due_days,is_archived",
+      )
       .eq("id", resolvedCompanyID)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -3140,11 +3180,17 @@ export async function handleGenerateExcelReportRequest(req: Request) {
   };
   const effectiveProfile: ProfileRow = {
     ...(companyProfile ?? {}),
-    company_name: overrideText(body.company_name_override, 180) ?? companyProfile?.company_name ?? null,
-    phone: overrideText(body.company_info_override, 500) ?? companyProfile?.phone ?? null,
-    display_name: overrideText(body.prepared_by_override, 160) ?? companyProfile?.display_name ?? null,
-    full_name: overrideText(body.prepared_by_override, 160) ?? companyProfile?.full_name ?? null,
-    title: overrideText(body.prepared_title_override, 120) ?? companyProfile?.title ?? null,
+    company_name: overrideText(body.company_name_override, 180) ??
+      companyProfile?.company_name ?? null,
+    company_info: overrideText(body.company_info_override, 500) ??
+      companyProfile?.company_info ?? null,
+    phone: companyProfile?.phone ?? null,
+    display_name: overrideText(body.prepared_by_override, 160) ??
+      companyProfile?.display_name ?? null,
+    full_name: overrideText(body.prepared_by_override, 160) ??
+      companyProfile?.full_name ?? null,
+    title: overrideText(body.prepared_title_override, 120) ??
+      companyProfile?.title ?? null,
     certificate_number: overrideText(body.certificate_number_override, 120) ??
       companyProfile?.certificate_number ?? null,
   };

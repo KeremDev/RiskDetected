@@ -27,12 +27,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ArrowCircleUp
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ReportProblem
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -117,6 +118,7 @@ fun HomeScreen(
     onProfile: () -> Unit = {},
     onUpgrade: () -> Unit = {},
     quickScanRequestKey: Int = 0,
+    onQuickScanRequestConsumed: (Int) -> Unit = {},
     viewModel: HistoryViewModel = hiltViewModel(),
     photoTrayViewModel: PhotoTrayViewModel = hiltViewModel(),
     quotaViewModel: QuotaViewModel = hiltViewModel(),
@@ -138,20 +140,29 @@ fun HomeScreen(
     val remotePhotoCapabilities by tierViewModel.photoCapabilities.collectAsState()
     val userTier = fetchedProfile?.tier ?: com.riskdetectedan.core.data.profile.SubscriptionTier.Free
     val initials = fetchedProfile?.displayInitials ?: "—"
-    // Android's additive rollout must remain closed until its build allowlist and capability
-    // rules have both resolved. The local tier contract therefore paints a one-photo surface;
-    // the remote result opens the paid slots only when the Android-specific gate allows it.
-    // This also avoids a brief three-photo window on a slow/offline launch.
+    // Paid plans locally resolve to the product contract (three photos), so a slow/offline
+    // capability fetch never flashes an incorrect 0/1 Free limit for Plus/Pro. A successfully
+    // resolved remote emergency gate remains authoritative and can still lower the limit.
     val localPhotoCapabilities = com.riskdetectedan.core.data.analysis.PlanCapabilities.forTier(userTier)
-    val maxPhotoCount = remotePhotoCapabilities?.maxPhotosPerAnalysis
+    val resolvedMaxPhotoCount = remotePhotoCapabilities?.maxPhotosPerAnalysis
         ?: localPhotoCapabilities.maxPhotosPerAnalysis
-    val visiblePhotoSlots = remotePhotoCapabilities?.visiblePhotoSlotsInUI
+    val resolvedVisiblePhotoSlots = remotePhotoCapabilities?.visiblePhotoSlotsInUI
         ?: localPhotoCapabilities.visiblePhotoSlotsInUI
+    // iOS intentionally shows the value of multi-photo analysis to free members: one usable
+    // slot and two locked previews. Capability enforcement remains one photo for Free.
+    val maxPhotoCount = if (userTier.isPaid) resolvedMaxPhotoCount else 1
+    val visiblePhotoSlots = if (userTier.isPaid) resolvedVisiblePhotoSlots else 3
     val isFreeQuotaExhausted = !userTier.isPaid && quota?.isExhausted == true
 
     var showTitlesSheet by rememberSaveable { mutableStateOf(false) }
     val titlesSheetState = rememberModalBottomSheetState()
     LaunchedEffect(Unit) {
+        // These ViewModels are scoped to the MainShell back-stack entry and survive a pushed
+        // analysis/result route. Refresh on every real Home re-entry so a just-completed
+        // analysis/report is visible immediately instead of leaving the pre-analysis empty
+        // state on screen until the process is restarted.
+        viewModel.load()
+        reportsViewModel.load()
         quotaViewModel.refresh()
         progressViewModel.refresh()
         tierViewModel.refresh()
@@ -223,6 +234,7 @@ fun HomeScreen(
             QuickScanDecision.OpenPhotoTray -> showPhotoTray = true
             QuickScanDecision.SelectSector -> showSectorSheet = true
         }
+        onQuickScanRequestConsumed(quickScanRequestKey)
     }
 
     Column(
@@ -267,13 +279,13 @@ fun HomeScreen(
         }
 
         Spacer(Modifier.height(14.dp))
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .shadow(elevation = 10.dp, shape = RoundedCornerShape(RdRadius.xl), ambientColor = colors.onyx.copy(alpha = 0.18f), spotColor = colors.onyx.copy(alpha = 0.18f))
+                .shadow(elevation = 10.dp, shape = RoundedCornerShape(RdRadius.xl), ambientColor = colors.cta.copy(alpha = 0.18f), spotColor = colors.cta.copy(alpha = 0.18f))
                 .clip(RoundedCornerShape(RdRadius.xl))
-                .background(colors.onyx)
+                .background(colors.cta)
                 .clickable {
                     if (isFreeQuotaExhausted) {
                         onUpgrade()
@@ -284,15 +296,27 @@ fun HomeScreen(
                     }
                 }
                 .padding(horizontal = RdSpacing.md),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            contentAlignment = Alignment.Center,
         ) {
-            Text(stringResource(RdR.string.rd_taramayi_baslat), style = RdFontStyle.Callout.toTextStyle(), color = colors.white)
+            Text(
+                stringResource(RdR.string.rd_taramayi_baslat),
+                style = RdFontStyle.Callout.toTextStyle(),
+                color = androidx.compose.ui.graphics.Color.White,
+            )
             Box(
-                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(RdRadius.md)).background(colors.white),
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(androidx.compose.ui.graphics.Color.White),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, tint = colors.onyx, modifier = Modifier.size(15.dp))
+                Icon(
+                    Icons.AutoMirrored.Filled.Send,
+                    contentDescription = null,
+                    tint = colors.cta,
+                    modifier = Modifier.size(20.dp),
+                )
             }
         }
 
@@ -317,7 +341,7 @@ fun HomeScreen(
         ) {
             when {
                 state is HistoryUiState.Loading -> Box(modifier = Modifier.fillMaxWidth().padding(vertical = RdSpacing.md), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = colors.onyx, modifier = Modifier.size(22.dp))
+                    CircularProgressIndicator(color = colors.black, modifier = Modifier.size(22.dp))
                 }
                 recentItems.isEmpty() -> EmptyHomeSectionRow(
                     icon = Icons.Filled.CheckCircle,
@@ -460,7 +484,7 @@ private fun FreeQuotaHint(quota: DailyQuotaUsage, onClick: () -> Unit) {
             stringResource(RdR.string.rd_gunluk_ucretsiz_hak_hazir)
         },
         icon = Icons.Filled.CardGiftcard,
-        iconTint = colors.white,
+        iconTint = androidx.compose.ui.graphics.Color.White,
         iconBackground = if (quota.isExhausted) colors.critical else colors.onyx,
         onClick = onClick,
         trailing = {
@@ -474,7 +498,7 @@ private fun FreeQuotaHint(quota: DailyQuotaUsage, onClick: () -> Unit) {
                 Text(
                     "${quota.remaining}/${quota.limit}",
                     style = RdFontStyle.Caption.toTextStyle(),
-                    color = colors.white,
+                    color = androidx.compose.ui.graphics.Color.White,
                 )
             }
         },
@@ -503,7 +527,7 @@ private fun HomeReportRow(report: Report, onClick: () -> Unit) {
         )
         Spacer(Modifier.width(RdSpacing.sm))
         Column(modifier = Modifier.weight(1f)) {
-            Text(report.title ?: report.fileName ?: stringResource(RdR.string.rd_rapor), style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx)
+            Text(report.title ?: report.fileName ?: stringResource(RdR.string.rd_rapor), style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
             report.createdAt?.take(10)?.let {
                 Text(it, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
             }

@@ -54,7 +54,14 @@ internal enum class PdfReportSection {
 
 internal fun pdfReportSectionOrder(kind: String): List<PdfReportSection> =
     if (kind == "risk_analysis") {
-        listOf(PdfReportSection.MethodReference, PdfReportSection.RiskAssessmentTable)
+        // The company/preparer cover is required for a risk-assessment document too. Omitting
+        // it meant the selected company's logo, address and responsible-party context were
+        // captured in the report snapshot but never visible in the exported PDF.
+        listOf(
+            PdfReportSection.Cover,
+            PdfReportSection.MethodReference,
+            PdfReportSection.RiskAssessmentTable,
+        )
     } else {
         listOf(PdfReportSection.Cover, PdfReportSection.FindingDetails)
     }
@@ -76,6 +83,11 @@ internal fun pdfReportSectionOrder(kind: String): List<PdfReportSection> =
 class PdfReportGenerator @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
+    private companion object {
+        const val TABLE_BODY_MAX_LINES = 18
+        const val TABLE_TEXT_SIZE = 15f
+    }
+
     // A4 at ~150dpi — sharp enough for on-screen PDF viewers/printing without an unreasonably
     // large file for a text-heavy document.
     private val PAGE_WIDTH = 1240
@@ -490,7 +502,7 @@ class PdfReportGenerator @Inject constructor(
         var cellX = x
         val paint = TextPaint().apply {
             color = if (isHeader) COLOR_WHITE else COLOR_ONYX
-            textSize = 15f
+            textSize = TABLE_TEXT_SIZE
             isFakeBoldText = isHeader
         }
         values.forEachIndexed { i, value ->
@@ -498,7 +510,7 @@ class PdfReportGenerator @Inject constructor(
             val cellLayout = StaticLayout.Builder
                 .obtain(value, 0, value.length, paint, (cellWidth - 16f).coerceAtLeast(1f).toInt())
                 .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-                .setMaxLines(if (isHeader) 2 else 8)
+                .setMaxLines(if (isHeader) 2 else TABLE_BODY_MAX_LINES)
                 .setEllipsize(android.text.TextUtils.TruncateAt.END)
                 .build()
             canvas.save()
@@ -513,19 +525,25 @@ class PdfReportGenerator @Inject constructor(
     }
 
     private fun estimateTableRowHeight(totalWidth: Float, weights: List<Float>, values: List<String>): Float {
-        val paint = TextPaint().apply { textSize = 14f }
+        // Measurement and drawing must use the exact same typography. Measuring at 14sp and
+        // drawing at 15sp let StaticLayout render one or two extra visual lines outside the
+        // measured row, so long descriptions overlapped the following finding in the real PDF.
+        val paint = TextPaint().apply { textSize = TABLE_TEXT_SIZE }
         val tallest = values.mapIndexed { index, value ->
             val cellWidth = (totalWidth * weights.getOrElse(index) { weights.last() } - 16f)
                 .coerceAtLeast(1f)
                 .toInt()
             StaticLayout.Builder
                 .obtain(value, 0, value.length, paint, cellWidth)
-                .setMaxLines(8)
+                .setMaxLines(TABLE_BODY_MAX_LINES)
                 .setEllipsize(android.text.TextUtils.TruncateAt.END)
                 .build()
                 .height
         }.maxOrNull() ?: 0
-        return (tallest + 18f).coerceIn(48f, 260f)
+        // Long corrective-action and legislation cells must remain readable. Do not cap the
+        // measured height below StaticLayout's actual height; the page-break branch above moves
+        // the complete row to a fresh page when necessary.
+        return (tallest + 18f).coerceAtLeast(48f)
     }
 
     /** Wraps [text] to [maxWidth] via [StaticLayout] (Android's real word-wrap engine, not a

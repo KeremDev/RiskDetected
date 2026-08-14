@@ -3,6 +3,7 @@ package com.riskdetectedan.core.data.error
 import com.riskdetectedan.core.data.billing.PurchaseErrorClassification
 import com.riskdetectedan.core.data.billing.PurchaseErrorKind
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -108,6 +109,19 @@ class AppErrorMessageTest {
     fun `network keyword is classified as network unavailable`() {
         val result = AppErrorMessages.make("network connection lost")
         assertEquals(AppErrorCategory.NetworkUnavailable, result.category)
+    }
+
+    @Test
+    fun `missing Google credential does not expose Credential Manager internals`() {
+        val result = AppErrorMessages.make(
+            "During begin sign in, failure response from one tap: 16: Cannot find a matching credential.",
+            context = "Google ile giriş yapılamadı",
+        )
+
+        assertEquals(AppErrorCategory.AuthRequired, result.category)
+        assertEquals("Bu cihazda seçilebilecek bir Google hesabı bulunamadı.", result.message)
+        assertTrue(result.action.contains("Google hesabı"))
+        assertFalse(result.message.contains("credential", ignoreCase = true))
     }
 
     @Test

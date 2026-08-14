@@ -1,7 +1,6 @@
 package com.riskdetectedan.core.data.reports
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class PdfReportContractTest {
@@ -15,14 +14,16 @@ class PdfReportContractTest {
     }
 
     @Test
-    fun `risk analysis follows iOS reference then assessment table contract`() {
+    fun `risk analysis includes company cover before reference and assessment table`() {
         val sections = pdfReportSectionOrder("risk_analysis")
 
         assertEquals(
-            listOf(PdfReportSection.MethodReference, PdfReportSection.RiskAssessmentTable),
+            listOf(
+                PdfReportSection.Cover,
+                PdfReportSection.MethodReference,
+                PdfReportSection.RiskAssessmentTable,
+            ),
             sections,
         )
-        assertFalse(sections.contains(PdfReportSection.Cover))
-        assertFalse(sections.contains(PdfReportSection.FindingDetails))
     }
 }

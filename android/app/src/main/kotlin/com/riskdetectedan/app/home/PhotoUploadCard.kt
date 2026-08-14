@@ -181,7 +181,7 @@ private fun PhotoUploadPreviewStrip(
                 Text(
                     "${index + 1}",
                     style = RdFontStyle.Caption.toTextStyle(),
-                    color = colors.onyx,
+                    color = colors.black,
                     modifier = Modifier
                         .padding(5.dp)
                         .size(22.dp)

@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,9 +39,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.company.CompanyDraft
 import com.riskdetectedan.core.data.company.Company
+import com.riskdetectedan.core.data.company.CompanyHazardClass
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdEmptyState
 import com.riskdetectedan.core.designsystem.RdFontStyle
@@ -68,9 +73,24 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
     val capabilities by viewModel.capabilities.collectAsState()
     val context = LocalContext.current
     var name by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
+    var contactPerson by remember { mutableStateOf("") }
+    var department by remember { mutableStateOf("") }
+    var defaultResponsible by remember { mutableStateOf("") }
+    var defaultDueDaysText by remember { mutableStateOf("") }
+    var hazardClass by remember { mutableStateOf(CompanyHazardClass.Medium) }
     var logoBytes by remember { mutableStateOf<ByteArray?>(null) }
     val companyCount = (state as? CompanyListUiState.Loaded)?.companies?.size ?: 0
     val canAddCompany = companyCount < capabilities.companyLimit
+    val draft = CompanyDraft(
+        name = name,
+        hazardClass = hazardClass,
+        address = address,
+        contactPerson = contactPerson,
+        department = department,
+        defaultResponsible = defaultResponsible,
+        defaultDueDaysText = defaultDueDaysText,
+    )
 
     val pickLogo = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -95,7 +115,7 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
         ) {
             when (val current = state) {
                 is CompanyListUiState.Loading -> Box(modifier = Modifier.fillMaxWidth().padding(RdSpacing.xl), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = colors.onyx)
+                    CircularProgressIndicator(color = colors.black)
                 }
                 is CompanyListUiState.Failed -> RdEmptyState(icon = Icons.Filled.Business, title = stringResource(RdR.string.rd_firmalar_yuklenemedi), subtitle = current.error.message)
                 is CompanyListUiState.Loaded -> if (current.companies.isEmpty()) {
@@ -114,7 +134,7 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
             }
 
             Spacer(Modifier.height(RdSpacing.lg))
-            Text(stringResource(RdR.string.rd_yeni_firma_ekle), style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
+            Text(stringResource(RdR.string.rd_yeni_firma_ekle), style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
             Text(
                 if (capabilities.companyLimit == 0) {
                     stringResource(RdR.string.rd_firma_yonetimi_plan_gerektirir)
@@ -133,6 +153,63 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
                         label = { Text(stringResource(RdR.string.rd_firma_adi)) },
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    Text(
+                        stringResource(RdR.string.rd_tehlike_sinifi),
+                        style = RdFontStyle.Footnote.toTextStyle(),
+                        color = colors.slate,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(RdSpacing.xs),
+                    ) {
+                        CompanyHazardClass.entries.forEach { option ->
+                            FilterChip(
+                                selected = hazardClass == option,
+                                onClick = { hazardClass = option },
+                                label = { Text(option.title) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    OutlinedTextField(
+                        value = address,
+                        onValueChange = { address = it },
+                        label = { Text(stringResource(RdR.string.rd_firma_adresi)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                    )
+                    OutlinedTextField(
+                        value = contactPerson,
+                        onValueChange = { contactPerson = it },
+                        label = { Text(stringResource(RdR.string.rd_firma_yetkilisi)) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = department,
+                        onValueChange = { department = it },
+                        label = { Text(stringResource(RdR.string.rd_departman)) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = defaultResponsible,
+                        onValueChange = { defaultResponsible = it },
+                        label = { Text(stringResource(RdR.string.rd_varsayilan_sorumlu)) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = defaultDueDaysText,
+                        onValueChange = { value ->
+                            defaultDueDaysText = value.filter(Char::isDigit).take(3)
+                        },
+                        label = { Text(stringResource(RdR.string.rd_varsayilan_termin_gun)) },
+                        supportingText = {
+                            Text(stringResource(RdR.string.rd_varsayilan_termin_aciklama))
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = defaultDueDaysText.isNotBlank() &&
+                            (draft.defaultDueDays?.let { it !in 1..365 } ?: true),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                     TextButton(
                         onClick = {
                             pickLogo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -147,11 +224,17 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
                     RdPrimaryButton(
                         text = stringResource(RdR.string.rd_firma_ekle),
                         onClick = {
-                            viewModel.addCompany(CompanyDraft(name = name), logoBytes)
+                            viewModel.addCompany(draft, logoBytes)
                             name = ""
+                            address = ""
+                            contactPerson = ""
+                            department = ""
+                            defaultResponsible = ""
+                            defaultDueDaysText = ""
+                            hazardClass = CompanyHazardClass.Medium
                             logoBytes = null
                         },
-                        enabled = name.isNotBlank() && canAddCompany,
+                        enabled = draft.isValid && canAddCompany,
                         style = RdButtonStyle.Onyx,
                         showArrow = false,
                     )
@@ -203,7 +286,7 @@ fun CompanyListParityPreviewSurface() {
             Text(
                 stringResource(RdR.string.rd_yeni_firma_ekle),
                 style = RdFontStyle.Title3.toTextStyle(),
-                color = colors.onyx,
+                color = colors.black,
             )
             Text(
                 stringResource(RdR.string.rd_firma_sayaci_format, companies.size, 5),

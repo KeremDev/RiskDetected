@@ -37,6 +37,10 @@ class HistoryFilteringTest {
             listOf("ppe"),
             filterHistoryItems(items, "kkd", HistoryFilterChip.Ppe, now = now).map { it.id },
         )
+        assertEquals(
+            listOf("critical"),
+            filterHistoryItems(items, "Iskele", HistoryFilterChip.All, now = now).map { it.id },
+        )
     }
 
     @Test fun `focused analysis and company filters compose without leaking other rows`() {

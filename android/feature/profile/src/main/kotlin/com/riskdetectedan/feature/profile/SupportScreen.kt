@@ -11,6 +11,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,12 +22,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Photo
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,7 +48,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.designsystem.RdButtonStyle
@@ -105,35 +114,79 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
         RdScreenHeader(title = stringResource(RdR.string.rd_destek), onBack = onBack)
 
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = RdSpacing.lg)
+                .padding(bottom = RdSpacing.xl),
+            verticalArrangement = Arrangement.spacedBy(RdSpacing.md),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Brush.linearGradient(listOf(colors.greenSoft, colors.white)))
+                    .border(1.dp, colors.green.copy(alpha = 0.22f), RoundedCornerShape(24.dp))
+                    .padding(18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier.size(52.dp).clip(RoundedCornerShape(17.dp)).background(colors.green.copy(alpha = 0.13f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.SupportAgent, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(27.dp))
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        stringResource(RdR.string.rd_riskdetected_destek),
+                        style = RdFontStyle.Title3.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                        color = colors.black,
+                    )
+                    Text(
+                        stringResource(RdR.string.rd_destek_aciklama),
+                        style = RdFontStyle.Footnote.toTextStyle(),
+                        color = colors.slate,
+                    )
+                }
+            }
+
             RdSectionCard {
-                Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        stringResource(RdR.string.rd_talep_upper),
+                        style = RdFontStyle.Caption.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                        color = colors.greenDark,
+                    )
                     OutlinedTextField(
                         value = subject,
                         onValueChange = { subject = it },
                         label = { Text(stringResource(RdR.string.rd_konu)) },
+                        placeholder = { Text(stringResource(RdR.string.rd_destek_konu_ornek)) },
+                        shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = message,
                         onValueChange = { message = it },
                         label = { Text(stringResource(RdR.string.rd_mesaj)) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    RdPrimaryButton(
-                        text = stringResource(RdR.string.rd_gonder),
-                        onClick = { viewModel.send(subject, message) },
-                        enabled = subject.isNotBlank() && message.isNotBlank() && state !is SupportUiState.Sending,
-                        style = RdButtonStyle.Onyx,
-                        showArrow = false,
+                        placeholder = { Text(stringResource(RdR.string.rd_destek_mesaj_ornek)) },
+                        minLines = 5,
+                        maxLines = 9,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().height(170.dp),
                     )
                 }
             }
 
-            Spacer(Modifier.height(RdSpacing.md))
             RdSectionCard {
                 Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
-                    Text(stringResource(RdR.string.rd_ek), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                    Text(
+                        stringResource(RdR.string.rd_ek_upper),
+                        style = RdFontStyle.Caption.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                        color = colors.greenDark,
+                    )
                     attachments.forEach { attachment ->
                         Row(
                             modifier = Modifier
@@ -150,7 +203,7 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
                             )
                             Spacer(Modifier.width(RdSpacing.xs))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(attachment.filename, style = RdFontStyle.Footnote.toTextStyle(), color = colors.onyx)
+                                Text(attachment.filename, style = RdFontStyle.Footnote.toTextStyle(), color = colors.black)
                                 Text(
                                     stringResource(RdR.string.rd_dosya_boyutu_kb_format, attachment.sizeBytes / 1024),
                                     style = RdFontStyle.Caption.toTextStyle(),
@@ -158,7 +211,7 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
                                 )
                             }
                             IconButton(onClick = { viewModel.removeAttachment(attachment.id) }) {
-                                Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kaldir), tint = colors.onyx)
+                                Icon(Icons.Filled.Close, contentDescription = stringResource(RdR.string.rd_kaldir), tint = colors.black)
                             }
                         }
                     }
@@ -166,18 +219,18 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
                         Text(stringResource(RdR.string.rd_en_fazla_3_ek_ekleyebilirsin), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                     } else {
                         Row(horizontalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
-                            TextButton(onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
-                                Icon(Icons.Filled.Photo, contentDescription = null, tint = colors.onyx)
-                                Spacer(Modifier.width(RdSpacing.xs))
-                                Text(stringResource(RdR.string.rd_fotograf))
-                            }
-                            TextButton(onClick = {
-                                pickFile.launch(arrayOf("image/jpeg", "image/png", "application/pdf"))
-                            }) {
-                                Icon(Icons.Filled.AttachFile, contentDescription = null, tint = colors.onyx)
-                                Spacer(Modifier.width(RdSpacing.xs))
-                                Text(stringResource(RdR.string.rd_dosya))
-                            }
+                            SupportAttachmentButton(
+                                label = stringResource(RdR.string.rd_fotograf),
+                                icon = Icons.Filled.Photo,
+                                modifier = Modifier.weight(1f),
+                                onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                            )
+                            SupportAttachmentButton(
+                                label = stringResource(RdR.string.rd_dosya),
+                                icon = Icons.Filled.AttachFile,
+                                modifier = Modifier.weight(1f),
+                                onClick = { pickFile.launch(arrayOf("image/jpeg", "image/png", "application/pdf")) },
+                            )
                         }
                     }
                     attachmentError?.let {
@@ -186,11 +239,10 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
                 }
             }
 
-            Spacer(Modifier.height(RdSpacing.md))
             when (val current = state) {
                 is SupportUiState.Idle -> Unit
                 is SupportUiState.Sending -> Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = colors.onyx)
+                    CircularProgressIndicator(color = colors.black)
                 }
                 is SupportUiState.Sent -> Text(
                     stringResource(
@@ -202,6 +254,38 @@ fun SupportScreen(onBack: (() -> Unit)? = null, viewModel: SupportViewModel = hi
                 )
                 is SupportUiState.Failed -> Text(current.error.message, style = RdFontStyle.Footnote.toTextStyle(), color = colors.critical)
             }
+
+            RdPrimaryButton(
+                text = stringResource(RdR.string.rd_destek_talebi_gonder),
+                onClick = { viewModel.send(subject.trim(), message.trim()) },
+                enabled = subject.trim().length >= 3 && message.trim().length >= 10 && state !is SupportUiState.Sending,
+                style = RdButtonStyle.Onyx,
+                showArrow = false,
+            )
         }
+    }
+}
+
+@Composable
+private fun SupportAttachmentButton(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val colors = RdTheme.colors
+    Row(
+        modifier = modifier
+            .height(50.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(colors.fog)
+            .border(1.dp, colors.line, RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(label, style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.SemiBold), color = colors.black)
     }
 }

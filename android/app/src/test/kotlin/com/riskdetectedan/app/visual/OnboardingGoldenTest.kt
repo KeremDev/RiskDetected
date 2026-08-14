@@ -392,6 +392,19 @@ class OnboardingGoldenTest {
     }
 
     @Test
+    fun report_archive_pdf_xlsx_dark() {
+        composeRule.setContent {
+            RiskDetectedTheme(darkTheme = true) {
+                GeneratedReportsParityPreviewSurface()
+            }
+        }
+
+        composeRule.onNodeWithText("İskele Risk Analizi").assertIsDisplayed()
+        composeRule.onNodeWithText("Üretim Hattı Bulguları").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
     fun report_source_preview_light() {
         composeRule.setContent {
             RiskDetectedLightOnlyTheme {

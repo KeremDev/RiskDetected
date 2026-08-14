@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,6 +81,10 @@ fun Pressable(
     content: @Composable BoxScope.() -> Unit,
 ) {
     var pressed by remember { mutableStateOf(false) }
+    // pointerInput(Unit) survives recompositions. Without rememberUpdatedState it keeps the
+    // first onClick lambda forever, so buttons that become enabled after a selection still run
+    // their initial disabled/no-op callback (sector picker and paywall CTAs are concrete cases).
+    val currentOnClick by rememberUpdatedState(onClick)
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f, label = "scaleOnPress")
     Box(
         modifier = modifier
@@ -91,7 +96,7 @@ fun Pressable(
                         tryAwaitRelease()
                         pressed = false
                     },
-                    onTap = { onClick() },
+                    onTap = { currentOnClick() },
                 )
             },
         content = content,
@@ -118,12 +123,12 @@ fun RdPrimaryButton(
 ) {
     val colors = RdTheme.colors
     val bg = when {
-        !enabled -> colors.onyx.copy(alpha = 0.08f)
+        !enabled -> colors.black.copy(alpha = 0.08f)
         style == RdButtonStyle.Green -> colors.green
         style == RdButtonStyle.Gold -> Color(0xFFD4A106)
-        else -> colors.onyx
+        else -> colors.cta
     }
-    val contentColor = if (!enabled) colors.onyx.copy(alpha = 0.35f) else colors.white
+    val contentColor = if (!enabled) colors.black.copy(alpha = 0.35f) else Color.White
 
     Pressable(
         modifier = modifier

@@ -85,7 +85,7 @@ fun ProfessionalProgressCard(progress: ProfessionalProgressSummary, onClick: () 
         Spacer(Modifier.width(RdSpacing.sm))
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(formatter.format(progress.profile.totalMdp), style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx)
+                Text(formatter.format(progress.profile.totalMdp), style = RdFontStyle.Callout.toTextStyle(), color = colors.black)
                 Text(
                     stringResource(RdR.string.rd_mdp_progress_format, formatter.format(nextThreshold)),
                     style = RdFontStyle.Caption.toTextStyle(),
@@ -129,7 +129,7 @@ fun ProfessionalProgressCard(progress: ProfessionalProgressSummary, onClick: () 
 fun ProfessionalTitlesSheet(progress: ProfessionalProgressSummary) {
     val colors = RdTheme.colors
     Column(modifier = Modifier.padding(RdSpacing.lg)) {
-        Text(stringResource(RdR.string.rd_uzmanlik_seviyeleri), style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
+        Text(stringResource(RdR.string.rd_uzmanlik_seviyeleri), style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
         Text(
             stringResource(RdR.string.rd_mdp_total_format, progress.profile.totalMdp),
             style = RdFontStyle.Footnote.toTextStyle(),
@@ -146,7 +146,7 @@ fun ProfessionalTitlesSheet(progress: ProfessionalProgressSummary) {
                 Icon(
                     if (unlocked) Icons.Filled.EmojiEvents else Icons.Filled.Lock,
                     contentDescription = null,
-                    tint = if (unlocked) colors.onyx else colors.slate,
+                    tint = if (unlocked) colors.black else colors.slate,
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.width(RdSpacing.sm))
@@ -154,7 +154,7 @@ fun ProfessionalTitlesSheet(progress: ProfessionalProgressSummary) {
                     Text(
                         professionalProgressTitleLabel(title.key),
                         style = RdFontStyle.Callout.toTextStyle(),
-                        color = if (unlocked) colors.onyx else colors.slate,
+                        color = if (unlocked) colors.black else colors.slate,
                     )
                     Text(stringResource(RdR.string.rd_mdp_esigi_format, title.threshold), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
                 }

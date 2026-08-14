@@ -1,6 +1,7 @@
 package com.riskdetectedan.core.data.analysis
 
 import com.riskdetectedan.core.common.RdEnvironmentConfig
+import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdResult
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
@@ -95,6 +96,10 @@ private data class MutateFindingBody(
     @SerialName("finding_id") val findingId: String,
     @SerialName("expected_finding_version") val expectedFindingVersion: Int,
     @SerialName("client_app_version") val clientAppVersion: String,
+    @SerialName("client_app_build") val clientAppBuild: String,
+    @SerialName("client_platform") val clientPlatform: String,
+    @SerialName("api_contract_version") val apiContractVersion: Int,
+    @SerialName("client_capabilities") val clientCapabilities: Map<String, Boolean>,
     @SerialName("request_id") val requestId: String,
     @SerialName("support_id") val supportId: String,
     val patch: FindingPatch? = null,
@@ -186,6 +191,10 @@ class FindingsRepository @Inject constructor(
                 findingId = findingId,
                 expectedFindingVersion = expectedFindingVersion,
                 clientAppVersion = environmentConfig.appVersionName,
+                clientAppBuild = environmentConfig.appVersionCode.toString(),
+                clientPlatform = environmentConfig.clientPlatform,
+                apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
+                clientCapabilities = environmentConfig.clientCapabilities,
                 requestId = UUID.randomUUID().toString(),
                 supportId = UUID.randomUUID().toString(),
             ),
@@ -229,6 +238,10 @@ class FindingsRepository @Inject constructor(
                     findingId = findingId,
                     expectedFindingVersion = expectedFindingVersion,
                     clientAppVersion = environmentConfig.appVersionName,
+                    clientAppBuild = environmentConfig.appVersionCode.toString(),
+                    clientPlatform = environmentConfig.clientPlatform,
+                    apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
+                    clientCapabilities = environmentConfig.clientCapabilities,
                     requestId = UUID.randomUUID().toString(),
                     supportId = UUID.randomUUID().toString(),
                     patch = patch,

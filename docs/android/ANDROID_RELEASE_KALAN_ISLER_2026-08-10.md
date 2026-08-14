@@ -92,7 +92,7 @@ Kabul ölçütü: Play'den indirilen build açılıyor, backend environment kont
 İlk AAB yüklemesinden sonra uygulanacaktır.
 
 - [x] RevenueCat Google Play credentials uyarısının kalktığını doğrula.
-- [ ] Google Play ürünlerinin ve base plan'ların RevenueCat tarafından eksiksiz okunduğunu doğrula.
+- [x] Google Play ürünlerinin ve base plan'ların RevenueCat tarafından eksiksiz okunduğunu doğrula.
 - [x] RTDN/Pub/Sub topic bağlantısını tamamla ve test bildirimi doğrula.
 - [ ] `default` offering içindeki dört paketin store fiyatlarını uygulamada doğrula:
   - [ ] `riskdetected_plus_monthly`
@@ -115,12 +115,14 @@ Kabul ölçütü: Play'den indirilen build açılıyor, backend environment kont
 
 Kabul ölçütü: RevenueCat App User ID her durumda Supabase `auth.uid()` olur; store fiyatları tek kaynak olur; webhook ve profil planı tutarlı kalır.
 
-Blokaj (11 Ağustos 2026): Dört ürün nesnesi Play'de oluşturuldu. Plus aylık ve Pro yıllık
-temel planları; doğru aylık/yıllık dönem, yalnız Türkiye kullanılabilirliği ve KDV dahil hedef
-fiyatlar doğrulanarak denendi. Play her iki denemede de ayrıntısız
-`Değişiklikleriniz kaydedilemedi` yanıtı verdi. Ödeme profili mevcut ancak payout yöntemi yok.
-Owner banka/payout yöntemini ekledikten veya Play bu hesap hatasını kaldırdıktan sonra temel
-planlar, yedi günlük Plus yıllık deneme ve gerçek satın alma matrisi tamamlanabilir.
+Çözüm (14 Ağustos 2026): Önceki `Değişiklikleriniz kaydedilemedi` hatasının nedeni geliştirici
+ödeme profilinde payout/banka yönteminin bulunmamasıydı. Banka yöntemi eklendikten sonra dört
+temel plan yalnız Türkiye için kaydedilip etkinleştirildi: Plus aylık `249,99 TL`, Plus yıllık
+`2.499,99 TL`, Pro aylık `499,99 TL`, Pro yıllık `4.999,99 TL` (KDV dahil). Yalnız Plus yıllık
+plana `trial-7d-v1` kimlikli, uygulamada daha önce hiçbir abonelik edinmemiş kullanıcılara açık
+7 günlük deneme eklendi ve etkinleştirildi. RevenueCat dört Play Store ürününü `Published`
+olarak okuyor; `default` offering ve `plus`/`pro` entitlement eşleşmeleri doğrulandı. Banka
+hesabının test yatırımıyla doğrulanması payout için owner'ın tamamlayacağı ayrı adımdır.
 
 ## P0 — Auth E2E
 
@@ -285,7 +287,8 @@ Kabul ölçütü: Closed test şartı tamamlanmış, sağlık metrikleri yeşil 
 - [ ] Upload keystore'un şifreli yedeğini owner kasasına almak ve kurtarma prosedürünü kaydetmek.
 - [x] Play App Signing fingerprint'lerini production Firebase kaydına eklemek.
 - [ ] Google OAuth Android client'ta Play app-signing fingerprint'ini son kez doğrulamak.
-- [ ] Geliştirici ödeme profiline payout/banka yöntemi eklemek; ardından dört base plan'ı kaydetmek.
+- [x] Geliştirici ödeme profiline payout/banka yöntemi eklemek; ardından dört base plan'ı kaydetmek.
+- [ ] Google'ın test yatırımı geldikten sonra payout banka hesabı doğrulamasını tamamlamak.
 - [ ] Dedicated Fastmail review mailbox parolasını doğrudan Play oturum açma beyanına girmek.
 - [ ] Açık Google destek kaydında Data Safety hesap-silme URL doğrulayıcı 403 sonucunu takip etmek.
 - [ ] Fiziksel Google hesaplı cihaz sağlamak.

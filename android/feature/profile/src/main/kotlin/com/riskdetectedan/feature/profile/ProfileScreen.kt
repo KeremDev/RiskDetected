@@ -35,6 +35,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Description
@@ -48,6 +49,11 @@ import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Numbers
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.Storage
@@ -157,7 +163,7 @@ fun ProfileScreen(
 
         when (val current = state) {
             is ProfileUiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = colors.onyx)
+                CircularProgressIndicator(color = colors.black)
             }
             is ProfileUiState.SignedOut -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(stringResource(RdR.string.rd_oturum_yok), style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
@@ -362,12 +368,12 @@ fun ProfileLoadedSurface(
             onAnalyses = onAnalyses,
             onReports = onReports,
         )
+        Spacer(Modifier.height(14.dp))
+        SubscriptionStatusCard(profile = profile, onPaywall = onPaywall)
         progress?.let {
             Spacer(Modifier.height(14.dp))
             ProfessionalProgressSection(it, onShowCompetencies = onShowCompetencies)
         }
-        Spacer(Modifier.height(14.dp))
-        SubscriptionStatusCard(profile = profile, onPaywall = onPaywall)
         Spacer(Modifier.height(14.dp))
         ProfileMenuSection(title = stringResource(RdR.string.rd_hesap_upper)) {
             ProfileMenuRow(stringResource(RdR.string.rd_profil_bilgileri), Icons.Filled.Edit, onClick = onEdit)
@@ -798,6 +804,12 @@ private fun ProfileHeroStats(
 @Composable
 private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, onShowCompetencies: () -> Unit) {
     val colors = RdTheme.colors
+    val isDark = RdTheme.isDark
+    val progressCardBackground = if (isDark) {
+        listOf(Color(0xFF292416), Color(0xFF1E211E), Color(0xFF17231B))
+    } else {
+        listOf(colors.planPlusSoft.copy(alpha = 0.78f), Color(0xFFFFF9EA), colors.greenSoft.copy(alpha = 0.34f))
+    }
     Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
         Row(
             modifier = Modifier
@@ -805,19 +817,18 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
                 .shadow(5.dp, RoundedCornerShape(RdRadius.lg))
                 .clip(RoundedCornerShape(RdRadius.lg))
                 .background(
-                    Brush.linearGradient(
-                        listOf(colors.white, colors.planPlusSoft.copy(alpha = 0.34f), colors.greenSoft.copy(alpha = 0.22f)),
-                    ),
+                    Brush.linearGradient(progressCardBackground),
                 )
-                .border(1.6.dp, colors.black, RoundedCornerShape(RdRadius.lg))
-                .padding(12.dp),
+                .border(1.dp, colors.planPlus.copy(alpha = if (isDark) 0.40f else 0.28f), RoundedCornerShape(RdRadius.lg))
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
                 modifier = Modifier
                     .size(width = 84.dp, height = 92.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(colors.onyx)
+                    .background(colors.planPlus.copy(alpha = if (isDark) 0.17f else 0.12f))
+                    .border(1.dp, colors.planPlus.copy(alpha = 0.28f), RoundedCornerShape(14.dp))
                     .padding(10.dp),
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -825,7 +836,7 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
                 Text(
                     professionalProgressTitleLabel(progress.currentTitle.key),
                     style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
+                    color = if (isDark) Color.White else colors.black,
                     maxLines = 2,
                 )
             }
@@ -846,7 +857,7 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
                             .fillMaxWidth(progress.titleProgress.toFloat().coerceIn(0f, 1f))
                             .height(15.dp)
                             .clip(RoundedCornerShape(50))
-                            .background(Brush.horizontalGradient(listOf(colors.black, colors.graphite, colors.black))),
+                            .background(Brush.horizontalGradient(listOf(Color(0xFFFFD36A), colors.planPlus, Color(0xFFFF8A3D)))),
                     )
                 }
                 Text(
@@ -868,8 +879,12 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
                 .clip(RoundedCornerShape(RdRadius.lg))
                 .background(
                     Brush.linearGradient(
-                        if (weekly.hasActivity) listOf(colors.greenSoft, colors.white, colors.planPlusSoft.copy(alpha = 0.46f))
-                        else listOf(Color(0xFFEEF6FF), colors.white, Color(0xFFF6F3FF)),
+                        when {
+                            isDark && weekly.hasActivity -> listOf(Color(0xFF102619), Color(0xFF151A17), Color(0xFF2A2514))
+                            isDark -> listOf(Color(0xFF111A24), Color(0xFF14181C), Color(0xFF1D1825))
+                            weekly.hasActivity -> listOf(colors.greenSoft, colors.white, colors.planPlusSoft.copy(alpha = 0.46f))
+                            else -> listOf(Color(0xFFEEF6FF), colors.white, Color(0xFFF6F3FF))
+                        },
                     ),
                 )
                 .border(1.dp, weeklyAccent.copy(alpha = 0.18f), RoundedCornerShape(RdRadius.lg))
@@ -910,7 +925,7 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
             Text(
                 stringResource(RdR.string.rd_yetkinlik_haritasi),
                 style = RdFontStyle.Subheadline.toTextStyle().copy(fontWeight = FontWeight.Bold),
-                color = colors.onyx,
+                color = colors.black,
                 modifier = Modifier.weight(1f),
             )
             Text(
@@ -971,23 +986,41 @@ private fun SubscriptionStatusCard(profile: UserProfile, onPaywall: () -> Unit) 
             .fillMaxWidth()
             .shadow(4.dp, RoundedCornerShape(RdRadius.lg))
             .clip(RoundedCornerShape(RdRadius.lg))
-            .background(Brush.linearGradient(listOf(soft, colors.white)))
-            .border(1.dp, accent.copy(alpha = 0.30f), RoundedCornerShape(RdRadius.lg))
+            .background(
+                Brush.linearGradient(
+                    if (paid) listOf(soft, colors.white)
+                    else listOf(colors.greenSoft, colors.white, colors.planPlusSoft.copy(alpha = 0.42f)),
+                ),
+            )
+            .border(1.2.dp, (if (paid) accent else colors.green).copy(alpha = 0.32f), RoundedCornerShape(RdRadius.lg))
             .clickable(enabled = !paid, onClick = onPaywall)
-            .padding(horizontal = 14.dp, vertical = 11.dp),
+            .padding(horizontal = 15.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.clip(RoundedCornerShape(50)).background(accent).padding(horizontal = 10.dp, vertical = 5.dp),
+            Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background((if (paid) accent else colors.green).copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center,
         ) {
-            Text(tierLabel, style = RdFontStyle.Caption.toTextStyle().copy(fontWeight = FontWeight.Bold), color = Color.White)
+            Icon(
+                if (paid) Icons.Filled.CheckCircle else Icons.Filled.WorkspacePremium,
+                contentDescription = null,
+                tint = if (paid) accent else colors.greenDark,
+                modifier = Modifier.size(23.dp),
+            )
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
+            if (!paid) {
+                Text(
+                    tierLabel.uppercase(Locale.forLanguageTag("tr-TR")),
+                    style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                    color = colors.greenDark,
+                )
+            }
             Text(
                 if (paid) stringResource(RdR.string.rd_plan_aktif_format, tierLabel)
                 else stringResource(RdR.string.rd_planini_yukselt),
-                style = RdFontStyle.Footnote.toTextStyle(),
+                style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.Bold),
                 color = colors.black,
             )
             Text(
@@ -997,7 +1030,12 @@ private fun SubscriptionStatusCard(profile: UserProfile, onPaywall: () -> Unit) 
                 color = colors.slate,
             )
         }
-        Icon(if (paid) Icons.Filled.CheckCircle else Icons.Filled.WorkspacePremium, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
+        Icon(
+            if (paid) Icons.Filled.CheckCircle else Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = null,
+            tint = if (profile.tier == SubscriptionTier.Free) colors.greenDark else accent,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 
@@ -1143,69 +1181,120 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = RdSpacing.lg),
+            .padding(horizontal = RdSpacing.lg)
+            .padding(bottom = 120.dp),
     ) {
-        Spacer(Modifier.height(RdSpacing.sm))
-        RdSectionCard {
-            Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
-                OutlinedTextField(fullName, { fullName = it }, label = { Text(stringResource(RdR.string.rd_ad_soyad)) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(title, { title = it }, label = { Text(stringResource(RdR.string.rd_unvan)) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(
-                    certificateNumber,
-                    { certificateNumber = it },
-                    label = { Text(stringResource(RdR.string.rd_sertifika_no)) },
-                    modifier = Modifier.fillMaxWidth(),
+        RdScreenHeader(title = stringResource(RdR.string.rd_profil_bilgileri), onBack = onDone)
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(Brush.linearGradient(listOf(colors.greenSoft, colors.white)))
+                .border(1.dp, colors.green.copy(alpha = 0.20f), RoundedCornerShape(24.dp))
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier.size(46.dp).clip(RoundedCornerShape(15.dp)).background(colors.green.copy(alpha = 0.13f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Person, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(24.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(RdR.string.rd_profilini_guncelle),
+                    style = RdFontStyle.Title3.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                    color = colors.black,
                 )
-                OutlinedTextField(companyName, { companyName = it }, label = { Text(stringResource(RdR.string.rd_firma)) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(phone, { phone = it }, label = { Text(stringResource(RdR.string.rd_telefon)) }, modifier = Modifier.fillMaxWidth())
+                Text(
+                    stringResource(RdR.string.rd_profil_rapor_aciklama),
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                )
             }
         }
 
         Spacer(Modifier.height(RdSpacing.md))
-        Text(stringResource(RdR.string.rd_risk_yontemi), style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
-        Spacer(Modifier.height(RdSpacing.xs))
-        Row(horizontalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
-            RiskMethodWire.entries.forEach { method ->
-                val isSelected = preferredMethod == method
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(RdRadius.xs))
-                        .background(if (isSelected) colors.onyx else colors.fog)
-                        .clickable { preferredMethod = method }
-                        .padding(horizontal = RdSpacing.sm, vertical = RdSpacing.xs),
-                ) {
-                    Text(
-                        if (method == RiskMethodWire.FineKinney) {
-                            stringResource(RdR.string.rd_fine_kinney)
-                        } else {
-                            stringResource(RdR.string.rd_bes_carp_bes_matris)
-                        },
-                        style = RdFontStyle.Footnote.toTextStyle(),
-                        color = if (isSelected) colors.white else colors.onyx,
-                    )
+        RdSectionCard {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    stringResource(RdR.string.rd_profil_ve_sirket_upper),
+                    style = RdFontStyle.Caption.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                    color = colors.greenDark,
+                )
+                ProfileEditField(fullName, { fullName = it }, stringResource(RdR.string.rd_ad_soyad), Icons.Filled.Person)
+                ProfileEditField(title, { title = it }, stringResource(RdR.string.rd_unvan), Icons.Filled.Badge)
+                ProfileEditField(certificateNumber, { certificateNumber = it }, stringResource(RdR.string.rd_sertifika_no), Icons.Filled.Numbers)
+                ProfileEditField(companyName, { companyName = it }, stringResource(RdR.string.rd_firma), Icons.Filled.Business)
+                ProfileEditField(phone, { phone = it }, stringResource(RdR.string.rd_telefon), Icons.Filled.Phone)
+            }
+        }
+
+        Spacer(Modifier.height(RdSpacing.md))
+        RdSectionCard {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    stringResource(RdR.string.rd_risk_yontemi_upper),
+                    style = RdFontStyle.Caption.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                    color = colors.greenDark,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
+                    RiskMethodWire.entries.forEach { method ->
+                        val isSelected = preferredMethod == method
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (isSelected) colors.cta else colors.fog)
+                                .border(1.dp, if (isSelected) colors.cta else colors.line, RoundedCornerShape(14.dp))
+                                .clickable { preferredMethod = method }
+                                .padding(horizontal = 10.dp, vertical = 12.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                if (method == RiskMethodWire.FineKinney) stringResource(RdR.string.rd_fine_kinney)
+                                else stringResource(RdR.string.rd_bes_carp_bes_matris),
+                                style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.SemiBold),
+                                color = if (isSelected) Color.White else colors.black,
+                            )
+                        }
+                    }
                 }
             }
         }
 
         Spacer(Modifier.height(RdSpacing.md))
-        TextButton(
-            onClick = {
-                pickLogo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            },
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(RdRadius.lg))
+                .background(colors.white)
+                .border(1.dp, colors.line, RoundedCornerShape(RdRadius.lg))
+                .clickable { pickLogo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                if (logoBytes != null) {
-                    stringResource(RdR.string.rd_logo_secildi)
-                } else {
-                    stringResource(RdR.string.rd_logo_degistir_opsiyonel)
-                },
-            )
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(13.dp)).background(colors.fog), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Image, contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(21.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    if (logoBytes != null) stringResource(RdR.string.rd_logo_secildi)
+                    else stringResource(RdR.string.rd_logo_degistir_opsiyonel),
+                    style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.black,
+                )
+                Text(stringResource(RdR.string.rd_logo_raporlarda_kullanilir), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+            }
         }
 
         Spacer(Modifier.height(RdSpacing.sm))
         if (isSaving) {
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = colors.onyx)
+                CircularProgressIndicator(color = colors.black)
             }
         } else {
             RdPrimaryButton(text = stringResource(RdR.string.rd_kaydet), onClick = {
@@ -1222,7 +1311,6 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
         }
         Spacer(Modifier.height(RdSpacing.xs))
         TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text(stringResource(RdR.string.rd_vazgec)) }
-        Spacer(Modifier.height(RdSpacing.lg))
     }
 
     saveError?.let { error ->
@@ -1235,4 +1323,23 @@ private fun ProfileEditForm(profile: UserProfile, viewModel: ProfileViewModel, o
             },
         )
     }
+}
+
+@Composable
+private fun ProfileEditField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    icon: ImageVector,
+) {
+    val colors = RdTheme.colors
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        leadingIcon = { Icon(icon, contentDescription = null, tint = colors.slate, modifier = Modifier.size(20.dp)) },
+        shape = RoundedCornerShape(16.dp),
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }

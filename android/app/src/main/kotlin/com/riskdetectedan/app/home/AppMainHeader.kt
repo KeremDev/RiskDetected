@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -65,6 +67,10 @@ fun AppMainHeader(
             painter = painterResource(R.drawable.rd_logo),
             contentDescription = stringResource(RdR.string.rd_riskdetected),
             contentScale = ContentScale.FillHeight,
+            // iOS RDLogo switches the whole wordmark to a white template in dark mode. The
+            // source PNG contains a black wordmark, so rendering it unchanged makes the brand
+            // disappear on Android's dark paper surface.
+            colorFilter = if (RdTheme.isDark) ColorFilter.tint(Color.White) else null,
             modifier = Modifier.height(34.dp).clickable(onClick = onLogo),
             alignment = Alignment.CenterStart,
         )

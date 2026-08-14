@@ -6,7 +6,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -96,6 +95,7 @@ import com.riskdetectedan.feature.reports.ReportPreviewUiState
 import java.io.File
 import java.time.OffsetDateTime
 import java.time.temporal.WeekFields
+import java.text.Normalizer
 import java.util.Locale
 
 private val Report.isExcel: Boolean
@@ -150,7 +150,11 @@ private fun reportSearchText(report: Report): String = listOfNotNull(
     report.format,
     report.mimeType,
     report.createdAt,
-).joinToString(" ").lowercase(Locale.forLanguageTag("tr-TR"))
+).joinToString(" ").let(::normalizeReportSearch)
+
+private fun normalizeReportSearch(value: String): String = Normalizer
+    .normalize(value.trim().lowercase(Locale.forLanguageTag("tr-TR")).replace('ı', 'i'), Normalizer.Form.NFD)
+    .replace(Regex("\\p{Mn}+"), "")
 
 /**
  * Android port of iOS build-81 `ReportView`: overview, Plus value card, collapsible archive and
@@ -197,7 +201,7 @@ fun GeneratedReportsScreen(
     val reports = (state as? GeneratedReportsUiState.Loaded)?.items.orEmpty()
     val analyses = (historyState as? HistoryUiState.Loaded)?.items.orEmpty()
         .filter { it.status == "completed" }
-    val needle = search.trim().lowercase(Locale.forLanguageTag("tr-TR"))
+    val needle = normalizeReportSearch(search)
     val filteredReports = reports.filter { report ->
         (focusedReportId == null || report.id == focusedReportId) &&
             (needle.isEmpty() || reportSearchText(report).contains(needle)) &&
@@ -208,6 +212,13 @@ fun GeneratedReportsScreen(
     val freeRiskTrialAvailable = userTier == SubscriptionTier.Free &&
         !(reportQuotaUsage?.riskTrialUsed ?: freeRiskTrialUsedFromArchive)
     val isGenerating = generatingExcelId != null || generatingPdfId != null
+
+    // Both ViewModels survive tab changes in MainShell; refresh the archive and its analysis
+    // sources on each real entry so newly generated items appear without relaunching the app.
+    LaunchedEffect(Unit) {
+        viewModel.load()
+        historyViewModel.load()
+    }
 
     LaunchedEffect(focusedReportId) {
         if (focusedReportId != null) archiveExpanded = true
@@ -295,7 +306,7 @@ fun GeneratedReportsScreen(
                     }
                     state is GeneratedReportsUiState.Loading && historyState is HistoryUiState.Loading -> item {
                         Box(Modifier.fillMaxWidth().height(140.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = colors.onyx)
+                            CircularProgressIndicator(color = colors.black)
                         }
                     }
                     reports.isEmpty() && analyses.isEmpty() -> item {
@@ -489,7 +500,8 @@ fun GeneratedReportsScreen(
 @Composable
 private fun ReportOverview(reportCount: Int, analysisCount: Int, riskReportCount: Int) {
     val colors = RdTheme.colors
-    val dark = isSystemInDarkTheme()
+    // Use the resolved in-app preference, not the device setting. These can intentionally differ.
+    val dark = RdTheme.isDark
     val metricBackground = if (dark) Color(0xFF17231B) else colors.onyx
     val metricBorder = if (dark) colors.green.copy(alpha = .34f) else colors.onyx
     Column(
@@ -808,9 +820,9 @@ private fun ReportSourceSheet(
     ) {
         Column(Modifier.fillMaxWidth().heightIn(min = 430.dp, max = 700.dp).padding(horizontal = 14.dp)) {
             Box(Modifier.fillMaxWidth().height(48.dp)) {
-                Text(stringResource(RdR.string.rd_rapor_olustur), style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx, modifier = Modifier.align(Alignment.Center))
+                Text(stringResource(RdR.string.rd_rapor_olustur), style = RdFontStyle.Callout.toTextStyle(), color = colors.black, modifier = Modifier.align(Alignment.Center))
                 IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.CenterEnd).size(34.dp).clip(CircleShape).background(colors.fog)) {
-                    Icon(Icons.Filled.Close, stringResource(RdR.string.rd_kapat), tint = colors.onyx, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Close, stringResource(RdR.string.rd_kapat), tint = colors.black, modifier = Modifier.size(18.dp))
                 }
             }
             Text(item.title, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, modifier = Modifier.padding(bottom = 10.dp))
@@ -938,32 +950,35 @@ private fun ReportSourceSheet(
                     modifier = Modifier.weight(1f),
                 )
                 Box(Modifier.size(34.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Filled.Send, null, tint = colors.onyx, modifier = Modifier.size(17.dp))
+                    Icon(Icons.AutoMirrored.Filled.Send, null, tint = colors.black, modifier = Modifier.size(17.dp))
                 }
             }
         }
     }
 
     if (showCompanyPicker) {
-        AlertDialog(
+        val companyPickerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
             onDismissRequest = { showCompanyPicker = false },
-            title = { Text(stringResource(RdR.string.rd_rapor_firmasi)) },
-            text = {
-                ReportCompanyPickerList(
-                    companies = companies,
-                    selected = selectedCompany,
-                    onSelect = { company ->
-                        selectedCompanyId = company?.id
-                        showCompanyPicker = false
-                    },
+            sheetState = companyPickerSheetState,
+            containerColor = colors.paper,
+            dragHandle = {
+                Box(
+                    Modifier.padding(top = 8.dp).size(width = 38.dp, height = 5.dp)
+                        .clip(CircleShape).background(colors.line),
                 )
             },
-            confirmButton = {
-                TextButton(onClick = { showCompanyPicker = false }) {
-                    Text(stringResource(RdR.string.rd_kapat))
-                }
-            },
-        )
+        ) {
+            ReportCompanySearchSheet(
+                companies = companies,
+                selected = selectedCompany,
+                onSelect = { company ->
+                    selectedCompanyId = company?.id
+                    showCompanyPicker = false
+                },
+                onClose = { showCompanyPicker = false },
+            )
+        }
     }
 }
 
@@ -999,7 +1014,7 @@ private fun ReportDocumentPreview(
             Text(item.createdAt?.take(10).orEmpty(), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
         }
         Box(Modifier.fillMaxWidth().height(2.dp).background(colors.green))
-        Text(item.title, style = RdFontStyle.Callout.toTextStyle().copy(fontWeight = FontWeight.Bold), color = colors.onyx)
+        Text(item.title, style = RdFontStyle.Callout.toTextStyle().copy(fontWeight = FontWeight.Bold), color = colors.black)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ReportPreviewStat(stringResource(RdR.string.rd_bulgu_sayisi_format, item.findingCount), Modifier.weight(1f))
             Box(
@@ -1043,7 +1058,7 @@ private fun ReportDocumentPreview(
 private fun ReportPreviewStat(text: String, modifier: Modifier = Modifier) {
     val colors = RdTheme.colors
     Box(modifier.height(52.dp).clip(RoundedCornerShape(13.dp)).background(colors.fog), contentAlignment = Alignment.Center) {
-        Text(text, style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.Bold), color = colors.onyx)
+        Text(text, style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.Bold), color = colors.black)
     }
 }
 
@@ -1131,7 +1146,7 @@ private fun ReportOptionCard(
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(title, style = RdFontStyle.Callout.toTextStyle().copy(fontWeight = FontWeight.Bold), color = colors.onyx)
+            Text(title, style = RdFontStyle.Callout.toTextStyle().copy(fontWeight = FontWeight.Bold), color = colors.black)
             Text(subtitle, style = RdFontStyle.Footnote.toTextStyle(), color = if (locked) colors.planPlusDark else colors.slate, maxLines = 3)
         }
         Box(Modifier.size(24.dp).clip(CircleShape).border(2.dp, if (selected) colors.green else colors.slate.copy(.32f), CircleShape).background(if (selected) colors.green else Color.Transparent), contentAlignment = Alignment.Center) {
@@ -1155,9 +1170,247 @@ private fun ReportCompanyChoice(selectedCompany: Company?, onClick: () -> Unit) 
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(selectedCompany?.name ?: stringResource(RdR.string.rd_firma_yok), style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.Bold), color = colors.black)
-            Text(stringResource(RdR.string.rd_firma_sec), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+            Text(
+                selectedCompany?.let(::reportCompanySubtitle)
+                    ?: stringResource(RdR.string.rd_kayitli_firmalarindan_sec),
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate,
+                maxLines = 1,
+            )
         }
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = colors.slate, modifier = Modifier.size(20.dp))
+        Icon(Icons.Filled.ExpandMore, null, tint = colors.slate, modifier = Modifier.size(20.dp))
+    }
+}
+
+internal fun filterReportCompanies(
+    companies: List<Company>,
+    query: String,
+    selectedCompanyId: String? = null,
+): List<Company> {
+    val needle = normalizeReportSearch(query)
+    return companies
+        .asSequence()
+        .filter { company ->
+            needle.isEmpty() || normalizeReportSearch(
+                listOfNotNull(
+                    company.name,
+                    company.hazardClass.title,
+                    company.address,
+                    company.contactPerson,
+                    company.department,
+                    company.defaultResponsible,
+                ).joinToString(" "),
+            ).contains(needle)
+        }
+        .sortedWith(
+            compareByDescending<Company> { it.id == selectedCompanyId }
+                .thenBy { normalizeReportSearch(it.name) },
+        )
+        .toList()
+}
+
+private fun reportCompanySubtitle(company: Company): String = listOfNotNull(
+    company.hazardClass.title,
+    company.department?.trim()?.takeIf(String::isNotEmpty)
+        ?: company.address?.trim()?.takeIf(String::isNotEmpty),
+).joinToString(" · ")
+
+@Composable
+internal fun ReportCompanySearchSheet(
+    companies: List<Company>,
+    selected: Company?,
+    onSelect: (Company?) -> Unit,
+    onClose: () -> Unit,
+) {
+    val colors = RdTheme.colors
+    var query by remember { mutableStateOf("") }
+    val filteredCompanies = remember(companies, query, selected?.id) {
+        filterReportCompanies(companies, query, selected?.id)
+    }
+
+    Column(
+        Modifier.fillMaxWidth().heightIn(min = 430.dp, max = 680.dp)
+            .padding(horizontal = 18.dp).padding(bottom = 22.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(colors.greenSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Business, null, tint = colors.greenDark, modifier = Modifier.size(21.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    stringResource(RdR.string.rd_rapor_firmasi),
+                    style = RdFontStyle.Title3.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                    color = colors.black,
+                )
+                Text(
+                    stringResource(RdR.string.rd_rapor_firmasi_sec_aciklama),
+                    style = RdFontStyle.Footnote.toTextStyle(),
+                    color = colors.slate,
+                )
+            }
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier.size(38.dp).clip(CircleShape).background(colors.fog),
+            ) {
+                Icon(Icons.Filled.Close, stringResource(RdR.string.rd_kapat), tint = colors.black, modifier = Modifier.size(18.dp))
+            }
+        }
+
+        ReportCompanySearchField(query = query, onQueryChange = { query = it })
+
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(RdR.string.rd_firma_sonuc_sayisi_format, filteredCompanies.size),
+                style = RdFontStyle.Caption.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                color = colors.slate,
+                modifier = Modifier.weight(1f),
+            )
+            if (query.isNotBlank()) {
+                Text(
+                    stringResource(RdR.string.rd_aramayi_temizle),
+                    style = RdFontStyle.Caption.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                    color = colors.greenDark,
+                    modifier = Modifier.clip(CircleShape).clickable { query = "" }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+        }
+
+        ReportCompanySearchRow(
+            company = null,
+            selected = selected == null,
+            onClick = { onSelect(null) },
+        )
+
+        if (filteredCompanies.isEmpty()) {
+            Column(
+                Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(18.dp))
+                    .background(colors.fog).padding(22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(Icons.Filled.Search, null, tint = colors.slate, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.height(9.dp))
+                Text(
+                    stringResource(if (companies.isEmpty()) RdR.string.rd_henuz_firma_yok else RdR.string.rd_firma_arama_sonuc_yok),
+                    style = RdFontStyle.Callout.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                    color = colors.black,
+                )
+                if (query.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        stringResource(RdR.string.rd_firma_arama_sonuc_yok_aciklama),
+                        style = RdFontStyle.Footnote.toTextStyle(),
+                        color = colors.slate,
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                Modifier.fillMaxWidth().weight(1f).testTag("report-company-results"),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(filteredCompanies, key = { it.id }) { company ->
+                    ReportCompanySearchRow(
+                        company = company,
+                        selected = selected?.id == company.id,
+                        onClick = { onSelect(company) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReportCompanySearchField(query: String, onQueryChange: (String) -> Unit) {
+    val colors = RdTheme.colors
+    Row(
+        Modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(15.dp))
+            .background(colors.white).border(1.dp, colors.line, RoundedCornerShape(15.dp))
+            .padding(start = 14.dp, end = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Search, null, tint = colors.slate, modifier = Modifier.size(19.dp))
+        Spacer(Modifier.width(9.dp))
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            if (query.isEmpty()) {
+                Text(stringResource(RdR.string.rd_firma_ara), style = RdFontStyle.Callout.toTextStyle(), color = colors.slate)
+            }
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                singleLine = true,
+                textStyle = RdFontStyle.Callout.toTextStyle().copy(color = colors.black),
+                cursorBrush = SolidColor(colors.green),
+                modifier = Modifier.fillMaxWidth().testTag("report-company-search"),
+            )
+        }
+        if (query.isNotEmpty()) {
+            IconButton(onClick = { onQueryChange("") }, modifier = Modifier.size(36.dp)) {
+                Icon(Icons.Filled.Close, stringResource(RdR.string.rd_aramayi_temizle), tint = colors.slate, modifier = Modifier.size(17.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReportCompanySearchRow(company: Company?, selected: Boolean, onClick: () -> Unit) {
+    val colors = RdTheme.colors
+    val title = company?.name ?: stringResource(RdR.string.rd_firma_secmeden_devam_et)
+    val subtitle = company?.let(::reportCompanySubtitle)
+        ?: stringResource(RdR.string.rd_firma_bilgisi_rapora_eklenmez)
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+            .background(if (selected) colors.greenSoft.copy(.72f) else colors.white)
+            .border(
+                if (selected) 1.4.dp else 1.dp,
+                if (selected) colors.green.copy(.52f) else colors.line,
+                RoundedCornerShape(16.dp),
+            )
+            .clickable(onClick = onClick)
+            .then(if (company != null) Modifier.testTag("report-company-${company.id}") else Modifier)
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(11.dp),
+    ) {
+        Box(
+            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                .background(if (selected) colors.green else colors.fog),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (company == null) Icons.Filled.Close else Icons.Filled.Business,
+                null,
+                tint = if (selected) Color.White else colors.slate,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                title,
+                style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                color = colors.black,
+                maxLines = 1,
+            )
+            Text(subtitle, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate, maxLines = 1)
+        }
+        Box(
+            Modifier.size(24.dp).clip(CircleShape)
+                .border(2.dp, if (selected) colors.green else colors.slate.copy(.30f), CircleShape)
+                .background(if (selected) colors.green else Color.Transparent),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(15.dp))
+        }
     }
 }
 
@@ -1245,7 +1498,7 @@ private fun ReportChoiceChip(text: String, selected: Boolean, modifier: Modifier
             .border(1.dp, if (selected) colors.green else colors.line, RoundedCornerShape(14.dp)).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = RdFontStyle.Footnote.toTextStyle(), color = if (selected) colors.greenDark else colors.onyx)
+        Text(text, style = RdFontStyle.Footnote.toTextStyle(), color = if (selected) colors.greenDark else colors.black)
     }
 }
 
@@ -1262,7 +1515,7 @@ private fun ReportGenerationOverlay(isExcel: Boolean, modifier: Modifier = Modif
             Text(
                 stringResource(if (isExcel) RdR.string.rd_excel_hazirlaniyor else RdR.string.rd_pdf_hazirlaniyor),
                 style = RdFontStyle.Title3.toTextStyle(),
-                color = colors.onyx,
+                color = colors.black,
             )
             Text(stringResource(RdR.string.rd_uygulamayi_acik_tut), style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate)
         }

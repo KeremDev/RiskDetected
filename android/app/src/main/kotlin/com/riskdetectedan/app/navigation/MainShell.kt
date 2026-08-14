@@ -131,6 +131,9 @@ fun MainShellScreen(
                 onProfile = { selectTab(RdTab.Profile) },
                 onUpgrade = { navController.navigate(Paywall) },
                 quickScanRequestKey = quickScanRequestKey,
+                onQuickScanRequestConsumed = { consumedKey ->
+                    if (quickScanRequestKey == consumedKey) quickScanRequestKey = 0
+                },
             )
             RdTab.Analyses -> Column {
                 AppMainHeader(

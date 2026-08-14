@@ -158,10 +158,10 @@ private fun CanvasCard(canvas: AnalysisCanvas, isActive: Boolean, isLocked: Bool
     val accentDark = if (canvas.minTier == SubscriptionTier.Pro) colors.greenDark else colors.planPlusDark
     val accentSoft = if (canvas.minTier == SubscriptionTier.Pro) colors.greenSoft else colors.planPlusSoft
     val background = if (isActive) colors.onyx else colors.white
-    val textColor = if (isActive) colors.white else colors.black
+    val textColor = if (isActive) Color.White else colors.black
     val borderColor = if (isActive) colors.onyx else if (canvas.isPaid) accent.copy(alpha = 0.55f) else colors.line
     val iconBg = if (isActive) colors.green else if (canvas.isPaid) accentSoft else colors.fog
-    val iconTint = if (isActive) colors.white else if (canvas.isPaid) accentDark else colors.black
+    val iconTint = if (isActive) Color.White else if (canvas.isPaid) accentDark else colors.black
 
     Box(
         modifier = Modifier
@@ -220,12 +220,12 @@ private fun TierBadge(tier: SubscriptionTier) {
             .padding(horizontal = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(badgeIcon, contentDescription = null, tint = colors.white, modifier = Modifier.size(8.dp))
+        Icon(badgeIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(8.dp))
         Spacer(Modifier.width(2.dp))
         Text(
             badgeLabel,
             style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 8.sp),
-            color = colors.white,
+            color = Color.White,
         )
     }
 }

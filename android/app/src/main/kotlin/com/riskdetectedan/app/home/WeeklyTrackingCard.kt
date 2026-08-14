@@ -77,7 +77,7 @@ fun WeeklyTrackingCard(summary: ProfessionalProgressSummary) {
         Text(
             tracking.body,
             style = RdFontStyle.Callout.toTextStyle(),
-            color = colors.onyx,
+            color = colors.black,
             maxLines = 2,
         )
     }

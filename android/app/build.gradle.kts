@@ -74,6 +74,19 @@ val productionGoogleServicesProjectId =
         ?.groupValues
         ?.get(1)
         .orEmpty()
+val productionGoogleServicesProjectNumber =
+    Regex("\\\"project_number\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"")
+        .find(productionGoogleServicesText)
+        ?.groupValues
+        ?.get(1)
+        .orEmpty()
+val productionGoogleServicesWebClientIds =
+    Regex(
+        "\\\"client_id\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"\\s*,\\s*\\\"client_type\\\"\\s*:\\s*3",
+    )
+        .findAll(productionGoogleServicesText)
+        .map { it.groupValues[1] }
+        .toSet()
 val productionGoogleServicesHasPackage = productionGoogleServicesText.contains(
     "\\\"package_name\\\"\\s*:\\s*\\\"com.riskdetectedan.app\\\"".toRegex(),
 )
@@ -133,6 +146,8 @@ abstract class VerifyReleaseEnvironmentTask : DefaultTask() {
     @get:Input abstract val revenueCatPublicKey: Property<String>
     @get:Input abstract val firebaseProjectId: Property<String>
     @get:Input abstract val firebaseConfigProjectId: Property<String>
+    @get:Input abstract val firebaseConfigProjectNumber: Property<String>
+    @get:Input abstract val firebaseConfigWebClientIds: Property<String>
     @get:Input abstract val firebaseConfigHasReleasePackage: Property<Boolean>
     @get:Input abstract val expectedSupabaseUrl: Property<String>
     @get:Input abstract val signingConfigured: Property<Boolean>
@@ -159,6 +174,21 @@ abstract class VerifyReleaseEnvironmentTask : DefaultTask() {
         }
         check(googleWebClientId.get().endsWith(".apps.googleusercontent.com")) {
             "Release Google OAuth value is not a web client id."
+        }
+        val firebaseWebClientIds = firebaseConfigWebClientIds.get()
+            .split(',')
+            .map(String::trim)
+            .filter(String::isNotBlank)
+            .toSet()
+        check(googleWebClientId.get() in firebaseWebClientIds) {
+            "Release Google OAuth web client id is not registered in app/google-services.json. " +
+                "Android and server OAuth clients must belong to the same Google Cloud project."
+        }
+        check(
+            firebaseConfigProjectNumber.get().isNotBlank() &&
+                googleWebClientId.get().startsWith("${firebaseConfigProjectNumber.get()}-"),
+        ) {
+            "Release Google OAuth web client id does not belong to the Firebase project number."
         }
         check(revenueCatPublicKey.get().isNotBlank()) {
             "Release requires the production RevenueCat public key."
@@ -349,10 +379,12 @@ android {
             initWith(getByName("debug"))
             applicationIdSuffix = ".qa"
             versionNameSuffix = "-qa"
-            isDebuggable = false
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // RevenueCat's Test Store intentionally aborts non-debuggable processes. QA uses
+            // the isolated staging Test Store key, so it must stay debuggable; release remains
+            // non-debuggable and is independently forced to use the Google Play public key.
+            isDebuggable = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             matchingFallbacks += listOf("debug")
             val qaCrashlyticsEnabled = stagingFirebaseProjectId.isNotBlank()
             manifestPlaceholders["firebaseCrashlyticsCollectionEnabled"] = qaCrashlyticsEnabled.toString()
@@ -499,6 +531,8 @@ val verifyReleaseEnvironment = tasks.register<VerifyReleaseEnvironmentTask>("ver
     revenueCatPublicKey.set(productionRevenueCatPublicKey)
     firebaseProjectId.set(productionFirebaseProjectId)
     firebaseConfigProjectId.set(productionGoogleServicesProjectId)
+    firebaseConfigProjectNumber.set(productionGoogleServicesProjectNumber)
+    firebaseConfigWebClientIds.set(productionGoogleServicesWebClientIds.sorted().joinToString(","))
     firebaseConfigHasReleasePackage.set(productionGoogleServicesHasPackage)
     expectedSupabaseUrl.set(expectedProductionSupabaseUrl)
     signingConfigured.set(releaseSigningConfigured)

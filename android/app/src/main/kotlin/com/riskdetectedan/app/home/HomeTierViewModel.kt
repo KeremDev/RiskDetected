@@ -26,10 +26,9 @@ import javax.inject.Inject
  *
  * **Remote `PlanCapabilities` override now closed too** (previously documented as a separate
  * still-open gap): [refresh] fires [PlanCapabilitiesRepository.fetchPhotoCapabilities] right
- * after the tier resolves. [photoCapabilities] starts null and the caller uses the fail-closed
- * local capability contract until the Android build allowlist and remote rules resolve; this is
- * intentionally stricter than briefly exposing a paid slot before the Android rollout gate is
- * known.
+ * after the tier resolves. [photoCapabilities] starts null and the caller uses the local plan
+ * contract until the Android build allowlist and remote rules resolve. That fallback is
+ * Free=1, Plus/Pro=3, matching the paid product instead of briefly painting paid users as Free.
  */
 @HiltViewModel
 class HomeTierViewModel @Inject constructor(

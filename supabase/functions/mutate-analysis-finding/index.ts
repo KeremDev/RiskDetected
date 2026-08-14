@@ -164,15 +164,22 @@ function editableReleaseGateOpen(
   client: ClientReleaseContext,
 ): boolean {
   if (bool(value.kill_switch, false)) return false;
-  if (client.platform !== "ios") return false;
+  if (client.platform !== "ios" && client.platform !== "android") return false;
   if (client.apiContractVersion < 2) return false;
   if (!client.appBuild) return false;
   if (client.capabilities.editable_findings !== true) return false;
 
+  const enabledBuildsKey = client.platform === "ios"
+    ? "enabled_ios_builds"
+    : "enabled_android_builds";
+  const minimumBuildKey = client.platform === "ios"
+    ? "min_ios_build"
+    : "min_android_build";
+
   const mode = rolloutMode(value.rollout_mode);
   if (mode === "all") return true;
   if (mode === "build_allowlist") {
-    const allowed = stringArray(value.enabled_ios_builds);
+    const allowed = stringArray(value[enabledBuildsKey]);
     if (allowed.includes(client.appBuild)) return true;
     return client.appBuildNumber != null &&
       allowed
@@ -180,7 +187,7 @@ function editableReleaseGateOpen(
         .some((build) => build === client.appBuildNumber);
   }
   if (mode === "min_build") {
-    const minimum = optionalPositiveInt(value.min_ios_build);
+    const minimum = optionalPositiveInt(value[minimumBuildKey]);
     return client.appBuildNumber != null && minimum != null &&
       client.appBuildNumber >= minimum;
   }

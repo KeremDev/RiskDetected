@@ -125,6 +125,12 @@ Deno.test("finding edits require build gated API contract", async () => {
   );
   assertStringIncludes(
     source,
+    'client.platform !== "ios" && client.platform !== "android"',
+  );
+  assertStringIncludes(source, '"enabled_android_builds"');
+  assertStringIncludes(source, '"min_android_build"');
+  assertStringIncludes(
+    source,
     "editableFindingsEnabled(supabase, clientRelease)",
   );
 });

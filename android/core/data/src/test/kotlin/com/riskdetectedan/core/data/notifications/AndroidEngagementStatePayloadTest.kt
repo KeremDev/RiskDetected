@@ -23,6 +23,7 @@ class AndroidEngagementStatePayloadTest {
         val json = Json.parseToJsonElement(encoded).jsonObject
 
         assertEquals("Europe/Istanbul", json.getValue("p_timezone").jsonPrimitive.content)
+        assertEquals("tr-TR", json.getValue("p_locale").jsonPrimitive.content)
         assertEquals("authorized", json.getValue("p_authorization_status").jsonPrimitive.content)
         assertEquals("com.riskdetectedan.app", json.getValue("p_application_id").jsonPrimitive.content)
     }

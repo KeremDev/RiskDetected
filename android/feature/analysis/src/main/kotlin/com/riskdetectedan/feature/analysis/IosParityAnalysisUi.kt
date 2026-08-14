@@ -258,14 +258,14 @@ internal fun IosParityAnalyzingView(
                         verticalArrangement = Arrangement.spacedBy(9.dp),
                     ) {
                         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("$percent", style = iosRounded(64f, FontWeight.Black, tracking = -0.5f, lineHeightMultiplier = 1f), color = colors.white)
-                            Text("%", style = iosRounded(28f, FontWeight.Black, lineHeightMultiplier = 1f), color = colors.white.copy(.92f), modifier = Modifier.padding(bottom = 5.dp))
+                            Text("$percent", style = iosRounded(64f, FontWeight.Black, tracking = -0.5f, lineHeightMultiplier = 1f), color = Color.White)
+                            Text("%", style = iosRounded(28f, FontWeight.Black, lineHeightMultiplier = 1f), color = Color.White.copy(.92f), modifier = Modifier.padding(bottom = 5.dp))
                         }
                         if (photoCount > 1) {
                             Text(
                                 stringResource(RdR.string.rd_fotograf_sayisi_format, photoCount),
                                 style = iosRounded(11f, FontWeight.Bold),
-                                color = colors.white,
+                                color = Color.White,
                                 modifier = Modifier.clip(CircleShape).background(colors.white.copy(.16f)).padding(horizontal = 10.dp, vertical = 5.dp),
                             )
                         }
@@ -284,7 +284,7 @@ internal fun IosParityAnalyzingView(
             }
 
             Spacer(Modifier.height(22.dp))
-            Text(stringResource(RdR.string.rd_analiz_devam_ediyor), style = iosRounded(22f, FontWeight.Bold, tracking = -0.4f), color = colors.onyx)
+            Text(stringResource(RdR.string.rd_analiz_devam_ediyor), style = iosRounded(22f, FontWeight.Bold, tracking = -0.4f), color = colors.black)
             Spacer(Modifier.height(6.dp))
             Text(
                 stringResource(RdR.string.rd_analiz_hazirlaniyor_alt),
@@ -347,12 +347,12 @@ private fun ProgressStep(label: String, fill: Float) {
                 .border(if (active) 2.dp else 0.dp, if (active) colors.selected else Color.Transparent, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            if (complete) Icon(Icons.Filled.Check, null, tint = colors.white, modifier = Modifier.size(13.dp))
+            if (complete) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(13.dp))
             else if (active) Box(Modifier.size(7.dp).clip(CircleShape).background(colors.selected))
         }
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(label, style = iosRounded(13.5f, FontWeight.SemiBold), color = colors.onyx, maxLines = 1)
+            Text(label, style = iosRounded(13.5f, FontWeight.SemiBold), color = colors.black, maxLines = 1)
             LinearProgressIndicator(
                 progress = { fill },
                 modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
@@ -467,13 +467,13 @@ internal fun IosParityResultView(
                 onClick = { showReportSheet = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = colors.onyx, contentColor = colors.white),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.cta, contentColor = Color.White),
             ) {
                 Icon(Icons.Filled.Tune, null, Modifier.size(20.dp))
                 Spacer(Modifier.width(10.dp))
                 Text(stringResource(RdR.string.rd_rapor_olustur), style = RdFontStyle.Callout.toTextStyle(), modifier = Modifier.weight(1f))
                 Box(Modifier.size(34.dp).clip(CircleShape).background(colors.white), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Filled.Send, null, tint = colors.onyx, modifier = Modifier.size(17.dp))
+                    Icon(Icons.AutoMirrored.Filled.Send, null, tint = colors.black, modifier = Modifier.size(17.dp))
                 }
             }
         }
@@ -608,11 +608,11 @@ private fun IosParityFindingEditorSheet(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, null, tint = colors.onyx) }
+                IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, null, tint = colors.black) }
                 Text(
                     stringResource(RdR.string.rd_bulguyu_duzenle),
                     style = iosRounded(20f, FontWeight.Bold),
-                    color = colors.onyx,
+                    color = colors.black,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
                 )
@@ -632,7 +632,7 @@ private fun IosParityFindingEditorSheet(
                         Text(
                             if (method == ParityRiskMethod.FineKinney) "Fine-Kinney Risk Puanı" else "5×5 Risk Puanı",
                             style = iosRounded(15f, FontWeight.Bold),
-                            color = colors.onyx,
+                            color = colors.black,
                         )
                         if (method == ParityRiskMethod.FineKinney) {
                             FindingScorePicker("Olasılık", FineKinneyValues.PROBABILITY, fkProbability) { fkProbability = it }
@@ -684,7 +684,7 @@ private fun IosParityFindingEditorSheet(
                     enabled = canSave,
                     modifier = Modifier.weight(1f).height(52.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = colors.onyx, contentColor = colors.white),
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.cta, contentColor = Color.White),
                 ) { Text(stringResource(RdR.string.rd_kaydet), style = iosRounded(15f, FontWeight.Bold)) }
             }
         }
@@ -720,10 +720,10 @@ private fun FindingScorePicker(label: String, options: List<Double>, selected: D
                 Text(
                     if (value % 1.0 == 0.0) value.toInt().toString() else value.toString(),
                     style = iosRounded(12.5f, FontWeight.SemiBold),
-                    color = if (active) colors.white else colors.onyx,
+                    color = if (active) Color.White else colors.black,
                     modifier = Modifier.clip(RoundedCornerShape(10.dp))
-                        .background(if (active) colors.onyx else colors.white)
-                        .border(1.dp, if (active) colors.onyx else colors.line, RoundedCornerShape(10.dp))
+                        .background(if (active) colors.selected else colors.white)
+                        .border(1.dp, if (active) colors.selected else colors.line, RoundedCornerShape(10.dp))
                         .clickable { onSelect(value) }.padding(horizontal = 12.dp, vertical = 8.dp),
                 )
             }
@@ -735,11 +735,11 @@ private fun FindingScorePicker(label: String, options: List<Double>, selected: D
 private fun ParityResultHeader(onBack: (() -> Unit)?, onReport: () -> Unit) {
     val colors = RdTheme.colors
     Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-        RoundHeaderButton(onBack) { Icon(Icons.Filled.KeyboardArrowLeft, stringResource(RdR.string.rd_geri), tint = colors.onyx, modifier = Modifier.size(23.dp)) }
-        Text(stringResource(RdR.string.rd_analiz_sonucu), style = iosRounded(15f, FontWeight.SemiBold), color = colors.onyx, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
-        RoundHeaderButton(onReport) { Icon(Icons.Filled.Download, stringResource(RdR.string.rd_rapor_olustur), tint = colors.onyx, modifier = Modifier.size(19.dp)) }
+        RoundHeaderButton(onBack) { Icon(Icons.Filled.KeyboardArrowLeft, stringResource(RdR.string.rd_geri), tint = colors.black, modifier = Modifier.size(23.dp)) }
+        Text(stringResource(RdR.string.rd_analiz_sonucu), style = iosRounded(15f, FontWeight.SemiBold), color = colors.black, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+        RoundHeaderButton(onReport) { Icon(Icons.Filled.Download, stringResource(RdR.string.rd_rapor_olustur), tint = colors.black, modifier = Modifier.size(19.dp)) }
         Spacer(Modifier.width(8.dp))
-        RoundHeaderButton(onReport) { Icon(Icons.Filled.IosShare, stringResource(RdR.string.rd_raporu_paylas), tint = colors.onyx, modifier = Modifier.size(18.dp)) }
+        RoundHeaderButton(onReport) { Icon(Icons.Filled.IosShare, stringResource(RdR.string.rd_raporu_paylas), tint = colors.black, modifier = Modifier.size(18.dp)) }
     }
 }
 
@@ -773,7 +773,7 @@ private fun ResultMetaSurface(
     ) {
         PhotoMosaic(photos)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(summary?.title ?: stringResource(RdR.string.rd_adsiz_analiz), style = iosRounded(15f, FontWeight.SemiBold), color = colors.onyx, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(summary?.title ?: stringResource(RdR.string.rd_adsiz_analiz), style = iosRounded(15f, FontWeight.SemiBold), color = colors.black, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(formatResultDate(summary?.createdAt) + " · " + canvasLabel, style = iosRounded(12f), color = colors.slate, maxLines = 1)
             summary?.analysisSector?.takeIf(String::isNotBlank)?.let { sector ->
                 Text(
@@ -785,7 +785,7 @@ private fun ResultMetaSurface(
             }
             Text(stringResource(RdR.string.rd_analiz_odagi_format, canvasLabel), style = iosRounded(12f), color = colors.slate, maxLines = 1)
             Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                MetaChip(stringResource(RdR.string.rd_bulgu_sayisi_format, findings.size), colors.fog, colors.onyx)
+                MetaChip(stringResource(RdR.string.rd_bulgu_sayisi_format, findings.size), colors.fog, colors.black)
                 MetaChip(stringResource(RdR.string.rd_ai_guveni_yuzde_format, confidence), if (capabilities.tier == SubscriptionTier.Pro) colors.greenSoft else colors.highBg, if (capabilities.tier == SubscriptionTier.Pro) colors.greenDark else colors.highText)
             }
             if (photos.isNotEmpty()) {
@@ -859,7 +859,7 @@ private fun ResultMethodSelector(method: ParityRiskMethod, onChange: (ParityRisk
                     .clickable { onChange(item) }.padding(vertical = 8.dp),
             ) {
                 Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(stringResource(if (item == ParityRiskMethod.FineKinney) RdR.string.rd_fine_kinney else RdR.string.rd_bes_carp_bes_matris), style = iosRounded(13f, FontWeight.Bold), color = if (active) colors.onyx else colors.slate)
+                    Text(stringResource(if (item == ParityRiskMethod.FineKinney) RdR.string.rd_fine_kinney else RdR.string.rd_bes_carp_bes_matris), style = iosRounded(13f, FontWeight.Bold), color = if (active) colors.black else colors.slate)
                     Text(stringResource(if (item == ParityRiskMethod.FineKinney) RdR.string.rd_fk_formula else RdR.string.rd_matrix_formula), style = iosMono(10f), color = colors.slate)
                 }
                 if (active) Icon(Icons.Filled.CheckCircle, null, tint = colors.green, modifier = Modifier.align(Alignment.TopEnd).padding(end = 6.dp).size(15.dp))
@@ -912,7 +912,7 @@ private fun RiskCountBar(level: RiskLevel, count: Int) {
         Box(Modifier.width(22.dp).height(50.dp).clip(RoundedCornerShape(4.dp)).background(colors.fog), contentAlignment = Alignment.BottomCenter) {
             Box(Modifier.fillMaxWidth().height((2 + 48 * (count.coerceAtMost(5) / 5f)).dp).background(level.color()))
         }
-        Text("$count", style = iosMono(10f, FontWeight.Bold), color = colors.onyx)
+        Text("$count", style = iosMono(10f, FontWeight.Bold), color = colors.black)
         Text(riskShortLabel(level), style = iosRounded(8f, FontWeight.Bold), color = colors.slate)
     }
 }
@@ -923,7 +923,7 @@ private fun EmptyResultSurface() {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.greenSoft).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(Icons.Filled.VerifiedUser, null, tint = colors.greenDark, modifier = Modifier.size(36.dp))
         Spacer(Modifier.height(8.dp))
-        Text(stringResource(RdR.string.rd_tehlike_tespit_edilmedi), style = RdFontStyle.Title3.toTextStyle(), color = colors.onyx)
+        Text(stringResource(RdR.string.rd_tehlike_tespit_edilmedi), style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
         Text(stringResource(RdR.string.rd_tehlike_tespit_edilmedi_aciklama), style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
     }
 }
@@ -952,14 +952,14 @@ private fun RichFindingCard(
             Text(
                 "$displayIndex",
                 style = iosMono(11f, FontWeight.Bold),
-                color = colors.onyx,
+                color = colors.black,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.size(25.dp).clip(RoundedCornerShape(8.dp)).background(colors.fog).padding(top = 5.dp),
             )
-            Text(finding.title, style = iosRounded(15f, FontWeight.SemiBold), color = colors.onyx, modifier = Modifier.weight(1f))
+            Text(finding.title, style = iosRounded(15f, FontWeight.SemiBold), color = colors.black, modifier = Modifier.weight(1f))
             if (canEdit) {
                 SmallFindingAction(onEdit, colors.planPlusSoft, colors.planPlus.copy(.55f)) {
-                    Icon(Icons.Filled.Edit, stringResource(RdR.string.rd_bulguyu_duzenle), tint = colors.onyx, modifier = Modifier.size(15.dp))
+                    Icon(Icons.Filled.Edit, stringResource(RdR.string.rd_bulguyu_duzenle), tint = colors.black, modifier = Modifier.size(15.dp))
                 }
                 SmallFindingAction(onDelete, colors.criticalBg, Color.Transparent) {
                     Icon(Icons.Filled.DeleteOutline, stringResource(RdR.string.rd_bulguyu_sil), tint = colors.criticalText, modifier = Modifier.size(16.dp))
@@ -971,7 +971,7 @@ private fun RichFindingCard(
             if (finding.needsFieldVerification) MetaChip(stringResource(RdR.string.rd_saha_teyidi), colors.highBg, colors.highText)
             if (finding.sourcePhotoIndices.isNotEmpty()) MetaChip(stringResource(RdR.string.rd_foto_indeks_format, finding.sourcePhotoIndices.joinToString(",")), colors.fog, colors.slate)
         }
-        finding.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = iosRounded(13f), color = colors.onyx.copy(.86f)) }
+        finding.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = iosRounded(13f), color = colors.black.copy(.86f)) }
         FindingScoreBlock(finding, method, level, score)
         val measures = findingMeasures(finding)
         if (measures.isNotEmpty()) {
@@ -1027,8 +1027,8 @@ private fun FindingScoreBlock(finding: Finding, method: ParityRiskMethod, level:
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(formatScore(score), style = iosMono(18f, FontWeight.Black), color = colors.white)
-            Text(if (method == ParityRiskMethod.FineKinney) "F-KINNEY" else "5×5", style = iosRounded(8f, FontWeight.Bold, tracking = .6f), color = colors.white.copy(.85f))
+            Text(formatScore(score), style = iosMono(18f, FontWeight.Black), color = Color.White)
+            Text(if (method == ParityRiskMethod.FineKinney) "F-KINNEY" else "5×5", style = iosRounded(8f, FontWeight.Bold, tracking = .6f), color = Color.White.copy(.85f))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(parityBandLabel(level), style = iosRounded(12f, FontWeight.Bold), color = level.color())
@@ -1116,10 +1116,10 @@ private fun LockedFindingPreviewCard(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("$number", style = iosMono(12f, FontWeight.Bold), color = colors.onyx, textAlign = TextAlign.Center, modifier = Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)).background(colors.white.copy(.92f)).padding(top = 7.dp))
+        Text("$number", style = iosMono(12f, FontWeight.Bold), color = colors.black, textAlign = TextAlign.Center, modifier = Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)).background(colors.white.copy(.92f)).padding(top = 7.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text(stringResource(if (requiredTier == SubscriptionTier.Pro) RdR.string.rd_ek_kritik_bulgu else RdR.string.rd_gizli_uygunsuzluk), style = iosRounded(14f, FontWeight.Bold), color = colors.onyx.copy(.86f), maxLines = 1)
+                Text(stringResource(if (requiredTier == SubscriptionTier.Pro) RdR.string.rd_ek_kritik_bulgu else RdR.string.rd_gizli_uygunsuzluk), style = iosRounded(14f, FontWeight.Bold), color = colors.black.copy(.86f), maxLines = 1)
                 MetaChip(parityBandLabel(level), level.backgroundColor(), level.color())
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1160,7 +1160,7 @@ private fun FindingDetailSurface(
                 Modifier.align(Alignment.CenterEnd).size(38.dp).shadow(10.dp, CircleShape, ambientColor = colors.onyx.copy(.14f), spotColor = colors.onyx.copy(.14f))
                     .clip(CircleShape).background(colors.white.copy(.96f)).clickable(onClick = onClose),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.Close, stringResource(RdR.string.rd_kapat), tint = colors.onyx, modifier = Modifier.size(18.dp)) }
+            ) { Icon(Icons.Filled.Close, stringResource(RdR.string.rd_kapat), tint = colors.black, modifier = Modifier.size(18.dp)) }
         }
 
         LazyColumn(
@@ -1171,7 +1171,7 @@ private fun FindingDetailSurface(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text((finding.category ?: stringResource(RdR.string.rd_genel)).uppercase(Locale.forLanguageTag("tr-TR")), style = iosRounded(11f, FontWeight.Bold, tracking = .6f), color = colors.slate)
-                    Text(finding.title, style = iosRounded(22f, FontWeight.Bold, tracking = -.4f), color = colors.onyx)
+                    Text(finding.title, style = iosRounded(22f, FontWeight.Bold, tracking = -.4f), color = colors.black)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         MetaChip(parityBandLabel(level), level.backgroundColor(), level.color())
                         MetaChip(stringResource(RdR.string.rd_ai_guveni_yuzde_format, (finding.confidence * 100).toInt()), colors.greenSoft, colors.greenDark)
@@ -1183,15 +1183,15 @@ private fun FindingDetailSurface(
                     Modifier.fillMaxWidth().height(238.dp).clip(RoundedCornerShape(16.dp)).background(colors.graphite),
                 ) {
                     if (bitmap != null) Image(bitmap, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                    else Icon(Icons.Filled.PhotoLibrary, null, tint = colors.white.copy(.58f), modifier = Modifier.align(Alignment.Center).size(42.dp))
+                    else Icon(Icons.Filled.PhotoLibrary, null, tint = Color.White.copy(.58f), modifier = Modifier.align(Alignment.Center).size(42.dp))
 
                     Row(
                         Modifier.align(Alignment.TopStart).padding(12.dp).clip(RoundedCornerShape(9.dp)).background(colors.white.copy(.92f)).padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        Icon(Icons.Filled.PhotoLibrary, null, tint = colors.onyx, modifier = Modifier.size(12.dp))
-                        Text(stringResource(RdR.string.rd_foto_indeks_format, sourceIndex.toString()), style = iosMono(11f, FontWeight.Bold), color = colors.onyx)
+                        Icon(Icons.Filled.PhotoLibrary, null, tint = colors.black, modifier = Modifier.size(12.dp))
+                        Text(stringResource(RdR.string.rd_foto_indeks_format, sourceIndex.toString()), style = iosMono(11f, FontWeight.Bold), color = colors.black)
                     }
 
                     Row(
@@ -1207,8 +1207,8 @@ private fun FindingDetailSurface(
                             Text(parityAction(level), style = iosRounded(12f, FontWeight.Bold), color = level.color(), maxLines = 2)
                         }
                         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(stringResource(if (method == ParityRiskMethod.FineKinney) RdR.string.rd_fk_upper else RdR.string.rd_matrix_upper), style = iosRounded(9f, FontWeight.Bold, tracking = .6f), color = colors.onyx.copy(.72f), textAlign = TextAlign.End)
-                            Text(parityFormulaValues(finding, method), style = iosMono(10.5f, FontWeight.SemiBold), color = colors.onyx.copy(.78f), maxLines = 1)
+                            Text(stringResource(if (method == ParityRiskMethod.FineKinney) RdR.string.rd_fk_upper else RdR.string.rd_matrix_upper), style = iosRounded(9f, FontWeight.Bold, tracking = .6f), color = colors.black.copy(.72f), textAlign = TextAlign.End)
+                            Text(parityFormulaValues(finding, method), style = iosMono(10.5f, FontWeight.SemiBold), color = colors.black.copy(.78f), maxLines = 1)
                         }
                     }
                 }
@@ -1258,9 +1258,9 @@ private fun FindingDetailSurface(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            Icon(Icons.Filled.Description, null, tint = colors.onyx, modifier = Modifier.size(17.dp))
+                            Icon(Icons.Filled.Description, null, tint = colors.black, modifier = Modifier.size(17.dp))
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(stringResource(RdR.string.rd_mevzuat_plus_acik), style = iosRounded(13f, FontWeight.Bold), color = colors.onyx)
+                                Text(stringResource(RdR.string.rd_mevzuat_plus_acik), style = iosRounded(13f, FontWeight.Bold), color = colors.black)
                                 Text(stringResource(RdR.string.rd_mevzuat_plus_aciklama), style = iosRounded(11f), color = colors.slate, maxLines = 2)
                             }
                             TierBadge(SubscriptionTier.Plus, compact = true)
@@ -1293,13 +1293,13 @@ private fun DetailMethodBox(
             Text(
                 stringResource(if (method == ParityRiskMethod.FineKinney) RdR.string.rd_fine_kinney else RdR.string.rd_bes_carp_bes_matris),
                 style = iosRounded(12f, FontWeight.Bold),
-                color = if (active) colors.onyx else colors.slate,
+                color = if (active) colors.black else colors.slate,
                 modifier = Modifier.align(Alignment.Center),
             )
             if (active) Icon(Icons.Filled.CheckCircle, null, tint = colors.green, modifier = Modifier.align(Alignment.TopEnd).size(15.dp))
         }
         Text(stringResource(if (method == ParityRiskMethod.FineKinney) RdR.string.rd_fk_formula else RdR.string.rd_matrix_formula), style = iosMono(10f), color = colors.slate)
-        Text(formatScore(parityScore(finding, method)), style = iosMono(23f, FontWeight.Black), color = colors.white, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(level.color()).padding(vertical = 12.dp))
+        Text(formatScore(parityScore(finding, method)), style = iosMono(23f, FontWeight.Black), color = Color.White, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(level.color()).padding(vertical = 12.dp))
         Text(parityBandLabel(level), style = iosRounded(11f, FontWeight.SemiBold), color = level.color())
     }
 }
@@ -1400,16 +1400,16 @@ private fun ResultReportSettingsSheet(
                 Text(
                     stringResource(if (showCompanyPicker) RdR.string.rd_rapor_firmasi else RdR.string.rd_rapor_olustur),
                     style = iosRounded(15f, FontWeight.SemiBold),
-                    color = colors.onyx,
+                    color = colors.black,
                     modifier = Modifier.align(Alignment.Center),
                 )
                 if (showCompanyPicker) {
                     IconButton(onClick = { showCompanyPicker = false }, modifier = Modifier.align(Alignment.CenterStart).size(34.dp).clip(CircleShape).background(colors.fog)) {
-                        Icon(Icons.Filled.KeyboardArrowLeft, stringResource(RdR.string.rd_geri), tint = colors.onyx)
+                        Icon(Icons.Filled.KeyboardArrowLeft, stringResource(RdR.string.rd_geri), tint = colors.black)
                     }
                 }
                 IconButton(onClick = onClose, modifier = Modifier.align(Alignment.CenterEnd).size(34.dp).clip(CircleShape).background(colors.fog)) {
-                    Icon(Icons.Filled.Close, stringResource(RdR.string.rd_kapat), tint = colors.onyx, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Close, stringResource(RdR.string.rd_kapat), tint = colors.black, modifier = Modifier.size(18.dp))
                 }
             }
             if (showCompanyPicker) {
@@ -1544,7 +1544,7 @@ private fun ResultReportSettingsSheet(
                 },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).height(56.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = colors.onyx, contentColor = colors.white),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.cta, contentColor = Color.White),
             ) {
                 Icon(if (format == ResultReportFormat.Pdf) Icons.Filled.Description else Icons.Filled.TableChart, null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(10.dp))
@@ -1558,7 +1558,7 @@ private fun ResultReportSettingsSheet(
                     modifier = Modifier.weight(1f),
                 )
                 Box(Modifier.size(34.dp).clip(CircleShape).background(colors.white), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Filled.Send, null, tint = colors.onyx, modifier = Modifier.size(17.dp))
+                    Icon(Icons.AutoMirrored.Filled.Send, null, tint = colors.black, modifier = Modifier.size(17.dp))
                 }
             }
         }
@@ -1602,7 +1602,7 @@ private fun CompanySelectionCard(company: Company?, onClick: () -> Unit) {
             Text(
                 company?.name ?: stringResource(RdR.string.rd_firma_secmeden_devam_et),
                 style = iosRounded(14f, FontWeight.Bold),
-                color = colors.onyx,
+                color = colors.black,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1634,7 +1634,7 @@ private fun LockedCompanyCard(onUpgrade: () -> Unit) {
             Icon(Icons.Filled.Lock, null, tint = colors.planPlusDark, modifier = Modifier.size(16.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(stringResource(RdR.string.rd_firma_bazli_rapor_plus_pro), style = iosRounded(14f, FontWeight.Bold), color = colors.onyx)
+            Text(stringResource(RdR.string.rd_firma_bazli_rapor_plus_pro), style = iosRounded(14f, FontWeight.Bold), color = colors.black)
             Text(stringResource(RdR.string.rd_logo_tehlike_firma_arsivi_yukselt), style = iosRounded(12f), color = colors.slate)
         }
         Icon(Icons.Filled.ArrowCircleUp, null, tint = colors.planPlusDark, modifier = Modifier.size(19.dp))
@@ -1665,7 +1665,7 @@ private fun ReportOverridesCard(
                 Icon(Icons.Filled.Tune, null, tint = colors.greenDark, modifier = Modifier.size(16.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(stringResource(RdR.string.rd_tek_seferlik_firma_logo), style = iosRounded(14f, FontWeight.Bold), color = colors.onyx)
+                Text(stringResource(RdR.string.rd_tek_seferlik_firma_logo), style = iosRounded(14f, FontWeight.Bold), color = colors.black)
                 Text(
                     stringResource(if (hasSelectedCompany) RdR.string.rd_secili_firma_korunur else RdR.string.rd_firma_eklemeden_rapora_ozel),
                     style = iosRounded(12f), color = colors.slate, maxLines = 2,
@@ -1693,7 +1693,7 @@ private fun ReportOverridesCard(
                     else Icon(Icons.Filled.Business, null, tint = colors.slate, modifier = Modifier.size(25.dp))
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text(stringResource(if (companyLogoBytes == null) RdR.string.rd_logo_secilmedi else RdR.string.rd_logo_rapora_eklenecek), style = iosRounded(13f, FontWeight.Bold), color = colors.onyx)
+                    Text(stringResource(if (companyLogoBytes == null) RdR.string.rd_logo_secilmedi else RdR.string.rd_logo_rapora_eklenecek), style = iosRounded(13f, FontWeight.Bold), color = colors.black)
                     Text(stringResource(if (hasSelectedCompany) RdR.string.rd_secili_firma_logosu_korunur else RdR.string.rd_firma_eklemeden_logo_sec), style = iosRounded(12f), color = colors.slate)
                 }
                 Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(colors.greenSoft).clickable(onClick = onPickLogo), contentAlignment = Alignment.Center) {
@@ -1723,7 +1723,7 @@ private fun ReportIdentityCard(
             Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(colors.greenSoft), contentAlignment = Alignment.Center) {
                 Icon(Icons.Filled.Person, null, tint = colors.greenDark, modifier = Modifier.size(15.dp))
             }
-            Text(stringResource(RdR.string.rd_hazirlayan_bilgileri), style = iosRounded(14f, FontWeight.Bold), color = colors.onyx)
+            Text(stringResource(RdR.string.rd_hazirlayan_bilgileri), style = iosRounded(14f, FontWeight.Bold), color = colors.black)
         }
         ReportLabeledField(stringResource(RdR.string.rd_hazirlayan), preparedBy, onPreparedByChange)
         ReportLabeledField(stringResource(RdR.string.rd_unvan), preparedTitle, onPreparedTitleChange)
@@ -1739,7 +1739,7 @@ private fun ReportLabeledField(label: String, value: String, onValueChange: (Str
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            textStyle = iosRounded(14f, FontWeight.Medium).copy(color = colors.onyx),
+            textStyle = iosRounded(14f, FontWeight.Medium).copy(color = colors.black),
             singleLine = true,
             modifier = Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(12.dp))
                 .background(colors.white).border(1.dp, colors.line, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 12.dp),
@@ -1761,7 +1761,7 @@ private fun CompanyPickerRow(title: String, subtitle: String, selected: Boolean,
             Icon(Icons.Filled.Business, null, tint = if (selected) colors.greenDark else colors.slate, modifier = Modifier.size(18.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = iosRounded(14f, FontWeight.Bold), color = colors.onyx)
+            Text(title, style = iosRounded(14f, FontWeight.Bold), color = colors.black)
             Text(subtitle, style = iosRounded(12f), color = colors.slate, maxLines = 2)
         }
         Icon(if (selected) Icons.Filled.CheckCircle else Icons.Filled.KeyboardArrowRight, null, tint = if (selected) colors.green else colors.slate, modifier = Modifier.size(19.dp))
@@ -1783,11 +1783,11 @@ private fun ReportOptionCard(selected: Boolean, icon: androidx.compose.ui.graphi
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(title, style = iosRounded(17f, FontWeight.Bold), color = colors.onyx)
+            Text(title, style = iosRounded(17f, FontWeight.Bold), color = colors.black)
             Text(subtitle, style = iosRounded(13.5f), color = colors.slate, maxLines = 3)
         }
         Box(Modifier.size(24.dp).clip(CircleShape).border(2.dp, if (selected) colors.green else colors.slate.copy(.32f), CircleShape).background(if (selected) colors.green else Color.Transparent), contentAlignment = Alignment.Center) {
-            if (selected) Icon(Icons.Filled.Check, null, tint = colors.white, modifier = Modifier.size(15.dp))
+            if (selected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(15.dp))
         }
     }
 }
@@ -1818,7 +1818,7 @@ private fun ReportFormatCard(format: ResultReportFormat, selected: Boolean, modi
     ) {
         Icon(if (format == ResultReportFormat.Pdf) Icons.Filled.Description else Icons.Filled.TableChart, null, tint = if (selected) colors.greenDark else colors.slate)
         Spacer(Modifier.height(6.dp))
-        Text(stringResource(if (format == ResultReportFormat.Pdf) RdR.string.rd_pdf_rapor else RdR.string.rd_excel_tablo), style = RdFontStyle.Footnote.toTextStyle(), color = colors.onyx)
+        Text(stringResource(if (format == ResultReportFormat.Pdf) RdR.string.rd_pdf_rapor else RdR.string.rd_excel_tablo), style = RdFontStyle.Footnote.toTextStyle(), color = colors.black)
         Text(stringResource(if (format == ResultReportFormat.Pdf) RdR.string.rd_pdf_rapor_aciklama else RdR.string.rd_excel_tablo_aciklama), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
     }
 }
@@ -1851,11 +1851,11 @@ private fun ReportGenerationOverlay(format: ResultReportFormat, progress: Float)
         ) {
             Box(Modifier.size(132.dp).scale(pulse).clip(CircleShape).background(colors.greenSoft), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(progress = { progress.coerceIn(.04f, 1f) }, modifier = Modifier.size(104.dp), color = colors.green, trackColor = colors.green.copy(.16f), strokeWidth = 8.dp)
-                Icon(Icons.Filled.FindInPage, null, tint = colors.onyx, modifier = Modifier.size(39.dp))
+                Icon(Icons.Filled.FindInPage, null, tint = colors.black, modifier = Modifier.size(39.dp))
                 Icon(Icons.Filled.AutoAwesome, null, tint = colors.green, modifier = Modifier.align(Alignment.TopEnd).padding(17.dp).size(19.dp))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(if (format == ResultReportFormat.Pdf) RdR.string.rd_pdf_hazirlaniyor else RdR.string.rd_excel_hazirlaniyor), style = iosRounded(28f, FontWeight.Bold, tracking = -.4f), color = colors.onyx)
+                Text(stringResource(if (format == ResultReportFormat.Pdf) RdR.string.rd_pdf_hazirlaniyor else RdR.string.rd_excel_hazirlaniyor), style = iosRounded(28f, FontWeight.Bold, tracking = -.4f), color = colors.black)
                 Text(status, style = iosRounded(15f, FontWeight.Medium), color = colors.slate, textAlign = TextAlign.Center)
             }
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {

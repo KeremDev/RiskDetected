@@ -332,6 +332,20 @@ object AppErrorMessages {
             )
         }
 
+        if (lower.contains("cannot find a matching credential") ||
+            lower.contains("no matching credential") ||
+            lower.contains("no credential available") ||
+            (lower.contains("one tap") && lower.contains("credential"))
+        ) {
+            return AppErrorMessage(
+                title = context ?: "Google ile giriş yapılamadı",
+                message = "Bu cihazda seçilebilecek bir Google hesabı bulunamadı.",
+                action = "Cihaza bir Google hesabı ekleyip tekrar dene veya e-posta ile giriş yap.",
+                category = AppErrorCategory.AuthRequired,
+                supportID = supportID,
+            )
+        }
+
         if (lower.contains("otp_expired") ||
             lower.contains("token expired") ||
             lower.contains("token has expired") ||

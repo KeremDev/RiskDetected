@@ -151,7 +151,7 @@ fun DataManagementScreen(
     Column(Modifier.fillMaxSize().background(colors.paper)) {
         RdScreenHeader(title = stringResource(RdR.string.rd_verilerim), onBack = onBack)
         Column(Modifier.padding(horizontal = RdSpacing.lg)) {
-            if (isWorking) CircularProgressIndicator(color = colors.onyx)
+            if (isWorking) CircularProgressIndicator(color = colors.black)
             RdListRow(
                 title = stringResource(RdR.string.rd_verilerimi_disari_aktar),
                 subtitle = stringResource(RdR.string.rd_veri_disari_aktar_aciklama),

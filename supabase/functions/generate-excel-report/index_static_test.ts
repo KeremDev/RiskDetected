@@ -64,7 +64,9 @@ Deno.test("generate-excel-report derives language from analysis snapshot", async
 });
 
 Deno.test("generate-excel-report applies authenticated report customization", async () => {
-  const source = await readTextIfAllowed(new URL("./index.ts", import.meta.url));
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
   if (source == null) return;
 
   assertStringIncludes(source, "company_name_override?: string | null");
@@ -75,4 +77,22 @@ Deno.test("generate-excel-report applies authenticated report customization", as
   assertStringIncludes(source, "value.length > 4_000_000");
   assertStringIncludes(source, "const effectiveProfile: ProfileRow");
   assertStringIncludes(source, "inlineCompanyLogo(body.company_logo_base64)");
+  assertStringIncludes(
+    source,
+    "default_responsible: company.default_responsible ?? null",
+  );
+  assertStringIncludes(
+    source,
+    "default_due_days: company.default_due_days ?? null",
+  );
+  assertStringIncludes(source, "company_info: companyInfo");
+  assertStringIncludes(
+    source,
+    "company_info: overrideText(body.company_info_override, 500)",
+  );
+  assertStringIncludes(source, "phone: companyProfile?.phone ?? null");
+  assertStringIncludes(
+    source,
+    "safeText(profile?.company_info, safeText(profile?.phone))",
+  );
 });

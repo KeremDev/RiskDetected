@@ -7,6 +7,7 @@ import com.riskdetectedan.core.designsystem.R as RdR
 import androidx.compose.ui.res.stringResource
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -32,6 +33,7 @@ import com.riskdetectedan.core.data.legal.LegalDocumentAssets
 import com.riskdetectedan.core.designsystem.RdLegalDocument
 import com.riskdetectedan.core.designsystem.RdLegalDocumentSheet
 import com.riskdetectedan.core.designsystem.RdSpacing
+import com.riskdetectedan.core.designsystem.RdTheme
 
 /**
  * Wraps the real app content, mirroring AppState.swift's release-policy gating: a hard-update
@@ -47,20 +49,22 @@ fun ReleaseGate(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val colors = RdTheme.colors
 
     when (val current = state) {
         ReleaseGateState.Checking -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize().background(colors.cloud), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
         is ReleaseGateState.ClientBlocked -> {
-            Box(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize().background(colors.cloud).padding(RdSpacing.lg), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(stringResource(RdR.string.rd_android_erisim_hazir_degil))
+                    Text(stringResource(RdR.string.rd_android_erisim_hazir_degil), color = colors.black)
                     Text(
                         stringResource(RdR.string.rd_android_erisim_gecici_kapali),
                         modifier = Modifier.padding(top = RdSpacing.sm),
+                        color = colors.black,
                     )
                     Button(
                         onClick = { viewModel.refresh() },
@@ -70,10 +74,10 @@ fun ReleaseGate(
             }
         }
         is ReleaseGateState.Hard -> {
-            Box(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize().background(colors.cloud).padding(RdSpacing.lg), contentAlignment = Alignment.Center) {
                 Column {
-                    Text(stringResource(RdR.string.rd_guncelleme_gerekli))
-                    Text(current.policy.displayMessage)
+                    Text(stringResource(RdR.string.rd_guncelleme_gerekli), color = colors.black)
+                    Text(current.policy.displayMessage, color = colors.black)
                     Button(
                         onClick = {
                             val url = current.policy.playStoreUrl
@@ -87,10 +91,10 @@ fun ReleaseGate(
             }
         }
         is ReleaseGateState.LegalDocumentsOutdated -> {
-            Box(modifier = Modifier.fillMaxSize().padding(RdSpacing.lg), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize().background(colors.cloud).padding(RdSpacing.lg), contentAlignment = Alignment.Center) {
                 Column {
-                    Text(stringResource(RdR.string.rd_hukuki_metinler_guncellendi))
-                    Text(stringResource(RdR.string.rd_hukuk_metinleri_guncel_degil))
+                    Text(stringResource(RdR.string.rd_hukuki_metinler_guncellendi), color = colors.black)
+                    Text(stringResource(RdR.string.rd_hukuk_metinleri_guncel_degil), color = colors.black)
                     Button(
                         onClick = {
                             val url = "https://play.google.com/store/apps/details?id=${context.packageName}"

@@ -114,12 +114,14 @@ data class PlanCapabilities(
             riskAnalysisReportTrialLimit = null,
             companyLimit = companyLimit,
             photoRetentionDays = retentionDays,
-            // Multi-photo/edit permissions are opened only after the remote release gate resolves.
-            maxPhotosPerAnalysis = 1,
-            visiblePhotoSlotsInUI = 1,
+            // Product contract: every paid member can prepare a three-photo analysis. The remote
+            // capability response may still close this during an emergency kill-switch, but a
+            // transient capability fetch failure must not paint a paid account as Free (0/1).
+            maxPhotosPerAnalysis = 3,
+            visiblePhotoSlotsInUI = 3,
             maxFindingsPerPhoto = 13,
-            maxFindingsPerAnalysis = 13,
-            canUseMultiPhotoAnalysis = false,
+            maxFindingsPerAnalysis = 39,
+            canUseMultiPhotoAnalysis = true,
             canEditAIFindings = false,
             canAddManualFindings = false,
         )

@@ -71,6 +71,25 @@ Deno.test("subscription test override migration is service-role only and time bo
   );
 });
 
+Deno.test("free RevenueCat sync clears stale test and trial metadata", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  const freeWriterStart = source.indexOf(
+    "async function writeFreeSubscriptionState",
+  );
+  const overrideLookupStart = source.indexOf(
+    "async function activeSubscriptionTestOverride",
+    freeWriterStart,
+  );
+  assert(freeWriterStart > 0 && overrideLookupStart > freeWriterStart);
+  const freeWriter = source.slice(freeWriterStart, overrideLookupStart);
+  assertStringIncludes(freeWriter, "environment: null");
+  assertStringIncludes(freeWriter, "...clearTrialReminderMetadataPatch()");
+});
+
 Deno.test("passive RevenueCat sync updates only matching active Plus trial metadata", async () => {
   const source = await readTextIfAllowed(
     new URL("./index.ts", import.meta.url),

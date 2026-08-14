@@ -59,7 +59,7 @@ fun NotificationSettingsScreen(onBack: (() -> Unit)? = null, viewModel: Notifica
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = RdSpacing.lg)) {
             when (val current = state) {
                 is NotificationSettingsUiState.Loading -> Box(modifier = Modifier.fillMaxWidth().padding(RdSpacing.xl), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = colors.onyx)
+                    CircularProgressIndicator(color = colors.black)
                 }
                 is NotificationSettingsUiState.SignedOut -> RdEmptyState(
                     icon = Icons.Filled.Notifications,
@@ -112,11 +112,22 @@ private fun PreferenceRow(label: String, checked: Boolean, onToggle: (Boolean) -
         modifier = Modifier.fillMaxWidth().padding(vertical = RdSpacing.sm),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(label, style = RdFontStyle.Callout.toTextStyle(), color = colors.onyx, modifier = Modifier.padding(end = RdSpacing.sm))
+        Text(label, style = RdFontStyle.Callout.toTextStyle(), color = colors.black, modifier = Modifier.padding(end = RdSpacing.sm))
         Switch(
             checked = checked,
             onCheckedChange = onToggle,
-            colors = SwitchDefaults.colors(checkedTrackColor = colors.green, checkedThumbColor = colors.white),
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = colors.green,
+                checkedThumbColor = androidx.compose.ui.graphics.Color.White,
+                checkedBorderColor = colors.green,
+                uncheckedTrackColor = colors.fog,
+                uncheckedThumbColor = colors.slate.copy(alpha = 0.62f),
+                uncheckedBorderColor = colors.line,
+                disabledCheckedTrackColor = colors.green.copy(alpha = 0.45f),
+                disabledCheckedThumbColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.72f),
+                disabledUncheckedTrackColor = colors.fog.copy(alpha = 0.55f),
+                disabledUncheckedThumbColor = colors.slate.copy(alpha = 0.32f),
+            ),
         )
     }
 }

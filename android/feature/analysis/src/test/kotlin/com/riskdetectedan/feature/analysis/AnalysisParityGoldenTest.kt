@@ -83,6 +83,17 @@ class AnalysisParityGoldenTest {
     }
 
     @Test
+    fun pro_result_dark() {
+        setResultContent(
+            capabilities = proCapabilities(),
+            reportState = ResultReportUiState.Idle,
+            darkTheme = true,
+        )
+
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
     fun pro_finding_editor_matches_ios_sheet_light() {
         setResultContent(
             capabilities = proCapabilities(),
@@ -136,9 +147,10 @@ class AnalysisParityGoldenTest {
         capabilities: PlanCapabilities,
         reportState: ResultReportUiState,
         reportSetup: ResultReportSetup = ResultReportSetup(),
+        darkTheme: Boolean = false,
     ) {
         composeRule.setContent {
-            RiskDetectedTheme(darkTheme = false) {
+            RiskDetectedTheme(darkTheme = darkTheme) {
                 IosParityResultView(
                     analysisId = "analysis-1",
                     findings = findings,

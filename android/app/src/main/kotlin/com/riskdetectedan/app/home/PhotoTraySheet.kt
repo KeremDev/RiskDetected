@@ -89,7 +89,7 @@ fun PhotoTraySheet(
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = RdSpacing.lg).padding(top = RdSpacing.md, bottom = RdSpacing.lg)) {
         Row(verticalAlignment = Alignment.Top) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(RdR.string.rd_fotograflar), style = RdFontStyle.Title2.toTextStyle(), color = colors.onyx)
+                Text(stringResource(RdR.string.rd_fotograflar), style = RdFontStyle.Title2.toTextStyle(), color = colors.black)
                 Text(stringResource(RdR.string.rd_fotograf_orani_format, photoPaths.size, maxPhotoCount), style = RdFontStyle.Data.toTextStyle(), color = colors.slate)
             }
             Box(
@@ -181,7 +181,7 @@ private fun PhotoTile(path: String, index: Int, canMoveLeft: Boolean, canMoveRig
                     modifier = Modifier.size(24.dp).clip(CircleShape).background(colors.white.copy(alpha = 0.92f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(stringResource(RdR.string.rd_sayi_format, index + 1), style = RdFontStyle.Data.toTextStyle(), color = colors.onyx)
+                    Text(stringResource(RdR.string.rd_sayi_format, index + 1), style = RdFontStyle.Data.toTextStyle(), color = colors.black)
                 }
                 Box(
                     modifier = Modifier
@@ -205,13 +205,13 @@ private fun PhotoTile(path: String, index: Int, canMoveLeft: Boolean, canMoveRig
                 Icon(
                     Icons.Filled.NavigateBefore,
                     contentDescription = stringResource(RdR.string.rd_sola_tasi),
-                    tint = if (canMoveLeft) colors.onyx else colors.slate.copy(alpha = 0.38f),
+                    tint = if (canMoveLeft) colors.black else colors.slate.copy(alpha = 0.38f),
                     modifier = Modifier.size(18.dp).clickable(enabled = canMoveLeft) { onMove(-1) },
                 )
                 Icon(
                     Icons.Filled.NavigateNext,
                     contentDescription = stringResource(RdR.string.rd_saga_tasi),
-                    tint = if (canMoveRight) colors.onyx else colors.slate.copy(alpha = 0.38f),
+                    tint = if (canMoveRight) colors.black else colors.slate.copy(alpha = 0.38f),
                     modifier = Modifier.size(18.dp).clickable(enabled = canMoveRight) { onMove(1) },
                 )
             }
@@ -289,12 +289,12 @@ private fun PrimaryButton(hasPhotos: Boolean, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(if (hasPhotos) Icons.Filled.AutoAwesome else Icons.Filled.Add, contentDescription = null, tint = colors.white, modifier = Modifier.size(17.dp))
+        Icon(if (hasPhotos) Icons.Filled.AutoAwesome else Icons.Filled.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp))
         Spacer(Modifier.width(9.dp))
         Text(
             stringResource(if (hasPhotos) RdR.string.rd_analize_gec else RdR.string.rd_fotograf_ekle),
             style = RdFontStyle.Callout.toTextStyle(),
-            color = colors.white,
+            color = Color.White,
         )
     }
 }

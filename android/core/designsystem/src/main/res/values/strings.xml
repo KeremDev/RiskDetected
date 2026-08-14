@@ -107,6 +107,14 @@
     <string name="rd_rapor_firma_filtresi">Rapor firma filtresi</string>
     <string name="rd_firma_yok">Firma yok</string>
     <string name="rd_firma_sec">Firma seç</string>
+    <string name="rd_kayitli_firmalarindan_sec">Kayıtlı firmalarından seç</string>
+    <string name="rd_rapor_firmasi_sec_aciklama">Raporda görünecek firmayı hızlıca bul ve seç.</string>
+    <string name="rd_firma_ara">Firma ara…</string>
+    <string name="rd_firma_sonuc_sayisi_format">%1$d firma</string>
+    <string name="rd_aramayi_temizle">Aramayı temizle</string>
+    <string name="rd_firma_arama_sonuc_yok">Aramana uygun firma bulunamadı</string>
+    <string name="rd_firma_arama_sonuc_yok_aciklama">Firma adını, adresi veya ilgili kişiyi değiştirerek tekrar dene.</string>
+    <string name="rd_firma_bilgisi_rapora_eklenmez">Firma bilgisi ve logosu rapora eklenmez.</string>
     <string name="rd_riskdetected">RiskDetected</string>
     <string name="rd_riskdetected_onizleme_telefonu">RiskDetected önizleme telefonu</string>
     <string name="rd_riskdetected_uygulama_onizlemesi">RiskDetected uygulama önizlemesi</string>
@@ -144,6 +152,13 @@
     <string name="rd_degistir">Değiştir</string>
     <string name="rd_firma_bazli_rapor_plus_pro">Firma bazlı rapor Plus ve Pro’da</string>
     <string name="rd_logo_tehlike_firma_arsivi_yukselt">Logo, tehlike sınıfı ve firma arşivi için yükselt.</string>
+    <string name="rd_tehlike_sinifi">Tehlike sınıfı</string>
+    <string name="rd_firma_adresi">Firma adresi</string>
+    <string name="rd_firma_yetkilisi">Firma yetkilisi</string>
+    <string name="rd_departman">Departman / bölüm</string>
+    <string name="rd_varsayilan_sorumlu">Varsayılan aksiyon sorumlusu</string>
+    <string name="rd_varsayilan_termin_gun">Varsayılan termin (gün)</string>
+    <string name="rd_varsayilan_termin_aciklama">1–365 gün arasında olmalı.</string>
     <string name="rd_bu_rapora_ozel_duzenle">Bu rapora özel düzenle</string>
     <string name="rd_tek_seferlik_firma_logo">Tek seferlik firma bilgisi veya logo</string>
     <string name="rd_secili_firma_korunur">Seçili firma korunur; sadece bu raporun görünen metinlerini veya logosunu değiştirebilirsin.</string>
@@ -249,6 +264,13 @@
     <string name="rd_satin_alimlari_geri_yukle">Satın alımları geri yükle</string>
     <string name="rd_firmalarim">Firmalarım</string>
     <string name="rd_destek">Destek</string>
+    <string name="rd_riskdetected_destek">RiskDetected destek</string>
+    <string name="rd_destek_aciklama">Sorunu veya önerini ayrıntılı yaz; ekibimiz talebini inceleyip sana dönüş yapsın.</string>
+    <string name="rd_talep_upper">TALEP</string>
+    <string name="rd_ek_upper">EKLER</string>
+    <string name="rd_destek_konu_ornek">Örn. Rapor oluşturma sorunu</string>
+    <string name="rd_destek_mesaj_ornek">Ne olduğunu ve hangi adımda sorun yaşadığını anlat…</string>
+    <string name="rd_destek_talebi_gonder">Destek talebi gönder</string>
     <string name="rd_bildirim_ayarlari">Bildirim ayarları</string>
     <string name="rd_gorunum">Görünüm</string>
     <string name="rd_verilerim">Verilerim</string>
@@ -345,7 +367,7 @@
     <string name="rd_gunluk_ucretsiz_hak_hazir">Günde 1 ücretsiz analiz hakkın hazır.</string>
     <string name="rd_kamera">Kamera</string>
     <string name="rd_galeri">Galeri</string>
-    <string name="rd_coklu_fotograf_yukselt">Çoklu fotoğraf özelliği için hesabınızı yükseltin</string>
+    <string name="rd_coklu_fotograf_yukselt">Çoklu fotoğraf analizi için PLUS’a geçin</string>
     <string name="rd_analize_gec">Analize geç</string>
     <string name="rd_sektor_sec_aciklama">Analizin hangi saha türüne odaklanacağını seç.</string>
     <string name="rd_son">Son</string>
@@ -479,7 +501,7 @@
     <string name="rd_fotograf_bulgu_coverage_format">F%1$d %2$d</string>
     <string name="rd_pro_upsell_analiz">Pro ile daha yüksek kapasite ve gelişmiş analiz</string>
     <string name="rd_plus_upsell_analiz">Plus ile daha detaylı analiz ve rapor seçenekleri</string>
-    <string name="rd_fine_kinney">İnce Kinney</string>
+    <string name="rd_fine_kinney">Fine-Kinney</string>
     <string name="rd_bes_carp_bes_matris">5×5 L-Tipi</string>
     <string name="rd_fk_formula">R = O × F × Ş</string>
     <string name="rd_matrix_formula">R = O × Ş</string>
@@ -722,10 +744,23 @@
     <string name="rd_analiz_kapsamini_sec">Analiz kapsamını seç</string>
     <string name="rd_analiz_sektor_aciklama">Bu fotoğrafı hangi sektörün saha koşullarına göre değerlendirelim? Risk öncelikleri ve öneriler seçtiğin sektöre göre uyarlanır.</string>
     <string name="rd_profil_bilgileri">Profil bilgileri</string>
+    <string name="rd_profilini_guncelle">Profilini güncelle</string>
+    <string name="rd_profil_rapor_aciklama">Buradaki bilgiler hazırladığın raporlarda kullanılır.</string>
+    <string name="rd_profil_ve_sirket_upper">PROFİL VE ŞİRKET</string>
+    <string name="rd_risk_yontemi_upper">RİSK YÖNTEMİ</string>
+    <string name="rd_logo_raporlarda_kullanilir">Seçtiğin logo PDF ve Excel raporlarına eklenir.</string>
     <string name="rd_raporlarim">Raporlarım</string>
     <string name="rd_bildirimler">Bildirimler</string>
     <string name="rd_yonet">Yönet</string>
     <string name="rd_tercihler">Tercihler</string>
+    <string name="rd_tema">Tema</string>
+    <string name="rd_tema_aciklama">Uygulamanın görünümünü cihazına veya kendi seçimine göre ayarla.</string>
+    <string name="rd_sistem">Sistem</string>
+    <string name="rd_aydinlik">Aydınlık</string>
+    <string name="rd_karanlik">Karanlık</string>
+    <string name="rd_tema_sistem_aciklama">Telefon ayarını takip eder.</string>
+    <string name="rd_tema_aydinlik_aciklama">Her zaman açık tema.</string>
+    <string name="rd_tema_karanlik_aciklama">Her zaman koyu tema.</string>
     <string name="rd_guvenlik_gizlilik">Güvenlik ve gizlilik</string>
     <string name="rd_plus_pro">Plus/Pro</string>
 </resources>
