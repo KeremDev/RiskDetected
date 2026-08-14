@@ -19,7 +19,6 @@
     <string name="rd_pdf_finding_title">%1$d. %2$s</string>
     <string name="rd_pdf_score_suffix"> · %1$.1f</string>
     <string name="rd_pdf_source_photos">Kaynak fotoğraf: %1$s</string>
-    <string name="rd_pdf_field_verification_required">Saha teyidi gerekli</string>
     <string name="rd_pdf_root_cause">Kök neden</string>
     <string name="rd_pdf_measures">Önlemler</string>
     <string name="rd_pdf_preventive">Önleyici Kontrol</string>

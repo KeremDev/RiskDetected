@@ -966,7 +966,6 @@ private fun RichFindingCard(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             MetaChip(parityBandLabel(level), level.backgroundColor(), level.color())
-            if (finding.needsFieldVerification) MetaChip(stringResource(RdR.string.rd_saha_teyidi), colors.highBg, colors.highText)
             if (finding.sourcePhotoIndices.isNotEmpty()) MetaChip(stringResource(RdR.string.rd_foto_indeks_format, finding.sourcePhotoIndices.joinToString(",")), colors.fog, colors.slate)
         }
         finding.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = iosRounded(13f), color = colors.black.copy(.86f)) }

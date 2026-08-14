@@ -514,7 +514,6 @@
     <string name="rd_risk_high_short">YK</string>
     <string name="rd_risk_medium_short">OR</string>
     <string name="rd_risk_low_short">DŞ</string>
-    <string name="rd_saha_teyidi">Saha teyidi</string>
     <string name="rd_foto_indeks_format">Foto %1$s</string>
     <string name="rd_risk_score_format">%1$s: %2$s</string>
     <string name="rd_onerilen_tedbir">Önerilen tedbir</string>
@@ -665,7 +664,6 @@
     <string name="rd_kok_neden_dot">KÖK NEDEN</string>
     <string name="rd_plani">PLANI</string>
     <string name="rd_mevzuat">MEVZUAT</string>
-    <string name="rd_saha_teyidi_gerekli">Saha teyidi gerekli</string>
     <string name="rd_referans_yok">Bu bulgu için mevzuat referansı belirtilmedi.</string>
     <string name="rd_standart_rapor">Standart Rapor</string>
     <string name="rd_standart_rapor_aciklama">Bulgular, fotoğraflar ve önerilen tedbirleri içeren hızlı uygunsuzluk raporu.</string>

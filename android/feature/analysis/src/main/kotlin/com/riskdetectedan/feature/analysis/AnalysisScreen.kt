@@ -697,29 +697,18 @@ private fun FindingRow(
             color = colors.slate,
             modifier = Modifier.padding(top = RdSpacing.xs),
         )
-        if (finding.needsFieldVerification || finding.sourcePhotoIndices.isNotEmpty()) {
+        if (finding.sourcePhotoIndices.isNotEmpty()) {
             Row(
                 modifier = Modifier.padding(top = RdSpacing.xs),
                 horizontalArrangement = Arrangement.spacedBy(RdSpacing.xs),
             ) {
-                if (finding.needsFieldVerification) {
-                    Text(
-                        stringResource(RdR.string.rd_saha_teyidi),
-                        style = RdFontStyle.Caption.toTextStyle(),
-                        color = colors.slate,
-                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(colors.fog)
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
-                    )
-                }
-                if (finding.sourcePhotoIndices.isNotEmpty()) {
-                    Text(
-                        stringResource(RdR.string.rd_foto_indeks_format, finding.sourcePhotoIndices.joinToString(", ")),
-                        style = RdFontStyle.Caption.toTextStyle(),
-                        color = colors.slate,
-                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(colors.fog)
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
-                    )
-                }
+                Text(
+                    stringResource(RdR.string.rd_foto_indeks_format, finding.sourcePhotoIndices.joinToString(", ")),
+                    style = RdFontStyle.Caption.toTextStyle(),
+                    color = colors.slate,
+                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(colors.fog)
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                )
             }
         }
         if (canEdit) {
