@@ -1,5 +1,6 @@
--- Covers the current Android release-gate state. The original ADR-005 migration creates every
--- flag closed; the later build-3 notification migration deliberately opens only notifications.
+-- Covers the current Android closed-test release-gate state. The original ADR-005 migration
+-- creates every flag closed; the build-3 release migration opens the six Android capabilities
+-- only for the explicitly admitted Play builds 2 and 3.
 
 begin;
 
@@ -14,10 +15,11 @@ select ok(
 );
 
 select ok(
-  (
+  coalesce((
     select bool_and(
-      coalesce((value->>'kill_switch')::boolean, false) = true
+      coalesce((value->>'kill_switch')::boolean, true) = false
       and value->>'rollout_mode' = 'off'
+      and value->'enabled_android_version_codes' = '[2, 3]'::jsonb
     )
     from public.app_feature_flags
     where key in (
@@ -25,18 +27,11 @@ select ok(
       'android_auth_enabled',
       'android_analysis_submit_enabled',
       'android_payments_enabled',
+      'android_notifications_enabled',
       'android_pdf_reports_enabled'
     )
-  )
-  and exists (
-    select 1
-    from public.app_feature_flags
-    where key = 'android_notifications_enabled'
-      and coalesce((value->>'kill_switch')::boolean, true) = false
-      and value->>'rollout_mode' = 'off'
-      and value->'enabled_android_version_codes' @> '[2, 3]'::jsonb
-  ),
-  'only the notification kill switch is open, with builds 2 and 3 admitted'
+  ), false),
+  'all six Android capabilities are open only for admitted builds 2 and 3'
 );
 
 select is(
