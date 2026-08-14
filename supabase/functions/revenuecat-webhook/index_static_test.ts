@@ -31,3 +31,16 @@ Deno.test("RevenueCat webhook prefers verified renewal truth over event order", 
   );
   assert(existingLookup > 0 && write > existingLookup);
 });
+
+Deno.test("RevenueCat Play webhook has an isolated authorization secret", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, 'searchParams.get("platform")');
+  assertStringIncludes(source, 'webhookPlatform === "android-play"');
+  assertStringIncludes(source, '"REVENUECAT_ANDROID_WEBHOOK_AUTHORIZATION"');
+  assertStringIncludes(source, '"REVENUECAT_WEBHOOK_AUTHORIZATION"');
+  assertStringIncludes(source, "Deno.env.get(\n    authorizationSecretName,");
+});

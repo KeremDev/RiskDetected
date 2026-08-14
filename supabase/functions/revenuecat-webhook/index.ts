@@ -1,9 +1,11 @@
 /**
  * revenuecat-webhook — sync RevenueCat subscription truth to Supabase.
  *
- * Configure RevenueCat webhook Authorization header to match
- * REVENUECAT_WEBHOOK_AUTHORIZATION. App User IDs are Supabase user UUIDs
- * because the iOS SDK logs in with auth.user.id.
+ * Configure the App Store RevenueCat webhook Authorization header to match
+ * REVENUECAT_WEBHOOK_AUTHORIZATION. The Android Play webhook uses the same
+ * endpoint with `?platform=android-play` and matches
+ * REVENUECAT_ANDROID_WEBHOOK_AUTHORIZATION, so rotating either credential
+ * cannot interrupt the other store. App User IDs are Supabase user UUIDs.
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
@@ -744,8 +746,13 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const webhookPlatform = new URL(req.url).searchParams.get("platform")
+    ?.trim().toLowerCase();
+  const authorizationSecretName = webhookPlatform === "android-play"
+    ? "REVENUECAT_ANDROID_WEBHOOK_AUTHORIZATION"
+    : "REVENUECAT_WEBHOOK_AUTHORIZATION";
   const expectedAuthorization = Deno.env.get(
-    "REVENUECAT_WEBHOOK_AUTHORIZATION",
+    authorizationSecretName,
   );
 
   if (!supabaseUrl || !serviceRoleKey || !expectedAuthorization) {
