@@ -28,7 +28,7 @@ struct ProfessionalProgressProfileSection: View {
                         .padding(RDSpacing.lg)
                 }
                 .background(Color.rdPaper)
-                .navigationTitle("Yetkinlik Haritası")
+                .navigationTitle(RDLocalization.string("professionalprogress.professional.progress.profile.section.yetkinlik.haritasi.e9397520", table: .professionalProgress, fallback: "Yetkinlik Haritası"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -76,14 +76,14 @@ struct ProfessionalProgressProfileSection: View {
     private var competencyPreview: some View {
         VStack(alignment: .leading, spacing: RDSpacing.sm) {
             HStack {
-                Text("Yetkinlik Haritası")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                Text(RDLocalization.string("professionalprogress.professional.progress.profile.section.yetkinlik.haritasi.ab36b62e", table: .professionalProgress, fallback: "Yetkinlik Haritası"))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Spacer()
-                Button("Tümü") {
+                Button(RDLocalization.string("professionalprogress.professional.progress.profile.section.tumu.5dadc5f6", table: .professionalProgress, fallback: "Tümü")) {
                     showCompetencies = true
                 }
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
             }
 
@@ -109,14 +109,14 @@ struct ProfessionalProgressProfileSection: View {
     private var emptyCompetency: some View {
         HStack(spacing: 10) {
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .frame(width: 36, height: 36)
                 .background(Color.rdFog)
                 .clipShape(RoundedRectangle(cornerRadius: RDRadius.sm))
 
-            Text("Analiz ve raporların arttıkça yetkinlik alanların burada görünür olacak.")
-                .font(.system(size: 13, design: .rounded))
+            Text(RDLocalization.string("professionalprogress.professional.progress.profile.section.analiz.ve.raporlarin.arttikca.yetkinlik.alanlari.b5934c21", table: .professionalProgress, fallback: "Analiz ve raporların arttıkça yetkinlik alanların burada görünür olacak."))
+                .font(.system(size: RDFontScale.size(13), design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .fixedSize(horizontal: false, vertical: true)
         }

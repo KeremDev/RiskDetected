@@ -18,7 +18,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
 - Fine-Kinney ve 5x5 ham girdileri AI'dan alınıyor; skorlar DB/sistem tarafında hesaplanıyor.
 - Free standart analiz limiti günde 1 olarak uygulanıyor.
 - Plus standart analiz limiti günde 10, Pro standart analiz limiti günde 40 olarak uygulanıyor.
-- Rapor kotası Free 3/ay, Plus 150/ay, Pro 750/ay olarak uygulanıyor.
+- Güncel production kuralı: Free 1 standart rapor/gün, Plus 150/ay, Pro 750/ay.
 - Free kullanıcı yalnızca 1 canvas seçebiliyor; Plus sınırlı gelişmiş canvas, Pro tam gelişmiş canvas erişimine sahip.
 - Free analizde backend tarafındaki sabit bulgu kırpma kaldırıldı; Free prompt kalite hedefi 6-9 bulgu olarak güncellendi.
 - Plus/Pro analizlerde bulgu hedefi 11-14 aralığına çıkarıldı.
@@ -435,7 +435,7 @@ dosyaları taranarak oluşturulan güncel tek yapılacaklar özetidir.
    - Done: Prompt/personalization/context/cache/thinking/token telemetry kolonları production DB'de canlı.
    - Done: Onboarding `Atla` linki onay ekranına bağlandı; "Sana özel sonuçlar veremeyeceğiz" mesajı ve üzgün yüz ikonu gösteriliyor.
    - Done: Onboarding V2 her zaman beyaz/light temaya kilitlendi; cihaz dark mode ayarı onboarding ekranlarını değiştirmiyor.
-   - Onboarding ve uygulama içi bazı metin/sloganlarda revizyon yapılacak.
+   - Done: Onboarding ve uygulama içi bazı metin/sloganlarda revizyon yapıldı. [TAMAMLANDI - 2026-06-02]
 
 8. Sabit analiz prompt revizyonu
    - Done: Backend sabit prompt `CORE_ANALYSIS_PROMPT` olarak korundu; dynamic onboarding/company/tier context ayrı bloklara ayrıldı.

@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://riskdetected.app/schemas/safety-profile-v1.json",
+  "title": "RiskDetected Safety Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "language",
+    "content_locale",
+    "jurisdiction_country",
+    "jurisdiction_region",
+    "status",
+    "review_status",
+    "display_name_key",
+    "primary_product_term",
+    "primary_domain_term",
+    "finding_term",
+    "hazard_term",
+    "risk_assessment_term",
+    "control_term",
+    "corrective_action_term",
+    "default_risk_method",
+    "allowed_risk_methods",
+    "legislation_canvas_enabled",
+    "structured_regulatory_references_enabled",
+    "regulatory_reference_policy",
+    "legal_compliance_claims_allowed",
+    "spelling_style",
+    "prompt_directives",
+    "forbidden_claims_key",
+    "profile_version"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^(tr-tr-current|en-(intl|gb|us|au|ca)-generic)-v[1-9][0-9]*$"
+    },
+    "language": {
+      "enum": ["tr", "en"]
+    },
+    "content_locale": {
+      "enum": ["tr-TR", "en-001", "en-GB", "en-US", "en-AU", "en-CA"]
+    },
+    "jurisdiction_country": {
+      "enum": ["TR", "INTL", "GB", "US", "AU", "CA"]
+    },
+    "jurisdiction_region": {
+      "type": ["string", "null"],
+      "minLength": 2
+    },
+    "status": {
+      "enum": ["current_regulatory", "terminology_only"]
+    },
+    "review_status": {
+      "enum": [
+        "extracted",
+        "machine_draft",
+        "language_reviewed",
+        "safety_reviewed",
+        "product_approved",
+        "shipping"
+      ]
+    },
+    "display_name_key": {
+      "type": "string",
+      "pattern": "^safety_profile\\."
+    },
+    "primary_product_term": { "type": "string", "minLength": 1 },
+    "primary_domain_term": { "type": "string", "minLength": 1 },
+    "finding_term": { "type": "string", "minLength": 1 },
+    "hazard_term": { "type": "string", "minLength": 1 },
+    "risk_assessment_term": { "type": "string", "minLength": 1 },
+    "control_term": { "type": "string", "minLength": 1 },
+    "corrective_action_term": { "type": "string", "minLength": 1 },
+    "default_risk_method": {
+      "enum": ["fine_kinney", "matrix_5x5"]
+    },
+    "allowed_risk_methods": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["fine_kinney", "matrix_5x5"]
+      }
+    },
+    "legislation_canvas_enabled": { "type": "boolean" },
+    "structured_regulatory_references_enabled": { "type": "boolean" },
+    "regulatory_reference_policy": {
+      "enum": ["tr_current", "none", "explicit_question_only"]
+    },
+    "legal_compliance_claims_allowed": { "type": "boolean" },
+    "spelling_style": {
+      "enum": ["turkish", "international", "british", "american", "australian", "canadian"]
+    },
+    "prompt_directives": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "forbidden_claims_key": {
+      "type": "string",
+      "pattern": "^(tr-tr-current|en-(intl|gb|us|au|ca)-generic)-v[1-9][0-9]*$"
+    },
+    "profile_version": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

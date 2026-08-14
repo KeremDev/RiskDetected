@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-08-01T20:01:21.975Z",
+  "operation": "status",
+  "project_ref": "ppcrzemgiztzcgddbins",
+  "app_store_version_id": "9a2f5061-8992-4957-a9e8-7b8a96747323",
+  "app_store_demo_account": {
+    "required": true,
+    "configured": true,
+    "value_persisted_in_evidence": false
+  },
+  "state": "reviewer_only_allowlist_active",
+  "counts": {
+    "matching_auth_user_count": 1,
+    "flag_count": 13,
+    "off_count": 0,
+    "allowlist_count": 13,
+    "enabled_user_hash_entry_count": 13,
+    "enabled_ios_build_entry_count": 0,
+    "kill_switch_true_count": 0
+  },
+  "safety": {
+    "public_rollout_enabled": false,
+    "build_allowlist_entries": 0,
+    "kill_switches_active": 0,
+    "raw_email_included": false,
+    "user_id_included": false,
+    "user_hash_included": false
+  },
+  "sequence_gate": {
+    "activation_allowed": true,
+    "completed_stages": 9,
+    "required_stages": 9,
+    "next_stage": null
+  },
+  "activation_status": "reviewer_only_allowlist_active"
+}

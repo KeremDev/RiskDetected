@@ -1,0 +1,44 @@
+plugins {
+    alias(libs.plugins.android.library)
+    // org.jetbrains.kotlin.android is no longer needed under AGP 9's built-in Kotlin support.
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+}
+
+android {
+    namespace = "com.riskdetectedan.feature.onboarding"
+    compileSdk = 37
+    defaultConfig { minSdk = 26 }
+    buildFeatures { compose = true }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation(project(":core:common"))
+    implementation(project(":core:data"))
+    implementation(project(":core:designsystem"))
+
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.google.id)
+
+    // OBTimelinePaywallViewModel imports com.revenuecat.purchases types directly (same reason
+    // feature:paywall declares this too — core:data's own RevenueCat dependency is
+    // `implementation`, not `api`, so it doesn't transit to this module's own imports).
+    implementation(libs.revenuecat.purchases)
+
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+    testImplementation(libs.junit)
+    debugImplementation(libs.compose.ui.tooling)
+}

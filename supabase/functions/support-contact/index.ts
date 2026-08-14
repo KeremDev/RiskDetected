@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  type NormalizedSupportAttachment,
+  normalizeSupportAttachments,
+  type SupportAttachmentInput,
+} from "../_shared/support-attachment-validation.ts";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -8,17 +13,20 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type SupportAttachment = {
-  filename?: string;
-  mime_type?: string;
-  data?: string;
-  size_bytes?: number;
-};
-
 type SupportRequestBody = {
   subject?: string;
   message?: string;
-  attachments?: SupportAttachment[];
+  attachments?: SupportAttachmentInput[];
+  app_language?: string;
+  content_locale?: string;
+  user_message_language?: string;
+  preferred_response_language?: string;
+};
+
+type SupportRateLimitResult = {
+  ok?: boolean;
+  code?: string;
+  retry_after_seconds?: number;
 };
 
 function json(status: number, body: Record<string, unknown>) {
@@ -56,26 +64,21 @@ function safeLogText(value: string, maxLength = 180): string {
     .slice(0, maxLength);
 }
 
-function normalizeAttachments(value: unknown): SupportAttachment[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .slice(0, 3)
-    .map((item) => {
-      const source = item as SupportAttachment;
-      return {
-        filename: cleanText(source.filename, 120) || "ek-dosya",
-        mime_type: cleanText(source.mime_type, 80) ||
-          "application/octet-stream",
-        data: cleanText(source.data, 8_000_000),
-        size_bytes: Number(source.size_bytes ?? 0),
-      };
-    })
-    .filter((item) =>
-      item.data && item.size_bytes >= 0 && item.size_bytes <= 5_000_000
-    );
+function verifiedTierFromSubscription(
+  subscription: Record<string, unknown> | null,
+): string {
+  const tier = cleanText(subscription?.tier, 40);
+  const status = cleanText(subscription?.status, 40);
+  const periodEndsAt = cleanText(subscription?.current_period_ends_at, 80);
+  const activeStatus = ["active", "trialing", "grace_period"].includes(status);
+  const activePeriod = !periodEndsAt || Date.parse(periodEndsAt) > Date.now();
+  if ((tier === "plus" || tier === "pro") && activeStatus && activePeriod) {
+    return tier;
+  }
+  return "free";
 }
 
-function attachmentMetadata(attachments: SupportAttachment[]) {
+function attachmentMetadata(attachments: NormalizedSupportAttachment[]) {
   return attachments.map((attachment) => ({
     filename: attachment.filename,
     mime_type: attachment.mime_type,
@@ -96,7 +99,11 @@ async function saveSupportRequest(
     senderTier: string;
     companyName: string;
     senderTitle: string;
-    attachments: SupportAttachment[];
+    appLanguage: "tr" | "en";
+    contentLocale: string;
+    userMessageLanguage: "tr" | "en" | "und";
+    preferredResponseLanguage: "tr" | "en";
+    attachments: NormalizedSupportAttachment[];
     deliveryStatus: "sent" | "stored" | "email_failed";
     deliveryError?: string;
   },
@@ -112,6 +119,10 @@ async function saveSupportRequest(
     tier: values.senderTier,
     company_name: values.companyName,
     title: values.senderTitle,
+    app_language: values.appLanguage,
+    content_locale: values.contentLocale,
+    user_message_language: values.userMessageLanguage,
+    preferred_response_language: values.preferredResponseLanguage,
     attachment_count: values.attachments.length,
     attachments: attachmentMetadata(values.attachments),
     delivery_status: values.deliveryStatus,
@@ -130,6 +141,30 @@ async function saveSupportRequest(
   }
 
   return true;
+}
+
+const SUPPORTED_CONTENT_LOCALES = new Set([
+  "tr-TR",
+  "en-001",
+  "en-GB",
+  "en-US",
+  "en-AU",
+  "en-CA",
+]);
+
+function supportAcknowledgement(
+  language: "tr" | "en",
+  supportID: string,
+  deliveryStatus: "sent" | "stored" | "email_failed",
+): string {
+  if (language === "en") {
+    return deliveryStatus === "sent"
+      ? `Your support request was sent. Support ID: ${supportID}`
+      : `Your support request was saved. Support ID: ${supportID}`;
+  }
+  return deliveryStatus === "sent"
+    ? `Destek talebin gönderildi. Destek kodu: ${supportID}`
+    : `Destek talebin kaydedildi. Destek kodu: ${supportID}`;
 }
 
 serve(async (req) => {
@@ -170,7 +205,42 @@ serve(async (req) => {
 
   const subject = cleanText(body.subject, 120);
   const message = cleanText(body.message, 5000);
-  const attachments = normalizeAttachments(body.attachments);
+  const appLanguage = cleanText(body.app_language, 8);
+  const contentLocale = cleanText(body.content_locale, 16);
+  const userMessageLanguage = cleanText(body.user_message_language, 8);
+  const preferredResponseLanguage = cleanText(
+    body.preferred_response_language,
+    8,
+  );
+  const localeLanguage = contentLocale === "tr-TR"
+    ? "tr"
+    : contentLocale.startsWith("en-")
+    ? "en"
+    : null;
+  if (
+    !["tr", "en"].includes(appLanguage) ||
+    !SUPPORTED_CONTENT_LOCALES.has(contentLocale) ||
+    localeLanguage !== appLanguage ||
+    !["tr", "en", "und"].includes(userMessageLanguage) ||
+    !["tr", "en"].includes(preferredResponseLanguage)
+  ) {
+    return json(422, {
+      error: "support_language_context_invalid",
+      message: appLanguage === "en"
+        ? "The support language context is invalid."
+        : "Destek dili bilgisi geçersiz.",
+      support_id: supportID,
+    });
+  }
+  const attachmentResult = normalizeSupportAttachments(body.attachments);
+  if (attachmentResult.error) {
+    return json(400, {
+      error: attachmentResult.error.code,
+      message: attachmentResult.error.message,
+      support_id: supportID,
+    });
+  }
+  const attachments = attachmentResult.attachments;
 
   if (subject.length < 3 || message.length < 10) {
     return json(400, {
@@ -206,19 +276,89 @@ serve(async (req) => {
     });
   }
 
+  const { data: rateLimit, error: rateLimitError } = await supabase.rpc(
+    "check_support_request_rate_limit",
+    {
+      p_user_id: user.id,
+      p_hour_limit: 5,
+      p_day_limit: 20,
+    },
+  );
+  if (rateLimitError) {
+    console.error(
+      "support rate limit check failed",
+      JSON.stringify({
+        support_id: supportID,
+        error: safeLogText(rateLimitError.message),
+      }),
+    );
+    return json(500, {
+      error: "support_rate_check_failed",
+      message: "Destek talebi limiti kontrol edilemedi.",
+      support_id: supportID,
+    });
+  }
+
+  const rateLimitResult = rateLimit as SupportRateLimitResult | null;
+  if (rateLimitResult?.ok !== true) {
+    const retryAfter = Math.max(
+      60,
+      Number(rateLimitResult?.retry_after_seconds ?? 3600),
+    );
+    return json(429, {
+      error: "support_rate_limited",
+      code: rateLimitResult?.code ?? "support_rate_limited",
+      message:
+        "Kısa sürede çok fazla destek talebi gönderdin. Lütfen biraz sonra tekrar dene.",
+      support_id: supportID,
+      retry_after_seconds: retryAfter,
+    });
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name,email,phone,tier,company_name,title")
+    .select(
+      "full_name,email,phone,tier,company_name,title,app_language,preferred_content_locale",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
+  const { data: subscription } = await supabase
+    .from("user_subscriptions")
+    .select("tier,status,current_period_ends_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const authEmail = cleanText(user.email, 240);
+  const profileEmail = cleanText(profile?.email, 240);
   const senderName = cleanText(profile?.full_name, 160) || "Kayıtlı değil";
-  const senderEmail = cleanText(profile?.email, 240) || user.email ||
+  const senderEmail = authEmail || profileEmail ||
     "Kayıtlı değil";
   const senderPhone = cleanText(profile?.phone, 80) || "Kayıtlı değil";
-  const senderTier = cleanText(profile?.tier, 40) || "free";
+  const senderTier = verifiedTierFromSubscription(
+    subscription as Record<string, unknown> | null,
+  );
   const companyName = cleanText(profile?.company_name, 160) || "Kayıtlı değil";
   const senderTitle = cleanText(profile?.title, 120) || "Kayıtlı değil";
+  const replyToEmail = authEmail.includes("@") ? authEmail : undefined;
+  if (
+    profile?.app_language !== appLanguage ||
+    profile?.preferred_content_locale !== contentLocale
+  ) {
+    return json(422, {
+      error: "support_language_context_mismatch",
+      message: appLanguage === "en"
+        ? "The support language does not match your profile."
+        : "Destek dili profilinle eşleşmiyor.",
+      support_id: supportID,
+    });
+  }
+  const languageFields = {
+    appLanguage: appLanguage as "tr" | "en",
+    contentLocale,
+    userMessageLanguage: userMessageLanguage as "tr" | "en" | "und",
+    preferredResponseLanguage: preferredResponseLanguage as "tr" | "en",
+  };
 
   const escapedMessage = escapeHTML(message).replace(/\n/g, "<br>");
   const html = `
@@ -244,6 +384,15 @@ serve(async (req) => {
         <tr><td style="padding:6px 12px 6px 0;color:#667085">Ünvan</td><td style="padding:6px 0">${
     escapeHTML(senderTitle)
   }</td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#667085">Uygulama dili / locale</td><td style="padding:6px 0">${
+    escapeHTML(`${appLanguage} / ${contentLocale}`)
+  }</td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#667085">Kullanıcı mesaj dili</td><td style="padding:6px 0">${
+    escapeHTML(userMessageLanguage)
+  }</td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#667085">Tercih edilen yanıt dili</td><td style="padding:6px 0"><strong>${
+    escapeHTML(preferredResponseLanguage)
+  }</strong></td></tr>
       </table>
       <h3 style="margin:0 0 8px">${escapeHTML(subject)}</h3>
       <div style="padding:14px;border:1px solid #E3E7E3;border-radius:12px;background:#F6F7F6">${escapedMessage}</div>
@@ -259,6 +408,9 @@ serve(async (req) => {
     `Plan: ${senderTier}`,
     `Firma: ${companyName}`,
     `Ünvan: ${senderTitle}`,
+    `Uygulama dili / locale: ${appLanguage} / ${contentLocale}`,
+    `Kullanıcı mesaj dili: ${userMessageLanguage}`,
+    `Tercih edilen yanıt dili: ${preferredResponseLanguage}`,
     "",
     `Konu: ${subject}`,
     "",
@@ -277,6 +429,7 @@ serve(async (req) => {
       senderTier,
       companyName,
       senderTitle,
+      ...languageFields,
       attachments,
       deliveryStatus: "stored",
       deliveryError: "RESEND_API_KEY missing",
@@ -294,6 +447,11 @@ serve(async (req) => {
       ok: true,
       support_id: supportID,
       delivery_status: "stored",
+      acknowledgement: supportAcknowledgement(
+        languageFields.appLanguage,
+        supportID,
+        "stored",
+      ),
     });
   }
 
@@ -306,7 +464,7 @@ serve(async (req) => {
     body: JSON.stringify({
       from: fromEmail,
       to: [toEmail],
-      reply_to: senderEmail.includes("@") ? senderEmail : undefined,
+      reply_to: replyToEmail,
       subject: `[RiskDetected Destek] ${subject}`,
       html,
       text,
@@ -331,6 +489,7 @@ serve(async (req) => {
       senderTier,
       companyName,
       senderTitle,
+      ...languageFields,
       attachments,
       deliveryStatus: "email_failed",
       deliveryError: safeLogText(detail),
@@ -351,6 +510,11 @@ serve(async (req) => {
         ok: true,
         support_id: supportID,
         delivery_status: "email_failed",
+        acknowledgement: supportAcknowledgement(
+          languageFields.appLanguage,
+          supportID,
+          "email_failed",
+        ),
       });
     }
 
@@ -372,6 +536,7 @@ serve(async (req) => {
     senderTier,
     companyName,
     senderTitle,
+    ...languageFields,
     attachments,
     deliveryStatus: "sent",
   });
@@ -380,5 +545,10 @@ serve(async (req) => {
     ok: true,
     support_id: supportID,
     delivery_status: "sent",
+    acknowledgement: supportAcknowledgement(
+      languageFields.appLanguage,
+      supportID,
+      "sent",
+    ),
   });
 });

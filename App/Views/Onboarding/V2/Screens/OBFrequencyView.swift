@@ -14,14 +14,14 @@ struct OBFrequencyView: View {
                     VStack(spacing: 10) {
                         OBHeroTile(tint: .green) { OBHeroFrequency() }
                             .obStage(delay: 0.08)
-                        Text("Haftada kaç işyerinde denetim yapıyorsun?")
-                            .font(.system(size: 22, weight: .semibold))
+                        Text(RDLocalization.string("onboarding.obfrequency.view.haftada.kac.isyerinde.denetim.yapiyorsun.800c3756", table: .onboarding, fallback: "Haftada kaç işyerinde denetim yapıyorsun?"))
+                            .font(.system(size: RDFontScale.size(22), weight: .semibold))
                             .tracking(-0.6)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
-                        Text("Planımızı senin tempona göre ölçeklendirelim.")
-                            .font(.system(size: 14))
+                        Text(RDLocalization.string("onboarding.obfrequency.view.planimizi.senin.tempona.gore.olceklendirelim.a834ab15", table: .onboarding, fallback: "Planımızı senin tempona göre ölçeklendirelim."))
+                            .font(.system(size: RDFontScale.size(14)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.22)
@@ -47,11 +47,12 @@ struct OBFrequencyView: View {
             }
 
             OBFooter {
-                OBPrimaryButton(title: "Planımı Hazırla", enabled: state.frequency != nil, accessibilityID: "onboarding.frequency.prepare") { onNext() }
+                OBPrimaryButton(title: RDLocalization.string("onboarding.obfrequency.view.planimi.hazirla.3638fcc3", table: .onboarding, fallback: "Planımı Hazırla"), enabled: state.frequency != nil, accessibilityID: "onboarding.frequency.prepare") { onNext() }
                     .obStage(delay: 0.68)
             }
         }
         .background(Color.rdPaper)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.frequency")
     }
 
@@ -63,25 +64,25 @@ struct OBFrequencyView: View {
         } label: {
             HStack(spacing: 16) {
                 Text(f.rawValue)
-                    .font(.system(size: 30, weight: .semibold, design: .monospaced))
+                    .font(.system(size: RDFontScale.size(30), weight: .semibold, design: .monospaced))
                     .foregroundStyle(Color.rdOnyx)
                     .frame(minWidth: 72, alignment: .leading)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(f.title)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: RDFontScale.size(16), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .lineLimit(1)
                     Text(f.sub)
-                        .font(.system(size: 13))
+                        .font(.system(size: RDFontScale.size(13)))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(selected ? Color.rdOnyx : Color.rdSlate.opacity(0.4))
                     .offset(x: selected ? 2 : 0)
             }
@@ -100,4 +101,12 @@ struct OBFrequencyView: View {
         .buttonStyle(OBPressStyle())
         .accessibilityIdentifier("onboarding.frequency.\(f.rawValue.replacingOccurrences(of: "+", with: "_plus").replacingOccurrences(of: "-", with: "_"))")
     }
+}
+
+#Preview {
+    OBFrequencyView(
+        state: OnboardingV2State.previewSample(step: 5),
+        onBack: {},
+        onNext: {}
+    )
 }

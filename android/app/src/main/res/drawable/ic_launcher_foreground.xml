@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- User-approved full-bleed Android master. Launcher masks provide the final outer shape. -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/rd_app_icon_foreground"
+    android:gravity="fill" />

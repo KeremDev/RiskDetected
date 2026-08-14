@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "app_id": "6769498181",
+  "bundle_id": "com.riskdetected.app",
+  "platform": "IOS",
+  "primary_locale": "tr",
+  "release": {
+    "version": "1.3.1",
+    "build_number": "81",
+    "build_id": "4790ee2d-48df-4fe6-8fbf-6f5fa5591db2",
+    "release_type": "MANUAL",
+    "copyright": "2026 RiskDetected"
+  },
+  "locales": [
+    "tr",
+    "en-GB",
+    "en-AU",
+    "en-US",
+    "en-CA"
+  ],
+  "mutable_locales": [
+    "en-GB",
+    "en-AU",
+    "en-US",
+    "en-CA"
+  ],
+  "protected_locales": [
+    "tr"
+  ],
+  "urls": {
+    "tr": {
+      "marketing": "https://riskdetected.com",
+      "support": "https://riskdetected.com",
+      "privacy": "https://riskdetected.com/gizlilik"
+    },
+    "english": {
+      "marketing": "https://riskdetected.com/en",
+      "support": "https://riskdetected.com/en/support",
+      "privacy": "https://riskdetected.com/en/privacy"
+    }
+  },
+  "screenshots": {
+    "theme": "light",
+    "orientation": "portrait",
+    "display_size": "6.9-inch",
+    "accepted_pixel_size": "1290x2796",
+    "slides_per_locale": 5,
+    "source_data": "synthetic_debug_fixtures",
+    "final_root": "appstore/screenshots/final"
+  },
+  "subscriptions_manifest": "appstore/subscriptions/manifest.json",
+  "review_evidence": "appstore/review/localization-evidence.md",
+  "source_research": [
+    "app-marketing-context.md",
+    "docs/ASO_IOS_ENGLISH_KEYWORD_RESEARCH_APPLYRA_2026-08-02.md",
+    "docs/RISKDETECTED_LOCALIZATION_MARKET_PRIORITIZATION_2026-07-28.md",
+    "docs/RISKDETECTED_GLOBAL_LOCALIZATION_COUNTRY_SAFETY_INTEGRATION_EXECUTION_PLAN_2026-07-28.md"
+  ],
+  "mutation_policy": {
+    "ASC_ALLOW_MUTATIONS": 0,
+    "ASC_ALLOW_SCREENSHOT_UPLOAD": 0,
+    "ASC_ALLOW_BUILD_UPLOAD": 0,
+    "ASC_ALLOW_REVIEW_SUBMISSION": 0,
+    "ASC_ALLOW_RELEASE": 0
+  },
+  "production_policy": {
+    "current_live_version": "1.3.0",
+    "current_live_build": "80",
+    "localization_rollout_must_remain_off": false,
+    "review_submission_performed_by_automation": false,
+    "release_performed_by_automation": false
+  }
+}

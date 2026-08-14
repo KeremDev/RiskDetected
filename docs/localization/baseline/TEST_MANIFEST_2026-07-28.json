@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-07-28T19:41:28+03:00",
+  "branch": "codex/global-localization-wave1",
+  "baseline_commit": "740d5513c3d2500820908b52a6957647f12576a5",
+  "production_mutation_performed": false,
+  "results": {
+    "ios_build_run": {
+      "status": "passed",
+      "simulator": "RD QA iPhone 16 Pro",
+      "warnings": 0,
+      "errors": 0,
+      "build_log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_run_sim_2026-07-28T16-39-41-112Z_pid73592_1577a873.log"
+    },
+    "ios_ui_smoke": {
+      "status": "passed",
+      "passed": 3,
+      "failed": 0,
+      "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-07-28T16-39-59-729Z_pid73592_b7eb9b16.xcresult",
+      "tests": [
+        "testMainTabsProfileAndDarkModeRenderWithBypass",
+        "testNotificationSettingsSheetStaysSimpleWithBypass",
+        "testHomeTextAnalysisEntryPointsAreRemoved"
+      ]
+    },
+    "deno": {
+      "status": "passed",
+      "passed": 173,
+      "failed": 0
+    },
+    "edge_function_check": {
+      "status": "passed",
+      "checked": 18,
+      "failed": 0
+    },
+    "pgtap": {
+      "status": "passed",
+      "files": 5,
+      "passed": 135,
+      "failed": 0,
+      "target": "local_supabase"
+    },
+    "production_readiness": {
+      "status": "passed",
+      "passed": 23,
+      "failed": 0
+    }
+  },
+  "phase_1_draft_checks_excluded_from_phase_0_acceptance": [
+    "localization_profile_contract",
+    "generated_typescript_check",
+    "hardcoded_copy_guard"
+  ],
+  "commands": {
+    "deno": "deno test -A supabase/functions",
+    "edge_function_check": "deno check supabase/functions/*/index.ts",
+    "pgtap": "supabase test db",
+    "production_readiness": "node scripts/analyze_readiness_check.mjs"
+  }
+}

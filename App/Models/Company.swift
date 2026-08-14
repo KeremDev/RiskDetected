@@ -9,17 +9,17 @@ enum CompanyHazardClass: String, Codable, CaseIterable, Identifiable, Equatable 
 
     var title: String {
         switch self {
-        case .low: return "Az Tehlikeli"
-        case .medium: return "Tehlikeli"
-        case .high: return "Çok Tehlikeli"
+        case .low: return RDLocalization.string("localizable.company.az.tehlikeli.5a7188a4", table: .localizable, fallback: "Az Tehlikeli")
+        case .medium: return RDLocalization.string("localizable.company.tehlikeli.a8563876", table: .localizable, fallback: "Tehlikeli")
+        case .high: return RDLocalization.string("localizable.company.cok.tehlikeli.66f7a10e", table: .localizable, fallback: "Çok Tehlikeli")
         }
     }
 
     var shortTitle: String {
         switch self {
-        case .low: return "Az"
-        case .medium: return "Tehlikeli"
-        case .high: return "Çok Tehlikeli"
+        case .low: return RDLocalization.string("localizable.company.az.563adf3d", table: .localizable, fallback: "Az")
+        case .medium: return RDLocalization.string("localizable.company.tehlikeli.533167db", table: .localizable, fallback: "Tehlikeli")
+        case .high: return RDLocalization.string("localizable.company.cok.tehlikeli.b663cc01", table: .localizable, fallback: "Çok Tehlikeli")
         }
     }
 }
@@ -40,16 +40,21 @@ struct Company: Codable, Identifiable, Equatable {
     let updatedAt: String?
 
     var listSubtitle: String {
-        [hazardClass.title, department?.nonEmpty]
+        [
+            RDLanguage.current == .turkish ? hazardClass.title : nil,
+            department?.nonEmpty,
+        ]
             .compactMap { $0 }
             .joined(separator: " · ")
     }
 
     var reportInfoText: String {
         [
-            hazardClass.title,
+            RDLanguage.current == .turkish ? hazardClass.title : nil,
             department.map { "Birim: \($0)" },
-            contactPerson.map { "İlgili: \($0)" },
+            contactPerson.map { RDLocalization.format("localizable.company.ilgili.1.2f721c63", table: .localizable, fallback: "İlgili: %1$@", arguments: [String(describing: $0)]) },
+            defaultResponsible.map { "Sorumlu: \($0)" },
+            defaultDueDays.map { RDLocalization.format("localizable.company.termin.1.gun.1d4912c1", table: .localizable, fallback: "Termin: %1$@ gün", arguments: [String(describing: $0)]) },
             address.map { "Adres: \($0)" }
         ]
         .compactMap { $0?.nonEmpty }
@@ -57,7 +62,7 @@ struct Company: Codable, Identifiable, Equatable {
     }
 
     var defaultDueText: String? {
-        defaultDueDays.map { "\($0) gün" }
+        defaultDueDays.map { RDLocalization.format("localizable.company.1.gun.886f2f8c", table: .localizable, fallback: "%1$@ gün", arguments: [String(describing: $0)]) }
     }
 
     enum CodingKeys: String, CodingKey {

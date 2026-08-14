@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-07-28T21:09:39+03:00",
+  "branch": "codex/global-localization-wave1",
+  "base_commit": "740d5513c3d2500820908b52a6957647f12576a5",
+  "phase": 2,
+  "production_mutation_performed": false,
+  "production_deploy_performed": false,
+  "phase_3_changes_started": false,
+  "migration_repository": {
+    "status": "passed",
+    "canonical_remote_history": 110,
+    "forward_migrations": 3,
+    "active_migrations": 113,
+    "archived_local_only": 41,
+    "archived_semantic_divergence": 2,
+    "duplicate_versions": 0,
+    "unexpected_versions": 0,
+    "evidence": "docs/localization/baseline/MIGRATION_LEDGER_AFTER_RECONCILIATION_2026-07-28.json",
+    "evidence_sha256": "34ca54324222f2fb7ca618039a3256bc00e99153fde0e0bdfd9ff2e8fcf1d8ea"
+  },
+  "migrations": [
+    {
+      "version": "20260728201500",
+      "file": "supabase/migrations/20260728201500_reconcile_untracked_production_schema_state.sql",
+      "sha256": "334473ef52a06ca2d2984a10163605ee8dead77fdfa3b2e75184a5476c622b15",
+      "purpose": "reconcile production schema state that was not represented by canonical remote history"
+    },
+    {
+      "version": "20260728202000",
+      "file": "supabase/migrations/20260728202000_attest_current_runtime_configuration_state.sql",
+      "sha256": "93e05e5eaadc7cddaa19f5c5c06f1db4d0f89545719929226c8c140496e18a8f",
+      "purpose": "reproduce the attested production feature-flag and plan-capability state"
+    },
+    {
+      "version": "20260728203000",
+      "file": "supabase/migrations/20260728203000_global_localization_context_wave1.sql",
+      "sha256": "340089ba8ff5a52cb2fb925759bf567c0adeae2b85778c1f6a620403da500f4d",
+      "purpose": "add the nullable Wave 1 localization context, backfill, guards, indexes and default-off flags"
+    }
+  ],
+  "schema_reconciliation": {
+    "status": "passed",
+    "production_baseline_sha256": "4576c3577deaceede660d9969c5d63b8f35baeec74e25cc0544b85dda9a181ea",
+    "reconciled_pre_localization_sha256": "4576c3577deaceede660d9969c5d63b8f35baeec74e25cc0544b85dda9a181ea",
+    "reconciled_pre_localization_diff_lines": 0,
+    "phase_2_schema_sha256": "3ac171aeee06e0de538eb7b3c7acdf7a51ebe9ca93847a094f54504820ed92e2",
+    "phase_2_schema_lines": 11340,
+    "phase_2_schema_bytes": 395533,
+    "phase_2_vs_production_diff_lines": 493,
+    "phase_2_vs_production_diff_sha256": "60d1e70a3c0b32d9b535dc52e0e00cbdf9e311fbf23fe1299651ddae02a2e49a",
+    "diff_classification": "expected additive localization columns, checks, trigger function, trigger, comments and indexes only",
+    "clean_reset_applied_migrations": 113,
+    "db_lint_public_private": "passed"
+  },
+  "localization_migration": {
+    "status": "passed",
+    "nullable_columns_added": 46,
+    "tables_extended": 7,
+    "not_valid_checks_added": 32,
+    "indexes_added": 2,
+    "default_off_flags_added": 11,
+    "backfill_batch_size": 500,
+    "backfill_targets": 7,
+    "production_backfill_max_row_count": 290,
+    "production_backfill_expected_batches_per_table": 1,
+    "production_backfill_evidence": "docs/localization/phase-2/PRODUCTION_BACKFILL_CARDINALITY_2026-07-28.json",
+    "production_backfill_evidence_sha256": "5bab5621f70cff039870cf57ba399de7ae3088485a6e0cef2591149b503bcafa"
+  },
+  "backend_contract": {
+    "status": "passed",
+    "legacy_turkish_default": true,
+    "six_profile_resolution": true,
+    "snapshot_persisted_before_quota_and_queue": true,
+    "persisted_snapshot_authoritative_for_worker_retry_repair": true,
+    "request_snapshot_mismatch_stable_error": true,
+    "queue_payload_transition_flag_gated": true,
+    "non_tr_legislation_rejected_before_ai_quota_queue": true,
+    "non_tr_legislation_error_code": "CANVAS_NOT_AVAILABLE_FOR_SAFETY_PROFILE",
+    "claim_lease_ambiguous_dispatch_coverage_finalization_regression": "passed"
+  },
+  "results": {
+    "deno_tests": {
+      "status": "passed",
+      "passed": 188,
+      "failed": 0
+    },
+    "deno_analyze_typecheck": {
+      "status": "passed",
+      "file": "supabase/functions/analyze/index.ts"
+    },
+    "pgtap": {
+      "status": "passed",
+      "files": 6,
+      "assertions": 223,
+      "failed": 0,
+      "localization_assertions": 88
+    },
+    "rls": {
+      "status": "passed",
+      "rls_preserved_on_phase_2_targets": 7,
+      "anon_private_notification_jobs_select": false
+    },
+    "localization_contract": {
+      "status": "passed",
+      "profiles": 6,
+      "contract_tests": 17,
+      "inventory_entries": 2397,
+      "unowned_p0_p1": 0,
+      "hardcoded_additions": 0,
+      "inventory_sha256": "a683c6a010fd19fc84c71f078ef0d775f7f7f8163d1c742c94a66b0836529a47"
+    },
+    "ios_build_run": {
+      "status": "passed",
+      "simulator": "RD QA iPhone 16 Pro",
+      "warnings": 0,
+      "errors": 0
+    },
+    "ios_full_ui_suite": {
+      "status": "passed",
+      "total": 39,
+      "passed": 38,
+      "skipped": 1,
+      "failed": 0,
+      "expected_failures": 0,
+      "duration_seconds": 387.992,
+      "skipped_test": "testE2ERealThreePhotoAnalysisCompletes()",
+      "skip_reason": "real provider E2E requires an explicit external test environment and is not part of the hermetic simulator suite",
+      "xcresult": "/tmp/rd-phase2-full-ui-20260728-2101.xcresult",
+      "xcresult_info_sha256": "a457fad3c64a496de03a23fbc22ece75000c2f4e45a34da8c4e3fcf037443aaf"
+    },
+    "git_diff_check": {
+      "status": "passed"
+    }
+  },
+  "commands": {
+    "migration_repository": "node scripts/verify_migration_repository.mjs",
+    "localization_contract": "make localization-test",
+    "deno": "deno test --allow-read supabase/functions",
+    "deno_typecheck": "deno check supabase/functions/analyze/index.ts",
+    "pgtap": "node scripts/run_local_pgtap.mjs --port 55322",
+    "db_lint": "supabase db lint --workdir /tmp/riskdetected-canonical-reset.sUD5br --schema public,private",
+    "ios_ui": "xcodebuild test on RD QA iPhone 16 Pro",
+    "diff_check": "git diff --check"
+  }
+}

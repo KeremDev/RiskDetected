@@ -36,7 +36,7 @@ final class CompanyService {
             return rows
         } catch {
             Self.logger.error("Company list failed: \(error.localizedDescription, privacy: .public)")
-            throw AnalysisService.AnalysisError.databaseFailed("Firmalar yüklenemedi.")
+            throw AnalysisService.AnalysisError.databaseFailed(RDLocalization.string("localizable.company.service.firmalar.yuklenemedi.7dc2bef5", table: .localizable, fallback: "Firmalar yüklenemedi."))
         }
     }
 
@@ -45,7 +45,7 @@ final class CompanyService {
             throw AnalysisService.AnalysisError.notAuthenticated
         }
         guard draft.isValid else {
-            throw AnalysisService.AnalysisError.invalidInput("Firma adı zorunlu.")
+            throw AnalysisService.AnalysisError.invalidInput(RDLocalization.string("localizable.company.service.firma.adi.zorunlu.5b063a40", table: .localizable, fallback: "Firma adı zorunlu."))
         }
 
         if let id = draft.id {
@@ -135,7 +135,7 @@ final class CompanyService {
                 .execute()
         } catch {
             Self.logger.error("Company archive failed: \(error.localizedDescription, privacy: .public)")
-            throw AnalysisService.AnalysisError.databaseFailed("Firma arşivlenemedi.")
+            throw AnalysisService.AnalysisError.databaseFailed(RDLocalization.string("localizable.company.service.firma.arsivlenemedi.6b5218d2", table: .localizable, fallback: "Firma arşivlenemedi."))
         }
     }
 
@@ -144,7 +144,7 @@ final class CompanyService {
             throw AnalysisService.AnalysisError.notAuthenticated
         }
         guard let data = image.normalizedJPEG(maxDimension: 900, compressionQuality: 0.82) else {
-            throw AnalysisService.AnalysisError.storageFailed("Logo dosyası hazırlanamadı.")
+            throw AnalysisService.AnalysisError.storageFailed(RDLocalization.string("localizable.company.service.logo.dosyasi.hazirlanamadi.f493f057", table: .localizable, fallback: "Logo dosyası hazırlanamadı."))
         }
 
         let path = "\(userID.uuidString.lowercased())/companies/\(companyID.uuidString.lowercased())/logo.jpg"
@@ -159,7 +159,7 @@ final class CompanyService {
             return path
         } catch {
             Self.logger.error("Company logo upload failed: \(error.localizedDescription, privacy: .public)")
-            throw AnalysisService.AnalysisError.storageFailed("Firma logosu yüklenemedi.")
+            throw AnalysisService.AnalysisError.storageFailed(RDLocalization.string("localizable.company.service.firma.logosu.yuklenemedi.d3f6dcd5", table: .localizable, fallback: "Firma logosu yüklenemedi."))
         }
     }
 
@@ -173,19 +173,19 @@ final class CompanyService {
     private func normalizedCompanyError(_ error: Error) -> Error {
         let message = error.localizedDescription
         if message.localizedCaseInsensitiveContains("company_feature_requires_paid_plan") {
-            return AnalysisService.AnalysisError.invalidInput("Firma eklemek için Plus veya Pro plana geçmelisin.")
+            return AnalysisService.AnalysisError.invalidInput(RDLocalization.string("localizable.company.service.firma.eklemek.icin.plus.veya.pro.plana.gecmelisi.971a5339", table: .localizable, fallback: "Firma eklemek için Plus veya Pro plana geçmelisin."))
         }
         if message.localizedCaseInsensitiveContains("company_limit_exceeded") {
-            return AnalysisService.AnalysisError.invalidInput("Planındaki firma limitine ulaştın.")
+            return AnalysisService.AnalysisError.invalidInput(RDLocalization.string("localizable.company.service.planindaki.firma.limitine.ulastin.e4b2888b", table: .localizable, fallback: "Planındaki firma limitine ulaştın."))
         }
         if message.localizedCaseInsensitiveContains("company_default_due_days_invalid") {
-            return AnalysisService.AnalysisError.invalidInput("Varsayılan termin 1-365 gün arasında olmalı.")
+            return AnalysisService.AnalysisError.invalidInput(RDLocalization.string("localizable.company.service.varsayilan.termin.1.365.gun.arasinda.olmali.698f66b8", table: .localizable, fallback: "Varsayılan termin 1-365 gün arasında olmalı."))
         }
         if message.localizedCaseInsensitiveContains("duplicate") ||
             message.localizedCaseInsensitiveContains("companies_user_active_name_idx") {
-            return AnalysisService.AnalysisError.invalidInput("Bu firma adı zaten listende var.")
+            return AnalysisService.AnalysisError.invalidInput(RDLocalization.string("localizable.company.service.bu.firma.adi.zaten.listende.var.56298152", table: .localizable, fallback: "Bu firma adı zaten listende var."))
         }
-        return AnalysisService.AnalysisError.databaseFailed("Firma kaydedilemedi.")
+        return AnalysisService.AnalysisError.databaseFailed(RDLocalization.string("localizable.company.service.firma.kaydedilemedi.e5800490", table: .localizable, fallback: "Firma kaydedilemedi."))
     }
 }
 

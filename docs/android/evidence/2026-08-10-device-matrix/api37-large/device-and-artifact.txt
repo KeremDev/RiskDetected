@@ -1,0 +1,8 @@
+serial=emulator-5564
+api_label=api37-large
+sdk=37
+model=sdk_gphone64_arm64
+size=Physical size: 1344x2992
+density=Physical density: 480
+font_scale=1.0
+67931585a5117ac58cf15402bce5a02545ae3dd71ff19e6f8efb66445ec2a39e  /Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/android/app/build/outputs/apk/qa/app-qa.apk

@@ -4,7 +4,7 @@ struct OBLoadingView: View {
     @ObservedObject var state: OnboardingV2State
     let onComplete: () -> Void
 
-    @State private var title: String = "Sana özel kurulum hazırlanıyor…"
+    @State private var title: String = RDLocalization.string("onboarding.obloading.view.sana.ozel.kurulum.hazirlaniyor.a7043077", table: .onboarding, fallback: "Sana özel kurulum hazırlanıyor…")
     @State private var revealed: [Bool] = [false, false, false]
     @State private var done: [Bool] = [false, false, false]
     @State private var rotation: Double = 0
@@ -21,7 +21,7 @@ struct OBLoadingView: View {
             loader
 
             Text(title)
-                .font(.system(size: 20, weight: .semibold))
+                .font(.system(size: RDFontScale.size(20), weight: .semibold))
                 .tracking(-0.4)
                 .foregroundStyle(Color.rdOnyx)
                 .multilineTextAlignment(.center)
@@ -42,6 +42,7 @@ struct OBLoadingView: View {
         .opacity(leaving ? 0 : 1)
         .animation(.easeInOut(duration: 0.32), value: leaving)
         .onAppear { runSequence() }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.loading")
     }
 
@@ -68,7 +69,7 @@ struct OBLoadingView: View {
             ZStack {
                 Circle().fill(Color.rdOnyx)
                 Image(systemName: "doc.text.fill")
-                    .font(.system(size: 20, weight: .regular))
+                    .font(.system(size: RDFontScale.size(20), weight: .regular))
                     .foregroundStyle(.white)
             }
             .frame(width: 48, height: 48)
@@ -100,7 +101,7 @@ struct OBLoadingView: View {
                 Circle().fill(done[i] ? Color.rdGreen : Color.rdOnyx.opacity(0.06))
                 if done[i] {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: RDFontScale.size(11), weight: .bold))
                         .foregroundStyle(.white)
                         .transition(.scale.combined(with: .opacity))
                 } else {
@@ -113,7 +114,7 @@ struct OBLoadingView: View {
             .frame(width: 28, height: 28)
 
             Text(text)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: RDFontScale.size(14), weight: .medium))
                 .foregroundStyle(done[i] ? Color.rdOnyx : Color.rdSlate)
             Spacer()
         }
@@ -134,21 +135,21 @@ struct OBLoadingView: View {
             var highlight = AttributedString(state.primarySectorLabel)
             highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
             s.append(highlight)
-            s.append(AttributedString(" için risk analiz şablonları yükleniyor..."))
+            s.append(AttributedString(RDLocalization.string("onboarding.obloading.view.icin.risk.analiz.sablonlari.yukleniyor.4b30b304", table: .onboarding, fallback: "için risk analiz şablonları yükleniyor...")))
             return s
         case 1:
             var s = AttributedString("")
             var highlight = AttributedString(state.hazardsLabel)
             highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
             s.append(highlight)
-            s.append(AttributedString(" sınıfı için kontrol listesi hazırlanıyor..."))
+            s.append(AttributedString(RDLocalization.string("onboarding.obloading.view.sinifi.icin.kontrol.listesi.hazirlaniyor.85dc6c38", table: .onboarding, fallback: "sınıfı için kontrol listesi hazırlanıyor...")))
             return s
         default:
             var s = AttributedString("")
             var highlight = AttributedString(state.certificateLabel)
             highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
             s.append(highlight)
-            s.append(AttributedString(" için rapor formatı kişiselleştiriliyor..."))
+            s.append(AttributedString(RDLocalization.string("onboarding.obloading.view.icin.rapor.formati.kisisellestiriliyor.34aea260", table: .onboarding, fallback: "için rapor formatı kişiselleştiriliyor...")))
             return s
         }
     }
@@ -162,7 +163,7 @@ struct OBLoadingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.8)  { OBHaptic.soft(); withAnimation(.obSpring) { done[1] = true } }
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.7)  { OBHaptic.soft(); withAnimation(.obSpring) { done[2] = true } }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0)  { title = "Plan hazır." }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0)  { title = RDLocalization.string("onboarding.obloading.view.plan.hazir.d352f51f", table: .onboarding, fallback: "Plan hazır.") }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4.5)  { leaving = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4.85) { onComplete() }
     }

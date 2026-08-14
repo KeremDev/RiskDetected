@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-28T19:45:02+03:00",
+  "source_ledger": "docs/localization/baseline/MIGRATION_LEDGER_BEFORE_RECONCILIATION_2026-07-28.json",
+  "production_mutation_performed": false,
+  "scope": "exact remote-only statements plus explicitly selected semantic-diff evidence",
+  "remote_only_versions": [
+    "20260611105834",
+    "20260611105836",
+    "20260611154735",
+    "20260611155228",
+    "20260611155618",
+    "20260611161445",
+    "20260611170250",
+    "20260611170729",
+    "20260611171231",
+    "20260611172004",
+    "20260611173529",
+    "20260611174422",
+    "20260611174722",
+    "20260611175741",
+    "20260611185911",
+    "20260611190306",
+    "20260611193019",
+    "20260611200440",
+    "20260612191457",
+    "20260612224143",
+    "20260613001428",
+    "20260613001447",
+    "20260615170803",
+    "20260615171457",
+    "20260615172300"
+  ],
+  "extra_evidence_versions": [
+    "20260622195418",
+    "20260714170000"
+  ],
+  "files": [
+    {
+      "version": "20260611105834",
+      "name": "admin_users",
+      "file": "docs/localization/baseline/remote-migration-history/20260611105834_admin_users.sql",
+      "sha256": "a76c8aa706e6731eb4a86be6bf30fbf9bcec75278b913f9f17adb2327d47f8c9"
+    },
+    {
+      "version": "20260611105836",
+      "name": "admin_audit_logs",
+      "file": "docs/localization/baseline/remote-migration-history/20260611105836_admin_audit_logs.sql",
+      "sha256": "c2440afdf28672be6e8bc1d26477d03e47fccbf8ea5314f52693e4b9c98451fa"
+    },
+    {
+      "version": "20260611154735",
+      "name": "admin_saved_filters",
+      "file": "docs/localization/baseline/remote-migration-history/20260611154735_admin_saved_filters.sql",
+      "sha256": "e882ae839e74eb80d1b70f1b5fb0cd0efec037fb90bd79e9b4c5f8ae622d6424"
+    },
+    {
+      "version": "20260611155228",
+      "name": "admin_dashboard_daily_series",
+      "file": "docs/localization/baseline/remote-migration-history/20260611155228_admin_dashboard_daily_series.sql",
+      "sha256": "04a6184101a1b1bc00aeb02350be7a32e42c4bc3917b1f64b3799fd35c7f7e04"
+    },
+    {
+      "version": "20260611155618",
+      "name": "model_pricing_catalog",
+      "file": "docs/localization/baseline/remote-migration-history/20260611155618_model_pricing_catalog.sql",
+      "sha256": "f0cf2d3607b6d84a2e8be06661482a1bf5f2bffdb6de06c786bd89b68bf82e47"
+    },
+    {
+      "version": "20260611161445",
+      "name": "admin_subscription_inconsistency_scan",
+      "file": "docs/localization/baseline/remote-migration-history/20260611161445_admin_subscription_inconsistency_scan.sql",
+      "sha256": "f828249a7b761a7785baa8d635fbca5375208f872c77a93bd6ccad2fe8499f08"
+    },
+    {
+      "version": "20260611170250",
+      "name": "admin_data_quality_and_notes",
+      "file": "docs/localization/baseline/remote-migration-history/20260611170250_admin_data_quality_and_notes.sql",
+      "sha256": "add2e0a754df98c9a80748b6232417a4438f3a60ac9148528b2e84f77a769890"
+    },
+    {
+      "version": "20260611170729",
+      "name": "admin_alerts",
+      "file": "docs/localization/baseline/remote-migration-history/20260611170729_admin_alerts.sql",
+      "sha256": "d42a9003f8b1797e869e0fce9fe8a95ca95199db7cf7ee0e2a95eb250017d38c"
+    },
+    {
+      "version": "20260611171231",
+      "name": "admin_pgmq_queue_metrics",
+      "file": "docs/localization/baseline/remote-migration-history/20260611171231_admin_pgmq_queue_metrics.sql",
+      "sha256": "c4db254ebc1b27f6da66ca72c37c4c9846bbf5cecbba4642a68189b8ed6e21c1"
+    },
+    {
+      "version": "20260611172004",
+      "name": "admin_user_segmentation_v2",
+      "file": "docs/localization/baseline/remote-migration-history/20260611172004_admin_user_segmentation_v2.sql",
+      "sha256": "4d77e2790aae870b0d9d829d2de869b617c6d22d3b666952016049fb2a850764"
+    },
+    {
+      "version": "20260611173529",
+      "name": "admin_cohort_retention",
+      "file": "docs/localization/baseline/remote-migration-history/20260611173529_admin_cohort_retention.sql",
+      "sha256": "316ea000adb5723c2b4d5670f3400cd69e3adb4542da0e4533e834cc9320a21c"
+    },
+    {
+      "version": "20260611174422",
+      "name": "admin_exports",
+      "file": "docs/localization/baseline/remote-migration-history/20260611174422_admin_exports.sql",
+      "sha256": "19e7df01819214746e5625ae39c297883950446037f0a130beeab19a407b4ea4"
+    },
+    {
+      "version": "20260611174722",
+      "name": "admin_findings_analytics",
+      "file": "docs/localization/baseline/remote-migration-history/20260611174722_admin_findings_analytics.sql",
+      "sha256": "c1335698b769b032db4aaf9ed6f2505001fd3127f3932978b0a8b4040976df8e"
+    },
+    {
+      "version": "20260611175741",
+      "name": "admin_rate_limit_events",
+      "file": "docs/localization/baseline/remote-migration-history/20260611175741_admin_rate_limit_events.sql",
+      "sha256": "6e6ac5c34f0fa77ec4e142b2856222725dd6e34947a4551123658ab04666f2d4"
+    },
+    {
+      "version": "20260611185911",
+      "name": "add_gemini_25_flash_lite_pricing",
+      "file": "docs/localization/baseline/remote-migration-history/20260611185911_add_gemini_25_flash_lite_pricing.sql",
+      "sha256": "ce1f73cfd2f8cf3b4ed5164c345d0a6653d20f0c2b8f61c535dc6597fc595b52"
+    },
+    {
+      "version": "20260611190306",
+      "name": "fix_gemini_25_flash_official_pricing",
+      "file": "docs/localization/baseline/remote-migration-history/20260611190306_fix_gemini_25_flash_official_pricing.sql",
+      "sha256": "a9a3d80dc7b9300eddb9296e21901dbf9616da309aed086c3b8fc2f173c155e5"
+    },
+    {
+      "version": "20260611193019",
+      "name": "dashboard_daily_series_istanbul_tz",
+      "file": "docs/localization/baseline/remote-migration-history/20260611193019_dashboard_daily_series_istanbul_tz.sql",
+      "sha256": "3b31918198a64c1afb0d703910fafda9d36bdd88aa8171ef8afa8738728d9504"
+    },
+    {
+      "version": "20260611200440",
+      "name": "admin_recent_sign_ins",
+      "file": "docs/localization/baseline/remote-migration-history/20260611200440_admin_recent_sign_ins.sql",
+      "sha256": "01bf622547b3f12619eef0b07c25b8e2944961c6349a9670d5b26b1b54c90e1f"
+    },
+    {
+      "version": "20260612191457",
+      "name": "add_active_analysis_sector",
+      "file": "docs/localization/baseline/remote-migration-history/20260612191457_add_active_analysis_sector.sql",
+      "sha256": "78818866dd3b114fe7c4c282e36d201066cd4b744c775d66196b0f28b6a7714c"
+    },
+    {
+      "version": "20260612224143",
+      "name": "add_trial_reminder_notifications",
+      "file": "docs/localization/baseline/remote-migration-history/20260612224143_add_trial_reminder_notifications.sql",
+      "sha256": "2437724754390d0e7ed5cc6182f662d2ebec0ec89144441d3b90fe05c38560c3"
+    },
+    {
+      "version": "20260613001428",
+      "name": "expand_onboarding_sector_allowlist",
+      "file": "docs/localization/baseline/remote-migration-history/20260613001428_expand_onboarding_sector_allowlist.sql",
+      "sha256": "5bb390d0b6e37104c79604ac51b6e1c356318de47015713e04d7998f480ff12e"
+    },
+    {
+      "version": "20260613001447",
+      "name": "expand_onboarding_sector_rpc",
+      "file": "docs/localization/baseline/remote-migration-history/20260613001447_expand_onboarding_sector_rpc.sql",
+      "sha256": "fdaa8d1d86c0faacc8b746c40c979430a4267188e0f403bff84bf4663313cba6"
+    },
+    {
+      "version": "20260615170803",
+      "name": "backfill_plus_yearly_trial_fields",
+      "file": "docs/localization/baseline/remote-migration-history/20260615170803_backfill_plus_yearly_trial_fields.sql",
+      "sha256": "73bcb5d7490e07bcbbdebfcc42d8d137e639e649c8ce9d3ae661f591e658ecc3"
+    },
+    {
+      "version": "20260615171457",
+      "name": "backfill_plus_yearly_trial_columns",
+      "file": "docs/localization/baseline/remote-migration-history/20260615171457_backfill_plus_yearly_trial_columns.sql",
+      "sha256": "52f1a1c3c23984de4d81c357513a0a08a251be2dd768b1ad9179e0aa8c33dba0"
+    },
+    {
+      "version": "20260615172300",
+      "name": "default_trial_will_renew",
+      "file": "docs/localization/baseline/remote-migration-history/20260615172300_default_trial_will_renew.sql",
+      "sha256": "adef470da535716b79680eee2e1f743e474bc32d9cfb3b7c7aac388ba23bebde"
+    },
+    {
+      "version": "20260622195418",
+      "name": "multi_photo_editable_findings",
+      "file": "docs/localization/baseline/remote-migration-history/20260622195418_multi_photo_editable_findings.sql",
+      "sha256": "c631c1f84f3f497f0ae082dc64395e307215491da041adf0cfafd854015d69a2"
+    },
+    {
+      "version": "20260714170000",
+      "name": "enable_single_photo_compact_layer_quality",
+      "file": "docs/localization/baseline/remote-migration-history/20260714170000_enable_single_photo_compact_layer_quality.sql",
+      "sha256": "d8a957038679125d4840554fc43375697e662283121561afdefc2c3fbecaf729"
+    }
+  ]
+}

@@ -1,127 +1,199 @@
 # RiskDetected Kullanım Koşulları
 
-Yürürlük tarihi: 8 Mayıs 2026
-Belge sürümü: terms-2026-05-08
+Yürürlük tarihi: 8 Temmuz 2026
+Belge sürümü: terms-2026-07-08
 
-Bu Kullanım Koşulları ("Koşullar"), RiskDetected mobil uygulamasını, web bağlantılarını, analiz, rapor ve destek hizmetlerini ("Hizmet") kullanımınızı düzenler. Uygulamaya üye olarak, giriş yaparak, fotoğraf/metin yükleyerek, analiz başlatarak veya Hizmeti kullanarak bu Koşulları kabul etmiş olursunuz.
+Bu Kullanım Koşulları ("Koşullar"), RiskDetected mobil uygulaması, analiz, rapor, firma,
+abonelik, mesleki ilerleme ve destek hizmetlerini ("Hizmet") kullanımınızı düzenler.
+Uygulamaya üye olarak, giriş yaparak, fotoğraf yükleyerek, analiz başlatarak veya
+Hizmeti kullanarak bu Koşulları kabul etmiş olursunuz.
 
-Hizmet sağlayıcı ve iletişim bilgileri:
+Hizmet sağlayıcı:
 
-- Hizmet sağlayıcı/veri sorumlusu: Riskdetected
-- MERSİS/VKN/TCKN: Belirtilmemiş
+- Riskdetected
+- MERSİS/VKN/TCKN: 21832867210
 - Adres: Eskişehir
-- E-posta: info@riskdetected.com
-- Destek kanalı: info@riskdetected.com
+- E-posta/Destek: info@riskdetected.com
 - Web sitesi: https://riskdetected.com
 
 ## 1. Hizmetin amacı
 
-RiskDetected, kullanıcının yüklediği saha, işyeri, fabrika, ekipman, çalışma alanı veya benzeri fotoğraflar ve/veya metinler üzerinden yapay zeka destekli risk, tehlike ve önlem önerileri üretir. Hizmet, iş sağlığı ve güvenliği, saha gözlemi, raporlama ve dokümantasyon süreçlerinde karar destek aracı olarak sunulur.
+RiskDetected, fotoğraf üzerinden yapay zeka destekli iş güvenliği risk/bulgu analizi,
+önerilen önlem, rapor, risk tablosu, firma takibi ve mesleki ilerleme özellikleri
+sunar.
+
+Yeni analizler fotoğraf yükleme veya kamera ile çekim üzerinden başlatılır. Önceki
+sürümlerde oluşturulmuş metin girdileri, yalnızca geçmiş kayıt, veri dışa aktarma,
+hesap silme ve hukuki saklama süreçleri kapsamında işlenebilir.
 
 RiskDetected:
 
-- Resmi iş güvenliği denetimi, bilirkişi incelemesi, mühendislik uygunluk raporu, hukuki görüş, sağlık değerlendirmesi veya mevzuata kesin uygunluk onayı vermez.
-- İş güvenliği uzmanı, işyeri hekimi, teknik uzman, mühendis, avukat, denetçi veya yetkili idare yerine geçmez.
-- Acil, hayati, yüksek riskli veya mevzuat gereği uzman müdahalesi gereken durumlarda tek başına kullanılmamalıdır.
+- Resmi denetim, bilirkişi incelemesi, mühendislik uygunluk raporu, hukuki görüş, sağlık değerlendirmesi veya mevzuata kesin uygunluk onayı vermez.
+- İş güvenliği uzmanı, işyeri hekimi, mühendis, avukat, denetçi veya yetkili idare yerine geçmez.
+- Acil, hayati veya yüksek riskli durumlarda tek başına kullanılmamalıdır.
 
 Nihai değerlendirme, sahadaki gerçek koşulları gören yetkili ve ehil kişiler tarafından yapılmalıdır.
 
-## 2. Kullanıcı hesabı
+## 2. Hesap ve kullanıcı sorumluluğu
 
-Hizmeti kullanmak için hesap oluşturmanız veya giriş yapmanız gerekebilir. Hesap bilgilerinizin doğru, güncel ve size ait olması gerekir. Hesabınız altında gerçekleşen işlemlerden siz sorumlusunuz.
+Hesap bilgilerinizin doğru, güncel ve size ait olması gerekir. Hesabınız altında yapılan
+işlemlerden siz sorumlusunuz. Başkasının hesabını kullanamaz, hesabınızı izinsiz
+kullandıramaz veya yanıltıcı kimlik/iletişim bilgisi paylaşamazsınız.
 
-Başkasının hesabını kullanamaz, hesabınızı izinsiz kullandıramaz, kimlik veya iletişim bilgilerinizi yanıltıcı şekilde paylaşamazsınız. Yetkisiz kullanım şüphesi varsa info@riskdetected.com üzerinden derhal bildirim yapmalısınız.
+## 3. İçerik yükleme kuralları
 
-## 3. Fotoğraf, metin ve içerik yükleme kuralları
+Yalnızca yükleme, işleme, analiz ettirme ve raporlama hakkına sahip olduğunuz içerikleri
+gönderebilirsiniz. Fotoğraf/firma/logo/rapor verilerinde çalışan, ziyaretçi,
+firma, marka, tesis, plaka, ticari sır, özel mülk veya özel nitelikli veri bulunabilir.
 
-Hizmete yalnızca yükleme ve analiz ettirme hakkına sahip olduğunuz içerikleri gönderebilirsiniz. Yüklediğiniz fotoğraflarda veya metinlerde şu unsurlar bulunabilir: insanların yüzü veya bedeni, çalışan görüntüsü, ziyaretçi görüntüsü, firma adı, logo, ticari unvan, tabela, plaka, ekipman seri numarası, makine, üretim hattı, fabrika, depo, saha, özel mülk, ticari sır, güvenlik açığı, konum bilgisi veya başka kişisel/veriye ilişkin bilgi.
+Kullanıcı olarak şunları kabul edersiniz:
 
-Bu nedenle kullanıcı olarak şunları kabul ve taahhüt edersiniz:
+- Gerekli bilgilendirme, izin, açık rıza, işveren/tesis onayı ve sözleşmesel yetkiler size aittir.
+- Gizli bilgi, ticari sır, güvenlik açısından hassas alan, çocuk görüntüsü veya özel nitelikli kişisel veriyi hukuka aykırı şekilde yükleyemezsiniz.
+- AI çıktısını kesin uzman raporu, resmi delil, hukuki güvence veya mevzuata uygunluk belgesi gibi sunamazsınız.
+- Yüz, logo veya mekan görüntüsünün analiz edilmesi o kişi, marka, şirket veya mekan hakkında doğrulanmış kusur isnadı anlamına gelmez.
 
-- Fotoğrafı çekmek, yüklemek, işlemek ve analiz ettirmek için gerekli yetkiye, izne veya hukuki sebebe sahipsiniz.
-- Fotoğrafta görünen kişiler, işveren, tesis sahibi, müşteri, yüklenici, marka/logonun hak sahibi veya ilgili üçüncü kişiler bakımından gerekli bilgilendirme, izin ve mevzuat yükümlülüklerini yerine getirmek sizin sorumluluğunuzdadır.
-- Gizli bilgi, ticari sır, kamuya kapalı alan, güvenlik açısından hassas bölge, askeri/güvenlik alanı, kişisel sağlık verisi, çocuk görüntüsü veya özel nitelikli kişisel veri içeren görselleri hukuka aykırı şekilde yükleyemezsiniz.
-- Başkalarının itibarını zedeleyen, iftira niteliğinde, ayrımcı, taciz edici, yasa dışı, şiddet içeren, pornografik, kişilik haklarını ihlal eden veya hukuka aykırı içerik yükleyemezsiniz.
-- Yüz, logo veya mekan görüntüsünün uygulamada analiz edilmesi, o kişi, marka, şirket veya mekan hakkında doğrulanmış bir tespit, kusur isnadı veya resmi rapor anlamına gelmez.
+## 4. Yapay zeka çıktıları
 
-RiskDetected, yüklenen içeriklerden doğan üçüncü kişi taleplerinden, izinsiz çekimlerden, işveren/tesis kurallarına aykırı paylaşımlardan veya gizlilik ihlallerinden kullanıcının sorumlu olduğunu belirtir. Hukuka aykırı içerik tespit edildiğinde ilgili içerik veya hesap askıya alınabilir, silinebilir veya yetkili mercilerle paylaşılabilir.
-
-## 4. Yapay zeka çıktıları ve sorumluluk sınırı
-
-RiskDetected analizleri yapay zeka tarafından üretilir. Yapay zeka çıktıları eksik, hatalı, güncel olmayan, bağlamdan kopuk veya sahadaki gerçek riski tam yansıtmayan sonuçlar içerebilir. Fotoğraf açısı, ışık, çözünürlük, kadraj, engellenen nesneler, yanlış etiketleme, eksik veri, kullanıcı notu veya model sınırlamaları sonucu etkileyebilir.
+AI çıktıları eksik, hatalı, bağlamdan kopuk, güncel olmayan veya sahadaki gerçek riski
+tam yansıtmayan sonuçlar içerebilir. Fotoğraf açısı, ışık, çözünürlük, kadraj, kapalı
+alanlar, eksik görsel bağlam ve model sınırlamaları sonucu etkileyebilir.
 
 Kullanıcı şunları kabul eder:
 
 - AI çıktıları öneri ve karar destek niteliğindedir.
-- Çıktılar tek başına resmi kayıt, kesin risk değerlendirmesi, hukuki delil, mevzuata uygunluk belgesi veya bağlayıcı uzman görüşü değildir.
-- Yüksek riskli, acil veya hayati tehlike içeren durumlarda yerinde inceleme, uzman değerlendirmesi ve ilgili mevzuatın gerektirdiği resmi süreçler uygulanmalıdır.
-- AI tarafından önerilen önlemler uygulanmadan önce yetkili iş güvenliği uzmanı, mühendis, işyeri hekimi, avukat veya ilgili profesyonel tarafından kontrol edilmelidir.
+- Yüksek riskli veya acil durumlarda yerinde inceleme, uzman değerlendirmesi ve ilgili mevzuatın gerektirdiği resmi süreçler uygulanmalıdır.
+- Önerilen önlemler uygulanmadan önce yetkili iş güvenliği uzmanı, mühendis, işyeri hekimi, avukat veya ilgili profesyonel tarafından kontrol edilmelidir.
 
-RiskDetected, kusursuz, kesintisiz, hatasız veya belirli bir amaca tamamen uygun sonuç üretileceğini garanti etmez. Yürürlükteki emredici hukuk kuralları saklı kalmak üzere, Hizmetin kullanımından doğabilecek dolaylı zararlar, kar kaybı, itibar kaybı, üretim kaybı, veri kaybı, yanlış karar, üçüncü kişi talepleri veya saha uygulama sonuçlarından RiskDetected sorumlu değildir.
+## 5. Raporlar, risk tabloları ve firma bilgileri
 
-## 5. Raporlar
+Uygulama standart rapor, risk analizi tablosu, PDF ve Excel çıktıları oluşturabilir.
+Raporlar kullanıcının sağladığı içerik ve AI çıktıları temel alınarak hazırlanır.
+Raporların doğruluğu, sahaya uygunluğu, paylaşılabilirliği ve kurum içi/resmi süreçlerde
+kullanılabilirliği kullanıcı tarafından kontrol edilmelidir.
 
-Uygulama, analiz sonuçlarından PDF veya benzeri raporlar oluşturabilir. Raporlar kullanıcının sağladığı içerik ve AI çıktıları temel alınarak hazırlanır. Raporların doğruluğu, sahaya uygunluğu, üçüncü kişilerle paylaşılabilirliği ve kurum içi/resmi süreçlerde kullanılabilirliği kullanıcı tarafından kontrol edilmelidir.
+Firma adı, logo, adres, ilgili kişi, departman veya tehlike sınıfı gibi alanları
+girmeniz halinde bu bilgiler rapor ve arşivlerde kullanılabilir. Üçüncü kişilere veya
+kurumlara ait bilgilerin kullanımı için gerekli yetki ve izin kullanıcının
+sorumluluğundadır.
 
-Raporlarda firma adı, logo, tesis görüntüsü, çalışan görüntüsü veya ticari bilgi yer alabilir. Bunları paylaşmadan önce gerekli izinleri almak kullanıcının sorumluluğundadır.
+## 6. Free, Plus, Pro ve deneme hakları
 
-## 6. Abonelik, ücretli özellikler ve Apple
+RiskDetected ücretsiz ve ücretli özellikler sunabilir.
 
-Hizmette ücretsiz ve ücretli özellikler bulunabilir. Ücretli özellikler, Apple App Store üzerinden uygulama içi satın alma veya abonelik şeklinde sunulabilir. Apple üzerinden yapılan satın alma ve aboneliklerde ödeme, yenileme, iptal ve iade süreçleri Apple'ın koşullarına tabidir.
+- Free kullanıcılar için günlük standart analiz hakkı ve sınırlı standart rapor hakkı tanımlanabilir.
+- Free kullanıcıya ürünü denemesi için tek seferlik risk analizi tablosu hakkı verilebilir.
+- Plus/Pro planlar; günlük analiz kotası, detaylı analiz, firma takibi, PDF/XLSX, risk tablosu, logo/firma çıktıları, saklama süresi veya benzeri ek özellikler sunabilir.
+- Mesleki ilerleme, MDP, rozet ve ünvanlar uygulama içi motivasyon göstergesidir; resmi sertifika, yetki, kıdem veya mesleki unvan değildir.
 
-Apple, bu Koşulların tarafı değildir; Hizmetin içeriğinden, analiz sonuçlarından, kullanıcı içeriklerinden veya kullanıcı destek süreçlerinden RiskDetected sorumludur. Uygulama içi satın alma kullanılan özelliklerde Apple App Store kuralları ve kullanıcıya sunulan satın alma ekranındaki bilgiler uygulanır.
+Kotalar, deneme hakları ve özellik kapsamı kötüye kullanım, teknik gereklilik, App
+Store kuralları veya ürün planına göre değiştirilebilir. Önemli değişikliklerde
+kullanıcı bilgilendirilir.
 
-## 7. Fikri mülkiyet
+## 7. Abonelikler ve Apple
 
-RiskDetected adı, logosu, tasarımı, yazılımı, arayüzü, metinleri, rapor şablonları, veri yapıları ve Hizmetin diğer unsurları ilgili hak sahiplerine aittir. Bu unsurlar izinsiz kopyalanamaz, çoğaltılamaz, tersine mühendisliğe tabi tutulamaz, satılamaz veya türev çalışma oluşturmak için kullanılamaz.
+Ücretli özellikler Apple App Store üzerinden uygulama içi satın alma veya abonelik
+olarak sunulabilir. Ödeme, yenileme, iptal, iade ve abonelik yönetimi Apple'ın
+koşullarına tabidir. Apple, bu Koşulların tarafı değildir; Hizmetin içeriğinden ve
+kullanıcı destek süreçlerinden RiskDetected sorumludur.
 
-Kullanıcı, yüklediği içeriklerin mülkiyetini elinde tutar. Ancak Hizmeti sunabilmemiz için kullanıcı, yüklediği içerikleri analiz etmek, saklamak, raporlamak, teknik olarak işlemek, güvenliği sağlamak ve destek taleplerini çözmek amacıyla RiskDetected'e sınırlı, dünya çapında, devredilebilir olmayan ve Hizmetin işletilmesi için gerekli kullanım hakkı verir.
+Abonelik ekranlarında gösterilen fiyat, süre, ücretsiz deneme, yenileme ve iptal
+bilgileri esas alınır. Aboneliği iptal etmek, yenilemeyi durdurmak veya aboneliği
+yönetmek için Apple ID abonelik ayarları kullanılmalıdır. Hesabın RiskDetected
+uygulamasından silinmesi, Apple tarafından yönetilen aktif abonelikleri otomatik olarak
+iptal etmeyebilir.
 
-RiskDetected, kullanıcı içeriklerini reklam veya kamuya açık tanıtım amacıyla kullanmaz; bunun için ayrıca açık izin alınması gerekir.
+## 8. Bildirimler
 
-## 8. Yasak kullanımlar
+Kullanıcı izin verirse analiz tamamlandı, rapor hazır, hesap durumu, haftalık/aylık
+mesleki özet, rozet veya ünvan bildirimleri gönderilebilir. Bildirimler garanti
+edilmez; ağ, cihaz ayarı veya APNs kaynaklı gecikme/başarısızlık olabilir.
+
+## 9. Fikri mülkiyet
+
+RiskDetected adı, logosu, tasarımı, yazılımı, arayüzü, metinleri, rapor şablonları,
+veri yapıları ve Hizmetin diğer unsurları ilgili hak sahiplerine aittir. İzinsiz
+kopyalanamaz, çoğaltılamaz, tersine mühendisliğe tabi tutulamaz veya satılamaz.
+
+Kullanıcı yüklediği içeriklerin mülkiyetini elinde tutar. Hizmeti sunabilmemiz için
+kullanıcı, yüklediği içerikleri analiz etmek, saklamak, raporlamak, teknik olarak
+işlemek, güvenliği sağlamak ve destek taleplerini çözmek amacıyla RiskDetected'e
+sınırlı, hizmet amaçlı kullanım hakkı verir.
+
+## 10. Yasak kullanımlar
 
 Hizmeti aşağıdaki amaçlarla kullanamazsınız:
 
 - Hukuka aykırı gözetim, takip, yüz tanıma, kimlik tespiti veya kişi fişleme.
 - Çalışan, müşteri, ziyaretçi veya üçüncü kişileri mevzuata aykırı izleme.
 - Rakip firma, müşteri, işveren veya tesis hakkında izinsiz bilgi toplama.
-- Başkasına ait gizli bilgi veya ticari sırrı izinsiz işleme.
+- Ticari sır, gizli bilgi veya güvenlik açığını izinsiz işleme.
 - AI çıktısını kesin uzman raporu gibi göstermek.
-- Uygulamanın güvenliğini bozmak, kota/abonelik sistemini aşmak veya tersine mühendislik yapmak.
+- Kota, abonelik, paywall, güvenlik veya RLS mekanizmalarını aşmaya çalışmak.
 - Zararlı yazılım, spam, otomatik kötüye kullanım veya hizmeti aşırı yükleme.
 
-## 9. Veri koruma ve gizlilik
+## 11. Veri koruma
 
-Kişisel verilerin işlenmesine ilişkin ayrıntılar Gizlilik Politikası ve KVKK Aydınlatma Metni'nde açıklanır. Uygulamayı kullanmadan önce bu metinleri okumanız gerekir.
+Kişisel verilerin işlenmesine ilişkin ayrıntılar Gizlilik Politikası, KVKK Aydınlatma
+Metni ve Açık Rıza Beyanı'nda açıklanır. Bu metinleri uygulama içinden veya web
+bağlantılarından okuyabilirsiniz.
 
-Yüklenen fotoğraflar analiz ve raporlama için işlenebilir. Fotoğraflar uygulama tarafından yeniden işlenerek teknik metadata/EXIF bilgilerinin azaltılması amaçlanır; ancak fotoğrafın görsel içeriğinde yer alan yüz, logo, tabela, mekan, plaka, ekipman veya benzeri unsurlar kullanıcı tarafından yüklenmiş içerik olarak analiz kapsamında işlenebilir.
+## 12. Hizmet değişiklikleri ve erişim
 
-## 10. Hizmet değişiklikleri ve erişim
+RiskDetected Hizmeti geliştirebilir, değiştirebilir, bazı özellikleri kaldırabilir,
+bakım nedeniyle geçici olarak durdurabilir veya güvenlik/uyumluluk gerekçesiyle
+erişimi sınırlayabilir.
 
-RiskDetected, Hizmeti geliştirebilir, değiştirebilir, bazı özellikleri kaldırabilir, bakım nedeniyle geçici olarak durdurabilir veya güvenlik/uyumluluk gerekçesiyle erişimi sınırlayabilir. Önemli değişikliklerde uygun yöntemlerle bilgilendirme yapılır.
+## 13. Hesap silme ve içerik kaldırma
 
-## 11. Hesap silme ve içerik kaldırma
+Kullanıcı analiz, rapor, firma ve avatar gibi içeriklerini uygulama içindeki ilgili
+ekranlardan silebilir veya güncelleyebilir.
 
-Kullanıcı, hesap silme, analiz silme, rapor silme veya veri taleplerini uygulama içinden ya da info@riskdetected.com üzerinden iletebilir. Silme talepleri yasal saklama yükümlülükleri, uyuşmazlıklar, güvenlik kayıtları veya teknik yedekleme süreleri saklı kalmak üzere işleme alınır.
+Hesap silme işlemi uygulama içinde Profil > Hesabımı sil / Delete Account yolundan
+başlatılır ve tamamlanır. E-posta, destek kanalı veya web sitesi hesap silme için zorunlu
+değildir.
 
-## 12. Üçüncü taraf hizmetleri
+Hesap silme onaylandığında hesap kaydı ve hesaba bağlı uygulama verileri kalıcı olarak
+silinir. Yasal saklama yükümlülükleri, uyuşmazlıklar, güvenlik kayıtları ve teknik
+yedekleme süreleri saklı kalabilir.
 
-Hizmet; barındırma, kimlik doğrulama, veri tabanı, dosya saklama, yapay zeka analizi, hata ayıklama, ödeme veya destek için üçüncü taraf altyapılardan yararlanabilir. Bu taraflar yalnızca Hizmetin sunulması için gerekli ölçüde veri işleyebilir ve Gizlilik Politikası/KVKK metninde açıklanır.
+Aktif App Store abonelikleri Apple ID abonelik ayarlarından yönetilir. Hesabın
+silinmesi, Apple tarafından yönetilen aktif aboneliği otomatik olarak iptal
+etmeyebilir.
 
-## 13. Koşulların değişmesi
+## 14. Üçüncü taraf hizmetleri
 
-RiskDetected, mevzuat, Apple kuralları, teknik gereksinimler veya Hizmet değişiklikleri nedeniyle bu Koşulları güncelleyebilir. Önemli değişikliklerde kullanıcıdan yeniden onay alınabilir veya uygulama içinde bildirim gösterilebilir. Güncel sürüm uygulamada veya web bağlantısında yayımlanır.
+Hizmet; Supabase, AI sağlayıcıları, RevenueCat, Apple App Store, Apple/Google giriş
+servisleri, APNs ve destek/güvenlik altyapıları gibi üçüncü taraflardan yararlanabilir.
+Bu taraflar yalnızca Hizmetin sunulması için gerekli ölçüde veri işleyebilir.
 
-## 14. Uygulanacak hukuk ve uyuşmazlıklar
+## 15. Sorumluluk sınırı
 
-Bu Koşullar Türkiye Cumhuriyeti hukukuna tabidir. Tüketici sıfatına sahip kullanıcıların emredici hakları saklıdır. Uyuşmazlıklarda, yürürlükteki mevzuat uyarınca yetkili tüketici hakem heyetleri, tüketici mahkemeleri veya genel yetkili mahkemeler görevli olabilir.
+Emredici hukuk kuralları saklı kalmak üzere RiskDetected; Hizmetin kullanımından
+doğabilecek dolaylı zararlar, kar kaybı, itibar kaybı, üretim kaybı, veri kaybı,
+yanlış karar, üçüncü kişi talepleri veya saha uygulama sonuçlarından sorumlu değildir.
 
-## 15. İletişim
+## 16. Koşulların değişmesi
 
-Koşullar, veri talepleri, içerik kaldırma, destek veya hukuki bildirimler için:
+Bu Koşullar mevzuat, Apple kuralları, teknik gereksinimler veya Hizmet değişiklikleri
+nedeniyle güncellenebilir. Önemli değişikliklerde kullanıcıdan yeniden onay alınabilir
+veya uygulama içinde bildirim gösterilebilir.
+
+## 17. Uygulanacak hukuk
+
+Bu Koşullar Türkiye Cumhuriyeti hukukuna tabidir. Tüketici sıfatına sahip kullanıcıların
+emredici hakları saklıdır. Uyuşmazlıklarda yürürlükteki mevzuat uyarınca yetkili
+tüketici hakem heyetleri, tüketici mahkemeleri veya genel yetkili mahkemeler görevli
+olabilir.
+
+## 18. İletişim
 
 - E-posta: info@riskdetected.com
 - Adres: Eskişehir
 - Web sitesi: https://riskdetected.com
 - Uygulama içi destek: Profil > Destek
+
+Hesap silme, destek veya iletişim talebi olarak yürütülmez. Hesabınızı ve hesabınıza
+bağlı uygulama verilerini silmek için uygulama içinde Profil > Hesabımı sil / Delete
+Account yolunu kullanabilirsiniz. E-posta, destek kanalı veya web sitesi hesap silme
+için zorunlu değildir.

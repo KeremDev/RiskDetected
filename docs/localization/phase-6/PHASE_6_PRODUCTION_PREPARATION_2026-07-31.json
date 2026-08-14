@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-01T12:19:31Z",
+  "phase": 6,
+  "status": "phase_6_complete_build_78_valid_rollout_off_ready_for_phase_7",
+  "production_project_ref": "ppcrzemgiztzcgddbins",
+  "live_user_isolation": {
+    "all_localization_rollout_modes_off": true,
+    "non_off_flag_count": 0,
+    "enabled_user_hash_count": 0,
+    "enabled_ios_build_count": 0,
+    "current_live_build": 77,
+    "candidate_build": 78,
+    "checked_localization_flag_count": 13,
+    "candidate_app_store_build_id": "6710ace3-c967-43fc-9186-b005b1a4a83c",
+    "candidate_processing_state": "VALID",
+    "app_store_version_1_3_0_created": false,
+    "app_review_submission_performed": false,
+    "public_release_performed": false
+  },
+  "migrations": [
+    {
+      "version": "20260731103000",
+      "name": "global_localization_release_telemetry",
+      "sha256": "949c632f2082a2b1004bfe950d50a86be522ae264051f300d780a2f5dd1d8575",
+      "production_applied": true
+    },
+    {
+      "version": "20260731120000",
+      "name": "legal_acknowledgement_integrity",
+      "sha256": "52cdf5baea2cc5665951ac87b8172be9e94f99f459699f8e60accafc2144709f",
+      "production_applied": true
+    },
+    {
+      "version": "20260731121000",
+      "name": "auth_email_delivery_idempotency",
+      "sha256": "1f5246574c110cf1536a267b8a725132e27f9c663235000cf2cb2608b3ecb087",
+      "production_applied": true
+    }
+  ],
+  "edge_functions": [
+    {
+      "slug": "analyze",
+      "version": 140,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "exact_safety_profile_approval_bundle_verified": true
+    },
+    {
+      "slug": "auth-send-email-hook",
+      "version": 8,
+      "status": "ACTIVE",
+      "verify_jwt": false
+    },
+    {
+      "slug": "generate-excel-report",
+      "version": 73,
+      "status": "ACTIVE",
+      "verify_jwt": true
+    },
+    {
+      "slug": "register-report",
+      "version": 23,
+      "status": "ACTIVE",
+      "verify_jwt": true
+    },
+    {
+      "slug": "send-push-notification",
+      "version": 48,
+      "status": "ACTIVE",
+      "verify_jwt": false
+    }
+  ],
+  "security": {
+    "scan_id": "f95c02ee-39bf-4838-9849-3ef2483c9137",
+    "scan_snapshot_sha256": "fb8b56ef4c5f609e162458d237834cc894a5569f53aaae6fdaf68349606ee891",
+    "coverage": "158/158",
+    "reportable_findings_remediated": 5,
+    "production_security_advisor_errors": 0,
+    "new_private_tables_client_select_granted": false
+  },
+  "verification": {
+    "localization_profiles": "17/17",
+    "localization_catalog_gates": "19/19",
+    "ai_localization": "63/63",
+    "phase_6_deno": "73/73",
+    "phase_6_pgtap": "39/39",
+    "testflight_rollout_gate_unit_tests": "4/4",
+    "function_focused_deno": "133/133",
+    "phase_5_release_gate": "passed",
+    "focused_ios_ui_regression": "1/1",
+    "full_ios_ui_regression": "45 executed, 1 intentionally skipped, 0 failures",
+    "full_ios_xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/phase6_full_2026-07-31.xcresult",
+    "release_archive": "1.3.0 (78) succeeded",
+    "app_store_connect_processing": "VALID",
+    "app_review_preflight": "32 PASS, 2 WARN, 4 HOLD, 0 FAIL, 4 SKIP",
+    "git_diff_check": "passed"
+  },
+  "safety_profile_approval": {
+    "status": "approved",
+    "source_sha256": "3a68229b1860572ff70600287412d3dadf890597698acfc3edb23afc8b9c6932",
+    "internal_review_id": "RD-SPR-20260801-3A68229B",
+    "approval_record_path": "docs/localization/phase-6/SAFETY_PROFILE_APPROVAL_2026-08-01.json",
+    "approval_record_sha256": "64b4a4ffb9ac852926448cb89c51188efcd5d846c236a510d8f35bb71aed5b5d",
+    "production_analyze_version": 140
+  },
+  "rollout_control": {
+    "threshold_contract_path": "docs/localization/phase-6/TESTFLIGHT_ROLLOUT_THRESHOLDS_2026-08-01.json",
+    "nine_stage_sequence_prepared": true,
+    "activation_state": "off_by_owner_instruction_until_apple_approval",
+    "all_13_production_rollout_modes_off": true,
+    "public_rollout_can_activate_without_owner_instruction": false
+  }
+}

@@ -5,6 +5,12 @@ import UserNotifications
 import Supabase
 import OSLog
 
+enum NotificationSettingsLoadState: Equatable {
+    case loading
+    case loaded
+    case failed
+}
+
 @MainActor
 final class NotificationService: NSObject, ObservableObject {
     static let shared = NotificationService()
@@ -13,9 +19,31 @@ final class NotificationService: NSObject, ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var lastDeviceToken: String?
     @Published private(set) var isRegistering = false
+    @Published private(set) var settingsLoadState: NotificationSettingsLoadState = .loading
     @Published private var notificationPreferences: NotificationPreferencesRow?
     @Published var pendingAnalysisHistoryID: UUID?
     @Published var pendingDestinationTab: RDTab?
+    @Published var pendingOpenNewAnalysis = false
+
+    var isLoadingSettings: Bool {
+        settingsLoadState == .loading
+    }
+
+    var settingsLoadFailed: Bool {
+        settingsLoadState == .failed
+    }
+
+    var systemAuthorizationGranted: Bool {
+        authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral
+    }
+
+    var notificationsEnabled: Bool {
+        systemAuthorizationGranted && (notificationPreferences?.enabled ?? false)
+    }
+
+    var appRemindersEnabled: Bool {
+        notificationsEnabled && (notificationPreferences?.appReminders ?? false)
+    }
 
     enum ProgressPreference {
         case weeklySummary
@@ -33,20 +61,43 @@ final class NotificationService: NSObject, ObservableObject {
 
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "NotificationService")
     private let supabase = SupabaseService.shared
+    private var settingsRefreshGeneration = 0
+    private var preferencesUserID: UUID?
 
     private override init() {
         super.init()
     }
 
     func configure() {
+        #if DEBUG
+        guard !Self.isUITestLaunch else { return }
+        #endif
         UNUserNotificationCenter.current().delegate = self
-        Task { await refreshSettings() }
+        Task {
+            await refreshSettings()
+            await syncEngagementStateIfNeeded()
+            syncCurrentTokenIfPossible()
+        }
     }
 
     func refreshSettings() async {
+        settingsRefreshGeneration &+= 1
+        let generation = settingsRefreshGeneration
+        settingsLoadState = .loading
+
         let settings = await UNUserNotificationCenter.current().notificationSettings()
+        guard generation == settingsRefreshGeneration else { return }
         authorizationStatus = settings.authorizationStatus
-        await refreshPreferences()
+        let preferencesLoaded = await refreshPreferences()
+        guard generation == settingsRefreshGeneration else { return }
+        settingsLoadState = preferencesLoaded ? .loaded : .failed
+    }
+
+    func prepareForAuthenticatedUser(_ userID: UUID) {
+        guard preferencesUserID != userID else { return }
+        settingsRefreshGeneration &+= 1
+        notificationPreferences = nil
+        settingsLoadState = .loading
     }
 
     func requestPermissionAndRegister() {
@@ -62,15 +113,17 @@ final class NotificationService: NSObject, ObservableObject {
                 await refreshSettings()
 
                 guard granted else {
-                    try await setPreference(enabled: false)
+                    await syncEngagementStateIfNeeded(force: true)
                     isRegistering = false
                     return
                 }
 
+                try await setMasterPreference(enabled: true)
+                await syncEngagementStateIfNeeded(force: true)
                 UIApplication.shared.registerForRemoteNotifications()
             } catch {
                 Self.logger.error("Notification authorization failed error=\(error.localizedDescription, privacy: .public)")
-                lastError = "Bildirim izni alınamadı. Lütfen cihaz ayarlarından tekrar dene."
+                lastError = RDLocalization.string("notifications.notification.service.bildirim.izni.alinamadi.lutfen.cihaz.ayarlarinda.acfcc568", table: .notifications, fallback: "Bildirim izni alınamadı. Lütfen cihaz ayarlarından tekrar dene.")
                 isRegistering = false
             }
         }
@@ -97,20 +150,24 @@ final class NotificationService: NSObject, ObservableObject {
                 await refreshSettings()
 
                 guard granted else {
-                    try? await setPreference(enabled: false)
+                    await syncEngagementStateIfNeeded(force: true)
                     isRegistering = false
                     return
                 }
 
+                try? await setMasterPreference(enabled: true)
+                await syncEngagementStateIfNeeded(force: true)
                 UIApplication.shared.registerForRemoteNotifications()
 
             case .authorized, .provisional, .ephemeral:
                 await refreshSettings()
+                try? await setMasterPreference(enabled: true)
+                await syncEngagementStateIfNeeded(force: true)
                 UIApplication.shared.registerForRemoteNotifications()
 
             case .denied:
-                try? await setPreference(enabled: false)
                 await refreshSettings()
+                await syncEngagementStateIfNeeded(force: true)
                 isRegistering = false
 
             @unknown default:
@@ -125,21 +182,133 @@ final class NotificationService: NSObject, ObservableObject {
     }
 
     func disableNotifications() {
+        lastError = nil
         Task {
             do {
-                try await setPreference(enabled: false)
+                try await setMasterPreference(enabled: false)
+                await refreshSettings()
             } catch {
                 Self.logger.error("Notification preference disable failed error=\(error.localizedDescription, privacy: .public)")
-                lastError = "Bildirim tercihi kaydedilemedi."
+                lastError = RDLocalization.string("notifications.notification.service.bildirim.tercihi.kaydedilemedi.0a3438da", table: .notifications, fallback: "Bildirim tercihi kaydedilemedi.")
+            }
+        }
+    }
+
+    func enableNotifications() {
+        guard !isRegistering else { return }
+        isRegistering = true
+        lastError = nil
+
+        Task {
+            do {
+                let settings = await UNUserNotificationCenter.current().notificationSettings()
+                authorizationStatus = settings.authorizationStatus
+
+                switch settings.authorizationStatus {
+                case .notDetermined:
+                    let granted = try await UNUserNotificationCenter.current().requestAuthorization(
+                        options: [.alert, .badge, .sound]
+                    )
+                    guard granted else {
+                        await refreshSettings()
+                        await syncEngagementStateIfNeeded(force: true)
+                        isRegistering = false
+                        return
+                    }
+                case .authorized, .provisional, .ephemeral:
+                    break
+                case .denied:
+                    await refreshSettings()
+                    isRegistering = false
+                    return
+                @unknown default:
+                    await refreshSettings()
+                    isRegistering = false
+                    return
+                }
+
+                try await setMasterPreference(enabled: true)
+                await refreshSettings()
+                await syncEngagementStateIfNeeded(force: true)
+                UIApplication.shared.registerForRemoteNotifications()
+                isRegistering = false
+            } catch {
+                Self.logger.error("Notification preference enable failed error=\(error.localizedDescription, privacy: .public)")
+                lastError = RDLocalization.string("notifications.notification.service.bildirim.tercihi.acilmadi.lutfen.tekrar.dene.f4d3fae0", table: .notifications, fallback: "Bildirim tercihi açılmadı. Lütfen tekrar dene.")
+                await refreshSettings()
+                isRegistering = false
             }
         }
     }
 
     func syncCurrentTokenIfPossible() {
-        guard authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral else {
+        guard supabase.currentUserID != nil else {
+            Self.logger.info("Push token sync skipped reason=no_user")
             return
         }
+        guard authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral else {
+            Self.logger.info("Push token sync skipped reason=not_authorized status=\(self.authorizationStatus.rawValue, privacy: .public)")
+            return
+        }
+        Self.logger.info("Push token sync requested")
         UIApplication.shared.registerForRemoteNotifications()
+    }
+
+    func handleAppBecameActive() async {
+        await refreshSettings()
+        await syncEngagementStateIfNeeded()
+        syncCurrentTokenIfPossible()
+    }
+
+    private func syncEngagementStateIfNeeded(force: Bool = false) async {
+        guard let userID = supabase.currentUserID else { return }
+        let authorizationValue = authorizationStatus.backendValue
+        let timezone = TimeZone.current.identifier
+        let syncSignature = "\(timezone)|\(authorizationValue)"
+        let defaults = UserDefaults.standard
+        let timestampKey = "rd.notification.engagement.lastSync.\(userID.uuidString)"
+        let signatureKey = "rd.notification.engagement.signature.\(userID.uuidString)"
+        let lastSync = defaults.object(forKey: timestampKey) as? Date
+        let signatureChanged = defaults.string(forKey: signatureKey) != syncSignature
+
+        if !force,
+           !signatureChanged,
+           let lastSync,
+           Date().timeIntervalSince(lastSync) < 6 * 60 * 60 {
+            return
+        }
+
+        let payload = EngagementStatePayload(
+            timezone: timezone,
+            locale: Locale.current.identifier,
+            authorizationStatus: authorizationValue,
+            appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+            appBuild: Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        )
+
+        do {
+            try await supabase.client
+                .rpc("record_user_engagement_state_v1", params: payload)
+                .execute()
+            defaults.set(Date(), forKey: timestampKey)
+            defaults.set(syncSignature, forKey: signatureKey)
+        } catch {
+            Self.logger.warning("Engagement heartbeat failed error=\(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func recordNotificationOpen(eventID: UUID?) async {
+        guard let eventID, supabase.currentUserID != nil else { return }
+        do {
+            try await supabase.client
+                .rpc(
+                    "record_notification_open_v1",
+                    params: NotificationOpenPayload(notificationEventID: eventID.uuidString)
+                )
+                .execute()
+        } catch {
+            Self.logger.warning("Notification open tracking failed error=\(error.localizedDescription, privacy: .public)")
+        }
     }
 
     nonisolated func didRegisterForRemoteNotifications(deviceToken: Data) {
@@ -148,11 +317,11 @@ final class NotificationService: NSObject, ObservableObject {
             lastDeviceToken = token
             do {
                 try await saveDeviceToken(token)
-                try await setPreference(enabled: true)
+                Self.logger.info("Device token saved environment=\(PushEnvironment.current, privacy: .public)")
                 isRegistering = false
             } catch {
                 Self.logger.error("Device token save failed error=\(error.localizedDescription, privacy: .public)")
-                lastError = "Bildirim cihaz kaydı tamamlanamadı."
+                lastError = RDLocalization.string("notifications.notification.service.bildirim.cihaz.kaydi.tamamlanamadi.cfa13bd9", table: .notifications, fallback: "Bildirim cihaz kaydı tamamlanamadı.")
                 isRegistering = false
             }
         }
@@ -161,13 +330,14 @@ final class NotificationService: NSObject, ObservableObject {
     nonisolated func didFailToRegisterForRemoteNotifications(error: Error) {
         Task { @MainActor in
             Self.logger.error("APNs registration failed error=\(error.localizedDescription, privacy: .public)")
-            lastError = "Bildirim cihaz kaydı alınamadı. Simülatörde veya imza ayarlarında APNs desteklenmeyebilir."
+            lastError = RDLocalization.string("notifications.notification.service.bildirim.cihaz.kaydi.alinamadi.simulatorde.veya..dc4985f5", table: .notifications, fallback: "Bildirim cihaz kaydı alınamadı. Simülatörde veya imza ayarlarında APNs desteklenmeyebilir.")
             isRegistering = false
         }
     }
 
     private func saveDeviceToken(_ token: String) async throws {
         guard let userID = supabase.currentUserID else { return }
+        let preferenceAllowsNotifications = notificationPreferences?.enabled ?? false
         let payload = PushDeviceTokenPayload(
             userID: userID.uuidString,
             token: token,
@@ -175,7 +345,8 @@ final class NotificationService: NSObject, ObservableObject {
             environment: PushEnvironment.current,
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
             deviceModel: UIDevice.current.model,
-            notificationsEnabled: true
+            notificationsEnabled: preferenceAllowsNotifications,
+            lastRegisteredAt: ISO8601DateFormatter().string(from: Date())
         )
 
         try await supabase.client
@@ -184,23 +355,13 @@ final class NotificationService: NSObject, ObservableObject {
             .execute()
     }
 
-    private func setPreference(enabled: Bool) async throws {
-        guard let userID = supabase.currentUserID else { return }
-        let payload = NotificationPreferencePayload(
-            userID: userID.uuidString,
-            enabled: enabled,
-            analysisComplete: enabled,
-            reportReady: enabled,
-            accountUpdates: enabled,
-            marketing: false,
-            progressWeeklySummary: enabled,
-            progressMonthlySummary: enabled,
-            progressMilestones: enabled
-        )
-
+    private func setMasterPreference(enabled: Bool) async throws {
+        guard supabase.currentUserID != nil else { return }
         try await supabase.client
-            .from("notification_preferences")
-            .upsert(payload, onConflict: "user_id")
+            .rpc(
+                "set_notification_master_preference_v1",
+                params: MasterNotificationPreferencePayload(enabled: enabled)
+            )
             .execute()
         await refreshPreferences()
     }
@@ -222,7 +383,7 @@ final class NotificationService: NSObject, ObservableObject {
             do {
                 guard let userID = supabase.currentUserID else { return }
                 if notificationPreferences == nil {
-                    try await setPreference(enabled: authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral)
+                    try await setMasterPreference(enabled: systemAuthorizationGranted)
                 }
                 try await supabase.client
                     .from("notification_preferences")
@@ -232,15 +393,37 @@ final class NotificationService: NSObject, ObservableObject {
                 await refreshPreferences()
             } catch {
                 Self.logger.error("Progress notification preference update failed column=\(preference.columnName, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                lastError = "Mesleki bildirim tercihi kaydedilemedi."
+                lastError = RDLocalization.string("notifications.notification.service.mesleki.bildirim.tercihi.kaydedilemedi.9b5fbbd3", table: .notifications, fallback: "Mesleki bildirim tercihi kaydedilemedi.")
             }
         }
     }
 
-    private func refreshPreferences() async {
+    func setAppRemindersPreference(enabled: Bool) {
+        Task {
+            do {
+                guard let userID = supabase.currentUserID else { return }
+                if notificationPreferences == nil {
+                    try await setMasterPreference(enabled: systemAuthorizationGranted)
+                }
+                try await supabase.client
+                    .from("notification_preferences")
+                    .update(AppRemindersPreferencePayload(appReminders: enabled))
+                    .eq("user_id", value: userID.uuidString)
+                    .execute()
+                await refreshPreferences()
+            } catch {
+                Self.logger.error("App reminder preference update failed error=\(error.localizedDescription, privacy: .public)")
+                lastError = RDLocalization.string("notifications.notification.service.uygulama.bildirimi.tercihi.kaydedilemedi.2bfbb347", table: .notifications, fallback: "Uygulama bildirimi tercihi kaydedilemedi.")
+            }
+        }
+    }
+
+    @discardableResult
+    private func refreshPreferences() async -> Bool {
         guard let userID = supabase.currentUserID else {
             notificationPreferences = nil
-            return
+            preferencesUserID = nil
+            return true
         }
         do {
             let rows: [NotificationPreferencesRow] = try await supabase.client
@@ -251,14 +434,21 @@ final class NotificationService: NSObject, ObservableObject {
                 .execute()
                 .value
             notificationPreferences = rows.first
+            preferencesUserID = userID
+            return true
         } catch {
             Self.logger.error("Notification preferences fetch failed error=\(error.localizedDescription, privacy: .public)")
+            return false
         }
     }
 
     private static var isUITestLaunch: Bool {
+        #if DEBUG
         CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
             || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+        #else
+        false
+        #endif
     }
 }
 
@@ -267,11 +457,7 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        let kind = notification.request.content.userInfo["kind"] as? String
-        if kind == "analysis_complete" || kind == "report_ready" {
-            return []
-        }
-        return [.banner, .sound, .badge]
+        return []
     }
 
     nonisolated func userNotificationCenter(
@@ -281,6 +467,25 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         let userInfo = response.notification.request.content.userInfo
         let kind = userInfo["kind"] as? String
         let data = userInfo["data"] as? [String: Any]
+        let rawEventID = (userInfo["event_id"] as? String) ??
+            (data?["notification_event_id"] as? String)
+        await NotificationService.shared.recordNotificationOpen(
+            eventID: rawEventID.flatMap(UUID.init(uuidString:))
+        )
+
+        if data?["destination"] as? String == "new_analysis" {
+            await MainActor.run {
+                NotificationService.shared.pendingOpenNewAnalysis = true
+                NotificationService.shared.pendingDestinationTab = .home
+            }
+            return
+        }
+        if data?["destination"] as? String == "home" {
+            await MainActor.run {
+                NotificationService.shared.pendingDestinationTab = .home
+            }
+            return
+        }
         if kind == "report_ready" ||
             data?["destination"] as? String == "reports" {
             await MainActor.run {
@@ -289,6 +494,7 @@ extension NotificationService: UNUserNotificationCenterDelegate {
             return
         }
         if kind == "account_updates" ||
+            kind == "trial_reminder" ||
             kind?.hasPrefix("progress_") == true ||
             data?["destination"] as? String == "profile" {
             await MainActor.run {
@@ -315,6 +521,18 @@ extension NotificationService: UNUserNotificationCenterDelegate {
 final class RDAppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
+        willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        #if DEBUG
+        if Self.isUITestLaunch {
+            UIView.setAnimationsEnabled(false)
+        }
+        #endif
+        return true
+    }
+
+    func application(
+        _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         NotificationService.shared.didRegisterForRemoteNotifications(deviceToken: deviceToken)
@@ -326,6 +544,13 @@ final class RDAppDelegate: NSObject, UIApplicationDelegate {
     ) {
         NotificationService.shared.didFailToRegisterForRemoteNotifications(error: error)
     }
+
+    #if DEBUG
+    private static var isUITestLaunch: Bool {
+        CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+    }
+    #endif
 }
 
 private enum PushEnvironment {
@@ -346,6 +571,7 @@ private struct PushDeviceTokenPayload: Encodable {
     let appVersion: String?
     let deviceModel: String
     let notificationsEnabled: Bool
+    let lastRegisteredAt: String
 
     enum CodingKeys: String, CodingKey {
         case userID = "user_id"
@@ -355,30 +581,47 @@ private struct PushDeviceTokenPayload: Encodable {
         case appVersion = "app_version"
         case deviceModel = "device_model"
         case notificationsEnabled = "notifications_enabled"
+        case lastRegisteredAt = "last_registered_at"
     }
 }
 
-private struct NotificationPreferencePayload: Encodable {
-    let userID: String
+private struct MasterNotificationPreferencePayload: Encodable {
     let enabled: Bool
-    let analysisComplete: Bool
-    let reportReady: Bool
-    let accountUpdates: Bool
-    let marketing: Bool
-    let progressWeeklySummary: Bool
-    let progressMonthlySummary: Bool
-    let progressMilestones: Bool
 
     enum CodingKeys: String, CodingKey {
-        case userID = "user_id"
-        case enabled
-        case analysisComplete = "analysis_complete"
-        case reportReady = "report_ready"
-        case accountUpdates = "account_updates"
-        case marketing
-        case progressWeeklySummary = "progress_weekly_summary"
-        case progressMonthlySummary = "progress_monthly_summary"
-        case progressMilestones = "progress_milestones"
+        case enabled = "p_enabled"
+    }
+}
+
+private struct AppRemindersPreferencePayload: Encodable {
+    let appReminders: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case appReminders = "app_reminders"
+    }
+}
+
+private struct EngagementStatePayload: Encodable {
+    let timezone: String
+    let locale: String
+    let authorizationStatus: String
+    let appVersion: String?
+    let appBuild: String?
+
+    enum CodingKeys: String, CodingKey {
+        case timezone = "p_timezone"
+        case locale = "p_locale"
+        case authorizationStatus = "p_authorization_status"
+        case appVersion = "p_app_version"
+        case appBuild = "p_app_build"
+    }
+}
+
+private struct NotificationOpenPayload: Encodable {
+    let notificationEventID: String
+
+    enum CodingKeys: String, CodingKey {
+        case notificationEventID = "p_notification_event_id"
     }
 }
 
@@ -406,13 +649,36 @@ private struct ProgressPreferencePayload: Encodable {
 }
 
 private struct NotificationPreferencesRow: Decodable {
+    let enabled: Bool
+    let appReminders: Bool
     let progressWeeklySummary: Bool
     let progressMonthlySummary: Bool
     let progressMilestones: Bool
 
     enum CodingKeys: String, CodingKey {
+        case enabled
+        case appReminders = "app_reminders"
         case progressWeeklySummary = "progress_weekly_summary"
         case progressMonthlySummary = "progress_monthly_summary"
         case progressMilestones = "progress_milestones"
+    }
+}
+
+private extension UNAuthorizationStatus {
+    var backendValue: String {
+        switch self {
+        case .notDetermined:
+            return "not_determined"
+        case .denied:
+            return "denied"
+        case .authorized:
+            return "authorized"
+        case .provisional:
+            return "provisional"
+        case .ephemeral:
+            return "ephemeral"
+        @unknown default:
+            return "not_determined"
+        }
     }
 }

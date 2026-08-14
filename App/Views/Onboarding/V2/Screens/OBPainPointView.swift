@@ -2,16 +2,38 @@ import SwiftUI
 
 struct OBPainPointView: View {
     let onNext: () -> Void
-    let onSkip: () -> Void
 
     @State private var checked: [Bool] = [false, false, false]
     @State private var shimmer: CGFloat = -1.0
 
-    private let pains: [(icon: String, text: String)] = [
-        ("clock", "Saatlerce süren rapor yazımı."),
-        ("photo.on.rectangle.angled", "Dağınık fotoğraflar ve notlar."),
-        ("calendar.badge.exclamationmark", "Geç teslim edilen değerlendirmeler.")
-    ]
+    private var pains: [(icon: String, text: String)] {
+        [
+            (
+                "clock",
+                RDLocalization.string(
+                    "onboarding.pain.report_writing",
+                    table: .onboarding,
+                    fallback: "Saatlerce süren rapor yazımı."
+                )
+            ),
+            (
+                "photo.on.rectangle.angled",
+                RDLocalization.string(
+                    "onboarding.pain.scattered_material",
+                    table: .onboarding,
+                    fallback: "Dağınık fotoğraflar ve notlar."
+                )
+            ),
+            (
+                "calendar.badge.exclamationmark",
+                RDLocalization.string(
+                    "onboarding.pain.late_assessments",
+                    table: .onboarding,
+                    fallback: "Geç teslim edilen değerlendirmeler."
+                )
+            )
+        ]
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,27 +45,27 @@ struct OBPainPointView: View {
                         OBHeroTile(tint: .dusk) {
                             ZStack {
                                 Image(systemName: "moon.stars.fill")
-                                    .font(.system(size: 22))
+                                    .font(.system(size: RDFontScale.size(22)))
                                     .foregroundStyle(Color(hex: "#F4F1E8"))
                                     .offset(x: 32, y: -18)
                                 Image(systemName: "doc.text.fill")
-                                    .font(.system(size: 44))
+                                    .font(.system(size: RDFontScale.size(44)))
                                     .foregroundStyle(Color(hex: "#F8F7F3"))
                                     .rotationEffect(.degrees(5))
                             }
                         }
                         .obStage(delay: 0.08)
 
-                        Text("Sahada gördüklerini akşam ofiste mi yazıyorsun?")
-                            .font(.system(size: 24, weight: .semibold))
+                        Text(RDLocalization.string("onboarding.obpain.point.view.sahada.gorduklerini.aksam.ofiste.mi.yaziyorsun.4ae8a20e", table: .onboarding, fallback: "Sahada gördüklerini akşam ofiste mi yazıyorsun?"))
+                            .font(.system(size: RDFontScale.size(24), weight: .semibold))
                             .tracking(-0.6)
                             .lineSpacing(2)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
 
-                        Text("Tanıdık geliyor mu?")
-                            .font(.system(size: 14))
+                        Text(RDLocalization.string("onboarding.obpain.point.view.tanidik.geliyor.mu.f06d0cd9", table: .onboarding, fallback: "Tanıdık geliyor mu?"))
+                            .font(.system(size: RDFontScale.size(14)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.22)
@@ -72,34 +94,24 @@ struct OBPainPointView: View {
             }
 
             OBFooter {
-                OBPrimaryButton(title: "Devam", accessibilityID: "onboarding.pain.continue") { onNext() }
-                    .obStage(delay: 0.78)
-                Button {
-                    OBHaptic.soft(); onSkip()
-                } label: {
-                    Text("Atla")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Color.rdSlate.opacity(0.6))
-                        .padding(.vertical, 6)
-                }
-                .obStage(delay: 0.88)
-                .accessibilityIdentifier("onboarding.pain.skip")
+                OBPrimaryButton(title: RDLocalization.string("onboarding.obpain.point.view.devam.9bac1052", table: .onboarding, fallback: "Devam"), accessibilityID: "onboarding.pain.continue") { onNext() }
             }
         }
         .background(Color.rdPaper)
         .onAppear { runCheckSequence() }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.pain_point")
     }
 
     private func painCard(icon: String, text: String, isChecked: Bool) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 20, weight: .regular))
+                .font(.system(size: RDFontScale.size(20), weight: .regular))
                 .foregroundStyle(Color.rdOnyx)
                 .frame(width: 40, height: 40)
 
             Text(text)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: RDFontScale.size(14), weight: .medium))
                 .foregroundStyle(Color.rdOnyx)
                 .lineLimit(2)
             Spacer()
@@ -113,7 +125,7 @@ struct OBPainPointView: View {
                     .scaleEffect(isChecked ? 1 : 0.2)
                     .opacity(isChecked ? 1 : 0)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .heavy))
+                    .font(.system(size: RDFontScale.size(12), weight: .heavy))
                     .foregroundStyle(.white)
                     .opacity(isChecked ? 1 : 0)
                     .scaleEffect(isChecked ? 1 : 0.4)
@@ -130,10 +142,28 @@ struct OBPainPointView: View {
 
     private var mirror: some View {
         HStack {
-            (Text("Bunu ").foregroundColor(.white)
-             + Text("birlikte").foregroundColor(Color(hex: "#4FE07E")).bold()
-             + Text(" değiştireceğiz.").foregroundColor(.white))
-                .font(.system(size: 16, weight: .medium))
+            (Text(
+                RDLocalization.string(
+                    "onboarding.pain.mirror.prefix",
+                    table: .onboarding,
+                    fallback: "Bunu "
+                )
+            ).foregroundColor(.white)
+             + Text(
+                RDLocalization.string(
+                    "onboarding.pain.mirror.emphasis",
+                    table: .onboarding,
+                    fallback: "birlikte"
+                )
+             ).foregroundColor(Color(hex: "#4FE07E")).bold()
+             + Text(
+                RDLocalization.string(
+                    "onboarding.pain.mirror.suffix",
+                    table: .onboarding,
+                    fallback: " değiştireceğiz."
+                )
+             ).foregroundColor(.white))
+                .font(.system(size: RDFontScale.size(16), weight: .medium))
             Spacer()
         }
         .padding(.horizontal, 20).padding(.vertical, 16)
@@ -184,4 +214,8 @@ struct OBPainPointView: View {
             animateShimmer()
         }
     }
+}
+
+#Preview {
+    OBPainPointView(onNext: {})
 }

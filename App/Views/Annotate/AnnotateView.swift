@@ -3,6 +3,8 @@ import PencilKit
 
 struct AnnotateView: View {
     var initialImage: UIImage? = nil
+    var primaryActionTitle: String = RDLocalization.string("analysis.annotate.view.isaretli.alanlari.analiz.et.517dc960", table: .analysis, fallback: "İşaretli alanları analiz et")
+    var primaryActionIcon: String = "sparkles"
     var onCancel: () -> Void
     var onAnalyze: (UIImage) -> Void
 
@@ -35,7 +37,7 @@ struct AnnotateView: View {
         HStack {
             Button(action: onCancel) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
                     .background(Color.white.opacity(0.12))
@@ -44,14 +46,14 @@ struct AnnotateView: View {
             .buttonStyle(RDPressableButtonStyle())
 
             Spacer()
-            Text("İşaretleme")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+            Text(RDLocalization.string("analysis.annotate.view.isaretleme.4574bc26", table: .analysis, fallback: "İşaretleme"))
+                .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
             Spacer()
 
             Button(action: undoLast) {
                 Image(systemName: "arrow.uturn.backward")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
                     .background(Color.white.opacity(0.12))
@@ -77,7 +79,7 @@ struct AnnotateView: View {
                         .background(Color.black)
                         .clipShape(RoundedRectangle(cornerRadius: 18))
                 } else {
-                    RDPlaceholderPhoto(label: "Saha fotoğrafı", cornerRadius: 18)
+                    RDPlaceholderPhoto(label: RDLocalization.string("analysis.annotate.view.saha.fotografi.0060bd58", table: .analysis, fallback: "Saha fotoğrafı"), cornerRadius: 18)
                 }
 
                 // Önceki şekiller
@@ -129,9 +131,9 @@ struct AnnotateView: View {
                 } label: {
                     VStack(spacing: 2) {
                         Image(systemName: t.icon)
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                         Text(t.label)
-                            .font(.system(size: 9, weight: .semibold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
                     }
                     .frame(width: 52, height: 44)
                     .foregroundStyle(active ? Color.white : Color.black)
@@ -178,7 +180,7 @@ struct AnnotateView: View {
     // MARK: - Bottom CTA
 
     private var bottomCTA: some View {
-        RDButton(title: "İşaretli alanları analiz et", style: .detect, icon: "sparkles") {
+        RDButton(title: primaryActionTitle, style: .detect, icon: primaryActionIcon) {
             onAnalyze(flattenedImage())
         }
         .padding(.horizontal, 20)
@@ -214,6 +216,9 @@ struct AnnotateView: View {
 
     // MARK: - Flatten annotated image
 
+    private let minFlattenedLongEdge: CGFloat = 1600
+    private let maxFlattenedLongEdge: CGFloat = 2400
+
     /// `.scaledToFit` ile aynı aspect-fit rect — fotoğrafın ekranda göründüğü alan.
     private func aspectFitRect(imageSize: CGSize, in container: CGSize) -> CGRect {
         guard imageSize.width > 0, imageSize.height > 0 else {
@@ -232,63 +237,93 @@ struct AnnotateView: View {
         }
     }
 
+    private func flattenedRenderPlan() -> (displaySize: CGSize, targetSize: CGSize, scale: CGFloat) {
+        let displaySize = photoSize.width > 0 && photoSize.height > 0
+        ? photoSize
+        : CGSize(width: 1080, height: 1080)
+        let displayLongEdge = max(displaySize.width, displaySize.height)
+        guard displayLongEdge > 0 else {
+            return (displaySize, displaySize, 1)
+        }
+
+        let sourceLongEdge = initialImage.map { max($0.size.width, $0.size.height) } ?? displayLongEdge
+        let targetLongEdge = min(max(sourceLongEdge, minFlattenedLongEdge), maxFlattenedLongEdge)
+        let scale = max(1, targetLongEdge / displayLongEdge)
+        let targetSize = CGSize(
+            width: max((displaySize.width * scale).rounded(), 1),
+            height: max((displaySize.height * scale).rounded(), 1)
+        )
+        return (displaySize, targetSize, scale)
+    }
+
     private func flattenedImage() -> UIImage {
-        let size = photoSize.width > 0 ? photoSize : CGSize(width: 1080, height: 1080)
-        let renderer = UIGraphicsImageRenderer(size: size)
+        let plan = flattenedRenderPlan()
+        let displaySize = plan.displaySize
+        let targetSize = plan.targetSize
+        let renderScale = plan.scale
+
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+
+        let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
         return renderer.image { ctx in
             let cgCtx = ctx.cgContext
 
             // 0. Siyah arka plan (letterbox alanı)
             cgCtx.setFillColor(UIColor.black.cgColor)
-            cgCtx.fill(CGRect(origin: .zero, size: size))
+            cgCtx.fill(CGRect(origin: .zero, size: targetSize))
 
             // 1. Base photo — ekrandaki scaledToFit ile aynı rect
             if let img = initialImage {
-                let fitRect = aspectFitRect(imageSize: img.size, in: size)
+                let fitRect = aspectFitRect(imageSize: img.size, in: targetSize)
                 img.draw(in: fitRect)
             }
 
             // 2. PK drawing (pen strokes) — container koordinatlarında
-            let pkImg = pkCanvas.drawing.image(from: CGRect(origin: .zero, size: size),
-                                               scale: UIScreen.main.scale)
-            pkImg.draw(in: CGRect(origin: .zero, size: size))
+            let pkImg = pkCanvas.drawing.image(
+                from: CGRect(origin: .zero, size: displaySize),
+                scale: renderScale
+            )
+            pkImg.draw(in: CGRect(origin: .zero, size: targetSize))
 
             // 3. Shape annotations
             for s in shapes {
-                let sx = s.start.x * size.width, sy = s.start.y * size.height
-                let ex = s.end.x * size.width, ey = s.end.y * size.height
+                let sx = s.start.x * targetSize.width, sy = s.start.y * targetSize.height
+                let ex = s.end.x * targetSize.width, ey = s.end.y * targetSize.height
                 let start = CGPoint(x: sx, y: sy)
                 let end   = CGPoint(x: ex, y: ey)
                 let rect  = CGRect(x: min(sx, ex), y: min(sy, ey),
                                    width: abs(ex - sx), height: abs(ey - sy))
                 let uiColor = s.color.uiColor
+                let lineWidth = max(3 * renderScale, 3)
 
                 switch s.tool {
                 case .rect:
                     cgCtx.setFillColor(uiColor.withAlphaComponent(0.12).cgColor)
                     cgCtx.setStrokeColor(uiColor.cgColor)
-                    cgCtx.setLineWidth(3)
-                    let path = UIBezierPath(roundedRect: rect, cornerRadius: 6)
+                    cgCtx.setLineWidth(lineWidth)
+                    let path = UIBezierPath(roundedRect: rect, cornerRadius: 6 * renderScale)
                     cgCtx.addPath(path.cgPath)
                     cgCtx.drawPath(using: .fillStroke)
 
                 case .circle:
                     cgCtx.setFillColor(uiColor.withAlphaComponent(0.10).cgColor)
                     cgCtx.setStrokeColor(uiColor.cgColor)
-                    cgCtx.setLineWidth(3)
+                    cgCtx.setLineWidth(lineWidth)
                     cgCtx.addEllipse(in: rect)
                     cgCtx.drawPath(using: .fillStroke)
 
                 case .arrow:
                     cgCtx.setStrokeColor(uiColor.cgColor)
-                    cgCtx.setLineWidth(3)
+                    cgCtx.setLineWidth(lineWidth)
                     cgCtx.setLineCap(.round)
                     cgCtx.move(to: start)
                     cgCtx.addLine(to: end)
                     cgCtx.strokePath()
                     // Arrowhead
                     let angle = atan2(end.y - start.y, end.x - start.x)
-                    let arrowSize: CGFloat = 12
+                    let arrowSize: CGFloat = 12 * renderScale
                     let a1 = angle + .pi - .pi / 7
                     let a2 = angle + .pi + .pi / 7
                     cgCtx.setFillColor(uiColor.cgColor)

@@ -27,7 +27,7 @@ enum ReportFailureSimulation {
             domain: "RiskDetected.ReportFailureSimulation",
             code: -1,
             userInfo: [
-                NSLocalizedDescriptionKey: "Simulated report failure: \(mode.rawValue)"
+                NSLocalizedDescriptionKey: RDLocalization.format("reports.report.failure.simulation.simulated.report.failure.1.db4855fa", table: .reports, fallback: "Simüle edilmiş rapor hatası: %1$@", arguments: [String(describing: mode.rawValue)])
             ]
         )
     }

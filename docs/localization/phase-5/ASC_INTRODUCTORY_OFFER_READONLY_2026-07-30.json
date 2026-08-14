@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-30T23:58:00+03:00",
+  "source": "App Store Connect API via asc 1.8.0",
+  "mutation_performed": false,
+  "products": [
+    {
+      "subscription_id": "6769501024",
+      "product_id": "riskdetected_plus_monthly",
+      "introductory_offer_count": 0
+    },
+    {
+      "subscription_id": "6769501933",
+      "product_id": "riskdetected_plus_yearly",
+      "introductory_offer_count": 175,
+      "uniform_offer": {
+        "start_date": "2026-05-30",
+        "end_date": "2026-09-30",
+        "duration": "ONE_WEEK",
+        "offer_mode": "FREE_TRIAL",
+        "number_of_periods": 1
+      },
+      "required_wave_1_territories_present": [
+        "AU",
+        "CA",
+        "GB",
+        "US"
+      ]
+    },
+    {
+      "subscription_id": "6769504185",
+      "product_id": "riskdetected_pro_monthly",
+      "introductory_offer_count": 0
+    },
+    {
+      "subscription_id": "6769504261",
+      "product_id": "riskdetected_pro_yearly",
+      "introductory_offer_count": 0
+    }
+  ],
+  "result": "unchanged_from_2026-07-28_baseline"
+}

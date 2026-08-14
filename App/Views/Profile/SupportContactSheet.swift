@@ -6,6 +6,8 @@ import UIKit
 struct SupportContactSheet: View {
     let profile: UserProfile?
     let tier: SubscriptionTier
+    let appLanguage: RDAppLanguage
+    let contentLocale: RDContentLocale
     let onClose: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -62,7 +64,7 @@ struct SupportContactSheet: View {
                     }
                 }
             }
-            .navigationTitle("Destek")
+            .navigationTitle(RDLocalization.string("localizable.support.contact.sheet.destek.05e6a313", table: .localizable, fallback: "Destek"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -75,7 +77,7 @@ struct SupportContactSheet: View {
         }
         .fileImporter(
             isPresented: $showFileImporter,
-            allowedContentTypes: [.item],
+            allowedContentTypes: [.jpeg, .png, .pdf],
             allowsMultipleSelection: false
         ) { result in
             Task { await handleImportedFile(result) }
@@ -90,18 +92,18 @@ struct SupportContactSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 Image(systemName: "headphones")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 48, height: 48)
                     .background(Color.rdGreenSoft)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("RiskDetected destek")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                    Text(RDLocalization.string("localizable.support.contact.sheet.riskdetected.destek.e11a7270", table: .localizable, fallback: "RiskDetected destek"))
+                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("Konu, mesaj ve gerekirse ekran görüntüsü ekleyerek bize ulaş.")
-                        .font(.system(size: 13, design: .rounded))
+                    Text(RDLocalization.string("localizable.support.contact.sheet.konu.mesaj.ve.gerekirse.ekran.goruntusu.ekleyere.4dd76367", table: .localizable, fallback: "Konu, mesaj ve gerekirse ekran görüntüsü ekleyerek bize ulaş."))
+                        .font(.system(size: RDFontScale.size(13), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -118,11 +120,11 @@ struct SupportContactSheet: View {
 
     private var senderCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("Gönderen")
-            supportInfoRow(icon: "person.fill", title: "Ad soyad", value: profile?.displayName ?? "Kayıtlı değil")
-            supportInfoRow(icon: "envelope.fill", title: "E-posta", value: profile?.email ?? "Kayıtlı değil")
-            supportInfoRow(icon: "phone.fill", title: "Telefon", value: profile?.phone ?? "Kayıtlı değil")
-            supportInfoRow(icon: tier.badgeIcon, title: "Plan", value: tier.title)
+            sectionLabel(RDLocalization.string("localizable.support.contact.sheet.gonderen.1bc4fb4a", table: .localizable, fallback: "Gönderen"))
+            supportInfoRow(icon: "person.fill", title: RDLocalization.string("localizable.support.contact.sheet.ad.soyad.76ebaa37", table: .localizable, fallback: "Ad soyad"), value: profile?.displayName ?? RDLocalization.string("localizable.support.contact.sheet.kayitli.degil.d9c4334d", table: .localizable, fallback: "Kayıtlı değil"))
+            supportInfoRow(icon: "envelope.fill", title: RDLocalization.string("localizable.support.contact.sheet.e.posta.65913732", table: .localizable, fallback: "E-posta"), value: profile?.email ?? RDLocalization.string("localizable.support.contact.sheet.kayitli.degil.f107e88e", table: .localizable, fallback: "Kayıtlı değil"))
+            supportInfoRow(icon: "phone.fill", title: RDLocalization.string("localizable.support.contact.sheet.telefon.886d484e", table: .localizable, fallback: "Telefon"), value: profile?.phone ?? RDLocalization.string("localizable.support.contact.sheet.kayitli.degil.076de3b1", table: .localizable, fallback: "Kayıtlı değil"))
+            supportInfoRow(icon: tier.badgeIcon, title: RDLocalization.string("localizable.support.contact.sheet.plan.327d57d0", table: .localizable, fallback: "Planı"), value: tier.title)
         }
         .padding(16)
         .background(Color.rdWhite)
@@ -135,12 +137,12 @@ struct SupportContactSheet: View {
 
     private var formCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionLabel("Talep")
+            sectionLabel(RDLocalization.string("localizable.support.contact.sheet.talep.e2063e6f", table: .localizable, fallback: "Talep"))
             VStack(alignment: .leading, spacing: 7) {
-                Text("Konu")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                Text(RDLocalization.string("localizable.support.contact.sheet.konu.ed0d8962", table: .localizable, fallback: "Konu"))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
-                TextField("Kısa bir konu yaz", text: $subject)
+                TextField(RDLocalization.string("localizable.support.contact.sheet.kisa.bir.konu.yaz.765f1671", table: .localizable, fallback: "Kısa bir konu yaz"), text: $subject)
                     .textInputAutocapitalization(.sentences)
                     .focused($focusedField, equals: .subject)
                     .submitLabel(.next)
@@ -151,8 +153,8 @@ struct SupportContactSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 7) {
-                Text("Mesaj")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                Text(RDLocalization.string("localizable.support.contact.sheet.mesaj.35edbcb6", table: .localizable, fallback: "Mesaj"))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 TextEditor(text: $message)
                     .focused($focusedField, equals: .message)
@@ -163,8 +165,8 @@ struct SupportContactSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(alignment: .topLeading) {
                         if message.isEmpty {
-                            Text("Sorunu, isteğini veya gördüğün ekranı anlat...")
-                                .font(.system(size: 15, design: .rounded))
+                            Text(RDLocalization.string("localizable.support.contact.sheet.sorunu.istegini.veya.gordugun.ekrani.anlat.93c57b7b", table: .localizable, fallback: "Sorunu, isteğini veya gördüğün ekranı anlat..."))
+                                .font(.system(size: RDFontScale.size(15), design: .rounded))
                                 .foregroundStyle(Color.rdSlate.opacity(0.72))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 18)
@@ -184,25 +186,25 @@ struct SupportContactSheet: View {
 
     private var attachmentCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionLabel("Ek")
+            sectionLabel(RDLocalization.string("localizable.support.contact.sheet.ek.c7e0a951", table: .localizable, fallback: "Ek"))
             ForEach(attachments) { attachment in
                 attachmentRow(attachment)
             }
 
             if attachments.count >= 3 {
-                Text("En fazla 3 ek ekleyebilirsin.")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                Text(RDLocalization.string("localizable.support.contact.sheet.en.fazla.3.ek.ekleyebilirsin.8ac2432b", table: .localizable, fallback: "En fazla 3 ek ekleyebilirsin."))
+                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 HStack(spacing: 10) {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                        attachmentButton(icon: "photo.on.rectangle.angled", title: "Fotoğraf")
+                        attachmentButton(icon: "photo.on.rectangle.angled", title: RDLocalization.string("localizable.support.contact.sheet.fotograf.07da075c", table: .localizable, fallback: "Fotoğraf"))
                     }
                     Button {
                         showFileImporter = true
                     } label: {
-                        attachmentButton(icon: "doc.badge.plus", title: "Dosya")
+                        attachmentButton(icon: "doc.badge.plus", title: RDLocalization.string("localizable.support.contact.sheet.dosya.f193f199", table: .localizable, fallback: "Dosya"))
                     }
                     .buttonStyle(.plain)
                 }
@@ -220,18 +222,18 @@ struct SupportContactSheet: View {
     private func attachmentRow(_ attachment: SupportAttachmentDraft) -> some View {
         HStack(spacing: 12) {
             Image(systemName: attachment.mimeType.hasPrefix("image/") ? "photo.fill" : "paperclip")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .frame(width: 44, height: 44)
                 .background(Color.rdGreenSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 13))
             VStack(alignment: .leading, spacing: 2) {
                 Text(attachment.filename)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
                 Text(attachment.formattedSize)
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
             Spacer()
@@ -239,7 +241,7 @@ struct SupportContactSheet: View {
                 attachments.removeAll { $0.id == attachment.id }
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(width: 32, height: 32)
                     .background(Color.rdFog)
@@ -262,10 +264,10 @@ struct SupportContactSheet: View {
                         .tint(.white)
                 } else {
                     Image(systemName: "paperplane.fill")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 }
-                Text(isSending ? "Gönderiliyor" : "Destek talebi gönder")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                Text(isSending ? RDLocalization.string("localizable.support.contact.sheet.gonderiliyor.5ae65683", table: .localizable, fallback: "Gönderiliyor") : RDLocalization.string("localizable.support.contact.sheet.destek.talebi.gonder.0aeffa33", table: .localizable, fallback: "Destek talebi gönder"))
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -280,17 +282,17 @@ struct SupportContactSheet: View {
     private func supportInfoRow(icon: String, title: String, value: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .frame(width: 30, height: 30)
                 .background(Color.rdGreenSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 9))
             Text(title)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
             Spacer(minLength: 12)
             Text(value)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .lineLimit(1)
         }
@@ -298,7 +300,7 @@ struct SupportContactSheet: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.system(size: 11, weight: .bold, design: .rounded))
+            .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
             .tracking(0.6)
             .foregroundStyle(Color.rdSlate)
     }
@@ -306,9 +308,9 @@ struct SupportContactSheet: View {
     private func attachmentButton(icon: String, title: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
             Text(title)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
         }
         .foregroundStyle(Color.rdBlack)
         .frame(maxWidth: .infinity)
@@ -320,10 +322,10 @@ struct SupportContactSheet: View {
     private func noticeCard(_ text: String, icon: String, color: Color, background: Color) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                 .foregroundStyle(color)
             Text(text)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(color)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -346,14 +348,19 @@ struct SupportContactSheet: View {
                 SupportRequestInput(
                     subject: subject.trimmingCharacters(in: .whitespacesAndNewlines),
                     message: message.trimmingCharacters(in: .whitespacesAndNewlines),
-                    attachments: attachments
+                    attachments: attachments,
+                    appLanguage: appLanguage,
+                    contentLocale: contentLocale
                 )
             )
-            let supportID = result.supportID ?? "oluşturuldu"
-            if result.deliveryStatus == "sent" {
-                successMessage = "Talebin gönderildi. Destek kodu: \(supportID)"
+            let supportID = result.supportID ?? RDLocalization.string("localizable.support.contact.sheet.olusturuldu.55daf5fd", table: .localizable, fallback: "oluşturuldu")
+            if let acknowledgement = result.acknowledgement?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !acknowledgement.isEmpty {
+                successMessage = acknowledgement
+            } else if result.deliveryStatus == "sent" {
+                successMessage = RDLocalization.format("localizable.support.contact.sheet.talebin.gonderildi.destek.kodu.1.2c87b88e", table: .localizable, fallback: "Talebin gönderildi. Destek kodu: %1$@", arguments: [String(describing: supportID)])
             } else {
-                successMessage = "Talebin kaydedildi. Destek kodu: \(supportID)"
+                successMessage = RDLocalization.format("localizable.support.contact.sheet.talebin.kaydedildi.destek.kodu.1.af3a6121", table: .localizable, fallback: "Talebin kaydedildi. Destek kodu: %1$@", arguments: [String(describing: supportID)])
             }
             subject = ""
             message = ""
@@ -368,7 +375,7 @@ struct SupportContactSheet: View {
             guard let rawData = try await item.loadTransferable(type: Data.self),
                   let image = UIImage(data: rawData),
                   let jpegData = image.supportJPEG(maxDimension: 1600, compressionQuality: 0.78) else {
-                errorMessage = "Fotoğraf hazırlanamadı."
+                errorMessage = RDLocalization.string("localizable.support.contact.sheet.fotograf.hazirlanamadi.71737e0b", table: .localizable, fallback: "Fotoğraf hazırlanamadı.")
                 return
             }
             try setAttachment(
@@ -377,7 +384,7 @@ struct SupportContactSheet: View {
                 mimeType: "image/jpeg"
             )
         } catch {
-            errorMessage = "Fotoğraf eklenemedi."
+            errorMessage = RDLocalization.string("localizable.support.contact.sheet.fotograf.eklenemedi.33fcc117", table: .localizable, fallback: "Fotoğraf eklenemedi.")
         }
     }
 
@@ -392,17 +399,17 @@ struct SupportContactSheet: View {
             let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
             try setAttachment(data: data, filename: url.lastPathComponent, mimeType: mimeType)
         } catch {
-            errorMessage = "Dosya eklenemedi."
+            errorMessage = RDLocalization.string("localizable.support.contact.sheet.dosya.eklenemedi.3947311d", table: .localizable, fallback: "Dosya eklenemedi.")
         }
     }
 
     private func setAttachment(data: Data, filename: String, mimeType: String) throws {
         guard attachments.count < 3 else {
-            errorMessage = "En fazla 3 ek ekleyebilirsin."
+            errorMessage = RDLocalization.string("localizable.support.contact.sheet.en.fazla.3.ek.ekleyebilirsin.8d8f0825", table: .localizable, fallback: "En fazla 3 ek ekleyebilirsin.")
             return
         }
         guard data.count <= 5_000_000 else {
-            errorMessage = "Ek dosya 5 MB'dan küçük olmalı."
+            errorMessage = RDLocalization.string("localizable.support.contact.sheet.ek.dosya.5.mb.dan.kucuk.olmali.054a77f6", table: .localizable, fallback: "Ek dosya 5 MB'dan küçük olmalı.")
             return
         }
         attachments.append(SupportAttachmentDraft(filename: uniqueAttachmentName(filename), mimeType: mimeType, data: data))

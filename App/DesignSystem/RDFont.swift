@@ -54,12 +54,12 @@ enum RDFontStyle {
 
 extension View {
     func rdFont(_ style: RDFontStyle) -> some View {
-        self.font(.system(size: style.size, weight: style.weight, design: style.design))
+        self.font(.system(size: RDFontScale.size(style.size), weight: style.weight, design: style.design))
     }
 }
 
 extension Text {
     func rdMono(size: CGFloat = 12, weight: Font.Weight = .medium) -> Text {
-        self.font(.system(size: size, weight: weight, design: .monospaced))
+        self.font(.system(size: RDFontScale.size(size), weight: weight, design: .monospaced))
     }
 }

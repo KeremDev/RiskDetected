@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RDUpgradeCTA: View {
     var tier: SubscriptionTier
@@ -38,10 +39,10 @@ struct RDUpgradeCTA: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: icon ?? tier.badgeIcon)
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 Text(title ?? tier.badgeLabel)
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(10), weight: .heavy, design: .rounded))
                     .tracking(title == nil ? 0.7 : 0.1)
                     .foregroundStyle(.white)
             }
@@ -63,13 +64,14 @@ struct RDUpgradeCTA: View {
             .shadow(color: tier.accentColor.opacity(0.24), radius: 8, x: 0, y: 3)
         }
         .buttonStyle(RDPressableButtonStyle())
-        .accessibilityLabel(isActive ? "\(tier.title) aktif" : (title ?? "\(tier.title)'a geç"))
+        .accessibilityLabel(isActive ? "\(tier.title) aktif" : (title ?? RDLocalization.format("localizable.rdupgrade.cta.1.a.gec.9c575241", table: .localizable, fallback: "%1$@'a geç", arguments: [String(describing: tier.title)])))
     }
 }
 
 struct RDHeaderAccountCTA: View {
     @EnvironmentObject private var app: AppState
     @State private var showMenu = false
+    @State private var avatarImage: UIImage?
     var onUpgrade: () -> Void
 
     var body: some View {
@@ -77,7 +79,7 @@ struct RDHeaderAccountCTA: View {
             if !app.isPro {
                 RDUpgradeCTA(
                     tier: app.currentTier == .plus ? .pro : .plus,
-                    title: "Yükselt",
+                    title: RDLocalization.string("localizable.rdupgrade.cta.yukselt.72b0d588", table: .localizable, fallback: "Yükselt"),
                     icon: "arrow.up.circle.fill",
                     action: onUpgrade
                 )
@@ -90,6 +92,7 @@ struct RDHeaderAccountCTA: View {
             } label: {
                 RDAvatar(
                     initials: app.profile?.displayInitials ?? "—",
+                    image: avatarImage,
                     size: 36,
                     tier: app.currentTier
                 )
@@ -120,6 +123,7 @@ struct RDHeaderAccountCTA: View {
                             closeMenu()
                             onUpgrade()
                         },
+                        onSettings: openProfilePreferences,
                         onSignOut: {
                             closeMenu()
                             app.signOut()
@@ -134,6 +138,9 @@ struct RDHeaderAccountCTA: View {
                 }
             }
         }
+        .task(id: app.profile?.avatarURL) {
+            await loadAvatarImage()
+        }
         .zIndex(30)
     }
 
@@ -142,9 +149,29 @@ struct RDHeaderAccountCTA: View {
         app.activeTab = tab
     }
 
+    private func openProfilePreferences() {
+        closeMenu()
+        app.requestProfileDestination(.preferences)
+    }
+
     private func closeMenu() {
         withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
             showMenu = false
+        }
+    }
+
+    private func loadAvatarImage() async {
+        guard let path = app.profile?.avatarURL?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty
+        else {
+            avatarImage = nil
+            return
+        }
+
+        do {
+            avatarImage = try await app.auth.profileAvatarImage(path: path)
+        } catch {
+            avatarImage = nil
         }
     }
 }
@@ -155,24 +182,25 @@ private struct RDHeaderProfileMenu: View {
     let onAnalyses: () -> Void
     let onReports: () -> Void
     let onUpgrade: () -> Void
+    let onSettings: () -> Void
     let onSignOut: () -> Void
     let onToggleTheme: () -> Void
 
     var body: some View {
         VStack(spacing: 6) {
             VStack(spacing: 0) {
-                menuButton(icon: "square.dashed", title: "Analizlerim", action: onAnalyses)
+                menuButton(icon: "square.dashed", title: RDLocalization.string("localizable.rdupgrade.cta.analizlerim.51ca6988", table: .localizable, fallback: "Analizlerim"), action: onAnalyses)
                 Divider().background(Color.rdLine).padding(.leading, 40)
-                menuButton(icon: "doc.text", title: "Raporlarım", action: onReports)
+                menuButton(icon: "doc.text", title: RDLocalization.string("localizable.rdupgrade.cta.raporlarim.1115ba4f", table: .localizable, fallback: "Raporlarım"), action: onReports)
                 Divider().background(Color.rdLine).padding(.leading, 40)
                 if currentTier.isPaid {
                     menuInfo(
                         icon: currentTier.badgeIcon,
-                        title: "\(currentTier.title) üyesiniz",
+                        title: RDLocalization.format("localizable.rdupgrade.cta.1.uyesiniz.d6d4c039", table: .localizable, fallback: "%1$@ üyesiniz", arguments: [String(describing: currentTier.title)]),
                         tint: currentTier.accentColor
                     )
                 } else {
-                    menuButton(icon: SubscriptionTier.plus.badgeIcon, title: "Plan Yükselt", tint: .rdPlanPlus, action: onUpgrade)
+                    menuButton(icon: SubscriptionTier.plus.badgeIcon, title: RDLocalization.string("localizable.rdupgrade.cta.plan.yukselt.023472ba", table: .localizable, fallback: "Plan Yükselt"), tint: .rdPlanPlus, action: onUpgrade)
                 }
             }
 
@@ -183,21 +211,28 @@ private struct RDHeaderProfileMenu: View {
                     icon: "rectangle.portrait.and.arrow.right",
                     tint: .rdCriticalText,
                     background: .rdCriticalBg,
-                    label: "Çıkış yap",
+                    label: RDLocalization.string("localizable.rdupgrade.cta.cikis.yap.7bffbf5f", table: .localizable, fallback: "Çıkış yap"),
                     action: onSignOut
+                )
+                iconButton(
+                    icon: "gearshape.fill",
+                    tint: .rdCharcoal,
+                    background: .rdFog,
+                    label: RDLocalization.string("localizable.rdupgrade.cta.ayarlar.97d7daa0", table: .localizable, fallback: "Ayarlar"),
+                    action: onSettings
                 )
                 iconButton(
                     icon: isDarkMode ? "sun.max.fill" : "moon.fill",
                     tint: .rdGreen,
                     background: .rdGreenSoft,
-                    label: isDarkMode ? "Aydınlık mod" : "Karanlık mod",
+                    label: isDarkMode ? RDLocalization.string("localizable.rdupgrade.cta.aydinlik.mod.fe8c009c", table: .localizable, fallback: "Aydınlık mod") : RDLocalization.string("localizable.rdupgrade.cta.karanlik.mod.07170435", table: .localizable, fallback: "Karanlık mod"),
                     action: onToggleTheme
                 )
             }
             .padding(.top, 2)
         }
         .padding(8)
-        .frame(width: 190)
+        .frame(width: 174)
         .background(Color.rdWhite)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
@@ -211,18 +246,18 @@ private struct RDHeaderProfileMenu: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .frame(width: 28, height: 28)
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .frame(width: 27, height: 27)
                     .foregroundStyle(tint)
                     .background(tint.opacity(0.10))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 7)
             .padding(.vertical, 8)
             .contentShape(Rectangle())
         }
@@ -232,18 +267,18 @@ private struct RDHeaderProfileMenu: View {
     private func menuInfo(icon: String, title: String, tint: Color) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .frame(width: 28, height: 28)
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .frame(width: 27, height: 27)
                 .foregroundStyle(tint)
                 .background(tint.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Text(title)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 7)
         .padding(.vertical, 8)
         .accessibilityLabel(title)
     }
@@ -257,10 +292,10 @@ private struct RDHeaderProfileMenu: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(maxWidth: .infinity)
-                .frame(height: 38)
+                .frame(height: 36)
                 .background(background)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }

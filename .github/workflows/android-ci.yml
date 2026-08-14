@@ -1,0 +1,167 @@
+name: android-ci
+
+# First CI pipeline in this repo (review §28 "CI/CD" — previously all manual via scripts/).
+# Scope: Android plus the additive Supabase contracts it consumes. Runs on every PR/push touching
+# android/, contracts/, or the backend function/migration/test surface so an Android contract
+# change cannot merge without both client and server quality gates.
+
+on:
+  pull_request:
+    paths:
+      - "android/**"
+      - "contracts/**"
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - "docs/android/**"
+      - ".github/workflows/android-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - "contracts/**"
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - "docs/android/**"
+
+defaults:
+  run:
+    working-directory: android
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    env:
+      RD_STAGING_SUPABASE_URL: ${{ secrets.RD_STAGING_SUPABASE_URL }}
+      RD_STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.RD_STAGING_SUPABASE_PUBLISHABLE_KEY }}
+      RD_STAGING_FIREBASE_PROJECT_ID: ${{ secrets.RD_STAGING_FIREBASE_PROJECT_ID }}
+      RD_STAGING_GOOGLE_WEB_CLIENT_ID: ${{ secrets.RD_STAGING_GOOGLE_WEB_CLIENT_ID }}
+      RD_STAGING_REVENUECAT_PUBLIC_KEY: ${{ secrets.RD_STAGING_REVENUECAT_PUBLIC_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install platform 37 (compileSdk)
+        run: sdkmanager --install "platforms;android-37.1" "build-tools;37.0.0"
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Pin screenshot-test environment
+        run: |
+          echo "LANG=C.UTF-8" >> "$GITHUB_ENV"
+          echo "LC_ALL=C.UTF-8" >> "$GITHUB_ENV"
+          echo "TZ=Europe/Istanbul" >> "$GITHUB_ENV"
+          echo "JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8 -Duser.language=tr -Duser.country=TR -Duser.timezone=Europe/Istanbul" >> "$GITHUB_ENV"
+
+      - name: Verify environment isolation
+        run: ./gradlew :app:verifyEnvironmentIsolation --stacktrace
+
+      - name: Source secret, PII log and AD_ID scan
+        run: bash scripts/scan-source-secrets-and-pii.sh
+
+      - name: Lint
+        run: ./gradlew lint --stacktrace
+
+      - name: Unit tests (all modules)
+        run: ./gradlew testDebugUnitTest --stacktrace
+
+      - name: Verify Android screenshot goldens
+        run: ./gradlew verifyRoborazziDebug -Proborazzi.dumpUiTree=true --stacktrace
+
+      - name: Assemble debug
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Assemble QA
+        run: ./gradlew :app:assembleQa --stacktrace
+
+      - name: Verify merged QA permissions
+        run: bash scripts/scan-source-secrets-and-pii.sh app/build/outputs/apk/qa/app-qa.apk
+
+      - name: Upload debug APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: warn
+
+      - name: Upload minified QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-qa-minified
+          path: |
+            android/app/build/outputs/apk/qa/app-qa.apk
+            android/app/build/outputs/mapping/qa/configuration.txt
+            android/app/build/outputs/mapping/qa/mapping.txt
+          if-no-files-found: warn
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports
+          path: android/**/build/reports/lint-results-*.html
+          if-no-files-found: ignore
+
+      - name: Upload screenshot comparison report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-screenshot-regression
+          path: |
+            android/**/build/reports/roborazzi
+            android/**/build/outputs/roborazzi
+            android/**/build/test-results/roborazzi
+          if-no-files-found: ignore
+
+  # Release is intentionally not assembled here until the CI secret store contains production
+  # configuration and a signing keystore. QA is assembled with staging-only configuration.
+
+  backend-contract-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pinned Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.7.14
+          cache: true
+
+      - name: Edge Function unit and static tests
+        run: find supabase/functions -type f \( -name '*test.ts' -o -name '*static_test.ts' \) -print0 | sort -z | xargs -0 --no-run-if-empty deno test --allow-read
+
+      - name: Set up pinned Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.113.0
+
+      # Explicit --local is a safety invariant. This workflow must never follow the repository's
+      # project link or execute destructive test setup against staging/production.
+      - name: Start isolated local Postgres
+        run: supabase db start
+
+      - name: Database RLS, RPC, gate and idempotency tests
+        run: supabase test db --local
+
+      - name: Stop isolated local Postgres
+        if: always()
+        run: supabase stop --no-backup

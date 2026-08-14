@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "project_ref": "ppcrzemgiztzcgddbins",
+  "verified_at": "2026-07-31T07:25:37Z",
+  "migration_ledger": {
+    "row_count": 114,
+    "required_tail": [
+      {
+        "version": "20260728201500",
+        "name": "reconcile_untracked_production_schema_state",
+        "source_sha256": "334473ef52a06ca2d2984a10163605ee8dead77fdfa3b2e75184a5476c622b15"
+      },
+      {
+        "version": "20260728202000",
+        "name": "attest_current_runtime_configuration_state",
+        "source_sha256": "93e05e5eaadc7cddaa19f5c5c06f1db4d0f89545719929226c8c140496e18a8f"
+      },
+      {
+        "version": "20260728203000",
+        "name": "global_localization_context_wave1",
+        "source_sha256": "340089ba8ff5a52cb2fb925759bf567c0adeae2b85778c1f6a620403da500f4d"
+      },
+      {
+        "version": "20260730213000",
+        "name": "global_localization_delivery_wave1",
+        "source_sha256": "064322087cc97d709e59cdd5ae2ad0edc654fbac0b2723e30f8e4b0a2c03c324"
+      }
+    ]
+  },
+  "approved_copy": {
+    "row_count": 10,
+    "template_count": 2,
+    "locales": [
+      "en-001",
+      "en-AU",
+      "en-CA",
+      "en-GB",
+      "en-US"
+    ],
+    "reviewer_name": "Kerem",
+    "reviewer_qualification": "İngilizce iş güvenliği metinlerini değerlendirme niteliğine sahip.",
+    "reviewed_at": "2026-07-31T06:31:04Z",
+    "review_pack_sha256": "5660f3a69595a0d8b80057fe2a5a0fb97c9393a003ff2bd72ad8208646955c87",
+    "approval_record_sha256": "abfbf34bbfcd59e72ac06658ab84970d0429cc1d2020102d866ae48544921158",
+    "production_content_sha256": "907170c165a48f651b221a981627614b876a6af0ca635744bf749d8425a80be2",
+    "rows": [
+      {
+        "template_key": "first_analysis_reminder_v1",
+        "locale": "en-001",
+        "checksum": "a7f068903c6761b2cb61b7ae02a5a4de70878c7c7e85bca05d81f291516be33d"
+      },
+      {
+        "template_key": "first_analysis_reminder_v1",
+        "locale": "en-AU",
+        "checksum": "ea821b27b3fd2a6297c24f340e1b6298b2bde7c7a7904b936944acf3fa549322"
+      },
+      {
+        "template_key": "first_analysis_reminder_v1",
+        "locale": "en-CA",
+        "checksum": "f36c979d39b27e9828a260e33dafc506fba1ee32fb1f6198fbb6fb7649663d68"
+      },
+      {
+        "template_key": "first_analysis_reminder_v1",
+        "locale": "en-GB",
+        "checksum": "864e45d8da87ecddc39c9f4dfe99c99c4e850c3d5d6b3a17939c91c068c1dd89"
+      },
+      {
+        "template_key": "first_analysis_reminder_v1",
+        "locale": "en-US",
+        "checksum": "aff4b824cf4eb63edbc5c72a95af00a44bc4e575d11e8db46b4c512e41f9dd69"
+      },
+      {
+        "template_key": "inactivity_reminder_v1",
+        "locale": "en-001",
+        "checksum": "dae734abc7d96823964bc0950f20129dcbcbe6484eff6830e5665e7fd0b03582"
+      },
+      {
+        "template_key": "inactivity_reminder_v1",
+        "locale": "en-AU",
+        "checksum": "ace93b6f1655807d1e503d7af4026ad50cfa8c704680a5e48de2c8711a530396"
+      },
+      {
+        "template_key": "inactivity_reminder_v1",
+        "locale": "en-CA",
+        "checksum": "19a5ca5e22c6048503019d83e4efed68c86864858f7b806520012f2214dd1133"
+      },
+      {
+        "template_key": "inactivity_reminder_v1",
+        "locale": "en-GB",
+        "checksum": "6f99fd6e3eacec397e3314b3dc94777eace37c1f347c90a8c4ebc8448d68abe4"
+      },
+      {
+        "template_key": "inactivity_reminder_v1",
+        "locale": "en-US",
+        "checksum": "27ec678188889bac7d04a75b22c426776528030dd2d646fc337e6e9cb592affd"
+      }
+    ]
+  },
+  "legacy_backfill": {
+    "profiles_rows": 96,
+    "analyses_rows": 130,
+    "reports_rows": 128,
+    "ai_usage_log_rows": 130,
+    "notification_event_rows": 295,
+    "notification_job_rows": 3,
+    "support_request_rows": 1,
+    "profiles_complete": true,
+    "analyses_complete": true,
+    "reports_complete": true
+  },
+  "access_control": {
+    "notification_localizations_rls_enabled": true,
+    "anon_select_revoked": true,
+    "authenticated_select_revoked": true,
+    "service_role_select_granted": true,
+    "checksum_trigger_present": true,
+    "job_localization_trigger_present": true,
+    "service_role_delivery_rpc_granted": true,
+    "authenticated_delivery_rpc_revoked": true
+  },
+  "automation_safety": {
+    "feature_flag_key": "engagement_notification_automation",
+    "feature_flag_updated_at": "2026-07-26T15:37:37.309894Z",
+    "rollout_mode": "on",
+    "rollout_percentage": 100,
+    "kill_switch": false,
+    "rules": {
+      "shadow": 2
+    },
+    "jobs": {
+      "shadow": 3
+    },
+    "active_rule_count": 0,
+    "pending_delivery_job_count": 0,
+    "delivery_activated_by_localization_migration": false
+  },
+  "post_migration_advisors": {
+    "security": {
+      "info": 23,
+      "warn": 4,
+      "error": 0
+    },
+    "performance": {
+      "info": 50,
+      "warn": 2,
+      "error": 0
+    },
+    "new_localization_tables_warn_or_error_count": 0,
+    "new_localization_tables_info_only": true,
+    "private_tables_have_no_client_policies_by_design": true
+  },
+  "privacy": {
+    "user_identifiers_captured": false,
+    "recipient_addresses_captured": false,
+    "secret_values_or_digests_captured": false
+  }
+}

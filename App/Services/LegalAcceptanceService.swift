@@ -7,9 +7,9 @@ final class LegalAcceptanceService {
     static let shared = LegalAcceptanceService()
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "LegalAcceptance")
 
-    static let kvkkVersion = "kvkk-2026-05-08"
-    static let termsVersion = "terms-2026-05-08"
-    static let aiProcessingVersion = "ai-photo-text-processing-2026-05-08"
+    nonisolated static let kvkkVersion = "kvkk-2026-06-10"
+    nonisolated static let termsVersion = "terms-2026-06-10"
+    nonisolated static let aiProcessingVersion = "consent-2026-06-10"
 
     private let supabase = SupabaseService.shared
     private var recordedUsers = Set<UUID>()
@@ -21,6 +21,15 @@ final class LegalAcceptanceService {
 
     func recordLoginNoticeAcceptanceIfNeeded(userID: UUID) async {
         guard !recordedUsers.contains(userID), !recordingUsers.contains(userID) else { return }
+        let language = RDLanguage.current
+        guard language == .turkish || RDLegalReleaseGate.englishAuthAndPurchaseApproved else {
+            return
+        }
+        guard let audit = RDLegalReleaseGate.acceptanceAuditMetadata(language: language) else {
+            Self.logger.error("Consent audit record blocked: legal document-set metadata unavailable.")
+            return
+        }
+        let versions = Self.acceptanceVersions(language: language)
         if let retryAt = nextRetryAt[userID], retryAt > Date() {
             return
         }
@@ -31,11 +40,14 @@ final class LegalAcceptanceService {
         do {
             let existing: [LegalAcceptanceRow] = try await supabase.client
                 .from("consents")
-                .select("id,user_id,kvkk_version,terms_version,explicit_consent_version,accepted_at")
+                .select("id,user_id,kvkk_version,terms_version,explicit_consent_version,legal_document_set,legal_locale,legal_set_manifest_checksum,accepted_at")
                 .eq("user_id", value: userID.uuidString)
-                .eq("kvkk_version", value: Self.kvkkVersion)
-                .eq("terms_version", value: Self.termsVersion)
-                .eq("explicit_consent_version", value: Self.aiProcessingVersion)
+                .eq("kvkk_version", value: versions.kvkk)
+                .eq("terms_version", value: versions.terms)
+                .eq("explicit_consent_version", value: versions.explicitConsent)
+                .eq("legal_document_set", value: audit.documentSetID)
+                .eq("legal_locale", value: audit.locale)
+                .eq("legal_set_manifest_checksum", value: audit.manifestChecksum)
                 .limit(1)
                 .execute()
                 .value
@@ -52,6 +64,9 @@ final class LegalAcceptanceService {
                 let kvkk_version: String
                 let terms_version: String
                 let explicit_consent_version: String
+                let legal_document_set: String
+                let legal_locale: String
+                let legal_set_manifest_checksum: String
                 let source: String
                 let app_version: String
                 let device_id: String
@@ -59,9 +74,12 @@ final class LegalAcceptanceService {
 
             let payload = Payload(
                 user_id: userID.uuidString,
-                kvkk_version: Self.kvkkVersion,
-                terms_version: Self.termsVersion,
-                explicit_consent_version: Self.aiProcessingVersion,
+                kvkk_version: versions.kvkk,
+                terms_version: versions.terms,
+                explicit_consent_version: versions.explicitConsent,
+                legal_document_set: audit.documentSetID,
+                legal_locale: audit.locale,
+                legal_set_manifest_checksum: audit.manifestChecksum,
                 source: "login_notice",
                 app_version: Self.appVersion,
                 device_id: UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
@@ -92,6 +110,19 @@ final class LegalAcceptanceService {
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
         return [version, build].compactMap { $0 }.joined(separator: " ")
     }
+
+    private static func acceptanceVersions(
+        language: RDLanguage
+    ) -> (kvkk: String, terms: String, explicitConsent: String) {
+        guard language == .english else {
+            return (kvkkVersion, termsVersion, aiProcessingVersion)
+        }
+        return (
+            "not-applicable-en-global-v1",
+            LegalDocumentService.shared.document(for: .terms).version,
+            LegalDocumentService.shared.document(for: .consent).version
+        )
+    }
 }
 
 private struct LegalAcceptanceRow: Codable, Identifiable {
@@ -100,6 +131,9 @@ private struct LegalAcceptanceRow: Codable, Identifiable {
     let kvkkVersion: String
     let termsVersion: String
     let explicitConsentVersion: String
+    let legalDocumentSet: String?
+    let legalLocale: String?
+    let legalSetManifestChecksum: String?
     let acceptedAt: String?
 
     enum CodingKeys: String, CodingKey {
@@ -108,6 +142,9 @@ private struct LegalAcceptanceRow: Codable, Identifiable {
         case kvkkVersion = "kvkk_version"
         case termsVersion = "terms_version"
         case explicitConsentVersion = "explicit_consent_version"
+        case legalDocumentSet = "legal_document_set"
+        case legalLocale = "legal_locale"
+        case legalSetManifestChecksum = "legal_set_manifest_checksum"
         case acceptedAt = "accepted_at"
     }
 }

@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-28T19:31:00+03:00",
+  "project_ref": "ppcrzemgiztzcgddbins",
+  "contains_secrets": false,
+  "function_count": 18,
+  "functions": [
+    {
+      "slug": "account-deletion-complete",
+      "version": 37,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "bundle_sha256": "507206fda473620e9e1914557e9edf121bd1337d033e7454c63c35b827e92a54"
+    },
+    {
+      "slug": "analyze",
+      "version": 134,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "bundle_sha256": "d7a4cb82072ec7764365222ab2d16146309ac00119c32eb4ec7a7d56fa1f0197"
+    },
+    {
+      "slug": "app-release-policy",
+      "version": 4,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "bundle_sha256": "e3b70a6d68ba21efe93b4d1e1a082be488b1b04964c0ddb835e40d440aaf11b9"
+    },
+    {
+      "slug": "generate-excel-report",
+      "version": 68,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "bundle_sha256": "de1fcb5199f0c665b51f7385b76d179708a1db00add17317787d3b04963f63cc"
+    },
+    {
+      "slug": "manage-notification-automation",
+      "version": 1,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "bundle_sha256": "b094da3df6058637a67eb262f58795a21ba98139c8ea490992196a08bbd597f5"
+    },
+    {
+      "slug": "mutate-analysis-finding",
+      "version": 3,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "bundle_sha256": "be86297d9fc3c643bfd913ffd0c05afa323a65063dd1ea1bf100dd9e2052aa35"
+    },
+    {
+      "slug": "process-analysis-jobs",
+      "version": 24,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "bundle_sha256": "5d1af2b26f0912d11d7002c5fc1178aa47d534d663b673ebc34bbf6b8537dc6b"
+    },
+    {
+      "slug": "process-notification-automation",
+      "version": 1,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "bundle_sha256": "7d57a09b31ed9616e00dd80bc69c95f96acc137f28f302e34c5cf120c9c614e3"
+    },
+    {
+      "slug": "register-report",
+      "version": 18,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "bundle_sha256": "24cffd59be5a07ac016d4b2396a5d3ed79fe74ae0ba3d6095859c49b980d1622"
+    },
+    {
+      "slug": "request-account-deletion",
+      "version": 17,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "bundle_sha256": "6c01d87993536892906d855e95ab41138e45742eeec898d757dbbdef3d720609"
+    },
+    {
+      "slug": "retention-cleanup",
+      "version": 44,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "bundle_sha256": "230cfea809229e4515657262e83e7611c6a7936a709c09bb41b7d5052473cfe0"
+    },
+    {
+      "slug": "revenuecat-webhook",
+      "version": 52,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "bundle_sha256": "143408ad890e4e1eed35614bafe8d35295295e2e35533fe93965133ff0be71bd"
+    },
+    {
+      "slug": "send-push-notification",
+      "version": 43,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "bundle_sha256": "ae6dea597b924b3937915e3adf2b653d0157538abc66fbae0c89e9e039149b41"
+    },
+    {
+      "slug": "send-report-ready-notification",
+      "version": 18,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "bundle_sha256": "7f0215d94456e25aef6072cc1218b61e1234540345f208a25a9921242f79f887"
+    },
+    {
+      "slug": "send-trial-reminder-notifications",
+      "version": 7,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "bundle_sha256": "24e33c605cfb57927653da618c771e0497c533d68146bc72a36b9bc52c9f5d3b"
+    },
+    {
+      "slug": "send-welcome-email",
+      "version": 23,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "bundle_sha256": "5128b2e043f27780a1d956f9ce8904bd18792adb0a7dd398c31a788dfaa01526"
+    },
+    {
+      "slug": "support-contact",
+      "version": 35,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "bundle_sha256": "d0863d8e3c86f76c9bfd4f19c1680b1aa91367e5dc41664df256f123d4ca2b47"
+    },
+    {
+      "slug": "sync-revenuecat-subscription",
+      "version": 50,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "bundle_sha256": "2f9133c941aa253b786a36458141435c09b6609346acc4c899fa32e6841a1e86"
+    }
+  ]
+}
+

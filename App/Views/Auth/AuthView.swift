@@ -2,14 +2,11 @@ import SwiftUI
 
 struct AuthView: View {
     @EnvironmentObject var app: AppState
-    @Environment(\.colorScheme) private var colorScheme
     @State private var phase: AuthPhase = .options
     @State private var email: String = ""
-    @State private var code: [String] = Array(repeating: "", count: 6)
+    @State private var code: [String] = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
     @State private var otpInput: String = ""
-    @State private var signingInDemo: DemoAccount?
     @State private var authError: AppErrorMessage?
-    @State private var showLegalInfo = false
     @State private var isSendingEmailCode = false
     @State private var isVerifyingEmailCode = false
     @State private var isSigningInWithApple = false
@@ -18,63 +15,17 @@ struct AuthView: View {
     private let googleSignInService = GoogleSignInService()
     @State private var autoVerifiedCode: String?
     @State private var caretPulse = false
+    @State private var selectedLegalDocument: LegalDocumentKind?
     @StateObject private var keyboard = KeyboardObserver()
     @FocusState private var focusedField: AuthInputField?
 
     enum AuthPhase { case options, email, otp }
     enum AuthInputField { case email, otp }
-    enum DemoAccount: String {
-        case pro, plus, free
 
-        var title: String {
-            switch self {
-            case .pro: return "Pro demo"
-            case .plus: return "Plus demo"
-            case .free: return "Free demo"
-            }
-        }
-
-        var email: String {
-            switch self {
-            case .pro: return "demo@riskdetected.app"
-            case .plus: return "plus@riskdetected.app"
-            case .free: return "free@riskdetected.app"
-            }
-        }
-
-        var password: String {
-            switch self {
-            case .pro: return "demo123456"
-            case .plus: return "plus123456"
-            case .free: return "free123456"
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .pro: return "star.fill"
-            case .plus: return "crown.fill"
-            case .free: return "person.crop.circle"
-            }
-        }
-
-        var tint: Color {
-            switch self {
-            case .pro: return Color.rdGreen
-            case .plus: return Color.rdPlanPlus
-            case .free: return Color.rdBlack
-            }
-        }
-    }
-
-    private var isSigningIn: Bool { signingInDemo != nil }
     private var normalizedEmail: String { email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
     private var otpCode: String { otpInput }
     private var canSendEmailCode: Bool { normalizedEmail.contains("@") && normalizedEmail.contains(".") && !isSendingEmailCode }
-    private var canVerifyEmailCode: Bool { otpCode.count == 6 && !isVerifyingEmailCode }
-    private var preferredModalColorScheme: ColorScheme {
-        app.themePreference.colorScheme ?? colorScheme
-    }
+    private var canVerifyEmailCode: Bool { otpCode.count == RDConfig.Auth.emailOTPLength && !isVerifyingEmailCode }
 
     var body: some View {
         GeometryReader { geo in
@@ -122,8 +73,8 @@ struct AuthView: View {
                 VStack(spacing: phase == .email ? 18 : 20) {
                     VStack(spacing: 10) {
                         RDLogo(size: phase == .email ? 36 : 38)
-                        Text("Saha için yapay zekâ destekli iş güvenliği asistanı")
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                        Text(RDLocalization.string("auth.auth.view.saha.icin.yapay.zeka.destekli.is.guvenligi.asist.73caffd7", table: .auth, fallback: "Saha için yapay zekâ destekli iş güvenliği asistanı"))
+                            .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdGraphite)
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: 270)
@@ -158,12 +109,6 @@ struct AuthView: View {
         .ignoresSafeArea()
         .background(Color.rdPaper)
         .accessibilityIdentifier("auth.root")
-        .sheet(isPresented: $showLegalInfo) {
-            LegalInfoSheet(onClose: { showLegalInfo = false })
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-                .preferredColorScheme(preferredModalColorScheme)
-        }
         .onChange(of: phase) { newPhase in
             if newPhase == .email {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
@@ -181,6 +126,14 @@ struct AuthView: View {
         }
         .onChange(of: focusedField) { field in
             caretPulse = field == .otp
+        }
+        .sheet(item: $selectedLegalDocument) { kind in
+            LegalInfoSheet(initialDocument: kind) {
+                selectedLegalDocument = nil
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(.light)
         }
     }
 
@@ -206,15 +159,15 @@ struct AuthView: View {
 
     private var optionsForm: some View {
         VStack(spacing: 10) {
-            RDButton(title: "E-posta ile giriş yap", style: .secondary, icon: "envelope.fill") {
+            RDButton(title: RDLocalization.string("auth.auth.view.e.posta.ile.giris.yap.ff1b3d8b", table: .auth, fallback: "E-posta ile giriş yap"), style: .secondary, icon: "envelope.fill") {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
             .accessibilityIdentifier("auth.email.start")
 
             HStack(spacing: 12) {
                 Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
-                Text("veya")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                Text(RDLocalization.string("auth.auth.view.veya.96cc844b", table: .auth, fallback: "veya"))
+                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdGraphite.opacity(0.78))
                     .padding(.horizontal, 4)
                 Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
@@ -222,7 +175,7 @@ struct AuthView: View {
             .padding(.vertical, 2)
 
             RDButton(
-                title: isSigningInWithApple ? "Apple ile bağlanıyor..." : "Apple ile devam et",
+                title: isSigningInWithApple ? RDLocalization.string("auth.auth.view.apple.ile.baglaniyor.0ea0accc", table: .auth, fallback: "Apple ile bağlanıyor...") : RDLocalization.string("auth.auth.view.apple.ile.devam.et.44a40f55", table: .auth, fallback: "Apple ile devam et"),
                 style: .primary,
                 icon: isSigningInWithApple ? "hourglass" : "applelogo",
                 showsActionIcon: false
@@ -241,25 +194,16 @@ struct AuthView: View {
 
             legalNotice
 
-            #if DEBUG
-            HStack(spacing: 8) {
-                demoButton(.pro)
-                demoButton(.plus)
-                demoButton(.free)
-            }
-            .opacity(isSigningIn ? 0.6 : 1)
-            #endif
-
             if let err = authError {
                 Text(err.message)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
                     .padding(.top, 2)
             }
             if let svcErr = app.authError {
                 Text("⚠️ \(svcErr)")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
             }
@@ -271,7 +215,7 @@ struct AuthView: View {
             HStack(spacing: 9) {
                 if isSigningInWithGoogle {
                     Image(systemName: "hourglass")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                 } else {
                     GoogleMark()
@@ -279,8 +223,8 @@ struct AuthView: View {
                 }
 
                 if isSigningInWithGoogle {
-                    Text("Google ile bağlanıyor...")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    Text(RDLocalization.string("auth.auth.view.google.ile.baglaniyor.d73e6d77", table: .auth, fallback: "Google ile bağlanıyor..."))
+                        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .tracking(-0.2)
                 } else {
@@ -301,25 +245,13 @@ struct AuthView: View {
     }
 
     private var legalNotice: some View {
-        VStack(spacing: 3) {
-            Text("Üye olarak veya giriş yaparak\nRiskDetected koşullarını kabul etmiş sayılırsın.")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
-                .foregroundStyle(Color.rdSlate)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity)
-
-            Button {
-                showLegalInfo = true
-            } label: {
-                Text("KVKK · Kullanım koşulları · Gizlilik politikası")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.rdGreenDark)
-                    .underline()
-            }
-            .buttonStyle(.plain)
-        }
+        LegalAcceptanceNotice(
+            fontSize: 10,
+            textColor: Color.rdSlate,
+            linkColor: Color.rdGreenDark,
+            accessibilityIdentifier: "auth.legal_notice",
+            onOpenDocument: { selectedLegalDocument = $0 }
+        )
         .padding(.horizontal, 8)
         .padding(.vertical, 2)
     }
@@ -330,12 +262,12 @@ struct AuthView: View {
             VStack(alignment: .leading, spacing: 9) {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "exclamationmark.circle.fill")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdCritical)
                         .padding(.top, 1)
 
                     Text(err.message)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdCritical)
                         .multilineTextAlignment(.leading)
                         .lineLimit(nil)
@@ -348,9 +280,9 @@ struct AuthView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: isSendingEmailCode ? "hourglass" : "arrow.clockwise")
-                                .font(.system(size: 11, weight: .bold, design: .rounded))
-                            Text(isSendingEmailCode ? "Yeni kod gönderiliyor..." : "Yeni kod gönder")
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                            Text(isSendingEmailCode ? RDLocalization.string("auth.auth.view.yeni.kod.gonderiliyor.b1451c30", table: .auth, fallback: "Yeni kod gönderiliyor...") : RDLocalization.string("auth.auth.view.yeni.kod.gonder.7cb92f87", table: .auth, fallback: "Yeni kod gönder"))
+                                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         }
                         .foregroundStyle(Color.rdCritical)
                     }
@@ -374,8 +306,8 @@ struct AuthView: View {
 
     private var emailForm: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("E-posta Adresinizi Giriniz")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+            Text(RDLocalization.string("auth.auth.view.e.posta.adresinizi.giriniz.e6b9a429", table: .auth, fallback: "E-posta Adresinizi Giriniz"))
+                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdInk)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
@@ -398,7 +330,7 @@ struct AuthView: View {
                 .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 3)
             HStack(spacing: 8) {
                 Image(systemName: "envelope.fill")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdOnyx.opacity(0.82))
                     .frame(width: 54, height: 52)
                     .background(Color.white)
@@ -407,24 +339,26 @@ struct AuthView: View {
                 TextField(
                     "",
                     text: $email,
-                    prompt: Text("Mailinizi yazınız...")
+                    prompt: Text(RDLocalization.string("auth.auth.view.mailinizi.yaziniz.0b6f66bd", table: .auth, fallback: "Mailinizi yazınız..."))
                         .foregroundColor(Color.rdOnyx.opacity(0.34))
                 )
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .focused($focusedField, equals: .email)
-                    .font(.system(size: 16, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), design: .rounded))
                     .foregroundColor(Color.rdOnyx)
                     .tint(Color.rdGreen)
+                    .lineLimit(1)
                     .padding(.horizontal, 16)
-                    .frame(height: 52)
+                    .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52, alignment: .leading)
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdLine, lineWidth: 1))
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             RDButton(
-                title: isSendingEmailCode ? "Kod gönderiliyor..." : "Kod gönder",
+                title: isSendingEmailCode ? RDLocalization.string("auth.auth.view.kod.gonderiliyor.726a039d", table: .auth, fallback: "Kod gönderiliyor...") : RDLocalization.string("auth.auth.view.kod.gonder.781cb25a", table: .auth, fallback: "Kod gönder"),
                 style: .primary,
                 trailingIcon: isSendingEmailCode ? "hourglass" : "arrow.right"
             ) {
@@ -432,11 +366,12 @@ struct AuthView: View {
             }
             .opacity(canSendEmailCode ? 1 : 0.55)
             .disabled(!canSendEmailCode)
+            legalNotice
             authErrorText
-            Button("← Diğer giriş yöntemleri") {
+            Button(RDLocalization.string("auth.auth.view.diger.giris.yontemleri.99e4376a", table: .auth, fallback: "← Diğer giriş yöntemleri")) {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .options }
             }
-            .font(.system(size: 14, weight: .semibold, design: .rounded))
+            .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
             .foregroundStyle(Color.rdInk)
             .frame(maxWidth: .infinity)
             .padding(8)
@@ -448,12 +383,12 @@ struct AuthView: View {
     private var otpForm: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Doğrulama kodu")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                Text(RDLocalization.string("auth.auth.view.dogrulama.kodu.95aeac29", table: .auth, fallback: "Doğrulama kodu"))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.white)
                     .shadow(color: Color.black.opacity(0.34), radius: 8, x: 0, y: 2)
-                Text("\(normalizedEmail.isEmpty ? "mail@ornek.com" : normalizedEmail) adresine gönderildi")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                Text(RDLocalization.format("auth.auth.view.1.adresine.gonderildi.a08ac01d", table: .auth, fallback: "%1$@ adresine gönderildi", arguments: [String(describing: normalizedEmail.isEmpty ? "mail@ornek.com" : normalizedEmail)]))
+                    .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.white.opacity(0.94))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -464,7 +399,7 @@ struct AuthView: View {
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
                     .focused($focusedField, equals: .otp)
-                    .font(.system(size: 1))
+                    .font(.system(size: RDFontScale.size(1)))
                     .foregroundStyle(Color.clear)
                     .tint(Color.clear)
                     .multilineTextAlignment(.center)
@@ -475,7 +410,7 @@ struct AuthView: View {
                     }
 
                 HStack(spacing: 10) {
-                    ForEach(0..<6, id: \.self) { i in
+                    ForEach(0..<RDConfig.Auth.emailOTPLength, id: \.self) { i in
                         otpDigitBox(index: i)
                     }
                 }
@@ -486,8 +421,8 @@ struct AuthView: View {
                 focusedField = .otp
             }
 
-            Text("Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin.")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+            Text(RDLocalization.string("auth.auth.view.kod.gelmedi.mi.e.posta.adresini.kontrol.edip.tek.b7b833bb", table: .auth, fallback: "Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin."))
+                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.white.opacity(0.92))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
@@ -496,7 +431,7 @@ struct AuthView: View {
                 .shadow(color: Color.black.opacity(0.34), radius: 8, x: 0, y: 2)
 
             RDButton(
-                title: isVerifyingEmailCode ? "Doğrulanıyor..." : "Doğrula ve giriş yap",
+                title: isVerifyingEmailCode ? RDLocalization.string("auth.auth.view.dogrulaniyor.1968dffd", table: .auth, fallback: "Doğrulanıyor...") : RDLocalization.string("auth.auth.view.dogrula.ve.giris.yap.b1c67bca", table: .auth, fallback: "Doğrula ve giriş yap"),
                 style: .detect,
                 icon: isVerifyingEmailCode ? "hourglass" : nil
             ) {
@@ -506,58 +441,14 @@ struct AuthView: View {
             .disabled(!canVerifyEmailCode)
             authErrorText
 
-            Button("← E-posta adresini değiştir") {
+            Button(RDLocalization.string("auth.auth.view.e.posta.adresini.degistir.e85f01e6", table: .auth, fallback: "← E-posta adresini değiştir")) {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
-            .font(.system(size: 14, weight: .bold, design: .rounded))
+            .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
             .foregroundStyle(Color.white.opacity(0.94))
             .frame(maxWidth: .infinity)
             .padding(8)
             .shadow(color: Color.black.opacity(0.34), radius: 8, x: 0, y: 2)
-        }
-    }
-
-    // MARK: - Demo sign-in
-
-    private func demoButton(_ account: DemoAccount) -> some View {
-        Button {
-            runDemoSignIn(account)
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: signingInDemo == account ? "hourglass" : account.icon)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                Text(signingInDemo == account ? "Giriş..." : account.title)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 42)
-            .foregroundStyle(account.tint)
-            .background(Color.rdWhite)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(account.tint.opacity(account == .free ? 0.18 : 0.45), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(RDPressableButtonStyle())
-        .disabled(isSigningIn)
-    }
-
-    private func runDemoSignIn(_ account: DemoAccount) {
-        guard !isSigningIn else { return }
-        signingInDemo = account
-        authError = nil
-        Task {
-            do {
-                try await app.auth.signInWithPassword(
-                    email: account.email,
-                    password: account.password
-                )
-            } catch {
-                setAuthError(error, context: "Giriş yapılamadı", fallbackTitle: "Giriş yapılamadı", operation: "demo_sign_in", email: account.email)
-            }
-            signingInDemo = nil
         }
     }
 
@@ -579,7 +470,7 @@ struct AuthView: View {
                 try await app.auth.sendEmailOTP(email: normalizedEmail)
                 autoVerifiedCode = nil
                 otpInput = ""
-                code = Array(repeating: "", count: 6)
+                code = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
                 if transitionToOTP {
                     withAnimation(.easeInOut(duration: 0.22)) { phase = .otp }
                 }
@@ -587,7 +478,7 @@ struct AuthView: View {
                     focusedField = .otp
                 }
             } catch {
-                setAuthError(error, context: "Kod gönderilemedi", fallbackTitle: "Kod gönderilemedi", operation: "send_email_otp", email: normalizedEmail)
+                setAuthError(error, context: RDLocalization.string("auth.auth.view.kod.gonderilemedi.50c44043", table: .auth, fallback: "Kod gönderilemedi"), fallbackTitle: RDLocalization.string("auth.auth.view.kod.gonderilemedi.50c44043", table: .auth, fallback: "Kod gönderilemedi"), operation: "send_email_otp", email: normalizedEmail)
             }
             isSendingEmailCode = false
         }
@@ -601,7 +492,7 @@ struct AuthView: View {
             do {
                 try await app.auth.verifyEmailOTP(email: normalizedEmail, token: otpCode)
             } catch {
-                setAuthError(error, context: "Kod doğrulanamadı", fallbackTitle: "Kod doğrulanamadı", operation: "verify_email_otp", email: normalizedEmail)
+                setAuthError(error, context: RDLocalization.string("auth.auth.view.kod.dogrulanamadi.8919fbda", table: .auth, fallback: "Kod doğrulanamadı"), fallbackTitle: RDLocalization.string("auth.auth.view.kod.dogrulanamadi.8919fbda", table: .auth, fallback: "Kod doğrulanamadı"), operation: "verify_email_otp", email: normalizedEmail)
             }
             isVerifyingEmailCode = false
         }
@@ -623,7 +514,7 @@ struct AuthView: View {
                 await app.auth.refreshProfile()
             } catch {
                 if !isUserCancelledAuth(error) {
-                    setAuthError(error, context: "Apple ile giriş yapılamadı", fallbackTitle: "Apple ile giriş yapılamadı", operation: "apple_sign_in")
+                    setAuthError(error, context: RDLocalization.string("auth.auth.view.apple.ile.giris.yapilamadi.8f8a40ac", table: .auth, fallback: "Apple ile giriş yapılamadı"), fallbackTitle: RDLocalization.string("auth.auth.view.apple.ile.giris.yapilamadi.8f8a40ac", table: .auth, fallback: "Apple ile giriş yapılamadı"), operation: "apple_sign_in")
                 }
             }
             isSigningInWithApple = false
@@ -647,7 +538,7 @@ struct AuthView: View {
                 await app.auth.refreshProfile()
             } catch {
                 if !isUserCancelledAuth(error) {
-                    setAuthError(error, context: "Google ile giriş yapılamadı", fallbackTitle: "Google ile giriş yapılamadı", operation: "google_sign_in")
+                    setAuthError(error, context: RDLocalization.string("auth.auth.view.google.ile.giris.yapilamadi.28393332", table: .auth, fallback: "Google ile giriş yapılamadı"), fallbackTitle: RDLocalization.string("auth.auth.view.google.ile.giris.yapilamadi.28393332", table: .auth, fallback: "Google ile giriş yapılamadı"), operation: "google_sign_in")
                 }
             }
             isSigningInWithGoogle = false
@@ -668,7 +559,7 @@ struct AuthView: View {
 
     private func isUserCancelledAuth(_ error: Error) -> Bool {
         let nsError = error as NSError
-        let lower = error.localizedDescription.lowercased(with: Locale(identifier: "tr_TR"))
+        let lower = error.localizedDescription.lowercased(with: .autoupdatingCurrent)
         return nsError.code == 1 && nsError.domain.contains("WebAuthenticationSession") ||
             lower.contains("cancel") ||
             lower.contains("vazgeç") ||
@@ -679,22 +570,22 @@ struct AuthView: View {
     }
 
     private func syncOTPInput(_ newValue: String) {
-        let sanitized = String(newValue.filter(\.isNumber).prefix(6))
+        let sanitized = String(newValue.filter(\.isNumber).prefix(RDConfig.Auth.emailOTPLength))
         if sanitized != otpInput {
             otpInput = sanitized
             return
         }
 
-        var nextCode = Array(repeating: "", count: 6)
+        var nextCode = Array(repeating: "", count: RDConfig.Auth.emailOTPLength)
         for (index, digit) in sanitized.enumerated() where index < nextCode.count {
             nextCode[index] = String(digit)
         }
         code = nextCode
         authError = nil
 
-        if sanitized.count < 6 {
+        if sanitized.count < RDConfig.Auth.emailOTPLength {
             autoVerifiedCode = nil
-        } else if sanitized.count == 6, autoVerifiedCode != sanitized, !isVerifyingEmailCode {
+        } else if sanitized.count == RDConfig.Auth.emailOTPLength, autoVerifiedCode != sanitized, !isVerifyingEmailCode {
             autoVerifiedCode = sanitized
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                 verifyEmailCode()
@@ -703,8 +594,8 @@ struct AuthView: View {
     }
 
     private func otpDigitBox(index: Int) -> some View {
-        let activeIndex = min(otpInput.count, 5)
-        let isActive = focusedField == .otp && otpInput.count < 6 && index == activeIndex
+        let activeIndex = min(otpInput.count, RDConfig.Auth.emailOTPLength - 1)
+        let isActive = focusedField == .otp && otpInput.count < RDConfig.Auth.emailOTPLength && index == activeIndex
         let hasValue = !code[index].isEmpty
 
         return ZStack {
@@ -718,7 +609,7 @@ struct AuthView: View {
 
             Text(code[index])
                 .multilineTextAlignment(.center)
-                .font(.system(size: 28, weight: .bold, design: .monospaced))
+                .font(.system(size: RDFontScale.size(28), weight: .bold, design: .monospaced))
                 .foregroundStyle(Color.rdOnyx)
 
             if isActive && !hasValue {
@@ -739,8 +630,8 @@ private struct GoogleMark: View {
             Circle()
                 .fill(Color.white)
 
-            Text("G")
-                .font(.system(size: 16, weight: .heavy, design: .rounded))
+            Text(RDLocalization.string("auth.auth.view.g.1bdc8bd9", table: .auth, fallback: "G"))
+                .font(.system(size: RDFontScale.size(16), weight: .heavy, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
@@ -763,16 +654,15 @@ private struct GoogleMark: View {
 
 private struct GoogleWordmark: View {
     var body: some View {
-        HStack(spacing: 0) {
-            Text("G").foregroundStyle(Color(hex: "#4285F4"))
-            Text("o").foregroundStyle(Color(hex: "#EA4335"))
-            Text("o").foregroundStyle(Color(hex: "#FBBC05"))
-            Text("g").foregroundStyle(Color(hex: "#4285F4"))
-            Text("l").foregroundStyle(Color(hex: "#34A853"))
-            Text("e").foregroundStyle(Color(hex: "#EA4335"))
-            Text(" ile devam et").foregroundStyle(Color.rdBlack)
-        }
-        .font(.system(size: 17, weight: .semibold, design: .rounded))
+        Text(
+            RDLocalization.string(
+                "auth.google.continue",
+                table: .auth,
+                fallback: "Google ile devam et"
+            )
+        )
+        .foregroundStyle(Color.rdBlack)
+        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
         .tracking(-0.2)
     }
 }

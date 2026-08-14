@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "review_status": "machine_draft",
+  "exact_terms": [
+    "RiskDetected",
+    "Fine-Kinney",
+    "JSON",
+    "PDF",
+    "XLSX",
+    "PPE",
+    "Plus",
+    "Pro"
+  ],
+  "plan_names": {
+    "free": "FREE",
+    "plus": "PLUS",
+    "pro": "PRO"
+  },
+  "technical_identifiers": [
+    "app_language",
+    "content_locale",
+    "storefront_country",
+    "work_jurisdiction_country",
+    "work_jurisdiction_region",
+    "safety_profile_id",
+    "analysis_language",
+    "report_language",
+    "legal_document_set"
+  ]
+}

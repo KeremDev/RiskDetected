@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "decision": "approved",
+  "reviewer_name": "Kerem",
+  "reviewer_qualification": "İngilizce iş güvenliği metinlerini değerlendirme niteliğine sahip.",
+  "reviewed_at": "2026-07-31T06:31:04Z",
+  "review_pack_path": "docs/localization/phase-5/NOTIFICATION_COPY_REVIEW_PACK_2026-07-30.md",
+  "review_pack_sha256": "5660f3a69595a0d8b80057fe2a5a0fb97c9393a003ff2bd72ad8208646955c87",
+  "approved_locales": [
+    "en-001",
+    "en-GB",
+    "en-US",
+    "en-AU",
+    "en-CA"
+  ],
+  "approved_automation_template_keys": [
+    "first_analysis_reminder_v1",
+    "inactivity_reminder_v1"
+  ],
+  "approved_exact_locale_rows": 10,
+  "transactional_event_keys_reviewed": [
+    "analysis_complete",
+    "report_ready",
+    "trial_reminder",
+    "progress_weekly_summary",
+    "progress_monthly_summary",
+    "progress_milestones",
+    "account_update.cancellation",
+    "account_update.expiration",
+    "account_update.billing_issue",
+    "account_update.subscription_paused"
+  ],
+  "notes": "Approved by the project owner in the Codex task. Exact-locale resolution and no-fallback behavior remain mandatory."
+}

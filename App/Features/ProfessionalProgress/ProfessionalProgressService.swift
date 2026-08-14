@@ -18,7 +18,9 @@ final class ProfessionalProgressService {
     }
 
     func fetchSummary() async -> ProfessionalProgressSummary? {
-        guard RDConfig.Features.professionalProgressEnabled else { return nil }
+        guard RDConfig.Features.professionalProgressEnabled,
+              RDProfessionalProgressLocalizationReview.isAvailable
+        else { return nil }
         guard let userID = supabase.currentUserID else { return nil }
 
         do {
@@ -85,7 +87,9 @@ final class ProfessionalProgressService {
     }
 
     func markBadgeSeen(_ badge: ProfessionalProgressBadge) async {
-        guard RDConfig.Features.professionalProgressEnabled else { return }
+        guard RDConfig.Features.professionalProgressEnabled,
+              RDProfessionalProgressLocalizationReview.isAvailable
+        else { return }
 
         struct Payload: Encodable {
             let seen_at: String
@@ -103,7 +107,9 @@ final class ProfessionalProgressService {
     }
 
     func markMessageSeen(_ message: ProfessionalProgressMessage) async {
-        guard RDConfig.Features.professionalProgressEnabled else { return }
+        guard RDConfig.Features.professionalProgressEnabled,
+              RDProfessionalProgressLocalizationReview.isAvailable
+        else { return }
 
         struct Payload: Encodable {
             let seen_at: String

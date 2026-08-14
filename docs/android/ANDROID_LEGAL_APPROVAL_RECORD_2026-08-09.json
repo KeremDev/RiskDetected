@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "document_set_id": "tr-android-v1",
+  "locale": "tr",
+  "decision": "approved_by_owner",
+  "reviewed_by": "Kerem Kayalar",
+  "reviewer_qualification": "Ürün sahibi ve yetkili karar verici; bu kayıt bağımsız hukuk danışmanlığı iddiası taşımaz.",
+  "reviewed_at": "2026-08-11T08:02:12Z",
+  "decision_basis": "Ürün sahibi 2026-08-11 tarihinde Android hukuk belge seti için açık nihai onay verdi; public gizlilik ve hesap silme URL'leri ayrıca yayınlanmış ve doğrulanmıştır.",
+  "scope": [
+    "Android kullanım koşullarına uygulama içi ve web hesap silme yollarının eklenmesi",
+    "Doğrulanmış web silme talepleri için en fazla 24 saatlik tamamlanma bilgisinin eklenmesi",
+    "Firebase Crashlytics çökme/teşhis işleme amacı ve PII minimizasyonunun açıklanması",
+    "Aktif Google Play aboneliğinin mağazadan ayrıca yönetildiğinin korunması"
+  ],
+  "documents": [
+    {
+      "kind": "terms",
+      "version": "terms-android-2026-08-09",
+      "sha256": "aebbb01c27012192ddf36669b73036889fe8d1f4266a08326aa96e248829e749"
+    },
+    {
+      "kind": "privacy",
+      "version": "privacy-android-2026-08-09",
+      "sha256": "ac811bcf95946e4251ebdbf3d2bd71622e94e3753fc0ca68b1fbaeccb9817672"
+    },
+    {
+      "kind": "kvkk",
+      "version": "kvkk-android-2026-08-09",
+      "sha256": "7cf16880546a414df03202ea1fd09ff0d7aafa48c9f1adb89f62d897741bb297"
+    },
+    {
+      "kind": "consent",
+      "version": "consent-android-2026-08-09",
+      "sha256": "53b380da568e67d6d7406f2a8bad0787b45ddcd2fdf0485f1aaec8f3e517a5c2"
+    }
+  ],
+  "acceptance_manifest_sha256": "aaa169338de3d9425e76cc4d8b9e98047847934c39cf646cb4f87f708c63cfec",
+  "publication_gate": {
+    "privacy_url": "https://riskdetected.com/gizlilik",
+    "account_deletion_url": "https://riskdetected.com/hesap-silme",
+    "verified_at": "2026-08-11T06:17:34Z",
+    "status": "published_and_verified"
+  }
+}

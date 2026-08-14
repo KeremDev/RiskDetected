@@ -1,0 +1,2 @@
+--------- beginning of main
+08-11 10:32:32.372  7076  7076 D RdNotificationRoute: parsed=report_ready:Reports; hasType=true

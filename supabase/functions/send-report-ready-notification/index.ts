@@ -129,8 +129,7 @@ serve(async (req) => {
       body: JSON.stringify({
         user_id: user.id,
         kind: "report_ready",
-        title: "Rapor Hazır",
-        body: "Risk raporun oluşturuldu, raporlar bölümünden inceleyebilirsin.",
+        event_key: "report_ready",
         data: {
           report_id: report.id,
           analysis_id: report.analysis_id,
@@ -159,6 +158,22 @@ serve(async (req) => {
     return json(200, {
       ok: false,
       status: "push_failed",
+      report_id: report.id,
+      request_id: requestID,
+      support_id: supportID,
+    });
+  }
+  let pushResult: { status?: string; reason?: string } = {};
+  try {
+    pushResult = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    pushResult = {};
+  }
+  if (pushResult.status !== "sent") {
+    return json(200, {
+      ok: false,
+      status: pushResult.status === "skipped" ? "push_skipped" : "push_failed",
+      reason: pushResult.reason ?? "push_not_sent",
       report_id: report.id,
       request_id: requestID,
       support_id: supportID,

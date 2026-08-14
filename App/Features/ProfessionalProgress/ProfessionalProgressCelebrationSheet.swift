@@ -17,7 +17,7 @@ struct ProfessionalProgressCelebrationSheet: View {
 
             VStack(spacing: RDSpacing.lg) {
                 Image(systemName: badge.iconName)
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(34), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 72, height: 72)
                     .background(Color.rdGreenSoft)
@@ -26,8 +26,8 @@ struct ProfessionalProgressCelebrationSheet: View {
                     .animation(.spring(response: 0.42, dampingFraction: 0.72), value: animateConfetti)
 
                 VStack(spacing: 9) {
-                    Text("Tebrikler")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    Text(RDLocalization.string("professionalprogress.professional.progress.celebration.sheet.tebrikler.b7a58ea5", table: .professionalProgress, fallback: "Tebrikler"))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdGreenDark)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
@@ -35,19 +35,19 @@ struct ProfessionalProgressCelebrationSheet: View {
                         .clipShape(Capsule())
 
                     Text(badge.title)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .multilineTextAlignment(.center)
 
                     Text(badge.subtitle)
-                        .font(.system(size: 14, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 RDButton(
-                    title: "Tamam",
+                    title: RDLocalization.string("professionalprogress.professional.progress.celebration.sheet.tamam.76cd1dbd", table: .professionalProgress, fallback: "Tamam"),
                     style: .detect,
                     icon: "checkmark",
                     height: 52,
@@ -140,8 +140,8 @@ private struct ConfettiPiece: Identifiable {
             id: UUID(),
             badgeKey: "first_report",
             badgeType: "report",
-            title: "İlk Adım",
-            subtitle: "İlk raporunu oluşturdun. Mesleki takip izin başladı.",
+            title: RDLocalization.string("professionalprogress.professional.progress.celebration.sheet.ilk.adim.9f3b5469", table: .professionalProgress, fallback: "İlk Adım"),
+            subtitle: RDLocalization.string("professionalprogress.professional.progress.celebration.sheet.ilk.raporunu.olusturdun.mesleki.takip.izin.basla.6d73be4e", table: .professionalProgress, fallback: "İlk raporunu oluşturdun. Mesleki takip izin başladı."),
             iconName: "rosette",
             unlockedAt: nil,
             seenAt: nil

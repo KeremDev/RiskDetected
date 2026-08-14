@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "stage": 6,
+  "stage_key": "english_au_allowlist",
+  "contract_issues": [],
+  "metric_issues": [],
+  "insufficient_samples": [],
+  "threshold_violations": [],
+  "rates": {
+    "analysis_failure_rate": null,
+    "wrong_language_rate": null,
+    "language_repair_rate": null,
+    "report_failure_rate": null,
+    "notification_template_miss_rate": null,
+    "queue_retry_rate": null
+  },
+  "applied_waivers": [],
+  "integrity_status": "passed",
+  "snapshot_sha256": "bf8c27e438d05a78bed889b8a3cc4f2888be3687323ee2f6d1bf8cfebc47b1a0",
+  "effective_status": "passed"
+}

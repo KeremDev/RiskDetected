@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!--
+          Local-device E2E bootstrap only. Credentials are read from the app-private files
+          directory, deleted before authentication starts, and are never accepted as Intent
+          extras or logged. This component does not exist in qa/release manifests.
+        -->
+        <activity
+            android:name=".DebugE2ELoginActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@style/Theme.RiskDetected" />
+    </application>
+</manifest>

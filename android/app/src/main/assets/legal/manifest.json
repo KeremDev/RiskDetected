@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "document_set_id": "tr-android-v1",
+  "locale": "tr",
+  "release_status": "approved",
+  "counsel_review_status": "approved",
+  "reviewed_by": "Kerem Kayalar",
+  "reviewer_qualification": "Ürün sahibi ve yetkili karar verici; bağımsız hukuk danışmanlığı değildir.",
+  "reviewed_at": "2026-08-11T08:02:12Z",
+  "counsel_approval_record_path": "docs/android/ANDROID_LEGAL_APPROVAL_RECORD_2026-08-09.json",
+  "counsel_approval_record_sha256": "528210d9f74f23c05bd03b1b9444b590de75eef27e4c37daf6fa6617f87ab89d",
+  "public_urls_verified_at": "2026-08-11T06:17:34Z",
+  "public_urls": {
+    "privacy": "https://riskdetected.com/gizlilik",
+    "account_deletion": "https://riskdetected.com/hesap-silme"
+  },
+  "adapted_from": {
+    "source": "https://riskdetected.com (kullanim-kosullari, gizlilik, kvkk, acik-riza-beyani)",
+    "fetched_at": "2026-08-07T20:45:00Z",
+    "adaptation_note": "Android mağaza ve platform uyarlamasına ek olarak owner talimatıyla web hesap silme yolu, 24 saatlik silme SLA'sı ve PII-minimum Firebase Crashlytics açıklaması eklendi. Şirket kimliği, KVKK hukuki sebepleri, saklama süreleri, temel veri kategorileri ve kullanıcı hakları değiştirilmedi. Public URL yayını ayrı release kapısıdır."
+  },
+  "documents": [
+    {
+      "kind": "terms",
+      "title": "Kullanım Koşulları",
+      "version": "terms-android-2026-08-09",
+      "path": "Kullanim-Kosullari.md",
+      "hash": "aebbb01c27012192ddf36669b73036889fe8d1f4266a08326aa96e248829e749",
+      "updated_at": "2026-08-09T00:00:00Z"
+    },
+    {
+      "kind": "privacy",
+      "title": "Gizlilik Politikası",
+      "version": "privacy-android-2026-08-09",
+      "path": "Gizlilik-Politikasi.md",
+      "hash": "ac811bcf95946e4251ebdbf3d2bd71622e94e3753fc0ca68b1fbaeccb9817672",
+      "updated_at": "2026-08-09T00:00:00Z"
+    },
+    {
+      "kind": "kvkk",
+      "title": "KVKK Aydınlatma Metni",
+      "version": "kvkk-android-2026-08-09",
+      "path": "KVKK-Aydinlatma-ve-Acik-Riza-Metni.md",
+      "hash": "7cf16880546a414df03202ea1fd09ff0d7aafa48c9f1adb89f62d897741bb297",
+      "updated_at": "2026-08-09T00:00:00Z"
+    },
+    {
+      "kind": "consent",
+      "title": "Açık Rıza Beyanı",
+      "version": "consent-android-2026-08-09",
+      "path": "Acik-Riza-Beyani.md",
+      "hash": "53b380da568e67d6d7406f2a8bad0787b45ddcd2fdf0485f1aaec8f3e517a5c2",
+      "updated_at": "2026-08-09T00:00:00Z"
+    }
+  ]
+}

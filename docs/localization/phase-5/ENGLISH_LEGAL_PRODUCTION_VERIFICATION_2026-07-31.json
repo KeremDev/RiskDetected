@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-07-31T08:08:29Z",
+  "hosting_provider": "vercel",
+  "project": {
+    "name": "riskdetected-landing",
+    "project_id": "prj_nYn4THG1v6K7GtqwSaldZalhICL7",
+    "team_id": "team_tABp5TSkJ3ifkDllhcZYK9A5"
+  },
+  "deployment": {
+    "target": "production",
+    "id": "dpl_9HvH32vh8YTTmmLFdJY9d9SSaxqS",
+    "url": "https://riskdetected-landing-ksnz0vhqz-kerem-kayalars-projects.vercel.app",
+    "inspector_url": "https://vercel.com/kerem-kayalars-projects/riskdetected-landing/9HvH32vh8YTTmmLFdJY9d9SSaxqS",
+    "ready": true,
+    "blue_green_candidate_verified_before_promotion": true,
+    "promoted_after_verification": true
+  },
+  "publication_safety": {
+    "source_git_commit": "f4fb5281120be7b6b1b715c5b92043d6ce8e0c5d",
+    "source_git_commit_matched_previous_production": true,
+    "isolated_clean_export_used": true,
+    "unrelated_dirty_worktree_changes_deployed": false,
+    "root_html_regression": false,
+    "root_html_difference_before_promotion": "Cloudflare dynamically injected challenge script only; Vite source HTML and asset references were unchanged.",
+    "ios_runtime_activation": false,
+    "supabase_localization_rollout_activation": false,
+    "notification_delivery_activation": false,
+    "app_store_release": false
+  },
+  "documents": {
+    "terms": {
+      "url": "https://riskdetected.com/legal-documents/en/Terms-of-Use.md",
+      "status": 200,
+      "content_type": "text/markdown; charset=utf-8",
+      "redirects": 0,
+      "sha256": "49a9b3f164b9dc8048453be930509aa334a854834c2abfa0cd8b11fd67ef6efa",
+      "exact_approved_source_hash_match": true,
+      "english_content_marker_verified": true,
+      "draft_or_release_blocker_marker_present": false
+    },
+    "privacy": {
+      "url": "https://riskdetected.com/legal-documents/en/Privacy-Policy.md",
+      "status": 200,
+      "content_type": "text/markdown; charset=utf-8",
+      "redirects": 0,
+      "sha256": "ef3d7e01b2b3c09603ff79c7f14bac631493feece7c1a0d6b0bd9a5f0e76ece4",
+      "exact_approved_source_hash_match": true,
+      "english_content_marker_verified": true,
+      "draft_or_release_blocker_marker_present": false
+    },
+    "ai_data_processing_notice": {
+      "url": "https://riskdetected.com/legal-documents/en/AI-and-Data-Processing-Notice.md",
+      "status": 200,
+      "content_type": "text/markdown; charset=utf-8",
+      "redirects": 0,
+      "sha256": "a8c9873f57228a36a4ede597e33648ff9251f9c814f1d1afc3e912c82ae08e1b",
+      "exact_approved_source_hash_match": true,
+      "english_content_marker_verified": true,
+      "draft_or_release_blocker_marker_present": false
+    }
+  },
+  "approval": {
+    "decision": "approved",
+    "reviewer_name": "Kerem",
+    "reviewer_qualification": "Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.",
+    "reviewed_at": "2026-07-31T08:02:40Z",
+    "record_path": "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-07-31_V2.json",
+    "record_sha256": "54ade7d6aae5615bcd5a1ce2f3191c1fecb77d9080ff61edf88b948afe129161"
+  },
+  "manifest": {
+    "path": "App/LegalDocuments/en/manifest.json",
+    "sha256": "008108dcb03fcc6db4955dbdc97c4e8f2091d78c8807832713de3ca9c051ad07",
+    "release_status": "approved",
+    "public_urls_verified_at": "2026-07-31T08:08:29Z"
+  },
+  "privacy": {
+    "credentials_recorded": false,
+    "vercel_bypass_token_recorded": false,
+    "personal_user_data_recorded": false
+  }
+}

@@ -1,0 +1,708 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "legal.acceptance.en.ai_notice": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI and Data Processing Notice"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI and Data Processing Notice"
+          }
+        }
+      }
+    },
+    "legal.acceptance.en.consent_joiner": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " and the "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " and the "
+          }
+        }
+      }
+    },
+    "legal.acceptance.en.prefix": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By signing up or signing in, you accept the "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By signing up or signing in, you accept the "
+          }
+        }
+      }
+    },
+    "legal.acceptance.en.privacy_joiner": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", acknowledge the "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", acknowledge the "
+          }
+        }
+      }
+    },
+    "legal.acceptance.en.suffix": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
+          }
+        }
+      }
+    },
+    "legal.document.consent.short_title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consent"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rıza"
+          }
+        }
+      }
+    },
+    "legal.document.consent.title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explicit Consent"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık Rıza Beyanı"
+          }
+        }
+      }
+    },
+    "legal.document.kvkk.short_title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KVKK"
+          }
+        }
+      }
+    },
+    "legal.document.kvkk.title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Notice"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KVKK Aydınlatma Metni"
+          }
+        }
+      }
+    },
+    "legal.document.privacy.short_title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik"
+          }
+        }
+      }
+    },
+    "legal.document.privacy.title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Policy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik Politikası"
+          }
+        }
+      }
+    },
+    "legal.document.show.accessibility": {
+      "comment": "Legal UI localization contract; placeholders: %@; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the %@ document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ belgesini göster"
+          }
+        }
+      }
+    },
+    "legal.document.terms.short_title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terms"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koşullar"
+          }
+        }
+      }
+    },
+    "legal.document.terms.title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terms of Use"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanım Koşulları"
+          }
+        }
+      }
+    },
+    "legal.english_unavailable.action": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To view the current Turkish documents, choose Turkish as the app language in iOS Settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türkçe metinleri görüntülemek için uygulama dilini iOS Ayarları’ndan Türkçe seçebilirsin."
+          }
+        }
+      }
+    },
+    "legal.english_unavailable.message": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English Terms, Privacy and AI/Data Processing notices are awaiting legal approval. Sign-in and purchases remain unavailable in English until approval."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İngilizce Kullanım Koşulları ve Gizlilik Politikası hukuk ve dil incelemesi tamamlanana kadar bu sürümde yayımlanmaz."
+          }
+        }
+      }
+    },
+    "legal.english_unavailable.title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English legal documents are not yet available"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İngilizce yasal metinler henüz kullanıma hazır değil"
+          }
+        }
+      }
+    },
+    "legal.info.title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legal information"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yasal Bilgilendirme"
+          }
+        }
+      }
+    },
+    "legal.legal.acceptance.notice.acik.riza.beyanini.ae108532": {
+      "comment": "swift_user_copy; App/Views/Components/LegalAcceptanceNotice.swift:49; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explicit Consent Statement"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık Rıza Beyanını"
+          }
+        }
+      }
+    },
+    "legal.legal.acceptance.notice.gizlilik.politikamizi.ab642b86": {
+      "comment": "swift_user_copy; App/Views/Components/LegalAcceptanceNotice.swift:45; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Our Privacy Policy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik Politikamızı"
+          }
+        }
+      }
+    },
+    "legal.legal.acceptance.notice.hizmet.sartlarimizi.c5c14c41": {
+      "comment": "swift_user_copy; App/Views/Components/LegalAcceptanceNotice.swift:43; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Our Terms of Service"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hizmet Şartlarımızı"
+          }
+        }
+      }
+    },
+    "legal.legal.acceptance.notice.kabul.etmis.olursunuz.fa5d4328": {
+      "comment": "swift_user_copy; App/Views/Components/LegalAcceptanceNotice.swift:50; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You accept it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kabul etmiş olursunuz."
+          }
+        }
+      }
+    },
+    "legal.legal.acceptance.notice.kaydolarak.veya.giris.yaparak.c5c76f3e": {
+      "comment": "swift_user_copy; App/Views/Components/LegalAcceptanceNotice.swift:42; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By registering or logging in,"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydolarak veya giriş yaparak,"
+          }
+        }
+      }
+    },
+    "legal.legal.acceptance.notice.kvkk.aydinlatma.metnini.f64fcf53": {
+      "comment": "swift_user_copy; App/Views/Components/LegalAcceptanceNotice.swift:47; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Notice Clarification Text"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KVKK Aydınlatma Metnini"
+          }
+        }
+      }
+    },
+    "legal.legal.document.service.acik.riza.beyani.214a6512": {
+      "comment": "computed_ui_copy; App/Services/LegalDocumentService.swift:76; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acik-Riza-Beyani"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acik-Riza-Beyani"
+          }
+        }
+      }
+    },
+    "legal.legal.document.service.belge.okunamadi.lutfen.daha.sonra.tekrar.deneyin.1868c5eb": {
+      "comment": "swift_user_copy; App/Services/LegalDocumentService.swift:554; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document could not be read. Please try again later."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belge okunamadı. Lütfen daha sonra tekrar deneyin."
+          }
+        }
+      }
+    },
+    "legal.legal.document.service.belge.yuklenemedi.lutfen.daha.sonra.tekrar.deney.093297ee": {
+      "comment": "computed_ui_copy; App/Services/LegalDocumentService.swift:550; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document could not be loaded. Please try again later."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belge yüklenemedi. Lütfen daha sonra tekrar deneyin."
+          }
+        }
+      }
+    },
+    "legal.legal.document.service.gizlilik.politikasi.84449d4a": {
+      "comment": "computed_ui_copy; App/Services/LegalDocumentService.swift:78; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy-Policy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik-Politikasi"
+          }
+        }
+      }
+    },
+    "legal.legal.document.service.kullanim.kosullari.6d55b3b3": {
+      "comment": "computed_ui_copy; App/Services/LegalDocumentService.swift:77; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanim-Kosullari"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanim-Kosullari"
+          }
+        }
+      }
+    },
+    "legal.legal.document.service.kvkk.aydinlatma.ve.acik.riza.metni.1f045e54": {
+      "comment": "computed_ui_copy; App/Services/LegalDocumentService.swift:75; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Notice-Information-and-Express-Consent-Text"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KVKK-Aydinlatma-ve-Acik-Riza-Metni"
+          }
+        }
+      }
+    },
+    "legal.legal.info.sheet.yasal.bilgilendirme.041d7f96": {
+      "comment": "swiftui_modifier; App/Views/Legal/LegalInfoSheet.swift:24; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legal Information"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yasal Bilgilendirme"
+          }
+        }
+      }
+    },
+    "legal.update.consent.message": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review the updated consent scope in the app before making a separate choice."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni açık rıza kapsamını uygulama içinde inceleyip ayrıca onaylayabilirsin."
+          }
+        }
+      }
+    },
+    "legal.update.consent.title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consent notice updated"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık rıza metni güncellendi"
+          }
+        }
+      }
+    },
+    "legal.update.info.message": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can review the updated documents in the app."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dilersen güncel metinleri uygulama içinde inceleyebilirsin."
+          }
+        }
+      }
+    },
+    "legal.update.info.title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legal documents updated"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yasal metinler güncellendi"
+          }
+        }
+      }
+    },
+    "legal.update.material.message": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuing to use the app means you accept the updated terms."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulamayı kullanmaya devam ederek güncel şartları kabul etmiş olursun."
+          }
+        }
+      }
+    },
+    "legal.update.material.title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Our terms have been updated"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şartlarımız güncellendi"
+          }
+        }
+      }
+    },
+    "legal.update.privacy.message": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review the updated Privacy Policy before continuing to use the app."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncel gizlilik politikasını inceleyerek uygulamayı kullanmaya devam edebilirsin."
+          }
+        }
+      }
+    },
+    "legal.update.privacy.title": {
+      "comment": "Legal UI localization contract; placeholders: none; review: machine_draft; shipping: legal_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Our Privacy Policy has been updated"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik politikamız güncellendi"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

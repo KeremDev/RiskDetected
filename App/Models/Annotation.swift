@@ -16,10 +16,10 @@ enum AnnotationTool: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .rect:   return "Kutu"
-        case .circle: return "Daire"
-        case .arrow:  return "Ok"
-        case .pen:    return "Çiz"
+        case .rect:   return RDLocalization.string("localizable.annotation.kutu.ed6d70b4", table: .localizable, fallback: "Kutu")
+        case .circle: return RDLocalization.string("localizable.annotation.daire.a28877ec", table: .localizable, fallback: "Daire")
+        case .arrow:  return RDLocalization.string("localizable.annotation.ok.3c52bae8", table: .localizable, fallback: "Ok")
+        case .pen:    return RDLocalization.string("localizable.annotation.ciz.7d56ba39", table: .localizable, fallback: "Çiz")
         }
     }
 }

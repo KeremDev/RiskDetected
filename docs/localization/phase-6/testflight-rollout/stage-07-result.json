@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "stage": 7,
+  "stage_key": "english_ca_allowlist",
+  "contract_issues": [],
+  "metric_issues": [],
+  "insufficient_samples": [],
+  "threshold_violations": [],
+  "rates": {
+    "analysis_failure_rate": null,
+    "wrong_language_rate": null,
+    "language_repair_rate": null,
+    "report_failure_rate": null,
+    "notification_template_miss_rate": null,
+    "queue_retry_rate": null
+  },
+  "applied_waivers": [],
+  "integrity_status": "passed",
+  "snapshot_sha256": "95add44906b0278bd222932c99e62c187996858397135200bedaf8b39d2859aa",
+  "effective_status": "passed"
+}

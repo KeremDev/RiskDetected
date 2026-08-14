@@ -34,7 +34,7 @@ struct ProfessionalProgressBadgesView: View {
                 .padding(.bottom, RDSpacing.lg)
             }
             .background(Color.rdPaper)
-            .navigationTitle("Başarılarım")
+            .navigationTitle(RDLocalization.string("professionalprogress.professional.progress.badges.view.basarilarim.6622e74c", table: .professionalProgress, fallback: "Başarılarım"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -64,19 +64,19 @@ struct ProfessionalProgressBadgesView: View {
                     )
 
                 Image(systemName: badge.icon)
-                    .font(.system(size: 23, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(23), weight: .bold, design: .rounded))
                     .foregroundStyle(badge.iconForeground)
                     .frame(width: 52, height: 52)
 
                 if badge.isEarned {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                         .foregroundStyle(badge.accent)
                         .background(Circle().fill(Color.rdWhite))
                         .offset(x: 4, y: -2)
                 } else {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .frame(width: 20, height: 20)
                         .background(Circle().fill(Color.rdWhite))
@@ -85,7 +85,7 @@ struct ProfessionalProgressBadgesView: View {
             }
 
             Text(badge.title)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 .foregroundStyle(badge.isEarned ? Color.rdBlack : Color.rdSlate)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
@@ -100,7 +100,27 @@ struct ProfessionalProgressBadgesView: View {
                 .stroke(badge.borderStyle, lineWidth: badge.isEarned ? 1.2 : 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: RDRadius.lg))
-        .accessibilityLabel("\(badge.title), \(badge.isEarned ? "kazanıldı" : "henüz kazanılmadı")")
+        .accessibilityLabel(
+            RDLocalization.format(
+                "progress.accessibility.title_status",
+                table: .professionalProgress,
+                fallback: "%1$@, %2$@",
+                arguments: [
+                    badge.title,
+                    badge.isEarned
+                        ? RDLocalization.string(
+                            "progress.accessibility.earned",
+                            table: .professionalProgress,
+                            fallback: "kazanıldı"
+                        )
+                        : RDLocalization.string(
+                            "progress.accessibility.not_earned",
+                            table: .professionalProgress,
+                            fallback: "henüz kazanılmadı"
+                        ),
+                ]
+            )
+        )
     }
 
     private var displayBadges: [BadgeDisplayItem] {
@@ -172,42 +192,42 @@ private struct BadgeCatalogItem {
     static let defaults: [BadgeCatalogItem] = [
         .init(
             key: "reports:10",
-            title: "10 Rapor",
+            title: RDLocalization.string("professionalprogress.professional.progress.badges.view.10.rapor.94e59118", table: .professionalProgress, fallback: "10 Rapor"),
             icon: "medal.fill",
             accent: Color(hex: "#0E9F6E"),
             requirement: .reportCount(10)
         ),
         .init(
             key: "reports:50",
-            title: "50 Rapor",
+            title: RDLocalization.string("professionalprogress.professional.progress.badges.view.50.rapor.5af979c6", table: .professionalProgress, fallback: "50 Rapor"),
             icon: "trophy.fill",
             accent: Color(hex: "#D97706"),
             requirement: .reportCount(50)
         ),
         .init(
             key: "reports:100",
-            title: "Yüz Rapor",
+            title: RDLocalization.string("professionalprogress.professional.progress.badges.view.yuz.rapor.a212662d", table: .professionalProgress, fallback: "Yüz Rapor"),
             icon: "trophy.fill",
             accent: Color(hex: "#B45309"),
             requirement: .reportCount(100)
         ),
         .init(
             key: "competency:5",
-            title: "5 Alan",
+            title: RDLocalization.string("professionalprogress.professional.progress.badges.view.5.alan.a1a0b74f", table: .professionalProgress, fallback: "5 Alan"),
             icon: "square.grid.3x2.fill",
             accent: Color(hex: "#2563EB"),
             requirement: .competencyCount(5)
         ),
         .init(
             key: "risk:first_high",
-            title: "Yüksek Risk",
+            title: RDLocalization.string("professionalprogress.professional.progress.badges.view.yuksek.risk.e92fc805", table: .professionalProgress, fallback: "Yüksek Risk"),
             icon: "exclamationmark.triangle.fill",
             accent: Color.rdCritical,
             requirement: .highRisk
         ),
         .init(
             key: "active_days:30",
-            title: "30 Aktif Gün",
+            title: RDLocalization.string("professionalprogress.professional.progress.badges.view.30.aktif.gun.8eba4217", table: .professionalProgress, fallback: "30 Aktif Gün"),
             icon: "calendar.badge.checkmark",
             accent: Color(hex: "#7C3AED"),
             requirement: .activeDays(30)

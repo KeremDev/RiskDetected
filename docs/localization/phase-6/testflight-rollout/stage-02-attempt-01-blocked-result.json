@@ -1,0 +1,27 @@
+{
+  "status": "hold",
+  "stage": 2,
+  "stage_key": "turkish_contract_dogfood",
+  "contract_issues": [],
+  "metric_issues": [],
+  "insufficient_samples": [
+    {
+      "metric": "sessions",
+      "actual": 0,
+      "required": 3
+    }
+  ],
+  "threshold_violations": [],
+  "rates": {
+    "analysis_failure_rate": 0,
+    "wrong_language_rate": 0,
+    "language_repair_rate": 0,
+    "report_failure_rate": 0,
+    "notification_template_miss_rate": 0,
+    "queue_retry_rate": 0
+  },
+  "applied_waivers": [],
+  "integrity_status": "blocked",
+  "snapshot_sha256": "1299fb22e2461a631a13db3769a525baf68e62160c81bf6ecc88bac7aabe97a2",
+  "effective_status": "blocked"
+}

@@ -26,7 +26,7 @@ struct RDLogo: View {
             .scaledToFit()
             .frame(width: imageWidth, height: imageHeight)
             .foregroundStyle(rendersOnDark ? Color.white : Color.rdBlack)
-            .accessibilityLabel("RiskDetected")
+            .accessibilityLabel(RDLocalization.string("localizable.rdlogo.riskdetected.c15b59dc", table: .localizable, fallback: "Risk Algılandı"))
     }
 }
 
@@ -43,7 +43,7 @@ struct RDHeaderLogoButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Ana sayfaya dön")
+        .accessibilityLabel(RDLocalization.string("localizable.rdlogo.ana.sayfaya.don.8c68021b", table: .localizable, fallback: "Ana sayfaya dön"))
     }
 }
 

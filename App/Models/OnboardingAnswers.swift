@@ -9,6 +9,9 @@ struct OnboardingAnswersDraft: Codable, Equatable {
     let onboardingVersion: String
     let certificateClass: OnboardingAnswerChoice?
     let hazardClasses: [OnboardingAnswerChoice]
+    let professionalRole: OnboardingAnswerChoice?
+    let safetyProfileID: String?
+    let appLanguage: String
     let sectors: [OnboardingAnswerChoice]
     let auditFrequency: OnboardingAnswerChoice?
     let selectedPlan: OnboardingAnswerChoice?
@@ -18,6 +21,9 @@ struct OnboardingAnswersDraft: Codable, Equatable {
         onboardingVersion: String = "v2",
         certificateClass: OnboardingAnswerChoice?,
         hazardClasses: [OnboardingAnswerChoice],
+        professionalRole: OnboardingAnswerChoice? = nil,
+        safetyProfileID: String? = nil,
+        appLanguage: String = RDLanguage.current.rawValue,
         sectors: [OnboardingAnswerChoice],
         auditFrequency: OnboardingAnswerChoice?,
         selectedPlan: OnboardingAnswerChoice?,
@@ -26,6 +32,9 @@ struct OnboardingAnswersDraft: Codable, Equatable {
         self.onboardingVersion = onboardingVersion
         self.certificateClass = certificateClass
         self.hazardClasses = hazardClasses
+        self.professionalRole = professionalRole
+        self.safetyProfileID = safetyProfileID
+        self.appLanguage = appLanguage
         self.sectors = sectors
         self.auditFrequency = auditFrequency
         self.selectedPlan = selectedPlan
@@ -35,6 +44,8 @@ struct OnboardingAnswersDraft: Codable, Equatable {
     var hasProfileAnswers: Bool {
         certificateClass != nil ||
             !hazardClasses.isEmpty ||
+            professionalRole != nil ||
+            safetyProfileID != nil ||
             !sectors.isEmpty ||
             auditFrequency != nil
     }
@@ -51,6 +62,9 @@ struct OnboardingAnswersDraft: Codable, Equatable {
                 capturedAt: capturedAt,
                 certificateClass: certificateClass,
                 hazardClasses: hazardClasses,
+                professionalRole: professionalRole,
+                safetyProfileID: safetyProfileID,
+                appLanguage: appLanguage,
                 sectors: sectors,
                 auditFrequency: auditFrequency,
                 selectedPlan: selectedPlan
@@ -63,6 +77,9 @@ struct OnboardingAnswersRawPayload: Codable, Equatable {
     let capturedAt: String
     let certificateClass: OnboardingAnswerChoice?
     let hazardClasses: [OnboardingAnswerChoice]
+    let professionalRole: OnboardingAnswerChoice?
+    let safetyProfileID: String?
+    let appLanguage: String
     let sectors: [OnboardingAnswerChoice]
     let auditFrequency: OnboardingAnswerChoice?
     let selectedPlan: OnboardingAnswerChoice?
@@ -71,6 +88,9 @@ struct OnboardingAnswersRawPayload: Codable, Equatable {
         case capturedAt = "captured_at"
         case certificateClass = "certificate_class"
         case hazardClasses = "hazard_classes"
+        case professionalRole = "professional_role"
+        case safetyProfileID = "safety_profile_id"
+        case appLanguage = "app_language"
         case sectors
         case auditFrequency = "audit_frequency"
         case selectedPlan = "selected_plan"

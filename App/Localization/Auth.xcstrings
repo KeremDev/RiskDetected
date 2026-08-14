@@ -1,0 +1,1734 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "auth.apple.sign.in.service.apple.guvenlik.dogrulamasi.baslatilamadi.568d11b0": {
+      "comment": "computed_ui_copy; App/Services/AppleSignInService.swift:145; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple security verification failed to start."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple güvenlik doğrulaması başlatılamadı."
+          }
+        }
+      }
+    },
+    "auth.apple.sign.in.service.apple.kimlik.bilgisi.okunamadi.1f1e9d52": {
+      "comment": "computed_ui_copy; App/Services/AppleSignInService.swift:143; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple credential could not be read."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple kimlik bilgisi okunamadı."
+          }
+        }
+      }
+    },
+    "auth.apple.sign.in.service.apple.kimlik.tokeni.alinamadi.26cf0b1f": {
+      "comment": "computed_ui_copy; App/Services/AppleSignInService.swift:147; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to obtain Apple ID token."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple kimlik tokenı alınamadı."
+          }
+        }
+      }
+    },
+    "auth.auth.service.data.corrupted.at.1.2.75b648bd": {
+      "comment": "swift_user_copy; App/Services/AuthService.swift:399; placeholders: %1$@|%2$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "data corrupted at %1$@: %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "veriler bozuk %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "auth.auth.service.dogrulama.tamamlandi.ama.oturum.olusturulamadi.l.2a5e70fd": {
+      "comment": "localized_error_description; App/Services/AuthService.swift:79; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification was completed but the session could not be created. Please send new code and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrulama tamamlandı ama oturum oluşturulamadı. Lütfen yeni kod gönderip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "auth.auth.service.e.posta.dogrulama.kodu.dogrulanamadi.f2487e20": {
+      "comment": "localized_error_description; App/Services/AuthService.swift:568; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The email verification code could not be verified."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-posta doğrulama kodu doğrulanamadı."
+          }
+        }
+      }
+    },
+    "auth.auth.service.logo.dosyasi.hazirlanamadi.dd6d4780": {
+      "comment": "localized_error_description; App/Services/AuthService.swift:278; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The logo file could not be prepared."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo dosyası hazırlanamadı."
+          }
+        }
+      }
+    },
+    "auth.auth.service.missing.key.1.at.2.2013762e": {
+      "comment": "swift_user_copy; App/Services/AuthService.swift:390; placeholders: %1$@|%2$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "missing key '%1$@' at %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "eksik anahtar'%1$@' de %2$@"
+          }
+        }
+      }
+    },
+    "auth.auth.service.oturum.bulunamadi.3535b0a0": {
+      "comment": "localized_error_description; App/Services/AuthService.swift:210; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session not found."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oturum bulunamadı."
+          }
+        }
+      }
+    },
+    "auth.auth.service.oturum.bulunamadi.6c4f2e88": {
+      "comment": "localized_error_description; App/Services/AuthService.swift:161; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session not found."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oturum bulunamadı."
+          }
+        }
+      }
+    },
+    "auth.auth.service.oturum.bulunamadi.7bbdc1d0": {
+      "comment": "localized_error_description; App/Services/AuthService.swift:271; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session not found."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oturum bulunamadı."
+          }
+        }
+      }
+    },
+    "auth.auth.service.oturum.bulunamadi.a73b798d": {
+      "comment": "localized_error_description; App/Services/AuthService.swift:305; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session not found."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oturum bulunamadı."
+          }
+        }
+      }
+    },
+    "auth.auth.service.profil.fotografi.hazirlanamadi.caff0171": {
+      "comment": "localized_error_description; App/Services/AuthService.swift:312; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile photo could not be prepared."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil fotoğrafı hazırlanamadı."
+          }
+        }
+      }
+    },
+    "auth.auth.service.profile.bootstrap.1.86cceeb4": {
+      "comment": "swift_user_copy; App/Services/AuthService.swift:443; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile bootstrap: %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil önyüklemesi: %1$@"
+          }
+        }
+      }
+    },
+    "auth.auth.service.profile.decode.corrupt.1.0c05431f": {
+      "comment": "swift_user_copy; App/Services/AuthService.swift:400; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile decode (corrupt): %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil kodu çözme (bozuk): %1$@"
+          }
+        }
+      }
+    },
+    "auth.auth.service.profile.decode.key.1.a5da62ed": {
+      "comment": "swift_user_copy; App/Services/AuthService.swift:391; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile decode (key): %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil kod çözme (anahtar): %1$@"
+          }
+        }
+      }
+    },
+    "auth.auth.service.profile.decode.type.1.fb611674": {
+      "comment": "swift_user_copy; App/Services/AuthService.swift:394; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile decode (type): %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil kod çözme (tür): %1$@"
+          }
+        }
+      }
+    },
+    "auth.auth.service.profile.decode.val.1.a6e0a1d8": {
+      "comment": "swift_user_copy; App/Services/AuthService.swift:397; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile decode (val): %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil kodu çözme (val): %1$@"
+          }
+        }
+      }
+    },
+    "auth.auth.service.profile.fetch.1.3d557476": {
+      "comment": "swift_user_copy; App/Services/AuthService.swift:406; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile fetch: %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil getirme: %1$@"
+          }
+        }
+      }
+    },
+    "auth.auth.service.type.1.mismatch.at.2.e583e0a0": {
+      "comment": "swift_user_copy; App/Services/AuthService.swift:393; placeholders: %1$@|%2$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "type %1$@ mismatch at %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tip %1$@ uyumsuzluk %2$@"
+          }
+        }
+      }
+    },
+    "auth.auth.service.value.1.not.found.at.2.8e8b5537": {
+      "comment": "swift_user_copy; App/Services/AuthService.swift:396; placeholders: %1$@|%2$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "value %1$@ not found at %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "değer %1$@ bulunamadı %2$@"
+          }
+        }
+      }
+    },
+    "auth.auth.view.1.adresine.gonderildi.a08ac01d": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:390; placeholders: %1$@; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent to %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ adresine gönderildi"
+          }
+        }
+      }
+    },
+    "auth.auth.view.apple.ile.baglaniyor.0ea0accc": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:178; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting with Apple..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple ile bağlanıyor..."
+          }
+        }
+      }
+    },
+    "auth.auth.view.apple.ile.devam.et.44a40f55": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:178; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with Apple"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple ile devam et"
+          }
+        }
+      }
+    },
+    "auth.auth.view.apple.ile.giris.yapilamadi.8f8a40ac": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:517; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not log in with Apple"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple ile giriş yapılamadı"
+          }
+        }
+      }
+    },
+    "auth.auth.view.diger.giris.yontemleri.99e4376a": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:371; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← Other login methods"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← Diğer giriş yöntemleri"
+          }
+        }
+      }
+    },
+    "auth.auth.view.dogrula.ve.giris.yap.b1c67bca": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:434; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify and log in"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrula ve giriş yap"
+          }
+        }
+      }
+    },
+    "auth.auth.view.dogrulama.kodu.95aeac29": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:386; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrulama kodu"
+          }
+        }
+      }
+    },
+    "auth.auth.view.dogrulaniyor.1968dffd": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:434; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirming..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrulanıyor..."
+          }
+        }
+      }
+    },
+    "auth.auth.view.e.33137469": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:663; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e"
+          }
+        }
+      }
+    },
+    "auth.auth.view.e.posta.adresini.degistir.e85f01e6": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:444; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← Change email address"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← E-posta adresini değiştir"
+          }
+        }
+      }
+    },
+    "auth.auth.view.e.posta.adresinizi.giriniz.e6b9a429": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:309; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter Your Email Address"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-posta Adresinizi Giriniz"
+          }
+        }
+      }
+    },
+    "auth.auth.view.e.posta.ile.giris.yap.ff1b3d8b": {
+      "comment": "custom_ui_copy; App/Views/Auth/AuthView.swift:162; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with email"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-posta ile giriş yap"
+          }
+        }
+      }
+    },
+    "auth.auth.view.g.1b4dcfe8": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:658; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "G"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "G"
+          }
+        }
+      }
+    },
+    "auth.auth.view.g.1bdc8bd9": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:633; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "G"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "G"
+          }
+        }
+      }
+    },
+    "auth.auth.view.g.d11abd30": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:661; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "g"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "G"
+          }
+        }
+      }
+    },
+    "auth.auth.view.google.ile.baglaniyor.d73e6d77": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:226; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting with Google..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google ile bağlanıyor..."
+          }
+        }
+      }
+    },
+    "auth.auth.view.google.ile.giris.yapilamadi.28393332": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:541; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not log in with Google"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google ile giriş yapılamadı"
+          }
+        }
+      }
+    },
+    "auth.auth.view.ile.devam.et.f97fded1": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:664; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "continue with"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ile devam et"
+          }
+        }
+      }
+    },
+    "auth.auth.view.kod.dogrulanamadi.8919fbda": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:495; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code could not be verified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod doğrulanamadı"
+          }
+        }
+      }
+    },
+    "auth.auth.view.kod.gelmedi.mi.e.posta.adresini.kontrol.edip.tek.b7b833bb": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:424; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Didn't receive the code? You can check your email address and resend."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin."
+          }
+        }
+      }
+    },
+    "auth.auth.view.kod.gonder.781cb25a": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:361; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod gönder"
+          }
+        }
+      }
+    },
+    "auth.auth.view.kod.gonderilemedi.50c44043": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:481; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code could not be sent"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod gönderilemedi"
+          }
+        }
+      }
+    },
+    "auth.auth.view.kod.gonderiliyor.726a039d": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:361; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code is being sent..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod gönderiliyor..."
+          }
+        }
+      }
+    },
+    "auth.auth.view.l.8c9a74bc": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:662; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "l"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ben"
+          }
+        }
+      }
+    },
+    "auth.auth.view.mailinizi.yaziniz.0b6f66bd": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:342; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your email address..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mailinizi yazınız..."
+          }
+        }
+      }
+    },
+    "auth.auth.view.o.194a5f92": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:660; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "o"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O"
+          }
+        }
+      }
+    },
+    "auth.auth.view.o.8d2ab61c": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:659; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "o"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O"
+          }
+        }
+      }
+    },
+    "auth.auth.view.saha.icin.yapay.zeka.destekli.is.guvenligi.asist.73caffd7": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:76; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-powered workplace-safety assistant for the field"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha için yapay zekâ destekli iş güvenliği asistanı"
+          }
+        }
+      }
+    },
+    "auth.auth.view.veya.96cc844b": {
+      "comment": "swiftui_text; App/Views/Auth/AuthView.swift:169; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "or"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "veya"
+          }
+        }
+      }
+    },
+    "auth.auth.view.yeni.kod.gonder.7cb92f87": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:284; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send new code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni kod gönder"
+          }
+        }
+      }
+    },
+    "auth.auth.view.yeni.kod.gonderiliyor.b1451c30": {
+      "comment": "swift_user_copy; App/Views/Auth/AuthView.swift:284; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New code is being sent..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni kod gönderiliyor..."
+          }
+        }
+      }
+    },
+    "auth.google.continue": {
+      "comment": "Authentication product-copy contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with Google"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google ile devam et"
+          }
+        }
+      }
+    },
+    "auth.google.sign.in.service.google.giris.penceresi.acilamadi.f8260b5c": {
+      "comment": "localized_error_description; App/Services/GoogleSignInService.swift:28; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Google login window could not be opened."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google giriş penceresi açılamadı."
+          }
+        }
+      }
+    },
+    "auth.google.sign.in.service.google.giris.sonucu.alinamadi.f27f918a": {
+      "comment": "localized_error_description; App/Services/GoogleSignInService.swift:67; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not get Google login result."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google giriş sonucu alınamadı."
+          }
+        }
+      }
+    },
+    "auth.google.sign.in.service.google.ios.client.id.eksik.google.cloud.dan.alin.b11518ec": {
+      "comment": "localized_error_description; App/Services/GoogleSignInService.swift:84; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google iOS Client ID is missing. Client ID received from Google Cloud should be added to Info.plist."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google iOS Client ID eksik. Google Cloud'dan alınan Client ID Info.plist içine eklenmeli."
+          }
+        }
+      }
+    },
+    "auth.google.sign.in.service.google.kimlik.token.i.alinamadi.5fc54a00": {
+      "comment": "localized_error_description; App/Services/GoogleSignInService.swift:38; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to retrieve Google identity token."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google kimlik token'ı alınamadı."
+          }
+        }
+      }
+    },
+    "auth.google.sign.in.service.google.server.client.id.eksik.google.cloud.conso.482f366a": {
+      "comment": "localized_error_description; App/Services/GoogleSignInService.swift:95; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google server client ID is missing. You must create a Web OAuth client ID in the Google Cloud Console and add it to the GIDServerClientID field in Info.plist."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google server client ID eksik. Google Cloud Console'da Web OAuth client ID oluşturup Info.plist içindeki GIDServerClientID alanına eklemelisin."
+          }
+        }
+      }
+    },
+    "auth.obauth.view.1.adresine.gonderildi.c6eb060c": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:420; placeholders: %1$@; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent to %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ adresine gönderildi"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.47.sablon.1.2.443461d9": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:759; placeholders: %1$@|%2$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "47 templates · %1$@ · %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "47 şablon · %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.apple.ile.baglaniyor.2a373fb3": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:156; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting with Apple..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple ile bağlanıyor..."
+          }
+        }
+      }
+    },
+    "auth.obauth.view.apple.ile.devam.et.891fa08e": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:156; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with Apple"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple ile devam et"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.apple.ile.giris.yapilamadi.8e2ae282": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:592; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not log in with Apple"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple ile giriş yapılamadı"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.dogrula.ve.devam.et.cf4af808": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:353; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify and continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrula ve devam et"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.dogrulama.kodu.2178a0be": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:417; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrulama kodu"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.dogrulama.kodu.49151fab": {
+      "comment": "swiftui_modifier; App/Views/Onboarding/V2/Screens/OBAuthView.swift:518; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrulama kodu"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.dogrulaniyor.d63b1354": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:353; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirming..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrulanıyor..."
+          }
+        }
+      }
+    },
+    "auth.obauth.view.e.d9412456": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:846; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.e.posta.adresini.gir.b2e37c77": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:299; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your email address"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-posta adresini gir"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.e.posta.adresinizi.giriniz.da5d336b": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:417; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your e-mail address"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-posta adresinizi giriniz"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.e.posta.ile.devam.6878ce15": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:296; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue via email"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-posta ile devam"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.e.posta.ile.devam.et.55c15dd1": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:207; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue via email"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-posta ile devam et"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.e.postayi.degistir.ec49de1d": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:373; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change email"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-postayı değiştir"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.g.5eaad138": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:841; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "G"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "G"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.g.fdad60f9": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:844; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "g"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "G"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.giris.yap.58e1b061": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:251; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign In"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giriş Yap"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.google.ile.baglaniyor.365debda": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:179; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting with Google..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google ile bağlanıyor..."
+          }
+        }
+      }
+    },
+    "auth.obauth.view.google.ile.giris.yapilamadi.4654faac": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:619; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not log in with Google"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google ile giriş yapılamadı"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.hazirladigin.plani.kaydedebilmen.icin.hesabini.o.aab9969d": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:114; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let's create your account so you can save the plan you prepared."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazırladığın planı kaydedebilmen için hesabını oluşturalım."
+          }
+        }
+      }
+    },
+    "auth.obauth.view.ile.devam.et.52aa31ca": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:847; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "continue with"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ile devam et"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.kod.dogrulama.acik.a3979975": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:296; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code verification is on"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod doğrulama açık"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.kod.dogrulanamadi.48256645": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:567; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code could not be verified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod doğrulanamadı"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.kod.gonder.57ce42d7": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:333; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod gönder"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.kod.gonderilemedi.aa3d6ffb": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:545; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code could not be sent"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod gönderilemedi"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.kod.gonderiliyor.a71cc123": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:333; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code is being sent..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod gönderiliyor..."
+          }
+        }
+      }
+    },
+    "auth.obauth.view.kod.gondermek.icin.e.posta.adresini.yaz.6a8d2849": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:420; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type your email address to send the code."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod göndermek için e-posta adresini yaz."
+          }
+        }
+      }
+    },
+    "auth.obauth.view.l.a43b7b81": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:845; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "l"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ben"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.mailinizi.yaziniz.03d0e7cf": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBAuthView.swift:463; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your email address..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mailinizi yazınız..."
+          }
+        }
+      }
+    },
+    "auth.obauth.view.o.55992d33": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:842; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "o"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.o.bde9314f": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:843; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "o"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.planin.hazir.seni.bekliyor.150275ab": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:756; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your plan is ready, waiting for you"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planın hazır, seni bekliyor"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.planin.hesabina.kilitlensin.diye.10.saniyeni.ala.dd40087d": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:137; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll take 10 seconds to lock your plan into your account."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planın hesabına kilitlensin diye 10 saniyeni alacağız"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.sana.ozel.76ff23c3": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:746; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SPECIAL FOR YOU"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SANA ÖZEL"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.son.adim.7bc70890": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:106; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last step."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son adım."
+          }
+        }
+      }
+    },
+    "auth.obauth.view.yeni.kod.gonder.085cf53a": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:368; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send new code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni kod gönder"
+          }
+        }
+      }
+    },
+    "auth.obauth.view.zaten.hesabim.var.36115df5": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBAuthView.swift:248; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I already have an account ·"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaten hesabım var ·"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

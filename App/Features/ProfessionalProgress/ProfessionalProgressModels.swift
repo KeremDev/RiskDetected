@@ -14,13 +14,13 @@ enum ProfessionalProgressTitle: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .candidate: return "Aday Uzman"
-        case .fieldObserver: return "Saha Gözlemcisi"
-        case .riskHunter: return "Risk Avcısı"
-        case .hazardAnalyst: return "Tehlike Analisti"
-        case .seniorRiskSpecialist: return "Kıdemli Risk Uzmanı"
-        case .safetyStrategist: return "Güvenlik Stratejisti"
-        case .masterHSESpecialist: return "Usta İSG Uzmanı"
+        case .candidate: return RDLocalization.string("professionalprogress.professional.progress.models.aday.uzman.80c60806", table: .professionalProgress, fallback: "Aday Uzman")
+        case .fieldObserver: return RDLocalization.string("professionalprogress.professional.progress.models.saha.gozlemcisi.2eea7f98", table: .professionalProgress, fallback: "Saha Gözlemcisi")
+        case .riskHunter: return RDLocalization.string("professionalprogress.professional.progress.models.risk.avcisi.743f242e", table: .professionalProgress, fallback: "Risk Avcısı")
+        case .hazardAnalyst: return RDLocalization.string("professionalprogress.professional.progress.models.tehlike.analisti.cccb6405", table: .professionalProgress, fallback: "Tehlike Analisti")
+        case .seniorRiskSpecialist: return RDLocalization.string("professionalprogress.professional.progress.models.kidemli.risk.uzmani.b252366f", table: .professionalProgress, fallback: "Kıdemli Risk Uzmanı")
+        case .safetyStrategist: return RDLocalization.string("professionalprogress.professional.progress.models.guvenlik.stratejisti.be6b9332", table: .professionalProgress, fallback: "Güvenlik Stratejisti")
+        case .masterHSESpecialist: return RDLocalization.string("professionalprogress.professional.progress.models.usta.isg.uzmani.f2c16a87", table: .professionalProgress, fallback: "Usta İSG Uzmanı")
         }
     }
 
@@ -77,17 +77,17 @@ enum ProfessionalProgressCompetency: String, CaseIterable, Identifiable, Codable
 
     var label: String {
         switch self {
-        case .fire: return "Yangın"
-        case .chemical: return "Kimyasal"
-        case .electrical: return "Elektrik"
-        case .mechanical: return "Mekanik"
-        case .ergonomics: return "Ergonomi"
-        case .psychosocial: return "Psikososyal"
-        case .workingAtHeight: return "Yüksekte Çalışma"
+        case .fire: return RDLocalization.string("professionalprogress.professional.progress.models.yangin.653d5ecb", table: .professionalProgress, fallback: "Yangın")
+        case .chemical: return RDLocalization.string("professionalprogress.professional.progress.models.kimyasal.58ad8545", table: .professionalProgress, fallback: "Kimyasal")
+        case .electrical: return RDLocalization.string("professionalprogress.professional.progress.models.elektrik.fbb087fa", table: .professionalProgress, fallback: "Elektrik")
+        case .mechanical: return RDLocalization.string("professionalprogress.professional.progress.models.mekanik.6824d368", table: .professionalProgress, fallback: "Mekanik")
+        case .ergonomics: return RDLocalization.string("professionalprogress.professional.progress.models.ergonomi.47cb2b71", table: .professionalProgress, fallback: "Ergonomi")
+        case .psychosocial: return RDLocalization.string("professionalprogress.professional.progress.models.psikososyal.404024f2", table: .professionalProgress, fallback: "Psikososyal")
+        case .workingAtHeight: return RDLocalization.string("professionalprogress.professional.progress.models.yuksekte.calisma.97ec4e45", table: .professionalProgress, fallback: "Yüksekte Çalışma")
         case .ppe: return "KKD"
-        case .mining: return "Maden"
-        case .construction: return "İnşaat"
-        case .factory: return "Fabrika"
+        case .mining: return RDLocalization.string("professionalprogress.professional.progress.models.maden.653693ae", table: .professionalProgress, fallback: "Maden")
+        case .construction: return RDLocalization.string("professionalprogress.professional.progress.models.insaat.d9446df6", table: .professionalProgress, fallback: "İnşaat")
+        case .factory: return RDLocalization.string("professionalprogress.professional.progress.models.fabrika.4b480755", table: .professionalProgress, fallback: "Fabrika")
         }
     }
 
@@ -331,7 +331,7 @@ struct ProfessionalProgressSummary: Equatable {
         guard let weeklySummary,
               weeklySummary.normalizedWeekStart == Self.currentWeekStartString else {
             return ProfessionalProgressWeeklyTracking(
-                title: "Haftalık Takip",
+                title: RDLocalization.string("professionalprogress.professional.progress.models.haftalik.takip.00850983", table: .professionalProgress, fallback: "Haftalık Takip"),
                 body: Self.weeklyTrackingBody(
                     reports: 0,
                     analyses: 0,
@@ -347,7 +347,7 @@ struct ProfessionalProgressSummary: Equatable {
 
         let topCompetency = weeklySummary.topCompetencyKey.flatMap(ProfessionalProgressCompetency.init(rawValue:))
         return ProfessionalProgressWeeklyTracking(
-            title: weeklySummary.messageTitle ?? "Haftalık Takip",
+            title: weeklySummary.messageTitle ?? RDLocalization.string("professionalprogress.professional.progress.models.haftalik.takip.192ca0ad", table: .professionalProgress, fallback: "Haftalık Takip"),
             body: weeklySummary.messageBody ?? Self.weeklyTrackingBody(
                 reports: weeklySummary.reportsCount,
                 analyses: weeklySummary.analysesCount,
@@ -388,7 +388,7 @@ struct ProfessionalProgressSummary: Equatable {
 
     private static var currentWeekStartString: String {
         var calendar = Calendar(identifier: .iso8601)
-        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        calendar.timeZone = RDConfig.Quota.businessTimeZone
         let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
 
         let formatter = DateFormatter()
@@ -407,13 +407,13 @@ struct ProfessionalProgressSummary: Equatable {
     ) -> String {
         var body: String
         if reports == 0 && analyses == 0 {
-            body = "Bu hafta ilk analizini başlat. 😔"
+            body = RDLocalization.string("professionalprogress.professional.progress.models.bu.hafta.ilk.analizini.baslat.6f6b8e2e", table: .professionalProgress, fallback: "Bu hafta ilk analizini başlat. 😔")
         } else if reports == 0 {
-            body = "\(analyses) analiz tamamladın. Şimdi rapora dönüştür."
+            body = RDLocalization.format("professionalprogress.professional.progress.models.1.analiz.tamamladin.simdi.rapora.donustur.2ba431b2", table: .professionalProgress, fallback: "%1$@ analiz tamamladın. Şimdi rapora dönüştür.", arguments: [String(describing: analyses)])
         } else if reports == 1 {
-            body = "İlk rapor tamam. Devam et."
+            body = RDLocalization.string("professionalprogress.professional.progress.models.ilk.rapor.tamam.devam.et.663e1cfb", table: .professionalProgress, fallback: "İlk rapor tamam. Devam et.")
         } else {
-            body = "Bu hafta \(reports) rapor tamamladın. 💪"
+            body = RDLocalization.format("professionalprogress.professional.progress.models.bu.hafta.1.rapor.tamamladin.ea8ca37d", table: .professionalProgress, fallback: "Bu hafta %1$@ rapor tamamladın. 💪", arguments: [String(describing: reports)])
         }
 
         return body

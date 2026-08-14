@@ -10,10 +10,10 @@ enum RDTab: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .home: return "Ana Sayfa"
-        case .analyses: return "Analizler"
-        case .reports: return "Raporlar"
-        case .profile: return "Profil"
+        case .home: return RDLocalization.string("localizable.rdtab.bar.ana.sayfa.5c57e0e6", table: .localizable, fallback: "Ana Sayfa")
+        case .analyses: return RDLocalization.string("localizable.rdtab.bar.analizler.55bc5133", table: .localizable, fallback: "Analizler")
+        case .reports: return RDLocalization.string("localizable.rdtab.bar.raporlar.ecfc0748", table: .localizable, fallback: "Raporlar")
+        case .profile: return RDLocalization.string("localizable.rdtab.bar.profil.2d7788f8", table: .localizable, fallback: "Profil")
         }
     }
 
@@ -86,7 +86,7 @@ struct RDTabBar: View {
                 }
 
                 Image(systemName: tab.icon)
-                    .font(.system(size: 21, weight: isActive ? .semibold : .regular, design: .rounded))
+                    .font(.system(size: RDFontScale.size(21), weight: isActive ? .semibold : .regular, design: .rounded))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(isActive ? Color.rdBlack : inactiveIconColor)
                     .opacity(isActive ? 1 : 0.82)
@@ -110,7 +110,7 @@ struct RDTabBar: View {
                 Circle()
                     .stroke(quickScanStroke, lineWidth: 1)
                 Image(systemName: "viewfinder")
-                    .font(.system(size: 23, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(23), weight: .semibold, design: .rounded))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(Color.rdGreen)
             }
@@ -120,7 +120,7 @@ struct RDTabBar: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Hızlı tarama başlat")
+        .accessibilityLabel(RDLocalization.string("localizable.rdtab.bar.hizli.tarama.baslat.f3589e86", table: .localizable, fallback: "Hızlı tarama başlat"))
         .accessibilityIdentifier("tab.quick_scan")
         .accessibilityAddTraits(.isButton)
     }

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "decision": "approved",
+  "reviewer_name": "Kerem",
+  "reviewer_qualification": "Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.",
+  "reviewed_at": "2026-07-31T08:02:40Z",
+  "approval_basis": {
+    "qualified_reviewer_statement_recorded": true,
+    "qualified_reviewer_statement_date": "2026-07-31",
+    "publication_direction_recorded": true,
+    "publication_direction_date": "2026-07-31",
+    "scope": "Final English localization of the current Turkish Terms, Privacy Policy, consent notice and verified product data-processing behaviour."
+  },
+  "reviewed_preapproval_manifest_path": "App/LegalDocuments/en/manifest.json",
+  "reviewed_preapproval_manifest_sha256": "5a07bc27485e34dd9c3accad1507c5d02823c8cad7c99b5e0a9e1fdf48ef3397",
+  "document_set_id": "en-global-v1",
+  "locale": "en",
+  "reviewed_documents": [
+    {
+      "kind": "terms",
+      "path": "en/Terms-of-Use.md",
+      "version": "terms-en-2026-07-31.1",
+      "sha256": "49a9b3f164b9dc8048453be930509aa334a854834c2abfa0cd8b11fd67ef6efa",
+      "source_documents": [
+        {
+          "path": "App/LegalDocuments/Kullanim-Kosullari.md",
+          "sha256": "0dfd3f6305982499a66aa6c80733a45181cd60ce2bd286a96d10cccd47f3f95c"
+        }
+      ]
+    },
+    {
+      "kind": "privacy",
+      "path": "en/Privacy-Policy.md",
+      "version": "privacy-en-2026-07-31.1",
+      "sha256": "ef3d7e01b2b3c09603ff79c7f14bac631493feece7c1a0d6b0bd9a5f0e76ece4",
+      "source_documents": [
+        {
+          "path": "App/LegalDocuments/Gizlilik-Politikasi.md",
+          "sha256": "f321fd9bb4b823cb325f23ad40ee641caf3303bd5ba2fbad402ca10b3ad5d487"
+        },
+        {
+          "path": "App/LegalDocuments/KVKK-Aydinlatma-ve-Acik-Riza-Metni.md",
+          "sha256": "d06f1fe842a24a5f8607de86c445e243efdcddc9061b0bc3d22c380c54fdec47"
+        }
+      ]
+    },
+    {
+      "kind": "consent",
+      "path": "en/AI-and-Data-Processing-Notice.md",
+      "version": "ai-data-en-2026-07-31.1",
+      "sha256": "a8c9873f57228a36a4ede597e33648ff9251f9c814f1d1afc3e912c82ae08e1b",
+      "source_documents": [
+        {
+          "path": "App/LegalDocuments/Acik-Riza-Beyani.md",
+          "sha256": "eb4c7bfdb90c2317499fc1168732c187d221a513f2af1cbbe3e83b8066683575"
+        },
+        {
+          "path": "App/LegalDocuments/Gizlilik-Politikasi.md",
+          "sha256": "f321fd9bb4b823cb325f23ad40ee641caf3303bd5ba2fbad402ca10b3ad5d487"
+        }
+      ]
+    }
+  ],
+  "release_conditions": [
+    "Publish the exact reviewed English documents at the three required HTTPS riskdetected.com URLs.",
+    "Verify that the public URLs do not serve a Turkish SPA fallback or redirect away from riskdetected.com.",
+    "Record public_urls and public_urls_verified_at in the legal manifest.",
+    "Keep the current production iOS build unaffected; enable the English runtime only in the new reviewed build and the approved rollout window."
+  ],
+  "notes": "This record supersedes the draft.1 approval record for release decisions. It binds the owner's qualified approval and explicit publication direction to the exact final English document hashes and their current Turkish source documents."
+}

@@ -55,7 +55,7 @@ final class AppleSignInService: NSObject {
 
     private static func randomNonceString(length: Int = 32) -> String {
         precondition(length > 0)
-        let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._")
         var result = ""
         var remainingLength = length
 
@@ -140,11 +140,11 @@ enum AppleSignInError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidCredential:
-            return "Apple kimlik bilgisi okunamadı."
+            return RDLocalization.string("auth.apple.sign.in.service.apple.kimlik.bilgisi.okunamadi.1f1e9d52", table: .auth, fallback: "Apple kimlik bilgisi okunamadı.")
         case .missingNonce:
-            return "Apple güvenlik doğrulaması başlatılamadı."
+            return RDLocalization.string("auth.apple.sign.in.service.apple.guvenlik.dogrulamasi.baslatilamadi.568d11b0", table: .auth, fallback: "Apple güvenlik doğrulaması başlatılamadı.")
         case .missingIdentityToken:
-            return "Apple kimlik tokenı alınamadı."
+            return RDLocalization.string("auth.apple.sign.in.service.apple.kimlik.tokeni.alinamadi.26cf0b1f", table: .auth, fallback: "Apple kimlik tokenı alınamadı.")
         }
     }
 }

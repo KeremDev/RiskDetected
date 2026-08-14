@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "project_ref": "ppcrzemgiztzcgddbins",
+  "updated_at": "2026-07-31T08:08:29Z",
+  "production_read_only_snapshot_path": "docs/localization/phase-5/PHASE_5_PRODUCTION_READONLY_2026-07-31.json",
+  "production_read_only_snapshot_sha256": "856e32db49114b783336b00493c4367c7237569391943effb4c101e62d306fd6",
+  "legal": {
+    "manifest_path": "App/LegalDocuments/en/manifest.json",
+    "counsel_review_evidence": {
+      "approval_record_path": "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-07-31_V2.json",
+      "approval_record_sha256": "54ade7d6aae5615bcd5a1ce2f3191c1fecb77d9080ff61edf88b948afe129161",
+      "decision": "approved",
+      "reviewer_name": "Kerem",
+      "reviewer_qualification": "Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.",
+      "reviewed_at": "2026-07-31T08:02:40Z",
+      "reviewed_preapproval_manifest_sha256": "5a07bc27485e34dd9c3accad1507c5d02823c8cad7c99b5e0a9e1fdf48ef3397"
+    },
+    "public_url_evidence": {
+      "status": "verified",
+      "verified_at": "2026-07-31T08:08:29Z",
+      "verification_path": "docs/localization/phase-5/ENGLISH_LEGAL_PRODUCTION_VERIFICATION_2026-07-31.json",
+      "verification_sha256": "5440c9d1fcb982ebacf854dc35b69c78cc511c61b9c4ffb6cc124c93e3b9e178",
+      "deployment_id": "dpl_9HvH32vh8YTTmmLFdJY9d9SSaxqS"
+    }
+  },
+  "notification_copy": {
+    "review_pack_path": "docs/localization/phase-5/NOTIFICATION_COPY_REVIEW_PACK_2026-07-30.md",
+    "review_pack_sha256": "5660f3a69595a0d8b80057fe2a5a0fb97c9393a003ff2bd72ad8208646955c87",
+    "approval_record_path": "docs/localization/phase-5/NOTIFICATION_COPY_APPROVAL_2026-07-31.json",
+    "approval_record_sha256": "abfbf34bbfcd59e72ac06658ab84970d0429cc1d2020102d866ae48544921158",
+    "decision": "approved",
+    "reviewer_name": "Kerem",
+    "reviewer_qualification": "İngilizce iş güvenliği metinlerini değerlendirme niteliğine sahip.",
+    "reviewed_at": "2026-07-31T06:31:04Z",
+    "approved_repository_seed_rows": 10,
+    "production_approved_exact_locale_rows": 10,
+    "production_rows_verified_at": "2026-07-31T07:25:37Z",
+    "production_verification_path": "docs/localization/phase-5/NOTIFICATION_COPY_PRODUCTION_VERIFICATION_2026-07-31.json",
+    "production_verification_sha256": "c3a885c795debba5785d22662789025805b10b90322b91a13fc033c59ffe35a4"
+  },
+  "auth_email_hook": {
+    "activation_runbook_path": "docs/localization/phase-5/AUTH_EMAIL_HOOK_ACTIVATION_RUNBOOK_2026-07-30.md",
+    "activation_runbook_sha256": "2db538f2937d7941a3028f44de242244c2b2485dc129ff5ceed282d2a679e827",
+    "production_verification_path": "docs/localization/phase-5/AUTH_EMAIL_HOOK_PRODUCTION_VERIFICATION_2026-07-31.json",
+    "function_name": "auth-send-email-hook",
+    "function_deployed": true,
+    "deployed_at": "2026-07-31T07:15:06.815Z",
+    "deployment_version": "7",
+    "deployment_bundle_sha256": "3cffc99745e2b247a0b4bbf96b2b9762d3bfde37e9ae5d10179d922af0afbdf2",
+    "hook_activated": true,
+    "hook_activated_at": "2026-07-31T07:08:03Z",
+    "secret_name_present": true,
+    "secret_value_recorded": false,
+    "smoke_tests": {
+      "tr_signup": "passed",
+      "en_signup": "passed",
+      "tr_recovery": "passed",
+      "en_recovery": "passed",
+      "secure_email_change": "passed"
+    },
+    "smoke_completed_at": "2026-07-31T07:16:48Z",
+    "production_verification_sha256": "268196598db212fd3dfae5cd79a4f6db031f43528a35e691d8d69c0c30fb13f5"
+  }
+}

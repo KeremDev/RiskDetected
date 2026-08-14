@@ -1,0 +1,276 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "safety.profile.au.subtitle": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Australian WHS terminology. This does not certify compliance."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yasal uyumluluk iddiası içermeyen Avustralya iş sağlığı ve güvenliği terminolojisi."
+          }
+        }
+      }
+    },
+    "safety.profile.au.title": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AU"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avustralya"
+          }
+        }
+      }
+    },
+    "safety.profile.body": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select the terminology used for your work. This changes wording in analyses and reports; it does not certify legal compliance."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çalışmanda kullanılan terminolojiyi seç. Bu seçim analiz ve rapor ifadelerini değiştirir; yasal uyumluluğu belgelemez."
+          }
+        }
+      }
+    },
+    "safety.profile.ca.subtitle": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Canadian OHS terminology. This does not certify Canada-wide compliance."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kanada çapında uyumluluk iddiası içermeyen iş sağlığı ve güvenliği terminolojisi."
+          }
+        }
+      }
+    },
+    "safety.profile.ca.title": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CA"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kanada"
+          }
+        }
+      }
+    },
+    "safety.profile.footer": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can change this for future analyses in Profile."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gelecekteki analizler için bu seçimi Profil’den değiştirebilirsin."
+          }
+        }
+      }
+    },
+    "safety.profile.gb.subtitle": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UK health and safety terminology. This does not certify compliance."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yasal uyumluluk iddiası içermeyen Birleşik Krallık iş sağlığı ve güvenliği terminolojisi."
+          }
+        }
+      }
+    },
+    "safety.profile.gb.title": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birleşik Krallık"
+          }
+        }
+      }
+    },
+    "safety.profile.intl.subtitle": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neutral workplace-safety terminology for work across regions."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bölgeler arası çalışmalar için tarafsız iş güvenliği terminolojisi."
+          }
+        }
+      }
+    },
+    "safety.profile.intl.title": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "International"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uluslararası"
+          }
+        }
+      }
+    },
+    "safety.profile.title": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose your safety terminology"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş güvenliği terminolojini seç"
+          }
+        }
+      }
+    },
+    "safety.profile.tr.subtitle": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Türkiye workplace-safety terminology and product behaviour."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevcut Türkiye İSG terminolojisi ve ürün davranışı."
+          }
+        }
+      }
+    },
+    "safety.profile.tr.title": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türkiye"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türkiye"
+          }
+        }
+      }
+    },
+    "safety.profile.us.subtitle": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "US occupational safety and health terminology. This does not certify compliance."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yasal uyumluluk iddiası içermeyen ABD iş güvenliği terminolojisi."
+          }
+        }
+      }
+    },
+    "safety.profile.us.title": {
+      "comment": "Safety terminology contract; placeholders: none; review: machine_draft; shipping: safety_review_required",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "US"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amerika Birleşik Devletleri"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

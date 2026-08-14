@@ -19,7 +19,19 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 type ExpiredPhoto = {
   id: string;
   storage_path: string;
+  analysis_id: string;
+  user_id: string;
 };
+
+function hasBoundStoragePath(photo: ExpiredPhoto): boolean {
+  const expectedPrefix =
+    `${photo.user_id.toLowerCase()}/${photo.analysis_id.toLowerCase()}/`;
+  if (!photo.storage_path.toLowerCase().startsWith(expectedPrefix)) {
+    return false;
+  }
+  const objectName = photo.storage_path.slice(expectedPrefix.length);
+  return objectName.length > 0 && !objectName.includes("/");
+}
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -100,7 +112,7 @@ serve(async (req) => {
 
   const { data: expiredPhotos, error: photoSelectError } = await supabase
     .from("photos")
-    .select("id, storage_path")
+    .select("id, storage_path, analysis_id, user_id")
     .lte("retention_expires_at", now)
     .order("retention_expires_at", { ascending: true })
     .limit(batchSize);
@@ -109,7 +121,15 @@ serve(async (req) => {
     return json(500, { error: "Failed to select expired photos" });
   }
 
-  const photos = (expiredPhotos ?? []) as ExpiredPhoto[];
+  const allExpiredPhotos = (expiredPhotos ?? []) as ExpiredPhoto[];
+  const photos = allExpiredPhotos.filter(hasBoundStoragePath);
+  const skippedUnboundPhotos = allExpiredPhotos.length - photos.length;
+  if (skippedUnboundPhotos > 0) {
+    console.warn(
+      "Skipped expired photo rows with unbound storage paths",
+      JSON.stringify({ skipped_unbound_photo_rows: skippedUnboundPhotos }),
+    );
+  }
   const photoIds = photos.map((photo) => photo.id);
   const storagePaths = photos.map((photo) => photo.storage_path).filter(
     Boolean,
@@ -153,5 +173,6 @@ serve(async (req) => {
     expired_raw_ai: expiredRawAI,
     expired_photo_rows: removedPhotoRows,
     expired_storage_objects: removedStorageObjects,
+    skipped_unbound_photo_rows: skippedUnboundPhotos,
   });
 });

@@ -3,7 +3,6 @@ import SwiftUI
 struct MainTabView: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.colorScheme) private var colorScheme
-    @State private var showQuickSourceSheet = false
     @State private var showQuotaAlert = false
     @State private var showPaywall = false
 
@@ -33,33 +32,13 @@ struct MainTabView: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
-        .sheet(isPresented: $showQuickSourceSheet) {
-            PhotoSourceSheet(
-                onCamera: {
-                    showQuickSourceSheet = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        app.requestQuickScan(source: .camera)
-                    }
-                },
-                onGallery: {
-                    showQuickSourceSheet = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        app.requestQuickScan(source: .gallery)
-                    }
-                },
-                onClose: { showQuickSourceSheet = false }
-            )
-            .presentationDetents([.height(285)])
-            .presentationDragIndicator(.hidden)
-            .preferredColorScheme(preferredModalColorScheme)
-        }
-        .alert("Ücretsiz hak doldu", isPresented: $showQuotaAlert) {
-            Button("Yükselt") {
+        .alert(RDLocalization.string("analysis.main.tab.view.ucretsiz.hak.doldu.02b7d919", table: .analysis, fallback: "Ücretsiz hak doldu"), isPresented: $showQuotaAlert) {
+            Button(RDLocalization.string("analysis.main.tab.view.yukselt.a7a8cbd7", table: .analysis, fallback: "Yükselt")) {
                 showPaywall = true
             }
-            Button("Tamam", role: .cancel) {}
+            Button(RDLocalization.string("analysis.main.tab.view.tamam.ce1433e3", table: .analysis, fallback: "Tamam"), role: .cancel) {}
         } message: {
-            Text("Günde 1 ücretsiz analiz hakkınızı kullandınız. Plus veya Pro ile devam edebilirsiniz.")
+            Text(RDLocalization.string("analysis.main.tab.view.gunde.1.ucretsiz.analiz.hakkinizi.kullandiniz.pl.c4387499", table: .analysis, fallback: "Günde 1 ücretsiz analiz hakkınızı kullandınız. Plus veya Pro ile devam edebilirsiniz."))
         }
         .fullScreenCover(isPresented: $showPaywall) {
             FreeAwarePaywallView(
@@ -85,7 +64,10 @@ struct MainTabView: View {
                 // Kota kontrolü geçici olarak alınamazsa HomeView kendi korumasını yine çalıştırır.
             }
         }
-        showQuickSourceSheet = true
+        app.activeTab = .home
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            app.requestQuickScan(source: .chooser)
+        }
     }
 
     private var preferredModalColorScheme: ColorScheme {
@@ -93,8 +75,12 @@ struct MainTabView: View {
     }
 
     private static var isUITestLaunch: Bool {
+        #if DEBUG
         CommandLine.arguments.contains { $0.hasPrefix("RD_UI_TEST_") }
             || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
+        #else
+        false
+        #endif
     }
 }
 

@@ -8,6 +8,8 @@ import SwiftUI
 struct AnalysisJob: Identifiable {
     let id = UUID()
     let previewImage: UIImage?
+    let presentationMode: AnalysisWaitingPresentationMode
+    let photoCount: Int
     let work: (@escaping @MainActor (AnalysisProgressUpdate) -> Void) async throws -> AnalysisResultBundle
 }
 
@@ -15,19 +17,33 @@ private struct PaywallPresentation: Identifiable {
     let id = UUID()
 }
 
-private let maxTextInputCharacters = AnalysisService.maxTextInputCharacters
+private enum PhotoTrayPickerRequest {
+    case camera
+    case gallery
+}
+
+private struct AnalysisPhotoDraft: Identifiable {
+    let id: UUID
+    var image: UIImage
+
+    init(id: UUID = UUID(), image: UIImage) {
+        self.id = id
+        self.image = image
+    }
+}
+
 private let freeQuotaCachePrefix = "rd.home.freeQuota"
+private let analysisSectorSheetHeight: CGFloat = 600
 
 struct HomeView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
 
-    @State private var mode: HomeMode = .photo
-    @State private var text: String = ""
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
     @State private var showCanvasSheet = false
-    @State private var showCompanyPicker = false
-    @State private var selectedCompany: Company?
+    @State private var showSectorSheet = false
+    @State private var selectedAnalysisSector: AnalysisSectorID?
     @State private var showAnnotate = false
     @State private var pendingAnnotateRequestID: UUID?
     @State private var showResult = false
@@ -36,16 +52,25 @@ struct HomeView: View {
     @State private var showSourceDialog = false
     @State private var showCameraPicker = false
     @State private var showGalleryPicker = false
-    @State private var selectedImage: UIImage? = nil
+    @State private var selectedPhotos: [AnalysisPhotoDraft] = []
+    @State private var annotatingPhotoID: UUID?
+    @State private var queuedAnnotatePhotoIDs: [UUID] = []
+    @State private var returnToPhotoTrayAfterAnnotation = false
+    @State private var pendingPhotoTrayPickerRequest: PhotoTrayPickerRequest?
 
     // Analiz state
     @State private var analysisResult: AnalysisResultBundle? = nil
     @State private var analysisError: String? = nil
+    @State private var analysisErrorTitle: String = RDLocalization.string("analysis.home.view.analiz.hatasi.5a62e64f", table: .analysis, fallback: "Analiz Hatası")
     @State private var pendingJob: AnalysisJob? = nil
     @State private var recentItems: [RecentAnalysis] = []
     @State private var recentReports: [ReportRow] = []
     @State private var openingRecentID: UUID? = nil
+    @State private var resumingInFlightID: UUID? = nil
     @State private var openingReportID: UUID? = nil
+    @State private var didOpenUITestResult = false
+    @State private var didOpenUITestAnalyzing = false
+    @State private var didOpenE2ERealAnalysis = false
     @State private var quotaUsage: DailyQuotaUsage? = nil
     @State private var professionalProgressSummary: ProfessionalProgressSummary? = nil
     @State private var showProfessionalTitlesSheet = false
@@ -53,22 +78,14 @@ struct HomeView: View {
     @State private var restoreCanvasSheetAfterPaywall = false
     @State private var reportPreviewItem: ShareItem?
 
-    enum HomeMode: String, CaseIterable {
-        case photo, text
-        var label: String { self == .photo ? "Fotoğraf" : "Metin" }
-        var icon: String { self == .photo ? "camera.fill" : "text.alignleft" }
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             HomeHeader()
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    modeSegment
-                        .padding(.bottom, 10)
-
                     if RDConfig.Features.professionalProgressEnabled,
+                       RDProfessionalProgressLocalizationReview.isAvailable,
                        let professionalProgressSummary {
                         ProfessionalProgressWeeklyTrackingCard(
                             summary: professionalProgressSummary,
@@ -77,11 +94,7 @@ struct HomeView: View {
                         .padding(.bottom, 12)
                     }
 
-                    if mode == .photo {
-                        photoUploadCard
-                    } else {
-                        textInputArea
-                    }
+                    photoUploadCard
 
                     if !app.currentTier.isPaid {
                         freeQuotaHint
@@ -89,20 +102,21 @@ struct HomeView: View {
                     }
 
                     RDButton(
-                        title: "Taramayı Başlat",
+                        title: RDLocalization.string("analysis.home.view.taramayi.baslat.59df4910", table: .analysis, fallback: "Taramayı Başlat"),
                         style: .detect,
                         icon: "sparkles",
-                        backgroundOverride: .rdOnyx,
-                        foregroundOverride: .white,
-                        shadowOverride: .clear
+                        backgroundOverride: scanButtonBackground,
+                        shadowOverride: scanButtonShadow
                     ) {
                         startAnalysisFlow()
                     }
+                    .accessibilityIdentifier("home.start_scan")
                     .frame(height: 56)
                     .rdCardShadow(colorScheme: colorScheme, radius: 3, x: 8, y: 10)
                     .padding(.top, 14)
 
                     if RDConfig.Features.professionalProgressEnabled,
+                       RDProfessionalProgressLocalizationReview.isAvailable,
                        let professionalProgressSummary {
                         ProfessionalProgressHomeCard(
                             summary: professionalProgressSummary,
@@ -134,9 +148,14 @@ struct HomeView: View {
             await loadProfessionalProgress()
         }
         .onAppear {
-            applyCachedQuotaUsageIfAvailable()
             closeFreeQuotaEntryPointsIfNeeded()
+            preparePhotoTrayFixtureIfNeeded()
             handlePendingQuickScanOnAppear()
+            openUITestResultIfNeeded()
+            openAnalyzingFixtureIfNeeded()
+            openRealE2EAnalysisIfNeeded()
+            openPendingAnalysisResultIfNeeded()
+            resumeInFlightAnalysisIfNeeded()
             Task {
                 await loadRecentItems()
                 await loadRecentReports()
@@ -150,12 +169,23 @@ struct HomeView: View {
                 await loadQuotaUsage()
                 await loadProfessionalProgress()
             }
+            resumeInFlightAnalysisIfNeeded()
+        }
+        .onChange(of: scenePhase) { phase in
+            guard phase == .active else { return }
+            openPendingAnalysisResultIfNeeded()
+            resumeInFlightAnalysisIfNeeded()
+        }
+        .onChange(of: app.pendingAnalysisResultID) { _ in
+            openPendingAnalysisResultIfNeeded()
         }
         .onChange(of: app.currentTier) { _ in
             normalizeSelectedCanvasesForTier()
-            applyCachedQuotaUsageIfAvailable()
             closeFreeQuotaEntryPointsIfNeeded()
             Task { await loadQuotaUsage() }
+        }
+        .onChange(of: maxSelectablePhotos) { _ in
+            preparePhotoTrayFixtureIfNeeded()
         }
         .onChange(of: quotaUsage) { _ in
             closeFreeQuotaEntryPointsIfNeeded()
@@ -163,34 +193,48 @@ struct HomeView: View {
         .onChange(of: app.quickScanRequestID) { _ in
             handleQuickScanRequest()
         }
-        .sheet(isPresented: $showSourceDialog) {
-            PhotoSourceSheet(
-                onCamera: {
+        .sheet(isPresented: $showSourceDialog, onDismiss: presentPendingPhotoTrayPickerIfNeeded) {
+            PhotoMediaTraySheet(
+                photos: selectedPhotos,
+                maxPhotoCount: maxSelectablePhotos,
+                visibleSlotCount: visiblePhotoSlotCount,
+                canAddMore: selectedPhotos.count < maxSelectablePhotos,
+                onCamera: openCameraFromPhotoTray,
+                onGallery: openGalleryFromPhotoTray,
+                onAnnotate: { id in
+                    startAnnotatingPhoto(id, returnToPhotoTray: true)
+                },
+                onRemove: removePhoto,
+                onMove: movePhoto,
+                onLockedSlot: {
                     showSourceDialog = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                            showCameraPicker = true
-                        } else {
-                            showGalleryPicker = true
-                        }
+                        showPlainPaywall()
                     }
                 },
-                onGallery: {
+                onStartAnalysis: {
                     showSourceDialog = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        showGalleryPicker = true
+                        continueFromPhotoTrayToAnalysis()
                     }
                 },
                 onClose: { showSourceDialog = false }
             )
-            .presentationDetents([.height(285)])
-            .presentationDragIndicator(.hidden)
+            .presentationDetents([
+                .height(PhotoMediaTraySheet.detentHeight(
+                    photosCount: selectedPhotos.count,
+                    maxPhotoCount: maxSelectablePhotos,
+                    visibleSlotCount: visiblePhotoSlotCount
+                ))
+            ])
+            .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showCanvasSheet) {
             CanvasSheet(
                 selected: $selectedCanvases,
                 userTier: app.currentTier,
+                legislationCanvasEnabled: app.legislationCanvasEnabled,
                 onConfirm: {
                     showCanvasSheet = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -208,25 +252,18 @@ struct HomeView: View {
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .sheet(isPresented: $showCompanyPicker) {
-            CompanyPickerSheet(
-                title: "Analiz firması",
-                accessTier: app.currentTier,
-                selectedCompanyID: selectedCompany?.id,
-                allowNoCompany: true,
-                onSelect: { company in
-                    selectedCompany = company
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        runAnalysis()
-                    }
-                },
-                onPaywall: {
+        .sheet(isPresented: $showSectorSheet) {
+            AnalysisSectorPickerView(
+                items: sectorPickerItems,
+                selected: $selectedAnalysisSector,
+                onContinue: {
+                    showSectorSheet = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        showPlainPaywall()
+                        continueAfterSectorSelection()
                     }
                 }
             )
-            .presentationDetents(CompanyPickerSheet.presentationDetents(for: app.currentTier))
+            .presentationDetents([.height(analysisSectorSheetHeight)])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -234,37 +271,56 @@ struct HomeView: View {
             CameraPicker { image in
                 showCameraPicker = false
                 if let image {
-                    selectedImage = image
-                    scheduleAnnotatePresentation()
+                    appendPickedPhotos(
+                        [image],
+                        shouldAnnotate: true,
+                        returnToPhotoTrayAfterAnnotate: true
+                    )
                 }
             }
             .ignoresSafeArea()
             .preferredColorScheme(preferredModalColorScheme)
+            .onDisappear {
+                showCameraPicker = false
+            }
         }
         .fullScreenCover(isPresented: $showGalleryPicker) {
-            GalleryPicker { image in
+            MultiGalleryPicker(selectionLimit: remainingPhotoSlots) { images in
                 showGalleryPicker = false
-                if let image {
-                    selectedImage = image
-                    scheduleAnnotatePresentation()
+                if !images.isEmpty {
+                    appendPickedPhotos(
+                        images,
+                        shouldAnnotate: true,
+                        returnToPhotoTrayAfterAnnotate: true
+                    )
                 }
             }
             .ignoresSafeArea()
             .preferredColorScheme(preferredModalColorScheme)
+            .onDisappear {
+                showGalleryPicker = false
+            }
         }
         .fullScreenCover(isPresented: annotatePresentationBinding) {
             AnnotateView(
-                initialImage: selectedImage,
+                initialImage: annotatingPhoto?.image,
+                primaryActionTitle: annotatePrimaryActionTitle,
+                primaryActionIcon: annotatePrimaryActionIcon,
                 onCancel: {
                     pendingAnnotateRequestID = nil
+                    annotatingPhotoID = nil
                     showAnnotate = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        continueAfterAnnotationStep()
+                    }
                 },
                 onAnalyze: { annotated in
-                    selectedImage = annotated
+                    updateAnnotatedPhoto(with: annotated)
                     pendingAnnotateRequestID = nil
+                    annotatingPhotoID = nil
                     showAnnotate = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        continueFromAnnotatedPhoto()
+                        continueAfterAnnotationStep()
                     }
                 }
             )
@@ -278,17 +334,24 @@ struct HomeView: View {
                 ),
                 asyncWork: job.work,
                 previewImage: job.previewImage,
+                presentationMode: job.presentationMode,
+                photoCount: job.photoCount,
                 onComplete: { result in
                     analysisResult = result
+                    resumingInFlightID = nil
                     if !app.currentTier.isPaid {
                         markFreeQuotaExhaustedLocally()
                     }
                     pendingJob = nil
+                    Task {
+                        await loadProfessionalProgress()
+                    }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                         showResult = true
                     }
                 },
                 onError: { msg in
+                    resumingInFlightID = nil
                     pendingJob = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                         handleAnalysisError(msg)
@@ -302,7 +365,8 @@ struct HomeView: View {
                 .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showProfessionalTitlesSheet) {
-            if let professionalProgressSummary {
+            if RDProfessionalProgressLocalizationReview.isAvailable,
+               let professionalProgressSummary {
                 ProfessionalProgressTitlesSheet(summary: professionalProgressSummary)
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
@@ -312,16 +376,17 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showResult) {
             ResultView(
                 bundle: analysisResult,
-                localPreviewImage: selectedImage,
+                localPreviewImage: primarySelectedImage,
+                localPreviewImages: selectedImages,
                 onClose: {
                     showResult = false
-                    selectedImage = nil
-                    selectedCompany = nil
+                    resetAnalysisDraft()
                     analysisResult = nil
                     Task {
                         await loadRecentItems()
                         await loadRecentReports()
                         await loadQuotaUsage()
+                        await loadProfessionalProgress()
                     }
                 }
             )
@@ -342,11 +407,19 @@ struct HomeView: View {
             )
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .alert("Analiz Hatası", isPresented: .init(
+        .alert(analysisErrorTitle, isPresented: .init(
             get: { analysisError != nil },
-            set: { if !$0 { analysisError = nil } }
+            set: {
+                if !$0 {
+                    analysisError = nil
+                    analysisErrorTitle = RDLocalization.string("analysis.home.view.analiz.hatasi.a9fd1811", table: .analysis, fallback: "Analiz Hatası")
+                }
+            }
         )) {
-            Button("Tamam") { analysisError = nil }
+            Button(RDLocalization.string("analysis.home.view.tamam.b16fe160", table: .analysis, fallback: "Tamam")) {
+                analysisError = nil
+                analysisErrorTitle = RDLocalization.string("analysis.home.view.analiz.hatasi.fb111abd", table: .analysis, fallback: "Analiz Hatası")
+            }
         } message: {
             Text(analysisError ?? "")
         }
@@ -358,175 +431,288 @@ struct HomeView: View {
         app.themePreference.colorScheme ?? colorScheme
     }
 
+    private var scanButtonBackground: Color {
+        preferredModalColorScheme == .dark ? .rdGreen : .rdOnyx
+    }
+
+    private var scanButtonShadow: Color {
+        if preferredModalColorScheme == .dark {
+            return Color.rdGreen.opacity(0.28)
+        }
+        return Color.rdOnyx.opacity(0.18)
+    }
+
+    private var selectedImages: [UIImage] {
+        selectedPhotos.map(\.image)
+    }
+
+    private var primarySelectedImage: UIImage? {
+        selectedPhotos.first?.image
+    }
+
+    private var annotatingPhoto: AnalysisPhotoDraft? {
+        guard let annotatingPhotoID else { return nil }
+        return selectedPhotos.first { $0.id == annotatingPhotoID }
+    }
+
+    private var maxSelectablePhotos: Int {
+        return app.planCapabilities.safeMaxPhotosPerAnalysis
+    }
+
+    private var visiblePhotoSlotCount: Int {
+        return app.planCapabilities.safeVisiblePhotoSlotsInUI
+    }
+
+    private var remainingPhotoSlots: Int {
+        max(maxSelectablePhotos - selectedPhotos.count, 1)
+    }
+
     private var annotatePresentationBinding: Binding<Bool> {
         Binding(
             get: {
-                showAnnotate && mode == .photo && selectedImage != nil
+                showAnnotate && annotatingPhoto != nil
             },
             set: { newValue in
                 if !newValue {
                     pendingAnnotateRequestID = nil
+                    annotatingPhotoID = nil
                     showAnnotate = false
                 }
             }
         )
     }
 
-    private var modeSegment: some View {
-        HStack(spacing: 0) {
-            ForEach(HomeMode.allCases, id: \.self) { m in
-                let active = mode == m
-                Button {
-                    if m == .text {
-                        pendingAnnotateRequestID = nil
-                        showAnnotate = false
-                    }
-                    withAnimation(.easeInOut(duration: 0.16)) { mode = m }
-                    UISelectionFeedbackGenerator().selectionChanged()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: m.icon)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        Text(m.label)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 36)
-                    .foregroundStyle(active ? Color.rdBlack : Color.rdSlate)
-                    .background(
-                        RoundedRectangle(cornerRadius: 9)
-                            .fill(active ? Color.rdWhite : Color.clear)
-                            .shadow(color: active ? Color.black.opacity(0.08) : .clear,
-                                    radius: 3, x: 0, y: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(4)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.rdFog)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.rdLine, lineWidth: 1)
-                )
-        )
-        .homeCardDepth(colorScheme: colorScheme, radius: 12, y: 5)
+    private var annotatePrimaryActionTitle: String {
+        returnToPhotoTrayAfterAnnotation ? RDLocalization.string("analysis.home.view.isaretlemeyi.kaydet.aa26b5c5", table: .analysis, fallback: "İşaretlemeyi kaydet") : RDLocalization.string("analysis.home.view.isaretli.alanlari.analiz.et.20a08616", table: .analysis, fallback: "İşaretli alanları analiz et")
+    }
+
+    private var annotatePrimaryActionIcon: String {
+        returnToPhotoTrayAfterAnnotation ? "checkmark" : "sparkles"
     }
 
     private var photoUploadCard: some View {
-        Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            if isFreeQuotaExhausted {
-                showQuotaPaywall()
-                return
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Label(RDLocalization.string("analysis.home.view.saha.fotograflari.b396eb02", table: .analysis, fallback: "Saha fotoğrafları"), systemImage: "photo.on.rectangle.angled")
+                    .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Spacer(minLength: 0)
+                Text("\(selectedPhotos.count)/\(maxSelectablePhotos)")
+                    .rdMono(size: 12, weight: .semibold)
+                    .foregroundStyle(Color.rdSlate)
             }
-            if selectedImage != nil {
-                // Mevcut foto varsa direkt çizim ekranına dön
-                if mode == .photo {
-                    pendingAnnotateRequestID = nil
-                    showAnnotate = true
-                }
-            } else {
-                showSourceDialog = true
-            }
-        } label: {
-            ZStack {
-                if let img = selectedImage {
-                    // Seçilmiş foto preview
-                    Image(uiImage: img)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .overlay(alignment: .topTrailing) {
-                            Button {
-                                selectedImage = nil
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                                    .foregroundStyle(.white)
-                                    .frame(width: 28, height: 28)
-                                    .background(Color.black.opacity(0.55))
-                                    .clipShape(Circle())
-                            }
-                            .padding(10)
-                        }
-                        .overlay(alignment: .bottomLeading) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "pencil.tip.crop.circle")
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                Text("İşaretlemeyi düzenle")
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(Color.white.opacity(0.92))
-                            .clipShape(Capsule())
-                            .padding(10)
-                        }
-                } else if isFreeQuotaExhausted {
+
+            if isFreeQuotaExhausted && selectedPhotos.isEmpty {
+                Button {
+                    showQuotaPaywall()
+                } label: {
                     lockedPhotoUploadContent
-                } else {
-                    ZStack {
-                        // İçerik
-                        VStack(spacing: 10) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 18)
-                                    .fill(Color.rdWhite)
-                                    .frame(width: 56, height: 56)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 18)
-                                            .stroke(Color.rdLine, lineWidth: 1)
-                                    )
-
-                                Image(systemName: "camera.fill")
-                                    .font(.system(size: 26, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(Color.rdGreenDark)
-                            }
-                            .frame(width: 68, height: 68)
-
-                            Text("Saha fotoğrafı yükle")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                                .foregroundStyle(Color.rdBlack)
-                            Text("Kamerayla çek veya galeriden seç")
-                                .font(.system(size: 13, design: .rounded))
-                                .foregroundStyle(Color.rdSlate)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        VStack {
-                            Spacer()
-                            Text("JPG · PNG · HEIC")
-                                .rdMono(size: 11, weight: .medium)
-                                .foregroundStyle(Color.rdSlate.opacity(0.7))
-                                .padding(.bottom, 14)
-                        }
+                }
+                .buttonStyle(RDPressableButtonStyle())
+            } else {
+                Button {
+                    openPhotoUploadCard()
+                } label: {
+                    if selectedPhotos.isEmpty {
+                        emptyPhotoUploadDropZone
+                    } else {
+                        selectedPhotoUploadSummaryRow
                     }
-                    .frame(height: 220)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.rdWhite)
+                }
+                .buttonStyle(RDPressableButtonStyle())
+                .accessibilityIdentifier("home.photo_tray.open")
 
-                            // Dashed border — marka siyahıyla daha net bir çerçeve.
-                            RoundedRectangle(cornerRadius: 20)
-                                .strokeBorder(
-                                    style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
-                                )
-                                .foregroundStyle(Color.rdBlack)
-                        }
-                    )
+                if !selectedPhotos.isEmpty {
+                    photoUploadPreviewStrip
                 }
             }
         }
-        .buttonStyle(RDPressableButtonStyle())
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.rdWhite)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+        )
         .homeCardDepth(colorScheme: colorScheme, radius: 18, y: 8)
+    }
+
+    private var emptyPhotoUploadDropZone: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color.rdWhite)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [7, 5]))
+                            .foregroundStyle(Color.rdSlate.opacity(0.45))
+                    )
+
+                Image(systemName: "plus")
+                    .font(.system(size: RDFontScale.size(32), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdGreenDark)
+            }
+            .frame(width: 82, height: 82)
+
+            VStack(spacing: 5) {
+                Text(RDLocalization.string("analysis.home.view.saha.fotografi.yukle.fc090c81", table: .analysis, fallback: "Saha fotoğrafı yükle"))
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text(RDLocalization.string("analysis.home.view.jpg.png.heic.48da947b", table: .analysis, fallback: "JPG · PNG · HEIC"))
+                    .rdMono(size: 11, weight: .medium)
+                    .foregroundStyle(Color.rdSlate.opacity(0.78))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 178)
+        .background(Color.clear)
+        .contentShape(RoundedRectangle(cornerRadius: 18))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var selectedPhotoUploadSummaryRow: some View {
+        HStack(spacing: 12) {
+            photoUploadSummaryIcon
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(
+                    RDLocalization.plural(
+                        "analysis.count.photos_added",
+                        table: .analysis,
+                        value: selectedPhotos.count,
+                        fallbackOne: "%lld fotoğraf eklendi",
+                        fallbackOther: "%lld fotoğraf eklendi"
+                    )
+                )
+                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                Text(RDLocalization.string("analysis.home.view.fotograflari.duzenle.7c862adf", table: .analysis, fallback: "Fotoğrafları düzenle"))
+                    .rdMono(size: 11, weight: .medium)
+                    .foregroundStyle(Color.rdSlate.opacity(0.78))
+            }
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "chevron.up")
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdSlate)
+                .frame(width: 34, height: 34)
+                .background(Color.rdFog)
+                .clipShape(Circle())
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
+        .background(Color.rdFog)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var photoUploadSummaryIcon: some View {
+        ZStack {
+            if let image = selectedPhotos.first?.image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 54, height: 54)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.white.opacity(0.72), lineWidth: 1)
+                    )
+            } else {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.rdWhite)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(style: StrokeStyle(lineWidth: 1.4, dash: [6, 4]))
+                            .foregroundStyle(Color.rdSlate.opacity(0.45))
+                    )
+                Image(systemName: "plus")
+                    .font(.system(size: RDFontScale.size(22), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.rdGreenDark)
+            }
+        }
+        .frame(width: 54, height: 54)
+    }
+
+    private var photoUploadPreviewStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(selectedPhotos.enumerated()), id: \.element.id) { index, draft in
+                    ZStack(alignment: .topTrailing) {
+                        Button {
+                            startAnnotatingPhoto(draft.id, returnToPhotoTray: true)
+                        } label: {
+                            Image(uiImage: draft.image)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 62, height: 62)
+                                .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("home.photo_preview.\(index + 1)")
+
+                        Text("\(index + 1)")
+                            .rdMono(size: 10, weight: .bold)
+                            .foregroundStyle(Color.rdOnyx)
+                            .frame(width: 22, height: 22)
+                            .background(Color.white.opacity(0.92))
+                            .clipShape(Circle())
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            .padding(5)
+
+                        Button {
+                            removePhoto(draft.id)
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .frame(width: 22, height: 22)
+                                .background(Color.black.opacity(0.62))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(RDPressableButtonStyle())
+                        .padding(4)
+                        .accessibilityLabel(RDLocalization.format("analysis.home.view.1.fotografi.sil.63339467", table: .analysis, fallback: "%1$@. fotoğrafı sil", arguments: [String(describing: index + 1)]))
+                    }
+                    .frame(width: 62, height: 62)
+                }
+
+                if selectedPhotos.count < maxSelectablePhotos {
+                    Button {
+                        openPhotoTray()
+                    } label: {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color.rdFog)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .strokeBorder(style: StrokeStyle(lineWidth: 1.3, dash: [6, 4]))
+                                    .foregroundStyle(Color.rdSlate.opacity(0.38))
+                            )
+                            .overlay(
+                                Image(systemName: "plus")
+                                    .font(.system(size: RDFontScale.size(20), weight: .semibold, design: .rounded))
+                                    .foregroundStyle(Color.rdSlate)
+                            )
+                            .frame(width: 62, height: 62)
+                    }
+                    .buttonStyle(RDPressableButtonStyle())
+                    .accessibilityIdentifier("home.photo_preview.add")
+                }
+            }
+            .padding(.vertical, 1)
+        }
     }
 
     private var lockedPhotoUploadContent: some View {
@@ -543,25 +729,25 @@ struct HomeView: View {
                         .frame(width: 56, height: 56)
 
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(lockedPhotoCriticalColor)
                 }
                 .frame(width: 82, height: 82)
 
-                Text("Ücretsiz hak doldu")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                Text(RDLocalization.string("analysis.home.view.ucretsiz.hak.doldu.c16fcce9", table: .analysis, fallback: "Ücretsiz hak doldu"))
+                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                     .foregroundStyle(lockedPhotoTitleColor)
-                Text("Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et.")
-                    .font(.system(size: 13, design: .rounded))
+                Text(RDLocalization.string("analysis.home.view.gunde.1.ucretsiz.analiz.hakkin.doldu.plus.veya.p.54c5c949", table: .analysis, fallback: "Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et."))
+                    .font(.system(size: RDFontScale.size(13), design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(lockedPhotoSubtitleColor)
                     .frame(maxWidth: 280)
 
                 HStack(spacing: 5) {
-                    Text("Yükselt")
-                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    Text(RDLocalization.string("analysis.home.view.yukselt.679408d0", table: .analysis, fallback: "Yükselt"))
+                        .font(.system(size: RDFontScale.size(12), weight: .heavy, design: .rounded))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                 }
                 .foregroundStyle(lockedPhotoActionColor)
                 .padding(.top, 4)
@@ -637,72 +823,6 @@ struct HomeView: View {
         isDarkMode ? Color.black.opacity(0.28) : Color.rdCritical.opacity(0.10)
     }
 
-    private var textInputArea: some View {
-        Group {
-            if isFreeQuotaExhausted {
-                Button {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    showQuotaPaywall()
-                } label: {
-                    lockedInputContent(
-                        title: "Ücretsiz hak doldu",
-                        subtitle: "Günde 1 ücretsiz analiz hakkın doldu. Plus veya Pro ile devam et.",
-                        icon: "text.badge.xmark"
-                    )
-                }
-                .buttonStyle(RDPressableButtonStyle())
-            } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    ZStack(alignment: .topLeading) {
-                        if text.isEmpty {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Saha gözlemini kısa yaz...")
-                                Text("Örn: \"Korkuluk eksik, işçi emniyet kemeri kullanmıyor.\"")
-                                    .padding(.top, 4)
-                            }
-                            .font(.system(size: 15, design: .rounded))
-                            .foregroundStyle(Color.rdSlate)
-                            .padding(.horizontal, 14)
-                            .padding(.top, 14)
-                            .allowsHitTesting(false)
-                        }
-                        TextEditor(text: $text)
-                            .font(.system(size: 15, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                            .scrollContentBackground(.hidden)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 8)
-                            .frame(minHeight: 160)
-                            .onChange(of: text) { new in
-                                if new.count > maxTextInputCharacters {
-                                    text = String(new.prefix(maxTextInputCharacters))
-                                }
-                            }
-                    }
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(Color.rdWhite)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(Color.rdLine, lineWidth: 1)
-                            )
-                    )
-                    .homeCardDepth(colorScheme: colorScheme, radius: 14, y: 6)
-
-                    HStack {
-                        Text("Maks. \(maxTextInputCharacters) karakter")
-                            .font(.system(size: 12, design: .rounded))
-                        Spacer()
-                        Text("\(text.count)/\(maxTextInputCharacters)")
-                            .rdMono(size: 12, weight: .medium)
-                    }
-                    .foregroundStyle(Color.rdSlate)
-                    .padding(.horizontal, 2)
-                }
-            }
-        }
-    }
-
     private var freeQuotaHint: some View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -721,11 +841,11 @@ struct HomeView: View {
                 .frame(width: 42, height: 38)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Ücretsiz Analiz Hakkı")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                    Text(RDLocalization.string("analysis.home.view.ucretsiz.analiz.hakki.795e8ebb", table: .analysis, fallback: "Ücretsiz Analiz Hakkı"))
+                        .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(freeQuotaHintSubtitle)
-                        .font(.system(size: 11, design: .rounded))
+                        .font(.system(size: RDFontScale.size(11), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
                 }
@@ -733,7 +853,7 @@ struct HomeView: View {
                 Spacer(minLength: 4)
 
                 Image(systemName: "gift.fill")
-                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .font(.system(size: RDFontScale.size(12), weight: .heavy, design: .rounded))
                     .foregroundStyle(SubscriptionTier.plus.accentTextColor)
                     .frame(width: 28, height: 28)
                     .background(SubscriptionTier.plus.accentSoftColor)
@@ -750,7 +870,7 @@ struct HomeView: View {
         }
         .buttonStyle(RDPressableButtonStyle())
         .homeCardDepth(colorScheme: colorScheme, radius: 14, y: 6)
-        .accessibilityLabel("Free kullanım bilgisi. \(freeQuotaHintSubtitle)")
+        .accessibilityLabel(RDLocalization.format("analysis.home.view.free.kullanim.bilgisi.1.3f83c487", table: .analysis, fallback: "Free kullanım bilgisi. %1$@", arguments: [String(describing: freeQuotaHintSubtitle)]))
     }
 
     private var freeQuotaCompactText: String {
@@ -760,76 +880,25 @@ struct HomeView: View {
 
     private var freeQuotaHintSubtitle: String {
         if isFreeQuotaExhausted {
-            return "Bugünkü hakkın doldu. Daha fazlası için hesabını yükselt."
+            return RDLocalization.string("analysis.home.view.bugunku.hakkin.doldu.daha.fazlasi.icin.hesabini..2f42126c", table: .analysis, fallback: "Bugünkü hakkın doldu. Daha fazlası için hesabını yükselt.")
         }
-        return "Günde 1 ücretsiz analiz hakkın hazır."
+        return RDLocalization.string("analysis.home.view.gunde.1.ucretsiz.analiz.hakkin.hazir.904ba1c3", table: .analysis, fallback: "Günde 1 ücretsiz analiz hakkın hazır.")
     }
 
-    private func lockedInputContent(title: String, subtitle: String, icon: String) -> some View {
-        VStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .fill(Color.rdCritical.opacity(0.10))
-                    .frame(width: 68, height: 68)
-                    .shadow(color: Color.rdCritical.opacity(0.18), radius: 16, x: 0, y: 8)
-
-                Circle()
-                    .stroke(Color.rdCritical, lineWidth: 5)
-                    .frame(width: 52, height: 52)
-
-                Image(systemName: icon)
-                    .font(.system(size: 19, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdCritical)
-            }
-
-            Text(title)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.rdBlack)
-
-            Text(subtitle)
-                .font(.system(size: 13, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Color.rdSlate)
-                .frame(maxWidth: 290)
-
-            HStack(spacing: 5) {
-                Text("PRO'ya geç")
-                    .font(.system(size: 12, weight: .heavy, design: .rounded))
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-            }
-            .foregroundStyle(Color.rdCritical)
-            .padding(.top, 4)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 190)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.rdWhite, Color.rdCriticalBg.opacity(0.68)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(
-                            style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
-                        )
-                        .foregroundStyle(Color.rdCritical.opacity(0.38))
-                )
-        )
-        .shadow(color: Color.rdCritical.opacity(0.08), radius: 14, x: 0, y: 6)
-    }
 
     private var recentSection: some View {
         homeSectionCard {
             sectionHeader(
-                title: "Son uygunsuzluklar",
+                title: RDLocalization.string("analysis.home.view.son.uygunsuzluklar.4f75d259", table: .analysis, fallback: "Son uygunsuzluklar"),
                 icon: "exclamationmark.triangle.fill",
                 tint: Color.rdCritical,
-                countLabel: "\(recentItems.count) kayıt"
+                countLabel: RDLocalization.plural(
+                    "analysis.count.records",
+                    table: .analysis,
+                    value: recentItems.count,
+                    fallbackOne: "%lld kayıt",
+                    fallbackOther: "%lld kayıt"
+                )
             ) {
                 app.activeTab = .analyses
             }
@@ -857,10 +926,16 @@ struct HomeView: View {
     private var generatedReportsSection: some View {
         homeSectionCard {
             sectionHeader(
-                title: "Oluşturulan raporlar",
+                title: RDLocalization.string("analysis.home.view.olusturulan.raporlar.6b7245c9", table: .analysis, fallback: "Oluşturulan raporlar"),
                 icon: "doc.richtext.fill",
                 tint: Color.rdGreen,
-                countLabel: "\(recentReports.count) dosya"
+                countLabel: RDLocalization.plural(
+                    "reports.count.files",
+                    table: .reports,
+                    value: recentReports.count,
+                    fallbackOne: "%lld dosya",
+                    fallbackOther: "%lld dosya"
+                )
             ) {
                 app.activeTab = .reports
             }
@@ -906,7 +981,7 @@ struct HomeView: View {
     ) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(width: 28, height: 28)
                 .background(tint.opacity(0.10))
@@ -914,12 +989,12 @@ struct HomeView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
 
                 Text(countLabel)
-                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.5), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate.opacity(0.82))
                     .lineLimit(1)
             }
@@ -928,11 +1003,11 @@ struct HomeView: View {
 
             Button(action: action) {
                 HStack(spacing: 4) {
-                    Text("Tümü")
+                    Text(RDLocalization.string("analysis.home.view.tumu.51f59551", table: .analysis, fallback: "Tümü"))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 8.5, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                 }
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
                 .padding(.horizontal, 10)
                 .frame(height: 28)
@@ -947,18 +1022,18 @@ struct HomeView: View {
         RDCard {
             HStack(spacing: 12) {
                 Image(systemName: "doc.text")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 42, height: 42)
                     .background(Color.rdFog)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Henüz rapor oluşturulmadı")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    Text(RDLocalization.string("analysis.home.view.henuz.rapor.olusturulmadi.8ff986dc", table: .analysis, fallback: "Henüz rapor oluşturulmadı"))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("PDF veya Excel çıktıları burada görünecek.")
-                        .font(.system(size: 12, design: .rounded))
+                    Text(RDLocalization.string("analysis.home.view.pdf.veya.excel.ciktilari.burada.gorunecek.da7b3830", table: .analysis, fallback: "PDF veya Excel çıktıları burada görünecek."))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 Spacer(minLength: 0)
@@ -970,18 +1045,18 @@ struct HomeView: View {
         RDCard {
             HStack(spacing: 12) {
                 Image(systemName: "clock.badge.checkmark")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(18), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 42, height: 42)
                     .background(Color.rdGreenSoft)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Henüz tamamlanmış analiz yok")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    Text(RDLocalization.string("analysis.home.view.henuz.tamamlanmis.analiz.yok.40338932", table: .analysis, fallback: "Henüz tamamlanmış analiz yok"))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
-                    Text("İlk tarama tamamlandığında burada listelenecek.")
-                        .font(.system(size: 12, design: .rounded))
+                    Text(RDLocalization.string("analysis.home.view.ilk.tarama.tamamlandiginda.burada.listelenecek.e43d3070", table: .analysis, fallback: "İlk tarama tamamlandığında burada listelenecek."))
+                        .font(.system(size: RDFontScale.size(12), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 Spacer(minLength: 0)
@@ -995,30 +1070,67 @@ struct HomeView: View {
         !app.currentTier.isPaid && quotaUsage?.isExhausted == true
     }
 
-    /// "Taramayı Başlat" → foto yoksa picker; varsa canvas sheet.
+    /// RDLocalization.string("analysis.home.view.taramayi.baslat.e82526ee", table: .analysis, fallback: "Taramayı Başlat") → foto yoksa medya tray; varsa sektör veya canvas seçimine geçer.
     private func startAnalysisFlow() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if app.requiresExplicitSafetyProfileSelection {
+            presentAnalysisError(
+                AppErrorMessage.make(
+                    rawMessage: RDLocalization.string("analysis.home.view.choose.a.safety.terminology.profile.in.profile.b.e12b8d4c", table: .analysis, fallback: "Analize başlamadan önce Profil'de bir güvenlik terminolojisi profili seçin."),
+                    context: RDLocalization.string("analysis.home.view.safety.terminology.required.f0f5c4a7", table: .analysis, fallback: "Güvenlik terminolojisi gerekli"),
+                    fallbackTitle: RDLocalization.string("analysis.home.view.safety.terminology.required.a0bb8cf5", table: .analysis, fallback: "Güvenlik terminolojisi gerekli")
+                )
+            )
+            return
+        }
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             return
         }
-        if mode == .photo && selectedImage == nil {
+        if selectedPhotos.isEmpty {
             showSourceDialog = true
             return
         }
-        if mode == .text && text.trimmingCharacters(in: .whitespacesAndNewlines).count < 10 {
-            analysisError = AppErrorMessage.make(
-                AnalysisService.AnalysisError.invalidInput("Analiz için en az 10 karakterlik bir açıklama yazmalısın."),
-                context: "Eksik metin",
-                fallbackTitle: "Eksik metin"
-            ).fullText
+        beginPreAnalysisSelection()
+    }
+
+    private func openPhotoUploadCard() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if selectedPhotos.isEmpty {
+            openInitialPhotoPickerFromHome()
+        } else {
+            openPhotoTray()
+        }
+    }
+
+    private func openPhotoTray() {
+        showSourceDialog = true
+    }
+
+    private func openInitialPhotoPickerFromHome() {
+        #if DEBUG
+        if Self.isUITestDirectHomePhotoPick {
+            appendPickedPhotos(
+                [Self.uiTestPhotoFixture(seed: 2)],
+                shouldAnnotate: true,
+                returnToPhotoTrayAfterAnnotate: true
+            )
             return
         }
-        showCanvasSheet = true
+        #endif
+
+        presentGalleryPicker()
+    }
+
+    private func resetAnalysisDraft() {
+        selectedPhotos = []
+        annotatingPhotoID = nil
+        pendingAnnotateRequestID = nil
+        queuedAnnotatePhotoIDs = []
+        returnToPhotoTrayAfterAnnotation = false
     }
 
     private func handleQuickScanRequest() {
-        mode = .photo
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             app.quickScanSource = .chooser
@@ -1029,21 +1141,21 @@ struct HomeView: View {
         switch source {
         case .camera:
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                showCameraPicker = true
+                presentCameraPicker()
             } else {
-                showGalleryPicker = true
+                presentGalleryPicker()
             }
             return
         case .gallery:
-            showGalleryPicker = true
+            presentGalleryPicker()
             return
         case .chooser:
             break
         }
-        if selectedImage == nil {
+        if selectedPhotos.isEmpty {
             showSourceDialog = true
         } else {
-            showCanvasSheet = true
+            beginPreAnalysisSelection()
         }
     }
 
@@ -1054,25 +1166,93 @@ struct HomeView: View {
         }
     }
 
-    /// AnnotateView'daki "İşaretli alanları analiz et" sonrası ana sayfada
-    /// bekletmeden doğrudan analiz odağı seçimine geçer.
+    /// Tray dışından başlatılan anotasyon sonrası sektör veya canvas seçimine geçer.
     private func continueFromAnnotatedPhoto() {
-        guard mode == .photo, selectedImage != nil else { return }
+        guard !selectedPhotos.isEmpty else { return }
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
             showQuotaPaywall()
             return
         }
+        beginPreAnalysisSelection()
+    }
+
+    private func continueAfterAnnotationStep() {
+        if presentNextQueuedAnnotationIfNeeded() {
+            return
+        }
+        if returnToPhotoTrayAfterAnnotation {
+            returnToPhotoTrayAfterAnnotation = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                showSourceDialog = true
+            }
+            return
+        }
+        continueFromAnnotatedPhoto()
+    }
+
+    @discardableResult
+    private func presentNextQueuedAnnotationIfNeeded() -> Bool {
+        queuedAnnotatePhotoIDs.removeAll { id in
+            !selectedPhotos.contains(where: { $0.id == id })
+        }
+        guard let nextID = queuedAnnotatePhotoIDs.first else {
+            return false
+        }
+        queuedAnnotatePhotoIDs.removeFirst()
+        scheduleAnnotatePresentation(for: nextID)
+        return true
+    }
+
+    private func queuePhotoAnnotations(
+        for photoIDs: [UUID],
+        returnToPhotoTray: Bool
+    ) {
+        let validIDs = photoIDs.filter { id in
+            selectedPhotos.contains(where: { $0.id == id })
+        }
+        guard !validIDs.isEmpty else { return }
+        queuedAnnotatePhotoIDs.append(contentsOf: validIDs)
+        returnToPhotoTrayAfterAnnotation = returnToPhotoTray
+        _ = presentNextQueuedAnnotationIfNeeded()
+    }
+
+    private func continueFromPhotoTrayToAnalysis() {
+        guard !selectedPhotos.isEmpty else {
+            showSourceDialog = true
+            return
+        }
+        continueFromAnnotatedPhoto()
+    }
+
+    /// Fotoğraf hazır olduktan sonra ilk seçim adımı.
+    private func beginPreAnalysisSelection() {
+        if RDConfig.Features.activeAnalysisSectorEnabled {
+            selectedAnalysisSector = nil
+            showSectorSheet = true
+        } else {
+            showCanvasSheet = true
+        }
+    }
+
+    /// Aktif sektör seçildikten sonra canvas seçimine geçer.
+    private func continueAfterSectorSelection() {
+        guard selectedAnalysisSector != nil else { return }
         showCanvasSheet = true
     }
 
-    /// Canvas seçimi onaylandıktan sonra çağrılır.
+    /// Canvas seçimi onaylandıktan sonra analizi başlatır.
     private func continueAfterCanvasSelection() {
-        if app.currentTier.isPaid {
-            showCompanyPicker = true
-        } else {
-            selectedCompany = nil
-            runAnalysis()
-        }
+        runAnalysis()
+    }
+
+    private var sectorPickerItems: [AnalysisSectorPickerItem] {
+        let onboarding = AnalysisSectorPreferences.onboardingSectors(
+            from: OnboardingAnswersService.shared.pendingDraft()
+        )
+        return AnalysisSectorPreferences.pickerItems(
+            onboardingSectors: onboarding,
+            lastUsed: AnalysisSectorPreferences.lastUsedSector()
+        )
     }
 
     /// Canvas + opsiyonel firma seçimi tamamlandıktan sonra çağrılır.
@@ -1082,67 +1262,74 @@ struct HomeView: View {
 
         // AuthService.session authStateChanges'ten geliyor — currentSession'dan daha güvenilir.
         guard let userID = app.auth.session?.user.id else {
-            analysisError = AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated).fullText
+            presentAnalysisError(AppErrorMessage.make(AnalysisService.AnalysisError.notAuthenticated))
             return
         }
         let canvases = selectedCanvasesForCurrentTier()
-        let capturedImage = selectedImage
-        let capturedText = text
-        let capturedCompanyID = selectedCompany?.id
+        let localization = app.localizationRequestForNewAnalysis
+        if RDGlobalLocalizationBuildGate.isEnabled && localization == nil {
+            presentAnalysisError(
+                AppErrorMessage.make(
+                    rawMessage: RDLocalization.string("analysis.home.view.safety.terminology.profile.is.required.562cf91b", table: .analysis, fallback: "Güvenlik terminolojisi profili gereklidir."),
+                    context: RDLocalization.string("analysis.home.view.safety.terminology.required.2302b5ec", table: .analysis, fallback: "Güvenlik terminolojisi gerekli"),
+                    fallbackTitle: RDLocalization.string("analysis.home.view.safety.terminology.required.bb477590", table: .analysis, fallback: "Güvenlik terminolojisi gerekli")
+                )
+            )
+            return
+        }
+        let capturedImages = selectedImages
+        let analysisSector: AnalysisSectorID?
+        if RDConfig.Features.activeAnalysisSectorEnabled {
+            guard let selected = selectedAnalysisSector else { return }
+            analysisSector = selected
+            AnalysisSectorPreferences.recordLastUsed(selected)
+        } else {
+            analysisSector = nil
+        }
 
-        switch mode {
-        case .photo:
-            guard let img = capturedImage else {
-                return
+        guard let previewImage = capturedImages.first else {
+            return
+        }
+        pendingJob = AnalysisJob(previewImage: previewImage, presentationMode: .photo, photoCount: capturedImages.count) {
+            progress in
+            if app.currentTier.isPaid {
+                await app.refreshPlanState()
             }
-            pendingJob = AnalysisJob(previewImage: img) {
-                progress in
-                if app.currentTier.isPaid {
-                    await app.refreshPlanState()
-                }
-                return try await AnalysisService.shared.runPhotoAnalysis(
-                    userID: userID,
-                    images: [img],
-                    canvases: canvases,
-                    companyID: capturedCompanyID,
-                    onProgress: progress
-                )
-            }
-        case .text:
-            let trimmed = capturedText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else {
-                return
-            }
-            pendingJob = AnalysisJob(previewImage: nil) {
-                progress in
-                if app.currentTier.isPaid {
-                    await app.refreshPlanState()
-                }
-                return try await AnalysisService.shared.runTextAnalysis(
-                    userID: userID,
-                    text: trimmed,
-                    canvases: canvases,
-                    companyID: capturedCompanyID,
-                    onProgress: progress
-                )
-            }
+            return try await AnalysisService.shared.runPhotoAnalysis(
+                userID: userID,
+                images: capturedImages,
+                canvases: canvases,
+                localization: localization,
+                analysisSector: analysisSector,
+                companyID: nil,
+                onProgress: progress
+            )
         }
     }
 
     private func handleAnalysisError(_ msg: String) {
-        let normalized = AppErrorMessage.make(rawMessage: msg, context: "Analiz tamamlanamadı", fallbackTitle: "Analiz tamamlanamadı")
+        let normalized = AppErrorMessage.make(rawMessage: msg, context: RDLocalization.string("analysis.home.view.analiz.tamamlanamadi.7e7d3254", table: .analysis, fallback: "Analiz tamamlanamadı"), fallbackTitle: RDLocalization.string("analysis.home.view.analiz.tamamlanamadi.7e7d3254", table: .analysis, fallback: "Analiz tamamlanamadı"))
         if normalized.category == .quotaExceeded {
             analysisError = nil
+            analysisErrorTitle = RDLocalization.string("analysis.home.view.analiz.hatasi.c6ebcb2d", table: .analysis, fallback: "Analiz Hatası")
             markFreeQuotaExhaustedLocally()
             showQuotaPaywall()
             Task { await loadQuotaUsage() }
         } else {
-            analysisError = normalized.fullText
+            presentAnalysisError(normalized)
         }
     }
 
+    private func presentAnalysisError(_ error: AppErrorMessage) {
+        analysisErrorTitle = error.title
+        analysisError = error.fullText
+    }
+
     private func selectedCanvasesForCurrentTier() -> [AnalysisCanvas] {
-        let ordered = AnalysisCanvas.all.filter { selectedCanvases.contains($0) }
+        let ordered = AnalysisCanvas.all.filter {
+            selectedCanvases.contains($0)
+                && ($0.id != AnalysisCanvas.legislation.id || app.legislationCanvasEnabled)
+        }
         let allowed = ordered.filter { app.currentTier.includes($0.minTier) }
         let nonEmpty = allowed.isEmpty ? [.general] : allowed
         if app.currentTier.isPaid {
@@ -1190,13 +1377,143 @@ struct HomeView: View {
         }
     }
 
-    private func scheduleAnnotatePresentation() {
+    private func openCameraFromPhotoTray() {
+        pendingPhotoTrayPickerRequest = .camera
+        showSourceDialog = false
+    }
+
+    private func openGalleryFromPhotoTray() {
+        pendingPhotoTrayPickerRequest = .gallery
+        showSourceDialog = false
+    }
+
+    private func presentPendingPhotoTrayPickerIfNeeded() {
+        guard let request = pendingPhotoTrayPickerRequest else { return }
+        pendingPhotoTrayPickerRequest = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            guard !showSourceDialog else { return }
+            switch request {
+            case .camera:
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    presentCameraPicker()
+                } else {
+                    presentGalleryPicker()
+                }
+            case .gallery:
+                presentGalleryPicker()
+            }
+        }
+    }
+
+    private func presentCameraPicker() {
+        showCameraPicker = false
+        DispatchQueue.main.async {
+            guard !showSourceDialog else { return }
+            showCameraPicker = true
+        }
+    }
+
+    private func presentGalleryPicker() {
+        showGalleryPicker = false
+        DispatchQueue.main.async {
+            guard !showSourceDialog else { return }
+            showGalleryPicker = true
+        }
+    }
+
+    private func appendPickedPhotos(
+        _ images: [UIImage],
+        shouldAnnotate: Bool,
+        returnToPhotoTrayAfterAnnotate: Bool
+    ) {
+        let allowedCount = maxSelectablePhotos - selectedPhotos.count
+        guard allowedCount > 0 else {
+            if app.currentTier.isPaid {
+                analysisErrorTitle = RDLocalization.string("analysis.home.view.fotograf.limiti.1a3eb0a6", table: .analysis, fallback: "Fotoğraf limiti")
+                analysisError = RDLocalization.format("analysis.home.view.bu.planda.en.fazla.1.fotograf.analiz.edilebilir.03d1b16d", table: .analysis, fallback: "Bu planda en fazla %1$@ fotoğraf analiz edilebilir.", arguments: [String(describing: maxSelectablePhotos)])
+            } else {
+                showPlainPaywall()
+            }
+            return
+        }
+        let drafts = images.prefix(allowedCount).map { AnalysisPhotoDraft(image: $0) }
+        guard !drafts.isEmpty else { return }
+        selectedPhotos.append(contentsOf: drafts)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if images.count > allowedCount {
+            analysisErrorTitle = RDLocalization.string("analysis.home.view.fotograf.limiti.03ab1131", table: .analysis, fallback: "Fotoğraf limiti")
+            analysisError = RDLocalization.format("analysis.home.view.en.fazla.1.fotograf.eklenebilir.fazla.secimler.a.dddd1ee5", table: .analysis, fallback: "En fazla %1$@ fotoğraf eklenebilir. Fazla seçimler alınmadı.", arguments: [String(describing: maxSelectablePhotos)])
+        }
+        if shouldAnnotate {
+            queuePhotoAnnotations(
+                for: drafts.map(\.id),
+                returnToPhotoTray: returnToPhotoTrayAfterAnnotate
+            )
+        } else if returnToPhotoTrayAfterAnnotate {
+            showSourceDialog = true
+        }
+    }
+
+    private func startAnnotatingPhoto(_ id: UUID, returnToPhotoTray: Bool = false) {
+        guard selectedPhotos.contains(where: { $0.id == id }) else { return }
+        queuedAnnotatePhotoIDs = []
+        returnToPhotoTrayAfterAnnotation = returnToPhotoTray
+        showSourceDialog = false
+        annotatingPhotoID = id
+        pendingAnnotateRequestID = nil
+        showAnnotate = true
+    }
+
+    private func updateAnnotatedPhoto(with image: UIImage) {
+        guard let annotatingPhotoID,
+              let index = selectedPhotos.firstIndex(where: { $0.id == annotatingPhotoID })
+        else { return }
+        selectedPhotos[index].image = image
+    }
+
+    private func removePhoto(_ id: UUID) {
+        selectedPhotos.removeAll { $0.id == id }
+        queuedAnnotatePhotoIDs.removeAll { $0 == id }
+        if annotatingPhotoID == id {
+            annotatingPhotoID = nil
+            pendingAnnotateRequestID = nil
+            showAnnotate = false
+        }
+        if selectedPhotos.isEmpty {
+            resetEmptyPhotoDraftPresentationState()
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    private func resetEmptyPhotoDraftPresentationState() {
+        queuedAnnotatePhotoIDs = []
+        annotatingPhotoID = nil
+        pendingAnnotateRequestID = nil
+        returnToPhotoTrayAfterAnnotation = false
+        pendingPhotoTrayPickerRequest = nil
+        showAnnotate = false
+        showCameraPicker = false
+        showGalleryPicker = false
+    }
+
+    private func movePhoto(_ id: UUID, offset: Int) {
+        guard let currentIndex = selectedPhotos.firstIndex(where: { $0.id == id }) else { return }
+        let newIndex = currentIndex + offset
+        guard selectedPhotos.indices.contains(newIndex) else { return }
+        withAnimation(.easeInOut(duration: 0.16)) {
+            selectedPhotos.swapAt(currentIndex, newIndex)
+        }
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+
+    private func scheduleAnnotatePresentation(for photoID: UUID) {
         let requestID = UUID()
+        annotatingPhotoID = photoID
         pendingAnnotateRequestID = requestID
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             guard pendingAnnotateRequestID == requestID,
-                  mode == .photo,
-                  selectedImage != nil
+                  annotatingPhotoID == photoID,
+                  selectedPhotos.contains(where: { $0.id == photoID })
             else { return }
             showAnnotate = true
         }
@@ -1243,7 +1560,7 @@ struct HomeView: View {
             return
         }
         do {
-            recentReports = try await AnalysisService.shared.listReports(limit: 5)
+            recentReports = try await AnalysisService.shared.listReports(limit: 5, photoAnalysesOnly: true)
         } catch {
             recentReports = []
         }
@@ -1260,19 +1577,25 @@ struct HomeView: View {
             quotaUsage = nil
             return
         }
-        applyCachedQuotaUsageIfAvailable()
         do {
             let usage = try await AnalysisService.shared.dailyQuotaUsage()
             quotaUsage = usage
             cacheQuotaUsage(usage)
         } catch {
-            if cachedQuotaUsageForCurrentUser() == nil {
+            if let cached = cachedQuotaUsageForCurrentUser() {
+                quotaUsage = cached
+            } else {
                 quotaUsage = nil
             }
         }
     }
 
     private func loadProfessionalProgress() async {
+        guard RDProfessionalProgressLocalizationReview.isAvailable else {
+            professionalProgressSummary = nil
+            showProfessionalTitlesSheet = false
+            return
+        }
         #if DEBUG
         if Self.isUITestMainLaunch {
             professionalProgressSummary = Self.uiTestProfessionalProgressSummary
@@ -1286,10 +1609,203 @@ struct HomeView: View {
         professionalProgressSummary = await ProfessionalProgressService.shared.fetchSummary()
     }
 
+    private func preparePhotoTrayFixtureIfNeeded() {
+        #if DEBUG
+        if Self.isUITestPhotoTrayFixture {
+            let targetCount = min(maxSelectablePhotos, 2)
+            if selectedPhotos.count < targetCount {
+                let missingPhotos = (selectedPhotos.count..<targetCount).map { index in
+                    AnalysisPhotoDraft(image: Self.uiTestPhotoFixture(seed: index))
+                }
+                selectedPhotos.append(contentsOf: missingPhotos)
+            }
+            showSourceDialog = true
+        } else if Self.isUITestOpenPhotoTray {
+            showSourceDialog = true
+        }
+        #endif
+    }
+
     #if DEBUG
     private static var isUITestMainLaunch: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_MAIN")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
+    }
+
+    private static var isUITestPhotoTrayFixture: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"] == "1"
+    }
+
+    private static var isUITestOpenPhotoTray: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_OPEN_PHOTO_TRAY")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_OPEN_PHOTO_TRAY"] == "1"
+    }
+
+    private static var isUITestDirectHomePhotoPick: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_DIRECT_HOME_PHOTO_PICK")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_DIRECT_HOME_PHOTO_PICK"] == "1"
+    }
+
+    private static var isUITestOpenResult: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_OPEN_RESULT")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_OPEN_RESULT"] == "1"
+    }
+
+    private static var isUITestOpenAnalyzing: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_OPEN_ANALYZING")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_OPEN_ANALYZING"] == "1"
+    }
+
+    private static var isUITestOpenAnalyzingCompletes: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_OPEN_ANALYZING_COMPLETES")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_OPEN_ANALYZING_COMPLETES"] == "1"
+    }
+
+    private static var isRealE2EAnalysisLaunch: Bool {
+        ProcessInfo.processInfo.environment["RD_E2E_REAL_3_PHOTO_ANALYSIS"] == "1"
+            || CommandLine.arguments.contains("RD_E2E_REAL_3_PHOTO_ANALYSIS")
+    }
+
+    private static func uiTestPhotoFixture(seed: Int) -> UIImage {
+        let size = CGSize(width: 720, height: 960)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            let rect = CGRect(origin: .zero, size: size)
+            let base = seed == 0 ? UIColor(red: 0.06, green: 0.40, blue: 0.26, alpha: 1) : UIColor(red: 0.10, green: 0.28, blue: 0.58, alpha: 1)
+            let accent = seed == 0 ? UIColor(red: 0.91, green: 0.20, blue: 0.46, alpha: 1) : UIColor(red: 0.02, green: 0.77, blue: 0.31, alpha: 1)
+            base.setFill()
+            context.fill(rect)
+
+            for index in 0..<9 {
+                let inset = CGFloat(index * 34)
+                let band = CGRect(x: inset - 120, y: CGFloat(index * 92), width: size.width + 220, height: 46)
+                accent.withAlphaComponent(index.isMultiple(of: 2) ? 0.72 : 0.42).setFill()
+                UIBezierPath(roundedRect: band, cornerRadius: 23).fill()
+            }
+
+            UIColor.white.withAlphaComponent(0.88).setStroke()
+            let marker = UIBezierPath(ovalIn: CGRect(x: 205, y: 305, width: 310, height: 420))
+            marker.lineWidth = 12
+            marker.stroke()
+        }
+    }
+
+    private static func e2eHazardPhotoFixture(seed: Int) -> UIImage {
+        if seed == 0, let asset = UIImage(named: "TrialPreviewA") {
+            return asset
+        }
+
+        let hazards: [(title: String, detail: String, color: UIColor)] = [
+            ("KORKULUK YOK", "Yuksekte acik kenar", .systemRed),
+            ("BARET YOK", "KKD eksikligi", .systemOrange),
+            ("ISLAK ZEMIN", "Kayma ve dusme riski", .systemBlue),
+            ("ACIK PANO", "Elektrik tehlikesi", .systemPurple),
+            ("DUZENSIZ SAHA", "Malzeme ve kablo daginik", .systemGreen),
+        ]
+        let item = hazards[max(0, min(seed, hazards.count - 1))]
+        let size = CGSize(width: 1024, height: 768)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            let rect = CGRect(origin: .zero, size: size)
+            UIColor(red: 0.78, green: 0.76, blue: 0.70, alpha: 1).setFill()
+            context.fill(rect)
+
+            UIColor(red: 0.42, green: 0.40, blue: 0.36, alpha: 1).setFill()
+            UIBezierPath(rect: CGRect(x: 0, y: 540, width: size.width, height: 228)).fill()
+
+            UIColor(red: 0.63, green: 0.64, blue: 0.60, alpha: 1).setFill()
+            for index in 0..<6 {
+                UIBezierPath(rect: CGRect(x: CGFloat(index) * 178 - 40, y: 120, width: 42, height: 420)).fill()
+            }
+
+            UIColor(red: 0.16, green: 0.18, blue: 0.20, alpha: 1).setStroke()
+            let platform = UIBezierPath()
+            platform.move(to: CGPoint(x: 80, y: 350))
+            platform.addLine(to: CGPoint(x: 930, y: 350))
+            platform.lineWidth = 10
+            platform.stroke()
+
+            drawE2EWorker(in: CGRect(x: 430, y: 275, width: 110, height: 250), wearingHelmet: seed != 1)
+
+            switch seed {
+            case 0:
+                item.color.setStroke()
+                let openEdge = UIBezierPath()
+                openEdge.move(to: CGPoint(x: 140, y: 310))
+                openEdge.addLine(to: CGPoint(x: 880, y: 310))
+                openEdge.lineWidth = 12
+                openEdge.stroke()
+            case 2:
+                UIColor.systemCyan.withAlphaComponent(0.72).setFill()
+                UIBezierPath(ovalIn: CGRect(x: 210, y: 560, width: 430, height: 70)).fill()
+            case 3:
+                UIColor.darkGray.setFill()
+                UIBezierPath(roundedRect: CGRect(x: 690, y: 245, width: 170, height: 210), cornerRadius: 12).fill()
+                UIColor.systemYellow.setStroke()
+                let wire = UIBezierPath()
+                wire.move(to: CGPoint(x: 725, y: 375))
+                wire.addLine(to: CGPoint(x: 835, y: 430))
+                wire.lineWidth = 8
+                wire.stroke()
+            case 4:
+                UIColor.brown.setFill()
+                for index in 0..<5 {
+                    UIBezierPath(rect: CGRect(x: 170 + index * 90, y: 560 + (index % 2) * 36, width: 140, height: 18)).fill()
+                }
+            default:
+                break
+            }
+
+            let banner = CGRect(x: 64, y: 58, width: 600, height: 116)
+            UIColor.black.withAlphaComponent(0.68).setFill()
+            UIBezierPath(roundedRect: banner, cornerRadius: 18).fill()
+
+            let titleAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 42, weight: .heavy),
+                .foregroundColor: UIColor.white
+            ]
+            let detailAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 26, weight: .semibold),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.86)
+            ]
+            item.title.draw(in: CGRect(x: 92, y: 76, width: 550, height: 48), withAttributes: titleAttributes)
+            item.detail.draw(in: CGRect(x: 92, y: 124, width: 550, height: 38), withAttributes: detailAttributes)
+        }
+    }
+
+    private static func drawE2EWorker(in rect: CGRect, wearingHelmet: Bool) {
+        UIColor(red: 0.12, green: 0.13, blue: 0.15, alpha: 1).setFill()
+        UIBezierPath(ovalIn: CGRect(x: rect.midX - 28, y: rect.minY, width: 56, height: 56)).fill()
+        if wearingHelmet {
+            UIColor.systemYellow.setFill()
+            UIBezierPath(roundedRect: CGRect(x: rect.midX - 38, y: rect.minY - 8, width: 76, height: 28), cornerRadius: 12).fill()
+        }
+
+        UIColor.systemYellow.withAlphaComponent(0.84).setFill()
+        UIBezierPath(roundedRect: CGRect(x: rect.midX - 36, y: rect.minY + 62, width: 72, height: 92), cornerRadius: 14).fill()
+        UIColor.black.setStroke()
+        let leftArm = UIBezierPath()
+        leftArm.move(to: CGPoint(x: rect.midX - 34, y: rect.minY + 82))
+        leftArm.addLine(to: CGPoint(x: rect.midX - 80, y: rect.minY + 130))
+        leftArm.lineWidth = 12
+        leftArm.stroke()
+        let rightArm = UIBezierPath()
+        rightArm.move(to: CGPoint(x: rect.midX + 34, y: rect.minY + 82))
+        rightArm.addLine(to: CGPoint(x: rect.midX + 78, y: rect.minY + 122))
+        rightArm.lineWidth = 12
+        rightArm.stroke()
+
+        let leftLeg = UIBezierPath()
+        leftLeg.move(to: CGPoint(x: rect.midX - 18, y: rect.minY + 154))
+        leftLeg.addLine(to: CGPoint(x: rect.midX - 46, y: rect.maxY))
+        leftLeg.lineWidth = 14
+        leftLeg.stroke()
+        let rightLeg = UIBezierPath()
+        rightLeg.move(to: CGPoint(x: rect.midX + 18, y: rect.minY + 154))
+        rightLeg.addLine(to: CGPoint(x: rect.midX + 48, y: rect.maxY))
+        rightLeg.lineWidth = 14
+        rightLeg.stroke()
     }
 
     private static var uiTestReports: [ReportRow] {
@@ -1303,7 +1819,7 @@ struct HomeView: View {
                 format: "pdf",
                 kind: PDFReportKind.standard.rawValue,
                 method: "fine_kinney",
-                title: "Genel · UI Test",
+                title: RDLocalization.string("analysis.home.view.genel.ui.test.a58b1874", table: .analysis, fallback: "Genel · UI Test"),
                 storagePath: "ui-test/report-standard.pdf",
                 fileName: "report-standard.pdf",
                 mimeType: "application/pdf",
@@ -1321,7 +1837,7 @@ struct HomeView: View {
                 format: "xlsx",
                 kind: "risk_analysis",
                 method: "matrix_5x5",
-                title: "Risk Analizi · UI Test",
+                title: RDLocalization.string("analysis.home.view.risk.analizi.ui.test.a01f53a7", table: .analysis, fallback: "Risk Analizi · UI Test"),
                 storagePath: "ui-test/report-risk.xlsx",
                 fileName: "report-risk.xlsx",
                 mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1397,7 +1913,7 @@ struct HomeView: View {
 
     private static var uiTestWeekStart: String {
         var calendar = Calendar(identifier: .iso8601)
-        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        calendar.timeZone = RDConfig.Quota.businessTimeZone
         let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
         let formatter = DateFormatter()
         formatter.calendar = calendar
@@ -1422,19 +1938,14 @@ struct HomeView: View {
         closeFreeQuotaEntryPointsIfNeeded()
     }
 
-    private func applyCachedQuotaUsageIfAvailable() {
-        guard !app.currentTier.isPaid,
-              let cached = cachedQuotaUsageForCurrentUser()
-        else { return }
-        quotaUsage = cached
-    }
-
     private func closeFreeQuotaEntryPointsIfNeeded() {
         guard isFreeQuotaExhausted else { return }
         showSourceDialog = false
         showCameraPicker = false
         showGalleryPicker = false
         showCanvasSheet = false
+        queuedAnnotatePhotoIDs = []
+        returnToPhotoTrayAfterAnnotation = false
     }
 
     private func cacheQuotaUsage(_ usage: DailyQuotaUsage) {
@@ -1463,26 +1974,156 @@ struct HomeView: View {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "Europe/Istanbul") ?? .current
+        formatter.timeZone = RDConfig.Quota.businessTimeZone
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: Date())
     }
 
     private func openRecentAnalysis(_ item: RecentAnalysis) {
-        guard openingRecentID == nil else { return }
-        openingRecentID = item.id
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        openAnalysisResult(analysisID: item.id, context: RDLocalization.string("analysis.home.view.analiz.acilamadi.bec78d0c", table: .analysis, fallback: "Analiz açılamadı"))
+    }
 
+    private func openAnalysisResult(analysisID: UUID, context: String) {
+        guard openingRecentID == nil else { return }
+        openingRecentID = analysisID
         Task {
             do {
-                let result = try await AnalysisService.shared.result(analysisID: item.id)
+                let result = try await AnalysisService.shared.result(analysisID: analysisID)
                 analysisResult = result
                 showResult = true
             } catch {
-                analysisError = AppErrorMessage.make(error, context: "Analiz açılamadı", fallbackTitle: "Analiz açılamadı").fullText
+                presentAnalysisError(AppErrorMessage.make(error, context: context, fallbackTitle: context))
             }
             openingRecentID = nil
         }
+    }
+
+    private func openPendingAnalysisResultIfNeeded() {
+        guard let analysisID = app.pendingAnalysisResultID,
+              pendingJob == nil,
+              !showResult,
+              openingRecentID == nil else { return }
+        app.pendingAnalysisResultID = nil
+        openAnalysisResult(analysisID: analysisID, context: RDLocalization.string("analysis.home.view.analiz.sonucu.acilamadi.5e47c59a", table: .analysis, fallback: "Analiz sonucu açılamadı"))
+    }
+
+    private func resumeInFlightAnalysisIfNeeded() {
+        guard pendingJob == nil,
+              !showResult,
+              openingRecentID == nil,
+              resumingInFlightID == nil,
+              app.pendingAnalysisResultID == nil,
+              let userID = app.auth.session?.user.id,
+              let inFlight = InFlightAnalysisStore.shared.load(for: userID) else {
+            return
+        }
+
+        if inFlight.kind == "text" {
+            InFlightAnalysisStore.shared.clear(analysisID: inFlight.analysisID)
+            analysisErrorTitle = RDLocalization.string("analysis.home.view.metin.analizi.kaldirildi.905d5a82", table: .analysis, fallback: "Metin analizi kaldırıldı")
+            analysisError = RDLocalization.string("analysis.home.view.metin.analizi.artik.desteklenmiyor.lutfen.fotogr.05e50fcd", table: .analysis, fallback: "Metin analizi artık desteklenmiyor. Lütfen fotoğraf yükleyerek yeni analiz başlatın.")
+            return
+        }
+
+        resumingInFlightID = inFlight.analysisID
+        pendingJob = AnalysisJob(
+            previewImage: nil,
+            presentationMode: .photo,
+            photoCount: inFlight.photoCount
+        ) { progress in
+            try await AnalysisService.shared.resumeAnalysis(
+                analysisID: inFlight.analysisID,
+                onProgress: progress
+            )
+        }
+    }
+
+    private func openUITestResultIfNeeded() {
+        #if DEBUG
+        guard Self.isUITestOpenResult, !didOpenUITestResult else { return }
+        didOpenUITestResult = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            openRecentAnalysis(RecentAnalysis.mock[0])
+        }
+        #endif
+    }
+
+    private func openAnalyzingFixtureIfNeeded() {
+        #if DEBUG
+        guard (Self.isUITestOpenAnalyzing || Self.isUITestOpenAnalyzingCompletes),
+              !didOpenUITestAnalyzing,
+              pendingJob == nil else { return }
+        didOpenUITestAnalyzing = true
+        pendingJob = AnalysisJob(
+            previewImage: Self.uiTestPhotoFixture(seed: 2),
+            presentationMode: .photo,
+            photoCount: 3
+        ) { progress in
+            progress(.preparingInput)
+            try await Task.sleep(nanoseconds: 420_000_000)
+            progress(.creatingAnalysis)
+            try await Task.sleep(nanoseconds: 420_000_000)
+            progress(.uploadingPhotos)
+            try await Task.sleep(nanoseconds: 420_000_000)
+            progress(.submitting)
+            try await Task.sleep(nanoseconds: 420_000_000)
+            if Self.isUITestOpenAnalyzingCompletes {
+                progress(.queued)
+                try await Task.sleep(nanoseconds: 420_000_000)
+                progress(.analyzing)
+                try await Task.sleep(nanoseconds: 420_000_000)
+                progress(.finalizingResult)
+                try await Task.sleep(nanoseconds: 420_000_000)
+                return try await AnalysisService.shared.resumeAnalysis(
+                    analysisID: UUID(uuidString: "00000000-0000-0000-0000-00000000c071")!,
+                    onProgress: nil
+                )
+            }
+            progress(.retryingNetwork)
+            try await Task.sleep(nanoseconds: 3_000_000_000)
+            progress(.queued)
+            try await Task.sleep(nanoseconds: 620_000_000)
+            progress(.analyzing)
+            try await Task.sleep(nanoseconds: 30_000_000_000)
+            throw AnalysisService.AnalysisError.aiFailed("UI test analiz bekletildi.")
+        }
+        #endif
+    }
+
+    private func openRealE2EAnalysisIfNeeded() {
+        #if DEBUG
+        guard Self.isRealE2EAnalysisLaunch, !didOpenE2ERealAnalysis, pendingJob == nil else { return }
+        guard let userID = app.auth.session?.user.id else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                openRealE2EAnalysisIfNeeded()
+            }
+            return
+        }
+
+        didOpenE2ERealAnalysis = true
+        let images = (0..<3).map(Self.e2eHazardPhotoFixture(seed:))
+        selectedPhotos = images.map { AnalysisPhotoDraft(image: $0) }
+        selectedCanvases = [.general, .ppe, .warningSigns, .workingAtHeight, .electrical]
+        selectedAnalysisSector = .construction
+
+        pendingJob = AnalysisJob(
+            previewImage: images.first,
+            presentationMode: .photo,
+            photoCount: images.count
+        ) { progress in
+            await app.refreshPlanState()
+            return try await AnalysisService.shared.runPhotoAnalysis(
+                userID: userID,
+                images: images,
+                canvases: [.general, .ppe, .warningSigns, .workingAtHeight, .electrical],
+                analysisSector: .construction,
+                companyID: nil,
+                title: RDLocalization.format("analysis.home.view.e2e.3.fotograf.storage.1.c8cb48fa", table: .analysis, fallback: "E2E 3 Fotoğraf Storage %1$@", arguments: [String(describing: Self.uiTestISODate(minutesAgo: 0))]),
+                onProgress: progress
+            )
+        }
+        #endif
     }
 
     private func openReport(_ report: ReportRow) {
@@ -1501,11 +2142,11 @@ struct HomeView: View {
                 )
                 reportPreviewItem = ShareItem(url: url)
             } catch {
-                analysisError = AppErrorMessage.make(
+                presentAnalysisError(AppErrorMessage.make(
                     error,
-                    context: "Rapor açılamadı",
-                    fallbackTitle: "Rapor açılamadı"
-                ).fullText
+                    context: RDLocalization.string("analysis.home.view.rapor.acilamadi.8d6f58ee", table: .analysis, fallback: "Rapor açılamadı"),
+                    fallbackTitle: RDLocalization.string("analysis.home.view.rapor.acilamadi.95aed07e", table: .analysis, fallback: "Rapor açılamadı")
+                ))
             }
             openingReportID = nil
         }
@@ -1610,7 +2251,7 @@ struct RecentAnalysisCard: View {
                 } else {
                     HStack(spacing: 3) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 8.5, weight: .black, design: .rounded))
+                            .font(.system(size: RDFontScale.size(8.5), weight: .black, design: .rounded))
                         Text("\(item.count)")
                             .rdMono(size: 10, weight: .black)
                     }
@@ -1627,6 +2268,7 @@ struct RecentAnalysisCard: View {
             .rdRowShadow()
         }
         .buttonStyle(RDPressableButtonStyle())
+        .accessibilityIdentifier("home.recent_analysis.\(item.title)")
     }
 
 }
@@ -1642,7 +2284,7 @@ private struct HomeReportRow: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: iconName)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(kindStyle.text)
                     .frame(width: 38, height: 38)
                     .background(kindStyle.background)
@@ -1650,20 +2292,20 @@ private struct HomeReportRow: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(reportTitle)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .lineLimit(1)
 
                     HStack(spacing: 6) {
                         Text(kindLabel)
-                            .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                            .font(.system(size: RDFontScale.size(10.5), weight: .bold, design: .rounded))
                             .foregroundStyle(kindStyle.text)
                             .padding(.horizontal, 8)
                             .frame(height: 23)
                             .background(kindStyle.background)
                             .clipShape(RoundedRectangle(cornerRadius: 7))
                         Text(dateText)
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                     }
                 }
@@ -1674,7 +2316,7 @@ private struct HomeReportRow: View {
                         .controlSize(.small)
                 } else {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
             }
@@ -1704,8 +2346,8 @@ private struct HomeReportRow: View {
     }
 
     private var kindLabel: String {
-        if isExcel { return "Excel tablo" }
-        return isRiskAnalysis ? "Risk analizi" : "Standart rapor"
+        if isExcel { return RDLocalization.string("analysis.home.view.excel.tablo.84e74224", table: .analysis, fallback: "Excel tablo") }
+        return isRiskAnalysis ? RDLocalization.string("analysis.home.view.risk.analizi.a7a9a6fd", table: .analysis, fallback: "Risk analizi") : RDLocalization.string("analysis.home.view.standart.rapor.e78add8a", table: .analysis, fallback: "Standart rapor")
     }
 
     private var kindStyle: (text: Color, background: Color) {
@@ -1726,10 +2368,11 @@ private struct HomeReportRow: View {
     }
 
     private var dateText: String {
-        guard let date = report.createdAt.flatMap(Self.parseDate) else { return "Tarih yok" }
+        guard let date = report.createdAt.flatMap(Self.parseDate) else { return RDLocalization.string("analysis.home.view.tarih.yok.6cb91bbc", table: .analysis, fallback: "Tarih yok") }
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMM HH:mm"
+        formatter.locale = .autoupdatingCurrent
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
         return formatter.string(from: date)
     }
 
@@ -1741,108 +2384,405 @@ private struct HomeReportRow: View {
     }
 }
 
-struct PhotoSourceSheet: View {
+private struct PhotoMediaTraySheet: View {
+    let photos: [AnalysisPhotoDraft]
+    let maxPhotoCount: Int
+    let visibleSlotCount: Int
+    let canAddMore: Bool
     let onCamera: () -> Void
     let onGallery: () -> Void
+    let onAnnotate: (UUID) -> Void
+    let onRemove: (UUID) -> Void
+    let onMove: (UUID, Int) -> Void
+    let onLockedSlot: () -> Void
+    let onStartAnalysis: () -> Void
     let onClose: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    static func detentHeight(
+        photosCount: Int,
+        maxPhotoCount: Int,
+        visibleSlotCount: Int
+    ) -> CGFloat {
+        let gridSpacing: CGFloat = 14
+        let slotCount = max(visibleSlotCount, min(maxPhotoCount, photosCount + 1))
+        let rowCount = max(1, Int(ceil(Double(slotCount) / 3.0)))
+        let contentWidth = UIScreen.main.bounds.width - 40
+        let availableWidth = contentWidth - (gridSpacing * 2)
+        let tileSize = max(88, min(112, floor(availableWidth / 3)))
+        let gridHeight = (CGFloat(rowCount) * tileSize) + (CGFloat(max(rowCount - 1, 0)) * gridSpacing) + 6
+        let hasLockedSlots = slotCount > maxPhotoCount
+        let verticalSpacing = CGFloat(hasLockedSlots ? 4 : 3) * 14
+        let upgradePromptHeight: CGFloat = hasLockedSlots ? 38 : 0
+
+        let contentHeight =
+            18 + // top padding
+            46 + // header
+            46 + // source buttons
+            gridHeight +
+            upgradePromptHeight +
+            58 + // primary button
+            verticalSpacing +
+            20 // bottom padding
+
+        return ceil(min(max(contentHeight + 28, 360), 500))
+    }
+
+    private var isDarkMode: Bool { colorScheme == .dark }
+    private var trayBackground: Color { isDarkMode ? Color(hex: "#151819") : Color.rdWhite }
+    private var trayPrimaryText: Color { isDarkMode ? Color.white : Color.rdOnyx }
+    private var traySecondaryText: Color { isDarkMode ? Color.white.opacity(0.64) : Color.rdSlate }
+    private var traySurface: Color { isDarkMode ? Color.white.opacity(0.08) : Color.rdFog }
+    private var trayTileSurface: Color { isDarkMode ? Color.white.opacity(0.06) : Color.rdWhite }
+    private var trayLockedSurface: Color { isDarkMode ? Color.white.opacity(0.07) : Color.rdFog }
+    private var trayStroke: Color { isDarkMode ? Color.white.opacity(0.13) : Color.rdLine }
+    private var trayIconText: Color { isDarkMode ? Color.white : Color.black }
+    private var trayCTA: Color { isDarkMode ? Color.rdGreen : Color.rdOnyx }
+
     var body: some View {
-        VStack(spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "camera.viewfinder")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdGreen)
-                    .frame(width: 48, height: 48)
-                    .background(Color.rdGreenSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+        VStack(spacing: 14) {
+            header
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Fotoğraf Yükle")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                    Text("Fotoğrafı nereden almak istiyorsun?")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                }
-
-                Spacer()
-
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                        .frame(width: 38, height: 38)
-                        .background(Color.rdCloud)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(RDPressableButtonStyle())
-                .accessibilityLabel("Kapat")
-            }
-
-            VStack(spacing: 10) {
+            HStack(spacing: 10) {
                 sourceButton(
-                    title: "Kamera ile çek",
-                    subtitle: "Sahada anında fotoğraf al",
+                    title: RDLocalization.string("analysis.home.view.kamera.0bbfe23e", table: .analysis, fallback: "Kamera"),
                     icon: "camera.fill",
+                    accessibilityID: "home.photo_tray.camera",
                     action: onCamera
                 )
                 sourceButton(
-                    title: "Galeriden seç",
-                    subtitle: "Var olan saha görselini kullan",
+                    title: RDLocalization.string("analysis.home.view.galeri.a1a2ff1c", table: .analysis, fallback: "Galeri"),
                     icon: "photo.on.rectangle.angled",
+                    accessibilityID: "home.photo_tray.gallery",
                     action: onGallery
                 )
             }
+            .disabled(!canAddMore)
 
+            LazyVGrid(columns: gridColumns, alignment: .center, spacing: gridSpacing) {
+                ForEach(0..<sheetSlotCount, id: \.self) { index in
+                    slot(at: index, tileSize: tileSize)
+                        .accessibilityIdentifier("home.photo_slot.\(index + 1)")
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 2)
+            .padding(.bottom, 4)
+
+            if hasLockedSlots {
+                multiPhotoUpgradePrompt
+            }
+
+            primaryButton
         }
         .padding(.horizontal, 20)
-        .padding(.top, 22)
-        .padding(.bottom, 12)
+        .padding(.top, 18)
+        .padding(.bottom, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Color.rdPaper)
+        .background(trayBackground)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("home.photo_tray")
     }
 
-    private func sourceButton(title: String, subtitle: String, icon: String, action: @escaping () -> Void) -> some View {
+    private var header: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(RDLocalization.string("analysis.home.view.fotograflar.a049e496", table: .analysis, fallback: "Fotoğraflar"))
+                    .font(.system(size: RDFontScale.size(23), weight: .bold, design: .rounded))
+                    .foregroundStyle(trayPrimaryText)
+                Text("\(photos.count)/\(maxPhotoCount)")
+                    .rdMono(size: 12, weight: .semibold)
+                    .foregroundStyle(traySecondaryText)
+            }
+
+            Spacer(minLength: 0)
+
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                    .foregroundStyle(traySecondaryText)
+                    .frame(width: 36, height: 36)
+                    .background(traySurface)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(RDPressableButtonStyle())
+            .accessibilityLabel(RDLocalization.string("analysis.home.view.kapat.349873ed", table: .analysis, fallback: "Kapat"))
+        }
+    }
+
+    private var gridSpacing: CGFloat { 14 }
+
+    private var tileSize: CGFloat {
+        let contentWidth = UIScreen.main.bounds.width - 40
+        let availableWidth = contentWidth - (gridSpacing * 2)
+        return max(88, min(112, floor(availableWidth / 3)))
+    }
+
+    private var gridColumns: [GridItem] {
+        Array(repeating: GridItem(.fixed(tileSize), spacing: gridSpacing), count: 3)
+    }
+
+    private var sheetSlotCount: Int {
+        max(visibleSlotCount, min(maxPhotoCount, photos.count + 1))
+    }
+
+    private var hasLockedSlots: Bool {
+        sheetSlotCount > maxPhotoCount
+    }
+
+    @ViewBuilder
+    private func slot(at index: Int, tileSize: CGFloat) -> some View {
+        if index < photos.count {
+            selectedTile(photos[index], index: index, tileSize: tileSize)
+        } else if index >= maxPhotoCount {
+            lockedTile(index: index, tileSize: tileSize)
+        } else {
+            emptyTile(index: index, tileSize: tileSize)
+        }
+    }
+
+    private func sourceButton(
+        title: String,
+        icon: String,
+        accessibilityID: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
-                    .frame(width: 44, height: 44)
-                    .background(Color.rdWhite)
-                    .clipShape(RoundedRectangle(cornerRadius: 13))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 13)
-                            .stroke(Color.rdLine, lineWidth: 1)
-                    )
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-                    Text(subtitle)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                Text(title)
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                    .lineLimit(1)
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-            .background(Color.rdWhite)
+            .foregroundStyle(trayIconText)
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(traySurface)
             .overlay(
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.rdLine, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(trayStroke, lineWidth: 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(RDPressableButtonStyle())
-        .accessibilityElement(children: .combine)
         .accessibilityLabel(title)
+        .accessibilityIdentifier(accessibilityID)
+    }
+
+    private func selectedTile(_ draft: AnalysisPhotoDraft, index: Int, tileSize: CGFloat) -> some View {
+        ZStack {
+            Button {
+                onAnnotate(draft.id)
+            } label: {
+                Image(uiImage: draft.image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: tileSize, height: tileSize)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 17))
+            }
+            .buttonStyle(.plain)
+
+            VStack {
+                HStack {
+                    Text("\(index + 1)")
+                        .rdMono(size: 10, weight: .bold)
+                        .foregroundStyle(Color.rdOnyx)
+                        .frame(width: 24, height: 24)
+                        .background(Color.white.opacity(0.92))
+                        .clipShape(Circle())
+
+                    Spacer(minLength: 0)
+
+                    Button {
+                        onRemove(draft.id)
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .frame(width: 24, height: 24)
+                            .background(Color.black.opacity(0.56))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(RDLocalization.string("analysis.home.view.fotografi.sil.caa00980", table: .analysis, fallback: "Fotoğrafı sil"))
+                }
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: 4) {
+                    tileIconButton("chevron.left", disabled: index == 0) {
+                        onMove(draft.id, -1)
+                    }
+                    tileIconButton("pencil.tip.crop.circle", disabled: false) {
+                        onAnnotate(draft.id)
+                    }
+                    tileIconButton("chevron.right", disabled: index >= photos.count - 1) {
+                        onMove(draft.id, 1)
+                    }
+                }
+                .padding(4)
+                .background(Color.white.opacity(0.90))
+                .clipShape(Capsule())
+            }
+            .padding(7)
+        }
+        .frame(width: tileSize, height: tileSize)
+        .accessibilityIdentifier("home.photo_tile.\(index + 1)")
+    }
+
+    private func emptyTile(index: Int, tileSize: CGFloat) -> some View {
+        Button(action: onGallery) {
+            RoundedRectangle(cornerRadius: 17)
+                .fill(trayTileSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 17)
+                        .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
+                        .foregroundStyle(traySecondaryText.opacity(isDarkMode ? 0.48 : 0.34))
+                )
+                .overlay(
+                    Image(systemName: "plus")
+                        .font(.system(size: RDFontScale.size(31), weight: .light, design: .rounded))
+                        .foregroundStyle(isDarkMode ? Color.white.opacity(0.72) : Color.rdSlate.opacity(0.58))
+                )
+                .frame(width: tileSize, height: tileSize)
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .disabled(!canAddMore)
+        .accessibilityLabel(RDLocalization.string("analysis.home.view.fotograf.ekle.279a8fb7", table: .analysis, fallback: "Fotoğraf ekle"))
+    }
+
+    private func lockedTile(index: Int, tileSize: CGFloat) -> some View {
+        Button(action: onLockedSlot) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 17)
+                    .fill(trayLockedSurface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 17)
+                            .stroke(trayStroke, lineWidth: 1)
+                    )
+
+                Image(systemName: "lock.fill")
+                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                    .foregroundStyle(trayIconText)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(width: tileSize, height: tileSize)
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityLabel(RDLocalization.format("analysis.home.view.1.slot.kilitli.plus.veya.pro.ile.acilir.55383064", table: .analysis, fallback: "%1$@. slot kilitli. Plus veya Pro ile açılır.", arguments: [String(describing: index + 1)]))
+    }
+
+    private var multiPhotoUpgradePrompt: some View {
+        Button(action: onLockedSlot) {
+            HStack(spacing: 9) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                Text(RDLocalization.string("analysis.home.view.coklu.fotograf.ozelligi.icin.hesabinizi.yukselti.14166947", table: .analysis, fallback: "Çoklu fotoğraf özelliği için hesabınızı yükseltin"))
+                    .font(.system(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.86)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: RDFontScale.size(10), weight: .black, design: .rounded))
+            }
+            .foregroundStyle(Color(hex: "#8A5A00"))
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            .background(
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#FFF8D7"),
+                        Color(hex: "#FFEFC2")
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color(hex: "#F0C24A"), lineWidth: 1.2)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .shadow(color: Color(hex: "#D9A300").opacity(0.13), radius: 8, x: 0, y: 3)
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityIdentifier("home.photo_tray.multi_photo_upgrade")
+    }
+
+    private func tileIconButton(
+        _ icon: String,
+        disabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                .foregroundStyle(disabled ? Color.rdSlate.opacity(0.38) : Color.rdOnyx)
+                .frame(width: 24, height: 22)
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+    }
+
+    private var primaryButton: some View {
+        Button {
+            if photos.isEmpty {
+                onGallery()
+            } else {
+                onStartAnalysis()
+            }
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: photos.isEmpty ? "plus.circle.fill" : "sparkles")
+                    .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                Text(
+                    photos.isEmpty
+                        ? RDLocalization.string(
+                            "analysis.photo_tray.add_photo",
+                            table: .analysis,
+                            fallback: "Fotoğraf ekle"
+                        )
+                        : RDLocalization.string(
+                            "analysis.photo_tray.continue_to_analysis",
+                            table: .analysis,
+                            fallback: "Analize geç"
+                        )
+                )
+                    .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                    .tracking(0)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 58)
+            .background(photos.isEmpty && !canAddMore ? Color.rdSlate : trayCTA)
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .disabled(photos.isEmpty && !canAddMore)
+        .accessibilityLabel(
+            photos.isEmpty
+                ? RDLocalization.string(
+                    "analysis.photo_tray.add_photo",
+                    table: .analysis,
+                    fallback: "Fotoğraf ekle"
+                )
+                : RDLocalization.string(
+                    "analysis.photo_tray.continue_to_analysis",
+                    table: .analysis,
+                    fallback: "Analize geç"
+                )
+        )
+        .accessibilityIdentifier("home.photo_tray.primary")
     }
 }
 

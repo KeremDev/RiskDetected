@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "contract_id": "rd-global-localization-testflight-rollout-v1",
+  "candidate_build": "78",
+  "status": "passed",
+  "completed_stages": 9,
+  "required_stages": 9,
+  "next_stage": null,
+  "next_stage_key": null,
+  "issues": []
+}

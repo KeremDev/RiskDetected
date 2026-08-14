@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "locale": "en-CA",
+  "review_status": "machine_draft",
+  "preferred_terms": [
+    "occupational health and safety",
+    "OHS inspection",
+    "hazard assessment",
+    "workplace inspection",
+    "control measure",
+    "corrective action"
+  ],
+  "spelling_examples": {
+    "prioritise": "prioritize",
+    "organised": "organized"
+  },
+  "jurisdiction_note": "Wave 1 does not resolve the federal, provincial or territorial legal regime."
+}

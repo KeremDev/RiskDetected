@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-07-28T19:59:12+03:00",
+  "branch": "codex/global-localization-wave1",
+  "phase": 1,
+  "source_sha256": "3a68229b1860572ff70600287412d3dadf890597698acfc3edb23afc8b9c6932",
+  "production_mutation_performed": false,
+  "phase_2_changes_started": false,
+  "results": {
+    "codegen": {
+      "status": "passed",
+      "profiles": 6,
+      "outputs": 5,
+      "generated_diff": "clean",
+      "swift_mirrors_byte_identical": true,
+      "typescript_mirrors_byte_identical": true,
+      "json_swift_typescript_source_hash_equal": true
+    },
+    "profile_contract": {
+      "status": "passed",
+      "passed": 17,
+      "failed": 0,
+      "invalid_profile_rejected": true,
+      "storefront_resolver_input_absent": true
+    },
+    "forbidden_claims": {
+      "status": "passed",
+      "profiles_tested": 6,
+      "passed": 6,
+      "failed": 0
+    },
+    "common_safety_contract": {
+      "status": "passed",
+      "hierarchy_of_controls_single_source": true,
+      "risk_method_disclaimer_profile_independent": true
+    },
+    "content_inventory": {
+      "status": "passed",
+      "entries": 2397,
+      "p0": 2115,
+      "p1": 282,
+      "unowned_p0_p1": 0,
+      "surfaces": {
+        "asc_metadata": 5,
+        "asc_subscription": 9,
+        "backend": 218,
+        "email": 25,
+        "ios_ui": 790,
+        "legal": 1026,
+        "notification": 4,
+        "pdf": 126,
+        "plist": 3,
+        "push": 12,
+        "xlsx": 179
+      },
+      "required_review_fields_present": true
+    },
+    "hardcoded_copy_guard": {
+      "status": "passed",
+      "baseline_candidates": 2397,
+      "current_candidates": 2397,
+      "new_candidates": 0
+    },
+    "generated_typescript_check": {
+      "status": "passed",
+      "path": "supabase/functions/_shared/generated/safety-profiles.generated.ts"
+    },
+    "ios_build_run": {
+      "status": "passed",
+      "simulator": "RD QA iPhone 16 Pro",
+      "warnings": 0,
+      "errors": 0,
+      "generated_swift_compiled": true,
+      "build_log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_run_sim_2026-07-28T16-57-19-154Z_pid73592_ba8ce98d.log"
+    },
+    "human_approval_evidence": {
+      "language_review_hashes": 0,
+      "safety_review_hashes": 0,
+      "product_approval_hashes": 0,
+      "status": "expected_machine_draft"
+    }
+  },
+  "commands": {
+    "phase_1_suite": "make localization-test",
+    "codegen_check": "node scripts/generate_localization_profiles.mjs --check",
+    "inventory_check": "node scripts/localization_inventory.mjs --check",
+    "hardcoded_guard": "node scripts/check_localization_hardcoded.mjs"
+  }
+}

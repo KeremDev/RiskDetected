@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "project_ref": "ppcrzemgiztzcgddbins",
+  "verified_at": "2026-07-31T07:16:48Z",
+  "function": {
+    "name": "auth-send-email-hook",
+    "status": "ACTIVE",
+    "version": "7",
+    "verify_jwt": false,
+    "endpoint": "https://ppcrzemgiztzcgddbins.supabase.co/functions/v1/auth-send-email-hook",
+    "deployed_at": "2026-07-31T07:15:06.815Z",
+    "deployment_bundle_sha256": "3cffc99745e2b247a0b4bbf96b2b9762d3bfde37e9ae5d10179d922af0afbdf2",
+    "entrypoint_sha256": "2b8d6a09e193b7a284fca2a8e29433dba676da0a285342c6838b120ab1303a91",
+    "localization_catalog_sha256": "1e4f751cb3f8dfdc7abd7ca3c7458f5969010021e780030eb3bafabb48323a63"
+  },
+  "hook": {
+    "type": "send_email",
+    "transport": "https",
+    "enabled": true,
+    "activated_at": "2026-07-31T07:08:03Z",
+    "endpoint_matches_deployed_function": true
+  },
+  "secrets": {
+    "required_names_present": [
+      "SEND_EMAIL_HOOK_SECRET",
+      "RESEND_API_KEY",
+      "RESEND_FROM_EMAIL"
+    ],
+    "send_email_hook_secret_verified_at": "2026-07-31T07:14:54.272Z",
+    "secret_values_or_digests_captured": false
+  },
+  "smoke_tests": [
+    {
+      "id": "tr_signup",
+      "locale": "tr-TR",
+      "action": "signup",
+      "expected_delivery_count": 1,
+      "status_code": 200,
+      "result": "passed"
+    },
+    {
+      "id": "en_signup",
+      "locale": "en-US",
+      "action": "signup",
+      "expected_delivery_count": 1,
+      "status_code": 200,
+      "result": "passed"
+    },
+    {
+      "id": "tr_recovery",
+      "locale": "tr-TR",
+      "action": "recovery",
+      "expected_delivery_count": 1,
+      "status_code": 200,
+      "result": "passed"
+    },
+    {
+      "id": "en_recovery",
+      "locale": "en-GB",
+      "action": "recovery",
+      "expected_delivery_count": 1,
+      "status_code": 200,
+      "result": "passed"
+    },
+    {
+      "id": "secure_email_change",
+      "locale": "en-001",
+      "action": "email_change",
+      "expected_delivery_count": 2,
+      "status_code": 200,
+      "result": "passed"
+    }
+  ],
+  "security_tests": [
+    {
+      "id": "invalid_signature_fail_closed",
+      "status_code": 401,
+      "error_code": "invalid_webhook_signature",
+      "result": "passed"
+    }
+  ],
+  "smoke_completed_at": "2026-07-31T07:16:48Z",
+  "test_recipient_class": "resend_provider_test_address",
+  "production_user_records_created": false,
+  "recipient_addresses_recorded": false,
+  "secret_value_recorded": false
+}

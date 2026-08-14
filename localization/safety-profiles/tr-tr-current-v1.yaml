@@ -1,0 +1,31 @@
+{
+  "id": "tr-tr-current-v1",
+  "language": "tr",
+  "content_locale": "tr-TR",
+  "jurisdiction_country": "TR",
+  "jurisdiction_region": null,
+  "status": "current_regulatory",
+  "review_status": "machine_draft",
+  "display_name_key": "safety_profile.turkey",
+  "primary_product_term": "iş güvenliği risk analizi",
+  "primary_domain_term": "iş sağlığı ve güvenliği",
+  "finding_term": "bulgu",
+  "hazard_term": "tehlike",
+  "risk_assessment_term": "risk değerlendirmesi",
+  "control_term": "kontrol tedbiri",
+  "corrective_action_term": "düzeltici faaliyet",
+  "default_risk_method": "fine_kinney",
+  "allowed_risk_methods": ["fine_kinney", "matrix_5x5"],
+  "legislation_canvas_enabled": true,
+  "structured_regulatory_references_enabled": true,
+  "regulatory_reference_policy": "tr_current",
+  "legal_compliance_claims_allowed": false,
+  "spelling_style": "turkish",
+  "prompt_directives": [
+    "Mevcut Türkçe analiz ve rapor davranışını koru.",
+    "Yalnız görüntüde gözlenebilen kanıta dayan; görünmeyen ölçüm veya maruziyet sonucu uydurma.",
+    "Risk skorunu hukukî uygunluk skoru olarak sunma."
+  ],
+  "forbidden_claims_key": "tr-tr-current-v1",
+  "profile_version": 1
+}

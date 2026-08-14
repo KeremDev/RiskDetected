@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "policy_id": "rd-owner-approved-device-simulator-validation-2026-08-01",
+  "contract_id": "rd-global-localization-testflight-rollout-v1",
+  "candidate_build": "78",
+  "authorized_at": "2026-08-01T21:00:00Z",
+  "authorization": {
+    "authorized": true,
+    "authorized_by_role": "project_owner",
+    "instruction": "Do not wait for delayed App Store Connect measurements in later stages; use physical-device or simulator tests and avoid repeating the same operations."
+  },
+  "scope": {
+    "stages": [2, 3, 4, 5, 6, 7, 8, 9],
+    "app_store_connect_usage_is_gate_input": false,
+    "app_store_connect_usage_collection_required": false,
+    "production_ai_repetition_required": false,
+    "physical_device_or_simulator_evidence_required": true,
+    "strict_stage_order_required": true
+  },
+  "unchanged_safety_boundaries": {
+    "zero_tolerance_language_failures": true,
+    "zero_tolerance_crashes": true,
+    "zero_tolerance_ambiguous_dispatches": true,
+    "runtime_flag_drift_blocks": true,
+    "aggregate_only_evidence": true,
+    "live_build_77_unchanged": true,
+    "public_rollout_forbidden": true,
+    "app_review_submission_forbidden_without_explicit_instruction": true,
+    "turkish_metadata_screenshots_and_subscription_content_unchanged": true
+  }
+}

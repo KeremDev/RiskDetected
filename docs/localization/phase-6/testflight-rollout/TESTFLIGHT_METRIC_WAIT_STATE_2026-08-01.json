@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "candidate": {
+    "version": "1.3.0",
+    "build": "78",
+    "asc_build_id": "6710ace3-c967-43fc-9186-b005b1a4a83c"
+  },
+  "observed_at": "2026-08-01T18:05:23Z",
+  "stage": 1,
+  "status": "waiting_for_apple_metric_propagation",
+  "asc_state": {
+    "tester_count": 1,
+    "installed_tester_count": 1,
+    "invite_count": 1,
+    "install_count": 0,
+    "session_count": 0,
+    "crash_count": 0,
+    "feedback_count": 0
+  },
+  "completed_non_asc_requirements": {
+    "completed_analyses": 1,
+    "successful_report_requests": 1,
+    "linked_notification_attempts": 2,
+    "queue_jobs": 1,
+    "wrong_language_events": 0,
+    "failed_analyses": 0,
+    "ambiguous_dispatches": 0
+  },
+  "physical_device": {
+    "candidate_installed": true,
+    "candidate_launch_succeeded": true,
+    "evidence": "docs/localization/phase-8/PHYSICAL_BUILD_78_SMOKE_READINESS_2026-08-01.json"
+  },
+  "apple_documentation": {
+    "statement": "Tester metrics are available only after installation and can take up to 24 hours to appear in App Store Connect.",
+    "source": "https://developer.apple.com/help/app-store-connect/test-a-beta-version/view-and-manage-tester-information/"
+  },
+  "next_action": "Re-read the build usage metric. Close stage 1 only after session_count is at least 1 and all existing zero-tolerance checks still pass.",
+  "safety": {
+    "stage_2_started": false,
+    "runtime_flags_changed": false,
+    "live_build_77_changed": false,
+    "turkish_store_content_changed": false
+  }
+}

@@ -1,0 +1,5298 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "onboarding.obcertificate.view.a.sinifi.isg.uzmani.4ac7f66b": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBCertificateView.swift:9; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Class A OHS Expert"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Sınıfı İSG Uzmanı"
+          }
+        }
+      }
+    },
+    "onboarding.obcertificate.view.az.tehlikeli.sinifta.yetkili.23a20492": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBCertificateView.swift:13; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authorised for low-hazard workplaces."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Az tehlikeli sınıfta yetkili."
+          }
+        }
+      }
+    },
+    "onboarding.obcertificate.view.b.sinifi.isg.uzmani.86c483dc": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBCertificateView.swift:11; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Class B OHS Expert"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "B Sınıfı İSG Uzmanı"
+          }
+        }
+      }
+    },
+    "onboarding.obcertificate.view.c.sinifi.isg.uzmani.4785e611": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBCertificateView.swift:13; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Class C OHS Expert"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "C Sınıfı İSG Uzmanı"
+          }
+        }
+      }
+    },
+    "onboarding.obcertificate.view.cok.tehlikeli.sinifta.yetkili.aaaf50c7": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBCertificateView.swift:9; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authorised for very-high-hazard workplaces."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çok tehlikeli sınıfta yetkili."
+          }
+        }
+      }
+    },
+    "onboarding.obcertificate.view.devam.ed81eccf": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBCertificateView.swift:73; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam"
+          }
+        }
+      }
+    },
+    "onboarding.obcertificate.view.hangi.sertifika.sinifindasin.dd146c19": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBCertificateView.swift:26; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which certification class are you in?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hangi sertifika sınıfındasın?"
+          }
+        }
+      }
+    },
+    "onboarding.obcertificate.view.sana.ozel.risk.sablonlari.hazirlayacagiz.671e73ee": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBCertificateView.swift:32; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We will prepare tailored risk templates for you."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana özel risk şablonları hazırlayacağız."
+          }
+        }
+      }
+    },
+    "onboarding.obcertificate.view.tehlikeli.siniflarda.yetkili.a91575b7": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBCertificateView.swift:11; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authorized in hazardous classes."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlikeli sınıflarda yetkili."
+          }
+        }
+      }
+    },
+    "onboarding.obcomponents.planin.hazir.simdi.kilitleyelim.b6f352e1": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Components/OBComponents.swift:790; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your plan is ready, now let's lock it"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planın hazır, şimdi kilitleyelim"
+          }
+        }
+      }
+    },
+    "onboarding.obcomponents.sektor.secildi.985a1dab": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Components/OBComponents.swift:421; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sector selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sektör seçildi"
+          }
+        }
+      }
+    },
+    "onboarding.obcomponents.sinif.secildi.af68ecbf": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Components/OBComponents.swift:421; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "class selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sınıf seçildi"
+          }
+        }
+      }
+    },
+    "onboarding.obfrequency.view.haftada.kac.isyerinde.denetim.yapiyorsun.800c3756": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBFrequencyView.swift:17; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How many workplaces do you inspect per week?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haftada kaç işyerinde denetim yapıyorsun?"
+          }
+        }
+      }
+    },
+    "onboarding.obfrequency.view.planimi.hazirla.3638fcc3": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBFrequencyView.swift:50; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare My Plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planımı Hazırla"
+          }
+        }
+      }
+    },
+    "onboarding.obfrequency.view.planimizi.senin.tempona.gore.olceklendirelim.a834ab15": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBFrequencyView.swift:23; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let us scale our plan to your pace."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planımızı senin tempona göre ölçeklendirelim."
+          }
+        }
+      }
+    },
+    "onboarding.obhazard.class.view.birden.fazla.secebilirsin.9a89b3cb": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBHazardClassView.swift:29; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can choose more than one."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birden fazla seçebilirsin."
+          }
+        }
+      }
+    },
+    "onboarding.obhazard.class.view.devam.dca438c1": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBHazardClassView.swift:69; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam"
+          }
+        }
+      }
+    },
+    "onboarding.obhazard.class.view.hangi.tehlike.sinifinda.calisiyorsun.79f6293b": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBHazardClassView.swift:23; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which hazard class do you work in?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hangi tehlike sınıfında çalışıyorsun?"
+          }
+        }
+      }
+    },
+    "onboarding.obhazard.class.view.imalat.gida.saglik.vb.5c5fd03f": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBHazardClassView.swift:10; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manufacturing, food, healthcare, etc."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İmalat, gıda, sağlık vb."
+          }
+        }
+      }
+    },
+    "onboarding.obhazard.class.view.ofis.perakende.hizmet.vb.37aa6e42": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBHazardClassView.swift:11; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Office, retail, service etc."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ofis, perakende, hizmet vb."
+          }
+        }
+      }
+    },
+    "onboarding.obhazard.class.view.petrokimya.maden.insaat.fabrika.vb.34e41743": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBHazardClassView.swift:9; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petrochemical, mine, construction, factory etc."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petrokimya, maden, inşaat, fabrika vb."
+          }
+        }
+      }
+    },
+    "onboarding.obhazard.class.view.sinif.secildi.1b7300f0": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBHazardClassView.swift:61; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "class selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sınıf seçildi"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.view.icin.rapor.formati.kisisellestiriliyor.34aea260": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:151; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report format is personalized for..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "için rapor formatı kişiselleştiriliyor..."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.view.icin.risk.analiz.sablonlari.yukleniyor.4b30b304": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:137; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading risk analysis templates for..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "için risk analiz şablonları yükleniyor..."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.view.plan.hazir.d352f51f": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:165; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The plan is ready."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan hazır."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.view.sana.ozel.kurulum.hazirlaniyor.a7043077": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:7; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing your personalised setup..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana özel kurulum hazırlanıyor…"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.view.sinifi.icin.kontrol.listesi.hazirlaniyor.85dc6c38": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:144; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing a checklist for the class..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sınıfı için kontrol listesi hazırlanıyor..."
+          }
+        }
+      }
+    },
+    "onboarding.obnotification.permission.view.deneme.suresi.ve.uygulama.hatirlatmalari.icin.bi.8fffda58": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBNotificationPermissionView.swift:55; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on notifications for plan, offer and app reminders."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan, teklif ve uygulama hatırlatmaları için bildirimleri aç."
+          }
+        }
+      }
+    },
+    "onboarding.obnotification.permission.view.simdi.odeme.alinmayacak.39364ad1": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBNotificationPermissionView.swift:76; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No purchase is made at this step"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu adımda satın alma yapılmaz"
+          }
+        }
+      }
+    },
+    "onboarding.obnotification.permission.view.ucretsiz.denemeniz.bitmeden.once.size.hatirlatac.21ab39bb": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBNotificationPermissionView.swift:46; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can follow plan and offer details in notifications"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan ve teklif bilgilerini bildirimlerden takip edebilirsin"
+          }
+        }
+      }
+    },
+    "onboarding.obnotification.permission.view.ucretsiz.devam.et.c00788c5": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBNotificationPermissionView.swift:84; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue for free"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ücretsiz devam et"
+          }
+        }
+      }
+    },
+    "onboarding.obpain.point.view.bunu.a5eb474f": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPainPointView.swift:122; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bunu"
+          }
+        }
+      }
+    },
+    "onboarding.obpain.point.view.degistirecegiz.740e76b1": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPainPointView.swift:124; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "we will change it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "değiştireceğiz."
+          }
+        }
+      }
+    },
+    "onboarding.obpain.point.view.devam.9bac1052": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBPainPointView.swift:74; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam"
+          }
+        }
+      }
+    },
+    "onboarding.obpain.point.view.sahada.gorduklerini.aksam.ofiste.mi.yaziyorsun.4ae8a20e": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPainPointView.swift:36; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do you write up your site observations later at the office?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sahada gördüklerini akşam ofiste mi yazıyorsun?"
+          }
+        }
+      }
+    },
+    "onboarding.obpain.point.view.tanidik.geliyor.mu.f06d0cd9": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPainPointView.swift:44; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sound familiar?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanıdık geliyor mu?"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.1.uzmanlari.icin.hazirlandi.1895b300": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:119; placeholders: %1$@; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BUILT FOR %1$@ PROFESSIONALS"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ UZMANLARI İÇİN HAZIRLANDI"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.17.indirim.acd00702": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:201; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "17% DISCOUNT"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%17 İNDİRİM"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.5.kullaniciya.kadar.52755363": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:14; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "up to 5 users"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 kullanıcıya kadar"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.aylik.c58200cd": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:197; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aylık"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.donustur.569f5956": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:111; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "transform."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dönüştür."
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.ekip.ile.paylas.ve.yorumla.3d615ff3": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:14; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share and comment with the team"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekip ile paylaş ve yorumla"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.fine.kinney.5.5.l.s.4ac3cf81": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney · 5×5 · L×S"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney · 5×5 · L×Ş"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.gizlilik.120a8da1": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:268; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.hemen.baslar.istedigin.zaman.iptal.bda70860": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:244; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts immediately · cancel anytime"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hemen başlar · istediğin zaman iptal"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.ilk.7.gun.ucretsiz.fiyat.app.store.uzerinden.yuk.7d822ee9": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:240; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Price and eligible offers are shown in the App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyat ve uygun teklifler App Store'da gösterilir"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.ilk.7.gun.ucretsiz.sonra.1.yil.92cf2208": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:242; placeholders: %1$@; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ per year · eligible offers are applied by the App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık %1$@ · varsa teklif App Store'da uygulanır"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.istedigin.zaman.iptal.app.store.uzerinden.fatura.34352096": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:264; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel anytime · Billed via App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İstediğin zaman iptal · App Store üzerinden faturalandırılır"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.mevzuat.referanslari.ile.927c6758": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:13; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Structured safety review"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevzuat referansları ile"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.oncelikli.destek.d923fb48": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:15; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priority support"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öncelikli destek"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.pdf.excel.disa.aktarim.893fa0e6": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:13; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF + Excel export"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF + Excel dışa aktarım"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.planin.hazir.7.gun.ucretsiz.dene.77c5ffa7": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:134; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Price and eligible offers are verified in the App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyat ve uygun teklifler App Store'da doğrulanır"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.sahadaki.her.gozlemi.74e61cb3": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:107; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every observation in the field"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sahadaki her gözlemi"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.sartlar.9a992598": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:266; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terms"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şartlar"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.satin.alimlari.geri.yukle.b9e04822": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:270; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore purchases"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alımları geri yükle"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.sinirsiz.fotograf.analizi.d14fa9d7": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:12; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multi-photo analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sınırsız fotoğraf analizi"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.turkce.24.saat.icinde.yanit.b7483600": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:15; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priority response within 24 hours"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türkçe · 24 saat içinde yanıt"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.ucretsiz.denemeyi.baslat.a308f2c3": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:64; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam et"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.yil.a344c127": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:219; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/year"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/yıl"
+          }
+        }
+      }
+    },
+    "onboarding.obpaywall.view.yillik.5e3176f4": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBPaywallView.swift:197; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık"
+          }
+        }
+      }
+    },
+    "onboarding.obplan.summary.view.hesabimi.olustur.5a057601": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBPlanSummaryView.swift:51; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create My Account"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesabımı Oluştur"
+          }
+        }
+      }
+    },
+    "onboarding.obplan.summary.view.planini.hesabina.kaydedelim.7.gun.ucretsiz.denem.ae67c90f": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBPlanSummaryView.swift:253; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your plan to your account, then verify prices and eligible offers in the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planını hesabına kaydedelim; fiyat ve uygun teklifleri App Store'da doğrula."
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.advises.organisations.or.clients.fb24608f": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:84; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Advises organisations or clients"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuruluşlara veya müşterilere tavsiyelerde bulunur"
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.another.role.connected.to.workplace.safety.4a8815f1": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:86; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another role connected to workplace safety"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri güvenliğiyle bağlantılı başka bir rol"
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.choose.the.closest.option.this.does.not.verify.a.a568fb3b": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:28; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the closest option. This does not verify a licence or professional status."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En yakın seçeneği seçin. Bu, bir lisansı veya mesleki durumu doğrulamaz."
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.continue.a1d0f82e": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:66; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam etmek"
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.engineering.or.technical.role.6d65e946": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:82; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engineering or technical role"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mühendislik veya teknik rol"
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.leads.health.safety.or.whs.activity.64cd8ac9": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:80; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leads health, safety or WHS activity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sağlık, güvenlik veya WHS faaliyetlerine öncülük eder"
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.manages.site.operations.450bd9c7": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:81; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manages site operations"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Site operasyonlarını yönetir"
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.provides.workplace.safety.support.or.inspections.b7f20a56": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:79; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides workplace-safety support or inspections"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri güvenliği desteği veya denetimleri sağlar"
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.responsible.for.a.business.or.workplace.10186bd4": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:85; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Responsible for a business or workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir işletme veya işyerinden sorumlu"
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.supervises.people.or.work.activities.df558498": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:83; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supervises people or work activities"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnsanları veya iş faaliyetlerini denetler"
+          }
+        }
+      }
+    },
+    "onboarding.obprofessional.role.view.what.best.describes.your.role.cb5ef255": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBProfessionalRoleView.swift:22; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What best describes your role?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rolünüzü en iyi ne tanımlar?"
+          }
+        }
+      }
+    },
+    "onboarding.obsafety.profile.selection.view.choose.your.safety.terminology.cb48da37": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBSafetyProfileSelectionView.swift:22; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose your safety terminology"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güvenlik terminolojinizi seçin"
+          }
+        }
+      }
+    },
+    "onboarding.obsafety.profile.selection.view.continue.2db574eb": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBSafetyProfileSelectionView.swift:90; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam etmek"
+          }
+        }
+      }
+    },
+    "onboarding.obsafety.profile.selection.view.continue.e58c5d7e": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBSafetyProfileSelectionView.swift:72; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam etmek"
+          }
+        }
+      }
+    },
+    "onboarding.obsafety.profile.selection.view.select.the.terminology.used.for.your.work.this.c.3723e2a5": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBSafetyProfileSelectionView.swift:28; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select the terminology used for your work. This changes wording in analyses and reports; it does not certify legal compliance."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çalışmanız için kullanılan terminolojiyi seçin. Bu, analizler ve raporlardaki ifadeleri değiştirir; yasal uygunluğu onaylamaz."
+          }
+        }
+      }
+    },
+    "onboarding.obsafety.profile.selection.view.you.can.change.this.for.future.analyses.in.profi.0ab71eb2": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBSafetyProfileSelectionView.swift:60; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can change this for future analyses in Profile."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gelecekteki analizler için bunu Profil'de değiştirebilirsiniz."
+          }
+        }
+      }
+    },
+    "onboarding.obsector.view.asagi.kaydirarak.diger.sektorleri.gorebilirsin.2f853e1f": {
+      "comment": "swiftui_modifier; App/Views/Onboarding/V2/Screens/OBSectorView.swift:60; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can see other sectors by scrolling down."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aşağı kaydırarak diğer sektörleri görebilirsin."
+          }
+        }
+      }
+    },
+    "onboarding.obsector.view.birden.fazla.secebilirsin.her.analiz.oncesinde.o.1577398e": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBSectorView.swift:26; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can choose more than one. Before each analysis, we will also ask in which sector you want to evaluate that photo."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birden fazla seçebilirsin. Her analiz öncesinde, o fotoğrafı hangi sektör kapsamında değerlendirmek istediğini ayrıca soracağız."
+          }
+        }
+      }
+    },
+    "onboarding.obsector.view.daha.fazla.sektor.7386ba43": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBSectorView.swift:83; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More sectors"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla sektör"
+          }
+        }
+      }
+    },
+    "onboarding.obsector.view.devam.586e262c": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBSectorView.swift:71; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam"
+          }
+        }
+      }
+    },
+    "onboarding.obsector.view.hangi.sektorlerde.calisiyorsun.bab57f6f": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBSectorView.swift:18; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which sectors do you work in?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hangi sektörlerde çalışıyorsun?"
+          }
+        }
+      }
+    },
+    "onboarding.obsector.view.sektor.secildi.69792ff7": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBSectorView.swift:63; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sector selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sektör seçildi"
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.12.tehlike.5f66303d": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12 hazards"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12 Tehlike"
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.atla.d0c256d2": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atla"
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.bilgisi.hazirlaniyor.6b055b9b": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "are being prepared…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bilgisi hazırlanıyor…"
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.devam.et.93ac0880": {
+      "comment": "swiftui_modifier; App/Views/Onboarding/V2/Screens/OBSplashView.swift:417; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam Et"
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.devam.et.a9d4eef4": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBSplashView.swift:402; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam Et"
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.fotograf.cek.yapay.zeka.tehlikeleri.otomatik.tes.2173ee63": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo. AI detects hazards, creates a report, and makes it ready to share."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf çek; yapay zekâ tehlikeleri otomatik tespit etsin, raporun anında oluşsun ve tek tıklama ile paylaş."
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.kok.neden.ve.mevzuat.22ab9903": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Root causes and references"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kök Neden ve Mevzuat"
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.onboarding.ilerleme.1.6.aab755cd": {
+      "comment": "swiftui_modifier; App/Views/Onboarding/V2/Screens/OBSplashView.swift:388; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onboarding progress, 1 / 6"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onboarding ilerleme, 1 / 6"
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.profesyonel.isg.asistani.138cfae2": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Professional Safety Assistant"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profesyonel İSG Asistanı"
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.riskdetected.onizleme.telefonu.4d1a083b": {
+      "comment": "swiftui_modifier; App/Views/Onboarding/V2/Screens/OBSplashView.swift:184; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RiskDetected preview phone"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RiskDetected önizleme telefonu"
+          }
+        }
+      }
+    },
+    "onboarding.obsplash.view.tespit.edildi.c3b9d6e4": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBSplashView.swift:104; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "detected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tespit edildi"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.1.ay.istedigin.zaman.iptal.b6b0b4af": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:536; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@/month — cancel anytime"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@/ay — istediğin zaman iptal"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.1.otomatik.yenilenir.istedigin.zaman.iptal.edebi.14f7048e": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:541; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ automatically renewed. You can cancel at any time."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ otomatik yenilenir. İstediğin zaman iptal edebilirsin."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.17.indirim.16d1d18a": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:389; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "17% Discount"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%17 İndirim"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.5.gun.a1306735": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:462; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.7.gun.5bf94fa7": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:470; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renewal"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yenileme"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.7.gun.ucretsiz.sonra.1.1c216e89": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:530; placeholders: %1$@; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ per year · eligible offers are applied by the App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık %1$@ · varsa teklif App Store'da uygulanır"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.7.gun.ucretsiz.sonra.1.2.55ea6bc2": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:531; placeholders: %1$@|%2$@; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ per year (%2$@) · eligible offers are applied by the App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık %1$@ (%2$@) · varsa teklif App Store'da uygulanır"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.aboneligi.baslat.79fd5050": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:312; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start subscription"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aboneliği başlat"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.app.store.fiyati.su.an.alinamadi.internet.baglan.3beb566f": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:339; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store price not available at this time. Check your internet connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.app.store.fiyati.su.an.alinamadi.internet.baglan.d59116a9": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:335; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store price not available at this time. Check your internet connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.app.store.fiyatlari.yukleniyor.4a75e8db": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:325; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store prices are loading..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store fiyatları yükleniyor..."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.app.store.odeme.ekrani.aciliyor.af128c75": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:292; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening App Store payment screen..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store ödeme ekranı açılıyor..."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.app.store.satin.alma.ekrani.hazirlaniyor.b11a0512": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:324; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store purchase screen is being prepared..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store satın alma ekranı hazırlanıyor..."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.aylik.311fbe87": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:380; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aylık"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.aylik.fiyat.app.store.uzerinden.yuklenecek.1c047937": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:540; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The monthly price will load from the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aylık fiyat App Store üzerinden yüklenecek."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.bugun.21298096": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:491; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.bugun.48c76375": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:453; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.coklu.fotograf.analizi.3c6f6a3d": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:442; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multi-Photo Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çoklu Fotoğraf Analizi"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.denemen.bitmeden.sana.hatirlatma.gondeririz.cc0144c2": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:463; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify the price and any eligible offer on the App Store confirmation screen."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyatı ve varsa uygun teklifi App Store onay ekranında doğrula."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.detayli.analiz.24351d3b": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:438; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detailed Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detaylı Analiz"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.devam.edersen.yillik.plan.baslar.istedigin.zaman.68e836a8": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:471; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The approved plan renews under App Store terms; you can cancel at any time."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onaylanan plan App Store şartlarıyla yenilenir; istediğin zaman iptal edebilirsin."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.firma.yonetimi.3eeadbe7": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:441; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company Management"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma Yönetimi"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.fiyat.yukleniyor.23a52d93": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading price..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyat yükleniyor..."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.fiyat.yukleniyor.31966e06": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:310; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Price is loading..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyat yükleniyor..."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.geri.yukle.1fe47fe9": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:171; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri yükle"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.gizlilik.politikasi.54f451ed": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:196; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Policy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik Politikası"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.her.ay.e9db7612": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:500; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every month"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her ay"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.kullanim.sartlari.4d6e5995": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:184; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terms of Use"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanım Şartları"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.34bd6c86": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:299; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please wait, your subscription is being checked through the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.70a7c29c": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:42; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please wait, your subscription is being checked through the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.onay.penceresi.acildiginda.islemi.app.store.uzer.195dca6a": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:293; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the confirmation window opens, you can complete the process via the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onay penceresi açıldığında işlemi App Store üzerinden tamamlayabilirsin."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.pdf.excel.rapor.95bfded2": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF/Excel Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF/Excel Rapor"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.plus.aboneligin.gucunu.hemen.kullanin.655cca4a": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:127; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock the Power of Plus"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus Aboneliğin Gücünü Hemen Kullanın"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.plus.ozellikleri.acilir.ucret.alinmaz.c93f0f8d": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:454; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review annual Plus features and the App Store price."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık Plus özelliklerini ve App Store fiyatını incele."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.risk.analizi.fine.kinney.ve.5.5.b43a3cfb": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk assessment (Fine-Kinney and 5×5)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analizi (Fine-Kinney ve 5*5)"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.satin.alma.dogrulaniyor.4ccbcf49": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:298; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifying purchase"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanıyor"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.satin.alma.hazirlaniyor.7e2cfcb3": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:136; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing to purchase..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma hazırlanıyor..."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.sektor.bazli.analiz.f645149d": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:443; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sector-Based Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sektör Bazlı Analiz"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.0aa7a4dc": {
+      "comment": "swiftui_modifier; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:159; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue for free for now"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şimdilik ücretsiz devam et"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.871ae28f": {
+      "comment": "swiftui_modifier; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:253; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue for free for now"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şimdilik ücretsiz devam et"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.b59d7d99": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:149; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue for free for now"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şimdilik ücretsiz devam et"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.tekrar.dene.f8ced812": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:310; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.tum.ozellikler.hemen.aktif.olur.odeme.baslar.b6ba3101": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:492; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All features are activated immediately and payment begins."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm özellikler hemen aktif olur, ödeme başlar."
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.ucretsiz.deneme.nasil.calisir.030529b1": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:126; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How the Annual Plan Works"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık Plan Nasıl Çalışır"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.ucretsiz.denemeyi.baslat.dc125184": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:312; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam et"
+          }
+        }
+      }
+    },
+    "onboarding.obtimeline.paywall.view.yillik.889fc7f2": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift:379; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.0.00.ye.dene.c364ad31": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:41; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View plan options"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan seçeneklerini gör"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.aydinlatma.ee4f3377": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:221; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lighting"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aydınlatma"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.denemeni.istiyoruz.59a5e56c": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:84; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "together"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "birlikte seçelim"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.geri.yukle.baead888": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:274; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri Yükle"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.gizlilik.politikasi.b57b93a6": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:272; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Policy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik Politikası"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.kkd.eksikligi.b99dabce": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:220; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lack of PPE"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KKD eksikliği"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.rapor.hazir.2cda9278": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:230; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report is ready"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor hazır"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.sartlar.de56b87b": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:276; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terms"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şartlar"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.su.an.odeme.yok.5ab25673": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:264; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Price and eligible offers are shown in the App Store"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyat ve uygun teklifler App Store'da gösterilir"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.taahhut.yok.istedigin.zaman.iptal.1ebf94cb": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:48; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No commitment, cancel anytime."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taahhüt yok, istediğin zaman iptal."
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.trialpreviewa.4c7dce10": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:204; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TrialPreviewA"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TrialPreviewA"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.trialpreviewb.d724a85f": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:205; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TrialPreviewB"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TrialPreviewB"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.trialpreviewc.fb16d819": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:206; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TrialPreviewC"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TrialPreviewC"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.ucretsiz.84c94af9": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:81; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "planı"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.uygulamayi.faee4cf2": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:80; placeholders: none; review: machine_draft; review: build79_copy_preserved; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the right "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana uygun "
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.uygulamayi.ucretsiz.denemeni.istiyoruz.2cbb5618": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:315; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We want you to review the plan options"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan seçeneklerini incelemeni istiyoruz"
+          }
+        }
+      }
+    },
+    "onboarding.obtrial.invite.view.yuksekte.calisma.faca06c7": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift:219; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working at height"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksekte çalışma"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.1.akisina.uygun.ilerle.a26399c3": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:123; placeholders: %1$@; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow the %1$@ workflow."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ akışına uygun ilerle."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.1.icin.egitilmis.sistem.aninda.rapor.914d7f50": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:83; placeholders: %1$@; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A system tailored to %1$@, with instant reports."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ için eğitilmiş sistem, anında rapor."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.1.icin.egitilmis.sistem.denetime.hazir.rapor.acda2ffe": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:99; placeholders: %1$@; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A system tailored to %1$@, with audit-ready reports."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ için eğitilmiş sistem, denetime hazır rapor."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.1.icin.egitilmis.sistem.sade.rapor.91133a60": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:115; placeholders: %1$@; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A system tailored to %1$@, with clear reports."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ için eğitilmiş Sistem, sade rapor."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.1.rolune.gore.anlasilir.bulgu.dili.ve.duzenli.do.936186a5": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:67; placeholders: %1$@; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the %1$@ role, we created a workflow focused on clear findings and consistent documentation. Team communication and archiving stay in one place."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ rolüne göre; anlaşılır bulgu dili ve düzenli dokümantasyon odaklı bir akış kurduk. Ekip içi iletişim ve arşivleme aynı yerde."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.bulgular.anlasilir.ve.uygulanabilir.kalsin.ed3f419d": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:73; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the findings understandable and actionable."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulgular anlaşılır ve uygulanabilir kalsın."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.detayli.rapor.uretilir.e12f7411": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:106; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A detailed report is produced"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detaylı rapor üretilir"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.ekip.dilinde.ozetle.a9beebae": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:73; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summarize in team language"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekip dilinde özetle"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.en.kritik.bulgu.liste.basinda.0a587b37": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:89; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The most critical finding is at the top of the list."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En kritik bulgu liste başında."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.en.kritik.bulgu.liste.basinda.d608fb84": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:121; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The most critical finding is at the top of the list."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En kritik bulgu liste başında."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.en.kritik.bulgu.liste.basinda.df7429ca": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:57; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The most critical finding is at the top of the list."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En kritik bulgu liste başında."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.en.kritik.bulgu.liste.basinda.dfb35613": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:105; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The most critical finding is at the top of the list."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En kritik bulgu liste başında."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.fine.kinnet.5.5.rapor.hazir.638e04ee": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:90; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney / 5×5 report ready."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinnet/5*5 Rapor hazır."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.fine.kinney.ve.5x5.ciktilari.otomatik.hazirlanir.7877daa5": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:106; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney and 5x5 printouts are prepared automatically."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney ve 5x5 çıktıları otomatik hazırlanır."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.fotograf.16fde2d2": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:120; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photograph"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.fotograf.7d19fd1b": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:88; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photograph"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.fotograf.b1bfc79a": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:72; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photograph"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.fotograf.e877cacc": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:104; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photograph"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.fotograf.ya.da.metni.paylas.analiz.baslasin.8cd0d9d4": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:104; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share the photo or text and let the analysis begin."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf ya da metni paylaş, analiz başlasın."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.fotograf.ya.da.metni.paylas.analiz.baslasin.e4690171": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:120; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share the photo or text and let the analysis begin."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf ya da metni paylaş, analiz başlasın."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.gozlemini.hizla.analize.aktar.4bdb0017": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:72; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quickly transfer your observation into analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gözlemini hızla analize aktar."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.isg.ekibin.icin.kayit.ve.paylasim.duzeni.hazir.69bbf645": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:66; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registration and sharing system is ready for your OHS team"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG ekibin için kayıt ve paylaşım düzeni hazır"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.isg.icin.egitilmis.sistem.1.temposunda.7ef96c1d": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:51; placeholders: %1$@; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A workplace-safety system matched to a %1$@ pace."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG için eğitilmiş sistem, %1$@ temposunda."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.isg.icin.egitilmis.yapay.zekamiz.aninda.cozumles.791693f0": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:56; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let our artificial intelligence trained for OHS solve it instantly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG için eğitilmiş yapay zekamız anında çözümlesin."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.isg.icin.egitilmis.yapay.zekamiz.aninda.cozumles.99c8bc1a": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:88; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let our artificial intelligence trained for OHS solve it instantly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG için eğitilmiş yapay zekamız anında çözümlesin."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.kayit.ve.takip.icin.duzenli.dokuman.uret.969178b2": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:74; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Produce regular documentation for recording and tracking."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt ve takip için düzenli doküman üret."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.paylas.44a3428e": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:59; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paylaş"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.paylas.5fb1aeba": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:107; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paylaş"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.paylas.d5d89d64": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:91; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paylaş"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.paylas.ve.arsivle.5b69a799": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:75; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share and archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paylaş ve arşivle"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.pdf.excel.ciktisi.arsive.hazir.gelir.b0361bc4": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:122; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF/Excel output comes ready for archive."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF/Excel çıktısı arşive hazır gelir."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.pratik.kontrol.ve.raporlama.akisin.hazir.b6d6d6ba": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:114; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practical control and reporting flow ready"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pratik kontrol ve raporlama akışın hazır"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.rapor.536a7ec0": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:58; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.rapor.55c2795b": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:122; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.rapor.ciktisi.olustur.4290d684": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:74; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate report output"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor çıktısı oluştur"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.rapor.firma.arsivine.kaydedilsin.ce75c5a8": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:58; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report should be saved in the company archive."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor firma arşivine kaydedilsin."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.raporlar.ekibinin.hep.elinin.altinda.olsun.1ff6f6c8": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:75; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the reports at your team's disposal at all times."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporlar ekibinin hep elinin altında olsun."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.risk.analiz.planin.hazir.87aa9334": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:98; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your risk analysis plan is ready"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analiz planın hazır"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.risk.analizi.6f07ec67": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:90; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analizi"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.risk.analizini.pdf.excel.tek.tikla.ilet.00cf0ce0": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:107; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export the risk assessment to PDF or Excel with one tap."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analizini PDF/Excel tek tıkla ilet."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.risk.analizini.pdf.excel.tek.tikla.ilet.81f86a73": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:91; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export the risk assessment to PDF or Excel with one tap."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analizini PDF/Excel tek tıkla ilet."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.risk.analizini.pdf.excel.tek.tikla.ilet.ef23bc9f": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:59; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export the risk assessment to PDF or Excel with one tap."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analizini PDF/Excel tek tıkla ilet."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.riskler.795bed4e": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:89; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riskler"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.riskler.81ff87d0": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:57; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riskler"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.riskler.d4c2534a": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:105; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riskler"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.riskler.fa4a65d3": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:121; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riskler"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.rutin.denetim.711caa02": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:42; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "routine inspection"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rutin denetim"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.sana.ozel.a7533e6f": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:81; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Special for you"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana Özel"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.sana.ozel.denetim.akisi.97d6a60f": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:113; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom control flow for you"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana özel denetim akışı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.sana.ozel.e76ebb67": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:49; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Special for you"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana Özel"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.sana.ozel.ef4ca24e": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:97; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "special for you"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana özel"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.sana.ozel.ekip.akisi.68a81134": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:65; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Special team flow for you"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana özel ekip akışı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.santiye.tehlikeleri.dakikalar.icinde.raporla.907e15d0": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:82; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report construction site hazards in minutes."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şantiye tehlikeleri dakikalar içinde raporla."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.takip.ritmini.koru.085971c4": {
+      "comment": "custom_ui_copy; App/Models/OnboardingPersonalPlan.swift:123; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maintain your tracking rhythm"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takip ritmini koru"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.personal.plan.yogun.denetim.temponla.yarisacak.planin.hazir.4258cfff": {
+      "comment": "swift_user_copy; App/Models/OnboardingPersonalPlan.swift:50; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your plan is ready for a demanding inspection schedule."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yoğun denetim temponla yarışacak planın hazır"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.a.sinifi.0251c6bf": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:35; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Class A"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Sınıfı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.a.sinifi.ab0600aa": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:185; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Class A"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Sınıfı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.app.store.fiyati.yukleniyor.b089c458": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:147; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store price loading"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store fiyatı yükleniyor"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.aylik.8ab1efeb": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:141; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aylık"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.az.tehlikeli.af92fef7": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:52; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low Hazard"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Az Tehlikeli"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.b.sinifi.d1b0323b": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:36; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Class B"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "B Sınıfı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.bir.isyerine.derin.denetim.ea8a60da": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:127; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deep inspection of a workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir işyerine derin denetim"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.birden.cok.osgb.sozlesmesi.4ffd6ac0": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:128; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multiple workplace safety service agreements"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birden çok OSGB sözleşmesi"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.c.sinifi.e98b4664": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:37; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Class C"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "C Sınıfı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.cok.tehlikeli.ea365d68": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:181; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Very High Hazard"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çok Tehlikeli"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.cok.tehlikeli.eababa99": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:50; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Very High Hazard"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çok Tehlikeli"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.consultant.bf04c397": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:22; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consultant"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danışman"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.diger.51be7c29": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:97; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.employer.owner.d72645c4": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:23; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Employer/Owner"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşveren/Sahip"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.engineer.c783d461": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:20; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engineer"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mühendis"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.fiyat.alinamadi.e680a4ea": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:148; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Price could not be received"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyat alınamadı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.fiyat.app.store.uzerinden.yuklenecek.2dfc04c7": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:149; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The price will be uploaded via the App Store."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiyat App Store üzerinden yüklenecek."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.hse.ohs.whs.manager.d49c5272": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:18; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HSE/OHS/WHS manager"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SEÇ/İSG/İSG yöneticisi"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.insaat.00734e7a": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:177; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Construction"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnşaat"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.isyeri.hekimi.33816b60": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:38; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace Physician"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri Hekimi"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.other.54ebe7f5": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:24; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.safety.professional.c44c5726": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:17; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Safety professional"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güvenlik uzmanı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.saglik.personeli.a48c2086": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:39; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Healthcare professional"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sağlık personeli"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.site.manager.f4479e1d": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:19; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Site manager"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Site yöneticisi"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.standart.yogunluk.5f3fb070": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:119; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard pace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standart yoğunluk"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.supervisor.4c6a7edf": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:21; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supervisor"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süpervizör"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.surekli.saha.rotasyonu.77f079c0": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:129; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuous field rotation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürekli saha rotasyonu"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.tanimlanmamis.veya.farkli.sektorler.6eef1c31": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:101; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undefined or different sectors"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanımlanmamış veya farklı sektörler"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.tehlikeli.ff529f2c": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:51; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazardous"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlikeli"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.tek.odak.30bd054c": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:118; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Single focus"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tek odak"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.yillik.bb3f3195": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:140; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.yogun.osgb.endustri.grubu.497fbbfb": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:130; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High-volume safety service / industry group"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yoğun OSGB / endüstri grubu"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.yogun.saha.9c5b0a16": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:121; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High-volume field work"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yoğun saha"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.v2.state.yuksek.tempo.ea428772": {
+      "comment": "computed_ui_copy; App/Views/Onboarding/V2/OnboardingV2State.swift:120; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High pace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksek tempo"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.5.5.c56e30aa": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/OnboardingView.swift:196; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.5.5.l.tipi.matris.3525cecd": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/OnboardingView.swift:197; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 L-Type Matrix"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 L-Tipi Matris"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.ai.odakli.analiz.canvaslari.7e21d6e7": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/OnboardingView.swift:11; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-driven analysis canvases"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI odaklı analiz canvasları"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.atla.e25539b1": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atla"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.baslayalim.b166d890": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:76; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let's begin"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlayalım"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.bulgulari.tek.dokunusla.fine.kinney.veya.5.5.met.9f646051": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:21; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convert findings to an audit-ready PDF/Excel report according to the Fine-Kinney or 5×5 method with one touch."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulguları tek dokunuşla Fine-Kinney veya 5×5 metoduna göre denetim hazır PDF/Excel rapora dönüştür."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.devam.a5bee993": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:76; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.f.kinney.7955a88b": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/OnboardingView.swift:193; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "F-KINNEY"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "F-KINNEY"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.fine.kinney.36094f7d": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/OnboardingView.swift:194; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnce Kinney"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.fine.kinney.5.5.risk.skoru.37dfd9ef": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/OnboardingView.swift:14; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney & 5×5 risk scoring"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney & 5×5 risk skoru"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.fotografla.uygunsuzluk.tespiti.64bd9fdb": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/OnboardingView.swift:8; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detection of nonconformity with photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğrafla uygunsuzluk tespiti"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.genel.39cd056c": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:155; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Genel"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.genel.kkd.sektor.veya.acil.risk.analizi.sec.her..b11ffd57": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:12; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select general, PPE, sector or immediate risk analysis. Each canvas works with an expert eye specific to its field."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Genel, KKD, sektör veya acil risk analizi seç. Her canvas, alanına özel uzman bir gözle çalışır."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.her.bulgu.icin.olasilik.frekans.siddet.ya.da.5.5.b8d4dbbd": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:15; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For each finding, a risk score in accordance with the field standard is produced by calculating Probability × Frequency × Severity or a 5 × 5 matrix."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her bulgu için Olasılık × Frekans × Şiddet ya da 5×5 matris hesabıyla saha standardına uygun risk skoru üretilir."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.isaretleme.6be848bf": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:157; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marking"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşaretleme"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.kayma.riski.5fc04da2": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:252; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk of slipping"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayma riski"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.kkd.eksikligi.8a363c64": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:253; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lack of PPE"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KKD eksikliği"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.pdf.excel.rapor.adbe8847": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF & Excel report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF & Excel rapor"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.r.o.f.s.c031ebce": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "R = P × F × S"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "R = O × F × Ş"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.r.o.s.0fc90694": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "R = P × S"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "R = O × Ş"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.rapor.2841.7db67f95": {
+      "comment": "swiftui_text; App/Views/Onboarding/OnboardingView.swift:289; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report #2841"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor #2841"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.risk.hesaplamasi.91234ce8": {
+      "comment": "swiftui_text; App/Views/Onboarding/OnboardingView.swift:188; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RISK SCORING"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RİSK HESAPLAMASI"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.risk.seviyeleri.ve.onlemler.3214990a": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/OnboardingView.swift:17; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk levels and precautions"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk seviyeleri ve önlemler"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.s.1a3e180d": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ş"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.s.89da2339": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ş"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.saha.fotograf.e741ee23": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/OnboardingView.swift:125; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Site · Photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha · Fotoğraf"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.sahadaki.fotografi.yukle.yapay.zeka.is.guvenligi.a0ff6f4b": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:9; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload the photo of the field. Let artificial intelligence detect occupational safety nonconformities within seconds."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sahadaki fotoğrafı yükle. Yapay zeka, iş güvenliği uygunsuzluklarını saniyeler içinde tespit etsin."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.sektor.41cc804c": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:158; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sector"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sektör"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.tehlike.tespit.edildi.7fe2db41": {
+      "comment": "swiftui_text; App/Views/Onboarding/OnboardingView.swift:142; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danger detected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlike tespit edildi"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.tespit.edilen.her.tehlike.icin.risk.seviyesi.aci.2f8fb473": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:18; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For each detected hazard, the risk level, explanation and precautions to be taken are clearly presented."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tespit edilen her tehlike için risk seviyesi, açıklama ve alınması gereken önlem net şekilde sunulur."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.tespit.edilen.riskler.2a8f4423": {
+      "comment": "swiftui_text; App/Views/Onboarding/OnboardingView.swift:257; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RISKS DETECTED"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TESPİT EDİLEN RİSKLER"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.v2.birkac.kisa.cevap.analizlerini.sektorune.ve.cali.b9867bb8": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/OnboardingViewV2.swift:396; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A few short answers will help us prepare your analysis more accurately according to your industry and field of work."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birkaç kısa cevap, analizlerini sektörüne ve çalışma alanına göre daha isabetli hazırlamamıza yardım eder."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.v2.cevaplamaya.devam.et.7cad3cb1": {
+      "comment": "custom_ui_copy; App/Views/Onboarding/V2/OnboardingViewV2.swift:405; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue answering"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cevaplamaya devam et"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.v2.geri.yuklenecek.aktif.abonelik.bulunamadi.f996c003": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingViewV2.swift:312; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active subscriptions were found to restore."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri yüklenecek aktif abonelik bulunamadı."
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.v2.sana.ozel.sonuclar.veremeyecegiz.38eef1fd": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/OnboardingViewV2.swift:390; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We will not be able to personalise your results"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana özel sonuçlar veremeyeceğiz"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.7bdaab97": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingViewV2.swift:351; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase could not be verified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanamadı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.7ccf47ab": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingViewV2.swift:352; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase could not be verified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanamadı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.e8f9d653": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingViewV2.swift:321; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase could not be verified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanamadı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.f439bf78": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/OnboardingViewV2.swift:320; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase could not be verified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Satın alma doğrulanamadı"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.v2.yine.de.atla.de185fdb": {
+      "comment": "swiftui_text; App/Views/Onboarding/V2/OnboardingViewV2.swift:412; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip anyway"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yine de atla"
+          }
+        }
+      }
+    },
+    "onboarding.onboarding.view.yetersiz.aydinlatma.39df16b2": {
+      "comment": "swift_user_copy; App/Views/Onboarding/OnboardingView.swift:254; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insufficient lighting"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yetersiz aydınlatma"
+          }
+        }
+      }
+    },
+    "onboarding.pain.late_assessments": {
+      "comment": "Onboarding product-copy contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Late assessments."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geç teslim edilen değerlendirmeler."
+          }
+        }
+      }
+    },
+    "onboarding.pain.mirror.emphasis": {
+      "comment": "Onboarding product-copy contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "together"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "birlikte"
+          }
+        }
+      }
+    },
+    "onboarding.pain.mirror.prefix": {
+      "comment": "Onboarding product-copy contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We will change this "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bunu "
+          }
+        }
+      }
+    },
+    "onboarding.pain.mirror.suffix": {
+      "comment": "Onboarding product-copy contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " değiştireceğiz."
+          }
+        }
+      }
+    },
+    "onboarding.pain.report_writing": {
+      "comment": "Onboarding product-copy contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hours spent writing reports."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saatlerce süren rapor yazımı."
+          }
+        }
+      }
+    },
+    "onboarding.pain.scattered_material": {
+      "comment": "Onboarding product-copy contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scattered photos and notes."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dağınık fotoğraflar ve notlar."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

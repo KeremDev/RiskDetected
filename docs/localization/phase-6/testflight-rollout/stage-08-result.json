@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "stage": 8,
+  "stage_key": "full_internal_group",
+  "contract_issues": [],
+  "metric_issues": [],
+  "insufficient_samples": [],
+  "threshold_violations": [],
+  "rates": {
+    "analysis_failure_rate": null,
+    "wrong_language_rate": null,
+    "language_repair_rate": null,
+    "report_failure_rate": null,
+    "notification_template_miss_rate": null,
+    "queue_retry_rate": null
+  },
+  "applied_waivers": [],
+  "integrity_status": "passed",
+  "snapshot_sha256": "629b5e27c56c478a157a6cb4f56ff27f4f53e2d2897308a29c6451975cd5a93a",
+  "effective_status": "passed"
+}

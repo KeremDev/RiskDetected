@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- On-device PDF copy. Kept in resources so the Turkish report contract is auditable. -->
+    <string name="rd_pdf_brand">RiskDetected</string>
+    <string name="rd_pdf_tagline">Profesyonel İSG Asistanı</string>
+    <string name="rd_pdf_risk_report">Risk Değerlendirme Raporu</string>
+    <string name="rd_pdf_standard_report">Standart Rapor</string>
+    <string name="rd_pdf_prepared_by">Hazırlayan</string>
+    <string name="rd_pdf_title">Unvan</string>
+    <string name="rd_pdf_certificate_number">Sertifika No</string>
+    <string name="rd_pdf_analysis_focus">Analiz Odağı</string>
+    <string name="rd_pdf_method">Yöntem</string>
+    <string name="rd_pdf_matrix_method">5x5 Risk Matrisi</string>
+    <string name="rd_pdf_fine_kinney_method">Fine-Kinney</string>
+    <string name="rd_pdf_date">Tarih</string>
+    <string name="rd_pdf_finding_count">%1$d bulgu</string>
+    <string name="rd_pdf_band_count">%1$s: %2$d</string>
+    <string name="rd_pdf_finding_details">Bulgu Detayları</string>
+    <string name="rd_pdf_finding_title">%1$d. %2$s</string>
+    <string name="rd_pdf_score_suffix"> · %1$.1f</string>
+    <string name="rd_pdf_source_photos">Kaynak fotoğraf: %1$s</string>
+    <string name="rd_pdf_field_verification_required">Saha teyidi gerekli</string>
+    <string name="rd_pdf_ai_confidence">AI güveni: %%%1$d</string>
+    <string name="rd_pdf_root_cause">Kök neden</string>
+    <string name="rd_pdf_measures">Önlemler</string>
+    <string name="rd_pdf_preventive">Önleyici Kontrol</string>
+    <string name="rd_pdf_corrective">Düzeltici Önlem</string>
+    <string name="rd_pdf_measure_row">• %1$s: %2$s</string>
+    <string name="rd_pdf_recommended_action">Önerilen aksiyon</string>
+    <string name="rd_pdf_risk_table">Risk Değerlendirme Tablosu</string>
+    <string name="rd_pdf_column_number">No</string>
+    <string name="rd_pdf_column_finding">Bulgu</string>
+    <string name="rd_pdf_column_probability">Olasılık</string>
+    <string name="rd_pdf_column_severity">Şiddet</string>
+    <string name="rd_pdf_column_score">Skor</string>
+    <string name="rd_pdf_column_level">Seviye</string>
+    <string name="rd_pdf_column_controls">Önlem / kök neden</string>
+    <string name="rd_pdf_column_references">Mevzuat / referans</string>
+    <string name="rd_pdf_root_cause_row">Kök neden: %1$s</string>
+    <string name="rd_pdf_reference_metadata">Analiz: %1$s\nFirma: %2$s\nHazırlayan: %3$s</string>
+    <string name="rd_pdf_matrix_reference">5x5 Risk Matrisi Referansı</string>
+    <string name="rd_pdf_fine_kinney_reference">Fine-Kinney Referansı</string>
+    <string name="rd_pdf_matrix_legend">Skor = Olasılık × Şiddet (1-5 ölçek her ikisi için de). 1-4: Düşük, 5-9: Orta, 10-14: Yüksek, 15-25: Kritik.</string>
+    <string name="rd_pdf_fine_kinney_legend">Skor = Olasılık (O) × Frekans (F) × Şiddet (Ş).\nOlasılık değerleri: %1$s\nFrekans değerleri: %2$s\nŞiddet değerleri: %3$s\n0-20: Düşük, 20-70: Orta, 70-200: Yüksek, 200+: Kritik.</string>
+    <string name="rd_pdf_band_critical">Kritik</string>
+    <string name="rd_pdf_band_high">Yüksek</string>
+    <string name="rd_pdf_band_medium">Orta</string>
+    <string name="rd_pdf_band_low">Düşük</string>
+    <string name="rd_pdf_band_unknown">Bilinmiyor</string>
+</resources>

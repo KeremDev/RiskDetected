@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-08-01T16:16:55.557Z",
+  "operation": "status",
+  "candidate_build_id": "6710ace3-c967-43fc-9186-b005b1a4a83c",
+  "sequence": {
+    "completed_stages": 0,
+    "required_stages": 9,
+    "next_stage": 1,
+    "stage9_prepare_allowed": false
+  },
+  "groups": {
+    "total_count": 1,
+    "internal_count": 1,
+    "external_count": 0,
+    "target_external_group_count": 0
+  },
+  "testers": {
+    "total_count": 1,
+    "state_counts": {
+      "INSTALLED": 1
+    },
+    "personal_fields_included": false
+  },
+  "beta_review": {
+    "submission_count": 0,
+    "state_counts": {},
+    "external_build_state": "READY_FOR_BETA_SUBMISSION",
+    "submitted": false
+  },
+  "status": "hold_prior_stages_incomplete",
+  "safety": {
+    "app_store_review_submitted": false,
+    "app_store_release_performed": false,
+    "beta_review_submission_is_separate": true,
+    "tester_names_included": false,
+    "tester_emails_included": false,
+    "tester_ids_included": false
+  }
+}

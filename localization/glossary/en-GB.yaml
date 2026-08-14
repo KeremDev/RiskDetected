@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "locale": "en-GB",
+  "review_status": "machine_draft",
+  "preferred_terms": [
+    "health and safety",
+    "risk assessment",
+    "control measure",
+    "site inspection",
+    "workplace inspection",
+    "record and review"
+  ],
+  "spelling_examples": {
+    "prioritize": "prioritise",
+    "organized": "organised"
+  },
+  "restricted_legal_terms": [
+    "reasonably practicable",
+    "HSE",
+    "HSENI"
+  ]
+}

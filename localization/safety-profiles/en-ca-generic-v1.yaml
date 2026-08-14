@@ -1,0 +1,31 @@
+{
+  "id": "en-ca-generic-v1",
+  "language": "en",
+  "content_locale": "en-CA",
+  "jurisdiction_country": "CA",
+  "jurisdiction_region": null,
+  "status": "terminology_only",
+  "review_status": "machine_draft",
+  "display_name_key": "safety_profile.canada",
+  "primary_product_term": "OHS inspection",
+  "primary_domain_term": "occupational health and safety",
+  "finding_term": "finding",
+  "hazard_term": "hazard",
+  "risk_assessment_term": "hazard assessment",
+  "control_term": "control measure",
+  "corrective_action_term": "corrective action",
+  "default_risk_method": "matrix_5x5",
+  "allowed_risk_methods": ["matrix_5x5", "fine_kinney"],
+  "legislation_canvas_enabled": false,
+  "structured_regulatory_references_enabled": false,
+  "regulatory_reference_policy": "none",
+  "legal_compliance_claims_allowed": false,
+  "spelling_style": "canadian",
+  "prompt_directives": [
+    "Use Canadian OHS, hazard-assessment and workplace-inspection terminology.",
+    "Use Canadian spelling and neutral wording across federal, provincial and territorial contexts.",
+    "Do not imply a single Canada-wide OHS legal compliance determination."
+  ],
+  "forbidden_claims_key": "en-ca-generic-v1",
+  "profile_version": 1
+}

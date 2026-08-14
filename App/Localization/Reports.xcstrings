@@ -1,0 +1,3204 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "reports.count.files": {
+      "comment": "Native plural contract; placeholder: %lld; one/other required.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld file"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld files"
+                }
+              }
+            }
+          }
+        },
+        "tr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld dosya"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld dosya"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "reports.count.findings": {
+      "comment": "Native plural contract; placeholder: %lld; one/other required.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld finding"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld findings"
+                }
+              }
+            }
+          }
+        },
+        "tr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld bulgu"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld bulgu"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "reports.create.title": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor Oluştur"
+          }
+        }
+      }
+    },
+    "reports.language.future.note": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report language is fixed to the analysis language."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor dili analiz kaydının diliyle aynıdır."
+          }
+        }
+      }
+    },
+    "reports.language.section": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "REPORT LANGUAGE"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAPOR DİLİ"
+          }
+        }
+      }
+    },
+    "reports.language.turkish.subtitle": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report uses the language captured by the analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF ve Excel çıktıları Türkçe hazırlanır."
+          }
+        }
+      }
+    },
+    "reports.pdf.finding_details.header": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FINDING DETAILS"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BULGU DETAYLARI"
+          }
+        }
+      }
+    },
+    "reports.pdf.risk_analysis.header": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WORKPLACE SAFETY RISK ASSESSMENT"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İŞ GÜVENLİĞİ RİSK ANALİZİ"
+          }
+        }
+      }
+    },
+    "reports.pdf.risk_analysis.subtitle": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspection output using the Fine-Kinney or 5×5 method."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney veya 5×5 metoduna göre denetim çıktısı."
+          }
+        }
+      }
+    },
+    "reports.pdf.risk_analysis.title": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detailed risk assessment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detaylı risk analizi"
+          }
+        }
+      }
+    },
+    "reports.pdf.risk_table.header": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RISK ASSESSMENT TABLE"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RİSK ANALİZİ TABLOSU"
+          }
+        }
+      }
+    },
+    "reports.pdf.standard.header": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SITE INSPECTION REPORT"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SAHA TARAMA RAPORU"
+          }
+        }
+      }
+    },
+    "reports.pdf.standard.subtitle": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A quick site report using the RiskDetected template."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RiskDetected şablonu ile hızlı saha raporu."
+          }
+        }
+      }
+    },
+    "reports.pdf.standard.title": {
+      "comment": "Report localization contract; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard PDF"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standart PDF"
+          }
+        }
+      }
+    },
+    "reports.pdfgeneration.overlay.gorsel.ve.risk.tablolari.isleniyor.89f0951d": {
+      "comment": "computed_ui_copy; App/Views/Components/PDFGenerationOverlay.swift:88; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visual and risk tables are being processed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görsel ve risk tabloları işleniyor"
+          }
+        }
+      }
+    },
+    "reports.pdfgeneration.overlay.ilerleme.c4f1db2d": {
+      "comment": "swiftui_text; App/Views/Components/PDFGenerationOverlay.swift:120; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progress"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlerleme"
+          }
+        }
+      }
+    },
+    "reports.pdfgeneration.overlay.pdf.hazir.5275371e": {
+      "comment": "computed_ui_copy; App/Views/Components/PDFGenerationOverlay.swift:94; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF is ready"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF hazır"
+          }
+        }
+      }
+    },
+    "reports.pdfgeneration.overlay.pdf.hazirlaniyor.58dab0c5": {
+      "comment": "swiftui_modifier; App/Views/Components/PDFGenerationOverlay.swift:176; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF is being prepared"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF hazırlanıyor"
+          }
+        }
+      }
+    },
+    "reports.pdfgeneration.overlay.pdf.hazirlaniyor.fc82f5ea": {
+      "comment": "swiftui_text; App/Views/Components/PDFGenerationOverlay.swift:107; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF is being prepared"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF hazırlanıyor"
+          }
+        }
+      }
+    },
+    "reports.pdfgeneration.overlay.pdf.sayfalari.olusturuluyor.e24b4046": {
+      "comment": "computed_ui_copy; App/Views/Components/PDFGenerationOverlay.swift:90; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creating PDF pages"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF sayfaları oluşturuluyor"
+          }
+        }
+      }
+    },
+    "reports.pdfgeneration.overlay.rapor.arsive.kaydediliyor.a45f30ba": {
+      "comment": "computed_ui_copy; App/Views/Components/PDFGenerationOverlay.swift:92; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report is saved to the archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor arşive kaydediliyor"
+          }
+        }
+      }
+    },
+    "reports.pdfgeneration.overlay.rapor.olusturulurken.uygulamayi.acik.tut.ce2b9443": {
+      "comment": "swiftui_modifier; App/Views/Components/PDFGenerationOverlay.swift:178; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the app open while the report is being generated."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor oluşturulurken uygulamayı açık tut."
+          }
+        }
+      }
+    },
+    "reports.pdfgeneration.overlay.rapor.verileri.hazirlaniyor.669b3ebb": {
+      "comment": "computed_ui_copy; App/Views/Components/PDFGenerationOverlay.swift:86; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report data is being prepared"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor verileri hazırlanıyor"
+          }
+        }
+      }
+    },
+    "reports.pdfgeneration.overlay.riskdetected.raporu.olusturulurken.uygulamayi.ac.f81bb077": {
+      "comment": "swiftui_text; App/Views/Components/PDFGenerationOverlay.swift:156; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the app open while the RiskDetected report is being generated."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RiskDetected raporu oluşturulurken uygulamayı açık tut."
+          }
+        }
+      }
+    },
+    "reports.report.failure.simulation.simulated.report.failure.1.db4855fa": {
+      "comment": "swift_output_copy; App/Services/ReportFailureSimulation.swift:30; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulated report failure: %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simüle edilmiş rapor hatası: %1$@"
+          }
+        }
+      }
+    },
+    "reports.report.view.1.2.gosteriliyor.dd210f2b": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@/%2$@ shown"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@/%2$@ gösteriliyor"
+          }
+        }
+      }
+    },
+    "reports.report.view.1.2.rapor.92b1ec5c": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$@ report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$@ rapor"
+          }
+        }
+      }
+    },
+    "reports.report.view.1.analiz.d9311dde": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:550; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ analiz"
+          }
+        }
+      }
+    },
+    "reports.report.view.1.bulgu.0cd86ada": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1887; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ finding"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ bulgu"
+          }
+        }
+      }
+    },
+    "reports.report.view.1.bulgu.raporun.devaminda.d7f885e4": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ %1$@ more findings continue in the report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ %1$@ bulgu raporun devamında"
+          }
+        }
+      }
+    },
+    "reports.report.view.1.destek.kodu.2.530c2aa3": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1333; placeholders: %1$@|%2$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ Support code: %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@\nDestek kodu: %2$@"
+          }
+        }
+      }
+    },
+    "reports.report.view.1.dosya.1784b365": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:647; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ file"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ dosya"
+          }
+        }
+      }
+    },
+    "reports.report.view.1.eslesen.rapor.gosteriliyor.5d23a465": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2126; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ matching report shown"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ eşleşen rapor gösteriliyor"
+          }
+        }
+      }
+    },
+    "reports.report.view.5.5.fcdf178d": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:1639; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5"
+          }
+        }
+      }
+    },
+    "reports.report.view.aciliyor.cfcc3a35": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2317; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "opening"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açılıyor"
+          }
+        }
+      }
+    },
+    "reports.report.view.analiz.07136742": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:267; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz"
+          }
+        }
+      }
+    },
+    "reports.report.view.analiz.fotografi.indirildi.ancak.goruntu.formati.d5768151": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1360; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The analysis photo was downloaded, but the image format could not be opened."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz fotoğrafı indirildi ancak görüntü formatı açılamadı."
+          }
+        }
+      }
+    },
+    "reports.report.view.analiz.rapora.acilamadi.40a7b44c": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1050; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis report could not be opened"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz rapora açılamadı"
+          }
+        }
+      }
+    },
+    "reports.report.view.analiz.rapora.acilamadi.b9df7a3d": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:1054; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis report could not be opened"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz rapora açılamadı"
+          }
+        }
+      }
+    },
+    "reports.report.view.analiz.tamamlandiginda.burada.standart.rapor.vey.bba3746a": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:560; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once the analysis is complete, you can produce a Standard Report or Pro Risk Analysis here."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz tamamlandığında burada Standart Rapor veya Pro Risk Analizi üretebilirsin."
+          }
+        }
+      }
+    },
+    "reports.report.view.analiz.tamamlandiginda.burada.standart.rapor.vey.db4ef1d2": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:560; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once the analysis is complete, you can produce a Standard Report or Pro Risk Analysis here."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz tamamlandığında burada Standart Rapor veya Pro Risk Analizi üretebilirsin."
+          }
+        }
+      }
+    },
+    "reports.report.view.arama.veya.filtreyi.degistirerek.arsivdeki.diger.1027ecf1": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:399; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can see other files in the archive by changing the search or filter."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arama veya filtreyi değiştirerek arşivdeki diğer dosyaları görebilirsin."
+          }
+        }
+      }
+    },
+    "reports.report.view.arama.veya.filtreyi.degistirerek.arsivdeki.diger.29b55658": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:399; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can see other files in the archive by changing the search or filter."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arama veya filtreyi değiştirerek arşivdeki diğer dosyaları görebilirsin."
+          }
+        }
+      }
+    },
+    "reports.report.view.aramayi.temizle.0f3e5a22": {
+      "comment": "swiftui_modifier; App/Views/Report/ReportView.swift:471; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayı temizle"
+          }
+        }
+      }
+    },
+    "reports.report.view.aramayi.temizle.7b76195f": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:471; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayı temizle"
+          }
+        }
+      }
+    },
+    "reports.report.view.arsiv.578e3fea": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:269; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşiv"
+          }
+        }
+      }
+    },
+    "reports.report.view.arsiv.9ac26fc1": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:269; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşiv"
+          }
+        }
+      }
+    },
+    "reports.report.view.arsiv.yuklenemedi.a582f5fc": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:375; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not load archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşiv yüklenemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.arsiv.yuklenemedi.e3e4016e": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:375; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not load archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşiv yüklenemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.arsivden.devamini.yukle.c2bc6c86": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2123; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load more from the archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivden devamını yükle"
+          }
+        }
+      }
+    },
+    "reports.report.view.ayse.denetim.6dcaaaf4": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:953; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayşe Audit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayşe Denetim"
+          }
+        }
+      }
+    },
+    "reports.report.view.bakim.ekibi.56eec922": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:954; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maintenance Team"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bakım Ekibi"
+          }
+        }
+      }
+    },
+    "reports.report.view.bolumu.acar.6e2c5db7": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:635; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens section"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bölümü açar"
+          }
+        }
+      }
+    },
+    "reports.report.view.bolumu.kapatir.c58a1796": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:635; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closes the section"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bölümü kapatır"
+          }
+        }
+      }
+    },
+    "reports.report.view.bu.analiz.icin.ai.bulgu.kaydi.donmedi.8e37f5b1": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1596; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No AI findings record was returned for this analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu analiz için AI bulgu kaydı dönmedi."
+          }
+        }
+      }
+    },
+    "reports.report.view.bu.analiz.icin.ai.bulgu.kaydi.donmedi.d6d0c81b": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:1596; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No AI findings record was returned for this analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu analiz için AI bulgu kaydı dönmedi."
+          }
+        }
+      }
+    },
+    "reports.report.view.bu.hafta.49317c78": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1994; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "this week"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu hafta"
+          }
+        }
+      }
+    },
+    "reports.report.view.copy.4e0b8ebd": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:1884; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "·"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "·"
+          }
+        }
+      }
+    },
+    "reports.report.view.copy.9fbd915a": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:1636; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "#"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "#"
+          }
+        }
+      }
+    },
+    "reports.report.view.copy.b46dfd10": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:1886; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "·"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "·"
+          }
+        }
+      }
+    },
+    "reports.report.view.d.mmm.hh.mm.2bf6d9df": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2357; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "d MMM HH:mm"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "d MMM SS:dd"
+          }
+        }
+      }
+    },
+    "reports.report.view.d.mmm.hh.mm.81e437e5": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1929; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "d MMM HH:mm"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "d MMM SS:dd"
+          }
+        }
+      }
+    },
+    "reports.report.view.d.mmm.ss.dd.b8b69074": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2357; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "d MMM HH:mm"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "d MMM SS:dd"
+          }
+        }
+      }
+    },
+    "reports.report.view.d.mmm.yyyy.hh.mm.2d1d96c7": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1686; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "d MMM yyyy · HH:mm"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "d MMM yyyy · SS:dd"
+          }
+        }
+      }
+    },
+    "reports.report.view.d.mmm.yyyy.ss.dd.db7ff9b1": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1686; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "d MMM yyyy · HH:mm"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "d AAA yyyy · SS:gg"
+          }
+        }
+      }
+    },
+    "reports.report.view.daha.fazla.yukle.d1217a26": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2123; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla yükle"
+          }
+        }
+      }
+    },
+    "reports.report.view.denetime.hazir.ciktilar.3917d78a": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:237; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audit-ready outputs"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetime hazır çıktılar"
+          }
+        }
+      }
+    },
+    "reports.report.view.denetime.hazir.ciktilar.57e9283a": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:237; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audit-ready outputs"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetime hazır çıktılar"
+          }
+        }
+      }
+    },
+    "reports.report.view.dosya.f970b19d": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:252; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "file"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dosya"
+          }
+        }
+      }
+    },
+    "reports.report.view.eslesen.rapor.yok.02b01d44": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:398; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleşen rapor yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.eslesen.rapor.yok.3e4ecd2e": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:398; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleşen rapor yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.excel.357c12e8": {
+      "comment": "computed_ui_copy; App/Views/Report/ReportView.swift:1991; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "excel"
+          }
+        }
+      }
+    },
+    "reports.report.view.excel.hazirlaniyor.65b62379": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1825; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel is being prepared..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel hazırlanıyor..."
+          }
+        }
+      }
+    },
+    "reports.report.view.excel.olusturulamadi.3590499c": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1202; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel could not be created"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel oluşturulamadı"
+          }
+        }
+      }
+    },
+    "reports.report.view.excel.olusturulamadi.81e5ab89": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1203; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel could not be created"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel oluşturulamadı"
+          }
+        }
+      }
+    },
+    "reports.report.view.excel.tablo.6d31e397": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2294; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel spreadsheet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel tablo"
+          }
+        }
+      }
+    },
+    "reports.report.view.filtreleri.temizle.366d1edd": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:401; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear filters"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtreleri temizle"
+          }
+        }
+      }
+    },
+    "reports.report.view.fine.kinney.toplam.1.5.5.toplam.2.24785862": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1695; placeholders: %1$@|%2$@; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney total: %1$@ · 5×5 total: %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney toplamı: %1$@ · 5×5 toplam: %2$@"
+          }
+        }
+      }
+    },
+    "reports.report.view.firma.filtresi.48cfa5ea": {
+      "comment": "swiftui_modifier; App/Views/Report/ReportView.swift:500; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company filter"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma filtresi"
+          }
+        }
+      }
+    },
+    "reports.report.view.firma.filtresi.e7be67fb": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:500; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company filter"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma filtresi"
+          }
+        }
+      }
+    },
+    "reports.report.view.fk.a594f58b": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:1652; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FK"
+          }
+        }
+      }
+    },
+    "reports.report.view.fotograf.analizi.tamamlandiginda.rapor.onizlemes.960da4ed": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:711; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the photo analysis is completed, the report preview will appear here with the actual findings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf analizi tamamlandığında rapor önizlemesi burada gerçek bulgularla oluşacak."
+          }
+        }
+      }
+    },
+    "reports.report.view.fotograf.analizi.tamamlandiginda.rapor.onizlemes.ff6f4cb4": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:711; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the photo analysis is completed, the report preview will appear here with the actual findings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf analizi tamamlandığında rapor önizlemesi burada gerçek bulgularla oluşacak."
+          }
+        }
+      }
+    },
+    "reports.report.view.hazir.b46b444a": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2318; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazır"
+          }
+        }
+      }
+    },
+    "reports.report.view.henuz.kayitli.rapor.yok.2a38092e": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:386; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No reports registered yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz kayıtlı rapor yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.henuz.kayitli.rapor.yok.d61ba3c3": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:386; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No reports registered yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz kayıtlı rapor yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.henuz.raporlanacak.analiz.yok.6f9bb548": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:708; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No analysis to report yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz raporlanacak analiz yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.henuz.raporlanacak.analiz.yok.ff3a933e": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:708; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No analysis to report yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz raporlanacak analiz yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.is.guvenligi.risk.analizi.18db139d": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1538; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Occupational Safety Risk Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş Güvenliği Risk Analizi"
+          }
+        }
+      }
+    },
+    "reports.report.view.is.guvenligi.risk.analizi.cffc3429": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:1538; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Occupational Safety Risk Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş Güvenliği Risk Analizi"
+          }
+        }
+      }
+    },
+    "reports.report.view.isg.uzmani.e760f8b8": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1703; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OHS Specialist"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG Uzmanı"
+          }
+        }
+      }
+    },
+    "reports.report.view.kayitli.rapor.dosyalari.bd41e3d0": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:365; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved Report Files"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı Rapor Dosyaları"
+          }
+        }
+      }
+    },
+    "reports.report.view.kullanici.2fbbc3c4": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1699; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanıcı"
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.dosyasi.ve.rapor.arsiv.kaydi.silinir.analiz..9a8805b0": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:191; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The PDF file and report archive record are deleted. The analysis result is not deleted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF dosyası ve rapor arşiv kaydı silinir. Analiz sonucu silinmez."
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.dosyasi.ve.rapor.arsiv.kaydi.silinir.analiz..e2674ab9": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:191; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The PDF file and report archive record are deleted. The analysis result is not deleted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF dosyası ve rapor arşiv kaydı silinir. Analiz sonucu silinmez."
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.excel.ve.risk.tablolarini.tek.yerden.yonet.79372246": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:241; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage PDF, Excel and risk tables from one place."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF, Excel ve risk tablolarını tek yerden yönet."
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.excel.ve.risk.tablolarini.tek.yerden.yonet.e98bd72a": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:241; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage PDF, Excel and risk tables from one place."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF, Excel ve risk tablolarını tek yerden yönet."
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.olusturmak.icin.tamamlanmis.bir.analiz.secme.021600c5": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1060; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To create a PDF, you must select a completed analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF oluşturmak için tamamlanmış bir analiz seçmelisin."
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.olusturulamadi.95f69251": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1151; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not create PDF"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF oluşturulamadı"
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.olusturulamadi.fd9b8c6f": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1152; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not create PDF"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF oluşturulamadı"
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.olusturulamadi.ff617364": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1062; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not create PDF"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF oluşturulamadı"
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.raporu.silinsin.mi.abd25be0": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:175; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete PDF report?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF raporu silinsin mi?"
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.veya.excel.olusturdugunda.dosya.rapor.arsivi.2ad92ce2": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:387; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you create PDF or Excel, the file will be saved in the report archive."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF veya Excel oluşturduğunda dosya rapor arşivine kaydedilecek."
+          }
+        }
+      }
+    },
+    "reports.report.view.pdf.veya.excel.olusturdugunda.dosya.rapor.arsivi.a24e418b": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:387; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you create PDF or Excel, the file will be saved in the report archive."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF veya Excel oluşturduğunda dosya rapor arşivine kaydedilecek."
+          }
+        }
+      }
+    },
+    "reports.report.view.pencereyi.kapat.42ff6afc": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1819; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close window"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pencereyi kapat"
+          }
+        }
+      }
+    },
+    "reports.report.view.pencereyi.kapat.7ae53ee2": {
+      "comment": "swiftui_modifier; App/Views/Report/ReportView.swift:1819; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close window"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pencereyi kapat"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.ara.0ee97e8c": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:455; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search for report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor ara"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.ara.1e3bedc8": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:455; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search for report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor ara"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.arsive.kaydedilemedi.0af90984": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1133; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report could not be saved to the archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor arşive kaydedilemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.arsive.kaydedilemedi.a5342f5d": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1132; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report could not be saved to the archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor arşive kaydedilemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.arsivi.yuklenemedi.7fec88c0": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:915; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to load report archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor arşivi yüklenemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.arsivi.yuklenemedi.8c44ed8d": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:827; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to load report archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor arşivi yüklenemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.arsivi.yuklenemedi.b30846fc": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:916; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to load report archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor arşivi yüklenemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.filtrelerini.temizle.35bd93ab": {
+      "comment": "swiftui_modifier; App/Views/Report/ReportView.swift:516; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear report filters"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor filtrelerini temizle"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.filtrelerini.temizle.780a1485": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:516; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear report filters"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor filtrelerini temizle"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.firma.filtresi.5fdad416": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:125; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report company filter"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor firma filtresi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.firma.filtresi.e0cc0fc3": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:125; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report company filter"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor firma filtresi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.hatasi.3b5b8533": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:111; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report Error"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor Hatası"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.hatasi.d7bee189": {
+      "comment": "swiftui_modifier; App/Views/Report/ReportView.swift:111; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report Error"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor Hatası"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.hazirlaniyor.e3f5d393": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1825; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report is being prepared..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor hazırlanıyor..."
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.indirilemedi.3fc8490a": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1308; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report could not be downloaded"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor indirilemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.indirilemedi.c2e21361": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1307; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report could not be downloaded"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor indirilemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.kaydedilemedi.ad69953f": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1072; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report could not be saved"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor kaydedilemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.kaynagi.bekleniyor.1ad81b3e": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:559; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for report source"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor kaynağı bekleniyor"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.kaynagi.bekleniyor.8b552051": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:559; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for report source"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor kaynağı bekleniyor"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.olustur.dae645d2": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1825; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor oluştur"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.silinemedi.4121267d": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1334; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to delete report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor silinemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.silinemedi.798148fd": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1335; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to delete report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor silinemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.verileri.hazirlaniyor.4202a83b": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:685; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report data is being prepared"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor verileri hazırlanıyor"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapor.verileri.hazirlaniyor.c052fd0a": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:685; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report data is being prepared"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor verileri hazırlanıyor"
+          }
+        }
+      }
+    },
+    "reports.report.view.rapora.donustur.dc554fbf": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:549; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convert to Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapora Dönüştür"
+          }
+        }
+      }
+    },
+    "reports.report.view.raporlar.yuklenemedi.6bb44aa9": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:927; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to load reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporlar yüklenemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.raporlar.yuklenemedi.e5c73c2a": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:931; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to load reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporlar yüklenemedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.raporu.sil.2d768ded": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:2168; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporu sil"
+          }
+        }
+      }
+    },
+    "reports.report.view.raporu.sil.b9373641": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:182; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporu sil"
+          }
+        }
+      }
+    },
+    "reports.report.view.raporu.sil.db5653f5": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2171; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporu sil"
+          }
+        }
+      }
+    },
+    "reports.report.view.report.analysis.row.1.e38d9363": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1914; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "report.analysis.row.%1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rapor.analiz.satır.%1$@"
+          }
+        }
+      }
+    },
+    "reports.report.view.report.archive.filter.1.05480bdc": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2032; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "report.archive.filter.%1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rapor.arşiv.filtre.%1$@"
+          }
+        }
+      }
+    },
+    "reports.report.view.report.archive.row.1.195c2bb6": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2274; placeholders: %1$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "report.archive.row.%1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rapor.arşiv.satır.%1$@"
+          }
+        }
+      }
+    },
+    "reports.report.view.risk.3424dae6": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RISK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RİSK"
+          }
+        }
+      }
+    },
+    "reports.report.view.risk.495b7f20": {
+      "comment": "Deterministic terminology/quality override; placeholders preserved;",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RISK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RİSK"
+          }
+        }
+      }
+    },
+    "reports.report.view.risk.analizi.873e9b38": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1993; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analizi"
+          }
+        }
+      }
+    },
+    "reports.report.view.risk.analizi.9997754e": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2295; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analizi"
+          }
+        }
+      }
+    },
+    "reports.report.view.risk.analizi.fb23011d": {
+      "comment": "computed_ui_copy; App/Views/Report/ReportView.swift:1993; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analizi"
+          }
+        }
+      }
+    },
+    "reports.report.view.risk.analizi.tablosu.olusturulamadi.156552f0": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1285; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to create risk analysis table"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analizi tablosu oluşturulamadı"
+          }
+        }
+      }
+    },
+    "reports.report.view.risk.analizi.tablosu.olusturulamadi.4e97001c": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1284; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to create risk analysis table"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analizi tablosu oluşturulamadı"
+          }
+        }
+      }
+    },
+    "reports.report.view.risk.tablosu.1dc67ffd": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:268; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Table"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Tablosu"
+          }
+        }
+      }
+    },
+    "reports.report.view.risk.tablosu.37c70d57": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:268; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Table"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Tablosu"
+          }
+        }
+      }
+    },
+    "reports.report.view.saha.sefi.8c568787": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:955; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Field Chief"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha Şefi"
+          }
+        }
+      }
+    },
+    "reports.report.view.sayfa.1.1.isg.uzmani.2.3.14375cf7": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1608; placeholders: %1$@|%2$@|%3$@; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page 1 / %1$@ · OHS Expert: %2$@ · %3$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sayfa 1 / %1$@ · İSG Uzmanı: %2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "reports.report.view.siliniyor.4cf99a12": {
+      "comment": "computed_ui_copy; App/Views/Report/ReportView.swift:2316; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "being deleted"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siliniyor"
+          }
+        }
+      }
+    },
+    "reports.report.view.son.tamamlanan.analizler.getiriliyor.8dd7d1d4": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:688; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading recently completed analyses."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son tamamlanan analizler getiriliyor."
+          }
+        }
+      }
+    },
+    "reports.report.view.son.tamamlanan.analizler.getiriliyor.c768118f": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:688; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading recently completed analyses."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son tamamlanan analizler getiriliyor."
+          }
+        }
+      }
+    },
+    "reports.report.view.standart.6ed5f7d4": {
+      "comment": "computed_ui_copy; App/Views/Report/ReportView.swift:1992; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standart"
+          }
+        }
+      }
+    },
+    "reports.report.view.standart.rapor.380caa82": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2295; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standart rapor"
+          }
+        }
+      }
+    },
+    "reports.report.view.tamam.8d82c31b": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:115; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamam"
+          }
+        }
+      }
+    },
+    "reports.report.view.tarih.yok.13758df5": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1926; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.tarih.yok.204e2241": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2354; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.tarih.yok.215533e0": {
+      "comment": "computed_ui_copy; App/Views/Report/ReportView.swift:1926; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.tarih.yok.2e16a37f": {
+      "comment": "computed_ui_copy; App/Views/Report/ReportView.swift:1683; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.tarih.yok.b95f2b1f": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1683; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih yok"
+          }
+        }
+      }
+    },
+    "reports.report.view.tehlike.tespit.edilmedi.69a999af": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1593; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hazard detected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlike tespit edilmedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.tehlike.tespit.edilmedi.8c212742": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:1593; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hazard detected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlike tespit edilmedi"
+          }
+        }
+      }
+    },
+    "reports.report.view.tekrar.dene.84b0ba25": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:378; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        }
+      }
+    },
+    "reports.report.view.test.aktif.firma.5d72481d": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:949; placeholders: none; review: machine_draft; review: build79_copy_preserved",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active Test Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktif Test Firması"
+          }
+        }
+      }
+    },
+    "reports.report.view.test.firma.raporu.283009de": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:977; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test Company Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test Firma Raporu"
+          }
+        }
+      }
+    },
+    "reports.report.view.test.firma.raporu.c968da6b": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:977; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test Company Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test Firma Raporu"
+          }
+        }
+      }
+    },
+    "reports.report.view.test.mah.guvenlik.cad.no.10.035c5225": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:952; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test Mah. Security Street. No: 10"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test Mah. Güvenlik Cad. No: 10"
+          }
+        }
+      }
+    },
+    "reports.report.view.tumu.b22778b1": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:1989; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümü"
+          }
+        }
+      }
+    },
+    "reports.report.view.ui.test.rapor.kaynagi.550f830d": {
+      "comment": "custom_ui_copy; App/Views/Report/ReportView.swift:993; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI Test Report Source"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI Test Rapor Kaynağı"
+          }
+        }
+      }
+    },
+    "reports.report.view.ui.test.rapor.kaynagi.cfdd432a": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:993; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI Test Report Source"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI Test Rapor Kaynağı"
+          }
+        }
+      }
+    },
+    "reports.report.view.ui.test.rapor.olusturma.akisi.icin.fixture.anali.4de1fbd3": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:998; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fixture analysis for UI test report generation flow."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI test rapor oluşturma akışı için fixture analiz."
+          }
+        }
+      }
+    },
+    "reports.report.view.vazgec.719fa5be": {
+      "comment": "swiftui_text; App/Views/Report/ReportView.swift:187; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "reports.report.view.vazgec.9e22fb3c": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:187; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "reports.report.view.yukleniyor.a5d75bb0": {
+      "comment": "swift_output_copy; App/Views/Report/ReportView.swift:2123; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yükleniyor"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

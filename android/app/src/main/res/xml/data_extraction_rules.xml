@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- allowBackup is already false; this file exists only to satisfy the manifest attribute
+     with an explicit empty rule set (nothing is ever eligible for backup/transfer). -->
+<data-extraction-rules>
+    <cloud-backup disableIfNoEncryptionCapability="true" />
+</data-extraction-rules>

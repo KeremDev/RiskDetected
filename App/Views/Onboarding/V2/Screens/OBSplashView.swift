@@ -1,528 +1,436 @@
 import SwiftUI
+import UIKit
 
 struct OBSplashView: View {
     let onNext: () -> Void
-    @State private var arrowOffset: CGFloat = -6
-    @State private var arrowOpacity: Double = 0
-    @State private var floatY: CGFloat = 0
+    var onSkip: (() -> Void)?
+
+    init(onNext: @escaping () -> Void, onSkip: (() -> Void)? = nil) {
+        self.onNext = onNext
+        self.onSkip = onSkip
+    }
 
     var body: some View {
-        GeometryReader { geo in
+        GeometryReader { proxy in
+            let metrics = OBSplashMetrics(size: proxy.size, safeAreaInsets: proxy.safeAreaInsets)
+
             ZStack(alignment: .bottom) {
-                // Background tinted to match image's bottom curve color
-                // (image curve has subtle gray, not pure white — match it
-                // so the transition between image bottom and solid bg is
-                // invisible).
-                Color(hex: "#F4F6F4").ignoresSafeArea()
+                OBSplashColor.white
+                    .ignoresSafeArea()
 
-                // Image pinned to top — takes ~70% of screen height. Image
-                // already has natural white curve at its bottom that blends
-                // seamlessly with the white safe-area below (no card needed).
-                Image("SplashBg")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: geo.size.width, height: geo.size.height * 0.87)
-                    .clipped()
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .ignoresSafeArea(edges: .top)
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityIdentifier("onboarding.splash")
 
-                // Bottom content — sits in white area
                 VStack(spacing: 0) {
-                    Text(attributedTitle)
-                        .font(.system(size: 30, weight: .bold))
-                        .tracking(-0.9)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom, 12)
-                        .obStage(delay: 0.18)
-
-                    Text("Sahada gördüğünü dakikalar içinde\ndenetime hazır rapora dönüştür.")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Color.rdSlate)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(2)
-                        .frame(maxWidth: 320)
-                        .padding(.bottom, 24)
-                        .obStage(delay: 0.26)
-
-                    OBPrimaryButton(title: "Başlayalım", accessibilityID: "onboarding.splash.start") { onNext() }
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 20)
-                        .obStage(delay: 0.34)
-
-                    HStack(spacing: 6) {
-                        Capsule().fill(Color.rdOnyx).frame(width: 20, height: 6)
-                        Circle().fill(Color.rdOnyx.opacity(0.14)).frame(width: 6, height: 6)
-                        Circle().fill(Color.rdOnyx.opacity(0.14)).frame(width: 6, height: 6)
-                        Circle().fill(Color.rdOnyx.opacity(0.14)).frame(width: 6, height: 6)
-                    }
-                    .padding(.bottom, 28)
-                    .obStage(delay: 0.42)
+                    OBSplashHero(metrics: metrics)
+                        .frame(height: metrics.heroHeight)
+                    Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+
+                OBSplashBottomSheet(metrics: metrics, onNext: onNext, onSkip: onSkip)
+                    .frame(height: metrics.sheetHeight)
             }
-            .frame(width: geo.size.width, height: geo.size.height)
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .ignoresSafeArea()
-        .accessibilityIdentifier("onboarding.splash")
-    }
-
-    private var attributedTitle: AttributedString {
-        var s = AttributedString("Profesyonel İSG\nasistanın")
-        s.foregroundColor = .rdOnyx
-        var dot = AttributedString(".")
-        dot.foregroundColor = .rdGreen
-        return s + dot
-    }
-
-    private var backdrop: some View {
-        ZStack {
-            LinearGradient(colors: [Color(hex: "#FCFCFB"), Color(hex: "#F7F8F6"), Color(hex: "#F1F3F0")],
-                           startPoint: .top, endPoint: .bottom)
-            RadialGradient(colors: [Color(hex: "#FFE0A8").opacity(0.35), .clear], center: .topTrailing, startRadius: 0, endRadius: 320)
-            RadialGradient(colors: [Color.rdGreen.opacity(0.1), .clear], center: .bottomLeading, startRadius: 0, endRadius: 280)
-        }
-        .ignoresSafeArea()
-    }
-
-    private var hero: some View {
-        ZStack {
-            OBSplashCharacter()
-                .frame(width: 280, height: 280)
-
-            // Clockwise from top-left, 7 chips around character.
-            // Each chip enters with stagger + scale, then floats infinitely
-            // with its own period for premium, organic feel.
-            ForEach(Array(OBSplashChip.all.enumerated()), id: \.offset) { i, chip in
-                OBSplashChipView(chip: chip, index: i)
-                    .offset(x: chip.x, y: chip.y)
-            }
-        }
-        .frame(width: 340, height: 340)
-    }
-
-    private func animateArrow() {
-        Task {
-            while !Task.isCancelled {
-                arrowOffset = -6; arrowOpacity = 0
-                withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.4)) {
-                    arrowOffset = 0; arrowOpacity = 1
-                }
-                try? await Task.sleep(nanoseconds: 600_000_000)
-                withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.6)) {
-                    arrowOffset = 10; arrowOpacity = 0
-                }
-                try? await Task.sleep(nanoseconds: 600_000_000)
-            }
-        }
     }
 }
 
-// MARK: - Splash character (Canvas port of original SVG illustration)
-// İSG specialist with green hard hat, orange high-vis vest, holding phone
-// that previews a Fine-Kinney 240 risk report. Drawn in a 280×280 box.
-struct OBSplashCharacter: View {
-    @State private var scanDash: CGFloat = 0
-    @State private var sparkleAngle: Double = 0
-    @State private var phoneScale: CGFloat = 0.92
-    @State private var phoneOpacity: Double = 0
+private struct OBSplashMetrics {
+    let size: CGSize
+    let safeAreaInsets: EdgeInsets
+
+    private let designWidth: CGFloat = 402
+    private let designHeight: CGFloat = 874
+
+    var width: CGFloat { size.width }
+    var height: CGFloat { size.height }
+    var scale: CGFloat { min(max(width / designWidth, 0.88), 1.12) }
+    var heightScale: CGFloat { min(max(height / designHeight, 0.86), 1.12) }
+    var overlap: CGFloat { 64 * scale }
+    var sheetHeight: CGFloat { min(max(273 * heightScale, 252), height * 0.39) }
+    var heroHeight: CGFloat { max(height - sheetHeight + overlap, 430 * scale) }
+    var phoneWidth: CGFloat { min(250 * scale, width * 0.64, heroHeight * 0.54) }
+}
+
+private enum OBSplashColor {
+    static let white = Color(hex: "#FFFFFF")
+    static let hero = Color(hex: "#EEF0F2")
+    static let cta = Color(hex: "#111418")
+    static let title = Color(hex: "#0E1116")
+    static let slate = Color(hex: "#6B7280")
+    static let dot = Color(hex: "#A4ABB5")
+    static let red = Color(hex: "#E5484D")
+    static let redSoft = Color(hex: "#FDECEC")
+    static let amber = Color(hex: "#F59E0B")
+    static let amberSoft = Color(hex: "#FFF4E5")
+}
+
+private struct OBSplashHero: View {
+    let metrics: OBSplashMetrics
 
     var body: some View {
-        Canvas { ctx, _ in
-            // Background circles (clipped via clipPath circle in SVG — we just draw filled circles)
-            ctx.fill(Path(ellipseIn: CGRect(x: 22, y: 22, width: 236, height: 236)),
-                     with: .color(Color(hex: "#EAF8EE")))
-            ctx.fill(Path(ellipseIn: CGRect(x: 32, y: 32, width: 136, height: 136)),
-                     with: .color(Color(hex: "#F4FBF6")))
+        let phoneWidth = metrics.phoneWidth
+        let phoneHeight = phoneWidth * 462 / 250
+        let phoneTop = max(92 * metrics.scale, metrics.heroHeight - phoneHeight)
+        let detectionWidth = 109 * metrics.scale
+        let preparingWidth = 166 * metrics.scale
+        let chipHeight = 42 * metrics.scale
 
-            // Ground ellipse (clipped to bg circle)
-            var groundClip = ctx
-            groundClip.clip(to: Path(ellipseIn: CGRect(x: 22, y: 22, width: 236, height: 236)))
-            groundClip.fill(Path(ellipseIn: CGRect(x: 20, y: 226, width: 240, height: 28)),
-                            with: .color(Color(hex: "#D8EFDF")))
-
-            // Decorative dots (within bg)
-            groundClip.fill(Path(ellipseIn: CGRect(x: 57.5, y: 77.5, width: 5, height: 5)),
-                            with: .color(Color.rdGreen.opacity(0.4)))
-            groundClip.fill(Path(ellipseIn: CGRect(x: 218, y: 58, width: 4, height: 4)),
-                            with: .color(Color(hex: "#FFB300").opacity(0.5)))
-            groundClip.fill(Path(ellipseIn: CGRect(x: 46, y: 178, width: 4, height: 4)),
-                            with: .color(Color.rdCritical.opacity(0.35)))
-            groundClip.fill(Path(ellipseIn: CGRect(x: 227.5, y: 197.5, width: 5, height: 5)),
-                            with: .color(Color.rdGreen.opacity(0.4)))
-
-            // CHARACTER (translate to 140, 138 like SVG)
-            var cc = ctx
-            cc.translateBy(x: 140, y: 138)
-            drawCharacter(in: &cc)
-        }
-        // Phone overlaid as a separate View so animations are simpler (rotate + entry)
-        .overlay(alignment: .topLeading) {
-            phone
-                .scaleEffect(phoneScale)
-                .opacity(phoneOpacity)
-                .rotationEffect(.degrees(-10), anchor: .center)
-                .offset(x: 140 - 44 - 22, y: 138 + 36 - 30)
-        }
-        .overlay(scanBeam)
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.7).delay(0.1)) {
-                phoneScale = 1.0; phoneOpacity = 1.0
-            }
-            withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: false)) {
-                scanDash = -14
-            }
-            withAnimation(.linear(duration: 6).repeatForever(autoreverses: false)) {
-                sparkleAngle = 360
-            }
-        }
-    }
-
-    private func drawCharacter(in ctx: inout GraphicsContext) {
-        let skin = Color(hex: "#F0C49A")
-        let dark = Color(hex: "#0B0D0E")
-        let pants = Color(hex: "#1F2225")
-        let vest = Color(hex: "#FFB300")
-        let hat = Color.rdGreen
-        let hatDark = Color(hex: "#008F24")
-
-        // Pants left
-        var pl = Path()
-        pl.move(to: CGPoint(x: -22, y: 64))
-        pl.addLine(to: CGPoint(x: -22, y: 100))
-        pl.addQuadCurve(to: CGPoint(x: -16, y: 106), control: CGPoint(x: -22, y: 106))
-        pl.addLine(to: CGPoint(x: -8, y: 106))
-        pl.addQuadCurve(to: CGPoint(x: -2, y: 100), control: CGPoint(x: -2, y: 106))
-        pl.addLine(to: CGPoint(x: -2, y: 64))
-        pl.closeSubpath()
-        ctx.fill(pl, with: .color(pants))
-
-        // Pants right
-        var pr = Path()
-        pr.move(to: CGPoint(x: 22, y: 64))
-        pr.addLine(to: CGPoint(x: 22, y: 100))
-        pr.addQuadCurve(to: CGPoint(x: 16, y: 106), control: CGPoint(x: 22, y: 106))
-        pr.addLine(to: CGPoint(x: 8, y: 106))
-        pr.addQuadCurve(to: CGPoint(x: 2, y: 100), control: CGPoint(x: 2, y: 106))
-        pr.addLine(to: CGPoint(x: 2, y: 64))
-        pr.closeSubpath()
-        ctx.fill(pr, with: .color(pants))
-
-        // Shoes
-        ctx.fill(Path(ellipseIn: CGRect(x: -25, y: 102, width: 20, height: 8)), with: .color(dark))
-        ctx.fill(Path(ellipseIn: CGRect(x: 5, y: 102, width: 20, height: 8)), with: .color(dark))
-
-        // Vest (orange safety vest)
-        var body = Path()
-        body.move(to: CGPoint(x: -38, y: -16))
-        body.addQuadCurve(to: CGPoint(x: -32, y: -24), control: CGPoint(x: -38, y: -22))
-        body.addLine(to: CGPoint(x: -10, y: -32))
-        body.addLine(to: CGPoint(x: 10, y: -32))
-        body.addLine(to: CGPoint(x: 32, y: -24))
-        body.addQuadCurve(to: CGPoint(x: 38, y: -16), control: CGPoint(x: 38, y: -22))
-        body.addLine(to: CGPoint(x: 38, y: 60))
-        body.addQuadCurve(to: CGPoint(x: 30, y: 68), control: CGPoint(x: 38, y: 68))
-        body.addLine(to: CGPoint(x: -30, y: 68))
-        body.addQuadCurve(to: CGPoint(x: -38, y: 60), control: CGPoint(x: -38, y: 68))
-        body.closeSubpath()
-        ctx.fill(body, with: .color(vest))
-
-        // White shirt under V
-        var shirt = Path()
-        shirt.move(to: CGPoint(x: -10, y: -32))
-        shirt.addLine(to: CGPoint(x: 0, y: -8))
-        shirt.addLine(to: CGPoint(x: 10, y: -32))
-        shirt.addLine(to: CGPoint(x: 10, y: -16))
-        shirt.addLine(to: CGPoint(x: 0, y: -4))
-        shirt.addLine(to: CGPoint(x: -10, y: -16))
-        shirt.closeSubpath()
-        ctx.fill(shirt, with: .color(.white))
-
-        // Reflective stripes
-        ctx.fill(Path(CGRect(x: -38, y: 30, width: 76, height: 4)),
-                 with: .color(.white.opacity(0.9)))
-        ctx.fill(Path(CGRect(x: -38, y: 40, width: 76, height: 2)),
-                 with: .color(.white.opacity(0.55)))
-
-        // Vest sparkle badge
-        ctx.fill(Path(ellipseIn: CGRect(x: 16, y: 0, width: 12, height: 12)),
-                 with: .color(Color.rdGreen))
-        var spark = Path()
-        spark.move(to: CGPoint(x: 22, y: 2))
-        spark.addLine(to: CGPoint(x: 23, y: 5))
-        spark.addLine(to: CGPoint(x: 26, y: 6))
-        spark.addLine(to: CGPoint(x: 23, y: 7))
-        spark.addLine(to: CGPoint(x: 22, y: 10))
-        spark.addLine(to: CGPoint(x: 21, y: 7))
-        spark.addLine(to: CGPoint(x: 18, y: 6))
-        spark.addLine(to: CGPoint(x: 21, y: 5))
-        spark.closeSubpath()
-        ctx.fill(spark, with: .color(.white))
-
-        // Right arm (holding phone forward)
-        var arm1 = Path()
-        arm1.move(to: CGPoint(x: -36, y: -18))
-        arm1.addQuadCurve(to: CGPoint(x: -52, y: 22), control: CGPoint(x: -52, y: -8))
-        arm1.addQuadCurve(to: CGPoint(x: -36, y: 42), control: CGPoint(x: -52, y: 40))
-        arm1.addLine(to: CGPoint(x: -22, y: 36))
-        arm1.addLine(to: CGPoint(x: -22, y: -8))
-        arm1.closeSubpath()
-        ctx.fill(arm1, with: .color(skin))
-
-        // Left arm by side
-        var arm2 = Path()
-        arm2.move(to: CGPoint(x: 36, y: -18))
-        arm2.addQuadCurve(to: CGPoint(x: 52, y: 22), control: CGPoint(x: 52, y: -8))
-        arm2.addQuadCurve(to: CGPoint(x: 44, y: 40), control: CGPoint(x: 52, y: 36))
-        arm2.addQuadCurve(to: CGPoint(x: 38, y: 30), control: CGPoint(x: 38, y: 38))
-        arm2.addLine(to: CGPoint(x: 38, y: -8))
-        arm2.closeSubpath()
-        ctx.fill(arm2, with: .color(skin))
-
-        // Hand (oval)
-        ctx.fill(Path(ellipseIn: CGRect(x: -51, y: 30, width: 14, height: 12)),
-                 with: .color(skin))
-
-        // Neck
-        ctx.fill(Path(CGRect(x: -8, y: -46, width: 16, height: 14)),
-                 with: .color(skin))
-
-        // Face circle
-        ctx.fill(Path(ellipseIn: CGRect(x: -22, y: -80, width: 44, height: 44)),
-                 with: .color(skin))
-
-        // Ears
-        ctx.fill(Path(ellipseIn: CGRect(x: -25, y: -63, width: 6, height: 10)),
-                 with: .color(skin))
-        ctx.fill(Path(ellipseIn: CGRect(x: 19, y: -63, width: 6, height: 10)),
-                 with: .color(skin))
-
-        // Eyebrows
-        var br1 = Path()
-        br1.move(to: CGPoint(x: -10, y: -68))
-        br1.addQuadCurve(to: CGPoint(x: -4, y: -68), control: CGPoint(x: -7, y: -70))
-        ctx.stroke(br1, with: .color(Color(hex: "#2A2D2F")),
-                   style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
-        var br2 = Path()
-        br2.move(to: CGPoint(x: 4, y: -68))
-        br2.addQuadCurve(to: CGPoint(x: 10, y: -68), control: CGPoint(x: 7, y: -70))
-        ctx.stroke(br2, with: .color(Color(hex: "#2A2D2F")),
-                   style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
-
-        // Eyes
-        ctx.fill(Path(ellipseIn: CGRect(x: -8.8, y: -63.8, width: 3.6, height: 3.6)),
-                 with: .color(dark))
-        ctx.fill(Path(ellipseIn: CGRect(x: 5.2, y: -63.8, width: 3.6, height: 3.6)),
-                 with: .color(dark))
-
-        // Smile
-        var smile = Path()
-        smile.move(to: CGPoint(x: -6, y: -50))
-        smile.addQuadCurve(to: CGPoint(x: 6, y: -50), control: CGPoint(x: 0, y: -45))
-        ctx.stroke(smile, with: .color(dark),
-                   style: StrokeStyle(lineWidth: 2, lineCap: .round))
-
-        // Cheek blush
-        ctx.fill(Path(ellipseIn: CGRect(x: -16, y: -58, width: 6, height: 6)),
-                 with: .color(Color(hex: "#FF9B7C").opacity(0.4)))
-        ctx.fill(Path(ellipseIn: CGRect(x: 10, y: -58, width: 6, height: 6)),
-                 with: .color(Color(hex: "#FF9B7C").opacity(0.4)))
-
-        // Hair under hat
-        var hair = Path()
-        hair.move(to: CGPoint(x: -22, y: -68))
-        hair.addQuadCurve(to: CGPoint(x: -16, y: -78), control: CGPoint(x: -22, y: -76))
-        hair.addLine(to: CGPoint(x: 16, y: -78))
-        hair.addQuadCurve(to: CGPoint(x: 22, y: -68), control: CGPoint(x: 22, y: -76))
-        hair.addLine(to: CGPoint(x: 16, y: -72))
-        hair.addLine(to: CGPoint(x: -16, y: -72))
-        hair.closeSubpath()
-        ctx.fill(hair, with: .color(Color(hex: "#2A2D2F")))
-
-        // Hard hat dome
-        var dome = Path()
-        dome.move(to: CGPoint(x: -26, y: -76))
-        dome.addQuadCurve(to: CGPoint(x: 0, y: -102), control: CGPoint(x: -26, y: -100))
-        dome.addQuadCurve(to: CGPoint(x: 26, y: -76), control: CGPoint(x: 26, y: -100))
-        dome.closeSubpath()
-        ctx.fill(dome, with: .color(hat))
-
-        // Hat crest
-        var crest = Path()
-        crest.move(to: CGPoint(x: -3, y: -100))
-        crest.addQuadCurve(to: CGPoint(x: 3, y: -100), control: CGPoint(x: 0, y: -106))
-        crest.addLine(to: CGPoint(x: 3, y: -84))
-        crest.addLine(to: CGPoint(x: -3, y: -84))
-        crest.closeSubpath()
-        ctx.fill(crest, with: .color(hatDark))
-
-        // Brim
-        var brim = Path()
-        brim.move(to: CGPoint(x: -30, y: -76))
-        brim.addLine(to: CGPoint(x: 30, y: -76))
-        brim.addLine(to: CGPoint(x: 28, y: -72))
-        brim.addLine(to: CGPoint(x: -28, y: -72))
-        brim.closeSubpath()
-        ctx.fill(brim, with: .color(hatDark))
-
-        // Hat highlight
-        var hl = Path()
-        hl.move(to: CGPoint(x: -20, y: -90))
-        hl.addQuadCurve(to: CGPoint(x: 0, y: -98), control: CGPoint(x: -10, y: -98))
-        ctx.stroke(hl, with: .color(Color(hex: "#5EE285").opacity(0.7)),
-                   style: StrokeStyle(lineWidth: 2, lineCap: .round))
-
-        // Magnifier accent on hat
-        ctx.stroke(Path(ellipseIn: CGRect(x: 10, y: -86, width: 8, height: 8)),
-                   with: .color(dark), lineWidth: 1.5)
-        var handle = Path()
-        handle.move(to: CGPoint(x: 17, y: -79))
-        handle.addLine(to: CGPoint(x: 21, y: -75))
-        ctx.stroke(handle, with: .color(dark),
-                   style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
-        ctx.fill(Path(ellipseIn: CGRect(x: 12.8, y: -83.2, width: 2.4, height: 2.4)),
-                 with: .color(Color(hex: "#FFB300")))
-    }
-
-    // Phone (44x60 in character coords, anchored at (-44, 36), rotated -10°)
-    private var phone: some View {
         ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 6).fill(Color.rdOnyx)
-            RoundedRectangle(cornerRadius: 4).fill(.white)
-                .padding(3)
-            VStack(alignment: .leading, spacing: 4) {
-                Capsule().fill(Color.rdGreen).frame(width: 14, height: 3)
-                Capsule().fill(Color.rdOnyx).frame(width: 22, height: 2.5)
-                Capsule().fill(Color.rdLine).frame(width: 18, height: 2.5)
-                ZStack {
-                    RoundedRectangle(cornerRadius: 2).fill(Color.rdHighBg).frame(width: 30, height: 9)
-                    Text("240")
-                        .font(.system(size: 6, weight: .bold))
-                        .foregroundStyle(Color.rdHigh)
-                }
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 2).fill(Color.rdFog).frame(width: 30, height: 14)
-                    HStack(spacing: 3) {
-                        Circle().fill(Color.rdGreen).frame(width: 6, height: 6)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Capsule().fill(Color.rdOnyx).frame(width: 14, height: 2)
-                            Capsule().fill(Color.rdSlate).frame(width: 10, height: 1.5)
-                        }
-                    }
-                    .padding(.leading, 3)
-                }
-            }
-            .padding(7)
-        }
-        .frame(width: 44, height: 60)
-    }
+            OBSplashColor.hero
 
-    // Animated scanning beam between phone and detected target
-    private var scanBeam: some View {
-        Canvas { ctx, _ in
-            var p = Path()
-            p.move(to: CGPoint(x: 88, y: 174))
-            p.addQuadCurve(to: CGPoint(x: 130, y: 178), control: CGPoint(x: 110, y: 168))
-            ctx.stroke(p, with: .color(Color.rdGreen.opacity(0.6)),
-                       style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [3, 4], dashPhase: scanDash))
+            RadialGradient(
+                colors: [Color.white.opacity(0.42), Color.white.opacity(0)],
+                center: UnitPoint(x: 0.5, y: 0.12),
+                startRadius: 0,
+                endRadius: max(metrics.width, metrics.heroHeight) * 0.62
+            )
+
+            Image("OBSplashSafetyPattern")
+                .resizable(resizingMode: .tile)
+                .frame(width: metrics.width, height: metrics.heroHeight)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+
+            OBSplashPhoneFrame(width: phoneWidth)
+                .position(x: metrics.width * 0.5, y: phoneTop + phoneHeight / 2)
+
+            OBSplashFloatingChip(
+                title: RDLocalization.string("onboarding.obsplash.view.12.tehlike.5f66303d", table: .onboarding, fallback: "12 Tehlike"),
+                subtitle: RDLocalization.string("onboarding.obsplash.view.tespit.edildi.c3b9d6e4", table: .onboarding, fallback: "tespit edildi"),
+                accent: OBSplashColor.red,
+                iconBackground: OBSplashColor.redSoft,
+                kind: .warning,
+                accessibilityID: "onboarding.splash.chip.detection"
+            )
+            .frame(width: detectionWidth, height: chipHeight)
+            .rotationEffect(.degrees(-5))
+            .position(
+                x: 12 * metrics.scale + detectionWidth / 2,
+                y: 332 * metrics.heightScale + chipHeight / 2
+            )
+
+            OBSplashFloatingChip(
+                title: RDLocalization.string("onboarding.obsplash.view.kok.neden.ve.mevzuat.22ab9903", table: .onboarding, fallback: "Kök Neden ve Mevzuat"),
+                subtitle: RDLocalization.string("onboarding.obsplash.view.bilgisi.hazirlaniyor.6b055b9b", table: .onboarding, fallback: "bilgisi hazırlanıyor…"),
+                accent: OBSplashColor.amber,
+                iconBackground: OBSplashColor.amberSoft,
+                kind: .spinner,
+                accessibilityID: "onboarding.splash.chip.preparing"
+            )
+            .frame(width: preparingWidth, height: chipHeight)
+            .rotationEffect(.degrees(5))
+            .position(
+                x: metrics.width - 10 * metrics.scale - preparingWidth / 2,
+                y: 300 * metrics.heightScale + chipHeight / 2
+            )
         }
-        .allowsHitTesting(false)
+        .frame(width: metrics.width, height: metrics.heroHeight)
+        .clipped()
     }
 }
 
-// MARK: - Splash chips (clockwise around character)
+private struct OBSplashPhoneFrame: View {
+    let width: CGFloat
 
-struct OBSplashChip: Identifiable {
-    let id = UUID()
-    let emoji: String
-    let text: String
+    private var height: CGFloat { width * 462 / 250 }
+    private var bezel: CGFloat { width * 0.028 }
+    private var bodyRadius: CGFloat { width * 0.165 }
+    private var screenWidth: CGFloat { width - bezel * 2 }
+    private var screenHeight: CGFloat { height - bezel * 2 }
+    private var screenRadius: CGFloat { bodyRadius - bezel * 0.7 }
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            OBSplashPhoneSideButtons(width: width, height: height)
+
+            RoundedRectangle(cornerRadius: bodyRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "#2C2C2F"), Color(hex: "#0B0B0D"), Color(hex: "#1A1A1C")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: bodyRadius, style: .continuous)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: bodyRadius - 1, style: .continuous)
+                        .stroke(Color.black.opacity(0.45), lineWidth: max(1.4, width * 0.01))
+                        .padding(width * 0.005)
+                )
+                .shadow(color: OBSplashColor.title.opacity(0.55), radius: 45, x: 0, y: 46)
+                .shadow(color: OBSplashColor.title.opacity(0.42), radius: 22, x: 0, y: 22)
+                .shadow(color: OBSplashColor.title.opacity(0.30), radius: 7, x: 0, y: 6)
+
+            Image("OBSplashPreview")
+                .resizable()
+                .scaledToFill()
+                .frame(width: screenWidth, height: screenHeight, alignment: .top)
+                .clipShape(RoundedRectangle(cornerRadius: screenRadius, style: .continuous))
+                .padding(bezel)
+
+            OBSplashDynamicIsland(width: width * 0.283, height: width * 0.074)
+                .padding(.top, width * 0.032)
+        }
+        .frame(width: width, height: height)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(RDLocalization.string("onboarding.obsplash.view.riskdetected.onizleme.telefonu.4d1a083b", table: .onboarding, fallback: "RiskDetected önizleme telefonu"))
+        .accessibilityIdentifier("onboarding.splash.preview_phone")
+    }
+}
+
+private struct OBSplashPhoneSideButtons: View {
+    let width: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            sideButton(height: height * 0.045)
+                .offset(x: -width * 0.014, y: height * 0.202)
+
+            sideButton(height: height * 0.085)
+                .offset(x: -width * 0.014, y: height * 0.302)
+
+            sideButton(height: height * 0.085)
+                .offset(x: -width * 0.014, y: height * 0.405)
+
+            sideButton(height: height * 0.12)
+                .offset(x: width - width * 0.002, y: height * 0.275)
+        }
+        .frame(width: width, height: height)
+    }
+
+    private func sideButton(height: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: width * 0.008, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [Color(hex: "#1D1D20"), Color(hex: "#050506")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(width: max(2.8, width * 0.014), height: height)
+    }
+}
+
+private struct OBSplashDynamicIsland: View {
+    let width: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            Capsule()
+                .fill(Color.black)
+
+            Circle()
+                .fill(Color(hex: "#1C2433"))
+                .frame(width: height * 0.33, height: height * 0.33)
+                .padding(.trailing, height * 0.22)
+        }
+        .frame(width: width, height: height)
+    }
+}
+
+private struct OBSplashFloatingChip: View {
+    enum Kind {
+        case warning
+        case spinner
+    }
+
+    let title: String
+    let subtitle: String
     let accent: Color
-    let x: CGFloat
-    let y: CGFloat
-    let floatPeriod: Double
-    let floatDelay: Double
-
-    // Sequential clockwise reveal: top → right → bottom → left
-    // Each chip fades in, stays ~1.4s, fades out. Next starts after
-    // 1.2s offset so 2-3 chips visible simultaneously.
-    static let all: [OBSplashChip] = [
-        .init(emoji: "🏗️", text: "Sektöre Özel",
-              accent: Color.rdOnyx,
-              x: 8, y: -158, floatPeriod: 5.0, floatDelay: 0.0),
-        .init(emoji: "📸", text: "Fotoğraf\nAnaliz",
-              accent: Color.rdInfo,
-              x: 120, y: 8, floatPeriod: 5.2, floatDelay: 0.3),
-        .init(emoji: "🔍", text: "Risk Analizi",
-              accent: Color.rdCritical,
-              x: -8, y: 168, floatPeriod: 5.4, floatDelay: 0.6),
-        .init(emoji: "✅", text: "Rapor",
-              accent: Color.rdGreen,
-              x: -126, y: 8, floatPeriod: 5.0, floatDelay: 0.9),
-    ]
-}
-
-// Cycle params shared by chip view
-private let chipCycleStagger: Double = 1.2     // delay between consecutive chip entries
-private let chipVisibleDuration: Double = 1.4  // time fully visible
-private let chipFadeDuration: Double = 0.4
-private var chipCyclePeriod: Double { Double(OBSplashChip.all.count) * chipCycleStagger }
-
-struct OBSplashChipView: View {
-    let chip: OBSplashChip
-    let index: Int
-    @State private var visible: Bool = false
-    @State private var scale: CGFloat = 0.85
+    let iconBackground: Color
+    let kind: Kind
+    let accessibilityID: String
 
     var body: some View {
         HStack(spacing: 7) {
-            Text(chip.emoji)
-                .font(.system(size: 13))
-            Text(chip.text)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.rdOnyx)
-                .lineSpacing(1)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-            Circle()
-                .fill(chip.accent)
-                .frame(width: 6, height: 6)
-                .overlay(Circle().stroke(chip.accent.opacity(0.22), lineWidth: 3))
-        }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(
             ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white)
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.rdOnyx.opacity(0.05), lineWidth: 1)
-            }
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: chip.accent.opacity(0.14), radius: 14, y: 6)
-        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
-        .opacity(visible ? 1 : 0)
-        .scaleEffect(scale)
-        .onAppear { runCycle() }
-    }
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(iconBackground)
 
-    // Each chip cycles: fade in → visible → fade out → hidden → repeat.
-    // Initial delay = index * stagger so chips appear sequentially clockwise.
-    private func runCycle() {
-        let startDelay = Double(index) * chipCycleStagger
-        let hiddenAfterFadeOut = chipCyclePeriod - chipFadeDuration - chipVisibleDuration - chipFadeDuration
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(startDelay * 1_000_000_000))
-            while !Task.isCancelled {
-                withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: chipFadeDuration)) {
-                    visible = true
-                    scale = 1.0
+                switch kind {
+                case .warning:
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: RDFontScale.size(11), weight: .bold))
+                        .foregroundStyle(accent)
+                case .spinner:
+                    OBSplashSpinnerIcon(color: accent)
+                        .frame(width: 13, height: 13)
                 }
-                try? await Task.sleep(nanoseconds: UInt64((chipFadeDuration + chipVisibleDuration) * 1_000_000_000))
-                withAnimation(.easeIn(duration: chipFadeDuration)) {
-                    visible = false
-                    scale = 0.9
-                }
-                try? await Task.sleep(nanoseconds: UInt64((chipFadeDuration + max(0, hiddenAfterFadeOut)) * 1_000_000_000))
-                scale = 0.85
+            }
+            .frame(width: 22, height: 22)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title)
+                    .font(.system(size: RDFontScale.size(10.5), weight: .heavy, design: .rounded))
+                    .foregroundStyle(OBSplashColor.title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Text(subtitle)
+                    .font(.system(size: RDFontScale.size(9.2), weight: .bold, design: .rounded))
+                    .foregroundStyle(accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
         }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
+        .background(OBSplashColor.white)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: OBSplashColor.title.opacity(kind == .warning ? 0.28 : 0.26), radius: 15, x: 0, y: 16)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(subtitle)")
+        .accessibilityIdentifier(accessibilityID)
     }
+}
+
+private struct OBSplashSpinnerIcon: View {
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(color.opacity(0.22), lineWidth: 1.6)
+            Circle()
+                .trim(from: 0.14, to: 0.82)
+                .stroke(color, style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
+                .rotationEffect(.degrees(-36))
+            Circle()
+                .fill(color)
+                .frame(width: 2.6, height: 2.6)
+                .offset(x: 4.4, y: -2.3)
+        }
+    }
+}
+
+private struct OBSplashBottomSheet: View {
+    let metrics: OBSplashMetrics
+    let onNext: () -> Void
+    let onSkip: (() -> Void)?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            OBSplashProgressDots()
+                .padding(.top, 24)
+
+            Text(RDLocalization.string("onboarding.obsplash.view.profesyonel.isg.asistani.138cfae2", table: .onboarding, fallback: "Profesyonel İSG Asistanı"))
+                .rdFont(.title1)
+                .foregroundStyle(OBSplashColor.title)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .padding(.top, 16)
+
+            Text(RDLocalization.string("onboarding.obsplash.view.fotograf.cek.yapay.zeka.tehlikeleri.otomatik.tes.2173ee63", table: .onboarding, fallback: "Fotoğraf çek; yapay zekâ tehlikeleri otomatik tespit etsin, raporun anında oluşsun ve tek tıklama ile paylaş."))
+                .font(.system(size: RDFontScale.size(14.5), weight: .regular, design: .rounded))
+                .foregroundStyle(OBSplashColor.slate)
+                .multilineTextAlignment(.center)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 11)
+                .accessibilityIdentifier("onboarding.splash.subtitle")
+
+            OBSplashCTAButton(action: onNext)
+                .padding(.top, 17)
+
+            Button {
+                onSkip?()
+            } label: {
+                Text(RDLocalization.string("onboarding.obsplash.view.atla.d0c256d2", table: .onboarding, fallback: "Atla"))
+                    .font(.system(size: RDFontScale.size(14.5), weight: .semibold, design: .rounded))
+                    .foregroundStyle(OBSplashColor.slate)
+                    .frame(height: 28)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(OBPressStyle())
+            .accessibilityIdentifier("onboarding.splash.skip")
+            .padding(.top, 10)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, max(24, 30 * metrics.scale))
+        .padding(.bottom, max(18, metrics.safeAreaInsets.bottom * 0.5))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(
+            OBSplashTopCorners(radius: 30)
+                .fill(OBSplashColor.white)
+                .shadow(color: OBSplashColor.title.opacity(0.16), radius: 17, x: 0, y: -14)
+        )
+        .accessibilityElement(children: .contain)
+    }
+}
+
+private struct OBSplashProgressDots: View {
+    var body: some View {
+        HStack(spacing: 7) {
+            Capsule()
+                .fill(OBSplashColor.cta)
+                .frame(width: 20, height: 6)
+
+            ForEach(0..<5, id: \.self) { _ in
+                Circle()
+                    .fill(OBSplashColor.dot.opacity(0.4))
+                    .frame(width: 6, height: 6)
+            }
+        }
+        .frame(height: 6)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(RDLocalization.string("onboarding.obsplash.view.onboarding.ilerleme.1.6.aab755cd", table: .onboarding, fallback: "Onboarding ilerleme, 1 / 6"))
+        .accessibilityIdentifier("onboarding.splash.progress")
+    }
+}
+
+private struct OBSplashCTAButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            OBHaptic.light()
+            action()
+        } label: {
+            HStack(spacing: 8) {
+                Text(RDLocalization.string("onboarding.obsplash.view.devam.et.a9d4eef4", table: .onboarding, fallback: "Devam Et"))
+                    .font(.system(size: RDFontScale.size(16.5), weight: .bold, design: .rounded))
+
+                Image(systemName: "arrow.right")
+                    .font(.system(size: RDFontScale.size(15.5), weight: .bold))
+            }
+            .foregroundStyle(Color.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(OBSplashColor.cta)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: OBSplashColor.cta.opacity(0.60), radius: 12, x: 0, y: 10)
+        }
+        .buttonStyle(OBPressStyle())
+        .accessibilityLabel(RDLocalization.string("onboarding.obsplash.view.devam.et.93ac0880", table: .onboarding, fallback: "Devam Et"))
+        .accessibilityIdentifier("onboarding.splash.start")
+    }
+}
+
+private struct OBSplashTopCorners: Shape {
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let bezierPath = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: [.topLeft, .topRight],
+            cornerRadii: CGSize(width: radius, height: radius)
+        )
+        return Path(bezierPath.cgPath)
+    }
+}
+
+#Preview("Splash Classic") {
+    OBSplashView(onNext: {}, onSkip: {})
 }

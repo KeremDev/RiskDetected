@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "app_id": "6769498181",
+  "subscription_group_id": "22089637",
+  "source": "docs/localization/phase-5/ASC_SUBSCRIPTION_METADATA_DRAFTS_2026-07-30.json",
+  "target_locales": [
+    "en-GB",
+    "en-AU",
+    "en-US",
+    "en-CA"
+  ],
+  "pricing_changes": false,
+  "product_id_changes": false,
+  "entitlement_changes": false,
+  "review_required": true
+}

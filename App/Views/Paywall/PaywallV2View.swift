@@ -6,11 +6,10 @@ struct PaywallV2View: View {
     var notice: String? = nil
 
     var body: some View {
-        PaywallView(
+        InAppPaywallView(
             onClose: onClose,
             onSubscribe: onSubscribe,
-            notice: notice,
-            layout: .plusFocused
+            notice: notice
         )
     }
 }

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "kind": "device_simulator_rollout_validation",
+  "policy_id": "rd-owner-approved-device-simulator-validation-2026-08-01",
+  "contract_id": "rd-global-localization-testflight-rollout-v1",
+  "candidate_build": "78",
+  "stage": 7,
+  "mode": "simulator",
+  "status": "passed",
+  "launches": 6,
+  "crashes": 0,
+  "profiles": ["tr-tr-current-v1", "en-intl-generic-v1", "en-gb-generic-v1", "en-us-generic-v1", "en-au-generic-v1", "en-ca-generic-v1"],
+  "checks": ["review_path", "profile_matrix", "report_language", "onboarding", "jurisdiction_isolation", "accessibility", "pseudolocalization", "backend_contract_suite"],
+  "proof_digests": ["3b55721040d1e45ce531f6f3d6a45f0900327f648c2cc5cd1161d195658b57f3", "552e98a3dc89113c378771a04b42ac191031959f82fc536bc41fea3d6794676b", "ca6bd412e50871758fddfff905bf096b4d734ea3c7029a222ff5a965611a44ab"],
+  "privacy": {
+    "aggregate_only": true,
+    "device_identifiers_included": false,
+    "user_or_account_data_included": false,
+    "user_content_included": false
+  }
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exposes app-cache-dir/reports/ via the FileProvider declared in AndroidManifest.xml —
+     matches where HistoryViewModel writes generated report files before sharing them. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="reports" path="reports/" />
+</paths>

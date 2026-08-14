@@ -2,20 +2,42 @@ import SwiftUI
 
 struct LegalInfoSheet: View {
     let onClose: () -> Void
-    @State private var selectedDocument: LegalDocumentKind = .kvkk
+    @StateObject private var legalDocuments = LegalDocumentService.shared
+    @State private var selectedDocument: LegalDocumentKind
+
+    init(initialDocument: LegalDocumentKind = .kvkk, onClose: @escaping () -> Void) {
+        self.onClose = onClose
+        _selectedDocument = State(
+            initialValue: RDLanguage.current == .english
+                && initialDocument == .kvkk
+                ? .terms
+                : initialDocument
+        )
+    }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 14) {
-                documentTabs
-                LegalDocumentReader(document: selectedDocument.document)
+                if RDLanguage.current == .english
+                    && !RDLegalReleaseGate.englishAuthAndPurchaseApproved {
+                    EnglishLegalUnavailableView()
+                } else {
+                    documentTabs
+                    LegalDocumentReader(document: legalDocuments.document(for: selectedDocument))
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
             .padding(.bottom, 20)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(Color.rdPaper)
-            .navigationTitle("Yasal Bilgilendirme")
+            .navigationTitle(
+                RDLocalization.string(
+                    "legal.info.title",
+                    table: .legal,
+                    fallback: "Yasal Bilgilendirme"
+                )
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -23,34 +45,101 @@ struct LegalInfoSheet: View {
                 }
             }
         }
+        .task {
+            guard RDLanguage.current == .turkish
+                    || RDLegalReleaseGate.englishAuthAndPurchaseApproved
+            else { return }
+            await legalDocuments.refreshIfNeeded(
+                userID: SupabaseService.shared.currentUserID,
+                userCreatedAt: SupabaseService.shared.client.auth.currentUser?.createdAt
+            )
+        }
     }
 
     private var documentTabs: some View {
-        HStack(spacing: 8) {
-            ForEach(LegalDocumentKind.allCases) { kind in
-                let active = selectedDocument == kind
-                Button {
-                    selectedDocument = kind
-                    UISelectionFeedbackGenerator().selectionChanged()
-                } label: {
-                    Text(kind.shortTitle)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                        .foregroundStyle(active ? Color.white : Color.rdCharcoal)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 38)
-                        .background(active ? Color.rdSelected : Color.rdWhite)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(active ? Color.rdGreen.opacity(0.55) : Color.rdLine, lineWidth: active ? 1.4 : 1)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(legalDocuments.availableKinds) { kind in
+                    let active = selectedDocument == kind
+                    Button {
+                        selectedDocument = kind
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    } label: {
+                        Text(kind.shortTitle)
+                            .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.82)
+                            .foregroundStyle(active ? Color.white : Color.rdCharcoal)
+                            .padding(.horizontal, 14)
+                            .frame(height: 38)
+                            .background(active ? Color.rdSelected : Color.rdWhite)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(active ? Color.rdGreen.opacity(0.55) : Color.rdLine, lineWidth: active ? 1.4 : 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(RDPressableButtonStyle())
+                    .accessibilityLabel(
+                        RDLocalization.format(
+                            "legal.document.show.accessibility",
+                            table: .legal,
+                            fallback: "%@ belgesini göster",
+                            arguments: [kind.title]
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    )
                 }
-                .buttonStyle(RDPressableButtonStyle())
-                .accessibilityLabel("\(kind.title) belgesini göster")
             }
         }
+    }
+}
+
+private struct EnglishLegalUnavailableView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Image(systemName: "checkmark.shield")
+                .font(.system(size: RDFontScale.size(28), weight: .semibold))
+                .foregroundStyle(Color.rdGreen)
+
+            Text(
+                RDLocalization.string(
+                    "legal.english_unavailable.title",
+                    table: .legal,
+                    fallback: "İngilizce yasal metinler henüz kullanıma hazır değil"
+                )
+            )
+            .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
+            .foregroundStyle(Color.rdBlack)
+
+            Text(
+                RDLocalization.string(
+                    "legal.english_unavailable.message",
+                    table: .legal,
+                    fallback: "İngilizce Kullanım Koşulları ve Gizlilik Politikası hukuk ve dil incelemesi tamamlanana kadar bu sürümde yayımlanmaz."
+                )
+            )
+            .font(.system(size: RDFontScale.size(14), design: .rounded))
+            .foregroundStyle(Color.rdCharcoal)
+
+            Text(
+                RDLocalization.string(
+                    "legal.english_unavailable.action",
+                    table: .legal,
+                    fallback: "Türkçe metinleri görüntülemek için uygulama dilini iOS Ayarları’ndan Türkçe seçebilirsin."
+                )
+            )
+            .font(.system(size: RDFontScale.size(13), design: .rounded))
+            .foregroundStyle(Color.rdSlate)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.rdWhite)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.rdLine, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -61,7 +150,7 @@ private struct LegalDocumentReader: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(document.title)
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -79,7 +168,7 @@ private struct LegalDocumentReader: View {
 
             ScrollView(showsIndicators: true) {
                 Text(document.text)
-                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13), weight: .regular, design: .rounded))
                     .foregroundStyle(Color.rdCharcoal)
                     .lineSpacing(5)
                     .textSelection(.enabled)
@@ -96,70 +185,6 @@ private struct LegalDocumentReader: View {
                 .stroke(Color.rdLine, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
-    }
-}
-
-private enum LegalDocumentKind: String, CaseIterable, Identifiable {
-    case kvkk
-    case terms
-    case privacy
-
-    var id: String { rawValue }
-
-    var shortTitle: String {
-        switch self {
-        case .kvkk: return "KVKK"
-        case .terms: return "Koşullar"
-        case .privacy: return "Gizlilik"
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .kvkk: return "KVKK Aydınlatma ve Açık Rıza Metni"
-        case .terms: return "Kullanım Koşulları"
-        case .privacy: return "Gizlilik Politikası"
-        }
-    }
-
-    var fileName: String {
-        switch self {
-        case .kvkk: return "KVKK-Aydinlatma-ve-Acik-Riza-Metni"
-        case .terms: return "Kullanim-Kosullari"
-        case .privacy: return "Gizlilik-Politikasi"
-        }
-    }
-
-    var document: LegalDocument {
-        LegalDocument(kind: self)
-    }
-}
-
-private struct LegalDocument {
-    let title: String
-    let fileName: String
-    let text: String
-
-    init(kind: LegalDocumentKind) {
-        title = kind.title
-        fileName = "\(kind.fileName).md"
-        text = Self.loadText(fileName: kind.fileName)
-    }
-
-    private static func loadText(fileName: String) -> String {
-        let nestedURL = Bundle.main.url(
-            forResource: fileName,
-            withExtension: "md",
-            subdirectory: "LegalDocuments"
-        )
-        let flatURL = Bundle.main.url(forResource: fileName, withExtension: "md")
-
-        guard let url = nestedURL ?? flatURL else {
-            return "Belge yüklenemedi. Lütfen daha sonra tekrar deneyin."
-        }
-
-        return (try? String(contentsOf: url, encoding: .utf8))
-            ?? "Belge okunamadı. Lütfen daha sonra tekrar deneyin."
     }
 }
 

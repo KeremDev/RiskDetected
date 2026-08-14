@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 2,
+  "appName": "RiskDetected",
+  "themeId": "clean-light",
+  "connectedCanvas": false,
+  "locales": [
+    "en-GB",
+    "en-US",
+    "en-AU",
+    "en-CA"
+  ],
+  "locale": "en-GB",
+  "device": "iphone",
+  "orientation": "portrait",
+  "appIcon": "/app-icon.png",
+  "slidesByDevice": {
+    "iphone": [
+      {
+        "id": "riskdetected_photo_hazard_check",
+        "layout": "device-bottom",
+        "label": {
+          "en-GB": "PHOTO RISK CHECK",
+          "en-US": "PHOTO HAZARD CHECK",
+          "en-AU": "PHOTO HAZARD CHECK",
+          "en-CA": "PHOTO HAZARD CHECK"
+        },
+        "headline": {
+          "en-GB": "Spot site risks\nfrom a photo",
+          "en-US": "Spot workplace hazards\nfrom a photo",
+          "en-AU": "Spot workplace hazards\nfrom a photo",
+          "en-CA": "Spot workplace hazards\nfrom a photo"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/01.png"
+      },
+      {
+        "id": "riskdetected_clear_findings",
+        "layout": "device-bottom",
+        "label": {
+          "en-GB": "CLEAR FINDINGS",
+          "en-US": "CLEAR FINDINGS",
+          "en-AU": "CLEAR FINDINGS",
+          "en-CA": "CLEAR FINDINGS"
+        },
+        "headline": {
+          "en-GB": "Turn evidence into\nclear findings",
+          "en-US": "Turn evidence into\nclear findings",
+          "en-AU": "Turn evidence into\nclear findings",
+          "en-CA": "Turn evidence into\nclear findings"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/02.png"
+      },
+      {
+        "id": "riskdetected_risk_prioritisation",
+        "layout": "device-bottom",
+        "label": {
+          "en-GB": "RISK PRIORITISATION",
+          "en-US": "RISK PRIORITIZATION",
+          "en-AU": "RISK PRIORITISATION",
+          "en-CA": "RISK PRIORITIZATION"
+        },
+        "headline": {
+          "en-GB": "Prioritise risk with\nFine-Kinney or 5×5",
+          "en-US": "Prioritize risk with\nFine-Kinney or 5×5",
+          "en-AU": "Prioritise risk with\nFine-Kinney or 5×5",
+          "en-CA": "Prioritize risk with\nFine-Kinney or 5×5"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/03.png"
+      },
+      {
+        "id": "riskdetected_professional_reports",
+        "layout": "device-bottom",
+        "label": {
+          "en-GB": "PROFESSIONAL REPORTS",
+          "en-US": "PROFESSIONAL REPORTS",
+          "en-AU": "PROFESSIONAL REPORTS",
+          "en-CA": "PROFESSIONAL REPORTS"
+        },
+        "headline": {
+          "en-GB": "Create professional\nPDF & Excel reports",
+          "en-US": "Create professional\nPDF & Excel reports",
+          "en-AU": "Create professional\nPDF & Excel reports",
+          "en-CA": "Create professional\nPDF & Excel reports"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/04.png"
+      },
+      {
+        "id": "riskdetected_local_terminology",
+        "layout": "device-bottom",
+        "label": {
+          "en-GB": "UK TERMINOLOGY",
+          "en-US": "US JHA TERMINOLOGY",
+          "en-AU": "AUSTRALIAN WHS",
+          "en-CA": "CANADIAN OHS"
+        },
+        "headline": {
+          "en-GB": "Use terminology\nsuited to UK practice",
+          "en-US": "Use US job hazard\nanalysis terminology",
+          "en-AU": "Work with Australian\nWHS terminology",
+          "en-CA": "Work with Canadian\nOHS terminology"
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/05.png"
+      }
+    ],
+    "android": [],
+    "ipad": [],
+    "android-7": [],
+    "android-10": [],
+    "feature-graphic": []
+  }
+}

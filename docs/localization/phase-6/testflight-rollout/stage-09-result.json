@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "stage": 9,
+  "stage_key": "external_testflight_review_candidate",
+  "contract_issues": [],
+  "metric_issues": [],
+  "insufficient_samples": [],
+  "threshold_violations": [],
+  "rates": {
+    "analysis_failure_rate": null,
+    "wrong_language_rate": null,
+    "language_repair_rate": null,
+    "report_failure_rate": null,
+    "notification_template_miss_rate": null,
+    "queue_retry_rate": null
+  },
+  "applied_waivers": [],
+  "integrity_status": "passed",
+  "snapshot_sha256": "af549f936eb51aad5f0d7e941fa9247b19dcce285f9407d4300da8cb418bbfb7",
+  "effective_status": "passed"
+}

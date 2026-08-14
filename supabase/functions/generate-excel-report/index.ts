@@ -10,9 +10,23 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import JSZip from "npm:jszip@3.10.1";
 import XLSX from "npm:xlsx-js-style@1.2.0";
+import {
+  analysisSectorLabel,
+  normalizeAnalysisSector,
+} from "../analyze/sector-context.ts";
+import {
+  englishDueTerm,
+  englishRiskBand,
+  nonTRReportTemplateLeak,
+  reportDate,
+  type ReportLocalizationContext,
+  reportNumber,
+  resolveReportLocalization,
+} from "../_shared/report-localization.ts";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const BUSINESS_TIME_ZONE = "Europe/Istanbul";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +39,19 @@ type RequestBody = {
   analysis_id?: string;
   method?: "fine_kinney" | "matrix_5x5";
   report_kind?: "risk_analysis" | "standard";
+  report_language?: "tr" | "en";
   company_id?: string | null;
+  company_name_override?: string | null;
+  company_info_override?: string | null;
+  prepared_by_override?: string | null;
+  prepared_title_override?: string | null;
+  certificate_number_override?: string | null;
+  company_logo_base64?: string | null;
+  client_app_version?: string;
+  client_app_build?: string;
+  client_platform?: string;
+  api_contract_version?: number;
+  client_capabilities?: Record<string, unknown>;
   request_id?: string;
   support_id?: string;
 };
@@ -46,6 +72,14 @@ type AnalysisRow = Record<string, unknown> & {
   finding_count?: number | null;
   created_at?: string | null;
   completed_at?: string | null;
+  analysis_sector?: string | null;
+  output_language?: string | null;
+  output_locale?: string | null;
+  work_jurisdiction_country?: string | null;
+  safety_profile_id?: string | null;
+  safety_profile_version?: number | null;
+  regulatory_reference_policy?: string | null;
+  localization_snapshot?: Record<string, unknown> | null;
 };
 
 type FindingRow = Record<string, unknown> & {
@@ -54,8 +88,10 @@ type FindingRow = Record<string, unknown> & {
   category?: string | null;
   description?: string | null;
   recommended_action?: string | null;
+  recommended_measures?: unknown;
   references_text?: string | null;
   root_cause_text?: string | null;
+  needs_field_verification?: boolean | null;
   confidence?: number | null;
   fk_probability?: number | null;
   fk_frequency?: number | null;
@@ -76,6 +112,7 @@ type ProfileRow = Record<string, unknown> & {
   certificate_number?: string | null;
   company_name?: string | null;
   company_logo_url?: string | null;
+  company_info?: string | null;
   phone?: string | null;
 };
 
@@ -89,6 +126,11 @@ type CompanyRow = {
   name: string;
   hazard_class: CompanyHazardClass;
   logo_path?: string | null;
+  address?: string | null;
+  contact_person?: string | null;
+  department?: string | null;
+  default_responsible?: string | null;
+  default_due_days?: number | null;
   is_archived?: boolean | null;
 };
 
@@ -97,6 +139,11 @@ type CompanySnapshot = {
   name: string;
   hazard_class: CompanyHazardClass;
   logo_path: string | null;
+  address: string | null;
+  contact_person: string | null;
+  department: string | null;
+  default_responsible: string | null;
+  default_due_days: number | null;
 };
 
 const palette = {
@@ -181,7 +228,7 @@ function monthlyReportLimit(tier: PlanTier): number | null {
 
 function istanbulMonthStartISO(): string {
   const day = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Istanbul",
+    timeZone: BUSINESS_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
   }).format(new Date());
@@ -266,8 +313,7 @@ async function sendReportReadyPush(params: {
       body: JSON.stringify({
         user_id: params.userID,
         kind: "report_ready",
-        title: "Rapor Hazır",
-        body: "Risk raporun oluşturuldu, raporlar bölümünden inceleyebilirsin.",
+        event_key: "report_ready",
         data: {
           report_id: params.reportID,
           analysis_id: params.analysisID,
@@ -295,6 +341,24 @@ async function sendReportReadyPush(params: {
     );
     return;
   }
+  let pushResult: { status?: string } = {};
+  try {
+    pushResult = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    pushResult = {};
+  }
+  if (pushResult.status !== "sent") {
+    console.warn(
+      "Report ready push not sent",
+      JSON.stringify({
+        request_id: params.requestID,
+        support_id: params.supportID,
+        report_id: params.reportID,
+        body: safeLogText(responseText),
+      }),
+    );
+    return;
+  }
 
   await params.supabase
     .from("reports")
@@ -309,10 +373,152 @@ function safeText(value: unknown, fallback = ""): string {
   return String(value);
 }
 
+function bool(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function positiveInt(value: unknown, fallback: number): number {
+  const parsed = Math.round(Number(value));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function optionalPositiveInt(value: unknown): number | null {
+  const parsed = Math.round(Number(value));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function stringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? "").trim()).filter(Boolean);
+}
+
+function reportSnapshotV2GateOpen(
+  value: Record<string, unknown>,
+  body: RequestBody,
+): boolean {
+  if (bool(value.kill_switch, false)) return false;
+  const platform = safeText(body.client_platform, "unknown").trim()
+    .toLowerCase();
+  const build = safeText(body.client_app_build, "").trim();
+  const buildNumber = optionalPositiveInt(build);
+  const contractVersion = positiveInt(body.api_contract_version, 1);
+  const capabilities = body.client_capabilities &&
+      typeof body.client_capabilities === "object"
+    ? body.client_capabilities
+    : {};
+  if (
+    (platform !== "ios" && platform !== "android") ||
+    contractVersion < 2 ||
+    !build
+  ) return false;
+  if (capabilities.report_snapshot_v2 !== true) return false;
+
+  const mode = safeText(value.rollout_mode, "off").trim().toLowerCase();
+  if (mode === "all") return true;
+  if (mode === "build_allowlist") {
+    const allowed = stringArray(
+      platform === "android"
+        ? value.enabled_android_builds
+        : value.enabled_ios_builds,
+    );
+    if (allowed.includes(build)) return true;
+    return buildNumber != null &&
+      allowed
+        .map((item) => optionalPositiveInt(item))
+        .some((item) => item === buildNumber);
+  }
+  if (mode === "min_build") {
+    const minimum = optionalPositiveInt(
+      platform === "android" ? value.min_android_build : value.min_ios_build,
+    );
+    return buildNumber != null && minimum != null && buildNumber >= minimum;
+  }
+  return false;
+}
+
+async function reportSnapshotV2Enabled(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  body: RequestBody,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("app_feature_flags")
+    .select("value")
+    .eq("key", "multi_photo_analysis")
+    .maybeSingle();
+  if (error) return false;
+  const value = data?.value as Record<string, unknown> | undefined;
+  if (!value || !reportSnapshotV2GateOpen(value, body)) return false;
+  const features = value.features && typeof value.features === "object"
+    ? value.features as Record<string, unknown>
+    : {};
+  return bool(
+    features.report_snapshot_v2,
+    bool(value.enable_report_snapshot_v2, false),
+  );
+}
+
+function displayFindingTitle(title: unknown): string {
+  const original = safeText(title);
+  const qualifiers = [
+    /\(sahada doğrulanmalı\)/giu,
+    /\(sahada dogrulanmali\)/giu,
+    /\(sahada doğrulanmalıdır\)/giu,
+    /\(sahada dogrulanmalidir\)/giu,
+    /sahada doğrulanmalı/giu,
+    /sahada dogrulanmali/giu,
+    /sahada doğrulanmalıdır/giu,
+    /sahada dogrulanmalidir/giu,
+  ];
+
+  let cleaned = original;
+  for (const qualifier of qualifiers) {
+    cleaned = cleaned.replace(qualifier, "");
+  }
+  cleaned = cleaned
+    .replace(/\s{2,}/gu, " ")
+    .replace(/ \(\)/gu, "")
+    .trim()
+    .replace(/[-–—·,;:\s]+$/u, "");
+
+  return cleaned || original;
+}
+
 function actionWithRootCause(finding: FindingRow): string {
   const rootCause = safeText(finding.root_cause_text).trim();
-  const action = safeText(finding.recommended_action);
-  return rootCause ? `${action}\n\nKök neden: ${rootCause}` : action;
+  const measures = controlMeasuresText(finding);
+  return rootCause ? `${measures}\n\nKök neden: ${rootCause}` : measures;
+}
+
+function controlMeasuresText(finding: FindingRow): string {
+  const rawMeasures = Array.isArray(finding.recommended_measures)
+    ? finding.recommended_measures
+    : [];
+  const measures = rawMeasures
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const kind = safeText(record.kind);
+      const title = controlMeasureTitle(kind, record.title);
+      const text = safeText(record.text).trim();
+      return text ? { title, text } : null;
+    })
+    .filter((item): item is { title: string; text: string } => item !== null);
+
+  if (measures.length === 0) {
+    const fallback = safeText(finding.recommended_action).trim();
+    return fallback ? `Düzeltici Önlem: ${fallback}` : "";
+  }
+
+  return measures
+    .map((measure) => `${measure.title}: ${measure.text}`)
+    .join("\n");
+}
+
+function controlMeasureTitle(kind: string, title: unknown): string {
+  if (kind === "preventive") return "Önleyici Kontrol";
+  if (kind === "corrective") return "Düzeltici Önlem";
+  return safeText(title, "Kontrol Tedbiri");
 }
 
 function safeNumber(value: unknown, fallback = 0): number {
@@ -327,7 +533,7 @@ function formatDate(raw: unknown): string {
   return new Intl.DateTimeFormat("tr-TR", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "Europe/Istanbul",
+    timeZone: BUSINESS_TIME_ZONE,
   }).format(date);
 }
 
@@ -380,6 +586,11 @@ function companySnapshot(company: CompanyRow | null): CompanySnapshot | null {
     name: company.name,
     hazard_class: company.hazard_class,
     logo_path: company.logo_path ?? null,
+    address: company.address ?? null,
+    contact_person: company.contact_person ?? null,
+    department: company.department ?? null,
+    default_responsible: company.default_responsible ?? null,
+    default_due_days: company.default_due_days ?? null,
   };
 }
 
@@ -388,11 +599,27 @@ function profileWithCompany(
   company: CompanyRow | null,
 ): ProfileRow | null {
   if (!company) return profile;
+  const companyInfo = [
+    hazardClassLabel(company.hazard_class),
+    safeText(company.address),
+    safeText(company.contact_person)
+      ? `İrtibat: ${safeText(company.contact_person)}`
+      : "",
+    safeText(company.department)
+      ? `Birim: ${safeText(company.department)}`
+      : "",
+    safeText(company.default_responsible)
+      ? `Sorumlu: ${safeText(company.default_responsible)}`
+      : "",
+    typeof company.default_due_days === "number"
+      ? `Varsayılan termin: ${company.default_due_days} gün`
+      : "",
+  ].filter((value) => value.length > 0).join(" · ");
   return {
     ...(profile ?? {}),
     company_name: company.name,
-    company_logo_url: company.logo_path ?? null,
-    phone: hazardClassLabel(company.hazard_class),
+    company_logo_url: company.logo_path ?? profile?.company_logo_url ?? null,
+    company_info: companyInfo,
   };
 }
 
@@ -421,6 +648,11 @@ function bandStyle(value: unknown) {
     default:
       return { fg: palette.unknown, bg: palette.unknownSoft };
   }
+}
+
+function analysisSectorLabelFromRow(analysis: AnalysisRow): string {
+  const sector = normalizeAnalysisSector(analysis.analysis_sector);
+  return sector ? analysisSectorLabel(sector, "tr") : "Belirtilmedi";
 }
 
 function canvasLabel(value: unknown): string {
@@ -526,12 +758,29 @@ function logoPathFromProfile(value: unknown): string {
   }
 }
 
+function isOwnedLogoPath(path: string, userID: string): boolean {
+  const normalizedPath = path.replace(/^\/+/, "").toLowerCase();
+  const ownerPrefix = `${userID.toLowerCase()}/`;
+  if (!normalizedPath.startsWith(ownerPrefix)) return false;
+  return normalizedPath === `${ownerPrefix}profile-logo.jpg` ||
+    /^([0-9a-f-]+)\/companies\/([0-9a-f-]+)\/logo\.jpg$/i.test(
+      normalizedPath,
+    );
+}
+
 async function loadCompanyLogo(
   supabase: any,
   profile: ProfileRow | null,
+  userID: string,
 ): Promise<{ bytes: Uint8Array; extension: "jpg" | "png" } | null> {
   const path = logoPathFromProfile(profile?.company_logo_url);
   if (!path) return null;
+  if (!isOwnedLogoPath(path, userID)) {
+    console.warn(
+      "Company logo skipped because path is outside current user prefix",
+    );
+    return null;
+  }
 
   const { data, error } = await supabase.storage.from("logos").download(path);
   if (error || !data) {
@@ -551,6 +800,30 @@ async function loadCompanyLogo(
     bytes: new Uint8Array(await data.arrayBuffer()),
     extension,
   };
+}
+
+function inlineCompanyLogo(
+  value: unknown,
+): { bytes: Uint8Array; extension: "jpg" | "png" } | null {
+  if (
+    typeof value !== "string" || value.length === 0 || value.length > 4_000_000
+  ) return null;
+  try {
+    const binary = atob(value);
+    if (binary.length === 0 || binary.length > 3_000_000) return null;
+    const bytes = Uint8Array.from(
+      binary,
+      (character) => character.charCodeAt(0),
+    );
+    const png = bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 &&
+      bytes[2] === 0x4e && bytes[3] === 0x47;
+    const jpeg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 &&
+      bytes[2] === 0xff;
+    if (!png && !jpeg) return null;
+    return { bytes, extension: png ? "png" : "jpg" };
+  } catch {
+    return null;
+  }
 }
 
 function appendXmlRelationship(
@@ -769,26 +1042,30 @@ const styles = {
       name: "Aptos Display",
       sz: 24,
       bold: true,
-      color: { rgb: palette.white },
+      color: { rgb: palette.greenDark },
     },
-    fill: { fgColor: { rgb: palette.ink } },
+    fill: { fgColor: { rgb: palette.greenSoft } },
     alignment: { horizontal: "left", vertical: "center" },
   },
   subtitle: {
     font: { name: "Aptos", sz: 12, color: { rgb: palette.slate } },
-    fill: { fgColor: { rgb: palette.ink } },
+    fill: { fgColor: { rgb: palette.greenSoft } },
     alignment: { horizontal: "left", vertical: "center" },
   },
   label: {
     font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.slate } },
+    fill: { fgColor: { rgb: palette.fog } },
     alignment: { horizontal: "left", vertical: "top", wrapText: true },
+    border: borderThin,
   },
   value: {
     font: { name: "Aptos", sz: 11, color: { rgb: palette.charcoal } },
+    fill: { fgColor: { rgb: palette.white } },
     alignment: { horizontal: "left", vertical: "top", wrapText: true },
+    border: borderThin,
   },
   kpiLabel: {
-    font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.slate } },
+    font: { name: "Aptos", sz: 9, bold: true, color: { rgb: palette.slate } },
     fill: { fgColor: { rgb: palette.fog } },
     alignment: { horizontal: "center", vertical: "center", wrapText: true },
     border: borderThin,
@@ -796,7 +1073,7 @@ const styles = {
   kpiValue: {
     font: {
       name: "Aptos Display",
-      sz: 20,
+      sz: 16,
       bold: true,
       color: { rgb: palette.ink },
     },
@@ -805,23 +1082,31 @@ const styles = {
     border: borderThin,
   },
   tableHeader: {
-    font: { name: "Aptos", sz: 10, bold: true, color: { rgb: palette.white } },
-    fill: { fgColor: { rgb: palette.ink } },
+    font: {
+      name: "Aptos",
+      sz: 10,
+      bold: true,
+      color: { rgb: palette.greenDark },
+    },
+    fill: { fgColor: { rgb: palette.tableBlue } },
     alignment: { horizontal: "center", vertical: "center", wrapText: true },
     border: borderThin,
   },
   tableCell: {
     font: { name: "Aptos", sz: 10, color: { rgb: palette.charcoal } },
+    fill: { fgColor: { rgb: palette.white } },
     alignment: { horizontal: "left", vertical: "top", wrapText: true },
     border: borderThin,
   },
   tableNumber: {
     font: { name: "Aptos", sz: 10, color: { rgb: palette.charcoal } },
+    fill: { fgColor: { rgb: palette.white } },
     alignment: { horizontal: "center", vertical: "top", wrapText: true },
     border: borderThin,
   },
   referenceTitle: {
     font: { name: "Aptos", sz: 13, bold: true, color: { rgb: palette.ink } },
+    fill: { fgColor: { rgb: palette.greenSoft } },
     alignment: { horizontal: "center", vertical: "center", wrapText: true },
   },
   referenceHeader: {
@@ -871,6 +1156,46 @@ function setStyle(
       ensureCell(sheet, address).s = style;
     }
   }
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function estimatedLineCount(value: unknown, widthChars: number): number {
+  const text = safeText(value).trim();
+  if (!text) return 1;
+  const usableWidth = Math.max(8, Math.floor(widthChars * 0.92));
+  return text.split(/\r?\n/u).reduce((sum, line) => {
+    const length = Math.max(1, line.trim().length);
+    return sum + Math.max(1, Math.ceil(length / usableWidth));
+  }, 0);
+}
+
+function estimatedRowHeight(
+  cells: Array<{ value: unknown; width: number }>,
+  options: {
+    min?: number;
+    max?: number;
+    base?: number;
+    lineHeight?: number;
+  } = {},
+): number {
+  const maxLines = cells.reduce(
+    (max, cell) => Math.max(max, estimatedLineCount(cell.value, cell.width)),
+    1,
+  );
+  const base = options.base ?? 8;
+  const lineHeight = options.lineHeight ?? 14;
+  return clampNumber(
+    base + maxLines * lineHeight,
+    options.min ?? 24,
+    options.max ?? 220,
+  );
+}
+
+function totalColumnWidth(widths: number[]): number {
+  return widths.reduce((sum, width) => sum + width, 0);
 }
 
 function methodBand(finding: FindingRow, method: string): RiskBand {
@@ -950,6 +1275,380 @@ function applyReferenceTableStyle(
   });
 }
 
+function englishCanvasLabel(value: unknown): string {
+  switch (safeText(value)) {
+    case "general":
+      return "General";
+    case "ppe":
+      return "Personal protective equipment";
+    case "machine":
+      return "Machinery";
+    case "warning_signs":
+      return "Safety signs";
+    case "electrical":
+      return "Electrical safety";
+    case "sector":
+      return "Sector-specific";
+    case "fire":
+      return "Fire safety";
+    case "ergonomics":
+      return "Ergonomics";
+    case "environment_measurement":
+      return "Work environment";
+    case "explosion":
+      return "Explosion hazards";
+    case "environment":
+      return "Environmental conditions";
+    case "working_at_height":
+      return "Work at height";
+    case "mobile_equipment":
+      return "Mobile equipment";
+    case "general_premium":
+      return "General";
+    case "construction_machinery":
+      return "Construction machinery";
+    case "legislation":
+      return "Unavailable for this safety profile";
+    default:
+      return safeText(value, "General");
+  }
+}
+
+function englishSectorLabel(analysis: AnalysisRow): string {
+  const sector = normalizeAnalysisSector(analysis.analysis_sector);
+  return sector ? analysisSectorLabel(sector, "en") : "Not specified";
+}
+
+function englishMethodLabel(method: string): string {
+  return method === "matrix_5x5" ? "5×5 matrix" : "Fine-Kinney";
+}
+
+function englishControlMeasuresText(finding: FindingRow): string {
+  const rawMeasures = Array.isArray(finding.recommended_measures)
+    ? finding.recommended_measures
+    : [];
+  const measures = rawMeasures
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const kind = safeText(record.kind);
+      const title = kind === "preventive"
+        ? "Preventive control"
+        : kind === "corrective"
+        ? "Corrective action"
+        : safeText(record.title, "Control measure");
+      const text = safeText(record.text).trim();
+      return text ? `${title}: ${text}` : null;
+    })
+    .filter((item): item is string => item !== null);
+  if (measures.length > 0) return measures.join("\n");
+  return safeText(finding.recommended_action);
+}
+
+function englishActionWithRootCause(finding: FindingRow): string {
+  const measures = englishControlMeasuresText(finding);
+  const rootCause = safeText(finding.root_cause_text);
+  return rootCause ? `${measures}\n\nRoot cause: ${rootCause}` : measures;
+}
+
+function assertNoNonTRWorkbookTemplateLeak(workbook: XLSX.WorkBook) {
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const range = sheet?.["!ref"];
+    if (!sheet || !range) continue;
+    const decoded = XLSX.utils.decode_range(range);
+    for (let row = decoded.s.r; row <= decoded.e.r; row++) {
+      for (let col = decoded.s.c; col <= decoded.e.c; col++) {
+        const cell = sheet[XLSX.utils.encode_cell({ r: row, c: col })];
+        const leak = nonTRReportTemplateLeak(cell?.v);
+        if (leak) {
+          throw new Error(`NON_TR_REPORT_TEMPLATE_LEAK:${leak}:${sheetName}`);
+        }
+      }
+    }
+  }
+}
+
+export function makeEnglishWorkbook(
+  analysis: AnalysisRow,
+  findings: FindingRow[],
+  profile: ProfileRow | null,
+  method: string,
+  requestID: string,
+  supportID: string,
+  documentNo: string,
+  localization: ReportLocalizationContext,
+): XLSX.WorkBook {
+  const workbook = XLSX.utils.book_new();
+  workbook.Props = {
+    Title: "RiskDetected risk assessment",
+    Subject: "Workplace-safety risk assessment report",
+    Author: "RiskDetected",
+    Company: "RiskDetected",
+  };
+
+  const preparedBy = safeText(
+    profile?.display_name ?? profile?.full_name,
+    "Not specified",
+  );
+  const companyName = safeText(profile?.company_name, "Not specified");
+  const counts = riskCounts(findings, method);
+  const highestBand = method === "matrix_5x5"
+    ? analysis.highest_band_m5
+    : analysis.highest_band_fk;
+  const disclaimer =
+    "This report supports workplace-safety review and risk prioritisation. It does not determine legal compliance and does not replace a competent person’s site assessment.";
+  const summaryRows: unknown[][] = [
+    ["RiskDetected", "", "", "", "", "", "", ""],
+    ["Workplace-safety risk assessment", "", "", "", "", "", "", ""],
+    [],
+    [
+      "Analysis",
+      safeText(analysis.title, "Untitled analysis"),
+      "",
+      "Company",
+      companyName,
+      "",
+      "Document no.",
+      documentNo,
+    ],
+    [
+      "Scope",
+      englishSectorLabel(analysis),
+      "",
+      "Prepared by",
+      preparedBy,
+      "",
+      "Created",
+      reportDate(analysis.created_at, localization.locale),
+    ],
+    [
+      "Focus",
+      englishCanvasLabel(analysis.canvas),
+      "",
+      "Method",
+      englishMethodLabel(method),
+      "",
+      "Generated",
+      reportDate(new Date().toISOString(), localization.locale),
+    ],
+    [],
+    [
+      "TOTAL FINDINGS",
+      "",
+      "HIGHEST RISK",
+      "",
+      "METHOD",
+      "",
+      "TOTAL SCORE",
+      "",
+    ],
+    [
+      reportNumber(findings.length, localization.locale, 0),
+      "",
+      englishRiskBand(highestBand),
+      "",
+      englishMethodLabel(method),
+      "",
+      reportNumber(
+        methodTotalScore(analysis, method),
+        localization.locale,
+      ),
+      "",
+    ],
+    [],
+    ["Risk level", "Count", "Share", "", "", "", "", ""],
+    ...(["critical", "high", "medium", "low", "unknown"] as RiskBand[]).map(
+      (band) => [
+        englishRiskBand(band),
+        counts[band],
+        findings.length > 0
+          ? `${Math.round((counts[band] / findings.length) * 100)}%`
+          : "0%",
+        "",
+        "",
+        "",
+        "",
+        "",
+      ],
+    ),
+    [],
+    ["Analysis summary", "", "", "", "", "", "", ""],
+    [
+      safeText(analysis.ai_summary, "No summary available."),
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [],
+    ["Important notice", "", "", "", "", "", "", ""],
+    [disclaimer, "", "", "", "", "", "", ""],
+  ];
+  const summary = appendSheet(workbook, "Summary", summaryRows);
+  setCols(summary, [18, 28, 4, 18, 28, 4, 18, 28]);
+  addMerges(summary, [
+    "A1:H1",
+    "A2:H2",
+    "A8:B8",
+    "C8:D8",
+    "E8:F8",
+    "G8:H8",
+    "A9:B9",
+    "C9:D9",
+    "E9:F9",
+    "G9:H9",
+    "D11:H11",
+    "D12:H12",
+    "D13:H13",
+    "D14:H14",
+    "D15:H15",
+    "A17:H17",
+    "A18:H18",
+    "A20:H20",
+    "A21:H21",
+  ]);
+  setStyle(summary, "A1:H1", styles.title);
+  setStyle(summary, "A2:H2", styles.subtitle);
+  setStyle(summary, "A4:H6", styles.tableCell);
+  setStyle(summary, "A4:A6", styles.label);
+  setStyle(summary, "D4:D6", styles.label);
+  setStyle(summary, "G4:G6", styles.label);
+  setStyle(summary, "A8:H8", styles.kpiLabel);
+  setStyle(summary, "A9:H9", styles.kpiValue);
+  setStyle(summary, "A11:H11", styles.tableHeader);
+  setStyle(summary, "A12:H15", styles.tableCell);
+  setStyle(summary, "A17:H17", styles.tableHeader);
+  setStyle(summary, "A18:H18", styles.value);
+  setStyle(summary, "A20:H20", styles.tableHeader);
+  setStyle(summary, "A21:H21", styles.value);
+  setRows(summary, [
+    32,
+    24,
+    8,
+    26,
+    26,
+    26,
+    10,
+    32,
+    28,
+    10,
+    26,
+    24,
+    24,
+    24,
+    24,
+    10,
+    28,
+    72,
+    10,
+    28,
+    72,
+  ]);
+
+  const metricHeaders = method === "matrix_5x5"
+    ? ["Likelihood", "Severity", "Score", "Risk level"]
+    : ["Likelihood", "Frequency", "Severity", "Score", "Risk level"];
+  const metricValues = (finding: FindingRow) =>
+    method === "matrix_5x5"
+      ? [
+        safeNumber(finding.m5_probability),
+        safeNumber(finding.m5_severity),
+        safeNumber(finding.m5_score),
+        englishRiskBand(finding.m5_band),
+      ]
+      : [
+        safeNumber(finding.fk_probability),
+        safeNumber(finding.fk_frequency),
+        safeNumber(finding.fk_severity),
+        safeNumber(finding.fk_score),
+        englishRiskBand(finding.fk_band),
+      ];
+  const headers = [
+    "No.",
+    "Hazard or unsafe condition",
+    "Category",
+    "Observed evidence",
+    ...metricHeaders,
+    "Recommended controls",
+    "Root cause",
+    "Target time",
+    "Status",
+  ];
+  const rows: unknown[][] = [
+    headers,
+    ...findings.map((finding, index) => [
+      finding.ordinal ?? index + 1,
+      displayFindingTitle(finding.title),
+      safeText(finding.category),
+      safeText(finding.description),
+      ...metricValues(finding),
+      englishControlMeasuresText(finding),
+      safeText(finding.root_cause_text),
+      englishDueTerm(methodBand(finding, method)),
+      "Open",
+    ]),
+  ];
+  const findingsSheet = appendSheet(workbook, "Risk register", rows);
+  const widths = method === "matrix_5x5"
+    ? [7, 32, 20, 62, 12, 12, 12, 16, 72, 42, 18, 14]
+    : [7, 32, 20, 62, 12, 12, 12, 12, 16, 72, 42, 18, 14];
+  setCols(findingsSheet, widths);
+  setRows(findingsSheet, [
+    42,
+    ...findings.map((finding) =>
+      estimatedRowHeight(
+        [
+          { value: finding.title, width: widths[1] },
+          { value: finding.description, width: widths[3] },
+          { value: englishActionWithRootCause(finding), width: 72 },
+        ],
+        { min: 72, max: 260, base: 10, lineHeight: 14 },
+      )
+    ),
+  ]);
+  const lastColumn = XLSX.utils.encode_col(headers.length - 1);
+  findingsSheet["!autofilter"] = {
+    ref: `A1:${lastColumn}${Math.max(1, rows.length)}`,
+  };
+  findingsSheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+  setStyle(findingsSheet, `A1:${lastColumn}1`, styles.tableHeader);
+  for (let index = 0; index < findings.length; index++) {
+    const row = index + 2;
+    const rowFill = index % 2 === 0 ? palette.white : palette.fog;
+    setStyle(findingsSheet, `A${row}:${lastColumn}${row}`, {
+      ...styles.tableCell,
+      fill: { fgColor: { rgb: rowFill } },
+    });
+    setStyle(findingsSheet, `A${row}:A${row}`, styles.tableNumber);
+  }
+
+  const auditRows = [
+    ["Field", "Value"],
+    ["Analysis ID", analysis.id],
+    ["Document no.", documentNo],
+    ["Report language", localization.language],
+    ["Report locale", localization.locale],
+    ["Safety profile", localization.safetyProfileID],
+    ["Safety profile version", localization.safetyProfileVersion],
+    ["Regulatory sections", "Disabled"],
+    ["Request ID", requestID],
+    ["Support code", supportID],
+    ["Notice", disclaimer],
+  ];
+  const audit = appendSheet(workbook, "Report information", auditRows);
+  setCols(audit, [26, 88]);
+  setStyle(audit, "A1:B1", styles.tableHeader);
+  setStyle(audit, "A2:B11", styles.tableCell);
+  setStyle(audit, "A2:A11", styles.label);
+
+  assertNoNonTRWorkbookTemplateLeak(workbook);
+  return workbook;
+}
+
 function appendMethodReferenceSheet(
   workbook: XLSX.WorkBook,
   analysis: AnalysisRow,
@@ -972,7 +1671,7 @@ function appendFineKinneyReferenceSheet(
 ) {
   const preparedBy = profile?.display_name ?? profile?.full_name ?? "Kullanıcı";
   const companyName = profile?.company_name ?? "Firma belirtilmedi";
-  const companyInfo = safeText(profile?.phone);
+  const companyInfo = safeText(profile?.company_info, safeText(profile?.phone));
   const preparedTitle = safeText(profile?.title, "Belirtilmedi");
   const certificateNumber = safeText(
     profile?.certificate_number,
@@ -1289,6 +1988,22 @@ function appendFineKinneyReferenceSheet(
       "",
       "",
     ],
+    [
+      `Analiz kapsamı: ${analysisSectorLabelFromRow(analysis)}`,
+      "",
+      "",
+      "",
+      "",
+      `Analiz odağı: ${canvasLabel(analysis.canvas)}`,
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
   ]);
   setCols(sheet, [12, 18, 18, 18, 4, 12, 18, 18, 18, 4, 12, 18, 18, 18]);
   setRows(sheet, [
@@ -1406,7 +2121,7 @@ function appendMatrixReferenceSheet(
 ) {
   const preparedBy = profile?.display_name ?? profile?.full_name ?? "Kullanıcı";
   const companyName = profile?.company_name ?? "Firma belirtilmedi";
-  const companyInfo = safeText(profile?.phone);
+  const companyInfo = safeText(profile?.company_info, safeText(profile?.phone));
   const preparedTitle = safeText(profile?.title, "Belirtilmedi");
   const certificateNumber = safeText(
     profile?.certificate_number,
@@ -1806,7 +2521,7 @@ function makeWorkbook(
   const companyName = profile?.company_name ?? "";
   const preparedTitle = safeText(profile?.title);
   const certificateNumber = safeText(profile?.certificate_number);
-  const companyInfo = safeText(profile?.phone);
+  const companyInfo = safeText(profile?.company_info, safeText(profile?.phone));
   const highestBand = method === "matrix_5x5"
     ? analysis.highest_band_m5
     : analysis.highest_band_fk;
@@ -1815,6 +2530,8 @@ function makeWorkbook(
   const createdDate = formatDate(analysis.created_at);
   const completedDate = formatDate(analysis.completed_at);
   const generatedDate = formatDate(new Date().toISOString());
+  const summaryAIText = safeText(analysis.ai_summary, "Özet bulunamadı.");
+  const summaryColumnWidths = [18, 24, 4, 18, 24, 4, 18, 26];
   const riskOrder: RiskBand[] = [
     "critical",
     "high",
@@ -1858,6 +2575,16 @@ function makeWorkbook(
       methodLabel(method),
     ],
     [
+      "Analiz kapsamı",
+      analysisSectorLabelFromRow(analysis),
+      "",
+      "Analiz odağı",
+      canvasLabel(analysis.canvas),
+      "",
+      "",
+      "",
+    ],
+    [
       "Başlangıç",
       createdDate,
       "",
@@ -1870,22 +2597,42 @@ function makeWorkbook(
     [],
     [
       "TOPLAM BULGU",
+      "",
       "EN YÜKSEK RİSK",
+      "",
       "METOT",
+      "",
       "TOPLAM SKOR",
-      "KRİTİK",
-      "YÜKSEK",
-      "ORTA/DÜŞÜK",
       "",
     ],
     [
       totalFindings,
+      "",
       bandLabel(highestBand),
+      "",
       methodLabel(method),
+      "",
       methodTotalScore(analysis, method),
+      "",
+    ],
+    [
+      "KRİTİK",
+      "",
+      "YÜKSEK",
+      "",
+      "ORTA",
+      "",
+      "DÜŞÜK",
+      "",
+    ],
+    [
       counts.critical,
+      "",
       counts.high,
-      `${counts.medium}/${counts.low}`,
+      "",
+      counts.medium,
+      "",
+      counts.low,
       "",
     ],
     [],
@@ -1909,7 +2656,7 @@ function makeWorkbook(
     [],
     ["AI Özeti", "", "", "", "", "", "", ""],
     [
-      safeText(analysis.ai_summary, "Özet bulunamadı."),
+      summaryAIText,
       "",
       "",
       "",
@@ -1919,7 +2666,7 @@ function makeWorkbook(
       "",
     ],
   ]);
-  setCols(summary, [18, 28, 4, 18, 24, 4, 16, 24]);
+  setCols(summary, summaryColumnWidths);
   setRows(summary, [
     32,
     24,
@@ -1928,35 +2675,73 @@ function makeWorkbook(
     24,
     24,
     24,
-    8,
+    24,
+    12,
+    34,
+    26,
+    32,
+    26,
+    10,
+    26,
+    24,
+    24,
+    24,
+    24,
+    24,
+    10,
     28,
-    42,
-    8,
-    24,
-    24,
-    24,
-    24,
-    24,
-    24,
-    8,
-    70,
-    70,
+    estimatedRowHeight(
+      [{ value: summaryAIText, width: totalColumnWidth(summaryColumnWidths) }],
+      { min: 64, max: 180, base: 8, lineHeight: 15 },
+    ),
   ]);
-  addMerges(summary, ["A1:H1", "A2:H2", "D12:H12", "A19:H19", "A20:H20"]);
+  addMerges(summary, [
+    "A1:H1",
+    "A2:H2",
+    "A10:B10",
+    "C10:D10",
+    "E10:F10",
+    "G10:H10",
+    "A11:B11",
+    "C11:D11",
+    "E11:F11",
+    "G11:H11",
+    "A12:B12",
+    "C12:D12",
+    "E12:F12",
+    "G12:H12",
+    "A13:B13",
+    "C13:D13",
+    "E13:F13",
+    "G13:H13",
+    "D15:H15",
+    "D16:H16",
+    "D17:H17",
+    "D18:H18",
+    "D19:H19",
+    "D20:H20",
+    "A22:H22",
+    "A23:H23",
+  ]);
   setStyle(summary, "A1:H1", styles.title);
   setStyle(summary, "A2:H2", styles.subtitle);
-  setStyle(summary, "A4:H7", styles.tableCell);
-  setStyle(summary, "A9:H9", styles.kpiLabel);
-  setStyle(summary, "A10:H10", styles.kpiValue);
-  setStyle(summary, "A12:H12", styles.tableHeader);
-  setStyle(summary, "A13:H17", styles.tableCell);
-  setStyle(summary, "A19:H19", styles.tableHeader);
-  setStyle(summary, "A20:H20", {
+  setStyle(summary, "A4:H8", styles.tableCell);
+  setStyle(summary, "A4:A8", styles.label);
+  setStyle(summary, "D4:D8", styles.label);
+  setStyle(summary, "G4:G8", styles.label);
+  setStyle(summary, "A10:H10", styles.kpiLabel);
+  setStyle(summary, "A11:H11", styles.kpiValue);
+  setStyle(summary, "A12:H12", styles.kpiLabel);
+  setStyle(summary, "A13:H13", styles.kpiValue);
+  setStyle(summary, "A15:H15", styles.tableHeader);
+  setStyle(summary, "A16:H20", styles.tableCell);
+  setStyle(summary, "A22:H22", styles.tableHeader);
+  setStyle(summary, "A23:H23", {
     ...styles.value,
     alignment: { horizontal: "left", vertical: "top", wrapText: true },
   });
   for (let i = 0; i < riskOrder.length; i++) {
-    const row = 13 + i;
+    const row = 16 + i;
     const color = bandStyle(riskOrder[i]);
     setStyle(summary, `A${row}:A${row}`, {
       ...styles.tableCell,
@@ -1993,7 +2778,7 @@ function makeWorkbook(
     "Kategori",
     "Açıklama",
     ...metricHeaders,
-    "Önerilen Önlem",
+    "Önlem / Kontrol Tedbirleri",
     "Kök Neden",
     "Referans / İzleme",
     "Termin",
@@ -2004,11 +2789,11 @@ function makeWorkbook(
     riskHeaders,
     ...findings.map((finding, index) => [
       finding.ordinal ?? index + 1,
-      safeText(finding.title),
+      displayFindingTitle(finding.title),
       safeText(finding.category),
       safeText(finding.description),
       ...metricValues(finding),
-      safeText(finding.recommended_action),
+      controlMeasuresText(finding),
       safeText(finding.root_cause_text),
       safeText(finding.references_text),
       suggestedTerm(methodBand(finding, method)),
@@ -2018,15 +2803,42 @@ function makeWorkbook(
   ];
   const riskSheet = appendSheet(workbook, "Risk Analiz Tablosu", riskRows);
   const riskColumnWidths = method === "matrix_5x5"
-    ? [6, 26, 18, 56, 11, 11, 12, 16, 56, 34, 36, 16, 14, 32]
-    : [6, 26, 18, 56, 11, 11, 11, 12, 16, 56, 34, 36, 16, 14, 32];
+    ? [6, 28, 18, 62, 11, 11, 12, 16, 72, 40, 42, 16, 14, 32]
+    : [6, 28, 18, 62, 11, 11, 11, 12, 16, 72, 40, 42, 16, 14, 32];
   const riskLastCol = XLSX.utils.encode_col(riskHeaders.length - 1);
   const riskLevelCol = XLSX.utils.encode_col(4 + metricHeaders.length - 1);
   const metricFirstCol = "E";
   const metricLastCol = XLSX.utils.encode_col(4 + metricHeaders.length - 2);
   const statusCol = XLSX.utils.encode_col(riskHeaders.length - 2);
+  const measureColumnIndex = 4 + metricHeaders.length;
+  const rootCauseColumnIndex = measureColumnIndex + 1;
+  const referenceColumnIndex = measureColumnIndex + 2;
   setCols(riskSheet, riskColumnWidths);
-  setRows(riskSheet, [34, ...findings.map(() => 92)]);
+  setRows(riskSheet, [
+    42,
+    ...riskRows.slice(1).map((row) =>
+      estimatedRowHeight(
+        [
+          { value: row[1], width: riskColumnWidths[1] },
+          { value: row[2], width: riskColumnWidths[2] },
+          { value: row[3], width: riskColumnWidths[3] },
+          {
+            value: row[measureColumnIndex],
+            width: riskColumnWidths[measureColumnIndex],
+          },
+          {
+            value: row[rootCauseColumnIndex],
+            width: riskColumnWidths[rootCauseColumnIndex],
+          },
+          {
+            value: row[referenceColumnIndex],
+            width: riskColumnWidths[referenceColumnIndex],
+          },
+        ],
+        { min: 72, max: 260, base: 10, lineHeight: 14 },
+      )
+    ),
+  ]);
   riskSheet["!autofilter"] = {
     ref: `A1:${riskLastCol}${Math.max(1, riskRows.length)}`,
   };
@@ -2058,6 +2870,10 @@ function makeWorkbook(
     });
   }
 
+  const criticalHighFindings = findings
+    .filter((finding) =>
+      ["critical", "high"].includes(methodBand(finding, method))
+    );
   const distribution = appendSheet(workbook, "Risk Dağılımı", [
     ["Risk Dağılımı", "", "", "", "", ""],
     ["Seviye", "Adet", "Oran", "Bar", "Metot", "Not"],
@@ -2076,20 +2892,17 @@ function makeWorkbook(
     }),
     [],
     ["Kritik/Yüksek Bulgular", "", "", "", "", ""],
-    ...findings
-      .filter((finding) =>
-        ["critical", "high"].includes(methodBand(finding, method))
-      )
-      .map((finding) => [
-        finding.ordinal ?? "",
-        safeText(finding.title),
-        bandLabel(methodBand(finding, method)),
-        methodScore(finding, method),
-        actionWithRootCause(finding),
-        "",
-      ]),
+    ...criticalHighFindings.map((finding) => [
+      finding.ordinal ?? "",
+      displayFindingTitle(finding.title),
+      bandLabel(methodBand(finding, method)),
+      methodScore(finding, method),
+      actionWithRootCause(finding),
+      "",
+    ]),
   ]);
-  setCols(distribution, [20, 10, 10, 34, 18, 18]);
+  const distributionColumnWidths = [20, 10, 10, 34, 58, 18];
+  setCols(distribution, distributionColumnWidths);
   setRows(distribution, [
     32,
     28,
@@ -2100,7 +2913,15 @@ function makeWorkbook(
     24,
     8,
     28,
-    ...findings.map(() => 48),
+    ...criticalHighFindings.map((finding) =>
+      estimatedRowHeight(
+        [
+          { value: displayFindingTitle(finding.title), width: 34 },
+          { value: actionWithRootCause(finding), width: 58 },
+        ],
+        { min: 54, max: 190, base: 8, lineHeight: 14 },
+      )
+    ),
   ]);
   addMerges(distribution, ["A1:F1", "A8:F8"]);
   setStyle(distribution, "A1:F1", styles.title);
@@ -2124,7 +2945,7 @@ function makeWorkbook(
 
   appendMethodReferenceSheet(workbook, analysis, profile, method, documentNo);
 
-  const info = appendSheet(workbook, "Rapor Bilgileri", [
+  const infoRows = [
     ["Alan", "Değer"],
     ["Analiz ID", analysis.id],
     ["Kullanıcı ID", analysis.user_id],
@@ -2137,9 +2958,19 @@ function makeWorkbook(
     ["Oluşturma tarihi", formatDate(new Date().toISOString())],
     ["Request ID", requestID],
     ["Destek kodu", supportID],
+  ];
+  const info = appendSheet(workbook, "Rapor Bilgileri", infoRows);
+  const infoColumnWidths = [24, 78];
+  setCols(info, infoColumnWidths);
+  setRows(info, [
+    28,
+    ...infoRows.slice(1).map((row) =>
+      estimatedRowHeight(
+        [{ value: row[1], width: infoColumnWidths[1] }],
+        { min: 24, max: 72, base: 8, lineHeight: 14 },
+      )
+    ),
   ]);
-  setCols(info, [24, 72]);
-  setRows(info, Array(12).fill(24));
   setStyle(info, "A1:B1", styles.tableHeader);
   setStyle(info, "A2:B12", styles.tableCell);
   setStyle(info, "A2:A12", styles.label);
@@ -2147,7 +2978,7 @@ function makeWorkbook(
   return workbook;
 }
 
-serve(async (req: Request) => {
+export async function handleGenerateExcelReportRequest(req: Request) {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -2243,6 +3074,24 @@ serve(async (req: Request) => {
     });
   }
 
+  const reportLocalization = resolveReportLocalization({
+    localizationSnapshot: (analysis as AnalysisRow).localization_snapshot,
+    requestedLanguage: body.report_language,
+  });
+  if (!reportLocalization.ok) {
+    const status = reportLocalization.code === "REPORT_LANGUAGE_MISMATCH"
+      ? 409
+      : 422;
+    return json(status, {
+      error: reportLocalization.code,
+      message: reportLocalization.code === "REPORT_LANGUAGE_MISMATCH"
+        ? "Requested report language does not match the analysis snapshot."
+        : "The analysis localization snapshot is unavailable or invalid.",
+      request_id: requestID,
+      support_id: supportID,
+    });
+  }
+
   const { data: findings, error: findingsError } = await supabase
     .from("findings")
     .select("*")
@@ -2254,6 +3103,23 @@ serve(async (req: Request) => {
     return json(500, {
       error: "findings_fetch_failed",
       message: "Bulgular Excel raporu için okunamadı.",
+      request_id: requestID,
+      support_id: supportID,
+    });
+  }
+
+  const { data: photos, error: photosError } = await supabase
+    .from("photos")
+    .select("*")
+    .eq("analysis_id", analysisID)
+    .eq("user_id", user.id)
+    .order("sequence_index", { ascending: true, nullsFirst: false })
+    .order("storage_path", { ascending: true });
+
+  if (photosError) {
+    return json(500, {
+      error: "photos_fetch_failed",
+      message: "Analiz fotoğrafları Excel raporu için okunamadı.",
       request_id: requestID,
       support_id: supportID,
     });
@@ -2285,7 +3151,9 @@ serve(async (req: Request) => {
   if (resolvedCompanyID.length > 0) {
     const { data: companyRow, error: companyError } = await supabase
       .from("companies")
-      .select("id,user_id,name,hazard_class,logo_path,is_archived")
+      .select(
+        "id,user_id,name,hazard_class,logo_path,address,contact_person,department,default_responsible,default_due_days,is_archived",
+      )
       .eq("id", resolvedCompanyID)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -2301,18 +3169,40 @@ serve(async (req: Request) => {
     company = companyRow as CompanyRow;
   }
 
-  const effectiveProfile = profileWithCompany(
+  const companyProfile = profileWithCompany(
     profile as ProfileRow | null,
     company,
   );
+  const overrideText = (value: unknown, maxLength: number): string | null => {
+    if (typeof value !== "string") return null;
+    const normalized = value.trim().slice(0, maxLength);
+    return normalized.length > 0 ? normalized : null;
+  };
+  const effectiveProfile: ProfileRow = {
+    ...(companyProfile ?? {}),
+    company_name: overrideText(body.company_name_override, 180) ??
+      companyProfile?.company_name ?? null,
+    company_info: overrideText(body.company_info_override, 500) ??
+      companyProfile?.company_info ?? null,
+    phone: companyProfile?.phone ?? null,
+    display_name: overrideText(body.prepared_by_override, 160) ??
+      companyProfile?.display_name ?? null,
+    full_name: overrideText(body.prepared_by_override, 160) ??
+      companyProfile?.full_name ?? null,
+    title: overrideText(body.prepared_title_override, 120) ??
+      companyProfile?.title ?? null,
+    certificate_number: overrideText(body.certificate_number_override, 120) ??
+      companyProfile?.certificate_number ?? null,
+  };
 
   let freeRiskAnalysisTrialAvailable = false;
   if (planTier === "free") {
     const { count: trialCount, error: trialCountError } = await supabase
-      .from("reports")
+      .from("usage_events")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
-      .or("kind.in.(riskAnalysis,risk_analysis),format.eq.xlsx");
+      .eq("feature", "report_risk_analysis_trial")
+      .eq("event_type", "completed");
 
     if (trialCountError) {
       return json(500, {
@@ -2326,8 +3216,7 @@ serve(async (req: Request) => {
     if ((trialCount ?? 0) >= 1) {
       return json(429, {
         error: "free_risk_analysis_trial_exhausted",
-        message:
-          "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
+        message: "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
         request_id: requestID,
         support_id: supportID,
       });
@@ -2339,9 +3228,11 @@ serve(async (req: Request) => {
   const reportLimit = monthlyReportLimit(planTier);
   if (reportLimit !== null && !freeRiskAnalysisTrialAvailable) {
     const { count: reportCount, error: reportCountError } = await supabase
-      .from("reports")
+      .from("usage_events")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
+      .eq("feature", "report_standard")
+      .eq("event_type", "completed")
       .gte("created_at", istanbulMonthStartISO());
 
     if (reportCountError) {
@@ -2368,21 +3259,36 @@ serve(async (req: Request) => {
   const documentNo = `XLSX-${methodCode}-${
     analysisID.slice(0, 8).toUpperCase()
   }-${archiveSuffix.slice(-8).toUpperCase()}`;
-  const workbook = makeWorkbook(
-    analysis as AnalysisRow,
-    (findings ?? []) as FindingRow[],
-    effectiveProfile,
-    method,
-    requestID,
-    supportID,
-    documentNo,
-  );
-  const logo = await loadCompanyLogo(supabase, effectiveProfile);
+  const workbook = reportLocalization.context.language === "en"
+    ? makeEnglishWorkbook(
+      analysis as AnalysisRow,
+      (findings ?? []) as FindingRow[],
+      effectiveProfile,
+      method,
+      requestID,
+      supportID,
+      documentNo,
+      reportLocalization.context,
+    )
+    : makeWorkbook(
+      analysis as AnalysisRow,
+      (findings ?? []) as FindingRow[],
+      effectiveProfile,
+      method,
+      requestID,
+      supportID,
+      documentNo,
+    );
+  const logo = inlineCompanyLogo(body.company_logo_base64) ??
+    await loadCompanyLogo(supabase, effectiveProfile, user.id);
   const rawBytes = workbookBuffer(workbook);
   const bytes = logo ? await embedCompanyLogo(rawBytes, logo) : rawBytes;
+  const fileStem = reportLocalization.context.language === "en"
+    ? "risk-assessment"
+    : "risk-analizi";
   const fileName = `${
-    safeFilePart(safeText((analysis as AnalysisRow).title, "risk-analizi"))
-  }-${method}-risk-analizi-${archiveSuffix}.xlsx`;
+    safeFilePart(safeText((analysis as AnalysisRow).title, fileStem))
+  }-${method}-${fileStem}-${archiveSuffix}.xlsx`;
   const storagePath =
     `${user.id.toLowerCase()}/${analysisID.toLowerCase()}/${fileName}`;
 
@@ -2411,6 +3317,27 @@ serve(async (req: Request) => {
     });
   }
 
+  const shouldStoreSnapshot = await reportSnapshotV2Enabled(supabase, body);
+  const snapshotColumns = shouldStoreSnapshot
+    ? {
+      findings_snapshot_json: findings ?? [],
+      photos_snapshot_json: photos ?? [],
+      analysis_edit_version: Math.max(
+        0,
+        Math.round(
+          Number(
+            (analysis as Record<string, unknown>).analysis_edit_version ?? 0,
+          ),
+        ),
+      ),
+      generated_from_user_edited_findings:
+        (analysis as Record<string, unknown>).has_user_edits === true,
+      source_photo_count: Array.isArray(photos) ? photos.length : null,
+      visible_findings_count: Array.isArray(findings) ? findings.length : null,
+      report_page_count: 1,
+    }
+    : {};
+
   const { data: report, error: reportError } = await supabase
     .from("reports")
     .insert({
@@ -2429,6 +3356,14 @@ serve(async (req: Request) => {
       page_count: 1,
       company_id: company?.id ?? null,
       company_snapshot: companySnapshot(company),
+      report_language: reportLocalization.context.language,
+      report_locale: reportLocalization.context.locale,
+      safety_profile_id: reportLocalization.context.safetyProfileID,
+      safety_profile_version: reportLocalization.context.safetyProfileVersion,
+      regulatory_sections_enabled:
+        reportLocalization.context.regulatorySectionsEnabled,
+      localization_snapshot: reportLocalization.context.snapshot,
+      ...snapshotColumns,
       request_id: requestID,
       support_id: supportID,
     })
@@ -2450,8 +3385,7 @@ serve(async (req: Request) => {
     if (message.includes("free_risk_analysis_trial_exhausted")) {
       return json(429, {
         error: "free_risk_analysis_trial_exhausted",
-        message:
-          "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
+        message: "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
         request_id: requestID,
         support_id: supportID,
       });
@@ -2493,22 +3427,39 @@ serve(async (req: Request) => {
     }
   }
 
-  await sendReportReadyPush({
-    supabase,
-    supabaseUrl,
-    serviceRoleKey,
-    userID: user.id,
-    reportID: report.id,
-    analysisID,
-    format: "xlsx",
-    kind: "risk_analysis",
-    requestID,
-    supportID,
-  });
+  try {
+    await sendReportReadyPush({
+      supabase,
+      supabaseUrl,
+      serviceRoleKey,
+      userID: user.id,
+      reportID: report.id,
+      analysisID,
+      format: "xlsx",
+      kind: "risk_analysis",
+      requestID,
+      supportID,
+    });
+  } catch (pushError) {
+    console.warn(
+      "Report ready push dispatch threw after Excel persistence",
+      JSON.stringify({
+        request_id: requestID,
+        support_id: supportID,
+        report_id: report.id,
+        analysis_id: analysisID,
+        error: safeLogError(pushError),
+      }),
+    );
+  }
 
   return json(200, {
     report,
     request_id: requestID,
     support_id: supportID,
   });
-});
+}
+
+if (import.meta.main) {
+  serve(handleGenerateExcelReportRequest);
+}

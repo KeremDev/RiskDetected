@@ -7,10 +7,14 @@ struct ProfessionalProgressTitlesSheet: View {
     @State private var showRankGuide = false
 
     private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8)
     ]
+
+    private let rankIconCircleSize: CGFloat = 50
+    private let rankIconOuterRingSize: CGFloat = 58
+    private let rankIconFrameSize: CGFloat = 62
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,11 +29,11 @@ struct ProfessionalProgressTitlesSheet: View {
                     .padding(.top, 8)
                     .padding(.bottom, 12)
 
-                titleSection("Temel Rütbeler", titles: Array(ProfessionalProgressTitle.allCases.prefix(3)))
+                titleSection(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.temel.rutbeler.ae685d59", table: .professionalProgress, fallback: "Temel Rütbeler"), titles: Array(ProfessionalProgressTitle.allCases.prefix(3)))
                 sectionDivider
-                titleSection("Uzmanlık Rütbeleri", titles: Array(ProfessionalProgressTitle.allCases.dropFirst(3).prefix(3)))
+                titleSection(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.uzmanlik.rutbeleri.adc7d11a", table: .professionalProgress, fallback: "Uzmanlık Rütbeleri"), titles: Array(ProfessionalProgressTitle.allCases.dropFirst(3).prefix(3)))
                 sectionDivider
-                titleSection("Ustalık", titles: Array(ProfessionalProgressTitle.allCases.suffix(1)))
+                titleSection(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.ustalik.0d958d48", table: .professionalProgress, fallback: "Ustalık"), titles: Array(ProfessionalProgressTitle.allCases.suffix(1)))
                 Spacer(minLength: 0)
             }
             .background(Color.rdWhite)
@@ -47,22 +51,25 @@ struct ProfessionalProgressTitlesSheet: View {
             RDModalCloseButton {
                 dismiss()
             }
-            .frame(width: 42, height: 42)
+            .scaleEffect(0.86)
+            .frame(width: 34, height: 34)
 
             Spacer()
 
-            Text("Mesleki Ünvanlar")
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
+            Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.mesleki.unvanlar.20cd00f4", table: .professionalProgress, fallback: "Mesleki Ünvanlar"))
+                .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
 
             Spacer()
 
             Color.clear
-                .frame(width: 42, height: 42)
+                .frame(width: 34, height: 34)
         }
         .padding(.horizontal, 18)
-        .padding(.top, 8)
-        .padding(.bottom, 10)
+        .padding(.top, 24)
+        .padding(.bottom, 8)
         .background(Color.rdWhite)
         .overlay(alignment: .bottom) {
             Rectangle()
@@ -86,17 +93,17 @@ struct ProfessionalProgressTitlesSheet: View {
         } label: {
             HStack(spacing: 9) {
                 Image(systemName: "questionmark.circle.fill")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdPlanPlusDark)
 
-                Text("Nasıl rütbe alırım?")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.nasil.rutbe.alirim.ba68ce6d", table: .professionalProgress, fallback: "Nasıl rütbe alırım?"))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
 
                 Spacer()
 
                 Image(systemName: "chevron.up.circle.fill")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate.opacity(0.65))
             }
             .padding(.horizontal, 14)
@@ -109,13 +116,13 @@ struct ProfessionalProgressTitlesSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(RDPressableButtonStyle())
-        .accessibilityLabel("Nasıl rütbe alırım")
+        .accessibilityLabel(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.nasil.rutbe.alirim.9a8647bb", table: .professionalProgress, fallback: "Nasıl rütbe alırım"))
     }
 
     private func titleSection(_ title: String, titles: [ProfessionalProgressTitle]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .padding(.horizontal, 24)
 
@@ -124,7 +131,7 @@ struct ProfessionalProgressTitlesSheet: View {
                     rankTile(professionalTitle)
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
         }
         .padding(.vertical, 12)
     }
@@ -146,15 +153,15 @@ struct ProfessionalProgressTitlesSheet: View {
 
                 if current {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdPlanPlus)
-                        .background(Circle().fill(Color.rdWhite).frame(width: 20, height: 20))
-                        .offset(x: 3, y: -2)
+                        .background(Circle().fill(Color.rdWhite).frame(width: 18, height: 18))
+                        .offset(x: 2, y: -2)
                 } else if !earned {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .font(.system(size: RDFontScale.size(8), weight: .black, design: .rounded))
                         .foregroundStyle(Color.rdWhite)
-                        .frame(width: 20, height: 20)
+                        .frame(width: 18, height: 18)
                         .background(Color.rdSlate.opacity(0.80))
                         .clipShape(Circle())
                         .overlay(Circle().stroke(Color.rdWhite, lineWidth: 2))
@@ -164,49 +171,69 @@ struct ProfessionalProgressTitlesSheet: View {
 
             VStack(spacing: 1) {
                 Text(title.label)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                     .foregroundStyle(earned ? Color.rdBlack : Color.rdSlate)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.70)
 
-                Text("\(formattedNumber(title.threshold)) MDP")
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                Text(RDLocalization.format("professionalprogress.professional.progress.titles.sheet.1.mdp.0657733e", table: .professionalProgress, fallback: "%1$@ MDP", arguments: [String(describing: formattedNumber(title.threshold))]))
+                    .font(.system(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
                     .foregroundStyle(earned ? Color.rdSlate : Color.rdSlate.opacity(0.70))
             }
         }
         .frame(maxWidth: .infinity)
-        .accessibilityLabel("\(title.label), \(earned ? "kazanıldı" : "henüz kazanılmadı")")
+        .accessibilityLabel(
+            RDLocalization.format(
+                "progress.accessibility.title_status",
+                table: .professionalProgress,
+                fallback: "%1$@, %2$@",
+                arguments: [
+                    title.label,
+                    earned
+                        ? RDLocalization.string(
+                            "progress.accessibility.earned",
+                            table: .professionalProgress,
+                            fallback: "kazanıldı"
+                        )
+                        : RDLocalization.string(
+                            "progress.accessibility.not_earned",
+                            table: .professionalProgress,
+                            fallback: "henüz kazanılmadı"
+                        ),
+                ]
+            )
+        )
     }
 
     private func rankIcon(style: RankVisualStyle, earned: Bool, current: Bool) -> some View {
         ZStack {
             Circle()
                 .fill(earned ? style.background : lockedIconBackground)
-                .frame(width: 58, height: 58)
+                .frame(width: rankIconCircleSize, height: rankIconCircleSize)
                 .shadow(color: earned ? style.shadow : Color.rdSlate.opacity(0.12), radius: earned ? 12 : 7, x: 0, y: 5)
 
             Circle()
                 .stroke(earned ? Color.rdWhite : Color.rdLine, lineWidth: 4)
-                .frame(width: 58, height: 58)
+                .frame(width: rankIconCircleSize, height: rankIconCircleSize)
 
             Circle()
                 .stroke(current ? Color.rdPlanPlus.opacity(0.95) : Color.clear, lineWidth: 3)
-                .frame(width: 66, height: 66)
+                .frame(width: rankIconOuterRingSize, height: rankIconOuterRingSize)
 
             Image(systemName: style.symbol)
-                .font(.system(size: 23, weight: .black, design: .rounded))
+                .font(.system(size: RDFontScale.size(19), weight: .black, design: .rounded))
                 .foregroundStyle(earned ? style.foreground : Color.rdSlate.opacity(0.45))
                 .symbolRenderingMode(.hierarchical)
 
             if earned {
                 Image(systemName: "sparkle")
-                    .font(.system(size: 8, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(7), weight: .black, design: .rounded))
                     .foregroundStyle(Color.white.opacity(0.85))
-                    .offset(x: 17, y: -17)
+                    .offset(x: 14, y: -14)
             }
         }
-        .frame(width: 70, height: 70)
+        .frame(width: rankIconFrameSize, height: rankIconFrameSize)
     }
 
     private var lockedIconBackground: LinearGradient {
@@ -300,7 +327,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
                 .padding(.bottom, 26)
             }
             .background(Color.rdPaper)
-            .navigationTitle("Rütbe Puanlama")
+            .navigationTitle(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.rutbe.puanlama.7bbebefb", table: .professionalProgress, fallback: "Rütbe Puanlama"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -316,7 +343,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 22, weight: .black, design: .rounded))
+                    .font(.system(size: RDFontScale.size(22), weight: .black, design: .rounded))
                     .foregroundStyle(Color.rdPlanPlusDark)
                     .frame(width: 44, height: 44)
                     .background(Color.rdPlanPlus.opacity(0.16))
@@ -324,10 +351,10 @@ private struct ProfessionalProgressRankGuideSheet: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(summary.currentTitle.label)
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(nextTitleStatusText)
-                        .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                        .font(.system(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -335,8 +362,8 @@ private struct ProfessionalProgressRankGuideSheet: View {
             }
 
             HStack(spacing: 8) {
-                statPill(value: formattedNumber(summary.profile.totalMDP), label: "Toplam MDP")
-                statPill(value: formattedNumber(summary.nextTitleRemaining), label: "Kalan MDP")
+                statPill(value: formattedNumber(summary.profile.totalMDP), label: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.toplam.mdp.f0ea764d", table: .professionalProgress, fallback: "Toplam MDP"))
+                statPill(value: formattedNumber(summary.nextTitleRemaining), label: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.kalan.mdp.f71caff4", table: .professionalProgress, fallback: "Kalan MDP"))
             }
         }
         .padding(16)
@@ -351,18 +378,18 @@ private struct ProfessionalProgressRankGuideSheet: View {
     private var actionHintCard: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "arrow.up.forward.circle.fill")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
                 .frame(width: 38, height: 38)
                 .background(Color.rdGreenSoft)
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Sana en yakın adım")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.sana.en.yakin.adim.996c4c7d", table: .professionalProgress, fallback: "Sana en yakın adım"))
+                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                 Text(actionHintText)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -384,17 +411,17 @@ private struct ProfessionalProgressRankGuideSheet: View {
 
     private var rulesCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("MDP nasıl kazanılır?")
-                .font(.system(size: 17, weight: .bold, design: .rounded))
+            Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.mdp.nasil.kazanilir.6d3aeefc", table: .professionalProgress, fallback: "MDP nasıl kazanılır?"))
+                .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
 
             VStack(spacing: 9) {
-                scoreRow(icon: "doc.text.fill", title: "Rapor oluştur", points: "+60 MDP", detail: "Her yeni rapor bir kez puan verir.")
-                scoreRow(icon: "tablecells.fill", title: "Risk analizi PDF/XLSX", points: "+90 MDP", detail: "Standart rapor puanına eklenir.")
-                scoreRow(icon: "shield.lefthalf.filled", title: "Yüksek/kritik riskli analiz", points: "+120 MDP", detail: "Tehlikeyi görünür kıldığında kazanılır.")
-                scoreRow(icon: "magnifyingglass.circle.fill", title: "Detaylı analiz", points: "+70 MDP", detail: "Standart dışı detaylı analizlerde işler.")
-                scoreRow(icon: "square.grid.3x2.fill", title: "İlk yetkinlik alanı", points: "+20 MDP", detail: "Her alan için yalnızca ilk kez verilir.")
-                scoreRow(icon: "calendar.badge.checkmark", title: "Haftanın ilk raporu", points: "+25 MDP", detail: "Haftada bir kez takip disiplini bonusu.")
+                scoreRow(icon: "doc.text.fill", title: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.rapor.olustur.5f96ad63", table: .professionalProgress, fallback: "Rapor oluştur"), points: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.60.mdp.1f989881", table: .professionalProgress, fallback: "+60 MDP"), detail: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.her.yeni.rapor.bir.kez.puan.verir.e2c8fe15", table: .professionalProgress, fallback: "Her yeni rapor bir kez puan verir."))
+                scoreRow(icon: "tablecells.fill", title: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.risk.analizi.pdf.xlsx.910caae2", table: .professionalProgress, fallback: "Risk analizi PDF/XLSX"), points: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.90.mdp.96c72589", table: .professionalProgress, fallback: "+90 MDP"), detail: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.standart.rapor.puanina.eklenir.2fbe2c93", table: .professionalProgress, fallback: "Standart rapor puanına eklenir."))
+                scoreRow(icon: "shield.lefthalf.filled", title: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.yuksek.kritik.riskli.analiz.c31153a6", table: .professionalProgress, fallback: "Yüksek/kritik riskli analiz"), points: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.120.mdp.7316b2eb", table: .professionalProgress, fallback: "+120 MDP"), detail: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.tehlikeyi.gorunur.kildiginda.kazanilir.8c66d951", table: .professionalProgress, fallback: "Tehlikeyi görünür kıldığında kazanılır."))
+                scoreRow(icon: "magnifyingglass.circle.fill", title: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.detayli.analiz.7a12c895", table: .professionalProgress, fallback: "Detaylı analiz"), points: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.70.mdp.6acf724a", table: .professionalProgress, fallback: "+70 MDP"), detail: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.standart.disi.detayli.analizlerde.isler.2aa4f581", table: .professionalProgress, fallback: "Standart dışı detaylı analizlerde işler."))
+                scoreRow(icon: "square.grid.3x2.fill", title: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.ilk.yetkinlik.alani.42920cb0", table: .professionalProgress, fallback: "İlk yetkinlik alanı"), points: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.20.mdp.aa9eb553", table: .professionalProgress, fallback: "+20 MDP"), detail: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.her.alan.icin.yalnizca.ilk.kez.verilir.c2b98db3", table: .professionalProgress, fallback: "Her alan için yalnızca ilk kez verilir."))
+                scoreRow(icon: "calendar.badge.checkmark", title: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.haftanin.ilk.raporu.dce7285a", table: .professionalProgress, fallback: "Haftanın ilk raporu"), points: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.25.mdp.c7974c89", table: .professionalProgress, fallback: "+25 MDP"), detail: RDLocalization.string("professionalprogress.professional.progress.titles.sheet.haftada.bir.kez.takip.disiplini.bonusu.e4efaa1c", table: .professionalProgress, fallback: "Haftada bir kez takip disiplini bonusu."))
             }
         }
         .padding(16)
@@ -410,15 +437,15 @@ private struct ProfessionalProgressRankGuideSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
-                Text("Puanlar gerçek iş çıktısından gelir.")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.puanlar.gercek.is.ciktisindan.gelir.f2b509b4", table: .professionalProgress, fallback: "Puanlar gerçek iş çıktısından gelir."))
+                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
             }
 
-            Text("Uygulamaya giriş yapmak puan vermez. Aynı analiz veya rapor tekrar işlense bile yeniden MDP yazılmaz. Aynı saha çalışmasından gelen analiz ve raporlar adil ilerleme için sınırlı hesaplanır.")
-                .font(.system(size: 12.5, weight: .medium, design: .rounded))
+            Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.uygulamaya.giris.yapmak.puan.vermez.ayni.analiz..3eefe37a", table: .professionalProgress, fallback: "Uygulamaya giriş yapmak puan vermez. Aynı analiz veya rapor tekrar işlense bile yeniden MDP yazılmaz. Aynı saha çalışmasından gelen analiz ve raporlar adil ilerleme için sınırlı hesaplanır."))
+                .font(.system(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -431,7 +458,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
     private func scoreRow(icon: String, title: String, points: String, detail: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .frame(width: 30, height: 30)
                 .background(Color.rdFog)
@@ -439,10 +466,10 @@ private struct ProfessionalProgressRankGuideSheet: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13.5, weight: .semibold, design: .rounded))
+                    .font(.system(size: RDFontScale.size(13.5), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(detail)
-                    .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                    .font(.system(size: RDFontScale.size(11.5), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -450,7 +477,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
             Spacer(minLength: 8)
 
             Text(points)
-                .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                .font(.system(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdPlanPlusDark)
                 .padding(.horizontal, 9)
                 .frame(height: 28)
@@ -465,7 +492,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
                 .rdMono(size: 17, weight: .bold)
                 .foregroundStyle(Color.rdBlack)
             Text(label)
-                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                .font(.system(size: RDFontScale.size(10.5), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -477,22 +504,22 @@ private struct ProfessionalProgressRankGuideSheet: View {
 
     private var nextTitleStatusText: String {
         guard let nextTitle = summary.nextTitle else {
-            return "En üst rütbedesin. Birikimin profilinde korunur."
+            return RDLocalization.string("professionalprogress.professional.progress.titles.sheet.en.ust.rutbedesin.birikimin.profilinde.korunur.32f9a051", table: .professionalProgress, fallback: "En üst rütbedesin. Birikimin profilinde korunur.")
         }
-        return "\(nextTitle.label) için \(formattedNumber(summary.nextTitleRemaining)) MDP kaldı."
+        return RDLocalization.format("professionalprogress.professional.progress.titles.sheet.1.icin.2.mdp.kaldi.7f112857", table: .professionalProgress, fallback: "%1$@ için %2$@ MDP kaldı.", arguments: [String(describing: nextTitle.label), String(describing: formattedNumber(summary.nextTitleRemaining))])
     }
 
     private var actionHintText: String {
         if summary.weeklyTracking.reportsCount == 0, summary.weeklyTracking.analysesCount > 0 {
-            return "\(summary.weeklyTracking.analysesCount) analiz tamamlandı. Birini rapora dönüştürerek +60 MDP kazanabilirsin."
+            return RDLocalization.format("professionalprogress.professional.progress.titles.sheet.1.analiz.tamamlandi.birini.rapora.donusturerek.6.8619c6e0", table: .professionalProgress, fallback: "%1$@ analiz tamamlandı. Birini rapora dönüştürerek +60 MDP kazanabilirsin.", arguments: [String(describing: summary.weeklyTracking.analysesCount)])
         }
         if summary.weeklyTracking.reportsCount == 0 {
-            return "Bu hafta ilk raporunu oluşturursan +60 MDP ve +25 haftalık bonus kazanırsın."
+            return RDLocalization.string("professionalprogress.professional.progress.titles.sheet.bu.hafta.ilk.raporunu.olusturursan.60.mdp.ve.25..d8302300", table: .professionalProgress, fallback: "Bu hafta ilk raporunu oluşturursan +60 MDP ve +25 haftalık bonus kazanırsın.")
         }
         if summary.profile.highFindings + summary.profile.criticalFindings == 0 {
-            return "Yüksek veya kritik riskleri doğru sınıflandırmak +120 MDP katkı sağlar."
+            return RDLocalization.string("professionalprogress.professional.progress.titles.sheet.yuksek.veya.kritik.riskleri.dogru.siniflandirmak.9485e6fa", table: .professionalProgress, fallback: "Yüksek veya kritik riskleri doğru sınıflandırmak +120 MDP katkı sağlar.")
         }
-        return "Yeni raporlar ve farklı yetkinlik alanları rütbe ilerlemeni hızlandırır."
+        return RDLocalization.string("professionalprogress.professional.progress.titles.sheet.yeni.raporlar.ve.farkli.yetkinlik.alanlari.rutbe.5c547b24", table: .professionalProgress, fallback: "Yeni raporlar ve farklı yetkinlik alanları rütbe ilerlemeni hızlandırır.")
     }
 
     private func formattedNumber(_ value: Int) -> String {

@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildWelcomeEmailContent,
+  WELCOME_EMAIL_LOCALES,
+  type WelcomeEmailLocale,
+} from "./template.ts";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -8,18 +13,16 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const SUPPORT_EMAIL = "info@riskdetected.com";
+
 type ProfileRow = {
   id: string;
   email: string | null;
   full_name: string | null;
   welcome_email_sent_at: string | null;
   welcome_email_status: string | null;
-};
-
-type OnboardingAnswersRow = {
-  certificate_class: string | null;
-  hazard_classes: string[] | null;
-  sectors: string[] | null;
+  app_language: "tr" | "en" | null;
+  preferred_content_locale: string | null;
 };
 
 function json(status: number, body: Record<string, unknown>) {
@@ -37,15 +40,6 @@ function cleanText(value: unknown, maxLength: number): string {
     .slice(0, maxLength);
 }
 
-function escapeHTML(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 function safeLogText(value: unknown, maxLength = 220): string {
   return cleanText(value, maxLength)
     .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
@@ -57,83 +51,6 @@ function displayName(profile: ProfileRow, fallbackEmail?: string | null) {
   if (fullName) return fullName;
   const email = cleanText(profile.email, 240) || cleanText(fallbackEmail, 240);
   return email.includes("@") ? email.split("@")[0] : "";
-}
-
-function personalizationLines(onboarding: OnboardingAnswersRow | null) {
-  const lines: string[] = [];
-
-  if (Array.isArray(onboarding?.sectors) && onboarding.sectors.length > 0) {
-    lines.push(
-      "Seçtiğiniz sektörlere göre analizlerde saha bağlamınızı dikkate alacağız.",
-    );
-  }
-
-  if (
-    Array.isArray(onboarding?.hazard_classes) &&
-    onboarding.hazard_classes.length > 0
-  ) {
-    lines.push(
-      "Tehlike sınıfı tercihiniz, analizlerde önceliklendirme ve rapor tonunu daha uygun hale getirmemize yardımcı olur.",
-    );
-  }
-
-  if (cleanText(onboarding?.certificate_class, 80)) {
-    lines.push(
-      "Uzmanlık seviyenize göre sonuçları daha pratik ve uygulanabilir tutmaya çalışacağız.",
-    );
-  }
-
-  return lines;
-}
-
-function buildEmail(
-  profile: ProfileRow,
-  onboarding: OnboardingAnswersRow | null,
-) {
-  const name = displayName(profile);
-  const greeting = name ? `Merhaba ${name},` : "Merhaba,";
-  const personalization = personalizationLines(onboarding);
-
-  const baseLines = [
-    greeting,
-    "",
-    "RiskDetected’a hoş geldiniz.",
-    "",
-    "Artık saha fotoğrafları veya kısa açıklamalar üzerinden İSG risklerini hızlıca analiz edebilir, bulguları rapora dönüştürebilir ve denetim arşivinizi düzenli tutabilirsiniz.",
-    "",
-    ...personalization.flatMap((line) => [line, ""]),
-    "İlk adım olarak uygulamada bir fotoğraf analizi başlatabilir veya metinle risk değerlendirmesi yapabilirsiniz.",
-    "",
-    "Herhangi bir sorunuz olursa bize info@riskdetected.com üzerinden ulaşabilirsiniz.",
-    "",
-    "Güvenli çalışmalar,",
-    "RiskDetected Ekibi",
-    "",
-    "Bu e-posta RiskDetected hesabınız oluşturulduğu için gönderildi.",
-  ];
-
-  const escapedParagraphs = baseLines
-    .join("\n")
-    .split(/\n{2,}/)
-    .map((paragraph) =>
-      `<p style="margin:0 0 16px">${
-        escapeHTML(paragraph).replace(/\n/g, "<br>")
-      }</p>`
-    )
-    .join("");
-
-  const html = `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#101415;line-height:1.55;max-width:560px">
-      <h1 style="font-size:22px;line-height:1.25;margin:0 0 18px;color:#101415">RiskDetected’a hoş geldiniz</h1>
-      ${escapedParagraphs}
-    </div>
-  `;
-
-  return {
-    subject: "RiskDetected’a hoş geldiniz",
-    text: baseLines.join("\n"),
-    html,
-  };
 }
 
 serve(async (req) => {
@@ -177,7 +94,9 @@ serve(async (req) => {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id,email,full_name,welcome_email_sent_at,welcome_email_status")
+    .select(
+      "id,email,full_name,welcome_email_sent_at,welcome_email_status,app_language,preferred_content_locale",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -215,7 +134,9 @@ serve(async (req) => {
     .eq("id", user.id)
     .is("welcome_email_sent_at", null)
     .or("welcome_email_status.is.null,welcome_email_status.neq.sending")
-    .select("id,email,full_name,welcome_email_sent_at,welcome_email_status")
+    .select(
+      "id,email,full_name,welcome_email_sent_at,welcome_email_status,app_language,preferred_content_locale",
+    )
     .maybeSingle();
 
   if (lockError || !lockedProfile) {
@@ -223,6 +144,30 @@ serve(async (req) => {
   }
 
   const lockedProfileRow = lockedProfile as ProfileRow;
+  const locale = lockedProfileRow.preferred_content_locale;
+  const localeIsSupported = typeof locale === "string" &&
+    (WELCOME_EMAIL_LOCALES as readonly string[]).includes(locale);
+  const localeLanguage = locale === "tr-TR"
+    ? "tr"
+    : locale?.startsWith("en-")
+    ? "en"
+    : null;
+  if (
+    !localeIsSupported || localeLanguage === null ||
+    localeLanguage !== lockedProfileRow.app_language
+  ) {
+    await supabase
+      .from("profiles")
+      .update({
+        welcome_email_status: "localization_failed",
+        welcome_email_error: "WELCOME_EMAIL_EXACT_LOCALE_TEMPLATE_MISSING",
+      })
+      .eq("id", user.id);
+    return json(422, {
+      error: "WELCOME_EMAIL_EXACT_LOCALE_TEMPLATE_MISSING",
+      delivery_status: "localization_failed",
+    });
+  }
   const toEmail = cleanText(lockedProfileRow.email, 240) ||
     cleanText(user.email, 240);
   if (!toEmail.includes("@")) {
@@ -236,16 +181,12 @@ serve(async (req) => {
     return json(200, { ok: true, delivery_status: "email_failed" });
   }
 
-  const { data: onboarding } = await supabase
-    .from("user_onboarding_answers")
-    .select("certificate_class,hazard_classes,sectors")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  const email = buildEmail(
-    lockedProfileRow,
-    (onboarding as OnboardingAnswersRow | null) ?? null,
-  );
+  const email = buildWelcomeEmailContent({
+    displayName: displayName(lockedProfileRow, user.email),
+    supportEmail: SUPPORT_EMAIL,
+    currentYear: new Date().getUTCFullYear().toString(),
+    locale: locale as WelcomeEmailLocale,
+  });
 
   if (!resendAPIKey) {
     await supabase

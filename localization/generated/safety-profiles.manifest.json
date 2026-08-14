@@ -1,0 +1,361 @@
+{
+  "schema_version": 1,
+  "manifest_version": 1,
+  "source_sha256": "ae72ae29ac4ed47d6ffbd7aa37dba426e44647066fe70d93d1021e8eefa54ad3",
+  "review_status": "machine_draft",
+  "default_profile_id": "tr-tr-current-v1",
+  "english_fallback_profile_id": "en-intl-generic-v1",
+  "app_languages": [
+    "tr",
+    "en"
+  ],
+  "content_locales": [
+    "tr-TR",
+    "en-001",
+    "en-GB",
+    "en-US",
+    "en-AU",
+    "en-CA"
+  ],
+  "jurisdiction_countries": [
+    "TR",
+    "INTL",
+    "GB",
+    "US",
+    "AU",
+    "CA"
+  ],
+  "legal_document_set_ids": [
+    "tr-current",
+    "en-global-v1"
+  ],
+  "common_contract": {
+    "hierarchy_of_controls": [
+      "elimination",
+      "substitution",
+      "engineering controls",
+      "administrative controls",
+      "personal protective equipment (PPE)"
+    ],
+    "risk_method_disclaimer": {
+      "semantic_key": "risk_method.legal_standard_disclaimer",
+      "review_status": "machine_draft",
+      "tr": "Fine-Kinney ve 5×5, riskleri önceliklendirmeye yardımcı olan ürün yöntemleridir; hukuki standart veya mevzuata uygunluk kanıtı değildir.",
+      "en": "Fine-Kinney and 5×5 are product methods for prioritising risk; they are not legal standards or evidence of regulatory compliance."
+    },
+    "risk_band_drafts": {
+      "fine_kinney": [
+        "Intolerable",
+        "High",
+        "Substantial",
+        "Possible",
+        "Trivial"
+      ],
+      "matrix_5x5": [
+        "Intolerable",
+        "High",
+        "Medium",
+        "Low",
+        "Trivial"
+      ]
+    }
+  },
+  "profiles": [
+    {
+      "id": "tr-tr-current-v1",
+      "language": "tr",
+      "content_locale": "tr-TR",
+      "jurisdiction_country": "TR",
+      "jurisdiction_region": null,
+      "status": "current_regulatory",
+      "review_status": "machine_draft",
+      "display_name_key": "safety_profile.turkey",
+      "primary_product_term": "iş güvenliği risk analizi",
+      "primary_domain_term": "iş sağlığı ve güvenliği",
+      "finding_term": "bulgu",
+      "hazard_term": "tehlike",
+      "risk_assessment_term": "risk değerlendirmesi",
+      "control_term": "kontrol tedbiri",
+      "corrective_action_term": "düzeltici faaliyet",
+      "default_risk_method": "fine_kinney",
+      "allowed_risk_methods": [
+        "fine_kinney",
+        "matrix_5x5"
+      ],
+      "legislation_canvas_enabled": true,
+      "structured_regulatory_references_enabled": true,
+      "regulatory_reference_policy": "tr_current",
+      "legal_compliance_claims_allowed": false,
+      "spelling_style": "turkish",
+      "prompt_directives": [
+        "Mevcut Türkçe analiz ve rapor davranışını koru.",
+        "Yalnız görüntüde gözlenebilen kanıta dayan; görünmeyen ölçüm veya maruziyet sonucu uydurma.",
+        "Risk skorunu hukukî uygunluk skoru olarak sunma."
+      ],
+      "forbidden_claims_key": "tr-tr-current-v1",
+      "profile_version": 1,
+      "forbidden_terms": [
+        "guarantees legal compliance",
+        "certifies legal compliance",
+        "replaces a professional inspection",
+        "officially approved",
+        "zero risk guaranteed",
+        "kesin uyumluluk",
+        "kesin mevzuata uygundur",
+        "hukukî uygunluğu garanti eder",
+        "resmî denetim yerine geçer"
+      ]
+    },
+    {
+      "id": "en-intl-generic-v1",
+      "language": "en",
+      "content_locale": "en-001",
+      "jurisdiction_country": "INTL",
+      "jurisdiction_region": null,
+      "status": "terminology_only",
+      "review_status": "machine_draft",
+      "display_name_key": "safety_profile.international",
+      "primary_product_term": "safety inspection",
+      "primary_domain_term": "workplace safety",
+      "finding_term": "finding",
+      "hazard_term": "hazard",
+      "risk_assessment_term": "risk assessment",
+      "control_term": "control measure",
+      "corrective_action_term": "corrective action",
+      "default_risk_method": "matrix_5x5",
+      "allowed_risk_methods": [
+        "matrix_5x5",
+        "fine_kinney"
+      ],
+      "legislation_canvas_enabled": false,
+      "structured_regulatory_references_enabled": false,
+      "regulatory_reference_policy": "none",
+      "legal_compliance_claims_allowed": false,
+      "spelling_style": "international",
+      "prompt_directives": [
+        "Use neutral international workplace-safety terminology.",
+        "Prefer the hierarchy of controls and on-site verification language.",
+        "Do not name a regulator or infer legal compliance from a photograph."
+      ],
+      "forbidden_claims_key": "en-intl-generic-v1",
+      "profile_version": 1,
+      "forbidden_terms": [
+        "guarantees legal compliance",
+        "certifies legal compliance",
+        "replaces a professional inspection",
+        "officially approved",
+        "zero risk guaranteed",
+        "global compliance",
+        "OSHA compliant",
+        "HSE compliant",
+        "WHS compliant",
+        "Canadian OHS compliant",
+        "6331 compliant"
+      ]
+    },
+    {
+      "id": "en-gb-generic-v1",
+      "language": "en",
+      "content_locale": "en-GB",
+      "jurisdiction_country": "GB",
+      "jurisdiction_region": null,
+      "status": "terminology_only",
+      "review_status": "machine_draft",
+      "display_name_key": "safety_profile.united_kingdom",
+      "primary_product_term": "risk assessment",
+      "primary_domain_term": "health and safety",
+      "finding_term": "finding",
+      "hazard_term": "hazard",
+      "risk_assessment_term": "risk assessment",
+      "control_term": "control measure",
+      "corrective_action_term": "corrective action",
+      "default_risk_method": "matrix_5x5",
+      "allowed_risk_methods": [
+        "matrix_5x5",
+        "fine_kinney"
+      ],
+      "legislation_canvas_enabled": false,
+      "structured_regulatory_references_enabled": false,
+      "regulatory_reference_policy": "none",
+      "legal_compliance_claims_allowed": false,
+      "spelling_style": "british",
+      "prompt_directives": [
+        "Use UK health and safety, risk assessment and control-measure terminology.",
+        "Use British spelling such as prioritise and organised.",
+        "Do not imply HSE or HSENI approval, certification or legal compliance."
+      ],
+      "forbidden_claims_key": "en-gb-generic-v1",
+      "profile_version": 1,
+      "forbidden_terms": [
+        "guarantees legal compliance",
+        "certifies legal compliance",
+        "replaces a professional inspection",
+        "officially approved",
+        "zero risk guaranteed",
+        "HSE compliant",
+        "HSENI compliant",
+        "OSHA compliant",
+        "WHS Act compliant",
+        "6331 compliant"
+      ]
+    },
+    {
+      "id": "en-us-generic-v1",
+      "language": "en",
+      "content_locale": "en-US",
+      "jurisdiction_country": "US",
+      "jurisdiction_region": null,
+      "status": "terminology_only",
+      "review_status": "machine_draft",
+      "display_name_key": "safety_profile.united_states",
+      "primary_product_term": "safety inspection",
+      "primary_domain_term": "occupational safety and health",
+      "finding_term": "finding",
+      "hazard_term": "hazard",
+      "risk_assessment_term": "hazard assessment",
+      "control_term": "control",
+      "corrective_action_term": "corrective action",
+      "default_risk_method": "matrix_5x5",
+      "allowed_risk_methods": [
+        "matrix_5x5",
+        "fine_kinney"
+      ],
+      "legislation_canvas_enabled": false,
+      "structured_regulatory_references_enabled": false,
+      "regulatory_reference_policy": "none",
+      "legal_compliance_claims_allowed": false,
+      "spelling_style": "american",
+      "prompt_directives": [
+        "Use U.S. occupational safety and health, hazard assessment and corrective-action terminology.",
+        "Use American spelling such as prioritize and organized.",
+        "Do not call a photo inspection a JHA or JSA without a separate task-based workflow."
+      ],
+      "forbidden_claims_key": "en-us-generic-v1",
+      "profile_version": 1,
+      "forbidden_terms": [
+        "guarantees legal compliance",
+        "certifies legal compliance",
+        "replaces a professional inspection",
+        "officially approved",
+        "zero risk guaranteed",
+        "OSHA compliant",
+        "OSHA violation",
+        "citation-ready",
+        "JHA completed",
+        "JSA completed",
+        "HSE compliant",
+        "WHS Act compliant",
+        "6331 compliant"
+      ]
+    },
+    {
+      "id": "en-au-generic-v1",
+      "language": "en",
+      "content_locale": "en-AU",
+      "jurisdiction_country": "AU",
+      "jurisdiction_region": null,
+      "status": "terminology_only",
+      "review_status": "machine_draft",
+      "display_name_key": "safety_profile.australia",
+      "primary_product_term": "WHS inspection",
+      "primary_domain_term": "work health and safety",
+      "finding_term": "finding",
+      "hazard_term": "hazard",
+      "risk_assessment_term": "risk assessment",
+      "control_term": "control measure",
+      "corrective_action_term": "corrective action",
+      "default_risk_method": "matrix_5x5",
+      "allowed_risk_methods": [
+        "matrix_5x5",
+        "fine_kinney"
+      ],
+      "legislation_canvas_enabled": false,
+      "structured_regulatory_references_enabled": false,
+      "regulatory_reference_policy": "none",
+      "legal_compliance_claims_allowed": false,
+      "spelling_style": "australian",
+      "prompt_directives": [
+        "Use Australian WHS, workplace-inspection and control-measure terminology.",
+        "Use Australian spelling such as prioritise and organised.",
+        "Do not treat model WHS laws as a single national legal compliance profile."
+      ],
+      "forbidden_claims_key": "en-au-generic-v1",
+      "profile_version": 1,
+      "forbidden_terms": [
+        "guarantees legal compliance",
+        "certifies legal compliance",
+        "replaces a professional inspection",
+        "officially approved",
+        "zero risk guaranteed",
+        "Australian law compliant",
+        "WHS compliant",
+        "model WHS law compliant",
+        "OSHA compliant",
+        "HSE compliant",
+        "6331 compliant"
+      ]
+    },
+    {
+      "id": "en-ca-generic-v1",
+      "language": "en",
+      "content_locale": "en-CA",
+      "jurisdiction_country": "CA",
+      "jurisdiction_region": null,
+      "status": "terminology_only",
+      "review_status": "machine_draft",
+      "display_name_key": "safety_profile.canada",
+      "primary_product_term": "OHS inspection",
+      "primary_domain_term": "occupational health and safety",
+      "finding_term": "finding",
+      "hazard_term": "hazard",
+      "risk_assessment_term": "hazard assessment",
+      "control_term": "control measure",
+      "corrective_action_term": "corrective action",
+      "default_risk_method": "matrix_5x5",
+      "allowed_risk_methods": [
+        "matrix_5x5",
+        "fine_kinney"
+      ],
+      "legislation_canvas_enabled": false,
+      "structured_regulatory_references_enabled": false,
+      "regulatory_reference_policy": "none",
+      "legal_compliance_claims_allowed": false,
+      "spelling_style": "canadian",
+      "prompt_directives": [
+        "Use Canadian OHS, hazard-assessment and workplace-inspection terminology.",
+        "Use Canadian spelling and neutral wording across federal, provincial and territorial contexts.",
+        "Do not imply a single Canada-wide OHS legal compliance determination."
+      ],
+      "forbidden_claims_key": "en-ca-generic-v1",
+      "profile_version": 1,
+      "forbidden_terms": [
+        "guarantees legal compliance",
+        "certifies legal compliance",
+        "replaces a professional inspection",
+        "officially approved",
+        "zero risk guaranteed",
+        "Canadian compliance",
+        "Canadian OHS compliant",
+        "Canada-wide OHS compliant",
+        "OSHA compliant",
+        "HSE compliant",
+        "WHS Act compliant",
+        "6331 compliant"
+      ]
+    }
+  ],
+  "glossary_versions": {
+    "core.yaml": 1,
+    "do-not-translate.yaml": 1,
+    "en-AU.yaml": 1,
+    "en-CA.yaml": 1,
+    "en-GB.yaml": 1,
+    "en-US.yaml": 1,
+    "forbidden-claims.yaml": 1
+  },
+  "human_approval_evidence": {
+    "language_review_hashes": [],
+    "safety_review_hashes": [],
+    "product_approval_hashes": []
+  }
+}
