@@ -1,6 +1,7 @@
 package com.riskdetectedan.core.designsystem
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
@@ -38,6 +40,13 @@ private data class RdConfettiPiece(
     val rotation: Float,
 )
 
+/**
+ * Optional deterministic clock used by screenshot tests. Production leaves this null and keeps
+ * the real coroutine-driven animation; tests can provide elapsed time since activation so every
+ * particle is rendered at the same frame on every host.
+ */
+val LocalRdConfettiSnapshotElapsedMillis = staticCompositionLocalOf<Long?> { null }
+
 @Composable
 fun RdConfettiView(
     isActive: Boolean,
@@ -46,6 +55,7 @@ fun RdConfettiView(
     durationMillis: Int = 620,
 ) {
     val colors = RdTheme.colors
+    val snapshotElapsedMillis = LocalRdConfettiSnapshotElapsedMillis.current
     val pieces = remember(colors, dense) {
         val palette = listOf(colors.green, colors.planPlus, colors.medium, colors.greenDark, colors.low, colors.high)
         val count = if (dense) 44 else 8
@@ -69,23 +79,31 @@ fun RdConfettiView(
         pieces.forEachIndexed { index, piece ->
             key(index) {
                 val progress = remember { Animatable(0f) }
-                LaunchedEffect(isActive) {
-                    if (isActive) {
+                LaunchedEffect(isActive, snapshotElapsedMillis) {
+                    if (isActive && snapshotElapsedMillis == null) {
                         delay(100 + piece.delayMs)
                         progress.animateTo(1f, animationSpec = tween(durationMillis = durationMillis))
                     } else {
                         progress.snapTo(0f)
                     }
                 }
-                val y = lerp(piece.startY, heightPx * piece.endYFraction, progress.value)
+                val progressValue = if (isActive && snapshotElapsedMillis != null) {
+                    val rawProgress = (
+                        (snapshotElapsedMillis - 100L - piece.delayMs).toFloat() / durationMillis
+                    ).coerceIn(0f, 1f)
+                    FastOutSlowInEasing.transform(rawProgress)
+                } else {
+                    progress.value
+                }
+                val y = lerp(piece.startY, heightPx * piece.endYFraction, progressValue)
                 Box(
                     modifier = Modifier
                         .offset { IntOffset((widthPx * piece.x).toInt(), y.toInt()) }
                         .size(piece.width, piece.height)
                         .graphicsLayer {
-                            rotationZ = piece.rotation * progress.value
-                            alpha = progress.value * 0.92f
-                            val scale = 0.72f + 0.28f * progress.value
+                            rotationZ = piece.rotation * progressValue
+                            alpha = progressValue * 0.92f
+                            val scale = 0.72f + 0.28f * progressValue
                             scaleX = scale
                             scaleY = scale
                         }

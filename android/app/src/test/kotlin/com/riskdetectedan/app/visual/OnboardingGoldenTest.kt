@@ -31,6 +31,7 @@ import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
+import com.riskdetectedan.core.designsystem.LocalRdConfettiSnapshotElapsedMillis
 import com.riskdetectedan.app.home.SectorPickerSheet
 import com.riskdetectedan.app.home.PhotoTraySheet
 import com.riskdetectedan.app.reports.ExcelGenerationOverlayParityPreviewSurface
@@ -213,16 +214,18 @@ class OnboardingGoldenTest {
     fun plan_summary_confetti_light() {
         composeRule.mainClock.autoAdvance = false
         composeRule.setContent {
-            RiskDetectedLightOnlyTheme {
-                OBPlanSummaryScreen(
-                    state = OnboardingUiState(
-                        certificate = OnboardingCertificate.A,
-                        hazards = setOf(OnboardingHazardClass.Critical, OnboardingHazardClass.High),
-                        sectors = listOf(OnboardingSector.Construction),
-                        frequency = OnboardingFrequency.TwoToFive,
-                    ),
-                    onNext = {},
-                )
+            CompositionLocalProvider(LocalRdConfettiSnapshotElapsedMillis provides 1_200L) {
+                RiskDetectedLightOnlyTheme {
+                    OBPlanSummaryScreen(
+                        state = OnboardingUiState(
+                            certificate = OnboardingCertificate.A,
+                            hazards = setOf(OnboardingHazardClass.Critical, OnboardingHazardClass.High),
+                            sectors = listOf(OnboardingSector.Construction),
+                            frequency = OnboardingFrequency.TwoToFive,
+                        ),
+                        onNext = {},
+                    )
+                }
             }
         }
         composeRule.mainClock.advanceTimeBy(1_400L)
