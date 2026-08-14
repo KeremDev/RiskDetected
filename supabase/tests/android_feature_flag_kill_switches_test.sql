@@ -18,7 +18,7 @@ select ok(
   coalesce((
     select bool_and(
       coalesce((value->>'kill_switch')::boolean, true) = false
-      and value->>'rollout_mode' = 'off'
+      and value->>'rollout_mode' = 'version_allowlist'
       and value->'enabled_android_version_codes' = '[2, 3]'::jsonb
     )
     from public.app_feature_flags

@@ -93,7 +93,10 @@ jobs:
           echo "LANG=C.UTF-8" >> "$GITHUB_ENV"
           echo "LC_ALL=C.UTF-8" >> "$GITHUB_ENV"
           echo "TZ=Europe/Istanbul" >> "$GITHUB_ENV"
-          echo "JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8 -Duser.language=tr -Duser.country=TR -Duser.timezone=Europe/Istanbul" >> "$GITHUB_ENV"
+          # Keep native library resolution locale-stable. A Turkish JVM locale lowercases
+          # "Linux" to "lınux", which makes Conscrypt look for a non-existent JNI binary.
+          # Android/Robolectric UI locale is configured by the tests and resources themselves.
+          echo "JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8 -Duser.language=en -Duser.country=US -Duser.timezone=Europe/Istanbul" >> "$GITHUB_ENV"
           echo "RD_BUILD_SHA=$GITHUB_SHA" >> "$GITHUB_ENV"
 
       - name: Environment and legal isolation

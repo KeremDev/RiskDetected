@@ -1,13 +1,13 @@
 -- Admit the next Android closed-test build without changing any iOS flag or policy.
--- Build 2 remains valid for the testers already enrolled; every Android capability retains its
--- existing rollout mode and only gains build 3 in the explicit allowlist.
+-- Build 2 remains valid for the testers already enrolled. Every Android capability is opened
+-- only through the explicit Play build allowlist; rollout_mode=off would keep the capability
+-- disabled even when kill_switch=false.
 
 update public.app_feature_flags
-set value = jsonb_set(
-      jsonb_set(value, '{kill_switch}', 'false'::jsonb, true),
-      '{enabled_android_version_codes}',
-      '[2,3]'::jsonb,
-      true
+set value = value || jsonb_build_object(
+      'kill_switch', false,
+      'rollout_mode', 'version_allowlist',
+      'enabled_android_version_codes', jsonb_build_array(2, 3)
     ),
     updated_at = now()
 where key in (
