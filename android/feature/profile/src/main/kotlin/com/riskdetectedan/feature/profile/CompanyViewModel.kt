@@ -91,32 +91,64 @@ class CompanyViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
-            val saved = when (val result = companyRepository.saveCompany(userId, draft)) {
-                is RdResult.Success -> result.value
-                is RdResult.Failure -> {
-                    _saveError.value = AppErrorMessages.make(
-                        result.message,
-                        context = context.getString(RdR.string.rd_firma_islemi_tamamlanamadi),
-                    )
-                    return@launch
-                }
-            }
-            _saveError.value = null
-
-            if (logoJpegBytes != null) {
-                when (val upload = companyRepository.uploadLogo(userId, saved.id, logoJpegBytes)) {
-                    is RdResult.Success -> companyRepository.saveCompany(
-                        userId,
-                        draft.copy(id = saved.id, logoPath = upload.value),
-                    )
-                    is RdResult.Failure ->
-                        _saveError.value = AppErrorMessages.make(
-                            upload.message,
-                            context = context.getString(RdR.string.rd_firma_islemi_tamamlanamadi),
-                        )
-                }
-            }
-            load()
+            saveCompany(userId, draft, logoJpegBytes)
         }
+    }
+
+    fun updateCompany(draft: CompanyDraft, logoJpegBytes: ByteArray? = null) {
+        val userId = authRepository.currentUserId ?: return
+        if (draft.id == null) return
+        viewModelScope.launch { saveCompany(userId, draft, logoJpegBytes) }
+    }
+
+    /** Product-level delete is a recoverable soft delete (`is_archived=true`). Archived rows are
+     * excluded by [CompanyRepository.listCompanies], so the company disappears immediately
+     * without breaking historical analyses and reports that still reference its id. */
+    fun deleteCompany(company: Company) {
+        viewModelScope.launch {
+            when (val result = companyRepository.archiveCompany(company.id)) {
+                is RdResult.Success -> {
+                    _saveError.value = null
+                    val current = _state.value as? CompanyListUiState.Loaded
+                    if (current != null) {
+                        _state.value = current.copy(companies = current.companies.filterNot { it.id == company.id })
+                    } else {
+                        load()
+                    }
+                }
+                is RdResult.Failure -> _saveError.value = AppErrorMessages.make(
+                    result.message,
+                    context = context.getString(RdR.string.rd_firma_islemi_tamamlanamadi),
+                )
+            }
+        }
+    }
+
+    private suspend fun saveCompany(userId: String, draft: CompanyDraft, logoJpegBytes: ByteArray?) {
+        val saved = when (val result = companyRepository.saveCompany(userId, draft)) {
+            is RdResult.Success -> result.value
+            is RdResult.Failure -> {
+                _saveError.value = AppErrorMessages.make(
+                    result.message,
+                    context = context.getString(RdR.string.rd_firma_islemi_tamamlanamadi),
+                )
+                return
+            }
+        }
+        _saveError.value = null
+
+        if (logoJpegBytes != null) {
+            when (val upload = companyRepository.uploadLogo(userId, saved.id, logoJpegBytes)) {
+                is RdResult.Success -> companyRepository.saveCompany(
+                    userId,
+                    draft.copy(id = saved.id, logoPath = upload.value),
+                )
+                is RdResult.Failure -> _saveError.value = AppErrorMessages.make(
+                    upload.message,
+                    context = context.getString(RdR.string.rd_firma_islemi_tamamlanamadi),
+                )
+            }
+        }
+        load()
     }
 }

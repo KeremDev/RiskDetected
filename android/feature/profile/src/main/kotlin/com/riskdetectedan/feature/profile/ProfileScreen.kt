@@ -808,7 +808,7 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
     val progressCardBackground = if (isDark) {
         listOf(Color(0xFF292416), Color(0xFF1E211E), Color(0xFF17231B))
     } else {
-        listOf(colors.planPlusSoft.copy(alpha = 0.78f), Color(0xFFFFF9EA), colors.greenSoft.copy(alpha = 0.34f))
+        listOf(colors.planPlusSoft, colors.planPlusSoft)
     }
     Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
         Row(
@@ -882,8 +882,8 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
                         when {
                             isDark && weekly.hasActivity -> listOf(Color(0xFF102619), Color(0xFF151A17), Color(0xFF2A2514))
                             isDark -> listOf(Color(0xFF111A24), Color(0xFF14181C), Color(0xFF1D1825))
-                            weekly.hasActivity -> listOf(colors.greenSoft, colors.white, colors.planPlusSoft.copy(alpha = 0.46f))
-                            else -> listOf(Color(0xFFEEF6FF), colors.white, Color(0xFFF6F3FF))
+                            weekly.hasActivity -> listOf(colors.greenSoft, colors.greenSoft)
+                            else -> listOf(Color(0xFFEEF6FF), Color(0xFFEEF6FF))
                         },
                     ),
                 )
@@ -988,8 +988,8 @@ private fun SubscriptionStatusCard(profile: UserProfile, onPaywall: () -> Unit) 
             .clip(RoundedCornerShape(RdRadius.lg))
             .background(
                 Brush.linearGradient(
-                    if (paid) listOf(soft, colors.white)
-                    else listOf(colors.greenSoft, colors.white, colors.planPlusSoft.copy(alpha = 0.42f)),
+                    if (paid) listOf(soft, soft)
+                    else listOf(colors.greenSoft, colors.greenSoft),
                 ),
             )
             .border(1.2.dp, (if (paid) accent else colors.green).copy(alpha = 0.32f), RoundedCornerShape(RdRadius.lg))

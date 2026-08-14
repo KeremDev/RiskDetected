@@ -87,7 +87,9 @@ fun RdConfettiView(
                         progress.snapTo(0f)
                     }
                 }
-                val progressValue = if (isActive && snapshotElapsedMillis != null) {
+                // A supplied snapshot time is an explicit test frame and must not race the
+                // screen's separate activation coroutine while Roborazzi is capturing.
+                val progressValue = if (snapshotElapsedMillis != null) {
                     val rawProgress = (
                         (snapshotElapsedMillis - 100L - piece.delayMs).toFloat() / durationMillis
                     ).coerceIn(0f, 1f)

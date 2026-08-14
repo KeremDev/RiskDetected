@@ -764,7 +764,6 @@ private fun ResultMetaSurface(
     onUpgrade: (SubscriptionTier) -> Unit,
 ) {
     val colors = RdTheme.colors
-    val confidence = if (findings.isEmpty()) 0 else (findings.map { it.confidence }.average() * 100).toInt()
     Row(
         Modifier.fillMaxWidth().shadow(10.dp, RoundedCornerShape(16.dp), ambientColor = colors.onyx.copy(.04f), spotColor = colors.onyx.copy(.04f))
             .clip(RoundedCornerShape(16.dp)).background(colors.white)
@@ -786,7 +785,6 @@ private fun ResultMetaSurface(
             Text(stringResource(RdR.string.rd_analiz_odagi_format, canvasLabel), style = iosRounded(12f), color = colors.slate, maxLines = 1)
             Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 MetaChip(stringResource(RdR.string.rd_bulgu_sayisi_format, findings.size), colors.fog, colors.black)
-                MetaChip(stringResource(RdR.string.rd_ai_guveni_yuzde_format, confidence), if (capabilities.tier == SubscriptionTier.Pro) colors.greenSoft else colors.highBg, if (capabilities.tier == SubscriptionTier.Pro) colors.greenDark else colors.highText)
             }
             if (photos.isNotEmpty()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1172,10 +1170,7 @@ private fun FindingDetailSurface(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text((finding.category ?: stringResource(RdR.string.rd_genel)).uppercase(Locale.forLanguageTag("tr-TR")), style = iosRounded(11f, FontWeight.Bold, tracking = .6f), color = colors.slate)
                     Text(finding.title, style = iosRounded(22f, FontWeight.Bold, tracking = -.4f), color = colors.black)
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        MetaChip(parityBandLabel(level), level.backgroundColor(), level.color())
-                        MetaChip(stringResource(RdR.string.rd_ai_guveni_yuzde_format, (finding.confidence * 100).toInt()), colors.greenSoft, colors.greenDark)
-                    }
+                    MetaChip(parityBandLabel(level), level.backgroundColor(), level.color())
                 }
             }
             item {

@@ -496,7 +496,6 @@ private fun ResultMetaCard(
     onUpgrade: () -> Unit,
 ) {
     val colors = RdTheme.colors
-    val averageConfidence = if (findings.isEmpty()) 0 else (findings.map(Finding::confidence).average() * 100).toInt()
     val sector = summary?.analysisSector?.let(AnalysisSector::fromId)?.let { analysisSectorTitle(it) }
     Column(
         modifier = Modifier
@@ -543,7 +542,7 @@ private fun ResultMetaCard(
                 if (sector != null) {
                     Text(stringResource(RdR.string.rd_analiz_kapsami_format, sector), style = RdFontStyle.Caption.toTextStyle(), color = colors.graphite)
                 }
-                Text(stringResource(RdR.string.rd_bulgu_ai_guveni_format, findings.size, averageConfidence), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
+                Text(stringResource(RdR.string.rd_bulgu_sayisi_format, findings.size), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
             }
         }
         if (photoBytes.size > 1) {

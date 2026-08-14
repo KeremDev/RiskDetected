@@ -295,10 +295,11 @@ class PdfReportGenerator @Inject constructor(
                     add(context.getString(R.string.rd_pdf_source_photos, finding.sourcePhotoIndices.joinToString(", ")))
                 }
                 if (finding.needsFieldVerification) add(context.getString(R.string.rd_pdf_field_verification_required))
-                add(context.getString(R.string.rd_pdf_ai_confidence, (finding.confidence.coerceIn(0.0, 1.0) * 100).toInt()))
             }.joinToString(" · ")
-            val metaPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 15f }
-            y = drawWrapped(canvas, verificationMeta, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, metaPaint) + 10f
+            if (verificationMeta.isNotBlank()) {
+                val metaPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 15f }
+                y = drawWrapped(canvas, verificationMeta, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, metaPaint) + 10f
+            }
             finding.description?.takeIf { it.isNotBlank() }?.let {
                 val descPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 18f }
                 y = drawWrapped(canvas, it, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, descPaint) + 16f

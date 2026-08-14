@@ -4,11 +4,15 @@ import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdResult
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ResponseException
+import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -115,6 +119,34 @@ private data class MutateFindingResult(
     val message: String? = null,
 )
 
+@Serializable
+private data class MutateFindingErrorBody(
+    val error: String? = null,
+    val message: String? = null,
+    @SerialName("support_id") val supportId: String? = null,
+)
+
+internal data class FindingMutationFailure(
+    val code: String,
+    val message: String,
+)
+
+internal object FindingMutationErrorMapper {
+    private val json = Json { ignoreUnknownKeys = true }
+
+    fun decode(body: String?, fallbackCode: String, fallbackMessage: String): FindingMutationFailure {
+        val payload = body?.let {
+            runCatching { json.decodeFromString<MutateFindingErrorBody>(it) }.getOrNull()
+        }
+        val code = payload?.error?.takeIf(String::isNotBlank) ?: fallbackCode
+        val baseMessage = payload?.message?.takeIf(String::isNotBlank) ?: fallbackMessage
+        val message = payload?.supportId?.takeIf(String::isNotBlank)?.let { supportId ->
+            "$baseMessage Destek kodu: $supportId"
+        } ?: baseMessage
+        return FindingMutationFailure(code, message)
+    }
+}
+
 /** Exact mirror of mutate-analysis-finding/index.ts's FK_PROBABILITY_VALUES/FK_FREQUENCY_VALUES/
  * FK_SEVERITY_VALUES (classic Fine-Kinney option sets) — checked in the SDK, not guessed. */
 object FineKinneyValues {
@@ -209,11 +241,7 @@ class FindingsRepository @Inject constructor(
             )
         }
     } catch (t: Throwable) {
-        RdResult.Failure(
-            code = "finding_delete_failed",
-            message = t.message ?: "Bulgu silinemedi.",
-            cause = t,
-        )
+        mutationFailure(t, "finding_delete_failed", "Bulgu silinemedi.")
     }
 
     /**
@@ -257,11 +285,26 @@ class FindingsRepository @Inject constructor(
                 )
             }
         } catch (t: Throwable) {
-            RdResult.Failure(
-                code = "finding_update_failed",
-                message = t.message ?: "Bulgu güncellenemedi.",
-                cause = t,
-            )
+            mutationFailure(t, "finding_update_failed", "Bulgu güncellenemedi.")
         }
+    }
+
+    private suspend fun mutationFailure(
+        throwable: Throwable,
+        fallbackCode: String,
+        fallbackMessage: String,
+    ): RdResult.Failure {
+        val response = when (throwable) {
+            is RestException -> throwable.response
+            is ResponseException -> throwable.response
+            else -> null
+        }
+        val responseBody = response?.let { runCatching { it.bodyAsText() }.getOrNull() }
+        val mapped = FindingMutationErrorMapper.decode(
+            body = responseBody,
+            fallbackCode = fallbackCode,
+            fallbackMessage = fallbackMessage,
+        )
+        return RdResult.Failure(mapped.code, mapped.message, throwable)
     }
 }

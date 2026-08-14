@@ -87,13 +87,7 @@ fun CanvasSheet(
             onUpgradeRequested()
             return
         }
-        if (!userTier.isPaid) {
-            onSelectedChange(setOf(canvas))
-        } else if (selected.contains(canvas)) {
-            if (selected.size > 1) onSelectedChange(selected - canvas)
-        } else {
-            onSelectedChange(selected + canvas)
-        }
+        onSelectedChange(nextCanvasSelection(selected, canvas, userTier.isPaid))
     }
 
     Column(modifier = Modifier.fillMaxWidth().padding(top = RdSpacing.sm)) {
@@ -148,6 +142,27 @@ fun CanvasSheet(
             modifier = Modifier.padding(horizontal = RdSpacing.lg),
         )
         Spacer(Modifier.height(RdSpacing.md))
+    }
+}
+
+/**
+ * "Genel" is the absence of a narrower focus, so combining it with a specific canvas makes the
+ * legacy primary `canvas` field misleading (for example `[general, sector]` used to be stored as
+ * `general` after sorting). Keep paid multi-selection for specific canvases, but make General
+ * mutually exclusive so the focus shown in history/report always reflects the user's choice.
+ */
+internal fun nextCanvasSelection(
+    selected: Set<AnalysisCanvas>,
+    tapped: AnalysisCanvas,
+    isPaidTier: Boolean,
+): Set<AnalysisCanvas> {
+    if (!isPaidTier || tapped == AnalysisCanvas.general) return setOf(tapped)
+
+    val specificSelection = selected - AnalysisCanvas.general
+    return if (tapped in specificSelection) {
+        if (specificSelection.size > 1) specificSelection - tapped else specificSelection
+    } else {
+        specificSelection + tapped
     }
 }
 

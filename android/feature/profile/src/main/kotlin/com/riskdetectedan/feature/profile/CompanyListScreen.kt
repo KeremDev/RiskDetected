@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
@@ -80,6 +81,8 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
     var defaultDueDaysText by remember { mutableStateOf("") }
     var hazardClass by remember { mutableStateOf(CompanyHazardClass.Medium) }
     var logoBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var editingCompany by remember { mutableStateOf<Company?>(null) }
+    var deletingCompany by remember { mutableStateOf<Company?>(null) }
     val companyCount = (state as? CompanyListUiState.Loaded)?.companies?.size ?: 0
     val canAddCompany = companyCount < capabilities.companyLimit
     val draft = CompanyDraft(
@@ -127,7 +130,19 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.xs)) {
                         current.companies.forEach { company ->
-                            RdListRow(title = company.name, subtitle = company.hazardClass.title, icon = Icons.Filled.Business)
+                            RdListRow(
+                                title = company.name,
+                                subtitle = company.hazardClass.title,
+                                icon = Icons.Filled.Business,
+                                onClick = { editingCompany = company },
+                                trailing = {
+                                    Text(
+                                        stringResource(RdR.string.rd_duzenle),
+                                        style = RdFontStyle.Caption.toTextStyle(),
+                                        color = colors.slate,
+                                    )
+                                },
+                            )
                         }
                     }
                 }
@@ -244,6 +259,125 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
             Spacer(Modifier.height(RdSpacing.lg))
         }
     }
+
+    editingCompany?.let { company ->
+        CompanyEditDialog(
+            company = company,
+            onSave = { updated ->
+                viewModel.updateCompany(updated)
+                editingCompany = null
+            },
+            onDelete = {
+                editingCompany = null
+                deletingCompany = company
+            },
+            onDismiss = { editingCompany = null },
+        )
+    }
+
+    deletingCompany?.let { company ->
+        AlertDialog(
+            onDismissRequest = { deletingCompany = null },
+            title = { Text(stringResource(RdR.string.rd_firmayi_sil)) },
+            text = { Text(stringResource(RdR.string.rd_firma_silme_onayi_format, company.name)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteCompany(company)
+                        deletingCompany = null
+                    },
+                ) { Text(stringResource(RdR.string.rd_evet_sil), color = colors.critical) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingCompany = null }) {
+                    Text(stringResource(RdR.string.rd_vazgec))
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun CompanyEditDialog(
+    company: Company,
+    onSave: (CompanyDraft) -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember(company.id) { mutableStateOf(company.name) }
+    var hazardClass by remember(company.id) { mutableStateOf(company.hazardClass) }
+    var address by remember(company.id) { mutableStateOf(company.address.orEmpty()) }
+    var contactPerson by remember(company.id) { mutableStateOf(company.contactPerson.orEmpty()) }
+    var department by remember(company.id) { mutableStateOf(company.department.orEmpty()) }
+    var defaultResponsible by remember(company.id) { mutableStateOf(company.defaultResponsible.orEmpty()) }
+    var defaultDueDaysText by remember(company.id) { mutableStateOf(company.defaultDueDays?.toString().orEmpty()) }
+    val draft = CompanyDraft(
+        id = company.id,
+        name = name,
+        hazardClass = hazardClass,
+        logoPath = company.logoPath,
+        address = address,
+        contactPerson = contactPerson,
+        department = department,
+        defaultResponsible = defaultResponsible,
+        defaultDueDaysText = defaultDueDaysText,
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(RdR.string.rd_firmayi_duzenle)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(RdSpacing.sm),
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(RdR.string.rd_firma_adi)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(RdSpacing.xs),
+                ) {
+                    CompanyHazardClass.entries.forEach { option ->
+                        FilterChip(
+                            selected = hazardClass == option,
+                            onClick = { hazardClass = option },
+                            label = { Text(option.title) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+                OutlinedTextField(address, { address = it }, label = { Text(stringResource(RdR.string.rd_firma_adresi)) }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(contactPerson, { contactPerson = it }, label = { Text(stringResource(RdR.string.rd_firma_yetkilisi)) }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(department, { department = it }, label = { Text(stringResource(RdR.string.rd_departman)) }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(defaultResponsible, { defaultResponsible = it }, label = { Text(stringResource(RdR.string.rd_varsayilan_sorumlu)) }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = defaultDueDaysText,
+                    onValueChange = { defaultDueDaysText = it.filter(Char::isDigit).take(3) },
+                    label = { Text(stringResource(RdR.string.rd_varsayilan_termin_gun)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = defaultDueDaysText.isNotBlank() && (draft.defaultDueDays?.let { it !in 1..365 } ?: true),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(draft) }, enabled = draft.isValid) {
+                Text(stringResource(RdR.string.rd_kaydet))
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onDelete) {
+                    Text(stringResource(RdR.string.rd_sil), color = RdTheme.colors.critical)
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(RdR.string.rd_vazgec)) }
+            }
+        },
+    )
 }
 
 /** Deterministic company-management state used by the release golden suite. */

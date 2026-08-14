@@ -283,7 +283,7 @@ fun AnnotateScreen(
                 val output = flattenAnnotatedImage(context, original, boxSize, shapes, penStrokes)
                 if (output != null) onAnalyze(output) else onCancel()
             },
-            style = RdButtonStyle.Onyx,
+            style = RdButtonStyle.Green,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 16.dp),
         )
     }

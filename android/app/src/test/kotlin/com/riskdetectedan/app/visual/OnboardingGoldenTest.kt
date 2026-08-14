@@ -228,6 +228,7 @@ class OnboardingGoldenTest {
                 }
             }
         }
+        composeRule.waitForIdle()
         composeRule.mainClock.advanceTimeBy(1_400L)
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }

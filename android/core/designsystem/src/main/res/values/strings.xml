@@ -36,6 +36,9 @@
     <string name="rd_analiz_sayisi_format">%1$d analiz</string>
     <string name="rd_bulgu_kisa">Bulgu</string>
     <string name="rd_duzenle">Düzenle</string>
+    <string name="rd_firmayi_duzenle">Firmayı düzenle</string>
+    <string name="rd_firmayi_sil">Firmayı sil</string>
+    <string name="rd_firma_silme_onayi_format">“%1$s” firması silinsin mi? Geçmiş analiz ve raporlardaki firma bilgisi korunur.</string>
     <string name="rd_e_postayi_degistir">E-postayı değiştir</string>
     <string name="rd_ek">EK</string>
     <string name="rd_emin_misin">Emin misin?</string>
@@ -652,7 +655,6 @@
     <string name="rd_kkd_cevresel_kontroller">KKD ve çevresel kontroller</string>
     <string name="rd_bulgular_yapilandiriliyor">Bulgular yapılandırılıyor</string>
     <string name="rd_analiz_odagi_format">Analiz odağı: %1$s</string>
-    <string name="rd_bulgu_ai_guveni_format">%1$d bulgu · AI güveni %%%2$d</string>
     <string name="rd_dagilim">DAĞILIM</string>
     <string name="rd_tolerans_disi">Tolerans dışı</string>
     <string name="rd_is_derhal_durdurulmali">İş derhal durdurulmalı.</string>
@@ -703,7 +705,6 @@
     <string name="rd_excel_hazir">Excel hazır</string>
     <string name="rd_uygulamayi_acik_tut">RiskDetected raporu oluşturulurken uygulamayı açık tut.</string>
     <string name="rd_bulgu_sayisi_format">%1$d bulgu</string>
-    <string name="rd_ai_guveni_yuzde_format">AI güveni %%%1$d</string>
     <string name="rd_bulgu_sira_upper_format">%1$d. BULGU</string>
     <string name="rd_yontem_karsilastirmasi">YÖNTEM KARŞILAŞTIRMASI</string>
     <string name="rd_tehlike_aciklamasi">TEHLİKE AÇIKLAMASI</string>
