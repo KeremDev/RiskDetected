@@ -7,7 +7,7 @@ on:
         description: "Play Console'da kullanılmamış versionCode"
         required: true
         type: string
-        default: "3"
+        default: "4"
 
 permissions:
   contents: read
@@ -206,7 +206,7 @@ jobs:
       - name: Upload release candidate evidence
         uses: actions/upload-artifact@v4
         with:
-          name: riskdetected-android-1.5.1-release-candidate
+          name: riskdetected-android-1.5.2-release-candidate
           retention-days: 30
           if-no-files-found: error
           path: |
