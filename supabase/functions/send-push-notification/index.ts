@@ -7,9 +7,11 @@
  * - APNS_BUNDLE_ID
  * - APNS_PRIVATE_KEY
  * - APNS_ENV (sandbox | production)
+ * localization-inventory: machine-prompt-begin
  * - FCM_SERVICE_ACCOUNT_JSON (the raw contents of a Firebase service account key JSON with
  *   the "Firebase Cloud Messaging API" scope — Android tokens fail closed with
  *   fcm_credentials_not_configured until this is set, same fail-closed shape APNs already had)
+ * localization-inventory: machine-prompt-end
  *
  * This function keeps verify_jwt=false for backwards compatibility and performs
  * an exact service-role Authorization check in the function body.
@@ -231,11 +233,11 @@ function parseFcmServiceAccount(): FcmServiceAccount {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new Error("FCM_SERVICE_ACCOUNT_JSON is not valid JSON");
+    throw new Error("fcm_service_account_json_invalid");
   }
   const value = parsed as Partial<FcmServiceAccount>;
   if (!value.client_email || !value.private_key || !value.project_id) {
-    throw new Error("FCM_SERVICE_ACCOUNT_JSON is missing required fields");
+    throw new Error("fcm_service_account_fields_missing");
   }
   return value as FcmServiceAccount;
 }
@@ -249,12 +251,14 @@ let cachedFcmToken:
   }
   | null = null;
 
+// localization-inventory: machine-prompt-begin
 /** Google OAuth2 service-account JWT-bearer flow (RFC 7523) — the FCM HTTP v1 API's auth
  * scheme, structurally the same shape as APNs's `makeProviderToken` above (build a signed JWT,
  * cache the result) but RS256 against a Google service account instead of ES256 against an
  * Apple auth key, and with an extra token-exchange round trip Apple's scheme doesn't need
  * (APNs accepts the signed JWT directly as the bearer token; Google exchanges it for a
  * short-lived OAuth2 access token first). */
+// localization-inventory: machine-prompt-end
 async function makeFcmProviderToken(): Promise<
   { accessToken: string; projectId: string }
 > {

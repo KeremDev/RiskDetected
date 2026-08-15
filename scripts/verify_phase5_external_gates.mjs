@@ -1023,7 +1023,7 @@ export async function evaluatePhase5ExternalGates({
   };
 }
 
-function parseCLI(argv) {
+export function parseCLI(argv) {
   const modeArgument = argv.find((argument) => argument.startsWith("--mode="));
   const mode = modeArgument?.split("=", 2)[1] ?? "current";
   if (!["current", "release"].includes(mode)) {

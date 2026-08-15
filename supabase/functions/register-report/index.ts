@@ -10,6 +10,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveReportLocalization } from "../_shared/report-localization.ts";
 import { readAndroidRuntimeGates } from "../_shared/android-runtime-gates.ts";
+import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 
 const PDF_MIME = "application/pdf";
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
@@ -53,6 +54,7 @@ type AnalysisRow = {
   status: string;
   title: string | null;
   company_id: string | null;
+  client_platform?: string | null;
   analysis_edit_version?: number | null;
   has_user_edits?: boolean | null;
   localization_snapshot?: Record<string, unknown> | null;
@@ -89,7 +91,7 @@ type ReportSnapshotResult =
   };
 
 const REPORT_ANALYSIS_SELECT =
-  "id,user_id,status,title,company_id,analysis_edit_version,has_user_edits,localization_snapshot";
+  "id,user_id,status,title,company_id,client_platform,analysis_edit_version,has_user_edits,localization_snapshot";
 
 const REPORT_FINDINGS_SELECT =
   "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,needs_field_verification,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,ai_confidence,last_user_edit_at,user_edit_count,finding_version,display_order";
@@ -551,7 +553,7 @@ serve(async (req) => {
   if (quotaEligibilityError || !quotaEligibility) {
     return json(500, {
       error: "report_quota_check_failed",
-      message: "Rapor kotası kontrol edilemedi.",
+      message: userFacingCopy("reportQuotaCheckFailed", body.report_language),
       request_id: requestID,
       support_id: supportID,
     });
@@ -567,8 +569,8 @@ serve(async (req) => {
     return json(429, {
       error: quotaCode,
       message: quotaCode === "free_risk_analysis_trial_exhausted"
-        ? "Bir kez tanımlanan risk analizi tablosu hakkını kullandın."
-        : "Rapor kotan doldu.",
+        ? userFacingCopy("reportRiskTrialUsed", body.report_language)
+        : userFacingCopy("reportQuotaExceeded", body.report_language),
       request_id: requestID,
       support_id: supportID,
     });
@@ -667,6 +669,12 @@ serve(async (req) => {
       file_size: fileSize,
       size_bytes: fileSize,
       page_count: pageCount,
+      client_platform: clientPlatform === "ios" || clientPlatform === "android"
+        ? clientPlatform
+        : (analysisRow.client_platform === "ios" ||
+            analysisRow.client_platform === "android"
+          ? analysisRow.client_platform
+          : null),
       company_id: company?.id ?? null,
       company_snapshot: companySnapshot(company),
       report_language: reportLocalization.context.language,
@@ -681,7 +689,7 @@ serve(async (req) => {
       support_id: supportID,
     })
     .select(
-      "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,request_id,support_id,report_language,report_locale,safety_profile_id,safety_profile_version,regulatory_sections_enabled,created_at",
+      "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,client_platform,request_id,support_id,report_language,report_locale,safety_profile_id,safety_profile_version,regulatory_sections_enabled,created_at",
     )
     .single();
 

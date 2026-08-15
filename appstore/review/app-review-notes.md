@@ -1,90 +1,50 @@
-RiskDetected 1.3.1 (build 81) is a maintenance and reliability update.
+RiskDetected 1.3.2 (build 82) is a maintenance and reliability update.
 
 Changes in this build:
+- Sign-in, localization, analysis/report flows, and general stability were improved.
+- Trial and notification explanations were clarified; users can continue without purchasing.
+- StoreKit/RevenueCat prices come from the user's App Store storefront.
+- Best-effort platform analytics are isolated from auth, subscriptions, quotas, analyses, and reports; telemetry failure cannot block app use.
 
-- Notification preference restoration and synchronization were improved.
-- The legal-document update notice is now shown once per actual document
-  revision.
-- Sign-in, localization, account settings, and general stability were improved.
-- The app records the signed-in account's first observed two-letter device
-  locale region (for example, AU or CA) for aggregate product analytics. This
-  is not App Store storefront data, is written only once, and is not used to
-  select a safety terminology profile.
-
-Reviewer login:
-Use the demo account supplied in the App Review Information fields. Demo
-credentials are intentionally not included in these notes or in the source
-repository.
-
-Review mailbox:
-The review mailbox is supplied in the App Review Information fields.
-
-OTP validity:
-If the reviewer chooses the email OTP path, request a fresh OTP from the sign-in
-screen and use the latest code delivered to the supplied review mailbox.
+Reviewer login and mailbox:
+Use the demo account in App Review Information. Request a fresh email OTP and use the latest code delivered to the supplied review mailbox. Credentials are intentionally excluded from these notes and the repository.
 
 Physical-device demo video:
-No separate video is required for normal review. The candidate build was tested
-on a physical iPhone and the app flow is available directly in the submitted
-build.
+No separate video is required. The candidate was tested on a physical iPhone and the complete flow is available in the submitted build.
 
 External services:
-RiskDetected uses Supabase for authentication, database, storage and Edge
-Functions, RevenueCat/StoreKit for subscriptions, Resend/Supabase email hooks
-for transactional email, and AI providers for workplace-safety analysis.
-AI-assisted risk analysis uses Google Gemini/Google AI with possible Groq-compatible fallback.
+Supabase provides authentication, database, storage, and Edge Functions. RevenueCat/StoreKit manages subscriptions. Transactional email uses Resend/Supabase hooks. AI-assisted workplace-safety analysis uses Google Gemini/Google AI with possible Groq-compatible fallback.
 
 Regional differences:
-English users explicitly select a safety terminology profile: International,
-UK, US, Australian WHS, or Canadian OHS. Storefront and IP address are not used
-to infer the user’s safety jurisdiction. The first observed device locale region
-described above is analytics-only and never changes the user's selected safety
-terminology profile.
+English users explicitly select International, UK, US, Australian WHS, or Canadian OHS terminology. Storefront, IP address, and analytics do not select or change the user's safety profile.
 
 China mainland availability decision:
-China mainland is excluded for this release because the app contains
-AI-assisted workplace-safety analysis and external AI provider processing.
+China mainland remains excluded because the app includes AI-assisted workplace-safety analysis and external AI processing.
 
 Regulated industry documentation:
-AI output is advisory. The app provides decision-support output only. It does not certify workplace compliance and does not replace a qualified occupational safety professional, workplace inspection, or legal review.
+AI output is advisory decision support. It does not certify compliance or replace a qualified occupational safety professional, workplace inspection, or legal review.
 
 Subscriptions:
-Subscriptions are managed by Apple IAP. Purchases can be restored in the app
-from Profile, and localized subscription metadata is configured for the English
-App Store locales.
+Apple IAP manages subscriptions. Purchases can be restored from Profile, and localized subscription metadata is configured for supported English locales.
 
 Permissions:
-Camera and photo-library access are requested so the user can capture or select
-workplace photos for safety-risk analysis.
+Camera and photo-library access let users capture or select workplace photos for risk analysis.
 
 Legal and privacy:
-English legal URLs:
-
-- Privacy Policy: https://riskdetected.com/en/privacy
-- Terms of Use: https://riskdetected.com/en/terms
+- Privacy: https://riskdetected.com/en/privacy
+- Terms: https://riskdetected.com/en/terms
 - Support: https://riskdetected.com/en/support
 
 Suggested review path:
-
 1. Sign in with the supplied demo account.
-2. Select English as the app language.
-3. Open the safety terminology selector and review International, UK, US,
-   Australian WHS, and Canadian OHS choices.
-4. Create a photo analysis using the synthetic workplace image available to
-   the review account.
-5. Review the evidence-linked findings and the Fine-Kinney / 5×5 scoring
-   presentation.
-6. Open an analysis result and generate PDF and Excel reports.
-7. Open Settings/Profile to inspect legal documents, restore purchases, and
-   the in-app account-deletion entry point.
+2. Select English and review the safety terminology profiles.
+3. Create a photo analysis using the synthetic image available to the account.
+4. Review evidence-linked findings and Fine-Kinney / 5×5 scoring.
+5. Generate PDF and Excel reports.
+6. Open Profile to inspect legal documents, restore purchases, and account deletion.
 
 Important product boundaries:
-
-- AI-generated findings are decision support and may be incomplete or
-  inaccurate.
-- Non-Turkish profiles use terminology guidance only. They do not claim
-  regulatory certification or compliance, and structured country legislation
-  references are not shown in this release.
-- The App Store screenshots use synthetic debug fixtures and contain no real
-  user or workplace data.
-- Existing Turkish App Store metadata and screenshots are unchanged.
+- AI findings may be incomplete or inaccurate and require professional review.
+- Non-Turkish profiles provide terminology guidance only; they do not claim regulatory certification.
+- Screenshots use synthetic debug fixtures with no real user or workplace data.
+- Existing App Store metadata and screenshots are unchanged.

@@ -16,6 +16,7 @@ final class AuthService: ObservableObject {
     private var stateTask: Task<Void, Never>?
     private var deviceRegionCaptureInFlightUserIDs = Set<UUID>()
     private var deviceRegionCaptureCompletedUserIDs = Set<UUID>()
+    private var platformTelemetryInFlightUserIDs = Set<UUID>()
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "AuthService")
 
     init() {
@@ -391,6 +392,71 @@ final class AuthService: ObservableObject {
         }
 
         await recordFirstSeenDeviceRegionIfNeeded(userID: user.id)
+        schedulePlatformTelemetryIfNeeded(userID: user.id)
+    }
+
+    /// Records analytics only after the authenticated profile lifecycle has completed.
+    /// This task is intentionally detached from auth success: telemetry failures must never
+    /// turn a valid sign-in, profile bootstrap, legal gate, or analysis flow into an error.
+    private func schedulePlatformTelemetryIfNeeded(userID: UUID) {
+        guard supabase.currentUserID == userID else { return }
+        guard profile?.id == userID else { return }
+        guard !platformTelemetryInFlightUserIDs.contains(userID) else { return }
+        guard Self.platformTelemetryStoredDay(userID: userID) != Self.platformTelemetryToday else {
+            return
+        }
+
+        platformTelemetryInFlightUserIDs.insert(userID)
+        Task { [weak self] in
+            guard let self else { return }
+            defer { self.platformTelemetryInFlightUserIDs.remove(userID) }
+
+            let delays: [UInt64] = [0, 500_000_000, 1_500_000_000]
+            for delay in delays {
+                guard self.supabase.currentUserID == userID else { return }
+                if delay > 0 { try? await Task.sleep(nanoseconds: delay) }
+                do {
+                    let response: PlatformTelemetryResponse = try await self.supabase.client
+                        .rpc(
+                            "record_client_platform_v1",
+                            params: PlatformTelemetryPayload(
+                                platform: AppClientMetadata.platform,
+                                appVersion: AppClientMetadata.appVersion,
+                                appBuild: AppClientMetadata.appBuild
+                            )
+                        )
+                        .execute()
+                        .value
+                    guard response.recorded else { continue }
+                    UserDefaults.standard.set(
+                        response.activityDay ?? Self.platformTelemetryToday,
+                        forKey: Self.platformTelemetryStorageKey(userID: userID)
+                    )
+                    return
+                } catch {
+                    Self.logger.warning(
+                        "Platform telemetry failed error=\(error.localizedDescription, privacy: .public)"
+                    )
+                }
+            }
+        }
+    }
+
+    private static var platformTelemetryToday: String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "Europe/Istanbul")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
+    }
+
+    private static func platformTelemetryStorageKey(userID: UUID) -> String {
+        "rd.platform.telemetry.v1.\(userID.uuidString.lowercased())"
+    }
+
+    private static func platformTelemetryStoredDay(userID: UUID) -> String? {
+        UserDefaults.standard.string(forKey: platformTelemetryStorageKey(userID: userID))
     }
 
     @discardableResult
@@ -819,6 +885,28 @@ private struct FirstSeenDeviceRegionPayload: Encodable {
 
     enum CodingKeys: String, CodingKey {
         case regionCode = "p_region_code"
+    }
+}
+
+private struct PlatformTelemetryPayload: Encodable {
+    let platform: String
+    let appVersion: String
+    let appBuild: String
+
+    enum CodingKeys: String, CodingKey {
+        case platform = "p_platform"
+        case appVersion = "p_app_version"
+        case appBuild = "p_app_build"
+    }
+}
+
+private struct PlatformTelemetryResponse: Decodable {
+    let recorded: Bool
+    let activityDay: String?
+
+    enum CodingKeys: String, CodingKey {
+        case recorded
+        case activityDay = "activity_day"
     }
 }
 

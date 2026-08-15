@@ -65,16 +65,26 @@ final class RiskDetectedUITests: XCTestCase {
         completeQuestionsToPersonalPlan()
         tap("onboarding.personal_plan.create_account")
 
+        XCTAssertTrue(waitFor("Ücretsiz Denemenizi İstiyoruz", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Herhangi bir ücret alınmaz.").exists)
+        XCTAssertTrue(waitFor("0.00 TL'ye dene").exists)
+        XCTAssertTrue(waitFor("onboarding.trial_invite.dismiss").exists)
+        XCTAssertTrue(waitFor("onboarding.trial_invite.continue_free").exists)
         tapScrolling("onboarding.trial_invite.cta", timeout: 10)
 
         XCTAssertTrue(waitFor("onboarding.notification_permission", timeout: 8).exists)
-        XCTAssertTrue(waitFor("Plan ve teklif bilgilerini bildirimlerden takip edebilirsin").exists)
+        XCTAssertTrue(waitFor("Deneme süren bitmeden sana haber verelim").exists)
         XCTAssertTrue(waitFor("Plan, teklif ve uygulama hatırlatmaları için bildirimleri aç.").exists)
+        XCTAssertTrue(waitFor("Bildirimleri Aç").exists)
         tap("onboarding.notification_permission.cta")
 
         XCTAssertTrue(waitFor("Yıllık", timeout: 8).exists)
         XCTAssertTrue(waitFor("Aylık").exists)
-        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12).exists)
+        XCTAssertTrue(waitFor("Devam Et", timeout: 12).exists)
+        XCTAssertTrue(waitFor("Hatırlatma Gönderilir").exists)
+        XCTAssertTrue(waitFor("Deneme süresinin 5. gününde size hatırlatma gönderilir.").exists)
+        XCTAssertTrue(waitFor("Hesabınız Aktif").exists)
+        XCTAssertTrue(waitFor("Deneme süresi sonunda hesabınız Plus olarak aktiflenir.").exists)
         XCTAssertTrue(waitFor("Geri yükle").exists)
         XCTAssertTrue(waitFor("Kullanım Şartları").exists)
         XCTAssertTrue(waitFor("Gizlilik Politikası").exists)
@@ -685,6 +695,82 @@ final class RiskDetectedUITests: XCTestCase {
         ], timeout: 8).exists)
     }
 
+    func testCaptureAccountCreationFollowUpScreens() throws {
+        launchApp(extraArguments: [
+            "RD_UI_TEST_BYPASS_AUTH",
+            "-UIViewAnimationEnabled", "NO",
+            "-ApplePersistenceIgnoreState", "YES",
+        ])
+
+        completeQuestionsToPersonalPlan()
+        tap("onboarding.personal_plan.create_account")
+
+        XCTAssertTrue(waitFor("onboarding.trial_invite", timeout: 10).exists)
+        XCTAssertTrue(waitFor("Ücretsiz Denemenizi İstiyoruz").exists)
+        attachScreenshot("01-uygulamayi-dene")
+
+        tapScrolling("onboarding.trial_invite.cta", timeout: 10)
+        XCTAssertTrue(waitFor("onboarding.notification_permission", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Deneme süren bitmeden sana haber verelim").exists)
+        attachScreenshot("02-bildirimleri-ac")
+
+        tap("onboarding.notification_permission.cta")
+        XCTAssertTrue(waitFor("Yıllık", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Aylık").exists)
+        XCTAssertTrue(waitFor("Devam Et", timeout: 12).exists)
+        XCTAssertTrue(waitFor("Hatırlatma Gönderilir").exists)
+        XCTAssertTrue(waitFor("Hesabınız Aktif").exists)
+        attachScreenshot("03-onboarding-paywall")
+    }
+
+    func testCapturePostOnboardingAndPaywallScreens() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_LIGHT_MODE"])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        attachScreenshot("01-ana-ekran")
+
+        tapTab(.analyses)
+        XCTAssertTrue(waitFor("Analizler").exists)
+        attachScreenshot("02-analizler")
+
+        tapTab(.reports)
+        XCTAssertTrue(waitFor("Denetime hazır çıktılar").exists)
+        attachScreenshot("03-raporlar")
+
+        tapTab(.profile)
+        XCTAssertTrue(waitFor("UI Test Kullanıcı").exists)
+        attachScreenshot("04-profil")
+
+        tapTab(.home)
+        tap("Yükselt", timeout: 10)
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
+        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 15).exists)
+        attachScreenshot("05-plus-yillik-paywall")
+
+        tap("Aylık")
+        XCTAssertTrue(waitFor("Plus’a abone olun.").exists)
+        attachScreenshot("06-plus-aylik-paywall")
+
+        tap("in_app_paywall.plus.pro_link")
+        XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
+        attachScreenshot("07-pro-yillik-paywall")
+
+        tap("Aylık")
+        XCTAssertTrue(waitForOne([
+            "Tüm Pro özellikleri aylık fiyat yükleniyor ile.",
+            "Tüm Pro özellikleri aylık fiyat alınamadı ile."
+        ], timeout: 8).exists)
+        attachScreenshot("08-pro-aylik-paywall")
+
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_PHOTO_TRAY", "RD_UI_TEST_LIGHT_MODE"])
+        XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
+        attachScreenshot("09-fotograf-secimi")
+
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT", "RD_UI_TEST_LIGHT_MODE"])
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        attachScreenshot("10-analiz-sonucu")
+    }
+
     func testCompanyPickerV2FieldsRenderWithFixtures() throws {
         launchMainApp()
 
@@ -1159,6 +1245,14 @@ final class RiskDetectedUITests: XCTestCase {
     private func tapTab(_ tab: TestTab) {
         tap(tab.identifier, timeout: 8)
         RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+    }
+
+    private func attachScreenshot(_ name: String) {
+        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     private func tapScrolling(_ identifier: String, timeout: TimeInterval = 8) {

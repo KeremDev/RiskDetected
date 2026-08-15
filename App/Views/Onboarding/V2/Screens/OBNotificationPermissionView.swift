@@ -43,7 +43,7 @@ struct OBNotificationPermissionView: View {
     }
 
     private var headline: some View {
-        Text(RDLocalization.string("onboarding.obnotification.permission.view.ucretsiz.denemeniz.bitmeden.once.size.hatirlatac.21ab39bb", table: .onboarding, fallback: "Plan ve teklif bilgilerini bildirimlerden takip edebilirsin"))
+        Text(RDLocalization.string("onboarding.obnotification.permission.view.ucretsiz.denemeniz.bitmeden.once.size.hatirlatac.21ab39bb", table: .onboarding, fallback: "Deneme süren bitmeden sana haber verelim"))
             .font(.system(size: RDFontScale.size(28), weight: .bold))
             .lineSpacing(2)
             .foregroundStyle(Color.rdOnyx)
@@ -81,7 +81,7 @@ struct OBNotificationPermissionView: View {
             Button {
                 Task { await continueAfterPermissionRequest() }
             } label: {
-                Text(RDLocalization.string("onboarding.obnotification.permission.view.ucretsiz.devam.et.c00788c5", table: .onboarding, fallback: "Ücretsiz devam et"))
+                Text(RDLocalization.string("onboarding.obnotification.permission.view.ucretsiz.devam.et.c00788c5", table: .onboarding, fallback: "Bildirimleri Aç"))
                     .font(.system(size: RDFontScale.size(18), weight: .bold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)

@@ -124,3 +124,20 @@ Deno.test("register-report rejects exhausted quota before Storage download", asy
     'await supabase.storage.from("reports").remove([storagePath]);',
   );
 });
+
+Deno.test("register-report persists a validated request platform with analysis fallback", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(
+    source,
+    "company_id,client_platform,analysis_edit_version",
+  );
+  assertStringIncludes(
+    source,
+    'client_platform: clientPlatform === "ios" || clientPlatform === "android"',
+  );
+  assertStringIncludes(source, 'analysisRow.client_platform === "android"');
+});

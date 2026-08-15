@@ -1,6 +1,7 @@
 package com.riskdetectedan.core.data.account
 
 import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.common.RdClientMetadata
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
 import io.ktor.client.call.body
@@ -33,6 +34,7 @@ private data class AccountDeletionRequestBody(
     @SerialName("support_id") val supportId: String,
     @SerialName("client_platform") val clientPlatform: String = "android",
     @SerialName("completion_mode") val completionMode: String = "immediate",
+    @SerialName("app_language") val appLanguage: String = RdClientMetadata.APP_LANGUAGE,
 )
 
 @Singleton

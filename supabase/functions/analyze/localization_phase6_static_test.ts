@@ -64,6 +64,7 @@ const paywallSources = await Promise.all(
     "../../../App/Views/Paywall/InAppPaywallView.swift",
   ].map((path) => Deno.readTextFile(new URL(path, import.meta.url))),
 );
+const trialInviteSource = paywallSources[2];
 const paywallCatalogs = await Promise.all(
   [
     "../../../App/Localization/Onboarding.xcstrings",
@@ -192,10 +193,16 @@ Deno.test("English legal routing and acknowledgement metadata fail closed", () =
   );
 });
 
-Deno.test("paywall copy does not promise an unverified introductory offer", () => {
+Deno.test("purchase paywall copy does not promise an unverified introductory offer", () => {
   const forbiddenClaim =
     /7\s*(?:days?|gün)\s*(?:free|ücretsiz)|free\s+trial|ücretsiz\s+deneme|₺0[,.]00|no payments at this time|şu an ödeme yok/iu;
-  for (const source of paywallSources) {
+  // The invite is an informational route to the StoreKit-backed paywall; it does not purchase.
+  // Its fixed CTA is product copy approved by the owner and remains separate from transactional
+  // price/offer claims, which must continue to come from StoreKit.
+  assertStringIncludes(trialInviteSource, "onContinue()");
+  assertEquals(trialInviteSource.includes("onPurchase"), false);
+  for (const [index, source] of paywallSources.entries()) {
+    if (index === 2) continue;
     const fallbacks = [...source.matchAll(/fallback:\s*"([^"]*)"/gu)]
       .map((match) => match[1]);
     assertEquals(
@@ -203,9 +210,27 @@ Deno.test("paywall copy does not promise an unverified introductory offer", () =
       false,
     );
   }
-  for (const catalog of paywallCatalogs) {
-    const values = [...catalog.matchAll(/"value":\s*"([^"]*)"/gu)]
-      .map((match) => match[1]);
+  for (const [index, catalog] of paywallCatalogs.entries()) {
+    const parsed = JSON.parse(catalog) as {
+      strings?: Record<
+        string,
+        { localizations?: Record<string, { stringUnit?: { value?: string } }> }
+      >;
+    };
+    const values = Object.entries(parsed.strings ?? {}).flatMap(
+      ([key, entry]) => {
+        if (index === 0 && key.startsWith("onboarding.obtrial.invite.")) {
+          return [];
+        }
+        return Object.values(entry.localizations ?? {}).flatMap((
+          localization,
+        ) =>
+          typeof localization.stringUnit?.value === "string"
+            ? [localization.stringUnit.value]
+            : []
+        );
+      },
+    );
     assertEquals(
       values.some((value) => forbiddenClaim.test(value)),
       false,

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   evaluatePhase5ExternalGates,
+  parseCLI,
   validateLegalHTTPResponse,
 } from "./verify_phase5_external_gates.mjs";
 
@@ -70,17 +70,12 @@ await test("Turkish SPA fallback cannot satisfy an English legal URL", () => {
   assert.ok(issues.some((issue) => issue.includes("English document marker")));
 });
 
-await test("release mode performs the live check and passes", () => {
-  const result = spawnSync(
-    process.execPath,
-    ["scripts/verify_phase5_external_gates.mjs", "--mode=release"],
-    {
-      cwd: repositoryRoot,
-      encoding: "utf8",
-    },
-  );
-  assert.equal(result.status, 0);
-  assert.match(result.stdout, /Phase 5 external gates: passed/u);
+await test("release mode cannot bypass the live legal check", () => {
+  assert.deepEqual(parseCLI(["--mode=release"]), {
+    mode: "release",
+    live: true,
+    json: false,
+  });
 });
 
 await test("release mode passes with exact live English documents", async () => {

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "version": "1.3.2",
+  "locale": "en-AU",
+  "market": "Australia",
+  "app_info": {
+    "name": "RiskDetected: Safety Audit",
+    "subtitle": "WHS Inspections & Risk Reports",
+    "privacy_policy_url": "https://riskdetected.com/en/privacy"
+  },
+  "version_info": {
+    "promotional_text": "Review workplace hazards with WHS terminology, evidence-grounded findings, risk scoring, and professional PDF and Excel reports.",
+    "description": "Review workplace hazards from field photos and turn observations into structured, evidence-grounded findings with RiskDetected.\n\nDesigned for safety professionals, site managers, consultants and operations teams, RiskDetected helps you organise a consistent workplace inspection workflow from initial review to report export.\n\nKey features:\n• Review a field photo with AI-assisted analysis\n• Plus and Pro plans can combine up to three photos in one assessment\n• Connect findings to their source photo for field verification\n• Prioritise risk using Fine-Kinney or a 5×5 matrix\n• Record likely contributing factors, controls and recommended actions\n• Create professional PDF and Excel reports\n• Add company, preparer and logo details to reports\n• Keep assessments and reports organised in the archive\n• Choose International or Australian WHS terminology for future analyses\n\nRiskDetected provides decision support. AI-generated findings may be incomplete or inaccurate and must be checked against the workplace. The app does not replace a qualified safety professional, a workplace inspection or legal review.\n\nSome features and higher usage limits require a Plus or Pro subscription. Subscriptions are managed by Apple and purchases can be restored in the app.\n\nTerms of Use: https://riskdetected.com/en/terms\nPrivacy Policy: https://riskdetected.com/en/privacy\nApple Standard EULA: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+    "keywords": "JSA,job,analysis,observation,matrix,hazard,assessment,workplace,site,generator,Fine-Kinney,JHA",
+    "marketing_url": "https://riskdetected.com/en",
+    "support_url": "https://riskdetected.com/en/support",
+    "whats_new": "Performance, reliability, and general usability improvements."
+  },
+  "screenshots": {
+    "source_theme": "light",
+    "captions": [
+      "Spot workplace hazards from a photo",
+      "Turn evidence into clear findings",
+      "Prioritise risk with Fine-Kinney or 5×5",
+      "Create professional PDF & Excel reports",
+      "Work with Australian WHS terminology"
+    ]
+  }
+}

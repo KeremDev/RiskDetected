@@ -23,6 +23,7 @@ import {
   reportNumber,
   resolveReportLocalization,
 } from "../_shared/report-localization.ts";
+import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -73,6 +74,7 @@ type AnalysisRow = Record<string, unknown> & {
   created_at?: string | null;
   completed_at?: string | null;
   analysis_sector?: string | null;
+  client_platform?: string | null;
   output_language?: string | null;
   output_locale?: string | null;
   work_jurisdiction_country?: string | null;
@@ -597,22 +599,31 @@ function companySnapshot(company: CompanyRow | null): CompanySnapshot | null {
 function profileWithCompany(
   profile: ProfileRow | null,
   company: CompanyRow | null,
+  language: unknown,
 ): ProfileRow | null {
   if (!company) return profile;
   const companyInfo = [
     hazardClassLabel(company.hazard_class),
     safeText(company.address),
     safeText(company.contact_person)
-      ? `İrtibat: ${safeText(company.contact_person)}`
+      ? userFacingCopy("reportCompanyContact", language, {
+        value: safeText(company.contact_person),
+      })
       : "",
     safeText(company.department)
-      ? `Birim: ${safeText(company.department)}`
+      ? userFacingCopy("reportCompanyDepartment", language, {
+        value: safeText(company.department),
+      })
       : "",
     safeText(company.default_responsible)
-      ? `Sorumlu: ${safeText(company.default_responsible)}`
+      ? userFacingCopy("reportCompanyResponsible", language, {
+        value: safeText(company.default_responsible),
+      })
       : "",
     typeof company.default_due_days === "number"
-      ? `Varsayılan termin: ${company.default_due_days} gün`
+      ? userFacingCopy("reportCompanyDefaultDueDays", language, {
+        value: company.default_due_days,
+      })
       : "",
   ].filter((value) => value.length > 0).join(" · ");
   return {
@@ -3172,6 +3183,7 @@ export async function handleGenerateExcelReportRequest(req: Request) {
   const companyProfile = profileWithCompany(
     profile as ProfileRow | null,
     company,
+    reportLocalization.context.language,
   );
   const overrideText = (value: unknown, maxLength: number): string | null => {
     if (typeof value !== "string") return null;
@@ -3354,6 +3366,18 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       file_size: bytes.byteLength,
       size_bytes: bytes.byteLength,
       page_count: 1,
+      client_platform: (() => {
+        const requested = safeText(body.client_platform, "").trim()
+          .toLowerCase();
+        if (requested === "ios" || requested === "android") return requested;
+        const inherited = safeText(
+          (analysis as AnalysisRow).client_platform,
+          "",
+        ).trim().toLowerCase();
+        return inherited === "ios" || inherited === "android"
+          ? inherited
+          : null;
+      })(),
       company_id: company?.id ?? null,
       company_snapshot: companySnapshot(company),
       report_language: reportLocalization.context.language,

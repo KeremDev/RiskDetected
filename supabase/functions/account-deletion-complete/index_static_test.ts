@@ -24,7 +24,8 @@ Deno.test("request-account-deletion invokes privileged completion worker", async
   assertStringIncludes(source, "auth_user_deleted");
   assertStringIncludes(source, "workerResponse.status");
   assertStringIncludes(source, "ok: false");
-  assertStringIncludes(source, "Hesap silme işlemi tamamlanamadı");
+  assertStringIncludes(source, 'userFacingCopy("deletionFailed", appLanguage)');
+  assertStringIncludes(source, "app_language: appLanguage");
 });
 
 Deno.test("account-deletion-complete records DB/Auth/Storage completion markers", async () => {

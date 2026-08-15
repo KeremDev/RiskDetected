@@ -23,6 +23,7 @@ import com.riskdetectedan.app.legal.LegalAcceptanceRecorder
 import com.riskdetectedan.app.navigation.RdNavHost
 import com.riskdetectedan.app.network.NetworkStatusBanner
 import com.riskdetectedan.app.push.PushTokenRegistrar
+import com.riskdetectedan.app.telemetry.PlatformTelemetryRegistrar
 import com.riskdetectedan.app.push.NotificationDeepLinkHandler
 import com.riskdetectedan.app.push.NotificationEngagementRegistrar
 import com.riskdetectedan.app.release.ReleaseGate
@@ -115,6 +116,9 @@ class MainActivity : ComponentActivity() {
                         // signed-in session (see its own doc comment for what onNewToken alone
                         // doesn't cover).
                         PushTokenRegistrar()
+                        // Best-effort and UI-free: records the authenticated platform/day without
+                        // becoming part of auth, profile, quota, or analysis success.
+                        PlatformTelemetryRegistrar()
                         // Supplies the authorization + foreground heartbeat used by the shared
                         // notification automation eligibility engine.
                         NotificationEngagementRegistrar()

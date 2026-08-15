@@ -1286,12 +1286,16 @@ final class AnalysisService {
             let email: String?
             let request_id: String
             let support_id: String
+            let client_platform: String
+            let app_language: String
         }
 
         let payload = Payload(
             email: email,
             request_id: requestID,
-            support_id: supportID
+            support_id: supportID,
+            client_platform: AppClientMetadata.platform,
+            app_language: RDLanguage.current.rawValue
         )
 
         do {

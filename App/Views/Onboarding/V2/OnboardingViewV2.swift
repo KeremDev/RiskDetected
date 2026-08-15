@@ -224,6 +224,9 @@ struct OnboardingViewV2: View {
                 onContinue: {
                     state.goTo(10)
                 },
+                onDismiss: {
+                    finishOnboarding()
+                },
                 onPrivacy: {
                     selectedLegalDocument = .privacy
                 },

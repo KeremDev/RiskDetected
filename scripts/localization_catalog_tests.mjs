@@ -284,8 +284,8 @@ test("L10N-004", "Swift user-facing hard-coded literal debt is zero", () => {
 test("L10N-005", "backend user-facing literal scan matches approved baseline", () => {
   assertLiteralSurfaceSnapshot(
     ["backend"],
-    254,
-    "e372b5619493f646d04c4db6d179b0786d38b7a1c261c087b89c279c08e7a3a4",
+    248,
+    "e9c8fbe0e5b90368b97774e227d086fd7f45438b858bf228696576d1be7449b8",
   );
 });
 
@@ -728,14 +728,14 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
   assert.equal(rows.length, 2_087, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
-    "7c674c9565b2a61492b8ca3b251d4cf306c4ba164c0d6f870faa4297cc5a670c",
+    "8a8e7d7a4a8eb293c5b5262110bdadf38a62690e2a4a95aab1cadaf8a7cafd40",
     "Turkish catalog snapshot changed",
   );
   assert.equal(
     catalog("Onboarding").strings[
       "onboarding.obtrial.invite.view.uygulamayi.faee4cf2"
     ].localizations.tr.stringUnit.value,
-    "Sana uygun ",
+    "Ücretsiz ",
     "approved Turkish source spacing correction",
   );
 });

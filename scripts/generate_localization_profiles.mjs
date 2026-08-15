@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import {
   mkdirSync,
   readFileSync,
@@ -663,6 +664,18 @@ export function getSafetyProfile(id: SafetyProfileID): SafetyProfileDefinition {
 `;
 }
 
+function formatTypeScript(source) {
+  const result = spawnSync("deno", ["fmt", "-"], {
+    input: source,
+    encoding: "utf8",
+  });
+  assert(
+    result.status === 0,
+    `Deno could not format generated TypeScript: ${result.stderr?.trim() ?? "unknown error"}`,
+  );
+  return result.stdout;
+}
+
 function generateManifestJSON(contract) {
   const {
     manifest,
@@ -717,7 +730,7 @@ function writeOrCheck(path, content) {
 
 const contract = loadContract();
 const swift = generateSwift(contract);
-const typeScript = generateTypeScript(contract);
+const typeScript = formatTypeScript(generateTypeScript(contract));
 const generatedManifest = generateManifestJSON(contract);
 
 writeOrCheck(OUTPUTS.swiftCanonical, swift);

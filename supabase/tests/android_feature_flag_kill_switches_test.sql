@@ -1,6 +1,6 @@
 -- Covers the current Android closed-test release-gate state. The original ADR-005 migration
--- creates every flag closed; the build-3 release migration opens the six Android capabilities
--- only for the explicitly admitted Play builds 2 and 3.
+-- creates every flag closed; later closed-test migrations open the six Android capabilities
+-- only for the explicitly admitted Play builds 2 through 5.
 
 begin;
 
@@ -19,7 +19,7 @@ select ok(
     select bool_and(
       coalesce((value->>'kill_switch')::boolean, true) = false
       and value->>'rollout_mode' = 'version_allowlist'
-      and value->'enabled_android_version_codes' = '[2, 3]'::jsonb
+      and value->'enabled_android_version_codes' = '[2, 3, 4, 5]'::jsonb
     )
     from public.app_feature_flags
     where key in (
@@ -31,7 +31,7 @@ select ok(
       'android_pdf_reports_enabled'
     )
   ), false),
-  'all six Android capabilities are open only for admitted builds 2 and 3'
+  'all six Android capabilities are open only for admitted builds 2 through 5'
 );
 
 select is(

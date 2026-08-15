@@ -6,6 +6,7 @@ import SwiftUI
 struct OBTrialInviteView: View {
     @EnvironmentObject private var app: AppState
     let onContinue: () -> Void
+    var onDismiss: () -> Void = {}
     var onPrivacy: () -> Void = {}
     var onTerms: () -> Void = {}
     var onRestore: () -> Void = {}
@@ -17,7 +18,7 @@ struct OBTrialInviteView: View {
     @State private var frontPhone: DeckPhone = .a
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
             backdrop
 
             VStack(spacing: 0) {
@@ -38,25 +39,36 @@ struct OBTrialInviteView: View {
                     .padding(.bottom, 14)
                     .obStage(delay: 0.32)
 
-                OBPrimaryButton(title: RDLocalization.string("onboarding.obtrial.invite.view.0.00.ye.dene.c364ad31", table: .onboarding, fallback: "Plan seçeneklerini gör"), trailingIcon: "arrow.right", style: .onyx, accessibilityID: "onboarding.trial_invite.cta") {
+                OBPrimaryButton(title: RDLocalization.string("onboarding.obtrial.invite.view.0.00.ye.dene.c364ad31", table: .onboarding, fallback: "0.00 TL'ye dene"), trailingIcon: "arrow.right", style: .onyx, accessibilityID: "onboarding.trial_invite.cta") {
                     record(.trialInviteCtaTap)
                     onContinue()
                 }
                 .padding(.horizontal, 24)
                 .obStage(delay: 0.4)
 
-                Text(RDLocalization.string("onboarding.obtrial.invite.view.taahhut.yok.istedigin.zaman.iptal.1ebf94cb", table: .onboarding, fallback: "Taahhüt yok, istediğin zaman iptal."))
-                    .font(.system(size: RDFontScale.size(12)))
-                    .foregroundStyle(Color.rdSlate)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 10)
-                    .obStage(delay: 0.44)
+                Button {
+                    OBHaptic.soft()
+                    onDismiss()
+                } label: {
+                    Text(RDLocalization.string("onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.b59d7d99", table: .onboarding, fallback: "Ücretsiz Devam Et"))
+                        .font(.system(size: RDFontScale.size(12), weight: .semibold))
+                        .foregroundStyle(Color.rdSlate.opacity(0.72))
+                        .underline(true, color: Color.rdSlate.opacity(0.46))
+                        .frame(height: 34)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("onboarding.trial_invite.continue_free")
+                .obStage(delay: 0.44)
 
                 footerLinks
                     .padding(.top, 14)
                     .padding(.bottom, 24)
                     .obStage(delay: 0.48)
             }
+
+            dismissButton
+                .padding(.top, 12)
+                .padding(.trailing, 18)
         }
         .onAppear { logViewIfNeeded() }
         .accessibilityElement(children: .contain)
@@ -77,17 +89,30 @@ struct OBTrialInviteView: View {
     }
 
     private var title: some View {
-        VStack(spacing: 8) {
-            (Text(RDLocalization.string("onboarding.obtrial.invite.view.uygulamayi.faee4cf2", table: .onboarding, fallback: "Sana uygun ")).foregroundColor(Color.rdOnyx)
-             + Text(RDLocalization.string("onboarding.obtrial.invite.view.ucretsiz.84c94af9", table: .onboarding, fallback: "planı")).foregroundColor(Color.rdGreen))
-                .font(.system(size: RDFontScale.size(26), weight: .semibold))
-                .tracking(-0.6)
-            Text(RDLocalization.string("onboarding.obtrial.invite.view.denemeni.istiyoruz.59a5e56c", table: .onboarding, fallback: "birlikte seçelim"))
-                .font(.system(size: RDFontScale.size(26), weight: .semibold))
-                .tracking(-0.6)
-                .foregroundStyle(Color.rdOnyx)
-        }
+        (Text(RDLocalization.string("onboarding.obtrial.invite.view.uygulamayi.faee4cf2", table: .onboarding, fallback: "Ücretsiz ")).foregroundColor(Color.rdGreen)
+         + Text(RDLocalization.string("onboarding.obtrial.invite.view.ucretsiz.84c94af9", table: .onboarding, fallback: "Denemenizi İstiyoruz")).foregroundColor(Color.rdOnyx))
+            .font(.system(size: RDFontScale.size(26), weight: .semibold))
+            .tracking(-0.6)
+            .fixedSize(horizontal: false, vertical: true)
         .multilineTextAlignment(.center)
+    }
+
+    private var dismissButton: some View {
+        Button {
+            OBHaptic.soft()
+            onDismiss()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: RDFontScale.size(13), weight: .bold))
+                .foregroundStyle(Color.rdSlate)
+                .frame(width: 34, height: 34)
+                .background(Color.white.opacity(0.86))
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color.rdLine, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(RDLocalization.string("onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.871ae28f", table: .onboarding, fallback: "Şimdilik ücretsiz devam et"))
+        .accessibilityIdentifier("onboarding.trial_invite.dismiss")
     }
 
     // Centered phone mockup container — optional asset slots for screenshots.
@@ -262,7 +287,7 @@ struct OBTrialInviteView: View {
             Image(systemName: "checkmark")
                 .font(.system(size: RDFontScale.size(13), weight: .bold))
                 .foregroundStyle(Color.rdOnyx)
-            Text(RDLocalization.string("onboarding.obtrial.invite.view.su.an.odeme.yok.5ab25673", table: .onboarding, fallback: "Fiyat ve uygun teklifler App Store'da gösterilir"))
+            Text(RDLocalization.string("onboarding.obtrial.invite.view.su.an.odeme.yok.5ab25673", table: .onboarding, fallback: "Herhangi bir ücret alınmaz."))
                 .font(.system(size: RDFontScale.size(15), weight: .semibold))
                 .foregroundStyle(Color.rdOnyx)
         }
@@ -313,7 +338,7 @@ struct OBTrialInviteView: View {
                 selectedPackageID: nil,
                 noticePresent: false,
                 errorMessage: nil,
-                contextHeadline: RDLocalization.string("onboarding.obtrial.invite.view.uygulamayi.ucretsiz.denemeni.istiyoruz.2cbb5618", table: .onboarding, fallback: "Plan seçeneklerini incelemeni istiyoruz"),
+                contextHeadline: RDLocalization.string("onboarding.obtrial.invite.view.uygulamayi.ucretsiz.denemeni.istiyoruz.2cbb5618", table: .onboarding, fallback: "Ücretsiz denemenizi istiyoruz"),
                 purchaseError: nil
             )
         )

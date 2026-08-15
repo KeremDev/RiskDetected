@@ -9,6 +9,7 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 
 type SupabaseAdmin = ReturnType<typeof createClient<any, "public">>;
 
@@ -18,6 +19,7 @@ type RequestBody = {
   support_id?: unknown;
   client_platform?: unknown;
   completion_mode?: unknown;
+  app_language?: unknown;
 };
 
 type DeletionRequest = {
@@ -110,6 +112,7 @@ async function sendRequestAcceptedEmail(
   email: string | null,
   supportID: string,
   estimatedCompletionAt: string,
+  appLanguage: unknown,
 ): Promise<void> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   const from = Deno.env.get("RESEND_FROM_EMAIL") ??
@@ -124,11 +127,11 @@ async function sendRequestAcceptedEmail(
     body: JSON.stringify({
       from,
       to: [email],
-      subject: "RiskDetected hesap silme talebin alındı",
-      text:
-        `Hesap ve veri silme talebin alındı. İşlem en geç 24 saat içinde tamamlanacaktır.\n\n` +
-        `Destek kodu: ${supportID}\nTahmini son zaman: ${estimatedCompletionAt}\n\n` +
-        "Aktif Google Play veya App Store aboneliğini mağaza abonelik ayarlarından ayrıca yönetmelisin.",
+      subject: userFacingCopy("deletionRequestEmailSubject", appLanguage),
+      text: userFacingCopy("deletionRequestEmailBody", appLanguage, {
+        supportID,
+        estimatedCompletionAt,
+      }),
     }),
   }).catch(() => undefined);
 }
@@ -282,6 +285,7 @@ serve(async (req) => {
     ["immediate", "request_only"] as const,
     "immediate",
   );
+  const appLanguage = body.app_language === "en" ? "en" : "tr";
   if (
     !clientPlatform || !completionMode ||
     (clientPlatform !== "web" && completionMode === "request_only")
@@ -352,7 +356,12 @@ serve(async (req) => {
 
   if (completionMode === "request_only") {
     const estimatedCompletionAt = deletionRequest.due_at ?? dueAt;
-    await sendRequestAcceptedEmail(email, supportID, estimatedCompletionAt);
+    await sendRequestAcceptedEmail(
+      email,
+      supportID,
+      estimatedCompletionAt,
+      appLanguage,
+    );
     return json(req, 202, {
       ok: true,
       completed: false,
@@ -360,8 +369,7 @@ serve(async (req) => {
       request_id: deletionRequest.id,
       support_id: supportID,
       estimated_completion_at: estimatedCompletionAt,
-      message:
-        "Hesap ve veri silme talebin alındı. İşlem en geç 24 saat içinde tamamlanacaktır.",
+      message: userFacingCopy("deletionRequestAccepted", appLanguage),
     });
   }
 
@@ -376,6 +384,7 @@ serve(async (req) => {
       body: JSON.stringify({
         request_id: deletionRequest.id,
         processed_by: "edge:function:request-account-deletion",
+        app_language: appLanguage,
       }),
     },
   );
@@ -392,8 +401,7 @@ serve(async (req) => {
       support_id: String(workerBody.support_id ?? supportID),
       worker_status: workerResponse.status,
       worker_error: workerBody.error ?? "worker_failed",
-      message:
-        "Hesap silme işlemi tamamlanamadı. Lütfen tekrar dene; sorun devam ederse destek koduyla bize ulaş.",
+      message: userFacingCopy("deletionFailed", appLanguage),
     });
   }
 
@@ -406,7 +414,8 @@ serve(async (req) => {
       workerBody.already_completed === true,
     request_id: deletionRequest.id,
     support_id: String(workerBody.support_id ?? supportID),
-    message:
-      `Hesabın ve verilerin silindi. Aktif ${storeName} aboneliğin varsa mağaza abonelik ayarlarından ayrıca yönetebilirsin.`,
+    message: userFacingCopy("deletionCompleted", appLanguage, {
+      store: storeName,
+    }),
   });
 });

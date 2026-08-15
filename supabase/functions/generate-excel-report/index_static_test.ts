@@ -96,3 +96,13 @@ Deno.test("generate-excel-report applies authenticated report customization", as
     "safeText(profile?.company_info, safeText(profile?.phone))",
   );
 });
+
+Deno.test("generate-excel-report persists a validated request platform with analysis fallback", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, "client_platform: (() => {");
+  assertStringIncludes(source, "(analysis as AnalysisRow).client_platform");
+});

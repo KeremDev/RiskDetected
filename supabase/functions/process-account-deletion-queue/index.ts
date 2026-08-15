@@ -78,9 +78,9 @@ async function sendQueueFailureAlert(params: {
     body: JSON.stringify({
       from,
       to: [to],
-      subject: "RiskDetected hesap silme worker uyarısı",
-      text: `PII içermeyen worker uyarısı\nDestek kodu: ${params.supportID}\n` +
-        `Hata kodu: ${params.failureCode}\nHTTP: ${params.httpStatus}`,
+      subject: "ACCOUNT_DELETION_WORKER_ALERT",
+      text: `support_id=${params.supportID}\n` +
+        `failure_code=${params.failureCode}\nhttp_status=${params.httpStatus}`,
     }),
   }).catch(() => undefined);
 }

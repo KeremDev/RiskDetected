@@ -579,7 +579,8 @@ function scanTypeScript(path, entries) {
   const sourceFile = relative(ROOT, path);
   if (
     sourceFile ===
-      "supabase/functions/_shared/ai-localization-prompt.ts"
+      "supabase/functions/_shared/ai-localization-prompt.ts" ||
+    sourceFile === "supabase/functions/_shared/user-facing-copy.ts"
   ) {
     return;
   }

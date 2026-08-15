@@ -530,13 +530,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You can follow plan and offer details in notifications"
+            "value": "We'll remind you before your trial ends"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Plan ve teklif bilgilerini bildirimlerden takip edebilirsin"
+            "value": "Deneme süren bitmeden sana haber verelim"
           }
         }
       }
@@ -548,13 +548,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Continue for free"
+            "value": "Turn On Notifications"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ücretsiz devam et"
+            "value": "Bildirimleri Aç"
           }
         }
       }
@@ -1772,13 +1772,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "App Store"
+            "value": "Reminder Sent"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "App Store"
+            "value": "Hatırlatma Gönderilir"
           }
         }
       }
@@ -1790,13 +1790,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Renewal"
+            "value": "Your Account Is Active"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yenileme"
+            "value": "Hesabınız Aktif"
           }
         }
       }
@@ -2042,13 +2042,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verify the price and any eligible offer on the App Store confirmation screen."
+            "value": "We will send you a reminder on the fifth day of your trial."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fiyatı ve varsa uygun teklifi App Store onay ekranında doğrula."
+            "value": "Deneme süresinin 5. gününde size hatırlatma gönderilir."
           }
         }
       }
@@ -2078,13 +2078,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The approved plan renews under App Store terms; you can cancel at any time."
+            "value": "Your account becomes active on Plus when the trial period ends."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Onaylanan plan App Store şartlarıyla yenilenir; istediğin zaman iptal edebilirsin."
+            "value": "Deneme süresi sonunda hesabınız Plus olarak aktiflenir."
           }
         }
       }
@@ -2438,13 +2438,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Continue for free for now"
+            "value": "Continue for Free"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Şimdilik ücretsiz devam et"
+            "value": "Ücretsiz Devam Et"
           }
         }
       }
@@ -2516,7 +2516,7 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Devam et"
+            "value": "Devam Et"
           }
         }
       }
@@ -2546,13 +2546,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "View plan options"
+            "value": "Try for free"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Plan seçeneklerini gör"
+            "value": "0.00 TL'ye dene"
           }
         }
       }
@@ -2690,13 +2690,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Price and eligible offers are shown in the App Store"
+            "value": "You won't be charged."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fiyat ve uygun teklifler App Store'da gösterilir"
+            "value": "Herhangi bir ücret alınmaz."
           }
         }
       }
@@ -2780,13 +2780,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "plan"
+            "value": "Trial"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "planı"
+            "value": "Denemenizi İstiyoruz"
           }
         }
       }
@@ -2798,13 +2798,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the right "
+            "value": "Free "
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sana uygun "
+            "value": "Ücretsiz "
           }
         }
       }
@@ -2816,13 +2816,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We want you to review the plan options"
+            "value": "We want you to try it for free"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Plan seçeneklerini incelemeni istiyoruz"
+            "value": "Ücretsiz denemenizi istiyoruz"
           }
         }
       }

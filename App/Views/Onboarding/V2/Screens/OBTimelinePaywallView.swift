@@ -147,7 +147,7 @@ struct OBTimelinePaywallView: View {
                 OBHaptic.soft()
                 onDismiss()
             } label: {
-                Text(RDLocalization.string("onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.b59d7d99", table: .onboarding, fallback: "Şimdilik ücretsiz devam et"))
+                Text(RDLocalization.string("onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.b59d7d99", table: .onboarding, fallback: "Ücretsiz Devam Et"))
                     .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .underline(true, color: Color.rdSlate.opacity(0.75))
@@ -307,10 +307,7 @@ struct OBTimelinePaywallView: View {
     }
 
     private var primaryButtonTitle: String {
-        guard selectedPackage != nil else {
-            return priceLoadError == nil ? RDLocalization.string("onboarding.obtimeline.paywall.view.fiyat.yukleniyor.31966e06", table: .onboarding, fallback: "Fiyat yükleniyor...") : RDLocalization.string("onboarding.obtimeline.paywall.view.tekrar.dene.f8ced812", table: .onboarding, fallback: "Tekrar dene")
-        }
-        return selectedPlan == .yearly ? RDLocalization.string("onboarding.obtimeline.paywall.view.ucretsiz.denemeyi.baslat.dc125184", table: .onboarding, fallback: "Devam et") : RDLocalization.string("onboarding.obtimeline.paywall.view.aboneligi.baslat.79fd5050", table: .onboarding, fallback: "Aboneliği başlat")
+        RDLocalization.string("onboarding.obtimeline.paywall.view.ucretsiz.denemeyi.baslat.dc125184", table: .onboarding, fallback: "Devam Et")
     }
 
     private var primaryButtonDisabled: Bool {
@@ -460,16 +457,16 @@ struct OBTimelinePaywallView: View {
                 index: 1,
                 icon: "bell.fill",
                 accent: Color(hex: "#F0A400"),
-                day: RDLocalization.string("onboarding.obtimeline.paywall.view.5.gun.a1306735", table: .onboarding, fallback: "App Store"),
-                detail: RDLocalization.string("onboarding.obtimeline.paywall.view.denemen.bitmeden.sana.hatirlatma.gondeririz.cc0144c2", table: .onboarding, fallback: "Fiyatı ve varsa uygun teklifi App Store onay ekranında doğrula."),
+                day: RDLocalization.string("onboarding.obtimeline.paywall.view.5.gun.a1306735", table: .onboarding, fallback: "Hatırlatma Gönderilir"),
+                detail: RDLocalization.string("onboarding.obtimeline.paywall.view.denemen.bitmeden.sana.hatirlatma.gondeririz.cc0144c2", table: .onboarding, fallback: "Deneme süresinin 5. gününde size hatırlatma gönderilir."),
                 isLast: false
             )
             timelineStep(
                 index: 2,
                 icon: "crown.fill",
                 accent: Color(hex: "#F0A400"),
-                day: RDLocalization.string("onboarding.obtimeline.paywall.view.7.gun.5bf94fa7", table: .onboarding, fallback: "Yenileme"),
-                detail: RDLocalization.string("onboarding.obtimeline.paywall.view.devam.edersen.yillik.plan.baslar.istedigin.zaman.68e836a8", table: .onboarding, fallback: "Onaylanan plan App Store şartlarıyla yenilenir; istediğin zaman iptal edebilirsin."),
+                day: RDLocalization.string("onboarding.obtimeline.paywall.view.7.gun.5bf94fa7", table: .onboarding, fallback: "Hesabınız Aktif"),
+                detail: RDLocalization.string("onboarding.obtimeline.paywall.view.devam.edersen.yillik.plan.baslar.istedigin.zaman.68e836a8", table: .onboarding, fallback: "Deneme süresi sonunda hesabınız Plus olarak aktiflenir."),
                 isLast: true
             )
         }

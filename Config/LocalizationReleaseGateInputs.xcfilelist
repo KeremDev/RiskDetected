@@ -160,8 +160,10 @@ $(SRCROOT)/supabase/functions/_shared/ai-localization-prompt.ts
 $(SRCROOT)/supabase/functions/_shared/ai-localization-prompt_test.ts
 $(SRCROOT)/supabase/functions/_shared/ai-localization-validation.ts
 $(SRCROOT)/supabase/functions/_shared/ai-localization-validation_test.ts
+$(SRCROOT)/supabase/functions/_shared/android-runtime-gates.ts
 $(SRCROOT)/supabase/functions/_shared/auth-email-localization.ts
 $(SRCROOT)/supabase/functions/_shared/auth-email-localization_test.ts
+$(SRCROOT)/supabase/functions/_shared/bounded-request-body.ts
 $(SRCROOT)/supabase/functions/_shared/fixtures/ai-localization-prompt-golden.json
 $(SRCROOT)/supabase/functions/_shared/cancelled-plus-trial-routing.ts
 $(SRCROOT)/supabase/functions/_shared/cancelled-plus-trial-routing_test.ts
@@ -187,15 +189,18 @@ $(SRCROOT)/supabase/functions/_shared/revenuecat-event.ts
 $(SRCROOT)/supabase/functions/_shared/revenuecat-event_test.ts
 $(SRCROOT)/supabase/functions/_shared/revenuecat-owner-guard.ts
 $(SRCROOT)/supabase/functions/_shared/revenuecat-owner-guard_test.ts
+$(SRCROOT)/supabase/functions/_shared/revenuecat-store.ts
 $(SRCROOT)/supabase/functions/_shared/safety-profile-approval.ts
 $(SRCROOT)/supabase/functions/_shared/safety-profile-manifest.ts
 $(SRCROOT)/supabase/functions/_shared/subscription-tier.ts
 $(SRCROOT)/supabase/functions/_shared/subscription-tier_test.ts
+$(SRCROOT)/supabase/functions/_shared/support-attachment-validation.ts
 $(SRCROOT)/supabase/functions/_shared/transactional-notification-localization.ts
 $(SRCROOT)/supabase/functions/_shared/transactional-notification-localization_test.ts
 $(SRCROOT)/supabase/functions/_shared/transactional-push-isolation_static_test.ts
 $(SRCROOT)/supabase/functions/_shared/trial-reminder.ts
 $(SRCROOT)/supabase/functions/_shared/trial-reminder_test.ts
+$(SRCROOT)/supabase/functions/_shared/user-facing-copy.ts
 $(SRCROOT)/supabase/functions/account-deletion-complete/index.ts
 $(SRCROOT)/supabase/functions/account-deletion-complete/index_static_test.ts
 $(SRCROOT)/supabase/functions/analyze/analysis_ambiguous_dispatch_guard_static_test.ts
@@ -232,6 +237,7 @@ $(SRCROOT)/supabase/functions/mutate-analysis-finding/index_static_test.ts
 $(SRCROOT)/supabase/functions/process-analysis-jobs/dispatch-policy.ts
 $(SRCROOT)/supabase/functions/process-analysis-jobs/dispatch-policy_test.ts
 $(SRCROOT)/supabase/functions/process-analysis-jobs/index.ts
+$(SRCROOT)/supabase/functions/process-account-deletion-queue/index.ts
 $(SRCROOT)/supabase/functions/process-notification-automation/index.ts
 $(SRCROOT)/supabase/functions/process-notification-automation/job-result-policy.ts
 $(SRCROOT)/supabase/functions/process-notification-automation/job-result-policy_test.ts
@@ -243,6 +249,7 @@ $(SRCROOT)/supabase/functions/revenuecat-webhook/index.ts
 $(SRCROOT)/supabase/functions/revenuecat-webhook/index_static_test.ts
 $(SRCROOT)/supabase/functions/send-push-notification/apns-delivery.ts
 $(SRCROOT)/supabase/functions/send-push-notification/apns-delivery_test.ts
+$(SRCROOT)/supabase/functions/send-push-notification/fcm-delivery.ts
 $(SRCROOT)/supabase/functions/send-push-notification/index.ts
 $(SRCROOT)/supabase/functions/send-push-notification/ios-preference-sync_static_test.ts
 $(SRCROOT)/supabase/functions/send-report-ready-notification/index.ts

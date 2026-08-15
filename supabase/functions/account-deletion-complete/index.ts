@@ -12,6 +12,7 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 
 type AccountDeletionRequest = {
   id: string;
@@ -31,6 +32,7 @@ type CompletionBody = {
   user_id?: string;
   dry_run?: boolean;
   processed_by?: string;
+  app_language?: unknown;
 };
 
 type SupabaseAdmin = ReturnType<typeof createClient<any, "public">>;
@@ -82,6 +84,7 @@ async function sha256Hex(value: string): Promise<string> {
 async function sendCompletionEmail(
   email: string | null,
   supportID: string,
+  appLanguage: unknown,
 ): Promise<void> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   const from = Deno.env.get("RESEND_FROM_EMAIL") ??
@@ -97,10 +100,10 @@ async function sendCompletionEmail(
     body: JSON.stringify({
       from,
       to: [email],
-      subject: "RiskDetected hesabın ve verilerin silindi",
-      text:
-        "Hesabın ve RiskDetected verilerin silindi. Aktif Google Play veya App Store aboneliğin varsa mağaza abonelik ayarlarından ayrıca yönetmelisin.\n\n" +
-        `Destek kodu: ${supportID}`,
+      subject: userFacingCopy("deletionCompleteEmailSubject", appLanguage),
+      text: userFacingCopy("deletionCompleteEmailBody", appLanguage, {
+        supportID,
+      }),
     }),
   }).catch(() => undefined);
 }
@@ -451,7 +454,7 @@ serve(async (req) => {
       );
     }
 
-    await sendCompletionEmail(targetEmail, supportID);
+    await sendCompletionEmail(targetEmail, supportID, body.app_language);
 
     return json(200, {
       ok: true,

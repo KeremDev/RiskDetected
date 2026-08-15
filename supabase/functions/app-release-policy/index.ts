@@ -7,6 +7,7 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 import { readAndroidRuntimeGates } from "../_shared/android-runtime-gates.ts";
 
 type ReleasePolicyBody = {
@@ -114,8 +115,7 @@ const DEFAULT_ANDROID_LEGAL_POLICY: AndroidLegalPolicy = {
   manifest_checksum:
     "aaa169338de3d9425e76cc4d8b9e98047847934c39cf646cb4f87f708c63cfec",
   policy_version: "android-legal-2026-08-09",
-  message_tr:
-    "Hukuki metinlerimiz güncellendi. Devam etmeden önce güncel metinleri inceleyin.",
+  message_tr: userFacingCopy("legalDocumentsUpdated", "tr"),
   documents: [
     {
       kind: "terms",

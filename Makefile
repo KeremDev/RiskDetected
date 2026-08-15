@@ -23,6 +23,7 @@ localization-ai-test:
 		supabase/functions/_shared/gemini-provider-client_test.ts \
 		supabase/functions/_shared/finding-confidence_test.ts \
 		supabase/functions/_shared/photo-source-indices_test.ts \
+		supabase/functions/_shared/user-facing-copy_test.ts \
 		supabase/functions/_shared/ai-localization-prompt_test.ts \
 		supabase/functions/_shared/ai-localization-validation_test.ts \
 		supabase/functions/analyze/ai_localization_canary_static_test.ts \

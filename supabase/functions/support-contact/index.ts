@@ -232,7 +232,10 @@ serve(async (req) => {
       support_id: supportID,
     });
   }
-  const attachmentResult = normalizeSupportAttachments(body.attachments);
+  const attachmentResult = normalizeSupportAttachments(
+    body.attachments,
+    appLanguage,
+  );
   if (attachmentResult.error) {
     return json(400, {
       error: attachmentResult.error.code,

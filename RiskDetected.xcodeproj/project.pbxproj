@@ -294,6 +294,7 @@
 				"$(SRCROOT)/App/Features/ProfessionalProgress",
 				"$(SRCROOT)/App/Generated",
 				"$(SRCROOT)/App/LegalDocuments",
+				"$(SRCROOT)/App/LegalDocuments/en",
 				"$(SRCROOT)/App/Localization",
 				"$(SRCROOT)/App/Models",
 				"$(SRCROOT)/App/Preview Content",
@@ -319,6 +320,7 @@
 				"$(SRCROOT)/App/Views/Result",
 				"$(SRCROOT)/Config",
 				"$(SRCROOT)/Legal",
+				"$(SRCROOT)/Legal/tr",
 				"$(SRCROOT)/RiskDetectedUITests",
 				"$(SRCROOT)/RiskDetected.xcodeproj/project.pbxproj",
 				"$(SRCROOT)/docs/localization/baseline/ASC_DISCOVERY_RAW_2026-07-28.json",
@@ -329,6 +331,7 @@
 				"$(SRCROOT)/scripts/localization_release_build_gate.sh",
 				"$(SRCROOT)/supabase/functions",
 				"$(SRCROOT)/supabase/functions/_shared",
+				"$(SRCROOT)/supabase/functions/_shared/fixtures",
 				"$(SRCROOT)/supabase/functions/_shared/generated",
 				"$(SRCROOT)/supabase/functions/_shared/localization",
 				"$(SRCROOT)/supabase/functions/account-deletion-complete",
@@ -340,6 +343,7 @@
 				"$(SRCROOT)/supabase/functions/manage-notification-automation",
 				"$(SRCROOT)/supabase/functions/mutate-analysis-finding",
 				"$(SRCROOT)/supabase/functions/process-analysis-jobs",
+				"$(SRCROOT)/supabase/functions/process-account-deletion-queue",
 				"$(SRCROOT)/supabase/functions/process-notification-automation",
 				"$(SRCROOT)/supabase/functions/register-report",
 				"$(SRCROOT)/supabase/functions/request-account-deletion",
@@ -555,7 +559,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/RiskDetected.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 81;
+				CURRENT_PROJECT_VERSION = 82;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
 				DEVELOPMENT_TEAM = 68CU98HAY3;
 				ENABLE_PREVIEWS = YES;
@@ -575,7 +579,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.3.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -593,7 +597,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/RiskDetected.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 81;
+				CURRENT_PROJECT_VERSION = 82;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
 				DEVELOPMENT_TEAM = 68CU98HAY3;
 				ENABLE_PREVIEWS = YES;
@@ -613,7 +617,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.3.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RISKDETECTED_REVENUECAT_API_KEY = appl_mckFFxUrvtNqzjShezjMIrFmItA;

@@ -40,6 +40,7 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 import {
   areLikelyDuplicateCoverageFindings,
   coverageFindingKey,
@@ -6028,11 +6029,18 @@ serve(async (req: Request) => {
     );
   } catch (error) {
     if (error instanceof RequestBodyTooLargeError) {
-      return errorResponse(413, "İstek gövdesi çok büyük.", {
-        code: "request_body_too_large",
-        requestID,
-        supportID,
-      });
+      return errorResponse(
+        413,
+        userFacingCopy(
+          "analyzeRequestTooLarge",
+          req.headers.get("x-app-language"),
+        ),
+        {
+          code: "request_body_too_large",
+          requestID,
+          supportID,
+        },
+      );
     }
     return errorResponse(400, "Geçersiz JSON body.", {
       code: "invalid_json",
@@ -6058,11 +6066,15 @@ serve(async (req: Request) => {
   } else if (authenticatedUser) {
     user = authenticatedUser;
   } else {
-    return errorResponse(401, "Geçersiz worker isteği.", {
-      code: "auth_invalid",
-      requestID,
-      supportID,
-    });
+    return errorResponse(
+      401,
+      userFacingCopy("analyzeInvalidWorkerRequest", body.app_language),
+      {
+        code: "auth_invalid",
+        requestID,
+        supportID,
+      },
+    );
   }
 
   const {
@@ -6091,7 +6103,10 @@ serve(async (req: Request) => {
     if (decision?.enabled !== true) {
       return errorResponse(
         503,
-        "Android analiz gönderimi geçici olarak kullanılamıyor.",
+        userFacingCopy(
+          "analyzeAndroidTemporarilyUnavailable",
+          body.app_language,
+        ),
         {
           code: "android_analysis_submit_disabled",
           reason: decision?.reason ?? "gate_unavailable",
@@ -6217,7 +6232,7 @@ serve(async (req: Request) => {
   const { data: ownedAnalysis, error: analysisOwnerErr } = await supabase
     .from("analyses")
     .select(
-      "id,user_id,status,worker_attempt_count,primary_method,analysis_sector,analysis_sector_source,analysis_sector_prompt_version,raw_ai_response,output_language,output_locale,work_jurisdiction_country,work_jurisdiction_region,safety_profile_id,safety_profile_version,regulatory_reference_policy,prompt_profile_version,localization_snapshot,language_validation_status,language_validation_attempts,language_validation_code",
+      "id,user_id,status,worker_attempt_count,primary_method,client_platform,analysis_sector,analysis_sector_source,analysis_sector_prompt_version,raw_ai_response,output_language,output_locale,work_jurisdiction_country,work_jurisdiction_region,safety_profile_id,safety_profile_version,regulatory_reference_policy,prompt_profile_version,localization_snapshot,language_validation_status,language_validation_attempts,language_validation_code",
     )
     .eq("id", analysisID)
     .eq("user_id", user.id)
@@ -6244,6 +6259,10 @@ serve(async (req: Request) => {
       },
     );
   }
+  const analysisClientPlatform = ownedAnalysis.client_platform === "ios" ||
+      ownedAnalysis.client_platform === "android"
+    ? ownedAnalysis.client_platform
+    : clientRelease.platform;
 
   if (isWorkerInvocation && ownedAnalysis.status === "completed") {
     return new Response(
@@ -7775,7 +7794,7 @@ serve(async (req: Request) => {
   const inputAudit: Record<string, unknown> = {
     app_language: appLanguage,
     client_build: clientRelease.appBuild,
-    client_platform: clientRelease.platform, // E8
+    client_platform: analysisClientPlatform,
     output_language: localizationSnapshot.output_language,
     output_locale: localizationSnapshot.output_locale,
     work_jurisdiction_country: localizationSnapshot.work_jurisdiction_country,
@@ -8449,7 +8468,7 @@ serve(async (req: Request) => {
         prompt_profile_version: localizationSnapshot.prompt_profile_version,
         app_language: appLanguage,
         client_build: clientRelease.appBuild,
-        client_platform: clientRelease.platform, // E8
+        client_platform: analysisClientPlatform,
         language_validation_status: languageValidationStatus,
         language_validation_attempts: languageValidationAttempts,
         language_validation_code: languageValidationCode,
@@ -8488,7 +8507,7 @@ serve(async (req: Request) => {
         prompt_profile_version: localizationSnapshot.prompt_profile_version,
         app_language: appLanguage,
         client_build: clientRelease.appBuild,
-        client_platform: clientRelease.platform, // E8
+        client_platform: analysisClientPlatform,
         language_validation_status: languageValidationStatus,
         language_validation_attempts: languageValidationAttempts,
         language_validation_code: languageValidationCode,
@@ -9126,7 +9145,7 @@ serve(async (req: Request) => {
     forbidden_claim_validation_status: forbiddenClaimValidationStatus,
     app_language: appLanguage,
     client_build: clientRelease.appBuild,
-    client_platform: clientRelease.platform, // E8 — see finalize_analysis_result_v2 note below
+    client_platform: analysisClientPlatform,
   };
 
   if (isPipelineV2Worker) {

@@ -1,3 +1,5 @@
+import { userFacingCopy } from "./user-facing-copy.ts";
+
 export type SupportAttachmentInput = {
   filename?: string;
   mime_type?: string;
@@ -84,7 +86,10 @@ function fileExtension(filename: string): string {
   return index >= 0 ? filename.slice(index + 1).toLowerCase() : "";
 }
 
-export function normalizeSupportAttachments(value: unknown): {
+export function normalizeSupportAttachments(
+  value: unknown,
+  language: unknown = "tr",
+): {
   attachments: NormalizedSupportAttachment[];
   error?: { code: string; message: string };
 } {
@@ -94,7 +99,7 @@ export function normalizeSupportAttachments(value: unknown): {
       attachments: [],
       error: {
         code: "invalid_attachments",
-        message: "Ek dosya verisi geçersiz.",
+        message: userFacingCopy("supportAttachmentsInvalid", language),
       },
     };
   }
@@ -103,7 +108,9 @@ export function normalizeSupportAttachments(value: unknown): {
       attachments: [],
       error: {
         code: "too_many_attachments",
-        message: `En fazla ${MAX_ATTACHMENT_COUNT} ek dosya gönderebilirsin.`,
+        message: userFacingCopy("supportAttachmentsTooMany", language, {
+          max: MAX_ATTACHMENT_COUNT,
+        }),
       },
     };
   }
@@ -120,7 +127,7 @@ export function normalizeSupportAttachments(value: unknown): {
         attachments: [],
         error: {
           code: "invalid_attachment_data",
-          message: "Ek dosya verisi geçersiz.",
+          message: userFacingCopy("supportAttachmentsInvalid", language),
         },
       };
     }
@@ -131,7 +138,7 @@ export function normalizeSupportAttachments(value: unknown): {
         attachments: [],
         error: {
           code: "attachment_too_large",
-          message: "Ek dosya 5 MB'dan küçük olmalı.",
+          message: userFacingCopy("supportAttachmentTooLarge", language),
         },
       };
     }
@@ -142,7 +149,7 @@ export function normalizeSupportAttachments(value: unknown): {
         attachments: [],
         error: {
           code: "attachments_too_large",
-          message: "Ek dosyaların toplam boyutu çok büyük.",
+          message: userFacingCopy("supportAttachmentsTotalTooLarge", language),
         },
       };
     }
@@ -161,8 +168,7 @@ export function normalizeSupportAttachments(value: unknown): {
         attachments: [],
         error: {
           code: "unsupported_attachment_type",
-          message:
-            "Yalnızca doğrulanmış JPEG, PNG veya PDF dosyaları eklenebilir.",
+          message: userFacingCopy("supportAttachmentTypeUnsupported", language),
         },
       };
     }
