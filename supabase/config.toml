@@ -63,6 +63,9 @@ verify_jwt = true
 [functions.sync-revenuecat-subscription]
 verify_jwt = true
 
+[functions.sync-revenuecat-attribution]
+verify_jwt = false
+
 [functions.send-report-ready-notification]
 verify_jwt = true
 
