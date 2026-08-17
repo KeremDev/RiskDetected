@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select extensions.plan(22);
+select extensions.plan(23);
 
 select has_table('public', 'user_ad_attribution', 'attribution table exists');
 select has_column('public', 'user_ad_attribution', 'user_id', 'user id exists');
@@ -15,6 +15,17 @@ select has_column('public', 'user_ad_attribution', 'sync_status', 'sync status e
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.user_ad_attribution'::regclass),
   'RLS is enabled'
+);
+select ok(
+  exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'user_ad_attribution'
+      and policyname = 'user_ad_attribution_clients_deny_all'
+      and permissive = 'RESTRICTIVE'
+  ),
+  'client access has an explicit restrictive deny policy'
 );
 select ok(
   not has_table_privilege('authenticated', 'public.user_ad_attribution', 'select'),
