@@ -242,23 +242,11 @@ struct OnboardingViewV2: View {
                 state.goTo(11)
             }
         case 11:
-            OBTimelinePaywallView(
-                packages: subscriptionPackages,
-                offeringsLoadState: subscriptionOfferingsLoadState,
-                isWorking: isPaywallWorking,
-                noticeMessage: paywallNoticeMessage,
-                onStart: { plan in
-                    startPurchase(plan)
-                },
-                onReloadPackages: {
-                    await onReloadSubscriptionOfferings()
-                },
-                onRestore: {
-                    restorePurchases()
-                },
-                onTerms: { selectedLegalDocument = .terms },
-                onPrivacy: { selectedLegalDocument = .privacy },
-                onDismiss: { finishOnboarding() }
+            PaywallDesignFlowView(
+                source: .onboardingV2,
+                onClose: { finishOnboarding() },
+                onSubscribe: { finishOnboarding() },
+                notice: paywallNoticeMessage
             )
         default:
             Color.rdPaper.onAppear { onFinish() }
@@ -322,37 +310,6 @@ struct OnboardingViewV2: View {
                         error,
                         context: RDLocalization.string("onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.f439bf78", table: .onboarding, fallback: "Satın alma doğrulanamadı"),
                         fallbackTitle: RDLocalization.string("onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.e8f9d653", table: .onboarding, fallback: "Satın alma doğrulanamadı")
-                    ).message
-                }
-            }
-        }
-    }
-
-    private func startPurchase(_ plan: OBPlan) {
-        guard !isPaywallWorking else { return }
-        isPaywallWorking = true
-        paywallNoticeMessage = nil
-        state.selectedPlan = plan
-
-        Task {
-            do {
-                try await onPurchase(plan)
-                await MainActor.run {
-                    isPaywallWorking = false
-                    finishOnboarding()
-                }
-            } catch is CancellationError {
-                await MainActor.run {
-                    isPaywallWorking = false
-                    paywallNoticeMessage = nil
-                }
-            } catch {
-                await MainActor.run {
-                    isPaywallWorking = false
-                    paywallNoticeMessage = AppErrorMessage.makePurchase(
-                        error,
-                        context: RDLocalization.string("onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.7bdaab97", table: .onboarding, fallback: "Satın alma doğrulanamadı"),
-                        fallbackTitle: RDLocalization.string("onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.7ccf47ab", table: .onboarding, fallback: "Satın alma doğrulanamadı")
                     ).message
                 }
             }
@@ -495,4 +452,5 @@ private struct SadFaceShape: Shape {
 
 #Preview("11 Paywall") {
     OnboardingViewV2(initialStep: 11)
+        .environmentObject(AppState())
 }

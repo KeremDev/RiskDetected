@@ -30,6 +30,10 @@ struct SubscriptionPlanPackage: Identifiable, Equatable {
     let monthlyEquivalentPrice: String?
     let subtitle: String
     let productIdentifier: String
+    /// App Store fiyatının sayısal karşılığı; yıllık indirim oranını hesaplamak için.
+    var priceAmount: Decimal? = nil
+    /// Ücretsiz deneme gün sayısı (introductory offer). Teklif yoksa nil.
+    var introductoryFreeTrialDays: Int? = nil
 
     var displayPrice: String? {
         Self.displayableStorePrice(price)
@@ -249,7 +253,9 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                         price: package.localizedPriceString,
                         monthlyEquivalentPrice: package.storeProduct.localizedPricePerMonth,
                         subtitle: Self.subtitle(for: package),
-                        productIdentifier: package.storeProduct.productIdentifier
+                        productIdentifier: package.storeProduct.productIdentifier,
+                        priceAmount: package.storeProduct.price,
+                        introductoryFreeTrialDays: Self.introductoryFreeTrialDays(for: package)
                     )
                 )
 
@@ -616,6 +622,22 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
     private static func tier(for package: Package) -> SubscriptionTier? {
         tier(fromProductIdentifier: package.storeProduct.productIdentifier)
             ?? tier(fromProductIdentifier: package.identifier)
+    }
+
+    /// RevenueCat introductory offer'ı ücretsiz denemeye çevirir. Teklif tanımlı
+    /// değilse nil döner; paywall deneme anlatımını yalnızca teklif varken gösterir.
+    private static func introductoryFreeTrialDays(for package: Package) -> Int? {
+        guard let discount = package.storeProduct.introductoryDiscount,
+              discount.paymentMode == .freeTrial else { return nil }
+        let period = discount.subscriptionPeriod
+        let periods = max(1, discount.numberOfPeriods)
+        switch period.unit {
+        case .day: return period.value * periods
+        case .week: return period.value * 7 * periods
+        case .month: return period.value * 30 * periods
+        case .year: return period.value * 365 * periods
+        @unknown default: return nil
+        }
     }
 
     private static func subtitle(for package: Package) -> String {

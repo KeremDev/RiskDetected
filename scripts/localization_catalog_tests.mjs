@@ -495,7 +495,9 @@ test("L10N-013", "every fallback is the Turkish value for the same key", () => {
       );
     }
   }
-  assert.ok(callCount >= 1_900, `unexpected localized call count ${callCount}`);
+  // Eşik, eski paywall ekranları (InAppPaywallView/OBTimelinePaywallView) Claude
+  // Design paywall akışıyla değiştirilip silindikten sonra güncellendi.
+  assert.ok(callCount >= 1_850, `unexpected localized call count ${callCount}`);
 });
 
 test("L10N-014", "user-owned content remains outside system translation", () => {
@@ -725,10 +727,10 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 2_087, "Turkish localized-unit count");
+  assert.equal(rows.length, 2_112, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
-    "8a8e7d7a4a8eb293c5b5262110bdadf38a62690e2a4a95aab1cadaf8a7cafd40",
+    "f288c9ae1a5672f59a9ef9054f950626a0961d5c867105ec5c66158d83223fe2",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

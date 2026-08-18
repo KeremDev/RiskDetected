@@ -145,17 +145,37 @@ const AI_DISCLOSURE_SOURCE_CHECKS = [
 ];
 const SUBSCRIPTION_PAYWALL_SOURCE_CHECKS = [
   {
-    path: "App/Views/Paywall/InAppPaywallView.swift",
+    // Claude Design paywall alt barı: geri yükleme, hukuki bağlantılar ve
+    // otomatik yenileme bildirimi.
+    path: "App/Views/Paywall/Design/PaywallDesignKit.swift",
     patterns: [
-      'fallback: "Geri yükle"',
-      'fallback: "Şartlar"), document: .terms)',
-      "legalLink(\"Gizlilik\", document: .privacy)",
-      'fallback: "İptal hakkı"), URL(string: "https://apps.apple.com/account/subscriptions")!)',
+      'fallback: "Geri Yükle"',
+      'fallback: "Koşullar"',
+      'fallback: "Gizlilik"',
+      'fallback: "İptal Hakkı"',
+      'fallback: "Otomatik yenilenir. İstediğiniz zaman iptal edin."',
+    ],
+  },
+  {
+    // Paywall akışı: abonelik yönetim bağlantısı, hukuki metin sunumu ve
+    // plan kartlarındaki dönem/fiyat gösterimi.
+    path: "App/Views/Paywall/Design/PaywallDesignFlowView.swift",
+    patterns: [
+      'URL(string: "https://apps.apple.com/account/subscriptions")!',
+      "onTerms: { selectedLegalDocument = .terms }",
+      "onPrivacy: { selectedLegalDocument = .privacy }",
+      'fallback: "App Store abonelik fiyatları şu an alınamadı.',
+      '"paywall.design.plan.per_month_format"',
+      '"paywall.design.plan.monthly_caption"',
+      '"paywall.design.plan.trial_note_format"',
+    ],
+  },
+  {
+    path: "App/Services/SubscriptionManager.swift",
+    patterns: [
       'fallback: "Yıllık abonelik"',
       'fallback: "Aylık abonelik"',
-      'fallback: "İstediğiniz zaman iptal edebilirsiniz · Otomatik yenilenir"',
-      'fallback: "App Store abonelik fiyatları şu an alınamadı.',
-      'fallback: "Yıllık fiyat %1$@; App Store şartları geçerlidir."',
+      "introductoryFreeTrialDays(for: package)",
     ],
   },
   {
