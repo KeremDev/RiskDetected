@@ -107,6 +107,9 @@ struct PaywallDesignScreen: View {
                     }
                 }
             }
+            // Ekran değiştiğinde (PLUS ↔ PRO) kaydırma konumu başa dönsün;
+            // aksi halde kullanıcı yeni ekranın ortasına düşüyor.
+            .id(screen)
 
             PaywallDesignFooter(
                 ctaTitle: cta.title,

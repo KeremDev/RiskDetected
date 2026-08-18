@@ -54,7 +54,7 @@ struct PaywallDesignFlowView: View {
             PaywallDesignScreen(
                 screen: activeScreen,
                 heroLabel: heroLabel,
-                tierName: activeScreen.tier.title,
+                tierName: tierName(activeScreen.tier),
                 accent: accent,
                 selectedBackground: selectedBackground,
                 showsTrialTimeline: trialDays != nil,
@@ -109,6 +109,12 @@ struct PaywallDesignFlowView: View {
 
     // MARK: - Görünüm verisi
 
+    /// Paket adları tasarımda büyük harf (FREE / PLUS / PRO). İngilizce katalogda
+    /// başlık biçiminde tutulduğu için görüntülemede yerel ayara duyarlı büyütme yapılır.
+    private func tierName(_ tier: SubscriptionTier) -> String {
+        RDLocalization.uppercased(tier.title)
+    }
+
     private var accent: Color {
         activeScreen == .plus ? PaywallDesignColor.orange : PaywallDesignColor.green
     }
@@ -136,7 +142,7 @@ struct PaywallDesignFlowView: View {
             "paywall.design.hero.benefits_format",
             table: .paywall,
             fallback: "%1$@ Abonelik Avantajları",
-            arguments: [activeScreen.tier.title]
+            arguments: [tierName(activeScreen.tier)]
         )
     }
 
@@ -145,12 +151,12 @@ struct PaywallDesignFlowView: View {
         case .plus:
             return (
                 PaywallDesignComparisonTable.Column(
-                    title: SubscriptionTier.free.title,
+                    title: tierName(.free),
                     color: PaywallDesignColor.muted,
                     weight: .semibold
                 ),
                 PaywallDesignComparisonTable.Column(
-                    title: SubscriptionTier.plus.title,
+                    title: tierName(.plus),
                     color: PaywallDesignColor.orange,
                     weight: .bold
                 )
@@ -158,12 +164,12 @@ struct PaywallDesignFlowView: View {
         case .pro:
             return (
                 PaywallDesignComparisonTable.Column(
-                    title: SubscriptionTier.plus.title,
+                    title: tierName(.plus),
                     color: PaywallDesignColor.orange,
                     weight: .semibold
                 ),
                 PaywallDesignComparisonTable.Column(
-                    title: SubscriptionTier.pro.title,
+                    title: tierName(.pro),
                     color: PaywallDesignColor.green,
                     weight: .bold
                 )
@@ -188,7 +194,7 @@ struct PaywallDesignFlowView: View {
                     table: .paywall,
                     fallback: "Daha gelişmiş ve sınırsız özellikler için "
                 ),
-                highlight: SubscriptionTier.pro.title,
+                highlight: tierName(.pro),
                 suffix: RDLocalization.string(
                     "paywall.design.cross_sell.pro.suffix",
                     table: .paywall,
@@ -204,7 +210,7 @@ struct PaywallDesignFlowView: View {
                     table: .paywall,
                     fallback: "Temel özellikler için "
                 ),
-                highlight: SubscriptionTier.plus.title,
+                highlight: tierName(.plus),
                 suffix: RDLocalization.string(
                     "paywall.design.cross_sell.plus.suffix",
                     table: .paywall,
