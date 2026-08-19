@@ -769,7 +769,9 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
     // olmustu ve bir anahtarda "Kinnet" yazim hatasi vardi. Fine-Kinney bir ozel
     // ad (W.T. Fine + G.F. Kinney) ve uluslararasi terim; hicbir dilde cevrilmez.
-    "cac9f2be1995e7bdcb1ce2950712d7653e0530340e5d150117d21e976642bc48",
+    // Yazim hatasi anahtar adinda da vardi; anahtar uretecin kendi kuraliyla
+    // yeniden hesaplandi (...fine.kinney.5.5.rapor.hazir.fdc34345).
+    "7820312482846add1eaa8fa97f2a0e28e332ca96422652c765cd553dd2c639d7",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

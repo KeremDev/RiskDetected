@@ -922,7 +922,7 @@ const CATALOG_ENGLISH_QUALITY_OVERRIDES = [
   ["Onboarding", "onboarding.onboarding.personal.plan.1.icin.egitilmis.sistem.denetime.hazir.rapor.acda2ffe", "A system tailored to %1$@, with audit-ready reports."],
   ["Onboarding", "onboarding.onboarding.personal.plan.1.icin.egitilmis.sistem.sade.rapor.91133a60", "A system tailored to %1$@, with clear reports."],
   ["Onboarding", "onboarding.onboarding.personal.plan.1.rolune.gore.anlasilir.bulgu.dili.ve.duzenli.do.936186a5", "For the %1$@ role, we created a workflow focused on clear findings and consistent documentation. Team communication and archiving stay in one place."],
-  ["Onboarding", "onboarding.onboarding.personal.plan.fine.kinnet.5.5.rapor.hazir.638e04ee", "Fine-Kinney / 5×5 report ready."],
+  ["Onboarding", "onboarding.onboarding.personal.plan.fine.kinney.5.5.rapor.hazir.fdc34345", "Fine-Kinney / 5×5 report ready."],
   ["Onboarding", "onboarding.onboarding.personal.plan.isg.icin.egitilmis.sistem.1.temposunda.7ef96c1d", "A workplace-safety system matched to a %1$@ pace."],
   ["Onboarding", "onboarding.onboarding.personal.plan.risk.analizini.pdf.excel.tek.tikla.ilet.00cf0ce0", "Export the risk assessment to PDF or Excel with one tap."],
   ["Onboarding", "onboarding.onboarding.personal.plan.risk.analizini.pdf.excel.tek.tikla.ilet.81f86a73", "Export the risk assessment to PDF or Excel with one tap."],
