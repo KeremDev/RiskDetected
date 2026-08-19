@@ -985,14 +985,16 @@ private fun MarqueeChip(feature: RdPaywallDesignFeature, accent: Color) {
             .clip(CircleShape)
             .background(RdPaywallDesignColor.ChipBg)
             .border(1.dp, RdPaywallDesignColor.ChipBorder, CircleShape)
-            .padding(horizontal = 12.dp, vertical = 7.dp),
+            .padding(horizontal = 11.dp, vertical = 5.5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        RdPaywallFeatureIcon(glyph = feature.glyph, size = 15.dp, color = accent)
+        RdPaywallFeatureIcon(glyph = feature.glyph, size = 13.5.dp, color = accent)
+        // Şerit bir vitrin, okunması gereken bir liste değil; düz ağırlıkta ve küçük
+        // olması hem etiketi alçaltıyor hem de gözü yormuyor.
         Text(
             text = feature.title,
-            style = rdPaywallText(12.5f, FontWeight.SemiBold, RdPaywallDesignColor.Ink),
+            style = rdPaywallText(11.5f, color = RdPaywallDesignColor.Ink),
             maxLines = 1,
         )
     }

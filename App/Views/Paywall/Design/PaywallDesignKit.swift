@@ -803,7 +803,7 @@ struct PaywallDesignFeatureMarquee: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var rowWidth: CGFloat = 0
-    @State private var rowHeight: CGFloat = 31
+    @State private var rowHeight: CGFloat = 27
     @State private var offset: CGFloat = 0
 
     private let spacing: CGFloat = 8
@@ -855,15 +855,17 @@ struct PaywallDesignFeatureMarquee: View {
 
     private func chip(_ feature: PaywallDesignFeature) -> some View {
         HStack(spacing: 6) {
-            PaywallDesignFeatureIcon(glyph: feature.glyph, size: 15, color: accent)
+            PaywallDesignFeatureIcon(glyph: feature.glyph, size: 13.5, color: accent)
             Text(feature.title)
-                .font(.system(size: 12.5, weight: .semibold))
+                // Şerit bir vitrin, okunması gereken bir liste değil; düz ağırlıkta
+                // ve küçük olması hem etiketi alçaltıyor hem de gözü yormuyor.
+                .font(.system(size: 11.5))
                 .foregroundColor(PaywallDesignColor.ink)
                 .lineLimit(1)
                 .fixedSize()
         }
-        .padding(.vertical, 7)
-        .padding(.horizontal, 12)
+        .padding(.vertical, 5.5)
+        .padding(.horizontal, 11)
         .background(
             GeometryReader { geometry in
                 Capsule()
