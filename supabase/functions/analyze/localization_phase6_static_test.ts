@@ -54,17 +54,43 @@ const legalManifest = JSON.parse(
     new URL("../../../App/LegalDocuments/en/manifest.json", import.meta.url),
   ),
 ) as { documents?: Array<{ kind?: string; change_type?: string }> };
-const paywallSources = await Promise.all(
+// Uygulamadaki her paywall giris noktasi artik tek bir Claude Design ekranini kullanir;
+// OBPaywallView/OBTimelinePaywallView/InAppPaywallView bu gecisle silindi.
+const [
+  paywallDesignFlowSource,
+  paywallDesignKitSource,
+  paywallDesignScreenSource,
+  trialInviteSource,
+  planSummarySource,
+  notificationPermissionSource,
+] = await Promise.all(
   [
-    "../../../App/Views/Onboarding/V2/Screens/OBPaywallView.swift",
-    "../../../App/Views/Onboarding/V2/Screens/OBTimelinePaywallView.swift",
+    "../../../App/Views/Paywall/Design/PaywallDesignFlowView.swift",
+    "../../../App/Views/Paywall/Design/PaywallDesignKit.swift",
+    "../../../App/Views/Paywall/Design/PaywallDesignScreen.swift",
     "../../../App/Views/Onboarding/V2/Screens/OBTrialInviteView.swift",
     "../../../App/Views/Onboarding/V2/Screens/OBPlanSummaryView.swift",
     "../../../App/Views/Onboarding/V2/Screens/OBNotificationPermissionView.swift",
-    "../../../App/Views/Paywall/InAppPaywallView.swift",
   ].map((path) => Deno.readTextFile(new URL(path, import.meta.url))),
 );
-const trialInviteSource = paywallSources[2];
+
+/// Deneme suresi iddiasi tasiyabilecek tek yer akis gorunumudur; oradaki her iddia
+/// StoreKit teklifine bagli oldugu icin metin taramasindan ayri denetlenir.
+const paywallSources = [
+  paywallDesignKitSource,
+  paywallDesignScreenSource,
+  planSummarySource,
+  notificationPermissionSource,
+];
+
+/// Deneme metnini uretmesine izin verilen anahtarlar. Her biri
+/// `PaywallDesignFlowView` icinde StoreKit'in dondurdugu tanitim teklifine baglidir;
+/// asagidaki test bu bagi dogrular.
+const STOREKIT_GATED_TRIAL_KEYS = [
+  "paywall.design.hero.trial_headline",
+  "paywall.design.plan.trial_note_format",
+  "paywall.design.cta.start_trial",
+];
 const paywallCatalogs = await Promise.all(
   [
     "../../../App/Localization/Onboarding.xcstrings",
@@ -201,13 +227,50 @@ Deno.test("purchase paywall copy does not promise an unverified introductory off
   // price/offer claims, which must continue to come from StoreKit.
   assertStringIncludes(trialInviteSource, "onContinue()");
   assertEquals(trialInviteSource.includes("onPurchase"), false);
-  for (const [index, source] of paywallSources.entries()) {
-    if (index === 2) continue;
+  for (const source of paywallSources) {
     const fallbacks = [...source.matchAll(/fallback:\s*"([^"]*)"/gu)]
       .map((match) => match[1]);
     assertEquals(
       fallbacks.some((fallback) => forbiddenClaim.test(fallback)),
       false,
+    );
+  }
+
+  // Akis gorunumu deneme metnini tasiyabilir, ama yalnizca App Store'un gercekten
+  // dondurdugu tanitim teklifine bagli oldugu icin. Bagi metin yasagiyla degil,
+  // uretildikleri bloklarin StoreKit kosuluna bagli olmasiyla dogruluyoruz.
+  assertStringIncludes(paywallDesignFlowSource, "introductoryFreeTrialDays");
+  assertStringIncludes(
+    sourceBetween(
+      paywallDesignFlowSource,
+      "private var trialDays: Int? {",
+      "private var heroLabel",
+    ),
+    "introductoryFreeTrialDays",
+  );
+  for (
+    const [region, start, end] of [
+      ["hero", "private var heroLabel: String {", "private var comparisonColumns"],
+      ["plan", "private var trialNoteText: String? {", "private var discountText"],
+      ["cta", "private var primaryButtonTitle: String {", "private var primaryButtonDisabled"],
+    ] as Array<[string, string, string]>
+  ) {
+    const block = sourceBetween(paywallDesignFlowSource, start, end);
+    assert(
+      block.includes("trialDays"),
+      `${region} copy must be gated on the StoreKit trial offer`,
+    );
+  }
+  const flowTrialFallbacks = [
+    ...paywallDesignFlowSource.matchAll(
+      /RDLocalization\.(?:string|format)\(\s*"([^"]+)"[\s\S]*?fallback:\s*"([^"]*)"/gu,
+    ),
+  ];
+  for (const [, key, fallback] of flowTrialFallbacks) {
+    if (!forbiddenClaim.test(fallback)) continue;
+    assert(
+      STOREKIT_GATED_TRIAL_KEYS.includes(key),
+      `Unreviewed trial claim in paywall flow: ${key}`,
     );
   }
   for (const [index, catalog] of paywallCatalogs.entries()) {
@@ -220,6 +283,9 @@ Deno.test("purchase paywall copy does not promise an unverified introductory off
     const values = Object.entries(parsed.strings ?? {}).flatMap(
       ([key, entry]) => {
         if (index === 0 && key.startsWith("onboarding.obtrial.invite.")) {
+          return [];
+        }
+        if (STOREKIT_GATED_TRIAL_KEYS.includes(key)) {
           return [];
         }
         return Object.values(entry.localizations ?? {}).flatMap((
