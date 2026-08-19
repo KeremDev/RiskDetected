@@ -81,8 +81,13 @@ struct PaywallDesignScreen: View {
                     if showsTimeline {
                         PaywallDesignTrialTimeline(
                             trialDays: trialDays,
-                            tierName: tierName,
-                            features: timelineFeatures
+                            tierName: tierName
+                        )
+                        // Özellikler artık ilk satırın altındaki ızgarada değil,
+                        // zaman çizelgesinin altında sürekli akan bir şeritte.
+                        PaywallDesignFeatureMarquee(
+                            features: timelineFeatures,
+                            accent: accent
                         )
                     } else {
                         PaywallDesignComparisonTable(

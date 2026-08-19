@@ -127,6 +127,14 @@ struct PaywallDesignFlowView: View {
     /// ekran deneme anlatımı yerine karşılaştırma tablosunu gösterir.
     private var trialDays: Int? {
         guard activeScreen == .plus else { return nil }
+        #if DEBUG
+        // Simülatörde StoreKit tanıtım teklifi dönmediği için deneme anlatımı hiçbir
+        // testte render edilemiyordu. Bu bayrak yalnızca DEBUG'da ve yalnızca görünümü
+        // açar; satın alma yolu gerçek pakete bağlı kalır.
+        if Self.isUITestForceTrialTimeline {
+            return 7
+        }
+        #endif
         return selectedPackage(for: .plus, billing: .yearly)?.introductoryFreeTrialDays
     }
 
@@ -635,6 +643,11 @@ struct PaywallDesignFlowView: View {
     }
 
     #if DEBUG
+    private static var isUITestForceTrialTimeline: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_FORCE_TRIAL_TIMELINE")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_FORCE_TRIAL_TIMELINE"] == "1"
+    }
+
     private static var isUITestForceProPaywall: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_FORCE_PRO_PAYWALL")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_FORCE_PRO_PAYWALL"] == "1"

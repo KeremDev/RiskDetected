@@ -619,6 +619,34 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("profile.row.companies").exists)
     }
 
+    /// Deneme zaman çizelgesi yalnızca App Store gerçek bir tanıtım teklifi döndürdüğünde
+    /// görünüyor; simülatörde bu hiç olmadığı için ekranın bu hâli test edilemiyordu.
+    /// `RD_UI_TEST_FORCE_TRIAL_TIMELINE` (yalnızca DEBUG) sadece görünümü açar.
+    func testTrialTimelinePaywallShowsFeatureMarqueeInsteadOfGrid() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_FORCE_TRIAL_TIMELINE",
+        ])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("Yükselt")
+
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.trial_timeline", timeout: 8).exists)
+        XCTAssertTrue(waitFor("Ücretsiz Deneme Nasıl Çalışır?", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Bugün", timeout: 4).exists)
+        XCTAssertTrue(waitFor("5. Gün", timeout: 4).exists)
+        XCTAssertTrue(waitFor("7. Gün", timeout: 4).exists)
+
+        // Özellikler artık kayan şeritte; "Bugün" altındaki ızgara kaldırıldı.
+        XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "trial-timeline-with-feature-marquee"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     func testInAppPaywallClaudePlusAndProRenderWithFreeTier() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
 

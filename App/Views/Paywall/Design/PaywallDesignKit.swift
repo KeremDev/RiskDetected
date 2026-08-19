@@ -411,16 +411,15 @@ struct PaywallDesignTrialTimeline: View {
     var trialDays: Int
     /// Aktif paket adı (PLUS / PRO); bugün satırındaki erişim cümlesinde kullanılır.
     var tierName: String
-    var features: [String]
 
     private var reminderDay: Int { max(1, trialDays - 2) }
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
                 rail(circleColor: PaywallDesignColor.orange, railColor: PaywallDesignColor.orange) {
                     PaywallDesignCheckIcon(
-                        size: CGSize(width: 15, height: 12),
+                        size: CGSize(width: 13, height: 10.5),
                         lineWidth: 2,
                         color: .white
                     )
@@ -436,40 +435,14 @@ struct PaywallDesignTrialTimeline: View {
                             todayDetail
                         }
                     }
-
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: 10, alignment: .leading),
-                            GridItem(.flexible(), spacing: 10, alignment: .leading)
-                        ],
-                        alignment: .leading,
-                        spacing: 8
-                    ) {
-                        ForEach(features, id: \.self) { feature in
-                            HStack(spacing: 6) {
-                                PaywallDesignCheckBadge(
-                                    diameter: 16,
-                                    checkSize: CGSize(width: 8, height: 7),
-                                    checkLineWidth: 2.4,
-                                    background: PaywallDesignColor.orangeSoft
-                                )
-                                Text(feature)
-                                    .font(.system(size: 12.5))
-                                    .foregroundColor(PaywallDesignColor.ink)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                        }
-                    }
-                    .padding(.top, 10)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, 16)
+                .padding(.bottom, 14)
             }
 
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
                 rail(circleColor: PaywallDesignColor.idleMark, railColor: PaywallDesignColor.idleRail) {
-                    PaywallDesignBellIcon()
+                    PaywallDesignBellIcon(size: CGSize(width: 12.5, height: 13.5))
                 }
                 step(
                     title: dayTitle(reminderDay),
@@ -482,9 +455,9 @@ struct PaywallDesignTrialTimeline: View {
                 .padding(.bottom, 22)
             }
 
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
                 rail(circleColor: PaywallDesignColor.idleMark, railColor: nil) {
-                    PaywallDesignCardIcon()
+                    PaywallDesignCardIcon(size: CGSize(width: 13, height: 10.5))
                 }
                 step(
                     title: dayTitle(trialDays),
@@ -525,7 +498,7 @@ struct PaywallDesignTrialTimeline: View {
                 arguments: [tierName]
             )
         )
-        .font(.system(size: 13))
+        .font(.system(size: 12))
         .foregroundColor(PaywallDesignColor.muted)
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -536,9 +509,9 @@ struct PaywallDesignTrialTimeline: View {
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(PaywallDesignColor.ink)
             Text(detail)
-                .font(.system(size: 13.5))
+                .font(.system(size: 12.5))
                 .foregroundColor(PaywallDesignColor.muted)
-                .designLineHeight(13.5)
+                .designLineHeight(12.5)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 2)
         }
@@ -553,7 +526,7 @@ struct PaywallDesignTrialTimeline: View {
         VStack(spacing: 0) {
             Circle()
                 .fill(circleColor)
-                .frame(width: 32, height: 32)
+                .frame(width: 28, height: 28)
                 .overlay(icon())
             if let railColor {
                 Rectangle()
@@ -563,7 +536,117 @@ struct PaywallDesignTrialTimeline: View {
                     .padding(.vertical, 3)
             }
         }
-        .frame(width: 32)
+        .frame(width: 28)
+    }
+}
+
+// MARK: - Kayan özellik şeridi
+
+private struct PaywallDesignMarqueeWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// Zaman çizelgesinin altındaki sürekli sola kayan özellik etiketleri.
+/// Şerit iki özdeş kopyadan oluşur; ilk kopya tam genişliği kadar kayınca
+/// başa döner, böylece dikiş yeri görünmeden sonsuz akar.
+struct PaywallDesignFeatureMarquee: View {
+    var features: [String]
+    var accent: Color
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var rowWidth: CGFloat = 0
+    @State private var rowHeight: CGFloat = 31
+    @State private var offset: CGFloat = 0
+
+    private let spacing: CGFloat = 8
+    /// Saniyede ~34pt: okunacak kadar yavaş, duruyor izlenimi vermeyecek kadar canlı.
+    private var duration: Double { max(6, Double(rowWidth + spacing) / 34) }
+
+    var body: some View {
+        // Kaydırılan içerik `overlay` içinde durur: ekrandan geniş olduğu için doğrudan
+        // yerleştirilseydi kendi genişliğini ebeveyne dayatır ve tüm sayfayı yana kaydırırdı.
+        // `Color.clear` ölçüyü verir, overlay yalnızca çizer.
+        Color.clear
+            .frame(height: rowHeight)
+            .frame(maxWidth: .infinity)
+            .overlay(alignment: .leading) {
+                HStack(spacing: spacing) {
+                    row
+                        .background(
+                            GeometryReader { geometry in
+                                Color.clear.preference(
+                                    key: PaywallDesignMarqueeWidthKey.self,
+                                    value: geometry.size.width
+                                )
+                            }
+                        )
+                    // İkinci kopya yalnızca görsel süreklilik için; ekran okuyucu tekrar etmesin.
+                    row.accessibilityHidden(true)
+                }
+                .offset(x: offset)
+                .fixedSize()
+            }
+            .clipped()
+            .padding(.top, 12)
+            .onPreferenceChange(PaywallDesignMarqueeWidthKey.self) { width in
+                guard width > 0, abs(width - rowWidth) > 0.5 else { return }
+                rowWidth = width
+                restartAnimation()
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("in_app_paywall.feature_marquee")
+    }
+
+    private var row: some View {
+        HStack(spacing: spacing) {
+            ForEach(features, id: \.self) { feature in
+                chip(feature)
+            }
+        }
+    }
+
+    private func chip(_ feature: String) -> some View {
+        HStack(spacing: 6) {
+            PaywallDesignCheckBadge(
+                diameter: 15,
+                checkSize: CGSize(width: 7.5, height: 6.5),
+                checkLineWidth: 2.4,
+                background: accent
+            )
+            Text(feature)
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundColor(PaywallDesignColor.ink)
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .padding(.vertical, 7)
+        .padding(.horizontal, 12)
+        .background(
+            GeometryReader { geometry in
+                Capsule()
+                    .fill(accent.opacity(0.10))
+                    .onAppear { rowHeight = max(rowHeight, geometry.size.height) }
+            }
+        )
+        .overlay(
+            Capsule().strokeBorder(accent.opacity(0.22), lineWidth: 1)
+        )
+    }
+
+    private func restartAnimation() {
+        // Hareket azaltma açıksa şerit sabit kalır; içerik yine tamamen okunur.
+        guard !reduceMotion else {
+            offset = 0
+            return
+        }
+        offset = 0
+        withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
+            offset = -(rowWidth + spacing)
+        }
     }
 }
 
