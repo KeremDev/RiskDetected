@@ -771,7 +771,8 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // ad (W.T. Fine + G.F. Kinney) ve uluslararasi terim; hicbir dilde cevrilmez.
     // Yazim hatasi anahtar adinda da vardi; anahtar uretecin kendi kuraliyla
     // yeniden hesaplandi (...fine.kinney.5.5.rapor.hazir.fdc34345).
-    "7820312482846add1eaa8fa97f2a0e28e332ca96422652c765cd553dd2c639d7",
+    // 2026-08-19: plan ozeti kilit metni sahip istegiyle yeniden yazildi.
+    "3258f2b4bd1087def076173f3fcf15bcda0fb2a6d0aa40ad3f6037c145085638",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

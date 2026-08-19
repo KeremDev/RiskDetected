@@ -835,7 +835,12 @@ fun RdPaywallDesignPlanCard(
                 Text(title, style = rdPaywallText(14f, FontWeight.Bold, RdPaywallDesignColor.Ink))
             }
 
-            Text(price, style = rdPaywallText(17f, FontWeight.ExtraBold, RdPaywallDesignColor.Ink))
+            // iOS ile ayni: 17f bazi para birimlerinde karti zorluyordu.
+            Text(
+                text = price,
+                style = rdPaywallText(15.5f, FontWeight.ExtraBold, RdPaywallDesignColor.Ink),
+                maxLines = 1,
+            )
             Text(
                 text = caption,
                 style = rdPaywallText(12f, color = RdPaywallDesignColor.Muted),

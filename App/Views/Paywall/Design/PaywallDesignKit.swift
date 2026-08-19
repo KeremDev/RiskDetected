@@ -706,8 +706,12 @@ struct PaywallDesignPlanCard: View {
             .padding(.bottom, 10)
 
             Text(price)
-                .font(.system(size: 17, weight: .heavy))
+                // 17pt bazi para birimlerinde ("₺2.499,99", "$49.99") kart genisligini
+                // zorluyordu; 15.5pt hiyerarsiyi bozmadan nefes aldiriyor.
+                .font(.system(size: 15.5, weight: .heavy))
                 .foregroundColor(PaywallDesignColor.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
 
             Text(caption)
                 .font(.system(size: 12))

@@ -251,7 +251,7 @@ struct OBPlanSummaryView: View {
             Image(systemName: "lock.fill")
                 .font(.system(size: RDFontScale.size(11), weight: .bold))
                 .foregroundStyle(Color.rdGreenDark)
-            Text(RDLocalization.string("onboarding.obplan.summary.view.planini.hesabina.kaydedelim.7.gun.ucretsiz.denem.ae67c90f", table: .onboarding, fallback: "Planını hesabına kaydedelim; fiyat ve uygun teklifleri App Store'da doğrula."))
+            Text(RDLocalization.string("onboarding.obplan.summary.view.planini.hesabina.kaydedelim.7.gun.ucretsiz.denem.ae67c90f", table: .onboarding, fallback: "Son Aşama 🙂 Planını hesabına kaydedelim; sana özel analizler ve raporlar sunalım."))
                 .font(.system(size: RDFontScale.size(12.5), weight: .medium))
                 .foregroundStyle(Color.rdSlate)
                 .lineLimit(3)
