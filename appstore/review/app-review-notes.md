@@ -1,13 +1,20 @@
-RiskDetected 1.3.2 (build 82) is a maintenance and reliability update.
+RiskDetected 1.3.3 (build 83) is a subscription-screen and localization update.
 
 Changes in this build:
-- Sign-in, localization, analysis/report flows, and general stability were improved.
-- Trial and notification explanations were clarified; users can continue without purchasing.
-- StoreKit/RevenueCat prices come from the user's App Store storefront.
+- The subscription screen was redesigned; every paid entry point and the final onboarding step now use the same screen.
+- Prices, free-trial length, and the discount badge are read from the user's App Store storefront and are hidden when the store returns no offer.
+- Turkish copy for the Fine-Kinney method name was corrected; it is a proper noun and is no longer translated.
+- Sign-in, analysis/report flows, and general stability were improved.
 - Best-effort platform analytics are isolated from auth, subscriptions, quotas, analyses, and reports; telemetry failure cannot block app use.
 
-Reviewer login and mailbox:
-Use the demo account in App Review Information. Request a fresh email OTP and use the latest code delivered to the supplied review mailbox. Credentials are intentionally excluded from these notes and the repository.
+Reviewer login:
+Use the demo account supplied in App Review Information. Sign-in is email OTP; no password is required. Credentials are intentionally excluded from these notes and from the repository.
+
+Review mailbox:
+The one-time code is delivered to the review mailbox recorded in App Review Information, which is the same address as the demo account.
+
+OTP validity:
+Each emailed code is valid for 10 minutes and for a single use. Request a fresh code from the sign-in screen if it expires.
 
 Physical-device demo video:
 No separate video is required. The candidate was tested on a physical iPhone and the complete flow is available in the submitted build.
@@ -22,7 +29,7 @@ China mainland availability decision:
 China mainland remains excluded because the app includes AI-assisted workplace-safety analysis and external AI processing.
 
 Regulated industry documentation:
-AI output is advisory decision support. It does not certify compliance or replace a qualified occupational safety professional, workplace inspection, or legal review.
+The app performs AI-assisted risk analysis of workplace photographs. AI output is advisory decision support: it does not certify compliance, and it does not replace a qualified occupational safety professional, a workplace inspection, or legal review.
 
 Subscriptions:
 Apple IAP manages subscriptions. Purchases can be restored from Profile, and localized subscription metadata is configured for supported English locales.
