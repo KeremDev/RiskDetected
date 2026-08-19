@@ -91,6 +91,114 @@
         }
       }
     },
+    "paywall.design.feature.archive_management": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive Management"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşiv Yönetimi"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.assignee": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Owner Assignment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorumlu Atama"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.fine_kinney": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.focused_analysis": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focused Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odaklı Analiz"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.matrix_5x5": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 Matrix"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5x5 Matris"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.report_customization": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report Customization"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor Özelleştirme"
+          }
+        }
+      }
+    },
     "paywall.design.footer.auto_renew": {
       "comment": "paywall design footer legal line; placeholders: none",
       "extractionState": "manual",
@@ -141,6 +249,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gizlilik"
+          }
+        }
+      }
+    },
+    "paywall.design.footer.renewal_monthly_format": {
+      "comment": "paywall design footer renewal price for the monthly plan; placeholders: %1$@ = store price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / month"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / ay"
+          }
+        }
+      }
+    },
+    "paywall.design.footer.renewal_yearly_format": {
+      "comment": "paywall design footer renewal price for the yearly plan; placeholders: %1$@ = store price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / year"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / yıl"
           }
         }
       }
@@ -289,6 +433,24 @@
         }
       }
     },
+    "paywall.design.plan.per_year_format": {
+      "comment": "paywall design yearly plan card total price line; placeholders: %1$@ = store price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / year"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / Yıl"
+          }
+        }
+      }
+    },
     "paywall.design.plan.trial_note_format": {
       "comment": "paywall design annual plan card free trial note; placeholders: %1$@ = trial day count",
       "extractionState": "manual",
@@ -350,13 +512,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your subscription starts. You can cancel any time before that."
+            "value": "Your subscription starts. You can cancel at any time."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aboneliğiniz başlar. İstediğiniz zaman öncesinde iptal edin."
+            "value": "Aboneliğiniz başlar. İstediğiniz zaman iptal edebilirsiniz."
           }
         }
       }
@@ -404,13 +566,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "— Get instant access to all %1$@ features"
+            "value": "Get instant access to all %1$@ features"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "— Tüm %1$@ özelliklerine anında erişim kazanın"
+            "value": "Tüm %1$@ özelliklerine anında erişim kazanın"
           }
         }
       }

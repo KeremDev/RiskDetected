@@ -59,7 +59,7 @@ struct PaywallDesignFlowView: View {
                 selectedBackground: selectedBackground,
                 showsTrialTimeline: trialDays != nil,
                 trialDays: trialDays ?? 7,
-                timelineFeatures: PaywallDesignCopy.timelineFeatures,
+                timelineFeatures: PaywallDesignCopy.timelineFeatures(for: activeScreen.tier),
                 comparisonLeft: comparisonColumns.left,
                 comparisonRight: comparisonColumns.right,
                 comparisonRows: comparisonRows,
@@ -69,6 +69,7 @@ struct PaywallDesignFlowView: View {
                 cta: ctaState,
                 notice: workingMessage ?? notice,
                 errorMessage: visibleError,
+                renewalPrice: renewalPriceText,
                 crossSell: crossSell,
                 onClose: closePaywall,
                 onSelectBilling: select(billing:),
@@ -166,7 +167,8 @@ struct PaywallDesignFlowView: View {
                 PaywallDesignComparisonTable.Column(
                     title: tierName(.plus),
                     color: PaywallDesignColor.orange,
-                    weight: .bold
+                    weight: .bold,
+                    emblem: .crown
                 )
             )
         case .pro:
@@ -174,12 +176,14 @@ struct PaywallDesignFlowView: View {
                 PaywallDesignComparisonTable.Column(
                     title: tierName(.plus),
                     color: PaywallDesignColor.orange,
-                    weight: .semibold
+                    weight: .semibold,
+                    emblem: .crown
                 ),
                 PaywallDesignComparisonTable.Column(
                     title: tierName(.pro),
                     color: PaywallDesignColor.green,
-                    weight: .bold
+                    weight: .bold,
+                    emblem: .star
                 )
             )
         }
@@ -235,22 +239,33 @@ struct PaywallDesignFlowView: View {
 
         switch billing {
         case .yearly:
+            // Öne çıkan satır aylık karşılık, altındaki küçük satır yıllık toplamdır:
+            // kullanıcı aylık plana göre kıyaslayabilsin. Mağaza aylık karşılığı
+            // vermezse (fiyat yüklenmediyse) eski sıraya düşülür.
             let monthlyEquivalent = package?.displayMonthlyEquivalentPrice
+            let yearlyTotal = RDLocalization.format(
+                "paywall.design.plan.per_year_format",
+                table: .paywall,
+                fallback: "%1$@ / Yıl",
+                arguments: [price]
+            )
             return PaywallDesignPlanOption(
                 title: InAppPaywallBilling.yearly.title,
-                price: price,
-                caption: monthlyEquivalent.map {
+                price: monthlyEquivalent.map {
                     RDLocalization.format(
                         "paywall.design.plan.per_month_format",
                         table: .paywall,
                         fallback: "%1$@ / Ay",
                         arguments: [$0]
                     )
-                } ?? RDLocalization.string(
-                    "paywall.design.plan.yearly_caption",
-                    table: .paywall,
-                    fallback: "/ Yıl"
-                ),
+                } ?? price,
+                caption: monthlyEquivalent == nil
+                    ? RDLocalization.string(
+                        "paywall.design.plan.yearly_caption",
+                        table: .paywall,
+                        fallback: "/ Yıl"
+                    )
+                    : yearlyTotal,
                 trialNote: trialNoteText,
                 badgeLabel: RDLocalization.string(
                     "paywall.design.plan.badge.popular",
@@ -271,6 +286,31 @@ struct PaywallDesignFlowView: View {
                 trialNote: nil,
                 badgeLabel: nil,
                 badgeDiscount: nil
+            )
+        }
+    }
+
+    /// Alt bardaki otomatik yenileme cümlesinin devamına eklenen fiyat. Seçili faturalama
+    /// dönemine göre aylık ya da yıllık biçim kullanılır; tutar mağazadan gelir ve
+    /// yüklenmediyse satır fiyatsız kalır.
+    private var renewalPriceText: String? {
+        guard let price = selectedPackage(for: activeScreen, billing: activeBilling)?.displayPrice else {
+            return nil
+        }
+        switch activeBilling {
+        case .yearly:
+            return RDLocalization.format(
+                "paywall.design.footer.renewal_yearly_format",
+                table: .paywall,
+                fallback: "%1$@ / yıl",
+                arguments: [price]
+            )
+        case .monthly:
+            return RDLocalization.format(
+                "paywall.design.footer.renewal_monthly_format",
+                table: .paywall,
+                fallback: "%1$@ / ay",
+                arguments: [price]
             )
         }
     }
@@ -658,13 +698,58 @@ struct PaywallDesignFlowView: View {
 // MARK: - Sabit içerik
 
 enum PaywallDesignCopy {
-    static var timelineFeatures: [String] {
-        [
-            RDLocalization.string("paywall.in.app.paywall.view.risk.analizi.61b95913", table: .paywall, fallback: "Risk Analizi"),
-            RDLocalization.string("paywall.in.app.paywall.view.detayli.analiz.e955c96b", table: .paywall, fallback: "Detaylı analiz"),
-            RDLocalization.string("paywall.in.app.paywall.view.coklu.fotograf.analizi.c5d7318b", table: .paywall, fallback: "Çoklu Fotoğraf Analizi"),
-            RDLocalization.string("paywall.in.app.paywall.view.firma.yonetimi.0c7cc244", table: .paywall, fallback: "Firma yönetimi")
+    /// Şerit etiketleri. Yalnızca PRO'da bulunan bir özellik PLUS ekranında gösterilmez:
+    /// karşılaştırma tablosunda çarpı görünen bir özelliği aynı ekranda reklam etmemek için.
+    static func timelineFeatures(for tier: SubscriptionTier) -> [PaywallDesignFeature] {
+        let entries: [(feature: PaywallDesignFeature, isProOnly: Bool)] = [
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.in.app.paywall.view.risk.analizi.61b95913", table: .paywall, fallback: "Risk Analizi"),
+                glyph: .shield
+            ), false),
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.in.app.paywall.view.detayli.analiz.e955c96b", table: .paywall, fallback: "Detaylı analiz"),
+                glyph: .chart
+            ), false),
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.in.app.paywall.view.coklu.fotograf.analizi.c5d7318b", table: .paywall, fallback: "Çoklu Fotoğraf Analizi"),
+                glyph: .photos
+            ), false),
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.in.app.paywall.view.firma.yonetimi.0c7cc244", table: .paywall, fallback: "Firma yönetimi"),
+                glyph: .building
+            ), false),
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.design.feature.fine_kinney", table: .paywall, fallback: "Fine-Kinney"),
+                glyph: .gauge
+            ), false),
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.design.feature.matrix_5x5", table: .paywall, fallback: "5x5 Matris"),
+                glyph: .grid
+            ), false),
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.in.app.paywall.view.derin.arastirma.20ba0421", table: .paywall, fallback: "Derin Araştırma"),
+                glyph: .magnifier
+            ), true),
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.design.feature.report_customization", table: .paywall, fallback: "Rapor Özelleştirme"),
+                glyph: .sliders
+            ), false),
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.design.feature.archive_management", table: .paywall, fallback: "Arşiv Yönetimi"),
+                glyph: .archive
+            ), false),
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.design.feature.assignee", table: .paywall, fallback: "Sorumlu Atama"),
+                glyph: .assignee
+            ), false),
+            (PaywallDesignFeature(
+                title: RDLocalization.string("paywall.design.feature.focused_analysis", table: .paywall, fallback: "Odaklı Analiz"),
+                glyph: .target
+            ), true),
         ]
+        return entries
+            .filter { tier == .pro || !$0.isProOnly }
+            .map(\.feature)
     }
 
     static var freeVersusPlusRows: [PaywallDesignComparisonRow] {
@@ -693,7 +778,7 @@ enum PaywallDesignCopy {
             PaywallDesignComparisonRow(
                 title: RDLocalization.string("paywall.in.app.paywall.view.derin.arastirma.20ba0421", table: .paywall, fallback: "Derin Araştırma"),
                 left: .cross,
-                right: .check(PaywallDesignColor.orange)
+                right: .cross
             ),
             PaywallDesignComparisonRow(
                 title: RDLocalization.string("paywall.in.app.paywall.view.coklu.fotograf.analizi.c5d7318b", table: .paywall, fallback: "Çoklu Fotoğraf Analizi"),
@@ -731,7 +816,7 @@ enum PaywallDesignCopy {
             ),
             PaywallDesignComparisonRow(
                 title: RDLocalization.string("paywall.in.app.paywall.view.derin.arastirma.20ba0421", table: .paywall, fallback: "Derin Araştırma"),
-                left: .check(PaywallDesignColor.orange),
+                left: .cross,
                 right: .check(PaywallDesignColor.green)
             ),
             PaywallDesignComparisonRow(
@@ -740,7 +825,7 @@ enum PaywallDesignCopy {
                 right: .check(PaywallDesignColor.green)
             ),
             PaywallDesignComparisonRow(
-                title: RDLocalization.string("paywall.in.app.paywall.view.oncelikli.destek.d8c6c44d", table: .paywall, fallback: "Öncelikli destek"),
+                title: RDLocalization.string("paywall.design.feature.focused_analysis", table: .paywall, fallback: "Odaklı Analiz"),
                 left: .cross,
                 right: .check(PaywallDesignColor.green)
             )

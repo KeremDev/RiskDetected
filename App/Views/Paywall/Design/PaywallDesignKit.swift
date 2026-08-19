@@ -24,6 +24,9 @@ enum PaywallDesignColor {
     static let footer = Color(hex: "9AA3B2")
     static let ruleStrong = Color(hex: "EEEEEE")
     static let rule = Color(hex: "F2F2F2")
+    /// Kayan özellik şeridi etiketleri: vurgu rengi göz yorduğu için nötr gri zemin.
+    static let chipBg = Color(hex: "F4F5F7")
+    static let chipBorder = Color(hex: "E3E6EB")
 }
 
 // MARK: - Ölçüler
@@ -411,6 +414,8 @@ struct PaywallDesignTrialTimeline: View {
     var trialDays: Int
     /// Aktif paket adı (PLUS / PRO); bugün satırındaki erişim cümlesinde kullanılır.
     var tierName: String
+    /// Paket vurgu rengi; bugün satırındaki taç ikonu ve paket adı bu renkle çizilir.
+    var accent: Color
 
     private var reminderDay: Int { max(1, trialDays - 2) }
 
@@ -424,21 +429,10 @@ struct PaywallDesignTrialTimeline: View {
                         color: .white
                     )
                 }
-                VStack(alignment: .leading, spacing: 0) {
-                    ViewThatFits(in: .horizontal) {
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            todayTitle
-                            todayDetail.fixedSize()
-                        }
-                        VStack(alignment: .leading, spacing: 0) {
-                            todayTitle
-                            todayDetail
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                // Diğer satırlarla aynı: bağlantı çizgisinin görünmesi için yeterli yükseklik.
-                .padding(.bottom, 22)
+                // Diğer basamaklarla aynı biçim: başlık üstte, açıklama altında.
+                todayStep
+                    // Bağlantı çizgisinin görünmesi için diğer satırlarla eşit yükseklik.
+                    .padding(.bottom, 22)
             }
 
             HStack(alignment: .top, spacing: 12) {
@@ -465,7 +459,7 @@ struct PaywallDesignTrialTimeline: View {
                     detail: RDLocalization.string(
                         "paywall.design.timeline.billing.detail",
                         table: .paywall,
-                        fallback: "Aboneliğiniz başlar. İstediğiniz zaman öncesinde iptal edin."
+                        fallback: "Aboneliğiniz başlar. İstediğiniz zaman iptal edebilirsiniz."
                     )
                 )
             }
@@ -484,30 +478,63 @@ struct PaywallDesignTrialTimeline: View {
         )
     }
 
-    private var todayTitle: some View {
-        Text(RDLocalization.string("paywall.design.timeline.today.title", table: .paywall, fallback: "Bugün"))
-            .font(.system(size: 15, weight: .bold))
-            .foregroundColor(PaywallDesignColor.ink)
+    private var todayTitle: String {
+        RDLocalization.string("paywall.design.timeline.today.title", table: .paywall, fallback: "Bugün")
     }
 
-    private var todayDetail: some View {
-        Text(
-            RDLocalization.format(
-                "paywall.design.timeline.today.detail_format",
-                table: .paywall,
-                fallback: "— Tüm %1$@ özelliklerine anında erişim kazanın",
-                arguments: [tierName]
-            )
+    private var todayDetail: String {
+        RDLocalization.format(
+            "paywall.design.timeline.today.detail_format",
+            table: .paywall,
+            fallback: "Tüm %1$@ özelliklerine anında erişim kazanın",
+            arguments: [tierName]
         )
-        .font(.system(size: 12))
-        .foregroundColor(PaywallDesignColor.muted)
-        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// Bugün satırı: açıklamanın başında taç ikonu, paket adı vurgu renginde.
+    private var todayStep: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(todayTitle)
+                .font(.system(size: 13.5, weight: .bold))
+                .foregroundColor(PaywallDesignColor.ink)
+            todayDetailText
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 3)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Paket adı cümlenin içinde geçtiği yerde vurgulanır; çeviri sırası değişse de
+    /// yer tutucunun karşılığı aranarak bulunur, sabit bir ön/son ek varsayılmaz.
+    private var todayDetailText: Text {
+        let detail = todayDetail
+        let body = Font.system(size: 12.5)
+        guard let range = detail.range(of: tierName) else {
+            return Text(detail).font(body).foregroundColor(PaywallDesignColor.muted)
+        }
+        // Taç paket adının hemen soluna, metnin içine yerleşir: satır kaydığında
+        // ikon da adla birlikte taşınır. Satır içi görsel için sistem sembolü
+        // kullanılıyor; `Text` yalnızca `Image` kabul eder, çizilen vektörü değil.
+        let crown = Text(Image(systemName: "crown.fill"))
+            .font(.system(size: 10.5))
+            .foregroundColor(accent)
+        return Text(String(detail[detail.startIndex..<range.lowerBound]))
+            .font(body)
+            .foregroundColor(PaywallDesignColor.muted)
+            + crown
+            + Text(" ")
+            + Text(tierName)
+                .font(.system(size: 12.5, weight: .bold))
+                .foregroundColor(accent)
+            + Text(String(detail[range.upperBound...]))
+                .font(body)
+                .foregroundColor(PaywallDesignColor.muted)
     }
 
     private func step(title: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
-                .font(.system(size: 15, weight: .bold))
+                .font(.system(size: 13.5, weight: .bold))
                 .foregroundColor(PaywallDesignColor.ink)
             Text(detail)
                 .font(.system(size: 12.5))
@@ -541,6 +568,222 @@ struct PaywallDesignTrialTimeline: View {
     }
 }
 
+// MARK: - Şerit ikonları
+
+/// Şerit etiketlerinin çizgisel ikonları. Hepsi 20×20 viewBox üzerine çizilir ve
+/// yalnızca kontur olarak boyanır — tasarım kararı: içi dolu ikon yok.
+enum PaywallDesignFeatureGlyph: String, Equatable, Sendable {
+    /// Kalkan + tik — risk analizi
+    case shield
+    /// Sütun grafik — detaylı analiz
+    case chart
+    /// Üst üste iki kare + ufuk çizgisi — çoklu fotoğraf
+    case photos
+    /// Bina — firma yönetimi
+    case building
+    /// Gösterge kadranı — Fine-Kinney risk puanlaması
+    case gauge
+    /// Izgara — 5x5 matris
+    case grid
+    /// Büyüteç — derin araştırma
+    case magnifier
+    /// Ayar sürgüleri — rapor özelleştirme
+    case sliders
+    /// Kapaklı kutu — arşiv yönetimi
+    case archive
+    /// Kişi + tik — sorumlu atama
+    case assignee
+    /// Nişangâh — odaklı analiz
+    case target
+}
+
+/// Şerit etiketi: metin ve ona ait ikon birlikte taşınır; ikon seçimi çeviriye değil
+/// içerik tanımına bağlıdır (bkz. `PaywallDesignCopy.timelineFeatures`).
+struct PaywallDesignFeature: Equatable, Identifiable, Sendable {
+    var title: String
+    var glyph: PaywallDesignFeatureGlyph
+
+    var id: String { title }
+}
+
+struct PaywallDesignFeatureIcon: View {
+    var glyph: PaywallDesignFeatureGlyph
+    var size: CGFloat
+    var color: Color
+    var lineWidth: CGFloat = 1.5
+
+    private let viewBox = CGSize(width: 20, height: 20)
+
+    var body: some View {
+        PaywallDesignVector(viewBox: viewBox) { path in
+            switch glyph {
+            case .shield: PaywallDesignFeatureIcon.shield(&path)
+            case .chart: PaywallDesignFeatureIcon.chart(&path)
+            case .photos: PaywallDesignFeatureIcon.photos(&path)
+            case .building: PaywallDesignFeatureIcon.building(&path)
+            case .gauge: PaywallDesignFeatureIcon.gauge(&path)
+            case .grid: PaywallDesignFeatureIcon.grid(&path)
+            case .magnifier: PaywallDesignFeatureIcon.magnifier(&path)
+            case .sliders: PaywallDesignFeatureIcon.sliders(&path)
+            case .archive: PaywallDesignFeatureIcon.archive(&path)
+            case .assignee: PaywallDesignFeatureIcon.assignee(&path)
+            case .target: PaywallDesignFeatureIcon.target(&path)
+            }
+        }
+        .stroke(
+            color,
+            style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+        )
+        .frame(width: size, height: size)
+    }
+
+    private static func shield(_ path: inout Path) {
+        path.move(to: CGPoint(x: 10, y: 2.4))
+        path.addLine(to: CGPoint(x: 16.4, y: 5))
+        path.addLine(to: CGPoint(x: 16.4, y: 9.8))
+        path.addQuadCurve(to: CGPoint(x: 10, y: 17.6), control: CGPoint(x: 16.4, y: 14.8))
+        path.addQuadCurve(to: CGPoint(x: 3.6, y: 9.8), control: CGPoint(x: 3.6, y: 14.8))
+        path.addLine(to: CGPoint(x: 3.6, y: 5))
+        path.closeSubpath()
+        path.move(to: CGPoint(x: 7.3, y: 9.9))
+        path.addLine(to: CGPoint(x: 9.3, y: 11.9))
+        path.addLine(to: CGPoint(x: 12.8, y: 8))
+    }
+
+    private static func chart(_ path: inout Path) {
+        path.move(to: CGPoint(x: 3.4, y: 3))
+        path.addLine(to: CGPoint(x: 3.4, y: 16.4))
+        path.addLine(to: CGPoint(x: 16.8, y: 16.4))
+        path.move(to: CGPoint(x: 7, y: 16.4))
+        path.addLine(to: CGPoint(x: 7, y: 11.6))
+        path.move(to: CGPoint(x: 10.6, y: 16.4))
+        path.addLine(to: CGPoint(x: 10.6, y: 8.4))
+        path.move(to: CGPoint(x: 14.2, y: 16.4))
+        path.addLine(to: CGPoint(x: 14.2, y: 5.2))
+    }
+
+    private static func photos(_ path: inout Path) {
+        path.addRoundedRect(
+            in: CGRect(x: 6.6, y: 2.4, width: 11, height: 11),
+            cornerSize: CGSize(width: 2.4, height: 2.4)
+        )
+        path.addRoundedRect(
+            in: CGRect(x: 2.4, y: 6.6, width: 11, height: 11),
+            cornerSize: CGSize(width: 2.4, height: 2.4)
+        )
+        path.addEllipse(in: CGRect(x: 4.5, y: 8.7, width: 2.2, height: 2.2))
+        path.move(to: CGPoint(x: 3.2, y: 15.4))
+        path.addLine(to: CGPoint(x: 6.6, y: 11.8))
+        path.addLine(to: CGPoint(x: 9.2, y: 14.4))
+        path.addLine(to: CGPoint(x: 10.8, y: 12.9))
+        path.addLine(to: CGPoint(x: 12.9, y: 15))
+    }
+
+    private static func building(_ path: inout Path) {
+        path.move(to: CGPoint(x: 4, y: 17))
+        path.addLine(to: CGPoint(x: 4, y: 3.4))
+        path.addLine(to: CGPoint(x: 12.2, y: 3.4))
+        path.addLine(to: CGPoint(x: 12.2, y: 17))
+        path.move(to: CGPoint(x: 12.2, y: 8.6))
+        path.addLine(to: CGPoint(x: 16.4, y: 8.6))
+        path.addLine(to: CGPoint(x: 16.4, y: 17))
+        path.move(to: CGPoint(x: 2.6, y: 17))
+        path.addLine(to: CGPoint(x: 17.6, y: 17))
+        path.move(to: CGPoint(x: 6.7, y: 6.6))
+        path.addLine(to: CGPoint(x: 9.5, y: 6.6))
+        path.move(to: CGPoint(x: 6.7, y: 9.8))
+        path.addLine(to: CGPoint(x: 9.5, y: 9.8))
+        path.move(to: CGPoint(x: 6.7, y: 13))
+        path.addLine(to: CGPoint(x: 9.5, y: 13))
+        path.move(to: CGPoint(x: 14, y: 11.6))
+        path.addLine(to: CGPoint(x: 14.8, y: 11.6))
+        path.move(to: CGPoint(x: 14, y: 14.2))
+        path.addLine(to: CGPoint(x: 14.8, y: 14.2))
+    }
+
+    private static func gauge(_ path: inout Path) {
+        path.addArc(
+            center: CGPoint(x: 10, y: 13.2),
+            radius: 6.8,
+            startAngle: .degrees(180),
+            endAngle: .degrees(0),
+            clockwise: false
+        )
+        // İbre: sağ üst çeyreğe bakar (yüksek risk skoru okuması).
+        path.move(to: CGPoint(x: 9.4, y: 13.6))
+        path.addLine(to: CGPoint(x: 14.2, y: 8.2))
+        path.move(to: CGPoint(x: 3.2, y: 15.6))
+        path.addLine(to: CGPoint(x: 16.8, y: 15.6))
+    }
+
+    private static func grid(_ path: inout Path) {
+        path.addRoundedRect(
+            in: CGRect(x: 2.8, y: 2.8, width: 14.4, height: 14.4),
+            cornerSize: CGSize(width: 2.4, height: 2.4)
+        )
+        for offset in [7.6, 12.4] {
+            path.move(to: CGPoint(x: offset, y: 2.8))
+            path.addLine(to: CGPoint(x: offset, y: 17.2))
+            path.move(to: CGPoint(x: 2.8, y: offset))
+            path.addLine(to: CGPoint(x: 17.2, y: offset))
+        }
+    }
+
+    private static func magnifier(_ path: inout Path) {
+        path.addEllipse(in: CGRect(x: 3, y: 3, width: 11.2, height: 11.2))
+        path.move(to: CGPoint(x: 12.6, y: 12.6))
+        path.addLine(to: CGPoint(x: 17.2, y: 17.2))
+    }
+
+    private static func sliders(_ path: inout Path) {
+        let rows: [(y: CGFloat, knob: CGFloat)] = [(5.6, 13.2), (10, 7.2), (14.4, 14)]
+        for row in rows {
+            path.move(to: CGPoint(x: 3, y: row.y))
+            path.addLine(to: CGPoint(x: 17, y: row.y))
+            path.addEllipse(
+                in: CGRect(x: row.knob - 1.8, y: row.y - 1.8, width: 3.6, height: 3.6)
+            )
+        }
+    }
+
+    private static func archive(_ path: inout Path) {
+        path.addRoundedRect(
+            in: CGRect(x: 2.6, y: 3.2, width: 14.8, height: 4),
+            cornerSize: CGSize(width: 1.2, height: 1.2)
+        )
+        path.move(to: CGPoint(x: 4.2, y: 7.2))
+        path.addLine(to: CGPoint(x: 4.2, y: 15))
+        path.addQuadCurve(to: CGPoint(x: 5.8, y: 16.6), control: CGPoint(x: 4.2, y: 16.6))
+        path.addLine(to: CGPoint(x: 14.2, y: 16.6))
+        path.addQuadCurve(to: CGPoint(x: 15.8, y: 15), control: CGPoint(x: 15.8, y: 16.6))
+        path.addLine(to: CGPoint(x: 15.8, y: 7.2))
+        path.move(to: CGPoint(x: 8, y: 10.6))
+        path.addLine(to: CGPoint(x: 12, y: 10.6))
+    }
+
+    private static func assignee(_ path: inout Path) {
+        path.addEllipse(in: CGRect(x: 5.2, y: 3.4, width: 6.4, height: 6.4))
+        path.move(to: CGPoint(x: 2.2, y: 17))
+        path.addQuadCurve(to: CGPoint(x: 12.2, y: 17), control: CGPoint(x: 7.2, y: 11))
+        path.move(to: CGPoint(x: 13.4, y: 11.4))
+        path.addLine(to: CGPoint(x: 15.1, y: 13.1))
+        path.addLine(to: CGPoint(x: 18.4, y: 9.4))
+    }
+
+    private static func target(_ path: inout Path) {
+        path.addEllipse(in: CGRect(x: 3.4, y: 3.4, width: 13.2, height: 13.2))
+        path.addEllipse(in: CGRect(x: 7.6, y: 7.6, width: 4.8, height: 4.8))
+        path.move(to: CGPoint(x: 10, y: 1.2))
+        path.addLine(to: CGPoint(x: 10, y: 3.2))
+        path.move(to: CGPoint(x: 10, y: 16.8))
+        path.addLine(to: CGPoint(x: 10, y: 18.8))
+        path.move(to: CGPoint(x: 1.2, y: 10))
+        path.addLine(to: CGPoint(x: 3.2, y: 10))
+        path.move(to: CGPoint(x: 16.8, y: 10))
+        path.addLine(to: CGPoint(x: 18.8, y: 10))
+    }
+}
+
 // MARK: - Kayan özellik şeridi
 
 private struct PaywallDesignMarqueeWidthKey: PreferenceKey {
@@ -554,7 +797,7 @@ private struct PaywallDesignMarqueeWidthKey: PreferenceKey {
 /// Şerit iki özdeş kopyadan oluşur; ilk kopya tam genişliği kadar kayınca
 /// başa döner, böylece dikiş yeri görünmeden sonsuz akar.
 struct PaywallDesignFeatureMarquee: View {
-    var features: [String]
+    var features: [PaywallDesignFeature]
     var accent: Color
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -604,21 +847,16 @@ struct PaywallDesignFeatureMarquee: View {
 
     private var row: some View {
         HStack(spacing: spacing) {
-            ForEach(features, id: \.self) { feature in
+            ForEach(features) { feature in
                 chip(feature)
             }
         }
     }
 
-    private func chip(_ feature: String) -> some View {
+    private func chip(_ feature: PaywallDesignFeature) -> some View {
         HStack(spacing: 6) {
-            PaywallDesignCheckBadge(
-                diameter: 15,
-                checkSize: CGSize(width: 7.5, height: 6.5),
-                checkLineWidth: 2.4,
-                background: accent
-            )
-            Text(feature)
+            PaywallDesignFeatureIcon(glyph: feature.glyph, size: 15, color: accent)
+            Text(feature.title)
                 .font(.system(size: 12.5, weight: .semibold))
                 .foregroundColor(PaywallDesignColor.ink)
                 .lineLimit(1)
@@ -629,12 +867,12 @@ struct PaywallDesignFeatureMarquee: View {
         .background(
             GeometryReader { geometry in
                 Capsule()
-                    .fill(accent.opacity(0.10))
+                    .fill(PaywallDesignColor.chipBg)
                     .onAppear { rowHeight = max(rowHeight, geometry.size.height) }
             }
         )
         .overlay(
-            Capsule().strokeBorder(accent.opacity(0.22), lineWidth: 1)
+            Capsule().strokeBorder(PaywallDesignColor.chipBorder, lineWidth: 1)
         )
     }
 
@@ -672,10 +910,18 @@ struct PaywallDesignComparisonRow: Equatable {
 }
 
 struct PaywallDesignComparisonTable: View {
+    /// Sütun başlığında paket adının solunda duran işaret.
+    enum Emblem: Equatable {
+        case none
+        case crown
+        case star
+    }
+
     struct Column {
         let title: String
         let color: Color
         let weight: Font.Weight
+        var emblem: Emblem = .none
     }
 
     var left: Column
@@ -718,10 +964,28 @@ struct PaywallDesignComparisonTable: View {
     }
 
     private func header(_ column: Column) -> some View {
-        Text(column.title)
-            .font(.system(size: 12, weight: column.weight))
-            .foregroundColor(column.color)
-            .frame(width: PaywallDesignMetric.markColumnWidth)
+        HStack(spacing: 3) {
+            switch column.emblem {
+            case .none:
+                EmptyView()
+            case .crown:
+                PaywallDesignCrownIcon(
+                    size: CGSize(width: 11, height: 9.9),
+                    color: PaywallDesignColor.orange
+                )
+            case .star:
+                PaywallDesignStarIcon(
+                    size: CGSize(width: 10.5, height: 10.5),
+                    color: PaywallDesignColor.green
+                )
+            }
+            Text(column.title)
+                .font(.system(size: 12, weight: column.weight))
+                .foregroundColor(column.color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .frame(width: PaywallDesignMetric.markColumnWidth)
     }
 
     @ViewBuilder
@@ -929,6 +1193,9 @@ struct PaywallDesignFooter: View {
     var accent: Color
     var notice: String?
     var errorMessage: String?
+    /// Seçili planın mağazadan gelen yenileme fiyatı, dönem ekiyle birlikte.
+    /// Fiyat yüklenmediyse nil olur ve satır yalnızca otomatik yenileme cümlesini gösterir.
+    var renewalPrice: String?
     var onCTA: () -> Void
     var onRestore: () -> Void
     var onTerms: () -> Void
@@ -976,19 +1243,14 @@ struct PaywallDesignFooter: View {
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(ctaAccessibilityIdentifier)
 
-            Text(
-                RDLocalization.string(
-                    "paywall.design.footer.auto_renew",
-                    table: .paywall,
-                    fallback: "Otomatik yenilenir. İstediğiniz zaman iptal edin."
-                )
-            )
-            .font(.system(size: 11))
-            .foregroundColor(PaywallDesignColor.footer)
-            .designLineHeight(11)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 10)
+            autoRenewText
+                .font(.system(size: 11))
+                .foregroundColor(PaywallDesignColor.footer)
+                .designLineHeight(11)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 10)
+                .accessibilityIdentifier("in_app_paywall.auto_renew")
 
             HStack(spacing: 8) {
                 link(
@@ -1024,6 +1286,19 @@ struct PaywallDesignFooter: View {
             Color.white
                 .shadow(color: Color.black.opacity(0.05), radius: 12, x: 0, y: -8)
         )
+    }
+
+    /// Otomatik yenileme cümlesi ve arkasına seçili planın fiyatı.
+    private var autoRenewText: Text {
+        let sentence = Text(
+            RDLocalization.string(
+                "paywall.design.footer.auto_renew",
+                table: .paywall,
+                fallback: "Otomatik yenilenir. İstediğiniz zaman iptal edin."
+            )
+        )
+        guard let renewalPrice else { return sentence }
+        return sentence + Text(" ") + Text(renewalPrice).fontWeight(.semibold)
     }
 
     private var separator: some View {

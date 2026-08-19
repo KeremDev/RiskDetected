@@ -40,7 +40,7 @@ struct PaywallDesignScreen: View {
     var selectedBackground: Color
     var showsTrialTimeline: Bool
     var trialDays: Int
-    var timelineFeatures: [String]
+    var timelineFeatures: [PaywallDesignFeature]
     var comparisonLeft: PaywallDesignComparisonTable.Column
     var comparisonRight: PaywallDesignComparisonTable.Column
     var comparisonRows: [PaywallDesignComparisonRow]
@@ -50,6 +50,8 @@ struct PaywallDesignScreen: View {
     var cta: PaywallDesignCTAState
     var notice: String?
     var errorMessage: String?
+    /// Alt bardaki otomatik yenileme cümlesinin devamına eklenen seçili plan fiyatı.
+    var renewalPrice: String?
     var crossSell: PaywallDesignCrossSell?
 
     var onClose: () -> Void
@@ -81,12 +83,7 @@ struct PaywallDesignScreen: View {
                     if showsTimeline {
                         PaywallDesignTrialTimeline(
                             trialDays: trialDays,
-                            tierName: tierName
-                        )
-                        // Özellikler artık ilk satırın altındaki ızgarada değil,
-                        // zaman çizelgesinin altında sürekli akan bir şeritte.
-                        PaywallDesignFeatureMarquee(
-                            features: timelineFeatures,
+                            tierName: tierName,
                             accent: accent
                         )
                     } else {
@@ -96,6 +93,13 @@ struct PaywallDesignScreen: View {
                             rows: comparisonRows
                         )
                     }
+
+                    // Şerit her iki anlatımın da altında durur: PLUS/PRO, yıllık/aylık
+                    // fark etmeksizin paketin kapsamı akarken görünür.
+                    PaywallDesignFeatureMarquee(
+                        features: timelineFeatures,
+                        accent: accent
+                    )
 
                     HStack(spacing: 10) {
                         planCard(annual, billing: .yearly, identifier: "in_app_paywall.plan.yearly")
@@ -124,6 +128,7 @@ struct PaywallDesignScreen: View {
                 accent: accent,
                 notice: notice,
                 errorMessage: errorMessage,
+                renewalPrice: renewalPrice,
                 onCTA: onCTA,
                 onRestore: onRestore,
                 onTerms: onTerms,

@@ -773,10 +773,10 @@
     <string name="rd_paywall_design_tier_plus">PLUS</string>
     <string name="rd_paywall_design_tier_pro">PRO</string>
     <string name="rd_paywall_design_timeline_today">Bugün</string>
-    <string name="rd_paywall_design_timeline_today_detail_format">— Tüm %1$s özelliklerine anında erişim kazanın</string>
+    <string name="rd_paywall_design_timeline_today_detail_format">Tüm %1$s özelliklerine anında erişim kazanın</string>
     <string name="rd_paywall_design_timeline_day_format">%1$s. Gün</string>
     <string name="rd_paywall_design_timeline_reminder">Deneme süreniz bitmeden size hatırlatacağız</string>
-    <string name="rd_paywall_design_timeline_billing">Aboneliğiniz başlar. İstediğiniz zaman öncesinde iptal edin.</string>
+    <string name="rd_paywall_design_timeline_billing">Aboneliğiniz başlar. İstediğiniz zaman iptal edebilirsiniz.</string>
     <string name="rd_paywall_design_row_daily_analysis">Günlük analiz</string>
     <!-- Paywall özellik etiketleri kendi anahtarlarında durur: uygulamanın geri kalanındaki
          aynı metinler farklı büyük/küçük harf düzenine sahip ("Risk analizi" / "Detaylı Analiz"),
@@ -785,6 +785,15 @@
     <string name="rd_paywall_design_feature_detailed_analysis">Detaylı Analiz</string>
     <string name="rd_paywall_design_feature_multi_photo">Çoklu Fotoğraf Analizi</string>
     <string name="rd_paywall_design_feature_company_management">Firma Yönetimi</string>
+    <string name="rd_paywall_design_feature_fine_kinney">Fine-Kinney</string>
+    <string name="rd_paywall_design_feature_matrix_5x5">5x5 Matris</string>
+    <string name="rd_paywall_design_feature_report_customization">Rapor Özelleştirme</string>
+    <string name="rd_paywall_design_feature_archive_management">Arşiv Yönetimi</string>
+    <string name="rd_paywall_design_feature_assignee">Sorumlu Atama</string>
+    <string name="rd_paywall_design_feature_focused_analysis">Odaklı Analiz</string>
+    <string name="rd_paywall_design_plan_per_year_format">%1$s / Yıl</string>
+    <string name="rd_paywall_design_footer_renewal_yearly_format">%1$s / yıl</string>
+    <string name="rd_paywall_design_footer_renewal_monthly_format">%1$s / ay</string>
     <string name="rd_paywall_design_row_deep_research">Derin Araştırma</string>
     <string name="rd_paywall_design_row_priority_support">Öncelikli destek</string>
     <string name="rd_paywall_design_value_one_per_day">1 / gün</string>

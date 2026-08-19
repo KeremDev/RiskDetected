@@ -60,7 +60,7 @@ data class RdPaywallDesignState(
     val tierName: String,
     val showsTrialTimeline: Boolean,
     val trialDays: Int,
-    val timelineFeatures: List<String>,
+    val timelineFeatures: List<RdPaywallDesignFeature>,
     val comparisonLeft: RdPaywallDesignColumn,
     val comparisonRight: RdPaywallDesignColumn,
     val comparisonRows: List<RdPaywallDesignRow>,
@@ -70,6 +70,8 @@ data class RdPaywallDesignState(
     val cta: RdPaywallDesignCta,
     val notice: String? = null,
     val errorMessage: String? = null,
+    /** Alt bardaki otomatik yenileme cümlesinin devamına eklenen seçili plan fiyatı. */
+    val renewalPrice: String? = null,
     val crossSell: RdPaywallDesignCrossSell? = null,
 )
 
@@ -136,11 +138,6 @@ fun RdPaywallDesignScreen(
                     RdPaywallDesignTrialTimeline(
                         trialDays = state.trialDays,
                         tierName = state.tierName,
-                    )
-                    // Özellikler artık ilk satırın altındaki ızgarada değil,
-                    // zaman çizelgesinin altında sürekli akan bir şeritte.
-                    RdPaywallDesignFeatureMarquee(
-                        features = state.timelineFeatures,
                         accent = state.tier.accent,
                     )
                 } else {
@@ -150,6 +147,13 @@ fun RdPaywallDesignScreen(
                         rows = state.comparisonRows,
                     )
                 }
+
+                // Şerit her iki anlatımın da altında durur: PLUS/PRO, yıllık/aylık
+                // fark etmeksizin paketin kapsamı akarken görünür.
+                RdPaywallDesignFeatureMarquee(
+                    features = state.timelineFeatures,
+                    accent = state.tier.accent,
+                )
 
                 Row(
                     modifier = Modifier
@@ -208,6 +212,7 @@ fun RdPaywallDesignScreen(
                 accent = state.tier.accent,
                 notice = state.notice,
                 errorMessage = state.errorMessage,
+                renewalPrice = state.renewalPrice,
                 onCta = onCta,
                 onRestore = onRestore,
                 onTerms = onTerms,

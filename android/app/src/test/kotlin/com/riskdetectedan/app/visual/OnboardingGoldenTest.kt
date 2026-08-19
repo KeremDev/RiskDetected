@@ -10,8 +10,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +37,9 @@ import com.riskdetectedan.core.data.profile.ProfileStats
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
+import com.riskdetectedan.core.designsystem.RdPaywallDesignColor
+import com.riskdetectedan.core.designsystem.RdPaywallDesignGlyph
+import com.riskdetectedan.core.designsystem.RdPaywallFeatureIcon
 import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
 import com.riskdetectedan.core.designsystem.LocalRdConfettiSnapshotElapsedMillis
 import com.riskdetectedan.app.home.SectorPickerSheet
@@ -373,6 +383,51 @@ class OnboardingGoldenTest {
         composeRule.onNodeWithText("%17 İndirim").assertIsDisplayed()
         composeRule.onNodeWithText("₺124,99 / Ay").assertIsDisplayed()
         composeRule.onNodeWithText("Ücretsiz Denemeyi Başlat").assertIsDisplayed()
+        // Şerit paket duyarlı: PRO'ya özel özellikler PLUS ekranında hiç geçmez.
+        assertEquals(0, composeRule.onAllNodesWithText("Odaklı Analiz").fetchSemanticsNodes().size)
+        assertEquals(0, composeRule.onAllNodesWithText("Derin Araştırma").fetchSemanticsNodes().size)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    /**
+     * Şerit etiketlerinin ikonları sürekli aktığı için paywall goldenlarında aynı anda
+     * yalnızca ilk üçü görünüyor. Bu kare on bir çizgisel ikonun tamamını sabit bir
+     * tabakta toplar; bir path bozulursa burada yakalanır.
+     */
+    @Test
+    fun paywall_feature_marquee_icons_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                Column(
+                    modifier = Modifier
+                        .background(RdPaywallDesignColor.Surface)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    RdPaywallDesignGlyph.entries.forEach { glyph ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RdPaywallFeatureIcon(
+                                glyph = glyph,
+                                size = 15.dp,
+                                color = RdPaywallDesignColor.Orange,
+                            )
+                            RdPaywallFeatureIcon(
+                                glyph = glyph,
+                                size = 30.dp,
+                                color = RdPaywallDesignColor.Green,
+                            )
+                            Text(glyph.name)
+                        }
+                    }
+                }
+            }
+        }
+
+        composeRule.onNodeWithText("Shield").assertIsDisplayed()
+        composeRule.onNodeWithText("Target").assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
@@ -390,7 +445,9 @@ class OnboardingGoldenTest {
 
         composeRule.onNodeWithText("PRO").assertIsDisplayed()
         // PRO ekranında deneme anlatımı yok; PLUS ile karşılaştırma tablosu gösterilir.
-        composeRule.onNodeWithText("Öncelikli destek").assertIsDisplayed()
+        // "Odaklı Analiz" hem karşılaştırma satırında hem de akan şeridin iki
+        // kopyasında geçiyor; tablodaki satır için ilk düğüm yeterli.
+        composeRule.onAllNodesWithText("Odaklı Analiz")[0].assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 

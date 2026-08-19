@@ -647,6 +647,59 @@ final class RiskDetectedUITests: XCTestCase {
         add(screenshot)
     }
 
+    /// Şerit artık deneme anlatımına bağlı değil: PLUS/PRO ve yıllık/aylık dört
+    /// kombinasyonun hepsinde görünür, alt bardaki otomatik yenileme satırı da öyle.
+    func testFeatureMarqueeAppearsOnEveryPaywallVariant() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("Yükselt")
+
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 8).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.auto_renew", timeout: 6).exists)
+
+        tap("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
+
+        tapScrolling("in_app_paywall.plus.pro_link", timeout: 12)
+        XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
+
+        tap("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.auto_renew", timeout: 6).exists)
+    }
+
+    /// Alt bardaki dört bağlantı: Koşullar ve Gizlilik uygulama içi hukuki metni
+    /// alttan açılan ekranda gösterir, Geri Yükle mağaza akışını başlatır ve
+    /// İptal Hakkı abonelik yönetimine gider (dışarı çıktığı için yalnızca varlığı denenir).
+    func testPaywallFooterLinksOpenInAppLegalSheets() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("Yükselt")
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
+
+        tap("in_app_paywall.terms")
+        XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 6).exists)
+        XCTAssertTrue(waitFor("Kullanım Koşulları", timeout: 4).exists)
+        tap("Pencereyi kapat")
+
+        tap("in_app_paywall.privacy")
+        XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 6).exists)
+        XCTAssertTrue(waitFor("Gizlilik Politikası", timeout: 4).exists)
+        tap("Pencereyi kapat")
+
+        XCTAssertTrue(waitFor("in_app_paywall.manage", timeout: 4).exists)
+
+        // Geri yükleme mağazaya gider; simülatörde oturum olmadığı için sonuç bir
+        // uyarı satırıdır. Beklenen davranış paywall'ın açık ve kullanılabilir kalması.
+        tap("in_app_paywall.restore")
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.cta", timeout: 6).exists)
+    }
+
     func testInAppPaywallClaudePlusAndProRenderWithFreeTier() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
 
@@ -677,7 +730,7 @@ final class RiskDetectedUITests: XCTestCase {
         tapScrolling("in_app_paywall.plus.pro_link", timeout: 12)
         XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
         XCTAssertTrue(waitFor("PRO Abonelik Avantajları").exists)
-        XCTAssertTrue(waitFor("Öncelikli destek").exists)
+        XCTAssertTrue(waitFor("Odaklı Analiz").exists)
         XCTAssertTrue(waitFor("Limitsiz").exists)
 
         tapScrolling("in_app_paywall.pro.plus_link", timeout: 12)

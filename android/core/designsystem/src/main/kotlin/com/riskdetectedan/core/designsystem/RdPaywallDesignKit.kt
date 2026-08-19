@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -66,6 +68,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -117,6 +121,10 @@ object RdPaywallDesignColor {
     val ErrorInk = Color(0xFFB3261E)
     val ErrorBg = Color(0xFFFDECEA)
     val Surface = Color.White
+
+    /** Kayan özellik şeridi etiketleri: vurgu rengi göz yorduğu için nötr gri zemin. */
+    val ChipBg = Color(0xFFF4F5F7)
+    val ChipBorder = Color(0xFFE3E6EB)
 }
 
 object RdPaywallDesignMetric {
@@ -529,6 +537,7 @@ fun RdPaywallDesignSocialProof(modifier: Modifier = Modifier) {
 fun RdPaywallDesignTrialTimeline(
     trialDays: Int,
     tierName: String,
+    accent: Color,
     modifier: Modifier = Modifier,
 ) {
     val reminderDay = maxOf(1, trialDays - 2)
@@ -543,10 +552,13 @@ fun RdPaywallDesignTrialTimeline(
             railColor = RdPaywallDesignColor.Orange,
             icon = { RdPaywallCheckIcon(13.dp, 10.5.dp, lineWidth = 2f, color = Color.White) },
         ) {
-            // Diğer satırlarla aynı: bağlantı çizgisinin görünmesi için yeterli yükseklik.
-            Column(modifier = Modifier.fillMaxWidth().padding(bottom = 22.dp)) {
-                TimelineTodayHeadline(tierName)
-            }
+            // Diğer basamaklarla aynı biçim: başlık üstte, açıklama altında.
+            // Alt boşluk bağlantı çizgisinin görünmesi için diğer satırlarla eşittir.
+            TimelineTodayStep(
+                tierName = tierName,
+                accent = accent,
+                modifier = Modifier.padding(bottom = 22.dp),
+            )
         }
 
         TimelineRow(
@@ -623,19 +635,50 @@ private fun TimelineRow(
     }
 }
 
+/** Bugün satırı: açıklamanın başında taç ikonu, paket adı vurgu renginde. */
 @Composable
-private fun TimelineTodayHeadline(tierName: String) {
-    // iOS'taki `ViewThatFits` karşılığı: sığarsa tek satır, sığmazsa alt satıra kayar.
-    androidx.compose.foundation.layout.FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
+private fun TimelineTodayStep(tierName: String, accent: Color, modifier: Modifier = Modifier) {
+    val detail = stringResource(R.string.rd_paywall_design_timeline_today_detail_format, tierName)
+    // Paket adı cümlenin içinde geçtiği yerde vurgulanır; çeviri sırası değişse de yer
+    // tutucunun karşılığı aranarak bulunur, sabit bir ön/son ek varsayılmaz.
+    val highlight = detail.indexOf(tierName)
+    Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = stringResource(R.string.rd_paywall_design_timeline_today),
-            style = rdPaywallText(15f, FontWeight.Bold, RdPaywallDesignColor.Ink),
+            style = rdPaywallText(13.5f, FontWeight.Bold, RdPaywallDesignColor.Ink),
         )
+        // Taç paket adının hemen soluna, metnin içine yerleşir: satır kaydığında ikon da
+        // adla birlikte taşınır (satır içi yerleştirme `InlineTextContent` ile yapılır).
+        val crownId = "rd-paywall-today-crown"
         Text(
-            text = stringResource(R.string.rd_paywall_design_timeline_today_detail_format, tierName),
-            style = rdPaywallText(12f, color = RdPaywallDesignColor.Muted),
+            text = if (highlight < 0) {
+                buildAnnotatedString { append(detail) }
+            } else {
+                buildAnnotatedString {
+                    append(detail.substring(0, highlight))
+                    // Yer tutucunun alternatif metni boş olamaz; ekran okuyucuda
+                    // yalnızca boşluk olarak duyulur, görsel boşluk da buradan gelir.
+                    appendInlineContent(crownId, " ")
+                    append(" ")
+                    withStyle(SpanStyle(color = accent, fontWeight = FontWeight.Bold)) {
+                        append(tierName)
+                    }
+                    append(detail.substring(highlight + tierName.length))
+                }
+            },
+            inlineContent = mapOf(
+                crownId to InlineTextContent(
+                    Placeholder(
+                        width = 13.sp,
+                        height = 11.7.sp,
+                        placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter,
+                    ),
+                ) {
+                    RdPaywallCrownIcon(color = accent, width = 13.dp, height = 11.7.dp)
+                },
+            ),
+            style = rdPaywallText(12.5f, color = RdPaywallDesignColor.Muted, lineHeightMultiple = 1.4f),
+            modifier = Modifier.padding(top = 3.dp),
         )
     }
 }
@@ -643,13 +686,232 @@ private fun TimelineTodayHeadline(tierName: String) {
 @Composable
 private fun TimelineStep(title: String, detail: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(title, style = rdPaywallText(15f, FontWeight.Bold, RdPaywallDesignColor.Ink))
+        Text(title, style = rdPaywallText(13.5f, FontWeight.Bold, RdPaywallDesignColor.Ink))
         Text(
             text = detail,
             style = rdPaywallText(12.5f, color = RdPaywallDesignColor.Muted, lineHeightMultiple = 1.4f),
             modifier = Modifier.padding(top = 2.dp),
         )
     }
+}
+
+// MARK: - Şerit ikonları
+
+/**
+ * Şerit etiketlerinin çizgisel ikonları (iOS'taki `PaywallDesignFeatureGlyph` karşılığı).
+ * Hepsi 20×20 viewBox üzerine çizilir ve yalnızca kontur olarak boyanır — içi dolu ikon yok.
+ */
+enum class RdPaywallDesignGlyph {
+    /** Kalkan + tik — risk analizi */
+    Shield,
+
+    /** Sütun grafik — detaylı analiz */
+    Chart,
+
+    /** Üst üste iki kare + ufuk çizgisi — çoklu fotoğraf */
+    Photos,
+
+    /** Bina — firma yönetimi */
+    Building,
+
+    /** Gösterge kadranı — Fine-Kinney risk puanlaması */
+    Gauge,
+
+    /** Izgara — 5x5 matris */
+    Grid,
+
+    /** Büyüteç — derin araştırma */
+    Magnifier,
+
+    /** Ayar sürgüleri — rapor özelleştirme */
+    Sliders,
+
+    /** Kapaklı kutu — arşiv yönetimi */
+    Archive,
+
+    /** Kişi + tik — sorumlu atama */
+    Assignee,
+
+    /** Nişangâh — odaklı analiz */
+    Target,
+}
+
+/**
+ * Şerit etiketi: metin ve ona ait ikon birlikte taşınır; ikon seçimi çeviriye değil içerik
+ * tanımına bağlıdır (bkz. `RdPaywallDesignCopy.timelineFeatures`).
+ */
+data class RdPaywallDesignFeature(
+    val title: String,
+    val glyph: RdPaywallDesignGlyph,
+)
+
+/** Kontur genişliği ölçekten bağımsız sabit dp'dir; iOS portundaki 1.5pt ile aynı. */
+@Composable
+fun RdPaywallFeatureIcon(
+    glyph: RdPaywallDesignGlyph,
+    size: Dp,
+    color: Color,
+    modifier: Modifier = Modifier,
+    lineWidth: Dp = 1.5.dp,
+) {
+    Canvas(modifier.size(size)) {
+        val viewBox = Size(20f, 20f)
+        val path = viewBoxPath(viewBox, this.size) {
+            when (glyph) {
+                RdPaywallDesignGlyph.Shield -> shieldGlyph()
+                RdPaywallDesignGlyph.Chart -> chartGlyph()
+                RdPaywallDesignGlyph.Photos -> photosGlyph()
+                RdPaywallDesignGlyph.Building -> buildingGlyph()
+                RdPaywallDesignGlyph.Gauge -> gaugeGlyph()
+                RdPaywallDesignGlyph.Grid -> gridGlyph()
+                RdPaywallDesignGlyph.Magnifier -> magnifierGlyph()
+                RdPaywallDesignGlyph.Sliders -> slidersGlyph()
+                RdPaywallDesignGlyph.Archive -> archiveGlyph()
+                RdPaywallDesignGlyph.Assignee -> assigneeGlyph()
+                RdPaywallDesignGlyph.Target -> targetGlyph()
+            }
+        }
+        drawPath(
+            path = path,
+            color = color,
+            style = Stroke(
+                width = lineWidth.toPx(),
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round,
+            ),
+        )
+    }
+}
+
+private fun Path.shieldGlyph() {
+    moveTo(10f, 2.4f)
+    lineTo(16.4f, 5f)
+    lineTo(16.4f, 9.8f)
+    // iOS'taki iki quad eğrinin kübik karşılığı (C1 = P0 + 2/3·(C−P0), C2 = P2 + 2/3·(C−P2)).
+    cubicTo(16.4f, 13.1333f, 14.2667f, 15.7333f, 10f, 17.6f)
+    cubicTo(5.7333f, 15.7333f, 3.6f, 13.1333f, 3.6f, 9.8f)
+    lineTo(3.6f, 5f)
+    close()
+    moveTo(7.3f, 9.9f)
+    lineTo(9.3f, 11.9f)
+    lineTo(12.8f, 8f)
+}
+
+private fun Path.chartGlyph() {
+    moveTo(3.4f, 3f)
+    lineTo(3.4f, 16.4f)
+    lineTo(16.8f, 16.4f)
+    moveTo(7f, 16.4f)
+    lineTo(7f, 11.6f)
+    moveTo(10.6f, 16.4f)
+    lineTo(10.6f, 8.4f)
+    moveTo(14.2f, 16.4f)
+    lineTo(14.2f, 5.2f)
+}
+
+private fun Path.photosGlyph() {
+    addRoundRect(RoundRect(Rect(6.6f, 2.4f, 17.6f, 13.4f), CornerRadius(2.4f)))
+    addRoundRect(RoundRect(Rect(2.4f, 6.6f, 13.4f, 17.6f), CornerRadius(2.4f)))
+    addOval(Rect(4.5f, 8.7f, 6.7f, 10.9f))
+    moveTo(3.2f, 15.4f)
+    lineTo(6.6f, 11.8f)
+    lineTo(9.2f, 14.4f)
+    lineTo(10.8f, 12.9f)
+    lineTo(12.9f, 15f)
+}
+
+private fun Path.buildingGlyph() {
+    moveTo(4f, 17f)
+    lineTo(4f, 3.4f)
+    lineTo(12.2f, 3.4f)
+    lineTo(12.2f, 17f)
+    moveTo(12.2f, 8.6f)
+    lineTo(16.4f, 8.6f)
+    lineTo(16.4f, 17f)
+    moveTo(2.6f, 17f)
+    lineTo(17.6f, 17f)
+    moveTo(6.7f, 6.6f)
+    lineTo(9.5f, 6.6f)
+    moveTo(6.7f, 9.8f)
+    lineTo(9.5f, 9.8f)
+    moveTo(6.7f, 13f)
+    lineTo(9.5f, 13f)
+    moveTo(14f, 11.6f)
+    lineTo(14.8f, 11.6f)
+    moveTo(14f, 14.2f)
+    lineTo(14.8f, 14.2f)
+}
+
+private fun Path.gaugeGlyph() {
+    arcTo(
+        rect = Rect(center = Offset(10f, 13.2f), radius = 6.8f),
+        startAngleDegrees = 180f,
+        sweepAngleDegrees = 180f,
+        forceMoveTo = true,
+    )
+    // İbre: sağ üst çeyreğe bakar (yüksek risk skoru okuması).
+    moveTo(9.4f, 13.6f)
+    lineTo(14.2f, 8.2f)
+    moveTo(3.2f, 15.6f)
+    lineTo(16.8f, 15.6f)
+}
+
+private fun Path.gridGlyph() {
+    addRoundRect(RoundRect(Rect(2.8f, 2.8f, 17.2f, 17.2f), CornerRadius(2.4f)))
+    for (offset in listOf(7.6f, 12.4f)) {
+        moveTo(offset, 2.8f)
+        lineTo(offset, 17.2f)
+        moveTo(2.8f, offset)
+        lineTo(17.2f, offset)
+    }
+}
+
+private fun Path.magnifierGlyph() {
+    addOval(Rect(3f, 3f, 14.2f, 14.2f))
+    moveTo(12.6f, 12.6f)
+    lineTo(17.2f, 17.2f)
+}
+
+private fun Path.slidersGlyph() {
+    for ((y, knob) in listOf(5.6f to 13.2f, 10f to 7.2f, 14.4f to 14f)) {
+        moveTo(3f, y)
+        lineTo(17f, y)
+        addOval(Rect(knob - 1.8f, y - 1.8f, knob + 1.8f, y + 1.8f))
+    }
+}
+
+private fun Path.archiveGlyph() {
+    addRoundRect(RoundRect(Rect(2.6f, 3.2f, 17.4f, 7.2f), CornerRadius(1.2f)))
+    moveTo(4.2f, 7.2f)
+    lineTo(4.2f, 15f)
+    quadraticBezierTo(4.2f, 16.6f, 5.8f, 16.6f)
+    lineTo(14.2f, 16.6f)
+    quadraticBezierTo(15.8f, 16.6f, 15.8f, 15f)
+    lineTo(15.8f, 7.2f)
+    moveTo(8f, 10.6f)
+    lineTo(12f, 10.6f)
+}
+
+private fun Path.assigneeGlyph() {
+    addOval(Rect(5.2f, 3.4f, 11.6f, 9.8f))
+    moveTo(2.2f, 17f)
+    quadraticBezierTo(7.2f, 11f, 12.2f, 17f)
+    moveTo(13.4f, 11.4f)
+    lineTo(15.1f, 13.1f)
+    lineTo(18.4f, 9.4f)
+}
+
+private fun Path.targetGlyph() {
+    addOval(Rect(3.4f, 3.4f, 16.6f, 16.6f))
+    addOval(Rect(7.6f, 7.6f, 12.4f, 12.4f))
+    moveTo(10f, 1.2f)
+    lineTo(10f, 3.2f)
+    moveTo(10f, 16.8f)
+    lineTo(10f, 18.8f)
+    moveTo(1.2f, 10f)
+    lineTo(3.2f, 10f)
+    moveTo(16.8f, 10f)
+    lineTo(18.8f, 10f)
 }
 
 // MARK: - Kayan özellik şeridi
@@ -664,7 +926,7 @@ private fun TimelineStep(title: String, detail: String, modifier: Modifier = Mod
  */
 @Composable
 fun RdPaywallDesignFeatureMarquee(
-    features: List<String>,
+    features: List<RdPaywallDesignFeature>,
     accent: Color,
     modifier: Modifier = Modifier,
 ) {
@@ -717,25 +979,19 @@ fun RdPaywallDesignFeatureMarquee(
 }
 
 @Composable
-private fun MarqueeChip(feature: String, accent: Color) {
+private fun MarqueeChip(feature: RdPaywallDesignFeature, accent: Color) {
     Row(
         modifier = Modifier
             .clip(CircleShape)
-            .background(accent.copy(alpha = 0.10f))
-            .border(1.dp, accent.copy(alpha = 0.22f), CircleShape)
+            .background(RdPaywallDesignColor.ChipBg)
+            .border(1.dp, RdPaywallDesignColor.ChipBorder, CircleShape)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        RdPaywallCheckBadge(
-            diameter = 15.dp,
-            checkWidth = 7.5.dp,
-            checkHeight = 6.5.dp,
-            checkLineWidth = 2.4f,
-            background = accent,
-        )
+        RdPaywallFeatureIcon(glyph = feature.glyph, size = 15.dp, color = accent)
         Text(
-            text = feature,
+            text = feature.title,
             style = rdPaywallText(12.5f, FontWeight.SemiBold, RdPaywallDesignColor.Ink),
             maxLines = 1,
         )
@@ -756,10 +1012,14 @@ data class RdPaywallDesignRow(
     val right: RdPaywallDesignMark,
 )
 
+/** Sütun başlığında paket adının solunda duran işaret. */
+enum class RdPaywallDesignEmblem { None, Crown, Star }
+
 data class RdPaywallDesignColumn(
     val title: String,
     val color: Color,
     val weight: FontWeight,
+    val emblem: RdPaywallDesignEmblem = RdPaywallDesignEmblem.None,
 )
 
 @Composable
@@ -805,12 +1065,31 @@ fun RdPaywallDesignComparisonTable(
 
 @Composable
 private fun ComparisonHeader(column: RdPaywallDesignColumn) {
-    Text(
-        text = column.title,
-        style = rdPaywallText(12f, column.weight, column.color),
-        textAlign = TextAlign.Center,
+    Row(
         modifier = Modifier.width(RdPaywallDesignMetric.MarkColumnWidth),
-    )
+        horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        when (column.emblem) {
+            RdPaywallDesignEmblem.None -> Unit
+            RdPaywallDesignEmblem.Crown -> RdPaywallCrownIcon(
+                color = RdPaywallDesignColor.Orange,
+                width = 11.dp,
+                height = 9.9.dp,
+            )
+            RdPaywallDesignEmblem.Star -> RdPaywallStarIcon(
+                color = RdPaywallDesignColor.Green,
+                width = 10.5.dp,
+                height = 10.5.dp,
+            )
+        }
+        Text(
+            text = column.title,
+            style = rdPaywallText(12f, column.weight, column.color),
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
+    }
 }
 
 @Composable
@@ -1023,6 +1302,11 @@ fun RdPaywallDesignFooter(
     accent: Color,
     notice: String?,
     errorMessage: String?,
+    /**
+     * Seçili planın mağazadan gelen yenileme fiyatı, dönem ekiyle birlikte. Fiyat
+     * yüklenmediyse null olur ve satır yalnızca otomatik yenileme cümlesini gösterir.
+     */
+    renewalPrice: String?,
     onCta: () -> Unit,
     onRestore: () -> Unit,
     onTerms: () -> Unit,
@@ -1075,11 +1359,21 @@ fun RdPaywallDesignFooter(
             )
         }
 
+        val autoRenew = stringResource(R.string.rd_paywall_design_footer_auto_renew)
         Text(
-            text = stringResource(R.string.rd_paywall_design_footer_auto_renew),
+            text = buildAnnotatedString {
+                append(autoRenew)
+                if (renewalPrice != null) {
+                    append(" ")
+                    withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(renewalPrice) }
+                }
+            },
             style = rdPaywallText(11f, color = RdPaywallDesignColor.Footer, lineHeightMultiple = 1.4f),
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp)
+                .testTag(RdPaywallDesignTag.AutoRenew),
         )
 
         Row(
@@ -1130,6 +1424,7 @@ object RdPaywallDesignTag {
     const val HeroLabel = "in_app_paywall.hero_label"
     const val SocialProof = "in_app_paywall.social_proof"
     const val TrialTimeline = "in_app_paywall.trial_timeline"
+    const val AutoRenew = "in_app_paywall.auto_renew"
     const val FeatureMarquee = "in_app_paywall.feature_marquee"
     const val ComparisonTable = "in_app_paywall.comparison_table"
     const val PlanYearly = "in_app_paywall.plan.yearly"

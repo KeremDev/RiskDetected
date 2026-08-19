@@ -251,7 +251,7 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                         tier: tier,
                         title: tier.title,
                         price: package.localizedPriceString,
-                        monthlyEquivalentPrice: package.storeProduct.localizedPricePerMonth,
+                        monthlyEquivalentPrice: Self.monthlyEquivalentPrice(for: package),
                         subtitle: Self.subtitle(for: package),
                         productIdentifier: package.storeProduct.productIdentifier,
                         priceAmount: package.storeProduct.price,
@@ -617,6 +617,38 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             updatedAt: state.updatedAt,
             errorMessage: error.localizedDescription
         )
+    }
+
+    /// Yıllık paketin aylık karşılığı. RevenueCat bunu yalnızca abonelik dönemini
+    /// çözebildiğinde döndürür; dönemi bilinmeyen yıllık pakette tutar 12'ye bölünüp
+    /// ürünün kendi para biriminde yazılır. Fiyatın kaynağı yine mağazadır, yalnızca
+    /// gösterim türetilir; tutar okunamazsa nil döner ve ekran o satırı hiç göstermez.
+    private static func monthlyEquivalentPrice(for package: Package) -> String? {
+        if let provided = package.storeProduct.localizedPricePerMonth,
+           !provided.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return provided
+        }
+        guard isYearly(package), package.storeProduct.price > 0 else { return nil }
+        guard let currencyCode = package.storeProduct.currencyCode else { return nil }
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = .autoupdatingCurrent
+        formatter.currencyCode = currencyCode
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSDecimalNumber(decimal: package.storeProduct.price / 12))
+    }
+
+    /// Paket türü çözülemediğinde kimlik belirteçlerine bakılır — paywall'daki
+    /// `matchesDesignPaywall(_:)` ile aynı liste.
+    private static func isYearly(_ package: Package) -> Bool {
+        if package.packageType == .annual { return true }
+        let token = [package.identifier, package.storeProduct.productIdentifier]
+            .joined(separator: " ")
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .autoupdatingCurrent)
+            .lowercased(with: .autoupdatingCurrent)
+        return ["annual", "yearly", "year", "yillik", "yil"].contains { token.contains($0) }
     }
 
     private static func tier(for package: Package) -> SubscriptionTier? {

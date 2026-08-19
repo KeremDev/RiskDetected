@@ -763,7 +763,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 2_112, "Turkish localized-unit count");
+  assert.equal(rows.length, 2_121, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
@@ -772,7 +772,11 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // Yazim hatasi anahtar adinda da vardi; anahtar uretecin kendi kuraliyla
     // yeniden hesaplandi (...fine.kinney.5.5.rapor.hazir.fdc34345).
     // 2026-08-19: plan ozeti kilit metni sahip istegiyle yeniden yazildi.
-    "3258f2b4bd1087def076173f3fcf15bcda0fb2a6d0aa40ad3f6037c145085638",
+    // 2026-08-19: paywall zaman cizelgesinde "Bugun" aciklamasi basligin altina
+    // alindi; satir ici tire on eki ("— ") artik gereksiz oldugu icin kaldirildi.
+    // 2026-08-19: kayan ozellik seridine alti yeni etiket, plan kartina yillik toplam
+    // satiri ve alt bara yenileme fiyati eklendi; 7. gun aciklamasi sadelestirildi.
+    "17d7276ac8400be3697fcdd1dc2ad6086f9064946ad16ec9a4537849a9012f3f",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

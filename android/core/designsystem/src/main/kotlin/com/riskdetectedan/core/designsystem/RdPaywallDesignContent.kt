@@ -24,12 +24,56 @@ object RdPaywallDesignCopy {
     @Composable
     fun freeTierName(): String = stringResource(R.string.rd_paywall_design_tier_free)
 
+    /**
+     * Şerit etiketleri. Yalnızca PRO'da bulunan bir özellik PLUS ekranında gösterilmez:
+     * karşılaştırma tablosunda çarpı görünen bir özelliği aynı ekranda reklam etmemek için.
+     */
     @Composable
-    fun timelineFeatures(): List<String> = listOf(
-        stringResource(R.string.rd_paywall_design_feature_risk_analysis),
-        stringResource(R.string.rd_paywall_design_feature_detailed_analysis),
-        stringResource(R.string.rd_paywall_design_feature_multi_photo),
-        stringResource(R.string.rd_paywall_design_feature_company_management),
+    fun timelineFeatures(tier: RdPaywallDesignTier): List<RdPaywallDesignFeature> = listOfNotNull(
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_feature_risk_analysis),
+            glyph = RdPaywallDesignGlyph.Shield,
+        ),
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_feature_detailed_analysis),
+            glyph = RdPaywallDesignGlyph.Chart,
+        ),
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_feature_multi_photo),
+            glyph = RdPaywallDesignGlyph.Photos,
+        ),
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_feature_company_management),
+            glyph = RdPaywallDesignGlyph.Building,
+        ),
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_feature_fine_kinney),
+            glyph = RdPaywallDesignGlyph.Gauge,
+        ),
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_feature_matrix_5x5),
+            glyph = RdPaywallDesignGlyph.Grid,
+        ),
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_row_deep_research),
+            glyph = RdPaywallDesignGlyph.Magnifier,
+        ).takeIf { tier == RdPaywallDesignTier.Pro },
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_feature_report_customization),
+            glyph = RdPaywallDesignGlyph.Sliders,
+        ),
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_feature_archive_management),
+            glyph = RdPaywallDesignGlyph.Archive,
+        ),
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_feature_assignee),
+            glyph = RdPaywallDesignGlyph.Assignee,
+        ),
+        RdPaywallDesignFeature(
+            title = stringResource(R.string.rd_paywall_design_feature_focused_analysis),
+            glyph = RdPaywallDesignGlyph.Target,
+        ).takeIf { tier == RdPaywallDesignTier.Pro },
     )
 
     @Composable
@@ -58,7 +102,7 @@ object RdPaywallDesignCopy {
         RdPaywallDesignRow(
             title = stringResource(R.string.rd_paywall_design_row_deep_research),
             left = RdPaywallDesignMark.Cross,
-            right = RdPaywallDesignMark.Check(RdPaywallDesignColor.Orange),
+            right = RdPaywallDesignMark.Cross,
         ),
         RdPaywallDesignRow(
             title = stringResource(R.string.rd_paywall_design_feature_multi_photo),
@@ -97,7 +141,7 @@ object RdPaywallDesignCopy {
         ),
         RdPaywallDesignRow(
             title = stringResource(R.string.rd_paywall_design_row_deep_research),
-            left = RdPaywallDesignMark.Check(RdPaywallDesignColor.Orange),
+            left = RdPaywallDesignMark.Cross,
             right = RdPaywallDesignMark.Check(RdPaywallDesignColor.Green),
         ),
         RdPaywallDesignRow(
@@ -106,7 +150,7 @@ object RdPaywallDesignCopy {
             right = RdPaywallDesignMark.Check(RdPaywallDesignColor.Green),
         ),
         RdPaywallDesignRow(
-            title = stringResource(R.string.rd_paywall_design_row_priority_support),
+            title = stringResource(R.string.rd_paywall_design_feature_focused_analysis),
             left = RdPaywallDesignMark.Cross,
             right = RdPaywallDesignMark.Check(RdPaywallDesignColor.Green),
         ),
@@ -150,12 +194,19 @@ fun rdPaywallDesignState(
         stringResource(R.string.rd_paywall_design_hero_benefits_format, tierName)
     }
 
+    // Öne çıkan satır aylık karşılık, altındaki küçük satır yıllık toplamdır: kullanıcı
+    // aylık plana göre kıyaslayabilsin. Mağaza aylık karşılığı vermezse eski sıraya düşülür.
+    val yearlyTotal = yearlyPrice ?: priceUnavailableText
     val annual = RdPaywallDesignPlanOption(
         title = stringResource(R.string.rd_yillik),
-        price = yearlyPrice ?: priceUnavailableText,
-        caption = yearlyMonthlyEquivalent
+        price = yearlyMonthlyEquivalent
             ?.let { stringResource(R.string.rd_paywall_design_plan_per_month_format, it) }
-            ?: stringResource(R.string.rd_paywall_design_plan_yearly_caption),
+            ?: yearlyTotal,
+        caption = if (yearlyMonthlyEquivalent == null) {
+            stringResource(R.string.rd_paywall_design_plan_yearly_caption)
+        } else {
+            stringResource(R.string.rd_paywall_design_plan_per_year_format, yearlyTotal)
+        },
         trialNote = trialDays?.let {
             stringResource(R.string.rd_paywall_design_plan_trial_note_format, it.toString())
         },
@@ -193,14 +244,33 @@ fun rdPaywallDesignState(
         tierName = tierName,
         showsTrialTimeline = showsTrialTimeline,
         trialDays = trialDays ?: 7,
-        timelineFeatures = RdPaywallDesignCopy.timelineFeatures(),
+        timelineFeatures = RdPaywallDesignCopy.timelineFeatures(tier),
         comparisonLeft = when (tier) {
-            RdPaywallDesignTier.Plus -> RdPaywallDesignColumn(freeName, RdPaywallDesignColor.Muted, FontWeight.SemiBold)
-            RdPaywallDesignTier.Pro -> RdPaywallDesignColumn(plusName, RdPaywallDesignColor.Orange, FontWeight.SemiBold)
+            RdPaywallDesignTier.Plus -> RdPaywallDesignColumn(
+                freeName,
+                RdPaywallDesignColor.Muted,
+                FontWeight.SemiBold,
+            )
+            RdPaywallDesignTier.Pro -> RdPaywallDesignColumn(
+                plusName,
+                RdPaywallDesignColor.Orange,
+                FontWeight.SemiBold,
+                RdPaywallDesignEmblem.Crown,
+            )
         },
         comparisonRight = when (tier) {
-            RdPaywallDesignTier.Plus -> RdPaywallDesignColumn(plusName, RdPaywallDesignColor.Orange, FontWeight.Bold)
-            RdPaywallDesignTier.Pro -> RdPaywallDesignColumn(proName, RdPaywallDesignColor.Green, FontWeight.Bold)
+            RdPaywallDesignTier.Plus -> RdPaywallDesignColumn(
+                plusName,
+                RdPaywallDesignColor.Orange,
+                FontWeight.Bold,
+                RdPaywallDesignEmblem.Crown,
+            )
+            RdPaywallDesignTier.Pro -> RdPaywallDesignColumn(
+                proName,
+                RdPaywallDesignColor.Green,
+                FontWeight.Bold,
+                RdPaywallDesignEmblem.Star,
+            )
         },
         comparisonRows = when (tier) {
             RdPaywallDesignTier.Plus -> RdPaywallDesignCopy.freeVersusPlusRows()
@@ -212,6 +282,14 @@ fun rdPaywallDesignState(
         cta = cta,
         notice = notice,
         errorMessage = errorMessage,
+        renewalPrice = when (selectedBilling) {
+            RdPaywallDesignBilling.Yearly -> yearlyPrice?.let {
+                stringResource(R.string.rd_paywall_design_footer_renewal_yearly_format, it)
+            }
+            RdPaywallDesignBilling.Monthly -> monthlyPrice?.let {
+                stringResource(R.string.rd_paywall_design_footer_renewal_monthly_format, it)
+            }
+        },
         crossSell = crossSell,
     )
 }
