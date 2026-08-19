@@ -398,37 +398,37 @@
       }
     },
     "onboarding.obloading.view.icin.rapor.formati.kisisellestiriliyor.34aea260": {
-      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:151; placeholders: none; review: machine_draft",
+      "comment": "onboarding loading step; placeholders: %1$@ = certificate class label",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Report format is personalized for..."
+            "value": "Personalizing the report format for %1$@..."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "için rapor formatı kişiselleştiriliyor..."
+            "value": "%1$@ için rapor formatı kişiselleştiriliyor..."
           }
         }
       }
     },
     "onboarding.obloading.view.icin.risk.analiz.sablonlari.yukleniyor.4b30b304": {
-      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:137; placeholders: none; review: machine_draft",
+      "comment": "onboarding loading step; placeholders: %1$@ = selected sector label",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Loading risk analysis templates for..."
+            "value": "Loading risk analysis templates for %1$@..."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "için risk analiz şablonları yükleniyor..."
+            "value": "%1$@ için risk analiz şablonları yükleniyor..."
           }
         }
       }
@@ -470,19 +470,19 @@
       }
     },
     "onboarding.obloading.view.sinifi.icin.kontrol.listesi.hazirlaniyor.85dc6c38": {
-      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:144; placeholders: none; review: machine_draft",
+      "comment": "onboarding loading step; placeholders: %1$@ = selected hazard class label",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preparing a checklist for the class..."
+            "value": "Preparing the checklist for the %1$@ class..."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "sınıfı için kontrol listesi hazırlanıyor..."
+            "value": "%1$@ sınıfı için kontrol listesi hazırlanıyor..."
           }
         }
       }

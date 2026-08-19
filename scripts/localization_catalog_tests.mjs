@@ -776,7 +776,10 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // alindi; satir ici tire on eki ("— ") artik gereksiz oldugu icin kaldirildi.
     // 2026-08-19: kayan ozellik seridine alti yeni etiket, plan kartina yillik toplam
     // satiri ve alt bara yenileme fiyati eklendi; 7. gun aciklamasi sadelestirildi.
-    "17d7276ac8400be3697fcdd1dc2ad6086f9064946ad16ec9a4537849a9012f3f",
+    // 2026-08-19: onboarding yukleme adimlarinda secim etiketi metne uc uca ekleniyordu
+    // ("Insaaticin ..."); uc metin yer tutuculu bicime cevrildi. Plan ozeti sablon
+    // sayisi 47'den 896'ya guncellendi.
+    "d4e26512b396579d6ec1f927cfa224f548826974aeeac523688edd7550dedd67",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

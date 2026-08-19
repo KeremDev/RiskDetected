@@ -108,9 +108,24 @@ fun OBLoadingScreen(
 
             Spacer(Modifier.height(28.dp))
             Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.widthIn(max = 320.dp)) {
-                StepRow(done = done.getOrElse(0) { false }, revealed = revealed.getOrElse(0) { false }, highlight = resolvedSectorLabel, suffix = stringResource(RdR.string.rd_loading_sector_suffix))
-                StepRow(done = done.getOrElse(1) { false }, revealed = revealed.getOrElse(1) { false }, highlight = resolvedHazardsLabel, suffix = stringResource(RdR.string.rd_loading_hazard_suffix))
-                StepRow(done = done.getOrElse(2) { false }, revealed = revealed.getOrElse(2) { false }, highlight = resolvedCertificateLabel, suffix = stringResource(RdR.string.rd_loading_certificate_suffix))
+                StepRow(
+                    done = done.getOrElse(0) { false },
+                    revealed = revealed.getOrElse(0) { false },
+                    highlight = resolvedSectorLabel,
+                    sentence = stringResource(RdR.string.rd_loading_sector_format, resolvedSectorLabel),
+                )
+                StepRow(
+                    done = done.getOrElse(1) { false },
+                    revealed = revealed.getOrElse(1) { false },
+                    highlight = resolvedHazardsLabel,
+                    sentence = stringResource(RdR.string.rd_loading_hazard_format, resolvedHazardsLabel),
+                )
+                StepRow(
+                    done = done.getOrElse(2) { false },
+                    revealed = revealed.getOrElse(2) { false },
+                    highlight = resolvedCertificateLabel,
+                    sentence = stringResource(RdR.string.rd_loading_certificate_format, resolvedCertificateLabel),
+                )
             }
         }
     }
@@ -186,7 +201,7 @@ private fun PulseRing(color: Color, progress: Float) {
 }
 
 @Composable
-private fun StepRow(done: Boolean, revealed: Boolean, highlight: String, suffix: String) {
+private fun StepRow(done: Boolean, revealed: Boolean, highlight: String, sentence: String) {
     val colors = RdTheme.colors
     if (!revealed) return
     Row(
@@ -214,9 +229,17 @@ private fun StepRow(done: Boolean, revealed: Boolean, highlight: String, suffix:
         Spacer(Modifier.width(12.dp))
         Text(
             buildAnnotatedString {
-                withStyle(SpanStyle(color = colors.onyx, fontWeight = FontWeight.SemiBold)) { append(highlight) }
-                append(" ")
-                withStyle(SpanStyle(color = if (done) colors.onyx else colors.slate)) { append(suffix.trim()) }
+                // Seçim cümleye yer tutucuyla giriyor; boşluk ve sözcük sırası çeviriye ait.
+                // Etiket cümlenin neresinde geçiyorsa orada koyulaşır.
+                val start = sentence.indexOf(highlight)
+                val body = SpanStyle(color = if (done) colors.onyx else colors.slate)
+                if (start < 0) {
+                    withStyle(body) { append(sentence) }
+                } else {
+                    withStyle(body) { append(sentence.substring(0, start)) }
+                    withStyle(SpanStyle(color = colors.onyx, fontWeight = FontWeight.SemiBold)) { append(highlight) }
+                    withStyle(body) { append(sentence.substring(start + highlight.length)) }
+                }
             },
             style = RdFontStyle.Footnote.toTextStyle(),
         )

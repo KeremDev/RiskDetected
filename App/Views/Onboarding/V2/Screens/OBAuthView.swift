@@ -757,7 +757,7 @@ struct OBAuthView: View {
                 Text(RDLocalization.string("auth.obauth.view.planin.hazir.seni.bekliyor.150275ab", table: .auth, fallback: "Planın hazır, seni bekliyor"))
                     .font(.system(size: RDFontScale.size(13), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
-                Text(RDLocalization.format("auth.obauth.view.47.sablon.1.2.443461d9", table: .auth, fallback: "47 şablon · %1$@ · %2$@", arguments: [String(describing: state.primarySectorLabel), String(describing: state.certificateLabel)]))
+                Text(RDLocalization.format("auth.obauth.view.47.sablon.1.2.443461d9", table: .auth, fallback: "896 şablon · %1$@ · %2$@", arguments: [String(describing: state.primarySectorLabel), String(describing: state.certificateLabel)]))
                     .font(.system(size: RDFontScale.size(12)))
                     .foregroundStyle(Color.rdSlate)
             }

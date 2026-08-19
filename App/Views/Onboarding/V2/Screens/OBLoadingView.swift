@@ -131,27 +131,51 @@ struct OBLoadingView: View {
     private func stepText(_ i: Int) -> AttributedString {
         switch i {
         case 0:
-            var s = AttributedString("")
-            var highlight = AttributedString(state.primarySectorLabel)
-            highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
-            s.append(highlight)
-            s.append(AttributedString(RDLocalization.string("onboarding.obloading.view.icin.risk.analiz.sablonlari.yukleniyor.4b30b304", table: .onboarding, fallback: "için risk analiz şablonları yükleniyor...")))
-            return s
+            let label = state.primarySectorLabel
+            return highlighting(
+                label,
+                in: RDLocalization.format(
+                    "onboarding.obloading.view.icin.risk.analiz.sablonlari.yukleniyor.4b30b304",
+                    table: .onboarding,
+                    fallback: "%1$@ için risk analiz şablonları yükleniyor...",
+                    arguments: [label]
+                )
+            )
         case 1:
-            var s = AttributedString("")
-            var highlight = AttributedString(state.hazardsLabel)
-            highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
-            s.append(highlight)
-            s.append(AttributedString(RDLocalization.string("onboarding.obloading.view.sinifi.icin.kontrol.listesi.hazirlaniyor.85dc6c38", table: .onboarding, fallback: "sınıfı için kontrol listesi hazırlanıyor...")))
-            return s
+            let label = state.hazardsLabel
+            return highlighting(
+                label,
+                in: RDLocalization.format(
+                    "onboarding.obloading.view.sinifi.icin.kontrol.listesi.hazirlaniyor.85dc6c38",
+                    table: .onboarding,
+                    fallback: "%1$@ sınıfı için kontrol listesi hazırlanıyor...",
+                    arguments: [label]
+                )
+            )
         default:
-            var s = AttributedString("")
-            var highlight = AttributedString(state.certificateLabel)
-            highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
-            s.append(highlight)
-            s.append(AttributedString(RDLocalization.string("onboarding.obloading.view.icin.rapor.formati.kisisellestiriliyor.34aea260", table: .onboarding, fallback: "için rapor formatı kişiselleştiriliyor...")))
-            return s
+            let label = state.certificateLabel
+            return highlighting(
+                label,
+                in: RDLocalization.format(
+                    "onboarding.obloading.view.icin.rapor.formati.kisisellestiriliyor.34aea260",
+                    table: .onboarding,
+                    fallback: "%1$@ için rapor formatı kişiselleştiriliyor...",
+                    arguments: [label]
+                )
+            )
         }
+    }
+
+    /// Kullanıcının seçimi cümlenin içinde nerede geçiyorsa orada koyulaşır. Etiket
+    /// cümleye yer tutucuyla giriyor; böylece boşluk ve sözcük sırası çeviriye kalıyor,
+    /// metin parçaları uç uca eklenmiyor.
+    private func highlighting(_ label: String, in sentence: String) -> AttributedString {
+        var text = AttributedString(sentence)
+        if let range = text.range(of: label) {
+            text[range].foregroundColor = .rdOnyx
+            text[range].font = .system(size: RDFontScale.size(14), weight: .semibold)
+        }
+        return text
     }
 
     private func runSequence() {

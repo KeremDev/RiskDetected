@@ -450,9 +450,9 @@
     <string name="rd_saha_aksam_ofis_soru">Sahada gördüklerini akşam ofiste mi yazıyorsun?</string>
     <string name="rd_kurulum_hazirlaniyor">Sana özel kurulum hazırlanıyor…</string>
     <string name="rd_plan_hazir_nokta">Plan hazır.</string>
-    <string name="rd_loading_sector_suffix">için risk analiz şablonları yükleniyor…</string>
-    <string name="rd_loading_hazard_suffix">sınıfı için kontrol listesi hazırlanıyor…</string>
-    <string name="rd_loading_certificate_suffix">için rapor formatı kişiselleştiriliyor…</string>
+    <string name="rd_loading_sector_format">%1$s için risk analiz şablonları yükleniyor…</string>
+    <string name="rd_loading_hazard_format">%1$s sınıfı için kontrol listesi hazırlanıyor…</string>
+    <string name="rd_loading_certificate_format">%1$s için rapor formatı kişiselleştiriliyor…</string>
     <string name="rd_plan_kaydet_google_play">Planını hesabına kaydedelim; fiyat ve uygun teklifleri Google Play\'de doğrula.</string>
     <string name="rd_bildirim_plan_teklif_baslik">Plan ve teklif bilgilerini bildirimlerden takip edebilirsin</string>
     <string name="rd_bildirim_plan_teklif_aciklama">Plan, teklif ve uygulama hatırlatmaları için bildirimleri aç.</string>
@@ -477,7 +477,7 @@
     <string name="rd_legal_prefix">Devam ederek </string>
     <string name="rd_legal_joiner"> ve </string>
     <string name="rd_legal_suffix">\'nı kabul etmiş olursun.</string>
-    <string name="rd_auth_plan_recap_format">47 şablon · %1$s · %2$s</string>
+    <string name="rd_auth_plan_recap_format">896 şablon · %1$s · %2$s</string>
     <string name="rd_tire">-</string>
     <string name="rd_dogrulama_kodu_baslik">Doğrulama kodu</string>
     <string name="rd_eposta_adresi_giriniz">E-posta adresinizi giriniz</string>

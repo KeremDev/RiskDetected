@@ -134,6 +134,11 @@ final class RiskDetectedUITests: XCTestCase {
         tap("Planımı Hazırla")
 
         XCTAssertTrue(waitFor("onboarding.loading", timeout: 8).exists)
+        // Adım metinleri seçim etiketini yer tutucuyla alır; uç uca eklenirse
+        // araya boşluk girmiyordu ("İnşaatiçin risk analiz şablonları...").
+        XCTAssertTrue(waitFor("İnşaat için risk analiz şablonları yükleniyor...", timeout: 6).exists)
+        XCTAssertTrue(waitFor("A Sınıfı için rapor formatı kişiselleştiriliyor...", timeout: 6).exists)
+
         XCTAssertTrue(waitFor("onboarding.personal_plan", timeout: 12).exists)
         tap("onboarding.personal_plan.create_account")
 
@@ -142,6 +147,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("onboarding.auth.google").exists)
         XCTAssertTrue(waitFor("E-posta ile devam et").exists)
         XCTAssertTrue(waitFor("onboarding.auth.sign_in_existing").exists)
+        XCTAssertTrue(waitFor("896 şablon · İnşaat · A Sınıfı").exists)
     }
 
     func testEnglishOnboardingUsesRoleAndRequiresExplicitSafetyProfile() throws {
