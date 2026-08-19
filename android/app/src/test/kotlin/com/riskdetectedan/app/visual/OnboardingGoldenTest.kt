@@ -253,7 +253,23 @@ class OnboardingGoldenTest {
     @Test
     fun onboarding_timeline_yearly_store_loaded_light() {
         composeRule.setContent { RiskDetectedLightOnlyTheme { OBTimelinePaywallPreviewSurface() } }
-        composeRule.onNodeWithText("7 Gün Ücretsiz Dene").assertIsDisplayed()
+        // Deneme anlatımı yalnızca mağazadan gerçek bir teklif geldiğinde görünür.
+        composeRule.onNodeWithText("Ücretsiz Denemeyi Başlat").assertIsDisplayed()
+        composeRule.onNodeWithText("Ücretsiz Deneme Nasıl Çalışır?").assertIsDisplayed()
+        composeRule.onNodeWithText("7 gün ücretsiz").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun onboarding_timeline_without_store_trial_shows_comparison_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                OBTimelinePaywallPreviewSurface(trialDays = null)
+            }
+        }
+        // Play bu hesap için deneme döndürmediğinde deneme vaadi yerine karşılaştırma gösterilir.
+        composeRule.onNodeWithText("PLUS Abonelik Avantajları").assertIsDisplayed()
+        assertEquals(0, composeRule.onAllNodesWithText("Ücretsiz Denemeyi Başlat").fetchSemanticsNodes().size)
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
@@ -345,11 +361,18 @@ class OnboardingGoldenTest {
                     plan = PaywallPlan.Plus,
                     billing = PaywallBilling.Yearly,
                     formattedPrice = "₺1.499,99",
+                    monthlyEquivalent = "₺124,99",
+                    trialDays = 7,
+                    discountPercent = 17,
                 )
             }
         }
 
-        composeRule.onNodeWithText("PLUS").assertIsDisplayed()
+        // Gerçek bir Play teklifi verildiğinde PLUS yıllık ekranı deneme anlatımını gösterir.
+        composeRule.onNodeWithText("Ücretsiz Deneme Nasıl Çalışır?").assertIsDisplayed()
+        composeRule.onNodeWithText("%17 İndirim").assertIsDisplayed()
+        composeRule.onNodeWithText("₺124,99 / Ay").assertIsDisplayed()
+        composeRule.onNodeWithText("Ücretsiz Denemeyi Başlat").assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
@@ -366,6 +389,8 @@ class OnboardingGoldenTest {
         }
 
         composeRule.onNodeWithText("PRO").assertIsDisplayed()
+        // PRO ekranında deneme anlatımı yok; PLUS ile karşılaştırma tablosu gösterilir.
+        composeRule.onNodeWithText("Öncelikli destek").assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 

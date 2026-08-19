@@ -9,6 +9,7 @@ import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.billing.BillingRepository
+import com.riskdetectedan.core.data.billing.PaywallDesignPricing
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
@@ -21,6 +22,9 @@ import com.riskdetectedan.core.designsystem.R as RdR
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -29,13 +33,21 @@ import javax.inject.Inject
 
 private const val EVENT_SOURCE = "onboarding_v2"
 
-/** The two real packages [OBTimelinePaywallScreen] offers — always Plus (onboarding upsells the
- * entry-level paid tier only, same as iOS's `OBTimelinePaywallView`, never Pro). */
+/** Bir plan için yıllık/aylık paket çifti. */
 data class OBTimelinePackages(val yearly: BillingPackage?, val monthly: BillingPackage?)
+
+/** Onboarding paywall'ında gösterilen plan — iOS Claude Design akışıyla aynı: PLUS açılışta
+ * gelir, çapraz satış kartıyla PRO'ya geçilebilir. */
+enum class OBPaywallPlan(val tier: SubscriptionTier) {
+    Plus(SubscriptionTier.Plus),
+    Pro(SubscriptionTier.Pro),
+}
+
+enum class OBPaywallBilling { Yearly, Monthly }
 
 sealed interface OBTimelinePaywallUiState {
     data object Loading : OBTimelinePaywallUiState
-    data class Loaded(val packages: OBTimelinePackages) : OBTimelinePaywallUiState
+    data class Loaded(val plus: OBTimelinePackages, val pro: OBTimelinePackages) : OBTimelinePaywallUiState
 
     /** Signed out, offerings fetch failed, or RevenueCat has no Plus package configured on this
      * offering. The purchase CTA remains disabled so a missing store product can never be
@@ -71,13 +83,80 @@ class OBTimelinePaywallViewModel @Inject constructor(
     private val _purchaseError = MutableStateFlow<AppErrorMessage?>(null)
     val purchaseError: StateFlow<AppErrorMessage?> = _purchaseError.asStateFlow()
 
+    private val _selectedPlan = MutableStateFlow(OBPaywallPlan.Plus)
+    val selectedPlan: StateFlow<OBPaywallPlan> = _selectedPlan.asStateFlow()
+
+    // Her plan kendi faturalama seçimini korur (iOS `plusBilling` / `proBilling`).
+    private val _plusBilling = MutableStateFlow(OBPaywallBilling.Yearly)
+    private val _proBilling = MutableStateFlow(OBPaywallBilling.Yearly)
+
+    val selectedBilling: StateFlow<OBPaywallBilling> =
+        combine(_selectedPlan, _plusBilling, _proBilling) { plan, plus, pro ->
+            if (plan == OBPaywallPlan.Plus) plus else pro
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, OBPaywallBilling.Yearly)
+
     private val funnelSessionId = UUID.randomUUID().toString()
 
     init {
         load()
     }
 
-    private fun load() {
+    private fun billingFor(plan: OBPaywallPlan): OBPaywallBilling =
+        if (plan == OBPaywallPlan.Plus) _plusBilling.value else _proBilling.value
+
+    private fun setBilling(plan: OBPaywallPlan, billing: OBPaywallBilling) {
+        if (plan == OBPaywallPlan.Plus) _plusBilling.value = billing else _proBilling.value = billing
+    }
+
+    fun packagesFor(plan: OBPaywallPlan): OBTimelinePackages {
+        val loaded = _state.value as? OBTimelinePaywallUiState.Loaded ?: return OBTimelinePackages(null, null)
+        return if (plan == OBPaywallPlan.Plus) loaded.plus else loaded.pro
+    }
+
+    fun packageFor(plan: OBPaywallPlan, billing: OBPaywallBilling): BillingPackage? =
+        packagesFor(plan).let { if (billing == OBPaywallBilling.Yearly) it.yearly else it.monthly }
+
+    fun selectBilling(billing: OBPaywallBilling) {
+        val plan = _selectedPlan.value
+        if (billingFor(plan) == billing || _isPurchasing.value) return
+        setBilling(plan, billing)
+        authRepository.currentUserId?.let {
+            recordEvent(it, PaywallEventName.BillingSelect, selectedTier = plan.tier)
+        }
+    }
+
+    /** Çapraz satış kartı: PLUS ↔ PRO geçişi. PRO paketi yoksa geçiş yapılmaz. */
+    fun togglePlan() {
+        if (_isPurchasing.value) return
+        val target = if (_selectedPlan.value == OBPaywallPlan.Plus) OBPaywallPlan.Pro else OBPaywallPlan.Plus
+        val targetPackages = packagesFor(target)
+        if (targetPackages.yearly == null && targetPackages.monthly == null) return
+        _selectedPlan.value = target
+        setBilling(target, OBPaywallBilling.Yearly)
+        alignBillingWithAvailablePackage()
+        authRepository.currentUserId?.let {
+            recordEvent(it, PaywallEventName.PlanSelect, selectedTier = target.tier)
+        }
+    }
+
+    /** Çapraz satış kartı yalnızca karşı planın gerçekten satılabildiği durumda gösterilir. */
+    fun crossSellAvailable(): Boolean {
+        val other = if (_selectedPlan.value == OBPaywallPlan.Plus) OBPaywallPlan.Pro else OBPaywallPlan.Plus
+        val packages = packagesFor(other)
+        return packages.yearly != null || packages.monthly != null
+    }
+
+    private fun alignBillingWithAvailablePackage() {
+        OBPaywallPlan.entries.forEach { plan ->
+            if (packageFor(plan, billingFor(plan)) != null) return@forEach
+            setBilling(
+                plan,
+                if (packagesFor(plan).yearly != null) OBPaywallBilling.Yearly else OBPaywallBilling.Monthly,
+            )
+        }
+    }
+
+    fun load() {
         val userId = authRepository.currentUserId
         if (userId == null) {
             _state.value = OBTimelinePaywallUiState.Unavailable
@@ -102,15 +181,17 @@ class OBTimelinePaywallViewModel @Inject constructor(
                     return@launch
                 }
             }
-            val plusPackages = OBTimelinePackages(
-                yearly = packages.find { it.tier == SubscriptionTier.Plus && it.productId.contains("yearly", ignoreCase = true) },
-                monthly = packages.find { it.tier == SubscriptionTier.Plus && it.productId.contains("monthly", ignoreCase = true) },
+            fun pair(tier: SubscriptionTier) = OBTimelinePackages(
+                yearly = packages.find { it.tier == tier && PaywallDesignPricing.matchesYearly(it) },
+                monthly = packages.find { it.tier == tier && PaywallDesignPricing.matchesMonthly(it) },
             )
+            val plusPackages = pair(SubscriptionTier.Plus)
             if (plusPackages.yearly == null && plusPackages.monthly == null) {
                 _state.value = OBTimelinePaywallUiState.Unavailable
                 return@launch
             }
-            _state.value = OBTimelinePaywallUiState.Loaded(plusPackages)
+            _state.value = OBTimelinePaywallUiState.Loaded(plus = plusPackages, pro = pair(SubscriptionTier.Pro))
+            alignBillingWithAvailablePackage()
             recordEvent(userId, PaywallEventName.View, selectedTier = SubscriptionTier.Plus)
         }
     }

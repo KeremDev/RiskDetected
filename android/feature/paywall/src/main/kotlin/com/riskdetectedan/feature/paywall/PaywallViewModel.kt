@@ -10,6 +10,7 @@ import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.billing.BillingSubscriptionState
+import com.riskdetectedan.core.data.billing.PaywallDesignPricing
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
@@ -23,6 +24,9 @@ import com.riskdetectedan.core.designsystem.R as RdR
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -90,8 +94,22 @@ class PaywallViewModel @Inject constructor(
     private val _selectedPlan = MutableStateFlow(PaywallPlan.Plus)
     val selectedPlan: StateFlow<PaywallPlan> = _selectedPlan.asStateFlow()
 
-    private val _selectedBilling = MutableStateFlow(PaywallBilling.Yearly)
-    val selectedBilling: StateFlow<PaywallBilling> = _selectedBilling.asStateFlow()
+    // iOS'ta olduğu gibi her plan kendi faturalama seçimini korur (PaywallDesignFlowView'daki
+    // plusBilling / proBilling): PLUS ↔ PRO arasında gidip gelmek diğerinin seçimini bozmaz.
+    private val _plusBilling = MutableStateFlow(PaywallBilling.Yearly)
+    private val _proBilling = MutableStateFlow(PaywallBilling.Yearly)
+
+    val selectedBilling: StateFlow<PaywallBilling> =
+        combine(_selectedPlan, _plusBilling, _proBilling) { plan, plus, pro ->
+            if (plan == PaywallPlan.Plus) plus else pro
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, PaywallBilling.Yearly)
+
+    private fun billingFor(plan: PaywallPlan): PaywallBilling =
+        if (plan == PaywallPlan.Plus) _plusBilling.value else _proBilling.value
+
+    private fun setBilling(plan: PaywallPlan, billing: PaywallBilling) {
+        if (plan == PaywallPlan.Plus) _plusBilling.value = billing else _proBilling.value = billing
+    }
 
     // One funnel session per ViewModel instance — mirrors iOS's per-presentation
     // funnel_session_id (a fresh UUID each time the paywall is shown, reused by every event
@@ -174,32 +192,40 @@ class PaywallViewModel @Inject constructor(
     fun selectPlan(plan: PaywallPlan) {
         if (_selectedPlan.value == plan || _isPurchasing.value) return
         _selectedPlan.value = plan
-        _selectedBilling.value = PaywallBilling.Yearly
+        setBilling(plan, PaywallBilling.Yearly)
         val packages = (_state.value as? PaywallUiState.Loaded)?.packages.orEmpty()
         alignBillingWithAvailablePackage(packages)
         authRepository.currentUserId?.let {
-            recordEvent(it, PaywallEventName.PlanSelect, selectedTier = plan.tier, billing = _selectedBilling.value)
+            recordEvent(it, PaywallEventName.PlanSelect, selectedTier = plan.tier, billing = billingFor(plan))
         }
+    }
+
+    /** Çapraz satış kartı: PLUS ↔ PRO ekranı arasında geçiş (iOS `toggleScreen()`). */
+    fun togglePlan() {
+        selectPlan(if (_selectedPlan.value == PaywallPlan.Plus) PaywallPlan.Pro else PaywallPlan.Plus)
     }
 
     fun selectBilling(billing: PaywallBilling) {
-        if (_selectedBilling.value == billing || _isPurchasing.value) return
-        _selectedBilling.value = billing
+        val plan = _selectedPlan.value
+        if (billingFor(plan) == billing || _isPurchasing.value) return
+        setBilling(plan, billing)
         authRepository.currentUserId?.let {
-            recordEvent(it, PaywallEventName.BillingSelect, selectedTier = _selectedPlan.value.tier, billing = billing)
+            recordEvent(it, PaywallEventName.BillingSelect, selectedTier = plan.tier, billing = billing)
         }
     }
 
-    fun selectedPackage(): BillingPackage? {
-        val packages = (_state.value as? PaywallUiState.Loaded)?.packages.orEmpty()
-        return packages.firstOrNull { pkg ->
-            pkg.tier == _selectedPlan.value.tier && pkg.matches(_selectedBilling.value)
+    /** Ekranın fiyat/deneme/indirim hesapları için ihtiyaç duyduğu ham paket. */
+    fun packageFor(plan: PaywallPlan, billing: PaywallBilling): BillingPackage? =
+        (_state.value as? PaywallUiState.Loaded)?.packages.orEmpty().firstOrNull { pkg ->
+            pkg.tier == plan.tier && pkg.matches(billing)
         }
-    }
+
+    fun selectedPackage(): BillingPackage? =
+        packageFor(_selectedPlan.value, billingFor(_selectedPlan.value))
 
     fun recordClose() {
         authRepository.currentUserId?.let {
-            recordEvent(it, PaywallEventName.Close, selectedTier = _selectedPlan.value.tier, billing = _selectedBilling.value)
+            recordEvent(it, PaywallEventName.Close, selectedTier = _selectedPlan.value.tier, billing = billingFor(_selectedPlan.value))
         }
     }
 
@@ -210,7 +236,7 @@ class PaywallViewModel @Inject constructor(
                 PaywallEventName.CtaTap,
                 selectedTier = _selectedPlan.value.tier,
                 billingPackage = selectedPackage(),
-                billing = _selectedBilling.value,
+                billing = billingFor(_selectedPlan.value),
             )
         }
     }
@@ -285,6 +311,12 @@ class PaywallViewModel @Inject constructor(
                     _isPurchasing.value = false
                     val current = _state.value as? PaywallUiState.Loaded
                     if (current != null) _state.value = current.copy(currentTier = result.value)
+                    if (!result.value.isPaid) {
+                        _purchaseError.value = AppErrorMessages.make(
+                            context.getString(RdR.string.rd_paywall_design_restore_empty),
+                            context = context.getString(RdR.string.rd_satin_alimlar_geri_yuklenemedi),
+                        )
+                    }
                 }
                 is RdResult.Failure -> {
                     _isPurchasing.value = false
@@ -346,16 +378,22 @@ class PaywallViewModel @Inject constructor(
     }
 
     private fun alignBillingWithAvailablePackage(packages: List<BillingPackage>) {
-        if (packages.any { it.tier == _selectedPlan.value.tier && it.matches(_selectedBilling.value) }) return
-        _selectedBilling.value = when {
-            packages.any { it.tier == _selectedPlan.value.tier && it.matches(PaywallBilling.Yearly) } -> PaywallBilling.Yearly
-            else -> PaywallBilling.Monthly
+        PaywallPlan.entries.forEach { plan ->
+            if (packages.any { it.tier == plan.tier && it.matches(billingFor(plan)) }) return@forEach
+            setBilling(
+                plan,
+                if (packages.any { it.tier == plan.tier && it.matches(PaywallBilling.Yearly) }) {
+                    PaywallBilling.Yearly
+                } else {
+                    PaywallBilling.Monthly
+                },
+            )
         }
     }
 
     private fun BillingPackage.matches(billing: PaywallBilling): Boolean = when (billing) {
-        PaywallBilling.Monthly -> productId.contains("monthly", ignoreCase = true)
-        PaywallBilling.Yearly -> productId.contains("yearly", ignoreCase = true) || productId.contains("annual", ignoreCase = true)
+        PaywallBilling.Monthly -> PaywallDesignPricing.matchesMonthly(this)
+        PaywallBilling.Yearly -> PaywallDesignPricing.matchesYearly(this)
     }
 
 

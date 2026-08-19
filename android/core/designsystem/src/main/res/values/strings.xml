@@ -762,4 +762,56 @@
     <string name="rd_tema_karanlik_aciklama">Her zaman koyu tema.</string>
     <string name="rd_guvenlik_gizlilik">Güvenlik ve gizlilik</string>
     <string name="rd_plus_pro">Plus/Pro</string>
+
+    <!-- Claude Design paywall (App/Views/Paywall/Design/*.swift 1:1 karşılığı). Android v1
+         Türkçe tek dil olduğu için görsellerdeki gömülü metinler de Türkçedir. -->
+    <string name="rd_paywall_design_close">Paywall ekranını kapat</string>
+    <string name="rd_paywall_design_social_proof">10.000+ kullanıcı, İSG uzmanlarının tercihi</string>
+    <string name="rd_paywall_design_hero_trial">Ücretsiz Deneme Nasıl Çalışır?</string>
+    <string name="rd_paywall_design_hero_benefits_format">%1$s Abonelik Avantajları</string>
+    <string name="rd_paywall_design_tier_free">FREE</string>
+    <string name="rd_paywall_design_tier_plus">PLUS</string>
+    <string name="rd_paywall_design_tier_pro">PRO</string>
+    <string name="rd_paywall_design_timeline_today">Bugün</string>
+    <string name="rd_paywall_design_timeline_today_detail_format">— Tüm %1$s özelliklerine anında erişim kazanın</string>
+    <string name="rd_paywall_design_timeline_day_format">%1$s. Gün</string>
+    <string name="rd_paywall_design_timeline_reminder">Deneme süreniz bitmeden size hatırlatacağız</string>
+    <string name="rd_paywall_design_timeline_billing">Aboneliğiniz başlar. İstediğiniz zaman öncesinde iptal edin.</string>
+    <string name="rd_paywall_design_row_daily_analysis">Günlük analiz</string>
+    <!-- Paywall özellik etiketleri kendi anahtarlarında durur: uygulamanın geri kalanındaki
+         aynı metinler farklı büyük/küçük harf düzenine sahip ("Risk analizi" / "Detaylı Analiz"),
+         paywall'da hepsi Başlık Düzeni'nde olmalı. -->
+    <string name="rd_paywall_design_feature_risk_analysis">Risk Analizi</string>
+    <string name="rd_paywall_design_feature_detailed_analysis">Detaylı Analiz</string>
+    <string name="rd_paywall_design_feature_multi_photo">Çoklu Fotoğraf Analizi</string>
+    <string name="rd_paywall_design_feature_company_management">Firma Yönetimi</string>
+    <string name="rd_paywall_design_row_deep_research">Derin Araştırma</string>
+    <string name="rd_paywall_design_row_priority_support">Öncelikli destek</string>
+    <string name="rd_paywall_design_value_one_per_day">1 / gün</string>
+    <string name="rd_paywall_design_value_ten_per_day">10 / gün</string>
+    <string name="rd_paywall_design_value_unlimited">Limitsiz</string>
+    <string name="rd_paywall_design_plan_per_month_format">%1$s / Ay</string>
+    <string name="rd_paywall_design_plan_yearly_caption">/ Yıl</string>
+    <string name="rd_paywall_design_plan_monthly_caption">/ Ay</string>
+    <string name="rd_paywall_design_plan_badge_popular">Popüler</string>
+    <string name="rd_paywall_design_plan_trial_note_format">%1$s gün ücretsiz</string>
+    <string name="rd_paywall_design_plan_discount_format">%%%1$s İndirim</string>
+    <string name="rd_paywall_design_cross_sell_pro_prefix">"Daha gelişmiş ve sınırsız özellikler için "</string>
+    <string name="rd_paywall_design_cross_sell_pro_suffix">" üyeliğimizi inceleyin"</string>
+    <string name="rd_paywall_design_cross_sell_plus_prefix">"Temel özellikler için "</string>
+    <string name="rd_paywall_design_cross_sell_plus_suffix">" üyeliğimizi inceleyin"</string>
+    <string name="rd_paywall_design_cta_start_trial">Ücretsiz Denemeyi Başlat</string>
+    <string name="rd_paywall_design_footer_auto_renew">Otomatik yenilenir. İstediğiniz zaman iptal edin.</string>
+    <string name="rd_paywall_design_footer_terms">Koşullar</string>
+    <string name="rd_paywall_design_footer_manage">İptal Hakkı</string>
+    <string name="rd_paywall_design_price_loading">fiyat yükleniyor</string>
+    <string name="rd_paywall_design_price_unavailable">fiyat alınamadı</string>
+    <string name="rd_paywall_design_cta_price_loading">Fiyat yükleniyor…</string>
+    <string name="rd_paywall_design_packages_loading">Google Play abonelik paketleri yükleniyor…</string>
+    <string name="rd_paywall_design_package_missing">Seçili abonelik paketi veya Google Play fiyatı şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene.</string>
+    <string name="rd_paywall_design_packages_failed">Google Play abonelik fiyatları şu an alınamadı. İnternet bağlantını kontrol edip tekrar dene.</string>
+    <string name="rd_paywall_design_package_not_loaded">Bu plan için Google Play paketi henüz yüklenmedi.</string>
+    <string name="rd_paywall_design_purchase_opening">Google Play ödeme ekranı açılıyor…</string>
+    <string name="rd_paywall_design_restore_checking">Google Play satın alımların kontrol ediliyor…</string>
+    <string name="rd_paywall_design_restore_empty">Geri yüklenecek aktif abonelik bulunamadı.</string>
 </resources>
