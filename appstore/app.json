@@ -64,8 +64,8 @@
     "ASC_ALLOW_RELEASE": 0
   },
   "production_policy": {
-    "current_live_version": "1.3.1",
-    "current_live_build": "81",
+    "current_live_version": "1.3.3",
+    "current_live_build": "83",
     "localization_rollout_must_remain_off": false,
     "review_submission_performed_by_automation": true,
     "release_performed_by_automation": false
