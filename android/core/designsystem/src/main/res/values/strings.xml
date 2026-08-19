@@ -776,7 +776,7 @@
     <string name="rd_paywall_design_timeline_today_detail_format">Tüm %1$s özelliklerine anında erişim kazanın</string>
     <string name="rd_paywall_design_timeline_day_format">%1$s. Gün</string>
     <string name="rd_paywall_design_timeline_reminder">Deneme süreniz bitmeden size hatırlatacağız</string>
-    <string name="rd_paywall_design_timeline_billing">Aboneliğiniz başlar. İstediğiniz zaman iptal edebilirsiniz.</string>
+    <string name="rd_paywall_design_timeline_billing">Aboneliğiniz aktif. İstediğiniz zaman iptal.</string>
     <string name="rd_paywall_design_row_daily_analysis">Günlük analiz</string>
     <!-- Paywall özellik etiketleri kendi anahtarlarında durur: uygulamanın geri kalanındaki
          aynı metinler farklı büyük/küçük harf düzenine sahip ("Risk analizi" / "Detaylı Analiz"),

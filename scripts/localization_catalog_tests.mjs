@@ -779,7 +779,8 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // 2026-08-19: onboarding yukleme adimlarinda secim etiketi metne uc uca ekleniyordu
     // ("Insaaticin ..."); uc metin yer tutuculu bicime cevrildi. Plan ozeti sablon
     // sayisi 47'den 896'ya guncellendi.
-    "d4e26512b396579d6ec1f927cfa224f548826974aeeac523688edd7550dedd67",
+    // 2026-08-20: paywall 7. gun aciklamasi ekranda yer kazanmak icin tek satira indi.
+    "73bc2d195fcffff905843755c505b44c79bddb23342fc9b32225a4d92c5ddc8e",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

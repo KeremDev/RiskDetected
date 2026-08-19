@@ -557,7 +557,7 @@ fun RdPaywallDesignTrialTimeline(
             TimelineTodayStep(
                 tierName = tierName,
                 accent = accent,
-                modifier = Modifier.padding(bottom = 22.dp),
+                modifier = Modifier.padding(bottom = 14.dp),
             )
         }
 
@@ -569,7 +569,7 @@ fun RdPaywallDesignTrialTimeline(
             TimelineStep(
                 title = stringResource(R.string.rd_paywall_design_timeline_day_format, reminderDay.toString()),
                 detail = stringResource(R.string.rd_paywall_design_timeline_reminder),
-                modifier = Modifier.padding(bottom = 22.dp),
+                modifier = Modifier.padding(bottom = 14.dp),
             )
         }
 
@@ -1035,7 +1035,7 @@ fun RdPaywallDesignComparisonTable(
             .padding(top = 16.dp, start = RdPaywallDesignMetric.ScreenPadding, end = RdPaywallDesignMetric.ScreenPadding)
             .testTag(RdPaywallDesignTag.ComparisonTable),
     ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
             Spacer(Modifier.weight(1f))
             ComparisonHeader(left)
             ComparisonHeader(right)
@@ -1045,12 +1045,13 @@ fun RdPaywallDesignComparisonTable(
 
         rows.forEachIndexed { index, row ->
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                // Tablo tek ekrana sığsın diye satırlar sıkılaştırıldı.
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = row.title,
-                    style = rdPaywallText(13.5f, color = RdPaywallDesignColor.Ink),
+                    style = rdPaywallText(12.5f, color = RdPaywallDesignColor.Ink),
                     modifier = Modifier.weight(1f),
                 )
                 ComparisonMark(row.left)
@@ -1100,22 +1101,22 @@ private fun ComparisonMark(mark: RdPaywallDesignMark) {
     ) {
         when (mark) {
             RdPaywallDesignMark.Cross -> RdPaywallCrossIcon(
-                width = 10.dp,
-                height = 10.dp,
+                width = 9.dp,
+                height = 9.dp,
                 viewBoxSide = 12f,
                 lineWidth = 1.8f,
                 color = RdPaywallDesignColor.IdleMark,
             )
             is RdPaywallDesignMark.Check -> RdPaywallCheckBadge(
-                diameter = 15.dp,
-                checkWidth = 7.dp,
-                checkHeight = 6.dp,
+                diameter = 13.5.dp,
+                checkWidth = 6.3.dp,
+                checkHeight = 5.4.dp,
                 checkLineWidth = 2.4f,
                 background = mark.color,
             )
             is RdPaywallDesignMark.Value -> Text(
                 text = mark.text,
-                style = rdPaywallText(11f, FontWeight.Bold, mark.color),
+                style = rdPaywallText(10.5f, FontWeight.Bold, mark.color),
                 maxLines = 1,
                 overflow = TextOverflow.Visible,
                 textAlign = TextAlign.Center,
@@ -1172,7 +1173,7 @@ fun RdPaywallDesignPlanCard(
                         Box(Modifier.size(9.dp).clip(CircleShape).background(accent))
                     }
                 }
-                Text(title, style = rdPaywallText(14f, FontWeight.Bold, RdPaywallDesignColor.Ink))
+                Text(title, style = rdPaywallText(13f, FontWeight.Bold, RdPaywallDesignColor.Ink))
             }
 
             // iOS ile ayni: fiyat kartin en agir ogesi olmamali; 14.5sp yari kalin.
@@ -1181,9 +1182,12 @@ fun RdPaywallDesignPlanCard(
                 style = rdPaywallText(14.5f, FontWeight.SemiBold, RdPaywallDesignColor.Ink),
                 maxLines = 1,
             )
+            // Yıllık kartta bu satır toplam tutarı taşıyor; başlıktan da fiyattan da
+            // hafif kalsın diye 11sp.
             Text(
                 text = caption,
-                style = rdPaywallText(12f, color = RdPaywallDesignColor.Muted),
+                style = rdPaywallText(11f, color = RdPaywallDesignColor.Muted),
+                maxLines = 1,
                 modifier = Modifier.padding(top = 2.dp),
             )
             if (trialNote != null) {
@@ -1322,7 +1326,7 @@ fun RdPaywallDesignFooter(
                 top = 14.dp,
                 start = RdPaywallDesignMetric.ScreenPadding,
                 end = RdPaywallDesignMetric.ScreenPadding,
-                bottom = 16.dp,
+                bottom = 10.dp,
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

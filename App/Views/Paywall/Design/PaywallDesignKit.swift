@@ -432,7 +432,7 @@ struct PaywallDesignTrialTimeline: View {
                 // Diğer basamaklarla aynı biçim: başlık üstte, açıklama altında.
                 todayStep
                     // Bağlantı çizgisinin görünmesi için diğer satırlarla eşit yükseklik.
-                    .padding(.bottom, 22)
+                    .padding(.bottom, 14)
             }
 
             HStack(alignment: .top, spacing: 12) {
@@ -447,7 +447,7 @@ struct PaywallDesignTrialTimeline: View {
                         fallback: "Deneme süreniz bitmeden size hatırlatacağız"
                     )
                 )
-                .padding(.bottom, 22)
+                .padding(.bottom, 14)
             }
 
             HStack(alignment: .top, spacing: 12) {
@@ -459,7 +459,7 @@ struct PaywallDesignTrialTimeline: View {
                     detail: RDLocalization.string(
                         "paywall.design.timeline.billing.detail",
                         table: .paywall,
-                        fallback: "Aboneliğiniz başlar. İstediğiniz zaman iptal edebilirsiniz."
+                        fallback: "Aboneliğiniz aktif. İstediğiniz zaman iptal."
                     )
                 )
             }
@@ -935,7 +935,7 @@ struct PaywallDesignComparisonTable: View {
                 header(left)
                 header(right)
             }
-            .padding(.bottom, 10)
+            .padding(.bottom, 8)
 
             Rectangle()
                 .fill(PaywallDesignColor.ruleStrong)
@@ -944,13 +944,14 @@ struct PaywallDesignComparisonTable: View {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 HStack(spacing: 0) {
                     Text(row.title)
-                        .font(.system(size: 13.5))
+                        .font(.system(size: 12.5))
                         .foregroundColor(PaywallDesignColor.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     mark(row.left)
                     mark(row.right)
                 }
-                .padding(.vertical, 6)
+                // Tablo tek ekrana sığsın diye satırlar sıkılaştırıldı.
+                .padding(.vertical, 4)
 
                 if index < rows.count - 1 {
                     Rectangle()
@@ -994,21 +995,21 @@ struct PaywallDesignComparisonTable: View {
             switch mark {
             case .cross:
                 PaywallDesignCrossIcon(
-                    size: CGSize(width: 10, height: 10),
+                    size: CGSize(width: 9, height: 9),
                     viewBoxSide: 12,
                     lineWidth: 1.8,
                     color: PaywallDesignColor.idleMark
                 )
             case let .check(color):
                 PaywallDesignCheckBadge(
-                    diameter: 15,
-                    checkSize: CGSize(width: 7, height: 6),
+                    diameter: 13.5,
+                    checkSize: CGSize(width: 6.3, height: 5.4),
                     checkLineWidth: 2.4,
                     background: color
                 )
             case let .text(value, color):
                 Text(value)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 10.5, weight: .bold))
                     .foregroundColor(color)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -1048,7 +1049,7 @@ struct PaywallDesignPlanCard: View {
                         }
                     )
                 Text(title)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundColor(PaywallDesignColor.ink)
             }
             .padding(.bottom, 10)
@@ -1063,8 +1064,12 @@ struct PaywallDesignPlanCard: View {
                 .minimumScaleFactor(0.85)
 
             Text(caption)
-                .font(.system(size: 12))
+                // Yıllık kartta bu satır toplam tutarı taşıyor; başlıktan da fiyattan da
+                // hafif kalsın diye 11pt.
+                .font(.system(size: 11))
                 .foregroundColor(PaywallDesignColor.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
                 .padding(.top, 2)
 
             if let trialNote {
@@ -1282,7 +1287,7 @@ struct PaywallDesignFooter: View {
         }
         .padding(.top, 14)
         .padding(.horizontal, PaywallDesignMetric.screenPadding)
-        .padding(.bottom, 30)
+        .padding(.bottom, 20)
         .background(
             Color.white
                 .shadow(color: Color.black.opacity(0.05), radius: 12, x: 0, y: -8)

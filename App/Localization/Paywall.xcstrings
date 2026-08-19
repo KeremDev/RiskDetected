@@ -512,13 +512,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your subscription starts. You can cancel at any time."
+            "value": "Your subscription is active. Cancel any time."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aboneliğiniz başlar. İstediğiniz zaman iptal edebilirsiniz."
+            "value": "Aboneliğiniz aktif. İstediğiniz zaman iptal."
           }
         }
       }
