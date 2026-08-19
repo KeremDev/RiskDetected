@@ -4,9 +4,9 @@
   "source_plan": "docs/RISKDETECTED_GLOBAL_LOCALIZATION_COUNTRY_SAFETY_INTEGRATION_EXECUTION_PLAN_2026-07-28.md",
   "candidate": {
     "version": "1.3.4",
-    "build": "85",
+    "build": "86",
     "version_id": null,
-    "build_id": "623038df-0855-4899-b001-4549c8641ed2"
+    "build_id": "423ece5b-78a9-4cde-b074-3db5945a537c"
   },
   "protected_store_locales": [
     "tr"
