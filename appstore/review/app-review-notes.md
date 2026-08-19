@@ -1,11 +1,12 @@
-RiskDetected 1.3.4 (build 84) is a subscription-screen and localization update.
+RiskDetected 1.3.4 (build 86) is a subscription-screen and onboarding update.
+No new permissions, no new external services, no change to data collection.
 
 Changes in this build:
-- The subscription screen was redesigned; every paid entry point and the final onboarding step now use the same screen.
-- Prices, free-trial length, and the discount badge are read from the user's App Store storefront and are hidden when the store returns no offer.
-- Turkish copy for the Fine-Kinney method name was corrected; it is a proper noun and is no longer translated.
-- Sign-in, analysis/report flows, and general stability were improved.
-- Best-effort platform analytics are isolated from auth, subscriptions, quotas, analyses, and reports; telemetry failure cannot block app use.
+- The subscription screen was rebuilt. Every paid entry point and the final onboarding step now use the same screen.
+- Price, billing period, discount badge and free-trial length are read from the user's App Store storefront through StoreKit. When the store returns no offer, the screen shows no price and makes no trial claim instead of a placeholder.
+- The yearly card leads with the monthly equivalent and shows the yearly total beneath it; the renewal price appears under the purchase button.
+- The plan comparison table marks Deep Research and Focused Analysis as PRO-only, and the feature strip on the PLUS screen no longer advertises them.
+- Onboarding copy corrections.
 
 Reviewer login:
 Use the demo account supplied in App Review Information. Sign-in is email OTP; no password is required. Credentials are intentionally excluded from these notes and from the repository.
