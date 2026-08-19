@@ -241,7 +241,7 @@ struct RiskDetailView: View {
 
                 HStack(spacing: 10) {
                     methodBox(
-                        title: RDLocalization.string("analysis.risk.detail.view.fine.kinney.dd5a1c46", table: .analysis, fallback: "İnce Kinney"),
+                        title: RDLocalization.string("analysis.risk.detail.view.fine.kinney.dd5a1c46", table: .analysis, fallback: "Fine-Kinney"),
                         formula: RDLocalization.string("analysis.risk.detail.view.o.f.s.d293e41e", table: .analysis, fallback: "O × F × Ş"),
                         score: Int(finding.fkScore),
                         band: finding.fkBand,

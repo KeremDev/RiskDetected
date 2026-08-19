@@ -191,7 +191,7 @@ struct OnboardingArt: View {
                 .foregroundStyle(Color.rdSlate)
 
             methodRow(score: "1440", label: RDLocalization.string("onboarding.onboarding.view.f.kinney.7955a88b", table: .onboarding, fallback: "F-KINNEY"), scoreColor: Color.rdCritical,
-                      title: RDLocalization.string("onboarding.onboarding.view.fine.kinney.36094f7d", table: .onboarding, fallback: "İnce Kinney"), formula: RDLocalization.string("onboarding.onboarding.view.r.o.f.s.c031ebce", table: .onboarding, fallback: "R = O × F × Ş"),
+                      title: RDLocalization.string("onboarding.onboarding.view.fine.kinney.36094f7d", table: .onboarding, fallback: "Fine-Kinney"), formula: RDLocalization.string("onboarding.onboarding.view.r.o.f.s.c031ebce", table: .onboarding, fallback: "R = O × F × Ş"),
                       params: [("O", 6), ("F", 6), (RDLocalization.string("onboarding.onboarding.view.s.1a3e180d", table: .onboarding, fallback: "Ş"), 40)])
             methodRow(score: "20", label: RDLocalization.string("onboarding.onboarding.view.5.5.c56e30aa", table: .onboarding, fallback: "5×5"), scoreColor: Color.rdHigh,
                       title: RDLocalization.string("onboarding.onboarding.view.5.5.l.tipi.matris.3525cecd", table: .onboarding, fallback: "5×5 L-Tipi Matris"), formula: RDLocalization.string("onboarding.onboarding.view.r.o.s.0fc90694", table: .onboarding, fallback: "R = O × Ş"),

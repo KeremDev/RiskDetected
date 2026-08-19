@@ -2774,7 +2774,7 @@ private struct FindingEditorSheet: View {
             }
 
             riskScoreGroup(
-                title: RDLocalization.string("analysis.result.view.fine.kinney.2823b5bc", table: .analysis, fallback: "İnce Kinney"),
+                title: RDLocalization.string("analysis.result.view.fine.kinney.2823b5bc", table: .analysis, fallback: "Fine-Kinney"),
                 score: formattedScore(fkScore),
                 formula: RDLocalization.format("analysis.result.view.o.1.f.2.s.3.846b0b14", table: .analysis, fallback: "O %1$@ × F %2$@ × Ş %3$@", arguments: [String(describing: formattedFK(fkProbability)), String(describing: formattedFK(fkFrequency)), String(describing: formattedFK(fkSeverity))])
             ) {

@@ -715,6 +715,42 @@ test("L10N-017A", "subscription plan names remain untranslated in Turkish", () =
   }
 });
 
+test("L10N-017B", "risk-method proper nouns survive translation", () => {
+  // "Fine-Kinney" iki arastirmacinin soyadidir (W.T. Fine, G.F. Kinney) ve
+  // uluslararasi bir yontem adidir; hicbir dilde cevrilmez. 2026-08-19'da makine
+  // cevirisi "Fine" sifatini "Ince" diye cevirip dort anahtari bozmustu, besincisinde
+  // de "Kinnet" yazim hatasi vardi — ikisi de canli iOS ekranlarina cikti.
+  const forbidden = [/\bİnce[\s-]?Kinney\b/i, /\bKinnet\b/i];
+
+  for (const catalogName of EXPECTED_CATALOGS) {
+    const parsed = catalog(catalogName);
+    for (const key of Object.keys(parsed.strings)) {
+      for (const language of ["tr", "en"]) {
+        for (const [path, unit] of collectStringUnits(
+          parsed.strings[key].localizations?.[language],
+        )) {
+          const value = unit.value ?? "";
+          for (const pattern of forbidden) {
+            assert.ok(
+              !pattern.test(value),
+              `${catalogName}:${key}:${path} (${language}) must spell the method "Fine-Kinney": ${value}`,
+            );
+          }
+          // "Kinney" gecen her yerde ozel ad ya tam yazilir ya da dar rozetlerde
+          // "F-KINNEY" kisaltmasiyla gecer; ikisi de her dilde aynidir.
+          if (/\bKinney\b/i.test(value)) {
+            assert.match(
+              value,
+              /(Fine[\s-]?Kinney|\bF-KINNEY\b)/i,
+              `${catalogName}:${key}:${path} (${language}) must keep the full "Fine-Kinney" name`,
+            );
+          }
+        }
+      }
+    }
+  }
+});
+
 test("L10N-018", "approved Turkish catalog source remains locked", () => {
   const rows = [];
   for (const name of EXPECTED_CATALOGS) {
@@ -730,7 +766,10 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
   assert.equal(rows.length, 2_112, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
-    "f288c9ae1a5672f59a9ef9054f950626a0961d5c867105ec5c66158d83223fe2",
+    // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
+    // olmustu ve bir anahtarda "Kinnet" yazim hatasi vardi. Fine-Kinney bir ozel
+    // ad (W.T. Fine + G.F. Kinney) ve uluslararasi terim; hicbir dilde cevrilmez.
+    "cac9f2be1995e7bdcb1ce2950712d7653e0530340e5d150117d21e976642bc48",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

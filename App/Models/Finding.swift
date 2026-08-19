@@ -9,7 +9,7 @@ enum RiskMethod: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .fineKinney: return RDLocalization.string("analysis.finding.fine.kinney.224a34d8", table: .analysis, fallback: "İnce Kinney")
+        case .fineKinney: return RDLocalization.string("analysis.finding.fine.kinney.224a34d8", table: .analysis, fallback: "Fine-Kinney")
         case .matrix5x5:  return RDLocalization.string("analysis.finding.5.5.l.tipi.f434fdf5", table: .analysis, fallback: "5×5 L-Tipi")
         }
     }
