@@ -5,7 +5,6 @@ Changes in this build:
 - Prices, free-trial length, and the discount badge are read from the user's App Store storefront and are hidden when the store returns no offer.
 - Turkish copy for the Fine-Kinney method name was corrected; it is a proper noun and is no longer translated.
 - Sign-in, analysis/report flows, and general stability were improved.
-- Apple Search Ads attribution is collected through RevenueCat's AdServices integration. It uses Apple's own AdServices attribution token, not the advertising identifier, so no App Tracking Transparency prompt is required and no SKAdNetwork identifiers are declared.
 - Best-effort platform analytics are isolated from auth, subscriptions, quotas, analyses, and reports; telemetry failure cannot block app use.
 
 Reviewer login:
