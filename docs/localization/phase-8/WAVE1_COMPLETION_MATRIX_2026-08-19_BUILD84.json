@@ -3,10 +3,10 @@
   "evaluated_at": "2026-08-19",
   "source_plan": "docs/RISKDETECTED_GLOBAL_LOCALIZATION_COUNTRY_SAFETY_INTEGRATION_EXECUTION_PLAN_2026-07-28.md",
   "candidate": {
-    "version": "1.3.3",
-    "build": "83",
-    "version_id": "6fceb09c-f8c6-472a-841e-20e320ccf0c0",
-    "build_id": "0e54081e-c9a1-4379-9e56-1f7d91401b94"
+    "version": "1.3.4",
+    "build": "84",
+    "version_id": null,
+    "build_id": "1d0bf9ed-84e3-4604-b7a2-618869f08b8b"
   },
   "protected_store_locales": [
     "tr"
@@ -469,7 +469,8 @@
     "reason": "Wave 1 kapsami build 80'den beri degismedi: bu adayin getirdigi degisiklikler (platform analytics, Apple Ads attribution, Claude Design paywall, Fine-Kinney lokalizasyon duzeltmesi) Wave 1 gereksinimlerinin hicbirinin kapsamina girmiyor.",
     "requirement_verdicts_re_adjudicated": false,
     "re_verified_for_this_candidate": [
-      "candidate triple (ASC builds/versions listesinden dogrulandi)"
+      "candidate triple (ASC builds listesinden dogrulandi; 84 VALID)",
+      "version_id yok: aday yalnizca TestFlight'a yuklendi, App Store surumu olusturulmadi"
     ]
   },
   "prior_candidate_evidence": {

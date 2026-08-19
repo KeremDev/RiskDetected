@@ -11,7 +11,7 @@ import {
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const MATRIX_PATH = resolve(
   ROOT,
-  "docs/localization/phase-8/WAVE1_COMPLETION_MATRIX_2026-08-19_BUILD83.json",
+  "docs/localization/phase-8/WAVE1_COMPLETION_MATRIX_2026-08-19_BUILD84.json",
 );
 
 function matrix() {
