@@ -136,7 +136,12 @@ fun RdPaywallDesignScreen(
                     RdPaywallDesignTrialTimeline(
                         trialDays = state.trialDays,
                         tierName = state.tierName,
+                    )
+                    // Özellikler artık ilk satırın altındaki ızgarada değil,
+                    // zaman çizelgesinin altında sürekli akan bir şeritte.
+                    RdPaywallDesignFeatureMarquee(
                         features = state.timelineFeatures,
+                        accent = state.tier.accent,
                     )
                 } else {
                     RdPaywallDesignComparisonTable(

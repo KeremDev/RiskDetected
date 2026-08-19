@@ -437,7 +437,8 @@ struct PaywallDesignTrialTimeline: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, 14)
+                // Diğer satırlarla aynı: bağlantı çizgisinin görünmesi için yeterli yükseklik.
+                .padding(.bottom, 22)
             }
 
             HStack(alignment: .top, spacing: 12) {

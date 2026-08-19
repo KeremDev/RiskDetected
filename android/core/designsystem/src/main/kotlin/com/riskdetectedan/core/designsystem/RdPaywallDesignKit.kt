@@ -1,6 +1,12 @@
 package com.riskdetectedan.core.designsystem
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +33,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +58,8 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
@@ -518,7 +529,6 @@ fun RdPaywallDesignSocialProof(modifier: Modifier = Modifier) {
 fun RdPaywallDesignTrialTimeline(
     trialDays: Int,
     tierName: String,
-    features: List<String>,
     modifier: Modifier = Modifier,
 ) {
     val reminderDay = maxOf(1, trialDays - 2)
@@ -531,18 +541,18 @@ fun RdPaywallDesignTrialTimeline(
         TimelineRow(
             circleColor = RdPaywallDesignColor.Orange,
             railColor = RdPaywallDesignColor.Orange,
-            icon = { RdPaywallCheckIcon(15.dp, 12.dp, lineWidth = 2f, color = Color.White) },
+            icon = { RdPaywallCheckIcon(13.dp, 10.5.dp, lineWidth = 2f, color = Color.White) },
         ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            // Diğer satırlarla aynı: bağlantı çizgisinin görünmesi için yeterli yükseklik.
+            Column(modifier = Modifier.fillMaxWidth().padding(bottom = 22.dp)) {
                 TimelineTodayHeadline(tierName)
-                TimelineFeatureGrid(features)
             }
         }
 
         TimelineRow(
             circleColor = RdPaywallDesignColor.IdleMark,
             railColor = RdPaywallDesignColor.IdleRail,
-            icon = { RdPaywallBellIcon() },
+            icon = { RdPaywallBellIcon(width = 12.5.dp, height = 13.5.dp) },
         ) {
             TimelineStep(
                 title = stringResource(R.string.rd_paywall_design_timeline_day_format, reminderDay.toString()),
@@ -554,7 +564,7 @@ fun RdPaywallDesignTrialTimeline(
         TimelineRow(
             circleColor = RdPaywallDesignColor.IdleMark,
             railColor = null,
-            icon = { RdPaywallCardIcon() },
+            icon = { RdPaywallCardIcon(width = 13.dp, height = 10.5.dp) },
         ) {
             TimelineStep(
                 title = stringResource(R.string.rd_paywall_design_timeline_day_format, trialDays.toString()),
@@ -579,7 +589,7 @@ private fun TimelineRow(
     icon: @Composable () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val circleSize = 32.dp
+    val circleSize = 28.dp
     val railInset = 3.dp
     Row(
         modifier = Modifier
@@ -608,7 +618,7 @@ private fun TimelineRow(
             modifier = Modifier.size(circleSize).clip(CircleShape).background(circleColor),
             contentAlignment = Alignment.Center,
         ) { icon() }
-        Spacer(Modifier.width(14.dp))
+        Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f), content = content)
     }
 }
@@ -625,47 +635,8 @@ private fun TimelineTodayHeadline(tierName: String) {
         )
         Text(
             text = stringResource(R.string.rd_paywall_design_timeline_today_detail_format, tierName),
-            style = rdPaywallText(13f, color = RdPaywallDesignColor.Muted),
+            style = rdPaywallText(12f, color = RdPaywallDesignColor.Muted),
         )
-    }
-}
-
-@Composable
-private fun TimelineFeatureGrid(features: List<String>) {
-    // `LazyVGrid` karşılığı — kaydırılabilir bir ebeveynin içinde lazy liste kullanılamaz,
-    // bu yüzden iki sütunlu sabit ızgara elle kurulur.
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        features.chunked(2).forEach { pair ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                pair.forEach { feature ->
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        RdPaywallCheckBadge(
-                            diameter = 16.dp,
-                            checkWidth = 8.dp,
-                            checkHeight = 7.dp,
-                            checkLineWidth = 2.4f,
-                            background = RdPaywallDesignColor.OrangeSoft,
-                        )
-                        Text(
-                            text = feature,
-                            style = rdPaywallText(12.5f, color = RdPaywallDesignColor.Ink),
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
-            }
-        }
     }
 }
 
@@ -675,8 +646,98 @@ private fun TimelineStep(title: String, detail: String, modifier: Modifier = Mod
         Text(title, style = rdPaywallText(15f, FontWeight.Bold, RdPaywallDesignColor.Ink))
         Text(
             text = detail,
-            style = rdPaywallText(13.5f, color = RdPaywallDesignColor.Muted, lineHeightMultiple = 1.4f),
+            style = rdPaywallText(12.5f, color = RdPaywallDesignColor.Muted, lineHeightMultiple = 1.4f),
             modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
+
+// MARK: - Kayan özellik şeridi
+
+/**
+ * Zaman çizelgesinin altındaki sürekli sola kayan özellik etiketleri (iOS'taki
+ * `PaywallDesignFeatureMarquee` karşılığı). Şerit iki özdeş kopyadan oluşur; ilk kopya
+ * tam genişliği kadar kayınca başa döner, böylece dikiş yeri görünmez.
+ *
+ * İçerik ekrandan geniş olduğu için ölçüyü `Box` verir, satır `offset` ile yalnızca çizilir;
+ * aksi halde kendi genişliğini ebeveyne dayatıp sayfayı yana kaydırırdı.
+ */
+@Composable
+fun RdPaywallDesignFeatureMarquee(
+    features: List<String>,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = 8.dp
+    var rowWidthPx by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val spacingPx = with(density) { spacing.roundToPx() }
+    val travelPx = rowWidthPx + spacingPx
+
+    // Saniyede ~34dp: okunacak kadar yavaş, duruyor izlenimi vermeyecek kadar canlı.
+    val durationMillis = remember(travelPx) {
+        val travelDp = with(density) { travelPx.toDp().value }
+        ((travelDp / 34f) * 1000f).toInt().coerceAtLeast(6_000)
+    }
+
+    val transition = rememberInfiniteTransition(label = "paywall-feature-marquee")
+    val progress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "paywall-feature-marquee-offset",
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .clipToBounds()
+            .testTag(RdPaywallDesignTag.FeatureMarquee),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(spacing),
+            modifier = Modifier.offset { IntOffset(-(progress * travelPx).toInt(), 0) },
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(spacing),
+                modifier = Modifier.onSizeChanged { rowWidthPx = it.width },
+            ) {
+                features.forEach { MarqueeChip(it, accent) }
+            }
+            // İkinci kopya yalnızca görsel süreklilik için.
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                features.forEach { MarqueeChip(it, accent) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MarqueeChip(feature: String, accent: Color) {
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(accent.copy(alpha = 0.10f))
+            .border(1.dp, accent.copy(alpha = 0.22f), CircleShape)
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        RdPaywallCheckBadge(
+            diameter = 15.dp,
+            checkWidth = 7.5.dp,
+            checkHeight = 6.5.dp,
+            checkLineWidth = 2.4f,
+            background = accent,
+        )
+        Text(
+            text = feature,
+            style = rdPaywallText(12.5f, FontWeight.SemiBold, RdPaywallDesignColor.Ink),
+            maxLines = 1,
         )
     }
 }
@@ -1069,6 +1130,7 @@ object RdPaywallDesignTag {
     const val HeroLabel = "in_app_paywall.hero_label"
     const val SocialProof = "in_app_paywall.social_proof"
     const val TrialTimeline = "in_app_paywall.trial_timeline"
+    const val FeatureMarquee = "in_app_paywall.feature_marquee"
     const val ComparisonTable = "in_app_paywall.comparison_table"
     const val PlanYearly = "in_app_paywall.plan.yearly"
     const val PlanMonthly = "in_app_paywall.plan.monthly"
