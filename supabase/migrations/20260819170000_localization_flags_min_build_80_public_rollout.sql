@@ -13,6 +13,11 @@
 --
 -- Kohort listeleri bilerek silinmiyor: bayrak ileride `allowlist` moduna geri
 -- alinirsa gozden gecirme kohortu oldugu gibi calisir.
+--
+-- Fresh/local replay `off` durumunda baslar (bkz. 20260802214159): oradaki
+-- gozden gecirme kohortu operasyonel olarak acilmisti, migration zincirinde
+-- degil. Bu migration de ayni emsali izliyor -- `off` bayraklari dokunmadan
+-- birakiyor, zinciri tekrar oynatilamaz hale getirmek yerine.
 
 do $localization_min_build$
 declare
@@ -53,7 +58,7 @@ begin
     select 1 from public.app_feature_flags
     where key = any(v_keys)
       and coalesce(value ->> 'rollout_mode', 'off')
-          not in ('allowlist', 'build_allowlist', 'min_build')
+          not in ('off', 'allowlist', 'build_allowlist', 'min_build')
   ) then
     raise exception 'refusing to release a localization flag from an unexpected rollout mode';
   end if;
@@ -65,11 +70,13 @@ begin
         'public_rollout_started_at', now()
       ),
       updated_at = now()
-  where key = any(v_keys);
+  where key = any(v_keys)
+    and coalesce(value ->> 'rollout_mode', 'off') <> 'off';
 
   if exists (
     select 1 from public.app_feature_flags
     where key = any(v_keys)
+      and coalesce(value ->> 'rollout_mode', 'off') <> 'off'
       and (
         value ->> 'rollout_mode' is distinct from 'min_build'
         or (value ->> 'min_ios_build')::integer is distinct from 80

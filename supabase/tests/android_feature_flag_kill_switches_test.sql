@@ -1,6 +1,9 @@
 -- Covers the current Android closed-test release-gate state. The original ADR-005 migration
--- creates every flag closed; later closed-test migrations open the six Android capabilities
--- only for the explicitly admitted Play builds 2 through 5.
+-- creates every flag closed; later closed-test migrations opened the six Android capabilities
+-- for explicitly admitted Play builds, then 20260820090000 switched all six to a min_version
+-- floor of 2 so a new build no longer has to be hand-added to an allowlist before it can run
+-- (see that migration for the versionCode 6 incident it fixes). `enabled_android_version_codes`
+-- is left in place as the rollback path and is asserted separately below.
 
 begin;
 
@@ -18,8 +21,8 @@ select ok(
   coalesce((
     select bool_and(
       coalesce((value->>'kill_switch')::boolean, true) = false
-      and value->>'rollout_mode' = 'version_allowlist'
-      and value->'enabled_android_version_codes' = '[2, 3, 4, 5]'::jsonb
+      and value->>'rollout_mode' = 'min_version'
+      and (value->>'min_android_version_code')::int = 2
     )
     from public.app_feature_flags
     where key in (
@@ -31,7 +34,7 @@ select ok(
       'android_pdf_reports_enabled'
     )
   ), false),
-  'all six Android capabilities are open only for admitted builds 2 through 5'
+  'all six Android capabilities are open for versionCode 2 and above (min_version floor)'
 );
 
 select is(
