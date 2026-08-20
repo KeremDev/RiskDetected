@@ -29,8 +29,10 @@ Packages/
 *.env
 *.p8
 AuthKey_*.p8
+*.pem
 *.jks
 *.keystore
+.secrets/
 App/GoogleService-Info.plist
 App/GoogleService-Info.plist.local
 backups/
@@ -58,6 +60,7 @@ output/imagegen/
 output/snapshot-previews/
 
 # Local tool caches / evidence dumps (large, machine-specific, not source)
+tmp/
 .derivedData/
 .playwright-cli/
 .asc/
