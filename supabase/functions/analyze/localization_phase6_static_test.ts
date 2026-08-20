@@ -250,9 +250,21 @@ Deno.test("purchase paywall copy does not promise an unverified introductory off
   );
   for (
     const [region, start, end] of [
-      ["hero", "private var heroLabel: String {", "private var comparisonColumns"],
-      ["plan", "private var trialNoteText: String? {", "private var discountText"],
-      ["cta", "private var primaryButtonTitle: String {", "private var primaryButtonDisabled"],
+      [
+        "hero",
+        "private var heroLabel: String {",
+        "private var comparisonColumns",
+      ],
+      [
+        "plan",
+        "private var trialNoteText: String? {",
+        "private var discountText",
+      ],
+      [
+        "cta",
+        "private var primaryButtonTitle: String {",
+        "private var primaryButtonDisabled",
+      ],
     ] as Array<[string, string, string]>
   ) {
     const block = sourceBetween(paywallDesignFlowSource, start, end);
