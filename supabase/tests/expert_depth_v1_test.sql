@@ -23,17 +23,18 @@ select is(
   'expert depth policy version is one'
 );
 
--- Halted on 2026-08-21: analyze v173 put the equipment depth scan in the same
--- model call as hazard detection and hazard detection collapsed. Re-enabling is
--- a deliberate act with its own migration; until then the chain must end `off`.
+-- Halted on 2026-08-21 after the v173 regression, then moved to shadow once the
+-- depth structures were reordered behind `findings` and shadow was fixed to
+-- actually measure. `shadow` asks the model for the structures and records
+-- them; nothing behavioural runs. Going to `on` needs its own migration.
 select is(
   (
     select value->>'rollout_mode'
     from public.app_feature_flags
     where key = 'ai_expert_depth_v1'
   ),
-  'off',
-  'expert depth stays disabled until the depth scan stops competing with hazard detection'
+  'shadow',
+  'expert depth is in shadow measurement, not enabled'
 );
 
 select is(
@@ -42,8 +43,8 @@ select is(
     from public.app_feature_flags
     where key = 'ai_expert_depth_v1'
   ),
-  true,
-  'expert depth kill switch is latched'
+  false,
+  'shadow requires the kill switch open; behaviour stays off through rollout_mode'
 );
 
 select ok(
