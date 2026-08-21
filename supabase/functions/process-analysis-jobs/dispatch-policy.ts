@@ -10,6 +10,14 @@ export type QueueReconciliationDecision = {
   reason: string;
 };
 
+export function forceCoverageQualityFallback(params: {
+  repairKind: unknown;
+  workerAttempt: number;
+}): boolean {
+  return params.repairKind === "coverage_quality_v2" &&
+    Number.isFinite(params.workerAttempt) && params.workerAttempt > 1;
+}
+
 const TERMINAL_JOB_STATES = new Set(["completed", "failed", "superseded"]);
 
 export function classifyDispatchObservation(params: {

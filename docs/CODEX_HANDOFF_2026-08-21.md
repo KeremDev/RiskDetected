@@ -74,7 +74,7 @@ Altı Android runtime kapısı (`android_client_enabled`, `android_auth_enabled`
 
 Bu, iOS'ta build 81'de yaşanan aynı tuzağın (allowlist listesi güncellenmeden canlıya çıkma, bulgu düzenleme/silme 423 ile reddedilmesi) Android'deki birebir analoğu. Çözüm iOS'takiyle aynı desen: `min_version`'a geçiş.
 
-- **Migration:** `supabase/migrations/20260820090000_android_runtime_gates_min_version_rollout.sql` — altı kapıyı `rollout_mode: min_version`, `min_android_version_code: 2`'ye çeviriyor. Eşik 2 seçildi çünkü versionCode 1 sadece Play App Signing'i etkinleştirmek için kullanılan tek seferlik yüklemeydi, bugünkü davranışı bozmuyor.
+- **Migration:** `supabase/migrations/20260819235131_android_runtime_gates_min_version_rollout.sql` — altı kapıyı `rollout_mode: min_version`, `min_android_version_code: 2`'ye çeviriyor. Eşik 2 seçildi çünkü versionCode 1 sadece Play App Signing'i etkinleştirmek için kullanılan tek seferlik yüklemeydi, bugünkü davranışı bozmuyor.
 - `enabled_android_version_codes` alanı **silinmedi** — min_version modunda okunmuyor ama geri dönüş gerekirse yerinde duruyor.
 - Fail-closed doğrulama: migration, her kapının mevcut modu beklenmedikse veya kill_switch açıksa exception fırlatıp hiçbir şeye dokunmuyor.
 
@@ -88,7 +88,7 @@ Bu, iOS'ta build 81'de yaşanan aynı tuzağın (allowlist listesi güncellenmed
 
 1. **`deno fmt --check` fail** — `supabase/functions/analyze/localization_phase6_static_test.ts` içinde eski bir format bozukluğu (Android işiyle ilgisi yok, önceki bir commit'ten kalma borç). Fix: `deno fmt` ile düzeltildi, mantık değişmedi. Commit `3e92820c`.
 
-2. **`supabase db start` fail (migration replay edilemiyor)** — `20260819170000_localization_flags_min_build_80_public_rollout.sql` migration'ı prod'da zaten uygulanmıştı (13 lokalizasyon bayrağını `allowlist`'ten `min_build`'e taşıyor), ama migration'ın kendisi taze bir ortamda (`off` durumunda başlayan) flag'leri "beklenmedik rollout mode" diye reddediyordu. Prod'da manuel olarak `allowlist`'e çekilmiş bir gözden geçirme kohortu vardı, migration zincirinde değil — bu yüzden CI'ın `supabase db start` fresh replay'i hiç geçmiyordu, önceden kimse bunu uçtan uca test etmemişti. **Fix:** migration'ın kendi emsalini izleyerek (`20260802214159_allow_build_81_release_features.sql`'deki aynı desen) `off` durumunu meşru bir taze-ortam durumu sayıp dokunmadan geçecek şekilde güncellendi. Commit `df320c1a`.
+2. **`supabase db start` fail (migration replay edilemiyor)** — `20260819151929_localization_flags_min_build_80_public_rollout.sql` migration'ı prod'da zaten uygulanmıştı (13 lokalizasyon bayrağını `allowlist`'ten `min_build`'e taşıyor), ama migration'ın kendisi taze bir ortamda (`off` durumunda başlayan) flag'leri "beklenmedik rollout mode" diye reddediyordu. Prod'da manuel olarak `allowlist`'e çekilmiş bir gözden geçirme kohortu vardı, migration zincirinde değil — bu yüzden CI'ın `supabase db start` fresh replay'i hiç geçmiyordu, önceden kimse bunu uçtan uca test etmemişti. **Fix:** migration'ın kendi emsalini izleyerek (`20260802214159_allow_build_81_release_features.sql`'deki aynı desen) `off` durumunu meşru bir taze-ortam durumu sayıp dokunmadan geçecek şekilde güncellendi. Commit `df320c1a`.
 
 3. **pgTAP test fail** — yukarıdaki migration'ı düzeltip fresh replay yapınca ortaya çıktı: `supabase/tests/android_feature_flag_kill_switches_test.sql` hâlâ eski `version_allowlist [2,3,4,5]` şeklini bekliyordu, min_version geçişiyle güncellenmemişti. Assertion `min_version` / floor 2'ye güncellendi. Aynı commit `df320c1a`. **575/575 pgTAP testi lokal fresh replay ile doğrulandı, sonra CI'da tekrar doğrulandı.**
 
@@ -99,7 +99,7 @@ Bu üçü de Android sürümüyle doğrudan ilgili değildi — release pipeline
 - Workflow `expected_version_code=6` ile tetiklendi, signed AAB üretildi (bundletool validate, JAR imza, 16KB/ELF, secret/PII taramaları geçti).
 - AAB indirilip kullanıcıya teslim edildi; **Play Console'a manuel olarak kullanıcı tarafından yüklendi** (repoda Play Developer API/fastlane entegrasyonu yok — bu adım hâlâ tamamen manuel, otomatikleştirilmedi).
 - Release notes format sorunu çözüldü: Play Console'un çoklu-dil kutusu `<dil-kodu>...</dil-kodu>` (açı ayraç) formatı bekliyor ama bu uygulamanın Play Store kaydında **tr-TR bir mağaza dili olarak tanımlı değil** — sadece `en-us` kabul edildi. **Açık nokta:** Türkçe mağaza dili Android'e hiç eklenmemiş, iOS'ta var. İstenirse ayrı bir Play Console adımı.
-- `android_release_policy` feature flag'i güncellendi: `latest_build 5→6`, `policy_version "closed-test-1.5.3-vc5"→"closed-test-1.6.0-vc6"`. Migration: `supabase/migrations/20260820101141_publish_android_build_6_release_policy.sql`, iOS'taki `publish_ios_build_81_release_policy.sql` deseniyle aynı (fail-closed rollback guard var). Commit `d4ba6d79`.
+- `android_release_policy` feature flag'i güncellendi: `latest_build 5→6`, `policy_version "closed-test-1.5.3-vc5"→"closed-test-1.6.0-vc6"`. Migration: `supabase/migrations/20260820101244_publish_android_build_6_release_policy.sql`, iOS'taki `publish_ios_build_81_release_policy.sql` deseniyle aynı (fail-closed rollback guard var). Commit `d4ba6d79`.
 
 ### 4e. Açık/manuel doğrulama backlog'u
 
@@ -138,9 +138,9 @@ Kullanıcı bu oturumda birkaç kez açıkça belirtti, her ikisi de hâlâ geç
 | `App/Views/Paywall/Design/PaywallDesignFlowView.swift` | Paket bazlı şerit filtreleme, fiyat metni, comparison emblem'leri |
 | `App/Services/SubscriptionManager.swift` | `monthlyEquivalentPrice` fallback (yıllık/12) |
 | `App/Views/Onboarding/V2/Screens/OBLoadingView.swift` | 896 döküman sayısı, placeholder-format + runtime highlighting |
-| `supabase/migrations/20260819170000_...` | Localization min_build migration'ı replay-safe hale getirildi |
-| `supabase/migrations/20260820090000_...` | Android 6 kapı: version_allowlist → min_version |
-| `supabase/migrations/20260820101141_...` | android_release_policy → build 6 |
+| `supabase/migrations/20260819151929_...` | Localization min_build migration'ı replay-safe hale getirildi |
+| `supabase/migrations/20260819235131_...` | Android 6 kapı: version_allowlist → min_version |
+| `supabase/migrations/20260820101244_...` | android_release_policy → build 6 |
 | `.github/workflows/android-release-candidate.yml` | Pinned versiyon koordinatları güncellendi; ilk kez uçtan uca çalıştırıldı, 3 ayrı borç bulundu/düzeltildi |
 | `android/app/build.gradle.kts` | versionCode 6, versionName 1.6.0 |
 | `supabase/tests/android_feature_flag_kill_switches_test.sql` | min_version'a göre güncellendi |
@@ -155,12 +155,12 @@ Kullanıcı bu oturumda birkaç kez açıkça belirtti, her ikisi de hâlâ geç
 `android-release-candidate` workflow'u `expected_version_code=6` ile çalıştırıldı. **İlk kez uçtan uca çalıştırıldığı için üç ayrı gizli borç ortaya çıktı**, üçü de Android sürümüyle ilgisizdi:
 
 1. `deno fmt --check` — `localization_phase6_static_test.ts` biçim bozukluğu. Commit `3e92820c`.
-2. `supabase db start` — `20260819170000` migration'ı prod'da uygulanmıştı ama **taze bir ortamda replay edilemiyordu**: prod'da flag'ler operasyonel olarak `allowlist`'e çekilmişti, migration zincirinde değil, dolayısıyla temiz replay `off` durumunu "beklenmedik rollout mode" diye reddediyordu. `20260802214159`'daki emsal izlenerek `off` meşru taze-ortam durumu sayıldı. Commit `df320c1a`.
+2. `supabase db start` — `20260819151929` migration'ı prod'da uygulanmıştı ama **taze bir ortamda replay edilemiyordu**: prod'da flag'ler operasyonel olarak `allowlist`'e çekilmişti, migration zincirinde değil, dolayısıyla temiz replay `off` durumunu "beklenmedik rollout mode" diye reddediyordu. `20260802214159`'daki emsal izlenerek `off` meşru taze-ortam durumu sayıldı. Commit `df320c1a`.
 3. Aynı replay pgTAP'te ikinci bir bayatlık gösterdi: kill-switch testi hâlâ `version_allowlist [2,3,4,5]` bekliyordu. Aynı commit.
 
 **Codex için ders:** bu workflow yeni test edildiği için başka gizli kırıklar çıkabilir. Ayrıca prod'da elle yapılan flag değişiklikleri migration zincirini replay edilemez hale getiriyor — bu desen tekrar edebilir.
 
-AAB üretildi, imza doğrulandı, **Play Console'a elle yüklendi ve yayınlandı** (repoda Play publish otomasyonu yok). `android_release_policy` güncellendi: `latest_build 5→6`, `policy_version closed-test-1.6.0-vc6`. Migration `20260820101141`, commit `d4ba6d79`.
+AAB üretildi, imza doğrulandı, **Play Console'a elle yüklendi ve yayınlandı** (repoda Play publish otomasyonu yok). `android_release_policy` güncellendi: `latest_build 5→6`, `policy_version closed-test-1.6.0-vc6`. Migration `20260820101244`, commit `d4ba6d79`.
 
 Release notes formatı: Play Console çoklu-dil kutusu `<dil-kodu>…</dil-kodu>` bekliyor; **tr-TR bu uygulamanın Play mağaza kaydında tanımlı değil**, sadece `en-us` kabul edildi.
 

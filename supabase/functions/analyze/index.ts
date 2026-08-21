@@ -43,7 +43,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 import {
   areLikelyDuplicateCoverageFindings,
+  COVERAGE_QUALITY_POLICY_VERSION,
   coverageFindingKey,
+  type CoverageQualityEvaluation,
+  type CoverageQualityNoAdditionalReasonCode,
+  evaluateCoverageQualityRecords,
+  normalizeCoverageQualityNoAdditionalReasonCode,
   normalizedTextTokens,
   preferredCoverageFinding,
   tokenOverlapRatio,
@@ -162,6 +167,8 @@ const MULTI_PHOTO_TARGET_MAX = 13;
 const PHOTO_TARGET_TOTAL_MAX = 65;
 const MAIN_AI_TIMEOUT_MS = 120_000;
 const REPAIR_AI_TIMEOUT_MS = 45_000;
+const COVERAGE_QUALITY_REPAIR_TIMEOUT_MS = 40_000;
+const COVERAGE_QUALITY_REPAIR_DEADLINE_MS = 60_000;
 const ANALYSIS_PIPELINE_V2_FLAG_KEY = "analysis_pipeline_v2";
 const ANALYSIS_AMBIGUOUS_DISPATCH_GUARD_FLAG_KEY =
   "analysis_ambiguous_dispatch_guard";
@@ -170,6 +177,9 @@ const MULTI_PHOTO_EXACT_COVERAGE_SCHEMA_FLAG_KEY =
 const AI_OUTPUT_CERTAINTY_POLICY_V2_FLAG_KEY = "ai_output_certainty_policy_v2";
 const AI_OUTPUT_DETERMINISTIC_FALLBACK_V1_FLAG_KEY =
   "ai_output_deterministic_fallback_v1";
+const AI_FINDING_COVERAGE_QUALITY_V2_FLAG_KEY =
+  "ai_finding_coverage_quality_v2";
+const COVERAGE_QUALITY_REPAIR_KIND = "coverage_quality_v2";
 
 type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
@@ -318,6 +328,7 @@ type AnalysisFindingPolicy = {
   layerAuditEnabled?: boolean;
   compactLayerSchemaEnabled?: boolean;
   evidenceGuardEnabled?: boolean;
+  coverageQualityV2Enabled?: boolean;
 };
 
 type MultiPhotoCoveragePolicy = {
@@ -347,6 +358,9 @@ type AIRequestOptions = {
   apiKeyAlias?: string;
   fetchImpl?: typeof fetch;
   thinkingBudget?: number;
+  coverageQualityV2?: boolean;
+  requestTimeoutMs?: number;
+  maxProviderRequests?: number;
 };
 
 type NormalizedPhotoFindingCoverage = {
@@ -362,6 +376,7 @@ type NormalizedPhotoFindingCoverage = {
   scene_elements: string[];
   inspection_layers: NormalizedInspectionLayer[];
   coverage_conclusion: string;
+  no_additional_reason_code: CoverageQualityNoAdditionalReasonCode | null;
   layer_audit: {
     missing_layer_keys: InspectionLayerKey[];
     duplicate_layer_keys: InspectionLayerKey[];
@@ -404,7 +419,7 @@ type OnboardingContext = {
 
 const PROMPT_VERSION = "isg-photo-policy-v2026-07-single-multi-targets";
 const PERSONALIZATION_VERSION = "onboarding-v1";
-const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v1";
+const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v2";
 // localization-inventory: machine-prompt-begin
 const ATOMIC_FINDING_PROMPT_TR =
   "Her bulgu yalnızca bağımsız olarak düzeltilebilen tek bir fiziksel tehlikeyi anlatsın. Yalnız aynı fiziksel tehlike, aynı görsel kanıt, aynı anlık düzeltici önlem ve aynı önleyici kontrol söz konusuysa tek bulguda birleştir. Ortak kategori, denetim katmanı veya benzer kök neden tek başına birleştirme gerekçesi değildir. Örneğin korkuluk eksikliği ile sabitlenmemiş merdiven aynı yüksekte çalışma katmanında olsa da ayrı fiziksel tehlikelerdir ve ayrı bulgu olmalıdır.";
@@ -416,6 +431,12 @@ const ATOMIC_FINDING_EVIDENCE_SCHEMA_DESCRIPTION =
   "Visible evidence for that one physical hazard only; distinct physical conditions require separate findings.";
 const ATOMIC_FINDING_ACTION_SCHEMA_DESCRIPTION =
   "The immediate corrective action for that one physical hazard only.";
+const COVERAGE_QUALITY_CANDIDATE_SCHEMA_DESCRIPTION =
+  "Count distinct independently correctable physical conditions after deduplication; never count categories, inspection layers or consequences.";
+const COVERAGE_QUALITY_PROMPT_TR =
+  "candidate_findings_count yalnız tekrarlar ayıklandıktan sonraki bağımsız düzeltilebilir fiziksel koşulların sayısıdır; kategori, katman veya sonuç sayısı değildir. Ayrı görsel kanıt ve ayrı müdahale gerektiren kontrolsüz atık ile yanmış-kuru alanı; uygunsuz korozyonlu kilitleme bağlantısı ile dışarı uzanan keskin tel ucunu ayrı değerlendir. Aynı fiziksel kaynak ve aynı düzeltme birden fazla katmanı etkiliyorsa tek bulgu bırak.";
+const COVERAGE_QUALITY_PROMPT_EN =
+  "candidate_findings_count is the number of distinct independently correctable physical conditions after deduplication, never the number of categories, layers or consequences. Treat uncontrolled waste separately from a burned or dry fire-spread area when they have different evidence and controls; treat an improper corroded locking connection separately from a protruding sharp wire end. Keep one finding when the same physical source and same correction merely affect multiple layers.";
 // localization-inventory: machine-prompt-end
 const BUSINESS_TIME_ZONE = "Europe/Istanbul";
 
@@ -1837,6 +1858,7 @@ function sanitizeCoverageFinding(
   rawFinding: unknown,
   photoIndex: number,
   photoCount: number,
+  strictSourcePhotoIndices = false,
 ): Record<string, unknown> | null {
   if (!rawFinding || typeof rawFinding !== "object") return null;
   const sanitized = sanitizePhotoHazardTextFields(
@@ -1846,6 +1868,14 @@ function sanitizeCoverageFinding(
     sanitized.source_photo_indices,
     photoCount,
   ).filter((index) => index === photoIndex);
+  if (
+    strictSourcePhotoIndices &&
+    (sourcePhotoIndices.length !== 1 ||
+      !Array.isArray(sanitized.source_photo_indices) ||
+      sanitized.source_photo_indices.length !== 1)
+  ) {
+    return null;
+  }
   const effectiveSourcePhotoIndices = sourcePhotoIndices.length > 0
     ? sourcePhotoIndices
     : [photoIndex];
@@ -1950,6 +1980,8 @@ function mergeDuplicateCoverageRecord(
       incoming.coverage_conclusion.length > base.coverage_conclusion.length
         ? incoming.coverage_conclusion
         : base.coverage_conclusion,
+    no_additional_reason_code: incoming.no_additional_reason_code ??
+      base.no_additional_reason_code,
     layer_audit: {
       missing_layer_keys: INSPECTION_LAYER_KEYS.filter((key) =>
         !layersByKey.has(key)
@@ -1982,6 +2014,10 @@ function mergeDuplicateCoverageRecord(
 function normalizePhotoFindingCoverage(
   rawPhotoFindings: unknown,
   policy: MultiPhotoCoveragePolicy,
+  options: {
+    strictSourcePhotoIndices?: boolean;
+    candidateSemanticsV2?: boolean;
+  } = {},
 ): NormalizedPhotoFindingCoverage[] | null {
   if (!Array.isArray(rawPhotoFindings)) return null;
   const recordsByPhoto = new Map<number, NormalizedPhotoFindingCoverage>();
@@ -1998,7 +2034,12 @@ function normalizePhotoFindingCoverage(
     }
     const rawFindings = (Array.isArray(record.findings) ? record.findings : [])
       .map((finding) =>
-        sanitizeCoverageFinding(finding, photoIndex, policy.photoCount)
+        sanitizeCoverageFinding(
+          finding,
+          photoIndex,
+          policy.photoCount,
+          options.strictSourcePhotoIndices === true,
+        )
       )
       .filter((finding): finding is Record<string, unknown> =>
         finding !== null
@@ -2017,11 +2058,14 @@ function normalizePhotoFindingCoverage(
       inspection.layers,
       policy,
     );
-    const candidateCount = Math.max(
-      rawFindings.length,
-      Math.round(Number(record.candidate_findings_count ?? findings.length)),
-      effectiveTargetMin,
+    const parsedCandidateCount = Math.max(
+      0,
+      Math.round(Number(record.candidate_findings_count ?? findings.length)) ||
+        0,
     );
+    const candidateCount = options.candidateSemanticsV2 === true
+      ? Math.max(rawFindings.length, parsedCandidateCount)
+      : Math.max(rawFindings.length, parsedCandidateCount, effectiveTargetMin);
     const status = normalizeCoverageStatus(
       record.coverage_status,
       findings.length,
@@ -2062,6 +2106,9 @@ function normalizePhotoFindingCoverage(
       coverage_conclusion: stripPhotoMarkerReferences(
         record.coverage_conclusion,
       ).slice(0, 500),
+      no_additional_reason_code: normalizeCoverageQualityNoAdditionalReasonCode(
+        record.no_additional_reason_code,
+      ),
       layer_audit: {
         missing_layer_keys: inspection.missing,
         duplicate_layer_keys: inspection.duplicates,
@@ -2110,6 +2157,7 @@ function normalizePhotoFindingCoverage(
       scene_elements: [],
       inspection_layers: [],
       coverage_conclusion: "",
+      no_additional_reason_code: null,
       layer_audit: {
         missing_layer_keys: [...INSPECTION_LAYER_KEYS],
         duplicate_layer_keys: [],
@@ -2364,46 +2412,125 @@ function mergeCoverageRepairRecords(
   baseRecords: NormalizedPhotoFindingCoverage[],
   repairRecords: NormalizedPhotoFindingCoverage[],
   policy: MultiPhotoCoveragePolicy,
-): void {
+  options: {
+    coverageQualityV2: boolean;
+    outputLanguage: "tr" | "en";
+  } = { coverageQualityV2: false, outputLanguage: "tr" },
+): {
+  addedCount: number;
+  duplicateRejectedCount: number;
+  unsupportedRejectedCount: number;
+  noAdditionalReasonCode: CoverageQualityNoAdditionalReasonCode | null;
+  noAdditionalReason: string | null;
+} {
+  let addedCount = 0;
+  let duplicateRejectedCount = 0;
+  let unsupportedRejectedCount = 0;
+  let noAdditionalReasonCode: CoverageQualityNoAdditionalReasonCode | null =
+    null;
+  let remainingTotalBudget = Math.max(
+    0,
+    policy.totalMax -
+      baseRecords.reduce((total, record) => total + record.findings.length, 0),
+  );
+  const qualityComparisonFindings = baseRecords.flatMap((record) =>
+    record.findings
+  );
   const baseByPhoto = new Map(
     baseRecords.map((record) => [record.photo_index, record]),
   );
   for (const repair of repairRecords) {
     const base = baseByPhoto.get(repair.photo_index);
     if (!base) continue;
-    if (repair.scene_summary) base.scene_summary = repair.scene_summary;
-    base.highest_risk_level = repair.highest_risk_level ??
-      base.highest_risk_level;
-    base.ai_confidence = repair.ai_confidence ?? base.ai_confidence;
-    if (
-      repair.coverage_status !== "no_actionable_hazard" ||
-      base.record_missing
-    ) {
-      base.coverage_status = repair.coverage_status;
+    if (!options.coverageQualityV2) {
+      if (repair.scene_summary) base.scene_summary = repair.scene_summary;
+      base.highest_risk_level = repair.highest_risk_level ??
+        base.highest_risk_level;
+      base.ai_confidence = repair.ai_confidence ?? base.ai_confidence;
+      if (
+        repair.coverage_status !== "no_actionable_hazard" ||
+        base.record_missing
+      ) {
+        base.coverage_status = repair.coverage_status;
+      }
+      base.record_missing = false;
     }
-    base.record_missing = false;
-    for (const finding of repair.findings) {
-      if (base.findings.length >= policy.targetMax) break;
+    noAdditionalReasonCode = repair.no_additional_reason_code ??
+      noAdditionalReasonCode;
+    const guardedFindings = options.coverageQualityV2
+      ? applyInspectionLayerEvidenceGuard(
+        repair.findings,
+        normalizeInspectionLayers(base.inspection_layers),
+        true,
+      )
+      : null;
+    unsupportedRejectedCount += guardedFindings
+      ? guardedFindings.applied
+        ? guardedFindings.rejected_unlinked_count +
+          guardedFindings.rejected_non_actionable_count
+        : repair.findings.length
+      : 0;
+    const incomingFindings = guardedFindings
+      ? guardedFindings.applied ? guardedFindings.findings : []
+      : repair.findings;
+    for (const finding of incomingFindings) {
+      if (
+        !options.coverageQualityV2 &&
+        base.findings.length >= policy.targetMax
+      ) {
+        break;
+      }
       const key = coverageFindingKey(finding);
-      if (!key) continue;
+      if (!key) {
+        unsupportedRejectedCount += 1;
+        continue;
+      }
+      if (
+        options.coverageQualityV2 &&
+        qualityComparisonFindings.some((existing) =>
+          areMergeableCoverageFindings(existing, finding, policy)
+        )
+      ) {
+        duplicateRejectedCount += 1;
+        continue;
+      }
       const existingIndex = base.findings.findIndex((existing) =>
         areMergeableCoverageFindings(existing, finding, policy)
       );
       if (existingIndex >= 0) {
-        base.findings[existingIndex] = mergeDuplicateCoverageFinding(
-          base.findings[existingIndex],
-          finding,
-          policy.photoCount,
-        );
+        if (options.coverageQualityV2) {
+          duplicateRejectedCount += 1;
+        } else {
+          base.findings[existingIndex] = mergeDuplicateCoverageFinding(
+            base.findings[existingIndex],
+            finding,
+            policy.photoCount,
+          );
+        }
+        continue;
+      }
+      if (
+        options.coverageQualityV2 &&
+        (base.findings.length >= policy.targetMax ||
+          remainingTotalBudget <= 0)
+      ) {
+        unsupportedRejectedCount += 1;
         continue;
       }
       base.findings.push(finding);
+      if (options.coverageQualityV2) {
+        qualityComparisonFindings.push(finding);
+        remainingTotalBudget -= 1;
+      }
+      addedCount += 1;
     }
-    base.candidate_findings_count = Math.max(
-      base.candidate_findings_count,
-      repair.candidate_findings_count,
-      base.findings.length,
-    );
+    if (!options.coverageQualityV2) {
+      base.candidate_findings_count = Math.max(
+        base.candidate_findings_count,
+        repair.candidate_findings_count,
+        base.findings.length,
+      );
+    }
     base.coverage_gap_reason = normalizeCoverageGapReason(
       base.coverage_status,
       repair.coverage_gap_reason ?? base.coverage_gap_reason,
@@ -2412,6 +2539,26 @@ function mergeCoverageRepairRecords(
       false,
     );
   }
+  if (options.coverageQualityV2) {
+    if (addedCount > 0) {
+      noAdditionalReasonCode = null;
+    } else if (!noAdditionalReasonCode) {
+      noAdditionalReasonCode = "insufficient_visual_evidence";
+    }
+  }
+  const noAdditionalReason = noAdditionalReasonCode
+    ? coverageQualityReasonText(
+      noAdditionalReasonCode,
+      options.outputLanguage,
+    )
+    : null;
+  return {
+    addedCount,
+    duplicateRejectedCount,
+    unsupportedRejectedCount,
+    noAdditionalReasonCode,
+    noAdditionalReason,
+  };
 }
 
 function coverageRepairCandidates(
@@ -2450,27 +2597,69 @@ function normalizeRepairPhotoIndices(
   ].sort((a, b) => a - b);
 }
 
+function coverageQualityReasonText(
+  code: CoverageQualityNoAdditionalReasonCode,
+  outputLanguage: "tr" | "en",
+): string {
+  switch (code) {
+    case "insufficient_visual_evidence":
+      return userFacingCopy(
+        "analysisQualityInsufficientVisualEvidence",
+        outputLanguage,
+      );
+    case "existing_findings_cover_scene":
+      return userFacingCopy(
+        "analysisQualityExistingFindingsCoverScene",
+        outputLanguage,
+      );
+    case "no_distinct_additional_hazard":
+    default:
+      return userFacingCopy(
+        "analysisQualityNoDistinctAdditionalHazard",
+        outputLanguage,
+      );
+  }
+}
+
 function buildCoverageRepairContext(
   baseContext: string,
   policy: MultiPhotoCoveragePolicy,
   records: NormalizedPhotoFindingCoverage[],
   photoIndices: number[],
+  outputLanguage: "tr" | "en",
+  coverageQualityV2: boolean,
 ): string {
-  const existingFindings = records
+  const reviewData = records
     .filter((record) => photoIndices.includes(record.photo_index))
-    .map((record) => {
-      const lines = record.findings
-        .map((finding, index) =>
-          `${index + 1}. ${safeText(finding.title)} | ${
-            safeText(finding.observed_evidence)
-          } | ${safeText(finding.corrective_action)}`
-        )
-        .join("\n");
-      return `Foto ${record.photo_index}: mevcut ${record.findings.length} bulgu\n${
-        lines || "Mevcut bulgu yok."
-      }`;
-    })
-    .join("\n\n");
+    .map((record) => ({
+      photo_index: record.photo_index,
+      scene_elements: record.scene_elements,
+      inspection_layers: record.inspection_layers,
+      initial_candidate_findings_count: record.candidate_findings_count,
+      existing_findings: record.findings.map((finding) => ({
+        title: finding.title,
+        observed_evidence: finding.observed_evidence,
+        root_cause: finding.root_cause,
+        corrective_action: finding.corrective_action,
+        preventive_control: finding.preventive_control,
+        inspection_layer_keys: finding.inspection_layer_keys,
+      })),
+    }));
+  const serializedReviewData = serializeUntrustedPromptValue(reviewData);
+  if (coverageQualityV2) {
+    const instruction = outputLanguage === "en"
+      ? `Review only ${
+        photoIndices.map((index) => `PHOTO_${index}`).join(", ")
+      }. Return only missing, distinct and visually supported physical hazards. Existing findings and the prior 12-layer audit are immutable authority: do not rewrite, remove, move or repeat them, and do not change prior layer statuses. A new finding requires separate visual evidence and an independently applicable correction or preventive control. A shared category, layer or consequence is not enough to merge separate conditions. Do not invent a minimum count. Every new finding must use only the requested photo index and at least one inspection_layer_key whose prior status is actionable or uncertain. If all linked layers are uncertain, set needs_field_verification=true and confidence at or below 0.69. Never create a finding from not_visible or checked_no_hazard. When findings is empty, set no_additional_reason_code to exactly one of no_distinct_additional_hazard, insufficient_visual_evidence or existing_findings_cover_scene. Return only requested photo_findings records.`
+      : `Yalnız ${
+        photoIndices.map((index) => `FOTO_${index}`).join(", ")
+      } için inceleme yap. Sadece eksik, ayrı ve görsel olarak desteklenen fiziksel tehlikeleri döndür. Mevcut bulgular ile önceki 12 katman denetimi değişmez otoritedir: bunları yeniden yazma, silme, taşıma, tekrar etme veya katman durumlarını değiştirme. Yeni bulgu ayrı görsel kanıt ve bağımsız uygulanabilir düzeltme ya da önleyici kontrol gerektirir. Ortak kategori, katman veya sonuç ayrı koşulları birleştirmek için yeterli değildir. Sayısal minimum uydurma. Her yeni bulgu yalnız istenen fotoğraf indeksini ve önceki durumu actionable veya uncertain olan en az bir inspection_layer_key değerini kullanmalı. Tüm bağlı katmanlar uncertain ise needs_field_verification=true ve confidence en fazla 0.69 olmalı. not_visible veya checked_no_hazard katmanından bulgu üretme. findings boşsa no_additional_reason_code alanını no_distinct_additional_hazard, insufficient_visual_evidence veya existing_findings_cover_scene değerlerinden tam biri yap. Yalnız istenen photo_findings kayıtlarını döndür.`;
+    return `${baseContext}
+<coverage_quality_review policy_version="${COVERAGE_QUALITY_POLICY_VERSION}">
+${instruction}
+<untrusted_review_data>${serializedReviewData}</untrusted_review_data>
+</coverage_quality_review>`;
+  }
 
   return `${baseContext}
 <coverage_repair_pass>
@@ -2482,7 +2671,7 @@ Her bulgu bağımsız olarak düzeltilebilen tek bir fiziksel tehlikeyi anlatsı
 Temiz, ilgisiz veya düşük kaliteli fotoğrafta risk uydurma; coverage_status değerini "no_actionable_hazard" veya "low_quality" yap ve coverage_gap_reason yaz.
 Yanıtı yine photo_findings[] formatında üret; sadece istenen fotoğraf indekslerini döndür.
 <mevcut_bulgular>
-${existingFindings}
+${serializedReviewData}
 </mevcut_bulgular>
 </coverage_repair_pass>`;
 }
@@ -2514,6 +2703,27 @@ function buildPhotoSummariesFromCoverage(
   }));
 }
 
+function coverageRecordForPersistence(
+  record: NormalizedPhotoFindingCoverage,
+): Record<string, unknown> {
+  return {
+    photo_index: record.photo_index,
+    coverage_status: record.coverage_status,
+    scene_summary: record.scene_summary,
+    candidate_findings_count: record.candidate_findings_count,
+    coverage_gap_reason: record.coverage_gap_reason,
+    highest_risk_level: record.highest_risk_level,
+    ai_confidence: record.ai_confidence,
+    scene_elements: record.scene_elements,
+    inspection_layers: record.inspection_layers,
+    coverage_conclusion: record.coverage_conclusion,
+    findings: record.findings,
+    ...(record.no_additional_reason_code
+      ? { no_additional_reason_code: record.no_additional_reason_code }
+      : {}),
+  };
+}
+
 function responseSchema(
   tier: PlanTier,
   coveragePolicy?: MultiPhotoCoveragePolicy | null,
@@ -2523,6 +2733,8 @@ function responseSchema(
     options.allowStructuredReferences !== false;
   const layerAuditEnabled = options.layerAuditEnabled === true &&
     options.isRepairPass !== true;
+  const findingLayerKeysEnabled = layerAuditEnabled ||
+    options.coverageQualityV2 === true && options.isRepairPass === true;
   const compactLayerSchemaEnabled = layerAuditEnabled &&
     coveragePolicy?.compactLayerSchemaEnabled === true;
   const exactCoverage = exactCoverageSchemaConstraints({
@@ -2573,7 +2785,7 @@ function responseSchema(
   if (includesPaidFields) {
     hazardProperties.references = { type: "STRING" };
   }
-  if (layerAuditEnabled) {
+  if (findingLayerKeysEnabled) {
     hazardProperties.inspection_layer_keys = {
       type: "ARRAY",
       minItems: 1,
@@ -2598,7 +2810,7 @@ function responseSchema(
     "m5_probability",
     "m5_severity",
     ...(includesPaidFields ? ["references"] : []),
-    ...(layerAuditEnabled ? ["inspection_layer_keys"] : []),
+    ...(findingLayerKeysEnabled ? ["inspection_layer_keys"] : []),
   ];
   const hazardSchema = {
     type: "OBJECT",
@@ -2620,7 +2832,7 @@ function responseSchema(
       "m5_probability",
       "m5_severity",
       ...(includesPaidFields ? ["references"] : []),
-      ...(layerAuditEnabled ? ["inspection_layer_keys"] : []),
+      ...(findingLayerKeysEnabled ? ["inspection_layer_keys"] : []),
       "source_photo_indices",
       "per_photo_observations",
     ],
@@ -2649,7 +2861,27 @@ function responseSchema(
               },
               coverage_status: { type: "STRING" },
               scene_summary: { type: "STRING" },
-              candidate_findings_count: { type: "INTEGER" },
+              candidate_findings_count: {
+                type: "INTEGER",
+                ...(options.coverageQualityV2 === true
+                  ? {
+                    description: COVERAGE_QUALITY_CANDIDATE_SCHEMA_DESCRIPTION,
+                  }
+                  : {}),
+              },
+              ...(options.coverageQualityV2 === true &&
+                  options.isRepairPass === true
+                ? {
+                  no_additional_reason_code: {
+                    type: "STRING",
+                    enum: [
+                      "no_distinct_additional_hazard",
+                      "insufficient_visual_evidence",
+                      "existing_findings_cover_scene",
+                    ],
+                  },
+                }
+                : {}),
               coverage_gap_reason: { type: "STRING" },
               highest_risk_level: { type: "STRING" },
               ai_confidence: { type: "NUMBER" },
@@ -2799,6 +3031,8 @@ function groqResponseSchemaInstruction(
     : "kısa saha diliyle kök neden";
   const layerAuditEnabled = options.layerAuditEnabled === true &&
     options.isRepairPass !== true;
+  const findingLayerKeysEnabled = layerAuditEnabled ||
+    options.coverageQualityV2 === true && options.isRepairPass === true;
   const compactLayerSchemaEnabled = layerAuditEnabled &&
     coveragePolicy?.compactLayerSchemaEnabled === true;
   const expectedPhotoIndices = [
@@ -2825,10 +3059,19 @@ ${inspectionLayerExamples}
       ],
       "coverage_conclusion": "12 katman sonunda bu bulgu sayısına neden ulaşıldığının kısa özeti",`
     : "";
-  const layerAuditFindingField = layerAuditEnabled
+  const layerAuditFindingField = findingLayerKeysEnabled
     ? `,
           "inspection_layer_keys": ["ground_housekeeping"]`
     : "";
+  const qualityReasonLine = "";
+  // localization-inventory: machine-prompt-begin
+  const qualityReasonInstruction = options.coverageQualityV2 === true &&
+      options.isRepairPass === true
+    ? outputLanguage === "en"
+      ? "\nWhen a photo_findings record has an empty findings array, include no_additional_reason_code with exactly one allowed enum value."
+      : "\nBir photo_findings kaydının findings dizisi boşsa no_additional_reason_code alanına izinli enum değerlerinden tam birini yaz."
+    : "";
+  // localization-inventory: machine-prompt-end
   const photoSummariesExample = compactLayerSchemaEnabled ? "" : `,
   "photo_summaries": [
     {
@@ -2850,7 +3093,7 @@ ${inspectionLayerExamples}
       "coverage_status": "actionable",
       "scene_summary": "fotoğraftaki sahnenin kısa özeti",
       "candidate_findings_count": ${coveragePolicy.targetMin},
-      "coverage_gap_reason": "",
+${qualityReasonLine}      "coverage_gap_reason": "",
       "highest_risk_level": "high",
       "ai_confidence": 0.7,
 ${layerAuditPhotoFields}
@@ -2893,7 +3136,7 @@ inspection_layers her fotoğraf için TAM 12 kayıt içermeli; her layer_key tam
       outputLanguage === "en"
         ? `\n${ATOMIC_FINDING_PROMPT_EN}`
         : `\n${ATOMIC_FINDING_PROMPT_TR}`
-    }${exactCoverageInstruction}`;
+    }${qualityReasonInstruction}${exactCoverageInstruction}`;
   }
   return `Aşağıdaki JSON yapısına birebir uy. Markdown, açıklama veya kod bloğu ekleme:
 {
@@ -3249,7 +3492,9 @@ function buildSubscriptionContext(
     ? findingPolicy.coverageV2Enabled
       ? `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Çıktıyı photo_findings[] formatında fotoğraf bazlı üret. Her fotoğraf için coverage_status alanını "actionable", "no_actionable_hazard" veya "low_quality" olarak yaz. ${
         layerAuditPromptRule(findingPolicy)
-      }Aksiyonlanabilir risk kanıtı olan her fotoğrafta yalnız kanıta dayalı ve duplicate olmayan bulguları üret; fotoğraf başına üst sınır ${findingPolicy.targetFindingsPerPhotoMax}, toplam final bulgu üst sınırı ${findingPolicy.maxFindingsTotal}. Temiz, ilgisiz, çok bulanık veya risk kanıtı zayıf fotoğrafta bulgu uydurma; listeyi doldurmak için aynı tehlikeyi farklı başlıklarla tekrar yazma; coverage_gap_reason alanında neden düşük kaldığını açıkla. Birleştirmeyi yalnız tek ve aynı fiziksel tehlikenin tekrarına uygula: görsel kanıt, anlık düzeltici önlem ve önleyici kontrol de aynı olmalı. Ortak kategori, inspection_layer_keys veya kök neden tek başına birleştirme gerekçesi değildir. Farklı görsel kanıt, farklı anlık düzeltici önlem, farklı önleyici kontrol veya farklı inspection_layer_keys varsa bulguları ayrı tut; farklı fiziksel tehlikeleri yalnız sayıyı azaltmak için birleştirme. Her bulguda source_photo_indices, per_photo_observations ve fotoğraf özeti alanlarını doldur.`
+      }Aksiyonlanabilir risk kanıtı olan her fotoğrafta yalnız kanıta dayalı ve duplicate olmayan bulguları üret; fotoğraf başına üst sınır ${findingPolicy.targetFindingsPerPhotoMax}, toplam final bulgu üst sınırı ${findingPolicy.maxFindingsTotal}. Temiz, ilgisiz, çok bulanık veya risk kanıtı zayıf fotoğrafta bulgu uydurma; listeyi doldurmak için aynı tehlikeyi farklı başlıklarla tekrar yazma; coverage_gap_reason alanında neden düşük kaldığını açıkla. Birleştirmeyi yalnız tek ve aynı fiziksel tehlikenin tekrarına uygula: görsel kanıt, anlık düzeltici önlem ve önleyici kontrol de aynı olmalı. Ortak kategori, inspection_layer_keys veya kök neden tek başına birleştirme gerekçesi değildir. Farklı görsel kanıt, farklı anlık düzeltici önlem, farklı önleyici kontrol veya farklı inspection_layer_keys varsa bulguları ayrı tut; farklı fiziksel tehlikeleri yalnız sayıyı azaltmak için birleştirme. Her bulguda source_photo_indices, per_photo_observations ve fotoğraf özeti alanlarını doldur. ${
+        findingPolicy.coverageQualityV2Enabled ? COVERAGE_QUALITY_PROMPT_TR : ""
+      }`
       : [
         `Bu analizde ${findingPolicy.photoCount} fotoğraf var. Görseller FOTO_1...FOTO_${findingPolicy.photoCount} marker'larıyla sırayla verilir; source_photo_indices alanında sadece bu marker numaralarını kullan. FOTO_* marker adlarını kullanıcıya gösterilecek hiçbir metin alanında yazma; kullanıcı metinde yalnızca "Foto 1" gibi kaynak etiketini arayüzde görür. Her fotoğraf için photo_summaries içinde ayrı özet üret. Her fotoğraf için 12 katmanlı taramadan çıkan tüm anlamlı bulgu adaylarını yaz; fotoğraf başına en fazla ${findingPolicy.maxFindingsPerPhoto}, toplamda en fazla ${findingPolicy.maxFindingsTotal} final bulgu üret. Kanıt varsa listeyi gereksiz kısaltma: çok fotoğraflı bir analizde tehlike kanıtı güçlü olan her fotoğraftan genellikle birden fazla bulgu beklenir. Risk kanıtı zayıfsa bulgu uydurma. Aynı tehlikeyi yalnız aynı kök neden ve aynı kontrol tedbiri olduğunda birleştir; farklı fotoğraftaki farklı tehlikeleri yalnız sayıyı azaltmak için birleştirme. source_photo_indices ve per_photo_observations alanlarını doldur.`,
         ATOMIC_FINDING_PROMPT_TR,
@@ -3320,6 +3565,9 @@ function buildEnglishSubscriptionContext(
         "For each image set coverage_status to actionable, no_actionable_hazard or low_quality.",
         englishLayerAuditPromptRule(findingPolicy),
         `Return only distinct, evidence-based findings, at most ${findingPolicy.targetFindingsPerPhotoMax} per image and ${findingPolicy.maxFindingsTotal} in total.`,
+        findingPolicy.coverageQualityV2Enabled
+          ? COVERAGE_QUALITY_PROMPT_EN
+          : "",
         "When inspection_layers contains multiple actionable layers, the findings should represent those actionable layers unless the same physical hazard, same visual evidence, same root cause and same control measures genuinely cover them together.",
         "Do not invent findings to fill a quota. If an actionable layer is not represented by a finding, explain the specific reason in coverage_gap_reason and keep user-visible text free of machine markers.",
       ].filter(Boolean).join(" ")
@@ -3679,7 +3927,10 @@ async function callGemini(
   };
 
   // Schema fallbacks do not consume the two legacy MAX_TOKENS retries.
-  const maximumAttempts = isLanguageContractRepair ? 1 : 5;
+  const maximumAttempts = options.maxProviderRequests === 1 ||
+      isLanguageContractRepair
+    ? 1
+    : 5;
   for (let attempt = 0; attempt < maximumAttempts; attempt += 1) {
     const attemptReason = nextAttemptReason;
     const requestOptions = {
@@ -3703,9 +3954,8 @@ async function callGemini(
 
     const startedAt = Date.now();
     let res: Response;
-    const timeoutMs = usesRepairLimits
-      ? REPAIR_AI_TIMEOUT_MS
-      : MAIN_AI_TIMEOUT_MS;
+    const timeoutMs = options.requestTimeoutMs ??
+      (usesRepairLimits ? REPAIR_AI_TIMEOUT_MS : MAIN_AI_TIMEOUT_MS);
     try {
       res = await sendGeminiGenerateContent({
         apiKey,
@@ -4109,7 +4359,8 @@ async function callGroq(
         },
         body: JSON.stringify(body),
       },
-      usesRepairLimits ? REPAIR_AI_TIMEOUT_MS : MAIN_AI_TIMEOUT_MS,
+      options.requestTimeoutMs ??
+        (usesRepairLimits ? REPAIR_AI_TIMEOUT_MS : MAIN_AI_TIMEOUT_MS),
       "Groq",
       options.fetchImpl,
     );
@@ -5736,6 +5987,10 @@ async function enqueueCoverageRepairJob(params: {
     claimToken: string | null;
   };
   intermediateRawResponse: Record<string, unknown>;
+  repairKind: string;
+  coverageQualityPolicyVersion: number | null;
+  qualityRepairEnqueuedAt: string | null;
+  qualityRepairDeadlineAt: string | null;
 }) {
   const queueSnapshotAuthorityEnabled =
     params.body.localization_snapshot_authority === true;
@@ -5751,6 +6006,10 @@ async function enqueueCoverageRepairJob(params: {
     request_id: params.requestID,
     support_id: params.supportID,
     repair_photo_indices: params.repairPhotoIndices,
+    repair_kind: params.repairKind,
+    coverage_quality_policy_version: params.coverageQualityPolicyVersion,
+    quality_repair_enqueued_at: params.qualityRepairEnqueuedAt,
+    quality_repair_deadline_at: params.qualityRepairDeadlineAt,
     photo_base64_parts: [],
     claim_guard_version: Number(params.body.claim_guard_version) === 2 ? 2 : 1,
     coverage_schema_version: params.coverageSchemaVersion,
@@ -6535,6 +6794,23 @@ serve(async (req: Request) => {
     AI_OUTPUT_DETERMINISTIC_FALLBACK_V1_FLAG_KEY,
     1,
   );
+  const coverageQualityFlag = await loadAIOutputPolicyFlag(
+    supabase,
+    user.id,
+    AI_FINDING_COVERAGE_QUALITY_V2_FLAG_KEY,
+    COVERAGE_QUALITY_POLICY_VERSION,
+  );
+  const isCoverageQualityRepair = isWorkerInvocation &&
+    jobMode === "repair" && body.repair_kind === COVERAGE_QUALITY_REPAIR_KIND;
+  const queuedCoverageQualityVersion = Number(
+    body.coverage_quality_policy_version,
+  );
+  const coverageQualityEnabled = isCoverageQualityRepair
+    ? queuedCoverageQualityVersion === COVERAGE_QUALITY_POLICY_VERSION &&
+      !coverageQualityFlag.killSwitch
+    : coverageQualityFlag.enabled;
+  const coverageQualityShadow = jobMode === "analysis" &&
+    coverageQualityFlag.shadow;
   const queuedCoverageSchemaVersion = Number(body.coverage_schema_version) === 2
     ? 2 as const
     : 1 as const;
@@ -7907,12 +8183,43 @@ serve(async (req: Request) => {
       ? normalizePhotoFindingCoverage(
         ownedAnalysis.raw_ai_response?.photo_findings,
         multiPhotoCoveragePolicy,
+        { candidateSemanticsV2: isCoverageQualityRepair },
       )
       : null;
   const previousCoverageAudit = ownedAnalysis.raw_ai_response?._coverage_v2 &&
       typeof ownedAnalysis.raw_ai_response._coverage_v2 === "object"
     ? ownedAnalysis.raw_ai_response._coverage_v2 as Record<string, unknown>
     : null;
+  const previousInputAudit = ownedAnalysis.raw_ai_response?._input_audit &&
+      typeof ownedAnalysis.raw_ai_response._input_audit === "object" &&
+      !Array.isArray(ownedAnalysis.raw_ai_response._input_audit)
+    ? ownedAnalysis.raw_ai_response._input_audit as Record<string, unknown>
+    : null;
+  const priorModelGenerationPassCount = jobMode === "repair"
+    ? Math.max(
+      1,
+      Math.min(
+        3,
+        Math.round(Number(previousInputAudit?.model_generation_pass_count)) ||
+          1,
+      ),
+    )
+    : 0;
+  const priorProviderRequestCount = jobMode === "repair"
+    ? Math.max(
+      0,
+      Math.round(Number(previousInputAudit?.provider_request_count_total)) ||
+        Math.round(Number(previousInputAudit?.provider_request_count)) || 0,
+    )
+    : 0;
+  const coverageQualityDeadlineAt = isCoverageQualityRepair
+    ? Date.parse(safeText(body.quality_repair_deadline_at))
+    : Number.NaN;
+  const coverageQualityEnqueuedAt = isCoverageQualityRepair
+    ? Date.parse(safeText(body.quality_repair_enqueued_at))
+    : Number.NaN;
+  const coverageQualityGenerationBudgetExhausted = isCoverageQualityRepair &&
+    priorModelGenerationPassCount >= 3;
   const analysisFindingPolicy = multiPhotoCoveragePolicy && photoFindingPolicy
     ? {
       ...photoFindingPolicy,
@@ -7928,6 +8235,7 @@ serve(async (req: Request) => {
         multiPhotoCoveragePolicy.compactLayerSchemaEnabled,
       evidenceGuardEnabled: jobMode === "analysis" &&
         multiPhotoCoveragePolicy.evidenceGuardEnabled,
+      coverageQualityV2Enabled: coverageQualityEnabled,
     }
     : photoFindingPolicy;
   const analysisContext = buildAnalysisContext({
@@ -8052,6 +8360,12 @@ serve(async (req: Request) => {
     deterministic_fallback_version: deterministicFallbackFlag.policyVersion,
     deterministic_fallback_enabled: deterministicFallbackFlag.enabled,
     deterministic_fallback_kill_switch: deterministicFallbackFlag.killSwitch,
+    coverage_quality_policy_version: COVERAGE_QUALITY_POLICY_VERSION,
+    coverage_quality_flag_mode: coverageQualityFlag.rolloutMode,
+    coverage_quality_enabled: coverageQualityEnabled,
+    coverage_quality_shadow: coverageQualityShadow,
+    coverage_quality_kill_switch: coverageQualityFlag.killSwitch,
+    candidate_count_semantics_version: coverageQualityEnabled ? 2 : 1,
     layer_audit_enabled: jobMode === "analysis" &&
       (multiPhotoCoveragePolicy?.layerAuditEnabled ?? false),
     compact_layer_schema_enabled: jobMode === "analysis" &&
@@ -8059,9 +8373,51 @@ serve(async (req: Request) => {
     evidence_guard_enabled: jobMode === "analysis" &&
       (multiPhotoCoveragePolicy?.evidenceGuardEnabled ?? false),
     repair_job_used: jobMode === "repair",
+    repair_kind: isCoverageQualityRepair
+      ? COVERAGE_QUALITY_REPAIR_KIND
+      : jobMode === "repair"
+      ? "legacy_coverage"
+      : null,
     repair_photo_indices: jobMode === "repair"
       ? requestedRepairPhotoIndices
       : [],
+    quality_repair_deadline_at: isCoverageQualityRepair
+      ? safeText(body.quality_repair_deadline_at) || null
+      : null,
+    quality_repair_enqueued_at: isCoverageQualityRepair
+      ? safeText(body.quality_repair_enqueued_at) || null
+      : null,
+    quality_repair_queue_delay_ms: isCoverageQualityRepair &&
+        Number.isFinite(coverageQualityEnqueuedAt)
+      ? Math.max(0, startMs - coverageQualityEnqueuedAt)
+      : null,
+    initial_analysis_duration_ms: jobMode === "repair"
+      ? Math.max(
+        0,
+        Math.round(Number(previousInputAudit?.initial_analysis_duration_ms)) ||
+          0,
+      )
+      : null,
+    model_generation_pass_count: priorModelGenerationPassCount,
+    provider_request_count_total: priorProviderRequestCount,
+    coverage_quality_status: coverageQualityShadow
+      ? "not_needed"
+      : isCoverageQualityRepair
+      ? "queued"
+      : "not_needed",
+    coverage_quality_trigger_reasons: jobMode === "repair" &&
+        Array.isArray(previousInputAudit?.coverage_quality_trigger_reasons)
+      ? previousInputAudit.coverage_quality_trigger_reasons
+      : [],
+    quality_repair_enqueued: false,
+    quality_repair_attempted: false,
+    quality_repair_added_count: 0,
+    quality_repair_duplicate_rejected_count: 0,
+    quality_repair_unsupported_rejected_count: 0,
+    quality_repair_no_additional_reason_code: null,
+    quality_repair_failed_open: false,
+    quality_repair_error_class: null,
+    quality_repair_duration_ms: null,
     reference_mode: referenceMode,
     references_requested: planTier !== "free" &&
       localizationSnapshot.structured_regulatory_references_enabled,
@@ -8258,6 +8614,93 @@ serve(async (req: Request) => {
     );
   };
 
+  const callPinnedCoverageQualityRepair = async (params: {
+    context: string;
+    parts: AIImagePart[];
+    coveragePolicy: MultiPhotoCoveragePolicy;
+    timeoutMs: number;
+  }) => {
+    const pinnedProvider = previousInputAudit?.provider === "groq"
+      ? "groq" as const
+      : "gemini" as const;
+    const pinnedModel = safeText(previousInputAudit?.model);
+    const pinnedAlias = safeText(previousInputAudit?.api_key_alias);
+    if (!pinnedModel || !pinnedAlias) {
+      throw new Error("COVERAGE_QUALITY_PINNED_PROVIDER_UNAVAILABLE");
+    }
+    const options: AIRequestOptions = {
+      isRepairPass: true,
+      expectedPhotoIndices: params.parts.map((part) => part.photoIndex),
+      coverageSchemaVersion: effectiveCoverageSchemaVersion,
+      allowStructuredReferences:
+        localizationSnapshot.structured_regulatory_references_enabled,
+      outputLanguage: localizationSnapshot.output_language,
+      providerAttemptTracker,
+      coverageQualityV2: true,
+      providerAttemptReason: "coverage_quality_repair",
+      apiKeyAlias: pinnedAlias,
+      maxProviderRequests: 1,
+      requestTimeoutMs: params.timeoutMs,
+      thinkingBudget: undefined,
+    };
+    if (pinnedProvider === "gemini") {
+      const keyConfig = [...geminiKeys, ...freeFallbackGeminiKeys].find(
+        (item) => item.alias === pinnedAlias,
+      );
+      if (!keyConfig) {
+        throw new Error("COVERAGE_QUALITY_PINNED_PROVIDER_UNAVAILABLE");
+      }
+      const result = await callGemini(
+        keyConfig.key,
+        pinnedModel,
+        systemPrompt,
+        params.context,
+        null,
+        params.parts,
+        keyConfig.pool,
+        providerOutputTier,
+        aiSimulation,
+        params.coveragePolicy,
+        options,
+      );
+      return {
+        ...result,
+        providerUsed: pinnedProvider,
+        modelUsed: pinnedModel,
+        apiKeyAlias: pinnedAlias,
+        attempt: 1,
+        geminiAttemptFailures: [],
+      };
+    }
+
+    const groqKey = [freeGroqKeyConfig(), plusProGroqKeyConfig()].find(
+      (item): item is GroqKeyConfig => item?.alias === pinnedAlias,
+    );
+    if (!groqKey) {
+      throw new Error("COVERAGE_QUALITY_PINNED_PROVIDER_UNAVAILABLE");
+    }
+    const result = await callGroq(
+      groqKey.key,
+      pinnedModel,
+      systemPrompt,
+      params.context,
+      null,
+      params.parts,
+      providerOutputTier,
+      aiSimulation,
+      params.coveragePolicy,
+      options,
+    );
+    return {
+      ...result,
+      providerUsed: pinnedProvider,
+      modelUsed: pinnedModel,
+      apiKeyAlias: pinnedAlias,
+      attempt: 1,
+      fallbackSource: null,
+    };
+  };
+
   const effectiveRepairPhotoIndices = jobMode === "repair" &&
       multiPhotoCoveragePolicy
     ? (requestedRepairPhotoIndices.length > 0
@@ -8274,6 +8717,8 @@ serve(async (req: Request) => {
       multiPhotoCoveragePolicy,
       previousCoverageRecords,
       effectiveRepairPhotoIndices,
+      localizationSnapshot.output_language,
+      isCoverageQualityRepair && coverageQualityEnabled,
     )
     : analysisContext;
   const aiImageParts =
@@ -8299,6 +8744,7 @@ serve(async (req: Request) => {
         localizationSnapshot.structured_regulatory_references_enabled,
       outputLanguage: localizationSnapshot.output_language,
       providerAttemptTracker,
+      coverageQualityV2: isCoverageQualityRepair && coverageQualityEnabled,
     }
     : {
       layerAuditEnabled: multiPhotoCoveragePolicy?.layerAuditEnabled ?? false,
@@ -8310,17 +8756,34 @@ serve(async (req: Request) => {
       outputLanguage: localizationSnapshot.output_language,
       providerAttemptTracker,
       thinkingBudget: configuredThinkingBudget,
+      coverageQualityV2: coverageQualityEnabled,
     };
+  const coverageQualityRemainingMs = Number.isFinite(
+      coverageQualityDeadlineAt,
+    )
+    ? coverageQualityDeadlineAt - Date.now()
+    : 0;
+  const coverageQualityDeadlineExpired = isCoverageQualityRepair &&
+    coverageQualityRemainingMs <= 0;
   const repairFallbackOnly = jobMode === "repair" &&
-    body.coverage_repair_fallback_only === true &&
+    (body.coverage_repair_fallback_only === true ||
+      coverageQualityDeadlineExpired ||
+      coverageQualityGenerationBudgetExhausted ||
+      isCoverageQualityRepair && !coverageQualityEnabled) &&
     ownedAnalysis.raw_ai_response &&
     typeof ownedAnalysis.raw_ai_response === "object";
 
   if (repairFallbackOnly) {
     const fallbackReason = safeLogText(
       String(
-        body.coverage_repair_fallback_reason ??
-          "repair_worker_retries_exhausted",
+        coverageQualityDeadlineExpired
+          ? "coverage_quality_deadline_expired"
+          : coverageQualityGenerationBudgetExhausted
+          ? "coverage_quality_generation_budget_exhausted"
+          : isCoverageQualityRepair && !coverageQualityEnabled
+          ? "coverage_quality_disabled"
+          : body.coverage_repair_fallback_reason ??
+            "repair_worker_retries_exhausted",
       ),
     );
     geminiResult = {
@@ -8335,6 +8798,21 @@ serve(async (req: Request) => {
     inputAudit.coverage_repair_fallback_only = true;
     inputAudit.coverage_repair_error = fallbackReason;
     inputAudit.coverage_repair_failed_but_completed = true;
+    if (isCoverageQualityRepair) {
+      const priorQualityAttemptDispatched = workerAttemptNumber > 1;
+      inputAudit.coverage_quality_status = coverageQualityDeadlineExpired
+        ? "deadline_skipped"
+        : "failed_open";
+      inputAudit.quality_repair_failed_open = true;
+      inputAudit.quality_repair_error_class = fallbackReason;
+      inputAudit.quality_repair_attempted = priorQualityAttemptDispatched;
+      if (priorQualityAttemptDispatched) {
+        inputAudit.model_generation_pass_count = Math.min(
+          3,
+          priorModelGenerationPassCount + 1,
+        );
+      }
+    }
     inputAudit.finish_reason = null;
     inputAudit.json_parse_retry_count = 0;
     inputAudit.thinking_budget = thinkingBudgetFor(true);
@@ -8355,19 +8833,16 @@ serve(async (req: Request) => {
         "string"
       ? ownedAnalysis.language_validation_code
       : null;
-    const previousInputAudit = ownedAnalysis.raw_ai_response &&
-        typeof ownedAnalysis.raw_ai_response === "object"
-      ? (ownedAnalysis.raw_ai_response as Record<string, unknown>)
-        ._input_audit
-      : null;
     if (
       previousInputAudit &&
-      typeof previousInputAudit === "object" &&
-      !Array.isArray(previousInputAudit)
+      typeof previousInputAudit === "object"
     ) {
-      const previousAudit = previousInputAudit as Record<string, unknown>;
+      const previousAudit = previousInputAudit;
       languageContractRepairUsed =
         previousAudit.language_contract_repair_used === true;
+      modelUsed = safeText(previousAudit.model) || modelUsed;
+      providerUsed = previousAudit.provider === "groq" ? "groq" : "gemini";
+      apiKeyAlias = safeText(previousAudit.api_key_alias) || null;
       const previousForbiddenStatus =
         previousAudit.forbidden_claim_validation_status;
       if (
@@ -8380,19 +8855,48 @@ serve(async (req: Request) => {
     }
   } else {
     try {
-      const out = await callAIForAnalysis(
-        aiContext,
-        aiImageParts,
-        multiPhotoCoveragePolicy,
-        aiRequestOptions,
-      );
+      if (isCoverageQualityRepair) {
+        inputAudit.quality_repair_attempted = true;
+        inputAudit.model_generation_pass_count = Math.min(
+          3,
+          priorModelGenerationPassCount + 1,
+        );
+      } else {
+        inputAudit.model_generation_pass_count = 1;
+      }
+      const out = isCoverageQualityRepair && multiPhotoCoveragePolicy
+        ? await callPinnedCoverageQualityRepair({
+          context: aiContext,
+          parts: aiImageParts,
+          coveragePolicy: multiPhotoCoveragePolicy,
+          timeoutMs: Math.max(
+            1,
+            Math.min(
+              COVERAGE_QUALITY_REPAIR_TIMEOUT_MS,
+              coverageQualityRemainingMs,
+            ),
+          ),
+        })
+        : await callAIForAnalysis(
+          aiContext,
+          aiImageParts,
+          multiPhotoCoveragePolicy,
+          aiRequestOptions,
+        );
       geminiResult = out.result;
-      coverageContractReport = exactCoverageContractEnabled
+      coverageContractReport = exactCoverageContractEnabled ||
+          isCoverageQualityRepair
         ? inspectPhotoCoverageContract(
           geminiResult?.photo_findings,
           expectedCoveragePhotoIndices,
         )
         : null;
+      if (
+        isCoverageQualityRepair &&
+        coverageContractReport?.outcome !== "complete"
+      ) {
+        throw new Error("COVERAGE_QUALITY_SCHEMA_CONTRACT_FAILED");
+      }
       inputTokens = out.inputTokens;
       outputTokens = out.outputTokens;
       cachedTokens = out.cachedTokens;
@@ -8427,6 +8931,8 @@ serve(async (req: Request) => {
         out.coverageSchemaFallbackError ?? null;
       inputAudit.coverage_contract = coverageContractReport;
       inputAudit.provider_request_count = providerAttemptTracker.requestCount;
+      inputAudit.provider_request_count_total = priorProviderRequestCount +
+        providerAttemptTracker.requestCount;
       inputAudit.provider_attempt_total_tokens =
         providerAttemptTracker.totalTokens;
       inputAudit.repair_job_used = jobMode === "repair";
@@ -8450,7 +8956,10 @@ serve(async (req: Request) => {
       } else {
         inputAudit.groq_fallback_used = true;
       }
-      if (localizationSnapshot.source === "explicit_request") {
+      if (
+        localizationSnapshot.source === "explicit_request" ||
+        isCoverageQualityRepair
+      ) {
         try {
           if (certaintyPolicyFlag.shadow) {
             const shadowValidation = validateAIOutputContract(
@@ -8484,7 +8993,19 @@ serve(async (req: Request) => {
               )
               : undefined,
             repair: async (validation) => {
+              if (isCoverageQualityRepair) {
+                throw new Error(
+                  "COVERAGE_QUALITY_VALIDATION_FAILED_NO_SECOND_REPAIR",
+                );
+              }
               languageContractRepairUsed = true;
+              inputAudit.model_generation_pass_count = Math.min(
+                3,
+                Math.max(
+                  1,
+                  Number(inputAudit.model_generation_pass_count) || 1,
+                ) + 1,
+              );
               initialValidationSnapshot = validation;
               initialForbiddenClaimPassed = validation.layers.find(
                 (layer) => layer.id === "forbidden_claim",
@@ -8701,12 +9222,19 @@ serve(async (req: Request) => {
           throw validationError;
         }
       }
-      coverageContractReport = exactCoverageContractEnabled
+      coverageContractReport = exactCoverageContractEnabled ||
+          isCoverageQualityRepair
         ? inspectPhotoCoverageContract(
           geminiResult?.photo_findings,
           expectedCoveragePhotoIndices,
         )
         : null;
+      if (
+        isCoverageQualityRepair &&
+        coverageContractReport?.outcome !== "complete"
+      ) {
+        throw new Error("COVERAGE_QUALITY_SCHEMA_CONTRACT_FAILED");
+      }
       inputAudit.coverage_contract = coverageContractReport;
       inputAudit.language_validation_status = languageValidationStatus;
       inputAudit.language_validation_attempts = languageValidationAttempts;
@@ -8715,6 +9243,8 @@ serve(async (req: Request) => {
       inputAudit.forbidden_claim_validation_status =
         forbiddenClaimValidationStatus;
       inputAudit.provider_request_count = providerAttemptTracker.requestCount;
+      inputAudit.provider_request_count_total = priorProviderRequestCount +
+        providerAttemptTracker.requestCount;
       inputAudit.provider_attempt_total_tokens =
         providerAttemptTracker.totalTokens;
       inputAudit.promptTokenCount = inputTokens;
@@ -8851,7 +9381,6 @@ serve(async (req: Request) => {
       });
       if (
         jobMode === "repair" &&
-        !(err instanceof OutputLanguageContractError) &&
         previousCoverageRecords &&
         ownedAnalysis.raw_ai_response &&
         typeof ownedAnalysis.raw_ai_response === "object"
@@ -8867,6 +9396,40 @@ serve(async (req: Request) => {
         };
         inputAudit.coverage_repair_error = safeLogError(err);
         inputAudit.coverage_repair_failed_but_completed = true;
+        languageValidationStatus =
+          ownedAnalysis.language_validation_status === "passed" ||
+            ownedAnalysis.language_validation_status === "repaired"
+            ? ownedAnalysis.language_validation_status
+            : "not_evaluated";
+        languageValidationAttempts = Math.max(
+          0,
+          Math.min(2, Number(ownedAnalysis.language_validation_attempts) || 0),
+        );
+        languageValidationCode = typeof ownedAnalysis
+            .language_validation_code === "string"
+          ? ownedAnalysis.language_validation_code
+          : null;
+        languageContractRepairUsed =
+          previousInputAudit?.language_contract_repair_used === true;
+        modelUsed = safeText(previousInputAudit?.model) || modelUsed;
+        providerUsed = previousInputAudit?.provider === "groq"
+          ? "groq"
+          : "gemini";
+        apiKeyAlias = safeText(previousInputAudit?.api_key_alias) || null;
+        const previousForbiddenStatus = previousInputAudit
+          ?.forbidden_claim_validation_status;
+        forbiddenClaimValidationStatus = previousForbiddenStatus === "passed" ||
+            previousForbiddenStatus === "repaired" ||
+            previousForbiddenStatus === "failed"
+          ? previousForbiddenStatus
+          : "not_evaluated";
+        if (isCoverageQualityRepair) {
+          inputAudit.coverage_quality_status = "failed_open";
+          inputAudit.quality_repair_failed_open = true;
+          inputAudit.quality_repair_error_class = err instanceof Error
+            ? err.constructor.name
+            : "unknown";
+        }
         inputAudit.finish_reason = null;
         inputAudit.json_parse_retry_count = 0;
         inputAudit.thinking_budget = thinkingBudgetFor(true);
@@ -8942,23 +9505,73 @@ serve(async (req: Request) => {
   inputAudit.analysis_quota_consumed = consumeAnalysisQuota;
 
   if (multiPhotoCoveragePolicy) {
+    let qualityMergeStats:
+      | ReturnType<typeof mergeCoverageRepairRecords>
+      | null = null;
+    const rawQualityRepairFindingCount = isCoverageQualityRepair &&
+        Array.isArray(geminiResult.photo_findings)
+      ? (geminiResult.photo_findings as unknown[]).reduce<number>(
+        (total, item) => {
+          if (!item || typeof item !== "object") return total;
+          const record = item as Record<string, unknown>;
+          const photoIndex = Math.round(Number(record.photo_index));
+          if (!effectiveRepairPhotoIndices.includes(photoIndex)) return total;
+          return total +
+            (Array.isArray(record.findings) ? record.findings.length : 0);
+        },
+        0,
+      )
+      : 0;
     let coverageRecords = normalizePhotoFindingCoverage(
       geminiResult.photo_findings,
       multiPhotoCoveragePolicy,
+      {
+        strictSourcePhotoIndices: isCoverageQualityRepair,
+        candidateSemanticsV2: coverageQualityEnabled,
+      },
     );
     if (jobMode === "repair" && previousCoverageRecords) {
-      const repairRecords = coverageRecords;
+      const repairRecords = repairFallbackOnly ? null : coverageRecords;
       coverageRecords = previousCoverageRecords;
       if (repairRecords) {
-        mergeCoverageRepairRecords(
+        qualityMergeStats = mergeCoverageRepairRecords(
           coverageRecords,
           repairRecords.filter((record) =>
             effectiveRepairPhotoIndices.includes(record.photo_index)
           ),
           multiPhotoCoveragePolicy,
+          {
+            coverageQualityV2: isCoverageQualityRepair,
+            outputLanguage: localizationSnapshot.output_language,
+          },
         );
+        if (isCoverageQualityRepair) {
+          const normalizedRepairFindingCount = repairRecords
+            .filter((record) =>
+              effectiveRepairPhotoIndices.includes(record.photo_index)
+            )
+            .reduce((total, record) => total + record.findings.length, 0);
+          qualityMergeStats.unsupportedRejectedCount += Math.max(
+            0,
+            rawQualityRepairFindingCount - normalizedRepairFindingCount,
+          );
+        }
         inputAudit.coverage_repair_used = true;
         inputAudit.coverage_repair_photo_indices = effectiveRepairPhotoIndices;
+        if (isCoverageQualityRepair) {
+          inputAudit.quality_repair_added_count = qualityMergeStats.addedCount;
+          inputAudit.quality_repair_duplicate_rejected_count =
+            qualityMergeStats.duplicateRejectedCount;
+          inputAudit.quality_repair_unsupported_rejected_count =
+            qualityMergeStats.unsupportedRejectedCount;
+          inputAudit.quality_repair_no_additional_reason_code =
+            qualityMergeStats.noAdditionalReasonCode;
+          inputAudit.quality_repair_no_additional_reason =
+            qualityMergeStats.noAdditionalReason;
+          inputAudit.coverage_quality_status = qualityMergeStats.addedCount > 0
+            ? "completed_added"
+            : "completed_no_addition";
+        }
       } else {
         inputAudit.coverage_repair_fallback_reason = "missing_photo_findings";
       }
@@ -8979,15 +9592,78 @@ serve(async (req: Request) => {
           record.coverage_conclusion = fallbackCoverageGapReason;
         }
       }
-      const repairCandidates = coverageRepairCandidates(
+      const legacyRepairCandidates = coverageRepairCandidates(
         coverageRecords,
         multiPhotoCoveragePolicy,
       );
+      const qualityEvaluations: CoverageQualityEvaluation[] =
+        evaluateCoverageQualityRecords(coverageRecords, {
+          candidateSemanticsV2: coverageQualityEnabled,
+        });
+      const qualityRepairCandidates = qualityEvaluations
+        .filter((evaluation) => evaluation.should_repair)
+        .map((evaluation) => evaluation.photo_index);
+      const repairCandidates = coverageQualityEnabled
+        ? qualityRepairCandidates
+        : legacyRepairCandidates;
       inputAudit.coverage_repair_candidate_photo_indices = repairCandidates;
+      if (jobMode === "analysis") {
+        inputAudit.coverage_quality_trigger_reasons = qualityEvaluations.map(
+          (evaluation) => ({
+            photo_index: evaluation.photo_index,
+            eligible: evaluation.eligible,
+            should_repair: evaluation.should_repair,
+            trigger_reasons: evaluation.trigger_reasons,
+            candidate_semantics_evaluable:
+              evaluation.candidate_semantics_evaluable,
+            candidate_semantics_status: evaluation.candidate_semantics_evaluable
+              ? "v2"
+              : "not_evaluable_legacy_semantics",
+            initial_candidate_findings_count:
+              evaluation.initial_candidate_findings_count,
+            initial_generated_findings_count:
+              evaluation.initial_generated_findings_count,
+            actionable_layer_count: evaluation.actionable_layer_count,
+            represented_actionable_layer_count:
+              evaluation.represented_actionable_layer_count,
+            unrepresented_actionable_layers:
+              evaluation.unrepresented_actionable_layers,
+          }),
+        );
+      }
+      if (jobMode === "analysis") {
+        inputAudit.initial_candidate_findings_count = qualityEvaluations.map(
+          (evaluation) => ({
+            photo_index: evaluation.photo_index,
+            count: evaluation.initial_candidate_findings_count,
+          }),
+        );
+        inputAudit.initial_generated_findings_count = qualityEvaluations.map(
+          (evaluation) => ({
+            photo_index: evaluation.photo_index,
+            count: evaluation.initial_generated_findings_count,
+          }),
+        );
+      } else {
+        inputAudit.initial_candidate_findings_count =
+          previousInputAudit?.initial_candidate_findings_count ?? [];
+        inputAudit.initial_generated_findings_count =
+          previousInputAudit?.initial_generated_findings_count ?? [];
+      }
+      if (coverageQualityShadow) {
+        inputAudit.coverage_quality_status = qualityRepairCandidates.length > 0
+          ? "shadow_candidate"
+          : "not_needed";
+      } else if (jobMode === "analysis" && coverageQualityEnabled) {
+        inputAudit.coverage_quality_status = qualityRepairCandidates.length > 0
+          ? "queued"
+          : "not_needed";
+      }
       if (
         jobMode === "analysis" &&
         !deterministicFallbackUsed &&
-        multiPhotoCoveragePolicy.repairEnabled &&
+        !coverageQualityShadow &&
+        (coverageQualityEnabled || multiPhotoCoveragePolicy.repairEnabled) &&
         repairCandidates.length > 0
       ) {
         try {
@@ -9019,6 +9695,9 @@ serve(async (req: Request) => {
               coverage_target_met: firstPassShortfalls.length === 0,
               shortfall_photo_indices: firstPassShortfalls,
               repair_recommended: repairCandidates.length > 0,
+              coverage_quality_status: coverageQualityEnabled
+                ? "queued"
+                : "not_needed",
             },
             _coverage_v2: {
               enabled: true,
@@ -9039,13 +9718,25 @@ serve(async (req: Request) => {
               target_findings_total_max: multiPhotoCoveragePolicy.totalMax,
               repair_enabled: multiPhotoCoveragePolicy.repairEnabled,
               repair_candidate_photo_indices: repairCandidates,
+              coverage_quality_policy_version: COVERAGE_QUALITY_POLICY_VERSION,
+              coverage_quality_trigger_reasons:
+                inputAudit.coverage_quality_trigger_reasons,
             },
           };
           inputAudit.coverage_repair_job_enqueued = true;
+          inputAudit.quality_repair_enqueued = coverageQualityEnabled;
           inputAudit.coverage_repair_used = false;
           inputAudit.repair_job_used = false;
           inputAudit.coverage_target_met = firstPassShortfalls.length === 0;
           inputAudit.shortfall_photo_indices = firstPassShortfalls;
+          const qualityRepairEnqueuedAt = coverageQualityEnabled
+            ? new Date()
+            : null;
+          if (qualityRepairEnqueuedAt) {
+            inputAudit.quality_repair_enqueued_at = qualityRepairEnqueuedAt
+              .toISOString();
+            inputAudit.initial_analysis_duration_ms = Date.now() - startMs;
+          }
           const intermediateRawResponse = {
             ...interimResult,
             _input_audit: inputAudit,
@@ -9067,6 +9758,20 @@ serve(async (req: Request) => {
               claimToken: isPipelineV2Worker ? workerClaimToken : null,
             },
             intermediateRawResponse,
+            repairKind: coverageQualityEnabled
+              ? COVERAGE_QUALITY_REPAIR_KIND
+              : "legacy_coverage",
+            coverageQualityPolicyVersion: coverageQualityEnabled
+              ? COVERAGE_QUALITY_POLICY_VERSION
+              : null,
+            qualityRepairEnqueuedAt: qualityRepairEnqueuedAt?.toISOString() ??
+              null,
+            qualityRepairDeadlineAt: coverageQualityEnabled
+              ? new Date(
+                (qualityRepairEnqueuedAt?.getTime() ?? Date.now()) +
+                  COVERAGE_QUALITY_REPAIR_DEADLINE_MS,
+              ).toISOString()
+              : null,
           });
           await updateUsagePersistence(
             supabase,
@@ -9097,6 +9802,11 @@ serve(async (req: Request) => {
           inputAudit.coverage_repair_queue_error = safeLogError(
             repairQueueError,
           );
+          if (coverageQualityEnabled) {
+            inputAudit.coverage_quality_status = "failed_open";
+            inputAudit.quality_repair_failed_open = true;
+            inputAudit.quality_repair_error_class = "queue_error";
+          }
           console.warn(
             "Coverage repair enqueue failed; completing first pass",
             JSON.stringify({
@@ -9109,6 +9819,7 @@ serve(async (req: Request) => {
         }
       } else if (jobMode !== "repair") {
         inputAudit.coverage_repair_used = false;
+        inputAudit.quality_repair_enqueued = false;
       }
 
       for (const record of coverageRecords) {
@@ -9127,8 +9838,30 @@ serve(async (req: Request) => {
         coverageRecords,
         multiPhotoCoveragePolicy,
       );
+      inputAudit.adjudicated_candidate_findings_count = coverageRecords.map(
+        (record) => ({
+          photo_index: record.photo_index,
+          count: record.findings.length,
+        }),
+      );
+      inputAudit.final_generated_findings_count = coverageRecords.map(
+        (record) => ({
+          photo_index: record.photo_index,
+          count: record.findings.length,
+        }),
+      );
+      if (isCoverageQualityRepair) {
+        inputAudit.quality_repair_duration_ms = Date.now() - startMs;
+      }
       geminiResult = {
         ...geminiResult,
+        ...(isCoverageQualityRepair
+          ? {
+            photo_findings: coverageRecords.map(
+              coverageRecordForPersistence,
+            ),
+          }
+          : {}),
         hazards: coverageHazards,
         photo_summaries: buildPhotoSummariesFromCoverage(
           coverageRecords,
@@ -9138,7 +9871,14 @@ serve(async (req: Request) => {
           photo_policy_version: multiPhotoCoveragePolicy.policyVersion,
           coverage_target_met: finalShortfalls.length === 0,
           shortfall_photo_indices: finalShortfalls,
-          repair_recommended: repairCandidates.length > 0,
+          repair_recommended: jobMode === "analysis" &&
+            repairCandidates.length > 0,
+          coverage_quality_status: inputAudit.coverage_quality_status ??
+            "not_needed",
+          quality_repair_no_additional_reason_code:
+            inputAudit.quality_repair_no_additional_reason_code ?? null,
+          quality_repair_no_additional_reason:
+            inputAudit.quality_repair_no_additional_reason ?? null,
         },
         _coverage_v2: {
           enabled: true,
@@ -9163,6 +9903,12 @@ serve(async (req: Request) => {
           repair_enabled: multiPhotoCoveragePolicy.repairEnabled,
           repair_candidate_photo_indices: repairCandidates,
           post_merge_shortfall_photo_indices: finalShortfalls,
+          coverage_quality_policy_version: COVERAGE_QUALITY_POLICY_VERSION,
+          coverage_quality_status: inputAudit.coverage_quality_status ??
+            "not_needed",
+          coverage_quality_trigger_reasons:
+            inputAudit.coverage_quality_trigger_reasons ?? [],
+          quality_repair_merge: qualityMergeStats,
         },
       };
       inputAudit.coverage_target_met = finalShortfalls.length === 0;
@@ -9222,6 +9968,7 @@ serve(async (req: Request) => {
     const layerAuditRecords = normalizePhotoFindingCoverage(
       geminiResult.photo_findings,
       multiPhotoCoveragePolicy,
+      { candidateSemanticsV2: coverageQualityEnabled },
     );
     if (layerAuditRecords) {
       const layerAuditSummary = buildLayerAuditSummary(
@@ -9496,6 +10243,21 @@ serve(async (req: Request) => {
   inputAudit.language_validation_code = languageValidationCode;
   inputAudit.language_contract_repair_used = languageContractRepairUsed;
   inputAudit.forbidden_claim_validation_status = forbiddenClaimValidationStatus;
+  inputAudit.model = modelUsed;
+  inputAudit.provider = providerUsed;
+  inputAudit.api_key_alias = apiKeyAlias;
+  inputAudit.provider_request_count_total = priorProviderRequestCount +
+    providerAttemptTracker.requestCount;
+  const currentAnalysisDurationMs = Date.now() - startMs;
+  inputAudit.total_analysis_duration_ms = isCoverageQualityRepair
+    ? Math.max(
+      0,
+      Math.round(Number(previousInputAudit?.initial_analysis_duration_ms)) ||
+        0,
+    ) + (Number.isFinite(coverageQualityEnqueuedAt)
+      ? Math.max(0, Date.now() - coverageQualityEnqueuedAt)
+      : currentAnalysisDurationMs)
+    : currentAnalysisDurationMs;
 
   const safeAISummary = imageBase64Parts.length > 0
     ? stripPhotoMarkerReferences(geminiResult.ai_summary)

@@ -36,7 +36,7 @@ function sourceBetween(start: string, end: string): string {
 
 Deno.test("Phase 4 validates output before usage success and persistence", () => {
   const providerBlock = sourceBetween(
-    "const out = await callAIForAnalysis(",
+    "const out = isCoverageQualityRepair && multiPhotoCoveragePolicy",
     "} catch (err) {",
   );
   const validationIndex = providerBlock.indexOf(
@@ -94,7 +94,7 @@ Deno.test("AI-016 and AI-017 preserve plan limits and exact photo coverage", () 
 Deno.test("language repair is one direct call on the same provider, model and key", () => {
   const repairBlock = sourceBetween(
     "const callSameProviderLanguageRepair = async",
-    "const effectiveRepairPhotoIndices",
+    "const callPinnedCoverageQualityRepair",
   );
   assertStringIncludes(
     repairBlock,

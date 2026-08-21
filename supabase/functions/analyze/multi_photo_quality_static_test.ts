@@ -184,7 +184,7 @@ Deno.test("atomic finding contract keeps independently correctable hazards separ
 
   assertStringIncludes(
     source,
-    'const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v1"',
+    'const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v2"',
   );
   assertStringIncludes(
     source,

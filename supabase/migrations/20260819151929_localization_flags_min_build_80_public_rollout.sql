@@ -1,3 +1,4 @@
+-- Canonical timestamp aligned with the production migration history.
 -- Wave 1 lokalizasyon bayraklarini yayin oncesi kohorttan cikarip herkese acar.
 --
 -- Onceki durum: 13 bayrak `allowlist` modunda ve `enabled_user_hashes` tek bir

@@ -1,3 +1,4 @@
+-- Canonical timestamp aligned with the production migration history.
 -- 1) multi_photo_analysis: build_allowlist -> min_build.
 --
 -- Allowlist her iOS build'inde elle genisletilmek zorundaydi ve build 81'de kalmisti.

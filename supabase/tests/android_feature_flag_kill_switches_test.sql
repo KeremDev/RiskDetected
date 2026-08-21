@@ -1,6 +1,6 @@
 -- Covers the current Android closed-test release-gate state. The original ADR-005 migration
 -- creates every flag closed; later closed-test migrations opened the six Android capabilities
--- for explicitly admitted Play builds, then 20260820090000 switched all six to a min_version
+-- for explicitly admitted Play builds, then 20260819235131 switched all six to a min_version
 -- floor of 2 so a new build no longer has to be hand-added to an allowlist before it can run
 -- (see that migration for the versionCode 6 incident it fixes). `enabled_android_version_codes`
 -- is left in place as the rollback path and is asserted separately below.

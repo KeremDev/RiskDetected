@@ -1,9 +1,36 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
   classifyDispatchObservation,
+  forceCoverageQualityFallback,
   reconcileQueueAfterDispatch,
   reconcileWithAuthoritativeState,
 } from "./dispatch-policy.ts";
+
+Deno.test("coverage quality retries become fallback-only after one worker attempt", () => {
+  assertEquals(
+    forceCoverageQualityFallback({
+      repairKind: "coverage_quality_v2",
+      workerAttempt: 1,
+    }),
+    false,
+  );
+  for (const workerAttempt of [2, 3, 9]) {
+    assertEquals(
+      forceCoverageQualityFallback({
+        repairKind: "coverage_quality_v2",
+        workerAttempt,
+      }),
+      true,
+    );
+  }
+  assertEquals(
+    forceCoverageQualityFallback({
+      repairKind: "legacy_coverage",
+      workerAttempt: 2,
+    }),
+    false,
+  );
+});
 
 Deno.test("guard v2 keeps ambiguous dispatch while claim is active", () => {
   for (const httpStatus of [null, 502, 504, 546]) {

@@ -5,9 +5,42 @@ import {
 } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
   areLikelyDuplicateCoverageFindings,
+  evaluateCoverageQualityRecord,
+  normalizeCoverageQualityNoAdditionalReasonCode,
   preferredCoverageFinding,
   tokenJaccardSimilarity,
 } from "./photo-finding-quality.ts";
+
+function qualityRecord(
+  overrides: Record<string, unknown> = {},
+): Parameters<typeof evaluateCoverageQualityRecord>[0] {
+  return {
+    photo_index: 1,
+    coverage_status: "actionable",
+    candidate_findings_count: 2,
+    findings: [
+      { title: "A", inspection_layer_keys: ["ground_housekeeping"] },
+      { title: "B", inspection_layer_keys: ["fire_explosion"] },
+    ],
+    record_missing: false,
+    inspection_layers: [
+      { layer_key: "ground_housekeeping", status: "actionable" },
+      { layer_key: "fire_explosion", status: "actionable" },
+    ],
+    layer_audit: {
+      missing_layer_keys: [],
+      duplicate_layer_keys: [],
+      invalid_layer_keys_count: 0,
+      invalid_layer_statuses_count: 0,
+    },
+    evidence_guard: {
+      rejected_unlinked_count: 0,
+      rejected_non_actionable_count: 0,
+      marked_uncertain_count: 0,
+    },
+    ...overrides,
+  } as Parameters<typeof evaluateCoverageQualityRecord>[0];
+}
 
 Deno.test("merges the reported title suffix variation with identical evidence", () => {
   const first = {
@@ -109,4 +142,339 @@ Deno.test("keeps the higher-confidence and more complete duplicate", () => {
 
   assertEquals(preferredCoverageFinding(brief, detailed), detailed);
   assertEquals(preferredCoverageFinding(detailed, brief), detailed);
+});
+
+Deno.test("coverage quality selector covers 30 TR/EN structural scenarios", () => {
+  const cases: Array<{
+    name: string;
+    record: Parameters<typeof evaluateCoverageQualityRecord>[0];
+    semanticsV2?: boolean;
+    repair: boolean;
+    reason?: string;
+  }> = [
+    { name: "clean two findings", record: qualityRecord(), repair: false },
+    {
+      name: "one finding",
+      record: qualityRecord({
+        findings: [{ inspection_layer_keys: ["ground_housekeeping"] }],
+      }),
+      repair: true,
+      reason: "low_finding_count",
+    },
+    {
+      name: "zero findings actionable",
+      record: qualityRecord({ findings: [], candidate_findings_count: 0 }),
+      repair: true,
+      reason: "low_finding_count",
+    },
+    {
+      name: "candidate gap v2",
+      record: qualityRecord({ candidate_findings_count: 3 }),
+      semanticsV2: true,
+      repair: true,
+      reason: "candidate_gap",
+    },
+    {
+      name: "candidate gap legacy ignored",
+      record: qualityRecord({ candidate_findings_count: 3 }),
+      repair: false,
+    },
+    {
+      name: "multi layer finding",
+      record: qualityRecord({
+        findings: [
+          { inspection_layer_keys: ["ground_housekeeping", "fire_explosion"] },
+          { inspection_layer_keys: ["fire_explosion"] },
+        ],
+      }),
+      repair: true,
+      reason: "multi_layer_finding",
+    },
+    {
+      name: "duplicate layer keys in one finding are normalized",
+      record: qualityRecord({
+        findings: [
+          {
+            inspection_layer_keys: [
+              "ground_housekeeping",
+              "ground_housekeeping",
+            ],
+          },
+          { inspection_layer_keys: ["fire_explosion"] },
+        ],
+      }),
+      repair: false,
+    },
+    {
+      name: "unrepresented actionable layer",
+      record: qualityRecord({
+        findings: [
+          { inspection_layer_keys: ["ground_housekeeping"] },
+          { inspection_layer_keys: ["ground_housekeeping"] },
+        ],
+      }),
+      repair: true,
+      reason: "unrepresented_actionable_layer",
+    },
+    {
+      name: "uncertain layer need not be represented",
+      record: qualityRecord({
+        inspection_layers: [
+          { layer_key: "ground_housekeeping", status: "actionable" },
+          { layer_key: "fire_explosion", status: "uncertain" },
+        ],
+      }),
+      repair: false,
+    },
+    {
+      name: "unlinked rejection",
+      record: qualityRecord({
+        evidence_guard: {
+          rejected_unlinked_count: 1,
+          rejected_non_actionable_count: 0,
+          marked_uncertain_count: 0,
+        },
+      }),
+      repair: true,
+      reason: "evidence_guard_rejection",
+    },
+    {
+      name: "non actionable rejection",
+      record: qualityRecord({
+        evidence_guard: {
+          rejected_unlinked_count: 0,
+          rejected_non_actionable_count: 1,
+          marked_uncertain_count: 0,
+        },
+      }),
+      repair: true,
+      reason: "evidence_guard_rejection",
+    },
+    {
+      name: "uncertain finding marked",
+      record: qualityRecord({
+        evidence_guard: {
+          rejected_unlinked_count: 0,
+          rejected_non_actionable_count: 0,
+          marked_uncertain_count: 1,
+        },
+      }),
+      repair: true,
+      reason: "evidence_guard_uncertain",
+    },
+    {
+      name: "record missing",
+      record: qualityRecord({ record_missing: true }),
+      repair: true,
+      reason: "record_incomplete",
+    },
+    {
+      name: "missing layer",
+      record: qualityRecord({
+        layer_audit: {
+          missing_layer_keys: ["ppe"],
+          duplicate_layer_keys: [],
+          invalid_layer_keys_count: 0,
+          invalid_layer_statuses_count: 0,
+        },
+      }),
+      repair: true,
+      reason: "record_incomplete",
+    },
+    {
+      name: "duplicate layer",
+      record: qualityRecord({
+        layer_audit: {
+          missing_layer_keys: [],
+          duplicate_layer_keys: ["ppe"],
+          invalid_layer_keys_count: 0,
+          invalid_layer_statuses_count: 0,
+        },
+      }),
+      repair: true,
+      reason: "record_incomplete",
+    },
+    {
+      name: "invalid layer key",
+      record: qualityRecord({
+        layer_audit: {
+          missing_layer_keys: [],
+          duplicate_layer_keys: [],
+          invalid_layer_keys_count: 1,
+          invalid_layer_statuses_count: 0,
+        },
+      }),
+      repair: true,
+      reason: "record_incomplete",
+    },
+    {
+      name: "invalid layer status",
+      record: qualityRecord({
+        layer_audit: {
+          missing_layer_keys: [],
+          duplicate_layer_keys: [],
+          invalid_layer_keys_count: 0,
+          invalid_layer_statuses_count: 1,
+        },
+      }),
+      repair: true,
+      reason: "record_incomplete",
+    },
+    {
+      name: "low quality skipped",
+      record: qualityRecord({ coverage_status: "low_quality", findings: [] }),
+      repair: false,
+    },
+    {
+      name: "no actionable skipped",
+      record: qualityRecord({
+        coverage_status: "no_actionable_hazard",
+        findings: [],
+      }),
+      repair: false,
+    },
+    {
+      name: "low quality candidate gap skipped",
+      record: qualityRecord({
+        coverage_status: "low_quality",
+        candidate_findings_count: 9,
+      }),
+      semanticsV2: true,
+      repair: false,
+    },
+    {
+      name: "no actionable malformed skipped",
+      record: qualityRecord({
+        coverage_status: "no_actionable_hazard",
+        record_missing: true,
+      }),
+      repair: false,
+    },
+    {
+      name: "negative candidate normalized",
+      record: qualityRecord({ candidate_findings_count: -4 }),
+      semanticsV2: true,
+      repair: false,
+    },
+    {
+      name: "nan candidate normalized",
+      record: qualityRecord({ candidate_findings_count: Number.NaN }),
+      semanticsV2: true,
+      repair: false,
+    },
+    {
+      name: "three complete findings",
+      record: qualityRecord({
+        candidate_findings_count: 3,
+        findings: [
+          { inspection_layer_keys: ["ground_housekeeping"] },
+          { inspection_layer_keys: ["fire_explosion"] },
+          { inspection_layer_keys: ["ppe"] },
+        ],
+        inspection_layers: [
+          { layer_key: "ground_housekeeping", status: "actionable" },
+          { layer_key: "fire_explosion", status: "actionable" },
+          { layer_key: "ppe", status: "actionable" },
+        ],
+      }),
+      semanticsV2: true,
+      repair: false,
+    },
+    {
+      name: "mixed case layer keys normalized",
+      record: qualityRecord({
+        findings: [
+          { inspection_layer_keys: ["GROUND_HOUSEKEEPING"] },
+          { inspection_layer_keys: ["FIRE_EXPLOSION"] },
+        ],
+      }),
+      repair: false,
+    },
+    {
+      name: "empty layer key exposes actionable layer",
+      record: qualityRecord({
+        findings: [
+          { inspection_layer_keys: [""] },
+          { inspection_layer_keys: ["fire_explosion"] },
+        ],
+      }),
+      repair: true,
+      reason: "unrepresented_actionable_layer",
+    },
+    {
+      name: "missing finding layer array exposes layer",
+      record: qualityRecord({
+        findings: [{}, { inspection_layer_keys: ["fire_explosion"] }],
+      }),
+      repair: true,
+      reason: "unrepresented_actionable_layer",
+    },
+    {
+      name: "all diagnostics can coexist",
+      record: qualityRecord({
+        candidate_findings_count: 4,
+        findings: [{ inspection_layer_keys: ["ground_housekeeping", "ppe"] }],
+        evidence_guard: {
+          rejected_unlinked_count: 1,
+          rejected_non_actionable_count: 1,
+          marked_uncertain_count: 1,
+        },
+      }),
+      semanticsV2: true,
+      repair: true,
+      reason: "candidate_gap",
+    },
+    {
+      name: "photo index preserved",
+      record: qualityRecord({ photo_index: 7 }),
+      repair: false,
+    },
+    {
+      name: "candidate equals finding count",
+      record: qualityRecord({ candidate_findings_count: 2 }),
+      semanticsV2: true,
+      repair: false,
+    },
+  ];
+
+  assertEquals(cases.length, 30);
+  for (const scenario of cases) {
+    const result = evaluateCoverageQualityRecord(scenario.record, {
+      candidateSemanticsV2: scenario.semanticsV2 === true,
+    });
+    assertEquals(result.should_repair, scenario.repair, scenario.name);
+    if (scenario.reason) {
+      assert(
+        result.trigger_reasons.includes(
+          scenario.reason as typeof result.trigger_reasons[number],
+        ),
+        scenario.name,
+      );
+    }
+  }
+});
+
+Deno.test("quality no-additional reason codes fail closed", () => {
+  assertEquals(
+    normalizeCoverageQualityNoAdditionalReasonCode(
+      "no_distinct_additional_hazard",
+    ),
+    "no_distinct_additional_hazard",
+  );
+  assertEquals(
+    normalizeCoverageQualityNoAdditionalReasonCode(
+      "insufficient_visual_evidence",
+    ),
+    "insufficient_visual_evidence",
+  );
+  assertEquals(
+    normalizeCoverageQualityNoAdditionalReasonCode(
+      "existing_findings_cover_scene",
+    ),
+    "existing_findings_cover_scene",
+  );
+  assertEquals(
+    normalizeCoverageQualityNoAdditionalReasonCode("invented"),
+    null,
+  );
 });

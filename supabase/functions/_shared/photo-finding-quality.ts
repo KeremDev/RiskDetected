@@ -1,8 +1,172 @@
 type FindingRecord = Record<string, unknown>;
 
+export const COVERAGE_QUALITY_POLICY_VERSION = 2;
+
+export const COVERAGE_QUALITY_NO_ADDITIONAL_REASON_CODES = [
+  "no_distinct_additional_hazard",
+  "insufficient_visual_evidence",
+  "existing_findings_cover_scene",
+] as const;
+
+export type CoverageQualityNoAdditionalReasonCode =
+  typeof COVERAGE_QUALITY_NO_ADDITIONAL_REASON_CODES[number];
+
+export type CoverageQualityTriggerReason =
+  | "low_finding_count"
+  | "candidate_gap"
+  | "multi_layer_finding"
+  | "unrepresented_actionable_layer"
+  | "evidence_guard_rejection"
+  | "evidence_guard_uncertain"
+  | "record_incomplete";
+
+export type CoverageQualityRecordInput = {
+  photo_index: number;
+  coverage_status: string;
+  candidate_findings_count: number;
+  findings: FindingRecord[];
+  record_missing: boolean;
+  inspection_layers: Array<{
+    layer_key: string;
+    status: string;
+  }>;
+  layer_audit: {
+    missing_layer_keys: string[];
+    duplicate_layer_keys: string[];
+    invalid_layer_keys_count: number;
+    invalid_layer_statuses_count: number;
+  };
+  evidence_guard: {
+    rejected_unlinked_count: number;
+    rejected_non_actionable_count: number;
+    marked_uncertain_count: number;
+  };
+};
+
+export type CoverageQualityEvaluation = {
+  photo_index: number;
+  eligible: boolean;
+  should_repair: boolean;
+  trigger_reasons: CoverageQualityTriggerReason[];
+  candidate_semantics_evaluable: boolean;
+  initial_candidate_findings_count: number;
+  initial_generated_findings_count: number;
+  actionable_layer_count: number;
+  represented_actionable_layer_count: number;
+  unrepresented_actionable_layers: string[];
+};
+
 function text(value: unknown): string {
   if (value === null || value === undefined) return "";
   return String(value).trim();
+}
+
+function safeNonNegativeCount(value: unknown): number {
+  const count = Math.round(Number(value));
+  return Number.isFinite(count) && count > 0 ? count : 0;
+}
+
+function findingLayerKeys(finding: FindingRecord): string[] {
+  if (!Array.isArray(finding.inspection_layer_keys)) return [];
+  return [
+    ...new Set(
+      finding.inspection_layer_keys
+        .map((value) => text(value).toLowerCase())
+        .filter(Boolean),
+    ),
+  ];
+}
+
+export function normalizeCoverageQualityNoAdditionalReasonCode(
+  value: unknown,
+): CoverageQualityNoAdditionalReasonCode | null {
+  const normalized = text(value);
+  return COVERAGE_QUALITY_NO_ADDITIONAL_REASON_CODES.includes(
+      normalized as CoverageQualityNoAdditionalReasonCode,
+    )
+    ? normalized as CoverageQualityNoAdditionalReasonCode
+    : null;
+}
+
+export function evaluateCoverageQualityRecord(
+  record: CoverageQualityRecordInput,
+  options: { candidateSemanticsV2: boolean },
+): CoverageQualityEvaluation {
+  const findings = Array.isArray(record.findings) ? record.findings : [];
+  const actionableLayers = record.inspection_layers
+    .filter((layer) => layer.status === "actionable")
+    .map((layer) => layer.layer_key);
+  const representedLayers = new Set(
+    findings.flatMap((finding) => findingLayerKeys(finding)),
+  );
+  const unrepresentedActionableLayers = actionableLayers.filter((layer) =>
+    !representedLayers.has(layer)
+  );
+  const eligible = record.coverage_status === "actionable";
+  const triggerReasons: CoverageQualityTriggerReason[] = [];
+
+  if (eligible) {
+    if (findings.length <= 1) triggerReasons.push("low_finding_count");
+    if (
+      options.candidateSemanticsV2 &&
+      safeNonNegativeCount(record.candidate_findings_count) > findings.length
+    ) {
+      triggerReasons.push("candidate_gap");
+    }
+    if (findings.some((finding) => findingLayerKeys(finding).length > 1)) {
+      triggerReasons.push("multi_layer_finding");
+    }
+    if (unrepresentedActionableLayers.length > 0) {
+      triggerReasons.push("unrepresented_actionable_layer");
+    }
+    if (
+      safeNonNegativeCount(record.evidence_guard.rejected_unlinked_count) > 0 ||
+      safeNonNegativeCount(
+          record.evidence_guard.rejected_non_actionable_count,
+        ) > 0
+    ) {
+      triggerReasons.push("evidence_guard_rejection");
+    }
+    if (
+      safeNonNegativeCount(record.evidence_guard.marked_uncertain_count) > 0
+    ) {
+      triggerReasons.push("evidence_guard_uncertain");
+    }
+    if (
+      record.record_missing ||
+      record.layer_audit.missing_layer_keys.length > 0 ||
+      record.layer_audit.duplicate_layer_keys.length > 0 ||
+      safeNonNegativeCount(record.layer_audit.invalid_layer_keys_count) > 0 ||
+      safeNonNegativeCount(record.layer_audit.invalid_layer_statuses_count) > 0
+    ) {
+      triggerReasons.push("record_incomplete");
+    }
+  }
+
+  return {
+    photo_index: record.photo_index,
+    eligible,
+    should_repair: eligible && triggerReasons.length > 0,
+    trigger_reasons: triggerReasons,
+    candidate_semantics_evaluable: options.candidateSemanticsV2,
+    initial_candidate_findings_count: safeNonNegativeCount(
+      record.candidate_findings_count,
+    ),
+    initial_generated_findings_count: findings.length,
+    actionable_layer_count: actionableLayers.length,
+    represented_actionable_layer_count:
+      actionableLayers.filter((layer) => representedLayers.has(layer)).length,
+    unrepresented_actionable_layers: unrepresentedActionableLayers,
+  };
+}
+
+export function evaluateCoverageQualityRecords(
+  records: CoverageQualityRecordInput[],
+  options: { candidateSemanticsV2: boolean },
+): CoverageQualityEvaluation[] {
+  return records.map((record) =>
+    evaluateCoverageQualityRecord(record, options)
+  );
 }
 
 export function normalizedTextTokens(value: unknown): string[] {

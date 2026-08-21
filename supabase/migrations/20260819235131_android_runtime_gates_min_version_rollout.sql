@@ -1,3 +1,4 @@
+-- Canonical timestamp aligned with the production migration history.
 -- Android runtime kapilari: version_allowlist -> min_version.
 --
 -- Alti kapinin (client, auth, analysis_submit, payments, notifications,
@@ -10,7 +11,7 @@
 -- Ayni tuzak iOS tarafinda `multi_photo_analysis` kapisinda yasandi: allowlist build
 -- 81'de kalmis, 82 ve 83 canliya bu liste guncellenmeden cikmis, bulgu duzenleme ve
 -- silme canli kullanicilarda 423 ile reddedilmisti. Cozum orada da min_build'e
--- gecmekti (bkz. 20260819160000).
+-- gecmekti (bkz. 20260819150951).
 --
 -- Esik 2: versionCode 1 Play App Signing'i etkinlestirmek icin kullanilan tek seferlik
 -- yuklemeydi ve bugunku allowlist'te de yok. min_version 2 bugunku davranisi birebir

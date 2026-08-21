@@ -1,3 +1,4 @@
+-- Canonical timestamp aligned with the production migration history.
 -- Records versionCode 6 (1.6.0) as the latest Android closed-test build, mirroring
 -- the pattern already used for ios_release_policy publishes (see e.g.
 -- 20260806182503_publish_ios_build_81_release_policy.sql). This build carries only

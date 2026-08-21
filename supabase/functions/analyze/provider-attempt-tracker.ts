@@ -7,6 +7,7 @@ export type ProviderAttemptReason =
   | "key_fallback"
   | "model_fallback"
   | "provider_fallback"
+  | "coverage_quality_repair"
   | "language_contract_repair";
 
 export type ProviderAttemptRecord = {

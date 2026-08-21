@@ -10,6 +10,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   classifyDispatchObservation,
   DispatchObservation,
+  forceCoverageQualityFallback,
   reconcileQueueAfterDispatch,
 } from "./dispatch-policy.ts";
 
@@ -443,6 +444,16 @@ async function drainQueueMessages(params: {
                 __job_generation: generation,
                 __worker_claim_token: claimToken,
                 __worker_attempt: workerAttempt,
+              }
+              : {}),
+            ...(forceCoverageQualityFallback({
+                repairKind: job.repair_kind,
+                workerAttempt,
+              })
+              ? {
+                coverage_repair_fallback_only: true,
+                coverage_repair_fallback_reason:
+                  "coverage_quality_single_attempt_guard",
               }
               : {}),
           }),

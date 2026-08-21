@@ -16,6 +16,21 @@ Deno.test("semantic user copy resolves Turkish and English without leaking place
   );
 });
 
+Deno.test("coverage quality no-additional reasons stay paired in Turkish and English", () => {
+  const keys = [
+    "analysisQualityNoDistinctAdditionalHazard",
+    "analysisQualityInsufficientVisualEvidence",
+    "analysisQualityExistingFindingsCoverScene",
+  ] as const;
+  for (const key of keys) {
+    const turkish = userFacingCopy(key, "tr");
+    const english = userFacingCopy(key, "en");
+    assertEquals(turkish.length > 20, true);
+    assertEquals(english.length > 20, true);
+    assertEquals(turkish === english, false, `languages leaked for ${key}`);
+  }
+});
+
 Deno.test("every semantic user copy key has complete Turkish and English copy", () => {
   const variables = {
     max: 3,

@@ -134,6 +134,23 @@ const COPY = {
     tr: "Analiz kotası iade edilemedi. Destek kodu: {{supportID}}",
     en: "The analysis quota could not be released. Support code: {{supportID}}",
   },
+  analysisQualityNoDistinctAdditionalHazard: {
+    tr:
+      "İlk bulguların dışında ayrı ve kanıtlanabilir ek bir risk doğrulanmadı.",
+    en:
+      "No separate, evidence-based risk was verified beyond the initial findings.",
+  },
+  analysisQualityInsufficientVisualEvidence: {
+    tr:
+      "Ek bir riski güvenilir biçimde doğrulamak için görsel kanıt yeterli değildi.",
+    en:
+      "The visual evidence was insufficient to verify an additional risk reliably.",
+  },
+  analysisQualityExistingFindingsCoverScene: {
+    tr: "Görüntüde doğrulanan koşullar mevcut bulgular tarafından kapsanıyor.",
+    en:
+      "The conditions verified in the image are covered by the existing findings.",
+  },
   analysisResultPersistenceFailed: {
     tr: "Analiz sonucu kaydedilemedi.",
     en: "The analysis result could not be saved.",
