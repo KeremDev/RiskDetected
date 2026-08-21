@@ -402,6 +402,16 @@ type NormalizedPhotoFindingCoverage = {
   highest_risk_level: string | null;
   ai_confidence: number | null;
   findings: Array<Record<string, unknown>>;
+  /**
+   * Field-verification items live here, never in `findings`.
+   *
+   * They assert that a control cannot be confirmed from the photograph, not
+   * that a hazard exists, so they carry no Fine-Kinney or 5x5 score. Keeping
+   * them in `findings` put four template rows into one report, and because the
+   * persistence loop accumulates totals over every hazard it dragged
+   * highest_band_fk from critical down to low on the 2026-08-21 regression.
+   */
+  field_verification_items: Array<Record<string, unknown>>;
   record_missing: boolean;
   scene_elements: string[];
   inspection_layers: NormalizedInspectionLayer[];
@@ -2079,10 +2089,21 @@ function mergeDuplicateCoverageRecord(
       !base.process_safety_audit.complete
     ? incoming.process_safety_audit
     : base.process_safety_audit;
+  // Verification items are keyed by equipment instance, so the same tank seen
+  // in two merged records must not produce the item twice.
+  const verificationItems = [...base.field_verification_items];
+  for (const item of incoming.field_verification_items) {
+    const alreadyPresent = verificationItems.some((existing) =>
+      existing.verification_reason_code === item.verification_reason_code &&
+      existing.equipment_instance_key === item.equipment_instance_key
+    );
+    if (!alreadyPresent) verificationItems.push(item);
+  }
 
   return {
     ...base,
     coverage_status: status,
+    field_verification_items: verificationItems,
     scene_summary: incoming.scene_summary.length > base.scene_summary.length
       ? incoming.scene_summary
       : base.scene_summary,
@@ -2280,13 +2301,13 @@ function normalizePhotoFindingCoverage(
     const guardedPhysicalFindings = physicalFindings(
       processSafetyGuard.findings,
     ).slice(0, policy.targetMax);
-    const guardedVerificationFindings = processSafetyGuard.findings
+    // A model-emitted verification item is routed to the same place as a
+    // code-generated one, so `findings` only ever holds hazards.
+    const guardedVerificationItems = processSafetyGuard.findings
       .filter(isFieldVerificationFinding)
-      .slice(0, MAX_FIELD_VERIFICATION_FINDINGS);
-    const findings = [
-      ...guardedPhysicalFindings,
-      ...guardedVerificationFindings,
-    ];
+      .slice(0, MAX_FIELD_VERIFICATION_FINDINGS)
+      .map(stripRiskInputsFromVerificationItem);
+    const findings = guardedPhysicalFindings;
     const effectiveTargetMin = effectiveCoverageTargetMinForLayers(
       inspection.layers,
       policy,
@@ -2330,6 +2351,7 @@ function normalizePhotoFindingCoverage(
         ? Math.max(0, Math.min(1, record.ai_confidence))
         : null,
       findings,
+      field_verification_items: guardedVerificationItems,
       record_missing: false,
       scene_elements: sceneElements,
       inspection_layers: inspection.layers,
@@ -2400,6 +2422,7 @@ function normalizePhotoFindingCoverage(
       highest_risk_level: null,
       ai_confidence: null,
       findings: [],
+      field_verification_items: [],
       record_missing: true,
       scene_elements: [],
       inspection_layers: [],
@@ -3001,7 +3024,37 @@ function periodicVerificationInspectionLayers(
   }
 }
 
-function periodicVerificationFinding(
+/**
+ * A field-verification item, not a finding.
+ *
+ * It states that a statutory control cannot be read off the photograph. That
+ * is a visibility statement, not a hazard claim, so it carries no Fine-Kinney
+ * or 5x5 input: `priority` orders it instead. Emitting these as findings gave
+ * an unreadable inspection certificate fk_severity 40 ("single fatality") and,
+ * because the persistence loop sums every hazard, pulled the whole analysis
+ * from highest_band_fk critical down to low.
+ */
+function verificationPriorityFor(
+  scan: NormalizedEquipmentDepthScan,
+): "high" | "medium" | "low" {
+  switch (scan.equipment_group_code) {
+    // Statutory inspection regimes where an expired or missing certificate is
+    // itself the classic fatal-accident precursor.
+    case "pressure_equipment":
+    case "lifting_conveying":
+    case "construction_machinery":
+      return "high";
+    case "electrical_installations":
+    case "machine_tools":
+      return "medium";
+    case "industrial_racks_doors":
+    case "other_complex_equipment":
+    default:
+      return "low";
+  }
+}
+
+function periodicVerificationItem(
   scan: NormalizedEquipmentDepthScan,
   sourcePhotoIndices: number[],
   outputLanguage: "tr" | "en",
@@ -3056,11 +3109,11 @@ function periodicVerificationFinding(
     verification_reason_code: "periodic_inspection_status",
     display_group: "field_verification",
     equipment_instance_key: scan.equipment_instance_key,
-    fk_probability: scan.fk_probability,
-    fk_frequency: scan.fk_frequency,
-    fk_severity: scan.fk_severity,
-    m5_probability: scan.m5_probability,
-    m5_severity: scan.m5_severity,
+    equipment_group_code: scan.equipment_group_code,
+    // Ordering only. Derived from the equipment class the scan already
+    // resolved, never from a Fine-Kinney severity: nothing has been observed
+    // to score.
+    priority: verificationPriorityFor(scan),
     source_photo_indices: sourcePhotoIndices,
     per_photo_observations: sourcePhotoIndices.map((photoIndex) => ({
       photo_index: photoIndex,
@@ -3073,7 +3126,7 @@ function periodicVerificationFinding(
   };
 }
 
-function applyPeriodicVerificationFindings(
+function applyPeriodicVerificationItems(
   records: NormalizedPhotoFindingCoverage[],
   options: {
     enabled: boolean;
@@ -3123,15 +3176,14 @@ function applyPeriodicVerificationFindings(
     );
     if (!targetRecord) continue;
     const duplicate = records.some((record) =>
-      record.findings.some((finding) =>
-        finding.verification_reason_code === "periodic_inspection_status" &&
-        finding.equipment_instance_key ===
-          candidate.scan.equipment_instance_key
+      record.field_verification_items.some((item) =>
+        item.verification_reason_code === "periodic_inspection_status" &&
+        item.equipment_instance_key === candidate.scan.equipment_instance_key
       )
     );
     if (duplicate) continue;
-    targetRecord.findings.push(
-      periodicVerificationFinding(
+    targetRecord.field_verification_items.push(
+      periodicVerificationItem(
         candidate.scan,
         sourcePhotoIndices,
         options.outputLanguage,
@@ -3255,6 +3307,25 @@ function buildPhotoSummariesFromCoverage(
   }));
 }
 
+/**
+ * A verification item never carries a risk score, whoever produced it. The
+ * model can still emit one through the shared finding schema, so the inputs are
+ * dropped here rather than trusted.
+ */
+function stripRiskInputsFromVerificationItem(
+  item: Record<string, unknown>,
+): Record<string, unknown> {
+  const {
+    fk_probability: _fkP,
+    fk_frequency: _fkF,
+    fk_severity: _fkS,
+    m5_probability: _m5P,
+    m5_severity: _m5S,
+    ...rest
+  } = item;
+  return { ...rest, display_group: "field_verification" };
+}
+
 function coverageRecordForPersistence(
   record: NormalizedPhotoFindingCoverage,
   includeExpertDepth: boolean,
@@ -3278,6 +3349,9 @@ function coverageRecordForPersistence(
       : {}),
     coverage_conclusion: record.coverage_conclusion,
     findings: record.findings,
+    ...(record.field_verification_items.length > 0
+      ? { field_verification_items: record.field_verification_items }
+      : {}),
     ...(record.no_additional_reason_code
       ? { no_additional_reason_code: record.no_additional_reason_code }
       : {}),
@@ -10457,7 +10531,7 @@ serve(async (req: Request) => {
           (item) => item.photo_index,
         );
       if (expertDepthEnabled) {
-        const periodicVerification = applyPeriodicVerificationFindings(
+        const periodicVerification = applyPeriodicVerificationItems(
           coverageRecords,
           {
             enabled: true,
@@ -10812,6 +10886,14 @@ serve(async (req: Request) => {
           }
           : {}),
         hazards: coverageHazards,
+        // Carried beside the hazards, never inside them. `hazards` becomes the
+        // findings rows and drives total_score_fk / highest_band_fk; a
+        // verification item has nothing observed to score and must not move
+        // those numbers. The server-rendered PDF and Excel reports can read
+        // this array without a client release.
+        field_verification_items: coverageRecords.flatMap((record) =>
+          record.field_verification_items
+        ),
         photo_summaries: buildPhotoSummariesFromCoverage(
           coverageRecords,
           multiPhotoCoveragePolicy,
@@ -10843,9 +10925,7 @@ serve(async (req: Request) => {
             photo_index: record.photo_index,
             finding_count: record.findings.length,
             physical_finding_count: physicalFindings(record.findings).length,
-            field_verification_count: record.findings.filter(
-              isFieldVerificationFinding,
-            ).length,
+            field_verification_count: record.field_verification_items.length,
             record_missing: record.record_missing,
             coverage_status: record.coverage_status,
           })),

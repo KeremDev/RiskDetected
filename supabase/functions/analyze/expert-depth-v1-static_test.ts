@@ -122,7 +122,14 @@ Deno.test("mechanism prompt prioritizes engineered retention and preserves sharp
 });
 
 Deno.test("periodic inspection is deterministic field verification, not model output", () => {
-  assertStringIncludes(analyzeSource, "periodicVerificationFinding");
+  // Renamed in the Faz 1 split: these are items, not findings, and they are
+  // written to field_verification_items rather than findings.
+  assertStringIncludes(analyzeSource, "periodicVerificationItem");
+  assertStringIncludes(
+    analyzeSource,
+    "targetRecord.field_verification_items.push(",
+  );
+  assertFalse(analyzeSource.includes("targetRecord.findings.push("));
   assertStringIncludes(
     analyzeSource,
     'verification_reason_code: "periodic_inspection_status"',
@@ -238,5 +245,76 @@ Deno.test("PDF snapshot and Excel export retain field-verification findings", ()
   );
   assertFalse(
     excelReportSource.includes('.neq("display_group", "field_verification")'),
+  );
+});
+
+// Regression: on 2026-08-21 analyze v173 wrote four template verification rows
+// into `findings`. The persistence loop sums fk/m5 over every hazard, so an
+// unreadable inspection certificate scored fk_severity 40 and the analysis fell
+// from highest_band_fk critical to low while finding_count read 6 for two real
+// hazards.
+Deno.test("verification items never reach the hazards array or the risk totals", () => {
+  // `hazards` becomes the findings rows and drives total_score_fk.
+  assertStringIncludes(
+    analyzeSource,
+    "coverageRecords.flatMap((record) => record.findings)",
+  );
+  assertFalse(
+    analyzeSource.includes(
+      "coverageRecords.flatMap((record) => record.field_verification_items)\n" +
+        "          .concat(",
+    ),
+  );
+  // Items ride beside the hazards, in their own key.
+  assertStringIncludes(
+    analyzeSource,
+    "field_verification_items: coverageRecords.flatMap((record) =>",
+  );
+});
+
+Deno.test("a verification item carries no Fine-Kinney or 5x5 input", () => {
+  const builderStart = analyzeSource.indexOf(
+    "function periodicVerificationItem(",
+  );
+  assert(builderStart > 0, "periodicVerificationItem must exist");
+  const builderEnd = analyzeSource.indexOf(
+    "\nfunction ",
+    builderStart + "function periodicVerificationItem(".length,
+  );
+  const builder = analyzeSource.slice(builderStart, builderEnd);
+  for (
+    const scoreField of [
+      "fk_probability:",
+      "fk_frequency:",
+      "fk_severity:",
+      "m5_probability:",
+      "m5_severity:",
+    ]
+  ) {
+    assertFalse(
+      builder.includes(scoreField),
+      `verification item must not set ${scoreField}`,
+    );
+  }
+  assertStringIncludes(builder, "priority: verificationPriorityFor(scan)");
+});
+
+Deno.test("a model-emitted verification item is stripped and rerouted too", () => {
+  assertStringIncludes(analyzeSource, "stripRiskInputsFromVerificationItem");
+  assertStringIncludes(
+    analyzeSource,
+    "field_verification_items: guardedVerificationItems,",
+  );
+  // The physical findings array is no longer concatenated with them.
+  assertStringIncludes(
+    analyzeSource,
+    "const findings = guardedPhysicalFindings;",
+  );
+});
+
+Deno.test("merged records do not duplicate an equipment instance", () => {
+  assertStringIncludes(
+    analyzeSource,
+    "existing.equipment_instance_key === item.equipment_instance_key",
   );
 });
