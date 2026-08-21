@@ -186,3 +186,46 @@ Deno.test("repair budget is a flag and image telemetry counts what was sent", as
   );
   assertStringIncludes(migration, "'repair_thinking_budget', 3072");
 });
+
+Deno.test("zero-finding re-examination is scoped, flagged and measurable", () => {
+  assertStringIncludes(
+    analyzeSource,
+    '"ai_zero_finding_reexamination_v1"',
+  );
+  assertStringIncludes(
+    analyzeSource,
+    "const ZERO_FINDING_REEXAMINATION_POLICY_VERSION = 1;",
+  );
+
+  // Read live on the repair pass, not pinned to the queued job, so the kill
+  // switch stops the next repair rather than draining the queue.
+  assertStringIncludes(
+    analyzeSource,
+    "const zeroFindingReexaminationEnabled = isCoverageQualityRepair &&\n    zeroFindingReexaminationFlag.enabled;",
+  );
+
+  // Scoped to photos the first pass left empty.
+  assertStringIncludes(
+    analyzeSource,
+    "physicalFindings(base.findings).length === 0;",
+  );
+  assertStringIncludes(
+    analyzeSource,
+    "if (reexamineThisPhoto) reexaminedPhotoIndices.push(base.photo_index);",
+  );
+
+  // The prompt has to open the door or the model declines to contradict its
+  // own prior verdict; the guard alone is not enough.
+  assertStringIncludes(analyzeSource, "checked_no_hazard olan bir katman");
+  assertStringIncludes(analyzeSource, "not_visible kapalı kalır");
+
+  // Recovered findings are the number that decides whether this was worth it.
+  assertStringIncludes(
+    analyzeSource,
+    "inputAudit.zero_finding_reexamination_recovered_count =",
+  );
+  assertStringIncludes(
+    analyzeSource,
+    "inputAudit.zero_finding_reexamination_photo_indices =",
+  );
+});

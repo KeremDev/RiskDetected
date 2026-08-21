@@ -205,6 +205,9 @@ const AI_OUTPUT_DETERMINISTIC_FALLBACK_V1_FLAG_KEY =
 const AI_FINDING_COVERAGE_QUALITY_V2_FLAG_KEY =
   "ai_finding_coverage_quality_v2";
 const AI_EXPERT_DEPTH_V1_FLAG_KEY = "ai_expert_depth_v1";
+const AI_ZERO_FINDING_REEXAMINATION_V1_FLAG_KEY =
+  "ai_zero_finding_reexamination_v1";
+const ZERO_FINDING_REEXAMINATION_POLICY_VERSION = 1;
 const COVERAGE_QUALITY_REPAIR_KIND = "coverage_quality_v2";
 const MAX_FIELD_VERIFICATION_FINDINGS = 4;
 
@@ -2800,17 +2803,22 @@ function mergeCoverageRepairRecords(
   options: {
     coverageQualityV2: boolean;
     outputLanguage: "tr" | "en";
+    zeroFindingReexamination?: boolean;
   } = { coverageQualityV2: false, outputLanguage: "tr" },
 ): {
   addedCount: number;
   duplicateRejectedCount: number;
   unsupportedRejectedCount: number;
+  reexaminedPhotoIndices: number[];
+  reexaminedCheckedLayerCount: number;
   noAdditionalReasonCode: CoverageQualityNoAdditionalReasonCode | null;
   noAdditionalReason: string | null;
 } {
   let addedCount = 0;
   let duplicateRejectedCount = 0;
   let unsupportedRejectedCount = 0;
+  let reexaminedCheckedLayerCount = 0;
+  const reexaminedPhotoIndices: number[] = [];
   let noAdditionalReasonCode: CoverageQualityNoAdditionalReasonCode | null =
     null;
   let remainingTotalBudget = Math.max(
@@ -2846,13 +2854,26 @@ function mergeCoverageRepairRecords(
     }
     noAdditionalReasonCode = repair.no_additional_reason_code ??
       noAdditionalReasonCode;
+    /**
+     * Reopening `checked_no_hazard` is scoped to photos the first pass left
+     * empty. A photo that already produced findings has a working audit, and
+     * re-litigating its judgements would trade a measured miss for an
+     * unmeasured false-positive risk.
+     */
+    const reexamineThisPhoto = options.zeroFindingReexamination === true &&
+      options.coverageQualityV2 &&
+      physicalFindings(base.findings).length === 0;
+    if (reexamineThisPhoto) reexaminedPhotoIndices.push(base.photo_index);
     const guardedFindings = options.coverageQualityV2
       ? applyInspectionLayerEvidenceGuard(
         repair.findings,
         normalizeInspectionLayers(base.inspection_layers),
         true,
+        reexamineThisPhoto,
       )
       : null;
+    reexaminedCheckedLayerCount +=
+      guardedFindings?.reexamined_checked_layer_count ?? 0;
     const processGuardedFindings = guardedFindings?.applied
       ? applyProcessSafetyEvidenceGuard(
         guardedFindings.findings,
@@ -2990,6 +3011,8 @@ function mergeCoverageRepairRecords(
     addedCount,
     duplicateRejectedCount,
     unsupportedRejectedCount,
+    reexaminedPhotoIndices,
+    reexaminedCheckedLayerCount,
     noAdditionalReasonCode,
     noAdditionalReason,
   };
@@ -3281,6 +3304,7 @@ function buildCoverageRepairContext(
   photoIndices: number[],
   outputLanguage: "tr" | "en",
   coverageQualityV2: boolean,
+  zeroFindingReexamination = false,
 ): string {
   const reviewData = records
     .filter((record) => photoIndices.includes(record.photo_index))
@@ -3305,6 +3329,29 @@ function buildCoverageRepairContext(
       })),
     }));
   const serializedReviewData = serializeUntrustedPromptJSON(reviewData);
+  /**
+   * The guard decides what survives; this only tells the model the door is
+   * open, and only for the photos the first pass left empty. Without it the
+   * model reads "the prior audit is immutable authority" and declines to
+   * contradict a checked_no_hazard it wrote itself.
+   */
+  const reexaminedIndices = zeroFindingReexamination
+    ? records
+      .filter((record) =>
+        photoIndices.includes(record.photo_index) &&
+        physicalFindings(record.findings).length === 0
+      )
+      .map((record) => record.photo_index)
+    : [];
+  const reexaminationInstruction = reexaminedIndices.length === 0
+    ? ""
+    : outputLanguage === "en"
+    ? ` The previous pass returned no finding at all for ${
+      reexaminedIndices.map((index) => `PHOTO_${index}`).join(", ")
+    }. For those photos only, a layer whose prior status is checked_no_hazard may be re-examined and used, because that verdict is the one being questioned. Re-examine it against the image, not against the previous wording. Report a hazard only when you can point to what is visible in the photograph; if the previous verdict was right, return no finding and say so. not_visible stays closed: it records that the layer could not be seen, and nothing can be concluded from it.`
+    : ` Önceki paso ${
+      reexaminedIndices.map((index) => `FOTO_${index}`).join(", ")
+    } için hiç bulgu döndürmedi. Yalnız bu fotoğraflarda, önceki durumu checked_no_hazard olan bir katman yeniden incelenebilir ve kullanılabilir; sorgulanan karar zaten o karardır. Katmanı önceki ifadeye göre değil, görüntüye bakarak yeniden değerlendir. Yalnız fotoğrafta görünen bir dayanağı gösterebiliyorsan tehlike bildir; önceki karar doğruysa bulgu döndürme ve bunu belirt. not_visible kapalı kalır: o kaydın anlamı katmanın görülemediğidir ve ondan sonuç çıkarılamaz.`;
   if (coverageQualityV2) {
     const instruction = outputLanguage === "en"
       ? `Review only ${
@@ -3315,7 +3362,7 @@ function buildCoverageRepairContext(
       } için inceleme yap. Sadece eksik, ayrı ve görsel olarak desteklenen fiziksel tehlikeleri döndür. Mevcut bulgular, önceki 12 katman denetimi, ekipman sınıflandırması ve process_safety_checks kayıtları değişmez otoritedir: bunları yeniden yazma, silme, taşıma veya tekrar etme. Bir koşul mevcut bulgunun başlık, görsel kanıt, açıklama, kök neden, düzeltici eylem veya önleyici kontrol alanlarından herhangi birinde zaten geçiyorsa, mevcut bulgu birden fazla koşulu hatalı biçimde birleştirmiş olsa bile o koşulu kapsanmış kabul et. Yeni bulgu ayrı görsel kanıt ve bağımsız uygulanabilir düzeltme ya da önleyici kontrol gerektirir. Ortak kategori, katman veya sonuç ayrı koşulları birleştirmek için yeterli değildir. Sayısal minimum uydurma. Her yeni bulgu yalnız istenen fotoğraf indeksini ve önceki durumu actionable veya uncertain olan en az bir inspection_layer_key değerini kullanmalı. Proses bulgusu ayrıca önceki durumu actionable veya uncertain olan process_safety_check_keys değerlerini kullanmalı. Tüm bağlı katmanlar veya proses kontrolleri uncertain ise needs_field_verification=true ve confidence en fazla 0.69 olmalı. not_visible veya checked_no_hazard kaydından bulgu üretme. Repair sırasında periyodik kontrol veya başka saha teyidi maddesi üretme. findings boşsa no_additional_reason_code alanını no_distinct_additional_hazard, insufficient_visual_evidence veya existing_findings_cover_scene değerlerinden tam biri yap. Yalnız istenen photo_findings kayıtlarını döndür.`;
     return `${baseContext}
 <coverage_quality_review policy_version="${COVERAGE_QUALITY_POLICY_VERSION}">
-${instruction}
+${instruction}${reexaminationInstruction}
 <untrusted_review_data>${serializedReviewData}</untrusted_review_data>
 </coverage_quality_review>`;
   }
@@ -7787,6 +7834,18 @@ serve(async (req: Request) => {
     AI_EXPERT_DEPTH_V1_FLAG_KEY,
     EXPERT_DEPTH_POLICY_VERSION,
   );
+  /**
+   * Read live on the repair pass rather than pinned to the queued job, so the
+   * kill switch stops the next repair instead of draining the queue first.
+   * This one changes what the model is allowed to contradict, so it should be
+   * revocable in one write.
+   */
+  const zeroFindingReexaminationFlag = await loadAIOutputPolicyFlag(
+    supabase,
+    user.id,
+    AI_ZERO_FINDING_REEXAMINATION_V1_FLAG_KEY,
+    ZERO_FINDING_REEXAMINATION_POLICY_VERSION,
+  );
   const isCoverageQualityRepair = isWorkerInvocation &&
     jobMode === "repair" && body.repair_kind === COVERAGE_QUALITY_REPAIR_KIND;
   const queuedCoverageQualityVersion = Number(
@@ -7804,6 +7863,8 @@ serve(async (req: Request) => {
       !expertDepthFlag.killSwitch
     : expertDepthFlag.enabled;
   const expertDepthShadow = jobMode === "analysis" && expertDepthFlag.shadow;
+  const zeroFindingReexaminationEnabled = isCoverageQualityRepair &&
+    zeroFindingReexaminationFlag.enabled;
   /**
    * Shadow means "ask for the depth structures and measure them, change
    * nothing". The equipment scan is model output, so there is nothing to
@@ -9752,6 +9813,7 @@ serve(async (req: Request) => {
       effectiveRepairPhotoIndices,
       localizationSnapshot.output_language,
       isCoverageQualityRepair && coverageQualityEnabled,
+      zeroFindingReexaminationEnabled,
     )
     : analysisContext;
   const aiImageParts =
@@ -10641,6 +10703,7 @@ serve(async (req: Request) => {
           {
             coverageQualityV2: isCoverageQualityRepair,
             outputLanguage: localizationSnapshot.output_language,
+            zeroFindingReexamination: zeroFindingReexaminationEnabled,
           },
         );
         if (isCoverageQualityRepair) {
@@ -10658,6 +10721,19 @@ serve(async (req: Request) => {
         inputAudit.coverage_repair_photo_indices = effectiveRepairPhotoIndices;
         if (isCoverageQualityRepair) {
           inputAudit.quality_repair_added_count = qualityMergeStats.addedCount;
+          inputAudit.zero_finding_reexamination_enabled =
+            zeroFindingReexaminationEnabled;
+          inputAudit.zero_finding_reexamination_mode =
+            zeroFindingReexaminationFlag.rolloutMode;
+          inputAudit.zero_finding_reexamination_kill_switch =
+            zeroFindingReexaminationFlag.killSwitch;
+          inputAudit.zero_finding_reexamination_photo_indices =
+            qualityMergeStats.reexaminedPhotoIndices;
+          // Findings that exist only because a checked_no_hazard verdict was
+          // reopened. Every one carries needs_field_verification, so this is
+          // the number to watch when judging whether the trade was worth it.
+          inputAudit.zero_finding_reexamination_recovered_count =
+            qualityMergeStats.reexaminedCheckedLayerCount;
           inputAudit.quality_repair_duplicate_rejected_count =
             qualityMergeStats.duplicateRejectedCount;
           inputAudit.quality_repair_unsupported_rejected_count =
