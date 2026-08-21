@@ -7725,6 +7725,15 @@ serve(async (req: Request) => {
       !expertDepthFlag.killSwitch
     : expertDepthFlag.enabled;
   const expertDepthShadow = jobMode === "analysis" && expertDepthFlag.shadow;
+  /**
+   * Shadow means "ask for the depth structures and measure them, change
+   * nothing". The equipment scan is model output, so there is nothing to
+   * observe unless the schema asks for it; gating the schema on `enabled`
+   * alone made shadow mode record a single `evaluable: false` and no data.
+   * Everything behavioural — verification items, the process-safety guard —
+   * stays on `expertDepthEnabled`.
+   */
+  const expertDepthObserved = expertDepthEnabled || expertDepthShadow;
   const queuedCoverageSchemaVersion = Number(body.coverage_schema_version) === 2
     ? 2 as const
     : 1 as const;
@@ -9108,7 +9117,7 @@ serve(async (req: Request) => {
         multiPhotoCoveragePolicy,
         {
           candidateSemanticsV2: isCoverageQualityRepair,
-          expertDepthV1: expertDepthEnabled,
+          expertDepthV1: expertDepthObserved,
           outputLanguage: localizationSnapshot.output_language,
         },
       )
@@ -9690,7 +9699,7 @@ serve(async (req: Request) => {
       outputLanguage: localizationSnapshot.output_language,
       providerAttemptTracker,
       coverageQualityV2: isCoverageQualityRepair && coverageQualityEnabled,
-      expertDepthV1: expertDepthEnabled,
+      expertDepthV1: expertDepthObserved,
     }
     : {
       layerAuditEnabled: multiPhotoCoveragePolicy?.layerAuditEnabled ?? false,
@@ -9703,7 +9712,7 @@ serve(async (req: Request) => {
       providerAttemptTracker,
       thinkingBudget: configuredThinkingBudget,
       coverageQualityV2: coverageQualityEnabled,
-      expertDepthV1: expertDepthEnabled,
+      expertDepthV1: expertDepthObserved,
     };
   const coverageQualityRemainingMs = Number.isFinite(
       coverageQualityDeadlineAt,
@@ -10520,7 +10529,7 @@ serve(async (req: Request) => {
       {
         strictSourcePhotoIndices: isCoverageQualityRepair,
         candidateSemanticsV2: coverageQualityEnabled,
-        expertDepthV1: expertDepthEnabled && jobMode !== "repair",
+        expertDepthV1: expertDepthObserved && jobMode !== "repair",
         outputLanguage: localizationSnapshot.output_language,
       },
     );
@@ -10655,7 +10664,41 @@ serve(async (req: Request) => {
           priorAddedCount,
         );
       } else if (expertDepthShadow) {
-        inputAudit.expert_depth_shadow_evaluable = false;
+        // Measure what the feature would have done, without doing it: how many
+        // equipment instances the scan found, and how many verification items
+        // would have been generated. `enabled: false` makes the applier count
+        // candidates and add nothing.
+        const wouldHaveAdded = applyPeriodicVerificationItems(
+          coverageRecords,
+          {
+            enabled: false,
+            outputLanguage: localizationSnapshot.output_language,
+            workJurisdictionCountry:
+              localizationSnapshot.work_jurisdiction_country,
+          },
+        );
+        inputAudit.expert_depth_shadow_evaluable = true;
+        inputAudit.expert_depth_equipment_scan = coverageRecords.map((
+          record,
+        ) => ({
+          photo_index: record.photo_index,
+          equipment_count: record.equipment_depth_scan.length,
+          equipment_groups: record.equipment_depth_scan.map((scan) =>
+            scan.equipment_group_code
+          ),
+          process_safety_scope: record.process_safety_audit.scope,
+          process_safety_check_count: record.process_safety_audit.checks.length,
+          actionable_process_check_count:
+            record.process_safety_audit.checks.filter((check) =>
+              check.status === "actionable"
+            ).length,
+        }));
+        inputAudit.periodic_verification_candidate_count =
+          wouldHaveAdded.candidateCount;
+        inputAudit.periodic_verification_added_count = 0;
+        inputAudit.process_safety_contract_incomplete = coverageRecords.some(
+          (record) => !record.process_safety_audit.complete,
+        );
       }
       if (deterministicFallbackUsed) {
         const fallbackCoverageGapReason = userFacingCopy(
@@ -11083,7 +11126,7 @@ serve(async (req: Request) => {
       multiPhotoCoveragePolicy,
       {
         candidateSemanticsV2: coverageQualityEnabled,
-        expertDepthV1: expertDepthEnabled,
+        expertDepthV1: expertDepthObserved,
         outputLanguage: localizationSnapshot.output_language,
       },
     );

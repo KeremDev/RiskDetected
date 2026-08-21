@@ -167,12 +167,22 @@ Deno.test("expert depth stays in the first generation and reuses coverage repair
   assertStringIncludes(analyzeSource, 'job_mode: "repair"');
 });
 
-Deno.test("shadow mode leaves provider prompt and normalized result unchanged", () => {
+// Rewritten with the shadow fix: the schema is now requested in shadow so
+// there is something to measure. What must stay unchanged is behaviour, not
+// the prompt — the old assertion pinned the prompt and made shadow useless.
+Deno.test("shadow mode observes without changing behaviour", () => {
   assertStringIncludes(analyzeSource, "expert_depth_shadow: expertDepthShadow");
-  assertStringIncludes(analyzeSource, "expertDepthV1: expertDepthEnabled,");
-  assertFalse(
-    analyzeSource.includes("expertDepthEnabled || expertDepthShadow"),
+  assertStringIncludes(
+    analyzeSource,
+    "const expertDepthObserved = expertDepthEnabled || expertDepthShadow;",
   );
+  // No verification item is injected in shadow.
+  assertFalse(
+    analyzeSource.includes(
+      "} else if (expertDepthShadow) {\n        const periodicVerification = applyPeriodicVerificationItems(\n          coverageRecords,\n          {\n            enabled: true,",
+    ),
+  );
+  // One flag, two meanings — no parallel shadow-only plumbing.
   assertFalse(analyzeSource.includes("expertDepthV1Shadow"));
 });
 
@@ -186,7 +196,7 @@ Deno.test("process contract errors fail open and preserve normal findings", () =
   assertStringIncludes(analyzeSource, "quality_repair_failed_open");
   assertStringIncludes(
     analyzeSource,
-    'expertDepthV1: expertDepthEnabled && jobMode !== "repair"',
+    'expertDepthV1: expertDepthObserved && jobMode !== "repair"',
   );
   assertStringIncludes(
     analyzeSource,
@@ -390,5 +400,35 @@ Deno.test("the depth prompt puts findings first", () => {
   );
   assertFalse(
     analyzeSource.includes("bulgulardan önce equipment_depth_scan üret"),
+  );
+});
+
+// Shadow used to record a single `evaluable: false` and nothing else: the
+// schema was gated on `enabled`, so the model was never asked for the
+// equipment scan and there was nothing to observe.
+Deno.test("shadow mode asks for the depth structures and measures them", () => {
+  assertStringIncludes(
+    analyzeSource,
+    "const expertDepthObserved = expertDepthEnabled || expertDepthShadow;",
+  );
+  assertStringIncludes(analyzeSource, "expertDepthV1: expertDepthObserved,");
+  assertStringIncludes(
+    analyzeSource,
+    "inputAudit.expert_depth_shadow_evaluable = true;",
+  );
+  assertStringIncludes(analyzeSource, "wouldHaveAdded.candidateCount");
+});
+
+Deno.test("shadow mode changes nothing behavioural", () => {
+  // Items are only injected on the enabled branch.
+  assertStringIncludes(analyzeSource, "enabled: false,");
+  assertStringIncludes(
+    analyzeSource,
+    "inputAudit.periodic_verification_added_count = 0;",
+  );
+  // The process-safety guard stays off in shadow.
+  assertStringIncludes(
+    analyzeSource,
+    "processSafetyEnabled: expertDepthEnabled && !expertDepthShadow,",
   );
 });
