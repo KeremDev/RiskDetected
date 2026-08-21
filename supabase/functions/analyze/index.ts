@@ -111,7 +111,10 @@ import {
 } from "../_shared/ai-localization-prompt.ts";
 import {
   type AIOutputValidationResult,
+  applyDeterministicAIOutputFallback,
+  type DeterministicFallbackCopy,
   OutputLanguageContractError,
+  validateAIOutputContract,
   validateAIOutputWithSingleRepair,
 } from "../_shared/ai-localization-validation.ts";
 import { sendGeminiGenerateContent } from "../_shared/gemini-provider-client.ts";
@@ -164,10 +167,21 @@ const ANALYSIS_AMBIGUOUS_DISPATCH_GUARD_FLAG_KEY =
   "analysis_ambiguous_dispatch_guard";
 const MULTI_PHOTO_EXACT_COVERAGE_SCHEMA_FLAG_KEY =
   "multi_photo_exact_coverage_schema";
+const AI_OUTPUT_CERTAINTY_POLICY_V2_FLAG_KEY = "ai_output_certainty_policy_v2";
+const AI_OUTPUT_DETERMINISTIC_FALLBACK_V1_FLAG_KEY =
+  "ai_output_deterministic_fallback_v1";
 
 type PlanTier = "free" | "plus" | "pro";
 type AnalysisMode = "standard" | "detailed" | "emergency" | "procedure";
 type AnalysisPipelineRolloutMode = "off" | "allowlist" | "on";
+type AIOutputPolicyRolloutMode = "off" | "shadow" | "allowlist" | "on";
+type AIOutputPolicyFlag = {
+  enabled: boolean;
+  shadow: boolean;
+  rolloutMode: AIOutputPolicyRolloutMode;
+  killSwitch: boolean;
+  policyVersion: number;
+};
 type AnalysisPipelineV2Flag = {
   enabled: boolean;
   rolloutMode: AnalysisPipelineRolloutMode;
@@ -4458,6 +4472,56 @@ async function loadExactCoverageSchemaFlag(
   }
 }
 
+async function loadAIOutputPolicyFlag(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userID: string,
+  key: string,
+  policyVersion: number,
+): Promise<AIOutputPolicyFlag> {
+  const fallback: AIOutputPolicyFlag = {
+    enabled: false,
+    shadow: false,
+    rolloutMode: "off",
+    killSwitch: false,
+    policyVersion,
+  };
+  try {
+    const { data, error } = await supabase
+      .from("app_feature_flags")
+      .select("value")
+      .eq("key", key)
+      .maybeSingle();
+    if (error || !data?.value || typeof data.value !== "object") {
+      return fallback;
+    }
+    const value = data.value as Record<string, unknown>;
+    if (Number(value.policy_version) !== policyVersion) return fallback;
+    const rolloutMode: AIOutputPolicyRolloutMode = value.rollout_mode === "on"
+      ? "on"
+      : value.rollout_mode === "shadow"
+      ? "shadow"
+      : value.rollout_mode === "allowlist"
+      ? "allowlist"
+      : "off";
+    const killSwitch = value.kill_switch === true;
+    const enabledHashes = Array.isArray(value.enabled_user_hashes)
+      ? value.enabled_user_hashes.map((item) => String(item))
+      : [];
+    const userHash = rolloutMode === "allowlist" ? await hashedID(userID) : "";
+    return {
+      enabled: !killSwitch && (rolloutMode === "on" ||
+        (rolloutMode === "allowlist" && enabledHashes.includes(userHash))),
+      shadow: !killSwitch && rolloutMode === "shadow",
+      rolloutMode,
+      killSwitch,
+      policyVersion,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 function resolveAIExecutionRoute(
   planTier: PlanTier,
   analysisMode: AnalysisMode,
@@ -5158,8 +5222,52 @@ function auditValidationLayers(
     ok: layer.ok,
     code: layer.code,
     ...(layer.field ? { field: layer.field } : {}),
+    ...(layer.path ? { path: layer.path } : {}),
     ...(layer.excerpt ? { excerpt: safeLogText(layer.excerpt, 200) } : {}),
+    ...(layer.violations
+      ? {
+        violations: layer.violations.slice(0, 8).map((violation) => ({
+          code: violation.code,
+          ...(violation.field ? { field: violation.field } : {}),
+          ...(violation.path ? { path: violation.path } : {}),
+          ...(violation.excerpt
+            ? { excerpt: safeLogText(violation.excerpt, 200) }
+            : {}),
+        })),
+      }
+      : {}),
   }));
+}
+
+function deterministicFallbackCopy(
+  language: "tr" | "en",
+  profileTerm: string,
+): DeterministicFallbackCopy {
+  const variables = { profileTerm };
+  return {
+    summary: userFacingCopy(
+      "analysisFallbackSummary",
+      language,
+      variables,
+    ),
+    zeroFindingsSummary: userFacingCopy(
+      "analysisFallbackZeroFindingsSummary",
+      language,
+      variables,
+    ),
+    zeroFindingsLimitation: userFacingCopy(
+      "analysisFallbackZeroFindingsLimitation",
+      language,
+    ),
+    cautiousRootCause: userFacingCopy(
+      "analysisFallbackCautiousRootCause",
+      language,
+    ),
+    coverageGapReason: userFacingCopy(
+      "analysisFallbackCoverageGapReason",
+      language,
+    ),
+  };
 }
 
 function storageObjectURL(
@@ -5954,6 +6062,25 @@ async function releaseAnalysisQuota(
   }
 }
 
+// Unlike failure cleanup, successful zero-finding fallback settlement must not
+// silently continue when the reservation cannot be released. The analysis is
+// only marked completed after this strict operation succeeds.
+// deno-lint-ignore no-explicit-any
+async function releaseAnalysisQuotaStrict(
+  supabase: any,
+  analysisID: string,
+  userID: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("usage_events")
+    .delete()
+    .eq("user_id", userID)
+    .eq("source_id", analysisID)
+    .in("feature", ["analysis_standard", "analysis_detailed"])
+    .eq("event_type", "reserved");
+  if (error) throw error;
+}
+
 // deno-lint-ignore no-explicit-any
 async function completeAnalysisQuota(
   supabase: any,
@@ -6395,6 +6522,18 @@ serve(async (req: Request) => {
   const exactCoverageSchemaFlag = await loadExactCoverageSchemaFlag(
     supabase,
     user.id,
+  );
+  const certaintyPolicyFlag = await loadAIOutputPolicyFlag(
+    supabase,
+    user.id,
+    AI_OUTPUT_CERTAINTY_POLICY_V2_FLAG_KEY,
+    2,
+  );
+  const deterministicFallbackFlag = await loadAIOutputPolicyFlag(
+    supabase,
+    user.id,
+    AI_OUTPUT_DETERMINISTIC_FALLBACK_V1_FLAG_KEY,
+    1,
   );
   const queuedCoverageSchemaVersion = Number(body.coverage_schema_version) === 2
     ? 2 as const
@@ -7904,6 +8043,15 @@ serve(async (req: Request) => {
     coverage_schema_version: effectiveCoverageSchemaVersion,
     coverage_schema_rollout_mode: exactCoverageSchemaFlag.rolloutMode,
     coverage_schema_kill_switch: exactCoverageSchemaFlag.killSwitch,
+    certainty_policy_mode: certaintyPolicyFlag.rolloutMode,
+    certainty_policy_version: certaintyPolicyFlag.policyVersion,
+    certainty_policy_enforced: certaintyPolicyFlag.enabled,
+    certainty_policy_shadow: certaintyPolicyFlag.shadow,
+    certainty_policy_kill_switch: certaintyPolicyFlag.killSwitch,
+    deterministic_fallback_mode: deterministicFallbackFlag.rolloutMode,
+    deterministic_fallback_version: deterministicFallbackFlag.policyVersion,
+    deterministic_fallback_enabled: deterministicFallbackFlag.enabled,
+    deterministic_fallback_kill_switch: deterministicFallbackFlag.killSwitch,
     layer_audit_enabled: jobMode === "analysis" &&
       (multiPhotoCoveragePolicy?.layerAuditEnabled ?? false),
     compact_layer_schema_enabled: jobMode === "analysis" &&
@@ -7972,6 +8120,14 @@ serve(async (req: Request) => {
   // thrown error only carries the final validation.
   let initialValidationSnapshot: AIOutputValidationResult | null = null;
   let rejectedRepairOutput: Record<string, unknown> | null = null;
+  let repairTransportFailed = false;
+  let repairTransportErrorClass: string | null = null;
+  let repairIntegrityCheckPassed: boolean | null = null;
+  let deterministicFallbackUsed = false;
+  let deterministicFallbackCodes: string[] = [];
+  let deterministicFallbackPaths: string[] = [];
+  let deterministicFallbackRemovedFindingsCount = 0;
+  let deterministicFallbackZeroFindings = false;
   let forbiddenClaimValidationStatus:
     | "not_evaluated"
     | "passed"
@@ -8296,10 +8452,37 @@ serve(async (req: Request) => {
       }
       if (localizationSnapshot.source === "explicit_request") {
         try {
+          if (certaintyPolicyFlag.shadow) {
+            const shadowValidation = validateAIOutputContract(
+              geminiResult,
+              localizationSnapshot,
+              {
+                allowedUserAuthoredValues: company?.name ? [company.name] : [],
+                certaintyPolicy: "v2",
+              },
+            );
+            inputAudit.certainty_policy_shadow_candidate_status =
+              shadowValidation.ok ? "passed" : "failed";
+            inputAudit.certainty_policy_shadow_candidate_code =
+              shadowValidation.code;
+            inputAudit.certainty_policy_shadow_candidate_path =
+              shadowValidation.failedPath;
+            inputAudit.certainty_policy_shadow_candidate_violations =
+              shadowValidation.violations.slice(0, 8);
+          }
           const validatedOutput = await validateAIOutputWithSingleRepair({
             initialResult: geminiResult,
             snapshot: localizationSnapshot,
             allowedUserAuthoredValues: company?.name ? [company.name] : [],
+            certaintyPolicy: certaintyPolicyFlag.enabled ? "v2" : "legacy",
+            enforceRepairIntegrity: certaintyPolicyFlag.enabled ||
+              deterministicFallbackFlag.enabled,
+            deterministicFallbackCopy: deterministicFallbackFlag.enabled
+              ? deterministicFallbackCopy(
+                localizationSnapshot.output_language,
+                activeSafetyProfile.primary_domain_term,
+              )
+              : undefined,
             repair: async (validation) => {
               languageContractRepairUsed = true;
               initialValidationSnapshot = validation;
@@ -8315,52 +8498,60 @@ serve(async (req: Request) => {
                   {
                     code: validation.code,
                     field: validation.failedField,
+                    path: validation.failedPath,
                     excerpt: validation.failedExcerpt,
+                    violations: validation.violations,
                   },
                 ),
               ].join("\n\n");
-              try {
-                const repaired = await callSameProviderLanguageRepair({
-                  provider: providerUsed,
-                  model: modelUsed,
-                  apiKeyAlias,
-                  context: repairContext,
-                  parts: aiImageParts,
-                  coveragePolicy: multiPhotoCoveragePolicy,
-                  options: aiRequestOptions,
-                });
-                inputTokens += repaired.inputTokens;
-                outputTokens += repaired.outputTokens;
-                cachedTokens = addNullableTokenCounts(
-                  cachedTokens,
-                  repaired.cachedTokens,
-                );
-                thoughtsTokens = addNullableTokenCounts(
-                  thoughtsTokens,
-                  repaired.thoughtsTokens,
-                );
-                totalTokens = addNullableTokenCounts(
-                  totalTokens,
-                  repaired.totalTokens,
-                );
-                rejectedRepairOutput = repaired.result as Record<
-                  string,
-                  unknown
-                >;
-                return repaired.result as Record<string, unknown>;
-              } catch {
-                throw new OutputLanguageContractError(
-                  localizationSnapshot.output_language,
-                  validation.code ?? "LANGUAGE_CONTRACT_REPAIR_FAILED",
-                );
-              }
+              const repaired = await callSameProviderLanguageRepair({
+                provider: providerUsed,
+                model: modelUsed,
+                apiKeyAlias,
+                context: repairContext,
+                parts: aiImageParts,
+                coveragePolicy: multiPhotoCoveragePolicy,
+                options: aiRequestOptions,
+              });
+              inputTokens += repaired.inputTokens;
+              outputTokens += repaired.outputTokens;
+              cachedTokens = addNullableTokenCounts(
+                cachedTokens,
+                repaired.cachedTokens,
+              );
+              thoughtsTokens = addNullableTokenCounts(
+                thoughtsTokens,
+                repaired.thoughtsTokens,
+              );
+              totalTokens = addNullableTokenCounts(
+                totalTokens,
+                repaired.totalTokens,
+              );
+              rejectedRepairOutput = repaired.result as Record<
+                string,
+                unknown
+              >;
+              return repaired.result as Record<string, unknown>;
             },
           });
           geminiResult = validatedOutput.result;
-          languageValidationStatus = validatedOutput.status;
+          languageValidationStatus = validatedOutput.status === "fallback"
+            ? "repaired"
+            : validatedOutput.status;
           languageValidationAttempts = validatedOutput.attempts;
           languageValidationCode = validatedOutput.code;
-          languageContractRepairUsed = validatedOutput.status === "repaired";
+          languageContractRepairUsed = validatedOutput.status !== "passed";
+          repairIntegrityCheckPassed = validatedOutput.repairIntegrity?.ok ??
+            null;
+          deterministicFallbackUsed = validatedOutput.status === "fallback";
+          deterministicFallbackCodes =
+            validatedOutput.deterministicFallback?.codes ?? [];
+          deterministicFallbackPaths =
+            validatedOutput.deterministicFallback?.paths ?? [];
+          deterministicFallbackRemovedFindingsCount =
+            validatedOutput.deterministicFallback?.removedFindingsCount ?? 0;
+          deterministicFallbackZeroFindings =
+            validatedOutput.deterministicFallback?.zeroFindings ?? false;
           const initialForbiddenClaim = validatedOutput.initialValidation.layers
             .find((layer) => layer.id === "forbidden_claim");
           const finalForbiddenClaim = validatedOutput.finalValidation.layers
@@ -8379,6 +8570,18 @@ serve(async (req: Request) => {
           inputAudit.language_validation_final_layers = auditValidationLayers(
             validatedOutput.finalValidation,
           );
+          inputAudit.language_validation_final_status = "passed";
+          inputAudit.repair_transport_failed = false;
+          inputAudit.repair_integrity_check_passed = repairIntegrityCheckPassed;
+          inputAudit.deterministic_fallback_used = deterministicFallbackUsed;
+          inputAudit.deterministic_fallback_code =
+            deterministicFallbackCodes[0] ?? null;
+          inputAudit.deterministic_fallback_codes = deterministicFallbackCodes;
+          inputAudit.deterministic_fallback_paths = deterministicFallbackPaths;
+          inputAudit.deterministic_fallback_removed_findings_count =
+            deterministicFallbackRemovedFindingsCount;
+          inputAudit.deterministic_fallback_zero_findings =
+            deterministicFallbackZeroFindings;
         } catch (validationError) {
           languageValidationStatus = "failed";
           languageValidationAttempts = validationError instanceof
@@ -8389,6 +8592,53 @@ serve(async (req: Request) => {
               OutputLanguageContractError
             ? validationError.validationCode
             : "LANGUAGE_CONTRACT_REPAIR_FAILED";
+          if (validationError instanceof OutputLanguageContractError) {
+            repairTransportFailed = validationError.repairTransportFailed;
+            repairTransportErrorClass =
+              validationError.repairTransportErrorClass;
+            repairIntegrityCheckPassed = validationError.repairIntegrity?.ok ??
+              null;
+          }
+          if (
+            deterministicFallbackFlag.shadow &&
+            validationError instanceof OutputLanguageContractError &&
+            validationError.validation && rejectedRepairOutput
+          ) {
+            const shadowFallback = applyDeterministicAIOutputFallback(
+              rejectedRepairOutput,
+              validationError.validation,
+              deterministicFallbackCopy(
+                localizationSnapshot.output_language,
+                activeSafetyProfile.primary_domain_term,
+              ),
+            );
+            const shadowFallbackValidation = shadowFallback
+              ? validateAIOutputContract(
+                shadowFallback.result,
+                localizationSnapshot,
+                {
+                  allowedUserAuthoredValues: company?.name
+                    ? [company.name]
+                    : [],
+                  certaintyPolicy: certaintyPolicyFlag.enabled
+                    ? "v2"
+                    : "legacy",
+                },
+              )
+              : null;
+            inputAudit.deterministic_fallback_shadow_candidate_status =
+              shadowFallbackValidation?.ok === true
+                ? "passed"
+                : shadowFallback
+                ? "failed"
+                : "ineligible";
+            inputAudit.deterministic_fallback_shadow_candidate_code =
+              shadowFallbackValidation?.code ?? null;
+            inputAudit.deterministic_fallback_shadow_candidate_paths =
+              shadowFallback?.paths ?? [];
+            inputAudit.deterministic_fallback_shadow_candidate_zero_findings =
+              shadowFallback?.zeroFindings ?? false;
+          }
           if (
             validationError instanceof OutputLanguageContractError &&
             validationError.validation
@@ -8406,9 +8656,13 @@ serve(async (req: Request) => {
               ? "passed"
               : "failed";
           }
-          if (initialValidationSnapshot) {
+          const errorInitialValidation = initialValidationSnapshot ??
+            (validationError instanceof OutputLanguageContractError
+              ? validationError.initialValidation
+              : null);
+          if (errorInitialValidation) {
             inputAudit.language_validation_initial_layers =
-              auditValidationLayers(initialValidationSnapshot);
+              auditValidationLayers(errorInitialValidation);
           }
           if (
             validationError instanceof OutputLanguageContractError &&
@@ -8419,11 +8673,21 @@ serve(async (req: Request) => {
             );
             inputAudit.language_validation_failed_field =
               validationError.validation.failedField;
+            inputAudit.language_validation_failed_path =
+              validationError.validation.failedPath;
             inputAudit.language_validation_failed_excerpt = safeLogText(
               validationError.validation.failedExcerpt ?? "",
               200,
             );
           }
+          inputAudit.language_validation_final_status =
+            validationError instanceof
+                OutputLanguageContractError
+              ? validationError.finalValidationStatus
+              : "not_run";
+          inputAudit.repair_transport_failed = repairTransportFailed;
+          inputAudit.repair_transport_error_class = repairTransportErrorClass;
+          inputAudit.repair_integrity_check_passed = repairIntegrityCheckPassed;
           inputAudit.language_validation_status = languageValidationStatus;
           inputAudit.language_validation_attempts = languageValidationAttempts;
           inputAudit.language_validation_code = languageValidationCode;
@@ -8674,6 +8938,9 @@ serve(async (req: Request) => {
     }
   }
 
+  const consumeAnalysisQuota = !deterministicFallbackZeroFindings;
+  inputAudit.analysis_quota_consumed = consumeAnalysisQuota;
+
   if (multiPhotoCoveragePolicy) {
     let coverageRecords = normalizePhotoFindingCoverage(
       geminiResult.photo_findings,
@@ -8699,6 +8966,19 @@ serve(async (req: Request) => {
     if (!coverageRecords) {
       inputAudit.coverage_v2_fallback_reason = "missing_photo_findings";
     } else {
+      if (deterministicFallbackUsed) {
+        const fallbackCoverageGapReason = userFacingCopy(
+          "analysisFallbackCoverageGapReason",
+          localizationSnapshot.output_language,
+        );
+        for (const record of coverageRecords) {
+          if (record.findings.length > 0) continue;
+          record.coverage_status = "no_actionable_hazard";
+          record.candidate_findings_count = 0;
+          record.coverage_gap_reason = fallbackCoverageGapReason;
+          record.coverage_conclusion = fallbackCoverageGapReason;
+        }
+      }
       const repairCandidates = coverageRepairCandidates(
         coverageRecords,
         multiPhotoCoveragePolicy,
@@ -8706,6 +8986,7 @@ serve(async (req: Request) => {
       inputAudit.coverage_repair_candidate_photo_indices = repairCandidates;
       if (
         jobMode === "analysis" &&
+        !deterministicFallbackUsed &&
         multiPhotoCoveragePolicy.repairEnabled &&
         repairCandidates.length > 0
       ) {
@@ -8966,7 +9247,7 @@ serve(async (req: Request) => {
   const hiddenOrRejectedFindingsCount = Math.max(
     0,
     reportLanguageSafeHazards.length - hazards.length,
-  );
+  ) + deterministicFallbackRemovedFindingsCount;
   let totalScoreFK = 0, totalScoreM5 = 0;
   let highestBandFK: "low" | "medium" | "high" | "critical" = "low";
   let highestBandM5: "low" | "medium" | "high" | "critical" = "low";
@@ -9066,6 +9347,50 @@ serve(async (req: Request) => {
         requestID,
         supportID,
       });
+    }
+  }
+
+  if (!isPipelineV2Worker && !consumeAnalysisQuota) {
+    try {
+      await releaseAnalysisQuotaStrict(supabase, analysisID, user.id);
+    } catch (quotaReleaseError) {
+      console.error(
+        "Fallback quota release failed",
+        JSON.stringify({
+          request_id: requestID,
+          support_id: supportID,
+          analysis_id: analysisID,
+          error: safeLogError(quotaReleaseError),
+        }),
+      );
+      await updateUsagePersistence(
+        supabase,
+        successUsageLogID,
+        "failed",
+        "fallback_quota_release_failed",
+      );
+      await updateOwnedAnalysis({
+        status: "failed",
+        failure_category: "technical",
+        failure_code: "fallback_quota_release_failed",
+        status_message: userFacingCopy(
+          "analysisFallbackQuotaReleaseFailed",
+          localizationSnapshot.output_language,
+          { supportID },
+        ),
+      });
+      return errorResponse(
+        500,
+        userFacingCopy(
+          "analysisResultPersistenceFailed",
+          localizationSnapshot.output_language,
+        ),
+        {
+          code: "fallback_quota_release_failed",
+          requestID,
+          supportID,
+        },
+      );
     }
   }
 
@@ -9205,6 +9530,7 @@ serve(async (req: Request) => {
     app_language: appLanguage,
     client_build: clientRelease.appBuild,
     client_platform: analysisClientPlatform,
+    consume_analysis_quota: consumeAnalysisQuota,
   };
 
   if (isPipelineV2Worker) {
@@ -9294,7 +9620,9 @@ serve(async (req: Request) => {
         supportID,
       });
     }
-    await completeAnalysisQuota(supabase, analysisID, user.id);
+    if (consumeAnalysisQuota) {
+      await completeAnalysisQuota(supabase, analysisID, user.id);
+    }
   }
 
   await updateUsagePersistence(supabase, successUsageLogID, "persisted");

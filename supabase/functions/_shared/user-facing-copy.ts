@@ -101,6 +101,43 @@ const COPY = {
     en:
       "Your account and data were deleted. Manage any active {{store}} subscription separately in your store subscription settings.",
   },
+  analysisFallbackSummary: {
+    tr:
+      "{{profileTerm}} kapsamında fotoğraftan güvenilir biçimde doğrulanabilen {{count}} bulgu raporlandı.",
+    en:
+      "{{count}} {{profileTerm}} finding(s) that could be reliably verified from the photo were reported.",
+  },
+  analysisFallbackZeroFindingsSummary: {
+    tr:
+      "{{profileTerm}} kapsamında fotoğraftan güvenilir biçimde doğrulanabilen bir bulgu raporlanmadı.",
+    en: "No {{profileTerm}} finding could be reliably verified from the photo.",
+  },
+  analysisFallbackZeroFindingsLimitation: {
+    tr:
+      "Fotoğraf tek başına güvenilir bir bulguyu doğrulamak için yeterli kanıt sağlamadı; saha doğrulaması gerekebilir.",
+    en:
+      "The photo alone did not provide enough evidence to verify a finding reliably; field verification may be needed.",
+  },
+  analysisFallbackCautiousRootCause: {
+    tr:
+      "Görseldeki koşul olası bir katkı faktörüne işaret ediyor; neden sahada doğrulanmalıdır.",
+    en:
+      "The visible condition suggests a possible contributing factor; the cause requires field verification.",
+  },
+  analysisFallbackCoverageGapReason: {
+    tr:
+      "Fotoğraftan aksiyonlanabilir bir risk kanıtı güvenilir biçimde doğrulanamadı.",
+    en:
+      "No actionable risk evidence could be reliably verified from the photo.",
+  },
+  analysisFallbackQuotaReleaseFailed: {
+    tr: "Analiz kotası iade edilemedi. Destek kodu: {{supportID}}",
+    en: "The analysis quota could not be released. Support code: {{supportID}}",
+  },
+  analysisResultPersistenceFailed: {
+    tr: "Analiz sonucu kaydedilemedi.",
+    en: "The analysis result could not be saved.",
+  },
 } as const;
 
 export type UserFacingCopyKey = keyof typeof COPY;

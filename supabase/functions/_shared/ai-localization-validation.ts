@@ -29,6 +29,7 @@ export type AIOutputValidationLayerID =
 export type AIOutputValidationFailureDetail = {
   code: string;
   field?: string;
+  path?: string;
   excerpt?: string;
 };
 
@@ -37,7 +38,9 @@ export type AIOutputValidationLayerResult = {
   ok: boolean;
   code: string | null;
   field?: string;
+  path?: string;
   excerpt?: string;
+  violations?: AIOutputValidationFailureDetail[];
 };
 
 export type AIOutputValidationResult = {
@@ -45,21 +48,49 @@ export type AIOutputValidationResult = {
   code: string | null;
   failedLayer: AIOutputValidationLayerID | null;
   failedField: string | null;
+  failedPath: string | null;
   failedExcerpt: string | null;
+  violations: AIOutputValidationFailureDetail[];
   layers: AIOutputValidationLayerResult[];
 };
 
 export type AIOutputValidationOptions = {
   allowedUserAuthoredValues?: readonly string[];
+  certaintyPolicy?: "legacy" | "v2";
+};
+
+export type AIOutputRepairIntegrityResult = {
+  ok: boolean;
+  code: string | null;
+  path: string | null;
+  removedFindingsCount: number;
+};
+
+export type DeterministicFallbackCopy = {
+  summary: string;
+  zeroFindingsSummary: string;
+  zeroFindingsLimitation: string;
+  cautiousRootCause: string;
+  coverageGapReason: string;
+};
+
+export type DeterministicFallbackResult = {
+  result: Record<string, unknown>;
+  codes: string[];
+  paths: string[];
+  removedFindingsCount: number;
+  zeroFindings: boolean;
 };
 
 export type ValidatedAIOutput = {
   result: Record<string, unknown>;
-  status: "passed" | "repaired";
+  status: "passed" | "repaired" | "fallback";
   attempts: 1 | 2;
   code: string | null;
   initialValidation: AIOutputValidationResult;
   finalValidation: AIOutputValidationResult;
+  repairIntegrity: AIOutputRepairIntegrityResult | null;
+  deterministicFallback: DeterministicFallbackResult | null;
 };
 
 export class OutputLanguageContractError extends Error {
@@ -70,11 +101,23 @@ export class OutputLanguageContractError extends Error {
   readonly attempts: 2;
   readonly failedLayer: AIOutputValidationLayerID | null;
   readonly validation: AIOutputValidationResult | null;
+  readonly initialValidation: AIOutputValidationResult | null;
+  readonly finalValidationStatus: "failed" | "not_run";
+  readonly repairTransportFailed: boolean;
+  readonly repairTransportErrorClass: string | null;
+  readonly repairIntegrity: AIOutputRepairIntegrityResult | null;
 
   constructor(
     expectedLanguage: "tr" | "en",
     validationCode: string,
     validation: AIOutputValidationResult | null = null,
+    options: {
+      initialValidation?: AIOutputValidationResult | null;
+      finalValidationStatus?: "failed" | "not_run";
+      repairTransportFailed?: boolean;
+      repairTransportErrorClass?: string | null;
+      repairIntegrity?: AIOutputRepairIntegrityResult | null;
+    } = {},
   ) {
     super(OUTPUT_LANGUAGE_CONTRACT_FAILED);
     this.name = "OutputLanguageContractError";
@@ -82,6 +125,11 @@ export class OutputLanguageContractError extends Error {
     this.validationCode = validationCode;
     this.failedLayer = validation?.failedLayer ?? null;
     this.validation = validation;
+    this.initialValidation = options.initialValidation ?? null;
+    this.finalValidationStatus = options.finalValidationStatus ?? "failed";
+    this.repairTransportFailed = options.repairTransportFailed ?? false;
+    this.repairTransportErrorClass = options.repairTransportErrorClass ?? null;
+    this.repairIntegrity = options.repairIntegrity ?? null;
     this.attempts = 2;
   }
 }
@@ -119,7 +167,7 @@ const USER_VISIBLE_FIELDS = new Set([
  * evidence claim. Scanning those fields made the validator contradict the
  * contract the same prompt hands the model.
  */
-const EVIDENCE_CLAIM_FIELDS = new Set([
+const LEGACY_EVIDENCE_CLAIM_FIELDS = new Set([
   "observed_evidence",
   "description",
   "root_cause",
@@ -127,25 +175,44 @@ const EVIDENCE_CLAIM_FIELDS = new Set([
   "observation",
 ]);
 
+const V2_EVIDENCE_CLAIM_FIELDS = new Set(
+  [...USER_VISIBLE_FIELDS].filter((field) => field !== "references"),
+);
+
+type FieldTextEntry = {
+  field: string;
+  path: string;
+  text: string;
+};
+
 function collectFieldText(
   value: unknown,
   fields: ReadonlySet<string>,
   key = "",
-  output: Array<{ field: string; text: string }> = [],
-): Array<{ field: string; text: string }> {
+  path = "",
+  output: FieldTextEntry[] = [],
+): FieldTextEntry[] {
   if (typeof value === "string") {
     if (fields.has(key) && value.trim()) {
-      output.push({ field: key, text: value.trim() });
+      output.push({ field: key, path, text: value.trim() });
     }
     return output;
   }
   if (Array.isArray(value)) {
-    for (const item of value) collectFieldText(item, fields, key, output);
+    value.forEach((item, index) => {
+      collectFieldText(item, fields, key, `${path}[${index}]`, output);
+    });
     return output;
   }
   if (!value || typeof value !== "object") return output;
   for (const [childKey, childValue] of Object.entries(value)) {
-    collectFieldText(childValue, fields, childKey, output);
+    collectFieldText(
+      childValue,
+      fields,
+      childKey,
+      path ? `${path}.${childKey}` : childKey,
+      output,
+    );
   }
   return output;
 }
@@ -156,7 +223,7 @@ function collectVisibleText(
   output: string[] = [],
 ): string[] {
   for (
-    const entry of collectFieldText(value, USER_VISIBLE_FIELDS, key)
+    const entry of collectFieldText(value, USER_VISIBLE_FIELDS, key, key)
   ) {
     output.push(entry.text);
   }
@@ -477,7 +544,74 @@ const DEFINITIVE_ROOT_CAUSE_PATTERNS = [
  * non-letter lookaround instead; the ASCII alternatives keep `\b`.
  */
 const UNSUPPORTED_CERTAINTY_PATTERN =
-  /\b(?:definitely|certainly|guaranteed|without doubt)\b|(?<![\p{L}\p{N}_])(?:kesinlikle|kesin olarak|şüphesiz)(?![\p{L}\p{N}_])/iu;
+  /\b(?:definitely|certainly|guaranteed|without doubt|with certainty)\b|(?<![\p{L}\p{N}_])(?:kesinlikle|kesin olarak|şüphesiz)(?![\p{L}\p{N}_])/iu;
+
+const TURKISH_NEGATIVE_DETERMINATION_PATTERN =
+  /(?:belirlen|tespit\s+edil|do\u{11f}rulan|de\u{11f}erlendiril|anla\u{15f}\u{131}l|saptan|g\u{f6}zlemlen|\u{f6}l\u{e7}\u{fc}l|teyit\s+edil)(?:[ae])?m(?:[ae]z|[ae]|iyor|\u{131}yor|uyor|\u{fc}yor)\p{L}*/iu;
+const ENGLISH_NEGATIVE_DETERMINATION_PATTERN =
+  /\b(?:cannot|can['’]t|could\s+not|couldn['’]t|is\s+not|are\s+not|was\s+not|were\s+not)\s+(?:reliably\s+)?(?:be\s+)?(?:determined|verified|confirmed|assessed|established|observed|measured)\b/iu;
+const TURKISH_NORMATIVE_ACTION_PATTERN =
+  /\p{L}*m(?:al\u{131}|eli)(?:d\u{131}r|dir|dur|d\u{fc}r|t\u{131}r|tir|tur|t\u{fc}r)?(?![\p{L}\p{N}_])|(?<![\p{L}\p{N}_])(?:gerekir|zorunludur)(?![\p{L}\p{N}_])/iu;
+const ENGLISH_NORMATIVE_ACTION_PATTERN =
+  /\b(?:must|should|(?:is|are)\s+(?:(?:definitely|certainly)\s+)?required)\b/iu;
+const CLAUSE_SEPARATOR_PATTERN =
+  /(?:[.!?;\n]+|,\s+|\s+(?:ve|ama|ancak|fakat|\u{e7}\u{fc}nk\u{fc}|zira|and|but|however|because|although|though|since|yet)\s+)/iu;
+
+const ACTION_FIELDS = new Set(["corrective_action", "preventive_control"]);
+
+function matchesTouchOrOverlap(
+  left: RegExpExecArray,
+  right: RegExpExecArray,
+  text: string,
+): boolean {
+  const leftEnd = left.index + left[0].length;
+  const rightEnd = right.index + right[0].length;
+  if (left.index <= rightEnd && right.index <= leftEnd) return true;
+  const between = leftEnd <= right.index
+    ? text.slice(leftEnd, right.index)
+    : text.slice(rightEnd, left.index);
+  return between.trim().length === 0;
+}
+
+function certaintyViolationInText(
+  entry: FieldTextEntry,
+  certaintyPolicy: "legacy" | "v2",
+): AIOutputValidationFailureDetail | null {
+  const clauses = certaintyPolicy === "v2"
+    ? entry.text.split(CLAUSE_SEPARATOR_PATTERN)
+    : [entry.text];
+  for (const rawClause of clauses) {
+    const clause = rawClause.trim();
+    const certaintyMatch = UNSUPPORTED_CERTAINTY_PATTERN.exec(clause);
+    if (!clause || !certaintyMatch) continue;
+    const turkishHedgeMatch = TURKISH_NEGATIVE_DETERMINATION_PATTERN.exec(
+      clause,
+    );
+    const englishHedgeMatch = ENGLISH_NEGATIVE_DETERMINATION_PATTERN.exec(
+      clause,
+    );
+    const isClosedHedge = Boolean(
+      (turkishHedgeMatch &&
+        certaintyMatch.index <= turkishHedgeMatch.index &&
+        matchesTouchOrOverlap(certaintyMatch, turkishHedgeMatch, clause)) ||
+        (englishHedgeMatch &&
+          matchesTouchOrOverlap(certaintyMatch, englishHedgeMatch, clause)),
+    );
+    if (certaintyPolicy === "v2" && isClosedHedge) continue;
+    const actionMatch = TURKISH_NORMATIVE_ACTION_PATTERN.exec(clause) ??
+      ENGLISH_NORMATIVE_ACTION_PATTERN.exec(clause);
+    const isActionClause = ACTION_FIELDS.has(entry.field) && actionMatch &&
+      matchesTouchOrOverlap(certaintyMatch, actionMatch, clause);
+    if (certaintyPolicy === "v2" && isActionClause) continue;
+    return {
+      code: "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY",
+      field: entry.field,
+      path: entry.path,
+      excerpt: excerptAround(clause, UNSUPPORTED_CERTAINTY_PATTERN),
+    };
+  }
+  return null;
+}
 
 function excerptAround(text: string, pattern: RegExp): string {
   const match = pattern.exec(text);
@@ -489,72 +623,141 @@ function excerptAround(text: string, pattern: RegExp): string {
   }`;
 }
 
-function photoEvidenceCode(
+type FindingLocation = {
+  item: Record<string, unknown>;
+  path: string;
+  containerPath: string;
+  index: number;
+};
+
+function findingLocations(value: unknown): FindingLocation[] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+  const record = value as Record<string, unknown>;
+  if (Array.isArray(record.hazards)) {
+    return record.hazards.flatMap((item, index) =>
+      item && typeof item === "object" && !Array.isArray(item)
+        ? [{
+          item: item as Record<string, unknown>,
+          path: `hazards[${index}]`,
+          containerPath: "hazards",
+          index,
+        }]
+        : []
+    );
+  }
+  if (!Array.isArray(record.photo_findings)) return [];
+  return record.photo_findings.flatMap((photoFinding, photoIndex) => {
+    if (
+      !photoFinding || typeof photoFinding !== "object" ||
+      Array.isArray(photoFinding)
+    ) return [];
+    const findings = (photoFinding as Record<string, unknown>).findings;
+    if (!Array.isArray(findings)) return [];
+    const containerPath = `photo_findings[${photoIndex}].findings`;
+    return findings.flatMap((item, findingIndex) =>
+      item && typeof item === "object" && !Array.isArray(item)
+        ? [{
+          item: item as Record<string, unknown>,
+          path: `${containerPath}[${findingIndex}]`,
+          containerPath,
+          index: findingIndex,
+        }]
+        : []
+    );
+  });
+}
+
+function deduplicateViolations(
+  violations: AIOutputValidationFailureDetail[],
+): AIOutputValidationFailureDetail[] {
+  const seen = new Set<string>();
+  return violations.filter((violation) => {
+    const key = `${violation.code}\u0000${violation.path ?? ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function photoEvidenceViolations(
   value: unknown,
-): AIOutputValidationFailureDetail | null {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    const findings = findingsFrom(value as Record<string, unknown>) ?? [];
-    for (const finding of findings) {
-      if (!finding || typeof finding !== "object" || Array.isArray(finding)) {
-        continue;
-      }
-      const item = finding as Record<string, unknown>;
-      const findingText = collectVisibleText(item).join("\n");
+  certaintyPolicy: "legacy" | "v2",
+): AIOutputValidationFailureDetail[] {
+  const violations: AIOutputValidationFailureDetail[] = [];
+  for (const finding of findingLocations(value)) {
+    const entries = collectFieldText(
+      finding.item,
+      USER_VISIBLE_FIELDS,
+      "",
+      finding.path,
+    );
+    for (const entry of entries) {
       if (
-        MEASUREMENT_VALUE_PATTERN.test(findingText) &&
-        item.needs_field_verification !== true
+        MEASUREMENT_VALUE_PATTERN.test(entry.text) &&
+        finding.item.needs_field_verification !== true
       ) {
-        return {
+        violations.push({
           code: "PHOTO_EVIDENCE_MEASUREMENT_REQUIRES_VERIFICATION",
-          excerpt: excerptAround(findingText, MEASUREMENT_VALUE_PATTERN),
-        };
+          field: entry.field,
+          path: entry.path,
+          excerpt: excerptAround(entry.text, MEASUREMENT_VALUE_PATTERN),
+        });
       }
-      const rootCause = typeof item.root_cause === "string"
-        ? item.root_cause
-        : "";
-      if (
-        DEFINITIVE_ROOT_CAUSE_PATTERNS.some((pattern) =>
-          pattern.test(rootCause)
-        )
-      ) {
-        return {
-          code: "PHOTO_EVIDENCE_DEFINITIVE_ROOT_CAUSE",
-          field: "root_cause",
-          excerpt: rootCause.slice(0, 160),
-        };
-      }
-      if (UNSUPPORTED_UNSEEN_FACT_PATTERN.test(findingText)) {
-        return {
+      if (UNSUPPORTED_UNSEEN_FACT_PATTERN.test(entry.text)) {
+        violations.push({
           code: "PHOTO_EVIDENCE_UNSEEN_FACT",
-          excerpt: excerptAround(findingText, UNSUPPORTED_UNSEEN_FACT_PATTERN),
-        };
+          field: entry.field,
+          path: entry.path,
+          excerpt: excerptAround(entry.text, UNSUPPORTED_UNSEEN_FACT_PATTERN),
+        });
       }
     }
-  }
-  for (const entry of collectFieldText(value, EVIDENCE_CLAIM_FIELDS)) {
-    if (UNSUPPORTED_CERTAINTY_PATTERN.test(entry.text)) {
-      return {
-        code: "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY",
-        field: entry.field,
-        excerpt: excerptAround(entry.text, UNSUPPORTED_CERTAINTY_PATTERN),
-      };
+    const rootCause = typeof finding.item.root_cause === "string"
+      ? finding.item.root_cause
+      : "";
+    if (
+      DEFINITIVE_ROOT_CAUSE_PATTERNS.some((pattern) => pattern.test(rootCause))
+    ) {
+      violations.push({
+        code: "PHOTO_EVIDENCE_DEFINITIVE_ROOT_CAUSE",
+        field: "root_cause",
+        path: `${finding.path}.root_cause`,
+        excerpt: rootCause.slice(0, 160),
+      });
     }
   }
-  return null;
+  const certaintyFields = certaintyPolicy === "v2"
+    ? V2_EVIDENCE_CLAIM_FIELDS
+    : LEGACY_EVIDENCE_CLAIM_FIELDS;
+  for (const entry of collectFieldText(value, certaintyFields)) {
+    const violation = certaintyViolationInText(entry, certaintyPolicy);
+    if (violation) violations.push(violation);
+  }
+  return deduplicateViolations(violations).slice(0, 32);
 }
 
 function layer(
   id: AIOutputValidationLayerID,
-  outcome: string | AIOutputValidationFailureDetail | null,
+  outcome:
+    | string
+    | AIOutputValidationFailureDetail
+    | AIOutputValidationFailureDetail[]
+    | null,
 ): AIOutputValidationLayerResult {
-  if (outcome === null) return { id, ok: true, code: null };
+  if (outcome === null || (Array.isArray(outcome) && outcome.length === 0)) {
+    return { id, ok: true, code: null };
+  }
   if (typeof outcome === "string") return { id, ok: false, code: outcome };
+  const violations = Array.isArray(outcome) ? outcome : [outcome];
+  const first = violations[0];
   return {
     id,
     ok: false,
-    code: outcome.code,
-    ...(outcome.field ? { field: outcome.field } : {}),
-    ...(outcome.excerpt ? { excerpt: outcome.excerpt } : {}),
+    code: first.code,
+    ...(first.field ? { field: first.field } : {}),
+    ...(first.path ? { path: first.path } : {}),
+    ...(first.excerpt ? { excerpt: first.excerpt } : {}),
+    violations,
   };
 }
 
@@ -588,16 +791,477 @@ export function validateAIOutputContract(
       "regulatory_reference",
       regulatoryCode(value, visibleText, snapshot),
     ),
-    layer("photo_evidence", photoEvidenceCode(value)),
+    layer(
+      "photo_evidence",
+      photoEvidenceViolations(value, options.certaintyPolicy ?? "legacy"),
+    ),
   ];
   const failed = layers.find((result) => !result.ok) ?? null;
+  const violations = failed?.violations ?? (failed?.code
+    ? [{
+      code: failed.code,
+      ...(failed.field ? { field: failed.field } : {}),
+      ...(failed.path ? { path: failed.path } : {}),
+      ...(failed.excerpt ? { excerpt: failed.excerpt } : {}),
+    }]
+    : []);
   return {
     ok: failed === null,
     code: failed?.code ?? null,
     failedLayer: failed?.id ?? null,
     failedField: failed?.field ?? null,
+    failedPath: failed?.path ?? null,
     failedExcerpt: failed?.excerpt ?? null,
+    violations,
     layers,
+  };
+}
+
+function jsonClone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function deepEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right)) return false;
+    return left.length === right.length &&
+      left.every((value, index) => deepEqual(value, right[index]));
+  }
+  if (
+    !left || !right || typeof left !== "object" || typeof right !== "object"
+  ) return false;
+  const leftRecord = left as Record<string, unknown>;
+  const rightRecord = right as Record<string, unknown>;
+  const keys = [
+    ...new Set([
+      ...Object.keys(leftRecord),
+      ...Object.keys(rightRecord),
+    ]),
+  ].sort();
+  return keys.every((key) =>
+    Object.hasOwn(leftRecord, key) === Object.hasOwn(rightRecord, key) &&
+    deepEqual(leftRecord[key], rightRecord[key])
+  );
+}
+
+function differencePaths(
+  left: unknown,
+  right: unknown,
+  path = "",
+  output: string[] = [],
+): string[] {
+  if (deepEqual(left, right)) return output;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right)) {
+      output.push(path);
+      return output;
+    }
+    if (left.length !== right.length) output.push(path);
+    const length = Math.min(left.length, right.length);
+    for (let index = 0; index < length; index += 1) {
+      differencePaths(
+        left[index],
+        right[index],
+        `${path}[${index}]`,
+        output,
+      );
+    }
+    return output;
+  }
+  if (
+    !left || !right || typeof left !== "object" || typeof right !== "object"
+  ) {
+    output.push(path);
+    return output;
+  }
+  const leftRecord = left as Record<string, unknown>;
+  const rightRecord = right as Record<string, unknown>;
+  const keys = [
+    ...new Set([
+      ...Object.keys(leftRecord),
+      ...Object.keys(rightRecord),
+    ]),
+  ].sort();
+  for (const key of keys) {
+    const childPath = path ? `${path}.${key}` : key;
+    if (
+      !Object.hasOwn(leftRecord, key) || !Object.hasOwn(rightRecord, key)
+    ) {
+      output.push(childPath);
+      continue;
+    }
+    differencePaths(leftRecord[key], rightRecord[key], childPath, output);
+  }
+  return output;
+}
+
+function pathTokens(path: string): Array<string | number> {
+  const tokens: Array<string | number> = [];
+  for (const match of path.matchAll(/([^.\[\]]+)|\[(\d+)\]/gu)) {
+    tokens.push(match[2] === undefined ? match[1] : Number(match[2]));
+  }
+  return tokens;
+}
+
+function valueAtPath(value: unknown, path: string): unknown {
+  let current = value;
+  for (const token of pathTokens(path)) {
+    if (!current || typeof current !== "object") return undefined;
+    current = (current as Record<string | number, unknown>)[token];
+  }
+  return current;
+}
+
+function setValueAtPath(value: unknown, path: string, replacement: unknown) {
+  const tokens = pathTokens(path);
+  if (tokens.length === 0) return;
+  let current = value;
+  for (const token of tokens.slice(0, -1)) {
+    if (!current || typeof current !== "object") return;
+    current = (current as Record<string | number, unknown>)[token];
+  }
+  if (!current || typeof current !== "object") return;
+  (current as Record<string | number, unknown>)[tokens.at(-1)!] = replacement;
+}
+
+function findingBasePath(path: string | undefined): string | null {
+  if (!path) return null;
+  return path.match(
+    /^(?:hazards\[\d+\]|photo_findings\[\d+\]\.findings\[\d+\])/u,
+  )?.[0] ?? null;
+}
+
+function findingContainers(
+  value: Record<string, unknown>,
+): Array<{ path: string; findings: unknown[] }> {
+  if (Array.isArray(value.hazards)) {
+    return [{ path: "hazards", findings: value.hazards }];
+  }
+  if (!Array.isArray(value.photo_findings)) return [];
+  return value.photo_findings.flatMap((photoFinding, index) => {
+    if (
+      !photoFinding || typeof photoFinding !== "object" ||
+      Array.isArray(photoFinding) ||
+      !Array.isArray((photoFinding as Record<string, unknown>).findings)
+    ) return [];
+    return [{
+      path: `photo_findings[${index}].findings`,
+      findings: (photoFinding as Record<string, unknown>).findings as unknown[],
+    }];
+  });
+}
+
+function allowedFindingDifferencePaths(
+  findingPath: string,
+  validation: AIOutputValidationResult,
+): Set<string> {
+  const allowed = new Set<string>(["needs_field_verification"]);
+  for (const violation of validation.violations) {
+    if (findingBasePath(violation.path) !== findingPath || !violation.path) {
+      continue;
+    }
+    allowed.add(violation.path.slice(findingPath.length + 1));
+  }
+  return allowed;
+}
+
+function isUserVisibleDifferencePath(path: string): boolean {
+  const lastStringToken = pathTokens(path).filter((token) =>
+    typeof token === "string"
+  ).at(-1);
+  return typeof lastStringToken === "string" &&
+    USER_VISIBLE_FIELDS.has(lastStringToken);
+}
+
+export function validateAIOutputRepairIntegrity(
+  initialValue: unknown,
+  repairedValue: unknown,
+  validation: AIOutputValidationResult,
+): AIOutputRepairIntegrityResult {
+  const fail = (
+    code: string,
+    path: string | null,
+    removedFindingsCount = 0,
+  ): AIOutputRepairIntegrityResult => ({
+    ok: false,
+    code,
+    path,
+    removedFindingsCount,
+  });
+  if (
+    !initialValue || !repairedValue || typeof initialValue !== "object" ||
+    typeof repairedValue !== "object" || Array.isArray(initialValue) ||
+    Array.isArray(repairedValue)
+  ) return fail("REPAIR_INTEGRITY_ROOT_CHANGED", null);
+
+  const initial = initialValue as Record<string, unknown>;
+  const repaired = repairedValue as Record<string, unknown>;
+  const initialContainers = findingContainers(initial);
+  const repairedContainers = findingContainers(repaired);
+  if (
+    initialContainers.length !== repairedContainers.length ||
+    initialContainers.some((container, index) =>
+      container.path !== repairedContainers[index]?.path
+    )
+  ) return fail("REPAIR_INTEGRITY_FINDING_CONTAINERS_CHANGED", null);
+
+  const offendingFindingPaths = new Set(
+    validation.violations.map((violation) => findingBasePath(violation.path))
+      .filter((path): path is string => Boolean(path)),
+  );
+  const evidenceRepair = validation.failedLayer === "photo_evidence";
+  let removedFindingsCount = 0;
+  for (
+    let containerIndex = 0;
+    containerIndex < initialContainers.length;
+    containerIndex += 1
+  ) {
+    const initialContainer = initialContainers[containerIndex];
+    const repairedContainer = repairedContainers[containerIndex];
+    if (repairedContainer.findings.length > initialContainer.findings.length) {
+      return fail("REPAIR_INTEGRITY_FINDING_ADDED", initialContainer.path);
+    }
+    if (
+      !evidenceRepair &&
+      repairedContainer.findings.length < initialContainer.findings.length
+    ) {
+      return fail("REPAIR_INTEGRITY_FINDING_REMOVED", initialContainer.path);
+    }
+    let repairedIndex = 0;
+    for (
+      let initialIndex = 0;
+      initialIndex < initialContainer.findings.length;
+      initialIndex += 1
+    ) {
+      const initialFinding = initialContainer.findings[initialIndex];
+      const repairedFinding = repairedContainer.findings[repairedIndex];
+      const initialFindingPath = `${initialContainer.path}[${initialIndex}]`;
+      if (!evidenceRepair) {
+        const differences = differencePaths(initialFinding, repairedFinding);
+        const disallowedPath = differences.find((path) =>
+          !isUserVisibleDifferencePath(path)
+        );
+        if (repairedFinding === undefined || disallowedPath) {
+          return fail(
+            "REPAIR_INTEGRITY_UNRELATED_PATH_CHANGED",
+            disallowedPath
+              ? `${initialFindingPath}.${disallowedPath}`
+              : initialFindingPath,
+            removedFindingsCount,
+          );
+        }
+        repairedIndex += 1;
+        continue;
+      }
+      if (!offendingFindingPaths.has(initialFindingPath)) {
+        if (!deepEqual(initialFinding, repairedFinding)) {
+          return fail(
+            "REPAIR_INTEGRITY_UNAFFECTED_FINDING_CHANGED",
+            initialFindingPath,
+            removedFindingsCount,
+          );
+        }
+        repairedIndex += 1;
+        continue;
+      }
+      const allowedPaths = allowedFindingDifferencePaths(
+        initialFindingPath,
+        validation,
+      );
+      const differences = differencePaths(initialFinding, repairedFinding);
+      if (
+        repairedFinding !== undefined &&
+        differences.every((path) => allowedPaths.has(path))
+      ) {
+        repairedIndex += 1;
+      } else {
+        removedFindingsCount += 1;
+      }
+    }
+    if (repairedIndex !== repairedContainer.findings.length) {
+      return fail(
+        "REPAIR_INTEGRITY_FINDING_ADDED",
+        repairedContainer.path,
+        removedFindingsCount,
+      );
+    }
+  }
+
+  const initialWithoutFindings = jsonClone(initial);
+  const repairedWithoutFindings = jsonClone(repaired);
+  for (const container of initialContainers) {
+    setValueAtPath(initialWithoutFindings, container.path, []);
+    setValueAtPath(repairedWithoutFindings, container.path, []);
+  }
+  const allowedGlobalPaths = new Set(
+    validation.violations.flatMap((violation) => {
+      if (!violation.path || findingBasePath(violation.path)) return [];
+      return [violation.path];
+    }),
+  );
+  if (!evidenceRepair) {
+    for (
+      const path of differencePaths(
+        initialWithoutFindings,
+        repairedWithoutFindings,
+      )
+    ) {
+      if (isUserVisibleDifferencePath(path)) allowedGlobalPaths.add(path);
+    }
+  }
+  if (removedFindingsCount > 0) allowedGlobalPaths.add("ai_summary");
+  const globalDifferences = differencePaths(
+    initialWithoutFindings,
+    repairedWithoutFindings,
+  );
+  const disallowedGlobalPath = globalDifferences.find((path) =>
+    !allowedGlobalPaths.has(path)
+  );
+  if (disallowedGlobalPath) {
+    return fail(
+      "REPAIR_INTEGRITY_UNRELATED_PATH_CHANGED",
+      disallowedGlobalPath,
+      removedFindingsCount,
+    );
+  }
+  return {
+    ok: true,
+    code: null,
+    path: null,
+    removedFindingsCount,
+  };
+}
+
+const DETERMINISTIC_FALLBACK_CODES = new Set([
+  "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY",
+  "PHOTO_EVIDENCE_DEFINITIVE_ROOT_CAUSE",
+  "PHOTO_EVIDENCE_MEASUREMENT_REQUIRES_VERIFICATION",
+  "PHOTO_EVIDENCE_UNSEEN_FACT",
+]);
+
+export function applyDeterministicAIOutputFallback(
+  value: unknown,
+  validation: AIOutputValidationResult,
+  copy: DeterministicFallbackCopy,
+): DeterministicFallbackResult | null {
+  if (
+    validation.failedLayer !== "photo_evidence" ||
+    validation.violations.length === 0 ||
+    validation.violations.some((violation) =>
+      !DETERMINISTIC_FALLBACK_CODES.has(violation.code) || !violation.path
+    ) ||
+    !value || typeof value !== "object" || Array.isArray(value)
+  ) return null;
+  const candidate = jsonClone(value as Record<string, unknown>);
+  const dropLocations = new Map<string, Set<number>>();
+  const cautiousRootCausePaths = new Set(
+    validation.violations.filter((violation) =>
+      violation.code === "PHOTO_EVIDENCE_DEFINITIVE_ROOT_CAUSE"
+    ).map((violation) => violation.path),
+  );
+  let summaryWasOffending = false;
+  for (const violation of validation.violations) {
+    const path = violation.path!;
+    const basePath = findingBasePath(path);
+    if (
+      violation.code ===
+        "PHOTO_EVIDENCE_MEASUREMENT_REQUIRES_VERIFICATION" && basePath
+    ) {
+      const finding = valueAtPath(candidate, basePath);
+      if (!finding || typeof finding !== "object" || Array.isArray(finding)) {
+        return null;
+      }
+      (finding as Record<string, unknown>).needs_field_verification = true;
+      continue;
+    }
+    if (
+      violation.code === "PHOTO_EVIDENCE_DEFINITIVE_ROOT_CAUSE" && basePath
+    ) {
+      setValueAtPath(candidate, path, copy.cautiousRootCause);
+      const finding = valueAtPath(candidate, basePath);
+      if (finding && typeof finding === "object" && !Array.isArray(finding)) {
+        (finding as Record<string, unknown>).needs_field_verification = true;
+      }
+      continue;
+    }
+    if (
+      violation.code === "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY" &&
+      cautiousRootCausePaths.has(path)
+    ) continue;
+    if (!basePath) {
+      if (path === "ai_summary") {
+        summaryWasOffending = true;
+        continue;
+      }
+      if (path === "limitations") {
+        setValueAtPath(candidate, path, copy.zeroFindingsLimitation);
+        continue;
+      }
+      if (
+        violation.field &&
+        new Set([
+          "scene_summary",
+          "coverage_gap_reason",
+          "coverage_conclusion",
+          "visual_evidence",
+          "observation",
+          "text",
+        ]).has(violation.field)
+      ) {
+        setValueAtPath(candidate, path, copy.coverageGapReason);
+        continue;
+      }
+      return null;
+    }
+    const match = basePath.match(/^(.*)\[(\d+)\]$/u);
+    if (!match) return null;
+    const indices = dropLocations.get(match[1]) ?? new Set<number>();
+    indices.add(Number(match[2]));
+    dropLocations.set(match[1], indices);
+  }
+  const beforeCount = findingLocations(candidate).length;
+  for (const [containerPath, indices] of dropLocations) {
+    const findings = valueAtPath(candidate, containerPath);
+    if (!Array.isArray(findings)) return null;
+    for (const index of [...indices].sort((left, right) => right - left)) {
+      findings.splice(index, 1);
+    }
+  }
+  const afterCount = findingLocations(candidate).length;
+  const removedFindingsCount = Math.max(0, beforeCount - afterCount);
+  const zeroFindings = afterCount === 0;
+  if (zeroFindings) {
+    candidate.ai_summary = copy.zeroFindingsSummary;
+    candidate.limitations = copy.zeroFindingsLimitation;
+  } else if (removedFindingsCount > 0 || summaryWasOffending) {
+    candidate.ai_summary = copy.summary.replaceAll(
+      "{{count}}",
+      String(afterCount),
+    );
+  }
+  if (Array.isArray(candidate.photo_findings)) {
+    for (const photoFinding of candidate.photo_findings) {
+      if (
+        !photoFinding || typeof photoFinding !== "object" ||
+        Array.isArray(photoFinding)
+      ) continue;
+      const record = photoFinding as Record<string, unknown>;
+      if (Array.isArray(record.findings) && record.findings.length === 0) {
+        record.coverage_status = "no_actionable_hazard";
+        record.coverage_gap_reason = copy.coverageGapReason;
+        if (Object.hasOwn(record, "coverage_conclusion")) {
+          record.coverage_conclusion = copy.coverageGapReason;
+        }
+      }
+    }
+  }
+  return {
+    result: candidate,
+    codes: [...new Set(validation.violations.map((item) => item.code))],
+    paths: [...new Set(validation.violations.map((item) => item.path!))],
+    removedFindingsCount,
+    zeroFindings,
   };
 }
 
@@ -605,6 +1269,9 @@ export async function validateAIOutputWithSingleRepair(params: {
   initialResult: unknown;
   snapshot: LocalizationSnapshot;
   allowedUserAuthoredValues?: readonly string[];
+  certaintyPolicy?: "legacy" | "v2";
+  enforceRepairIntegrity?: boolean;
+  deterministicFallbackCopy?: DeterministicFallbackCopy;
   repair: (
     validation: AIOutputValidationResult,
   ) => Promise<Record<string, unknown>>;
@@ -612,7 +1279,10 @@ export async function validateAIOutputWithSingleRepair(params: {
   const initialValidation = validateAIOutputContract(
     params.initialResult,
     params.snapshot,
-    { allowedUserAuthoredValues: params.allowedUserAuthoredValues },
+    {
+      allowedUserAuthoredValues: params.allowedUserAuthoredValues,
+      certaintyPolicy: params.certaintyPolicy,
+    },
   );
   if (initialValidation.ok) {
     return {
@@ -622,20 +1292,88 @@ export async function validateAIOutputWithSingleRepair(params: {
       code: null,
       initialValidation,
       finalValidation: initialValidation,
+      repairIntegrity: null,
+      deterministicFallback: null,
     };
   }
 
-  const repairedResult = await params.repair(initialValidation);
+  let repairedResult: Record<string, unknown>;
+  try {
+    repairedResult = await params.repair(initialValidation);
+  } catch (error) {
+    throw new OutputLanguageContractError(
+      params.snapshot.output_language,
+      "LANGUAGE_CONTRACT_REPAIR_TRANSPORT_FAILED",
+      null,
+      {
+        initialValidation,
+        finalValidationStatus: "not_run",
+        repairTransportFailed: true,
+        repairTransportErrorClass: error instanceof Error
+          ? error.name
+          : typeof error,
+      },
+    );
+  }
+  const repairIntegrity = params.enforceRepairIntegrity &&
+      initialValidation.failedLayer !== "json_schema"
+    ? validateAIOutputRepairIntegrity(
+      params.initialResult,
+      repairedResult,
+      initialValidation,
+    )
+    : null;
+  if (repairIntegrity && !repairIntegrity.ok) {
+    throw new OutputLanguageContractError(
+      params.snapshot.output_language,
+      repairIntegrity.code ?? "REPAIR_INTEGRITY_FAILED",
+      null,
+      { initialValidation, repairIntegrity },
+    );
+  }
   const finalValidation = validateAIOutputContract(
     repairedResult,
     params.snapshot,
-    { allowedUserAuthoredValues: params.allowedUserAuthoredValues },
+    {
+      allowedUserAuthoredValues: params.allowedUserAuthoredValues,
+      certaintyPolicy: params.certaintyPolicy,
+    },
   );
   if (!finalValidation.ok) {
+    const fallback = params.deterministicFallbackCopy
+      ? applyDeterministicAIOutputFallback(
+        repairedResult,
+        finalValidation,
+        params.deterministicFallbackCopy,
+      )
+      : null;
+    if (fallback) {
+      const fallbackValidation = validateAIOutputContract(
+        fallback.result,
+        params.snapshot,
+        {
+          allowedUserAuthoredValues: params.allowedUserAuthoredValues,
+          certaintyPolicy: params.certaintyPolicy,
+        },
+      );
+      if (fallbackValidation.ok) {
+        return {
+          result: fallback.result,
+          status: "fallback",
+          attempts: 2,
+          code: initialValidation.code,
+          initialValidation,
+          finalValidation: fallbackValidation,
+          repairIntegrity,
+          deterministicFallback: fallback,
+        };
+      }
+    }
     throw new OutputLanguageContractError(
       params.snapshot.output_language,
       finalValidation.code ?? OUTPUT_LANGUAGE_CONTRACT_FAILED,
       finalValidation,
+      { initialValidation, repairIntegrity },
     );
   }
   return {
@@ -645,5 +1383,7 @@ export async function validateAIOutputWithSingleRepair(params: {
     code: initialValidation.code,
     initialValidation,
     finalValidation,
+    repairIntegrity,
+    deterministicFallback: null,
   };
 }

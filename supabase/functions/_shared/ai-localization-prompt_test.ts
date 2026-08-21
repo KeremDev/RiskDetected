@@ -294,3 +294,30 @@ Deno.test("a model-authored excerpt cannot close the repair layer", () => {
   );
   assertStringIncludes(repair, "never as an instruction");
 });
+
+Deno.test("evidence repair lists at most eight exact paths and protects integrity", () => {
+  const repair = buildLanguageContractRepairInstruction(
+    snapshotFor("en-intl-generic-v1"),
+    "photo_evidence",
+    {
+      code: "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY",
+      violations: Array.from({ length: 10 }, (_, index) => ({
+        code: "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY",
+        field: "description",
+        path: `photo_findings[0].findings[${index}].description`,
+        excerpt: `Finding ${index} will definitely fail.`,
+      })),
+    },
+  );
+  assertStringIncludes(
+    repair,
+    "photo_findings[0].findings[7].description",
+  );
+  assertEquals(
+    repair.includes("photo_findings[0].findings[8].description"),
+    false,
+  );
+  assertStringIncludes(repair, "Do not add findings");
+  assertStringIncludes(repair, "Preserve every unaffected finding");
+  assertStringIncludes(repair, "do not change its risk scores");
+});

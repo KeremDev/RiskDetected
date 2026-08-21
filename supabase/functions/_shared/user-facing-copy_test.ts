@@ -23,6 +23,8 @@ Deno.test("every semantic user copy key has complete Turkish and English copy", 
     supportID: "RD-TEST",
     estimatedCompletionAt: "2026-08-16T00:00:00Z",
     store: "App Store",
+    profileTerm: "workplace safety",
+    count: 2,
   };
   for (const key of USER_FACING_COPY_KEYS) {
     for (const language of ["tr", "en"] as const) {
