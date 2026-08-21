@@ -184,7 +184,7 @@ Deno.test("atomic finding contract keeps independently correctable hazards separ
 
   assertStringIncludes(
     source,
-    'const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v2"',
+    'const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v3"',
   );
   assertStringIncludes(
     source,
@@ -193,6 +193,10 @@ Deno.test("atomic finding contract keeps independently correctable hazards separ
   assertStringIncludes(
     source,
     "korkuluk eksikliği ile sabitlenmemiş merdiven aynı yüksekte çalışma katmanında olsa da ayrı fiziksel tehlikelerdir",
+  );
+  assertStringIncludes(
+    source,
+    "bağımsız müdahale gerektiren ikinci bir fiziksel koşul ekliyorsa iki ayrı bulgu oluştur",
   );
   assertStringIncludes(
     source,

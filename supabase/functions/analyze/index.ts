@@ -48,6 +48,7 @@ import {
   type CoverageQualityEvaluation,
   type CoverageQualityNoAdditionalReasonCode,
   evaluateCoverageQualityRecords,
+  isCoverageRepairSubfindingAlreadyCovered,
   normalizeCoverageQualityNoAdditionalReasonCode,
   normalizedTextTokens,
   preferredCoverageFinding,
@@ -420,12 +421,12 @@ type OnboardingContext = {
 
 const PROMPT_VERSION = "isg-photo-policy-v2026-07-single-multi-targets";
 const PERSONALIZATION_VERSION = "onboarding-v1";
-const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v2";
+const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v3";
 // localization-inventory: machine-prompt-begin
 const ATOMIC_FINDING_PROMPT_TR =
-  "Her bulgu yalnızca bağımsız olarak düzeltilebilen tek bir fiziksel tehlikeyi anlatsın. Yalnız aynı fiziksel tehlike, aynı görsel kanıt, aynı anlık düzeltici önlem ve aynı önleyici kontrol söz konusuysa tek bulguda birleştir. Ortak kategori, denetim katmanı veya benzer kök neden tek başına birleştirme gerekçesi değildir. Örneğin korkuluk eksikliği ile sabitlenmemiş merdiven aynı yüksekte çalışma katmanında olsa da ayrı fiziksel tehlikelerdir ve ayrı bulgu olmalıdır.";
+  "Her bulgu yalnızca bağımsız olarak düzeltilebilen tek bir fiziksel tehlikeyi anlatsın. Başlık, görsel kanıt, açıklama, kök neden, düzeltici eylem ve önleyici kontrol alanlarının tamamı aynı tek tehlikede kalmalı. Bu alanlardan biri 've', 'ile' veya 'ayrıca' bağlacıyla bağımsız müdahale gerektiren ikinci bir fiziksel koşul ekliyorsa iki ayrı bulgu oluştur. Yalnız aynı fiziksel tehlike, aynı görsel kanıt, aynı anlık düzeltici önlem ve aynı önleyici kontrol söz konusuysa tek bulguda birleştir. Ortak kategori, denetim katmanı veya benzer kök neden tek başına birleştirme gerekçesi değildir. Örneğin korkuluk eksikliği ile sabitlenmemiş merdiven aynı yüksekte çalışma katmanında olsa da ayrı fiziksel tehlikelerdir ve ayrı bulgu olmalıdır.";
 const ATOMIC_FINDING_PROMPT_EN =
-  "Each finding must contain exactly one independently correctable physical hazard. Merge only the same physical hazard with the same visual evidence, immediate corrective action and preventive control. A shared category, inspection layer or root cause alone never justifies merging distinct hazards. For example, missing edge protection and an unsecured ladder are separate findings.";
+  "Each finding must contain exactly one independently correctable physical hazard. Keep the title, visual evidence, description, root cause, corrective action and preventive control focused on that same single hazard. If any field joins a second physical condition that needs an independent intervention with 'and', 'with' or 'also', split the conditions into separate findings. Merge only the same physical hazard with the same visual evidence, immediate corrective action and preventive control. A shared category, inspection layer or root cause alone never justifies merging distinct hazards. For example, missing edge protection and an unsecured ladder are separate findings.";
 const ATOMIC_FINDING_TITLE_SCHEMA_DESCRIPTION =
   "Exactly one independently correctable physical hazard; never join distinct hazards in one title.";
 const ATOMIC_FINDING_EVIDENCE_SCHEMA_DESCRIPTION =
@@ -2488,9 +2489,12 @@ function mergeCoverageRepairRecords(
       }
       if (
         options.coverageQualityV2 &&
-        qualityComparisonFindings.some((existing) =>
+        (qualityComparisonFindings.some((existing) =>
           areMergeableCoverageFindings(existing, finding, policy)
-        )
+        ) ||
+          base.findings.some((existing) =>
+            isCoverageRepairSubfindingAlreadyCovered(existing, finding)
+          ))
       ) {
         duplicateRejectedCount += 1;
         continue;
@@ -2640,6 +2644,7 @@ function buildCoverageRepairContext(
       existing_findings: record.findings.map((finding) => ({
         title: finding.title,
         observed_evidence: finding.observed_evidence,
+        description: finding.description,
         root_cause: finding.root_cause,
         corrective_action: finding.corrective_action,
         preventive_control: finding.preventive_control,
@@ -2651,10 +2656,10 @@ function buildCoverageRepairContext(
     const instruction = outputLanguage === "en"
       ? `Review only ${
         photoIndices.map((index) => `PHOTO_${index}`).join(", ")
-      }. Return only missing, distinct and visually supported physical hazards. Existing findings and the prior 12-layer audit are immutable authority: do not rewrite, remove, move or repeat them, and do not change prior layer statuses. A new finding requires separate visual evidence and an independently applicable correction or preventive control. A shared category, layer or consequence is not enough to merge separate conditions. Do not invent a minimum count. Every new finding must use only the requested photo index and at least one inspection_layer_key whose prior status is actionable or uncertain. If all linked layers are uncertain, set needs_field_verification=true and confidence at or below 0.69. Never create a finding from not_visible or checked_no_hazard. When findings is empty, set no_additional_reason_code to exactly one of no_distinct_additional_hazard, insufficient_visual_evidence or existing_findings_cover_scene. Return only requested photo_findings records.`
+      }. Return only missing, distinct and visually supported physical hazards. Existing findings and the prior 12-layer audit are immutable authority: do not rewrite, remove, move or repeat them, and do not change prior layer statuses. Treat a condition as already covered when it appears in any existing title, visual evidence, description, root cause, corrective action or preventive control, even when that existing finding incorrectly combines multiple conditions. A new finding requires separate visual evidence and an independently applicable correction or preventive control. A shared category, layer or consequence is not enough to merge separate conditions. Do not invent a minimum count. Every new finding must use only the requested photo index and at least one inspection_layer_key whose prior status is actionable or uncertain. If all linked layers are uncertain, set needs_field_verification=true and confidence at or below 0.69. Never create a finding from not_visible or checked_no_hazard. When findings is empty, set no_additional_reason_code to exactly one of no_distinct_additional_hazard, insufficient_visual_evidence or existing_findings_cover_scene. Return only requested photo_findings records.`
       : `Yalnız ${
         photoIndices.map((index) => `FOTO_${index}`).join(", ")
-      } için inceleme yap. Sadece eksik, ayrı ve görsel olarak desteklenen fiziksel tehlikeleri döndür. Mevcut bulgular ile önceki 12 katman denetimi değişmez otoritedir: bunları yeniden yazma, silme, taşıma, tekrar etme veya katman durumlarını değiştirme. Yeni bulgu ayrı görsel kanıt ve bağımsız uygulanabilir düzeltme ya da önleyici kontrol gerektirir. Ortak kategori, katman veya sonuç ayrı koşulları birleştirmek için yeterli değildir. Sayısal minimum uydurma. Her yeni bulgu yalnız istenen fotoğraf indeksini ve önceki durumu actionable veya uncertain olan en az bir inspection_layer_key değerini kullanmalı. Tüm bağlı katmanlar uncertain ise needs_field_verification=true ve confidence en fazla 0.69 olmalı. not_visible veya checked_no_hazard katmanından bulgu üretme. findings boşsa no_additional_reason_code alanını no_distinct_additional_hazard, insufficient_visual_evidence veya existing_findings_cover_scene değerlerinden tam biri yap. Yalnız istenen photo_findings kayıtlarını döndür.`;
+      } için inceleme yap. Sadece eksik, ayrı ve görsel olarak desteklenen fiziksel tehlikeleri döndür. Mevcut bulgular ile önceki 12 katman denetimi değişmez otoritedir: bunları yeniden yazma, silme, taşıma, tekrar etme veya katman durumlarını değiştirme. Bir koşul mevcut bulgunun başlık, görsel kanıt, açıklama, kök neden, düzeltici eylem veya önleyici kontrol alanlarından herhangi birinde zaten geçiyorsa, mevcut bulgu birden fazla koşulu hatalı biçimde birleştirmiş olsa bile o koşulu kapsanmış kabul et. Yeni bulgu ayrı görsel kanıt ve bağımsız uygulanabilir düzeltme ya da önleyici kontrol gerektirir. Ortak kategori, katman veya sonuç ayrı koşulları birleştirmek için yeterli değildir. Sayısal minimum uydurma. Her yeni bulgu yalnız istenen fotoğraf indeksini ve önceki durumu actionable veya uncertain olan en az bir inspection_layer_key değerini kullanmalı. Tüm bağlı katmanlar uncertain ise needs_field_verification=true ve confidence en fazla 0.69 olmalı. not_visible veya checked_no_hazard katmanından bulgu üretme. findings boşsa no_additional_reason_code alanını no_distinct_additional_hazard, insufficient_visual_evidence veya existing_findings_cover_scene değerlerinden tam biri yap. Yalnız istenen photo_findings kayıtlarını döndür.`;
     return `${baseContext}
 <coverage_quality_review policy_version="${COVERAGE_QUALITY_POLICY_VERSION}">
 ${instruction}

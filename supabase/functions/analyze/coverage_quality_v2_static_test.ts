@@ -95,6 +95,10 @@ Deno.test("quality repair preserves prior findings and validates additions again
   assertStringIncludes(analyzeSource, "qualityComparisonFindings");
   assertStringIncludes(
     analyzeSource,
+    "isCoverageRepairSubfindingAlreadyCovered(existing, finding)",
+  );
+  assertStringIncludes(
+    analyzeSource,
     "photo_findings: coverageRecords.map",
   );
 });

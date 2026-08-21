@@ -6,6 +6,7 @@ import {
 import {
   areLikelyDuplicateCoverageFindings,
   evaluateCoverageQualityRecord,
+  isCoverageRepairSubfindingAlreadyCovered,
   normalizeCoverageQualityNoAdditionalReasonCode,
   preferredCoverageFinding,
   tokenJaccardSimilarity,
@@ -119,6 +120,106 @@ Deno.test("strong evidence action and root cause agreement can merge different t
   };
 
   assert(areLikelyDuplicateCoverageFindings(first, second));
+});
+
+Deno.test("quality repair rejects a sharp-wire subfinding already covered by a compound finding", () => {
+  const compound = {
+    title: "Korozyonlu ve hasarlı bağlantı elemanı ile bükülmüş tel",
+    observed_evidence:
+      "Bağlantı elemanında yoğun korozyon ve etrafına sarılmış bükülmüş tel görülmektedir.",
+    description:
+      "Bağlantıdaki bozulmanın yanında dışarıya doğru uzanan keskin uçlu tel kesilme ve delinme riski oluşturur.",
+    corrective_action:
+      "Bağlantıyı değiştir ve keskin tel ucunu keserek veya kapatarak güvenli hale getir.",
+    preventive_control:
+      "Bağlantı elemanlarını ve tel uçlarını periyodik saha kontrolüne ekle.",
+    root_cause: "Bakım ve fiziksel bağlantı kontrolünün yetersizliği.",
+  };
+  const sharpWire = {
+    title: "Keskin ve dışarı çıkık tel ucu",
+    observed_evidence:
+      "Bağlantının yanında dışarı doğru uzanan keskin tel ucu açıkça görülmektedir.",
+    corrective_action:
+      "Keskin tel ucunu keserek veya koruyucu kapakla güvenli hale getir.",
+    preventive_control: "Tel uçlarını düzenli fiziksel kontrolde doğrula.",
+    root_cause: "Tel ucunun güvenli biçimde sonlandırılmaması.",
+  };
+
+  assertFalse(areLikelyDuplicateCoverageFindings(compound, sharpWire));
+  assert(isCoverageRepairSubfindingAlreadyCovered(compound, sharpWire));
+});
+
+Deno.test("quality repair rejects an English subfinding covered inside a compound finding", () => {
+  const compound = {
+    title: "Corroded connector with protruding wire",
+    observed_evidence:
+      "The connector is heavily corroded and a sharp wire end protrudes beside it.",
+    description:
+      "The protruding sharp wire can cause a cut or puncture injury.",
+    corrective_action:
+      "Replace the connector and cut back or cap the sharp wire end.",
+    preventive_control:
+      "Include connectors and exposed wire ends in routine inspections.",
+    root_cause: "Inadequate maintenance of the connection assembly.",
+  };
+  const sharpWire = {
+    title: "Protruding sharp wire end",
+    observed_evidence:
+      "A sharp wire end is visibly protruding beside the connector.",
+    corrective_action: "Cut back or cap the sharp wire end immediately.",
+    preventive_control: "Inspect exposed wire ends routinely.",
+    root_cause: "The wire end was not safely terminated.",
+  };
+
+  assert(isCoverageRepairSubfindingAlreadyCovered(compound, sharpWire));
+});
+
+Deno.test("quality repair preserves distinct hazards on the same equipment", () => {
+  const exposedCable = {
+    title: "Açık kabloya temas riski",
+    observed_evidence:
+      "Pano kapağı açık ve enerji kabloları çalışanların erişimine açıktır.",
+    description: "Açık iletkene temas elektrik çarpmasına yol açabilir.",
+    corrective_action: "Panoyu kapat ve erişimi sınırla.",
+    preventive_control: "Pano kapaklarını vardiya öncesi kontrol et.",
+    root_cause: "Pano erişim kontrolü eksikliği.",
+  };
+  const grounding = {
+    title: "Topraklama bağlantısı eksikliği",
+    observed_evidence:
+      "Pano gövdesinde doğrulanabilir bir topraklama bağlantısı görünmemektedir.",
+    corrective_action: "Topraklama sürekliliğini ölç ve bağlantıyı tamamla.",
+    preventive_control: "Topraklama ölçümlerini periyodik olarak kaydet.",
+    root_cause: "Elektrik tesisatı kontrolü eksikliği.",
+  };
+
+  assertFalse(
+    isCoverageRepairSubfindingAlreadyCovered(exposedCable, grounding),
+  );
+});
+
+Deno.test("quality repair preserves sharp wire when the corrosion finding never covered it", () => {
+  const corrosionOnly = {
+    title: "Korozyonlu bağlantı elemanı",
+    observed_evidence:
+      "Metal bağlantı elemanının yüzeyinde yoğun paslanma ve kesit kaybı görülmektedir.",
+    description: "Korozyon bağlantının taşıma kapasitesini azaltabilir.",
+    corrective_action: "Korozyonlu bağlantı elemanını yenisiyle değiştir.",
+    preventive_control: "Bağlantıları korozyon açısından düzenli kontrol et.",
+    root_cause: "Çevresel etkiye karşı bakım eksikliği.",
+  };
+  const sharpWire = {
+    title: "Keskin ve dışarı çıkık tel ucu",
+    observed_evidence:
+      "Bağlantının yanında dışarı doğru uzanan keskin tel ucu görülmektedir.",
+    corrective_action: "Keskin tel ucunu kes ve koruyucu kapak tak.",
+    preventive_control: "Tel uçlarını saha kontrol listesine ekle.",
+    root_cause: "Tel ucunun güvenli sonlandırılmaması.",
+  };
+
+  assertFalse(
+    isCoverageRepairSubfindingAlreadyCovered(corrosionOnly, sharpWire),
+  );
 });
 
 Deno.test("keeps the higher-confidence and more complete duplicate", () => {

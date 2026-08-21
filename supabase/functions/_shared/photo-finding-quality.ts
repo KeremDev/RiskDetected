@@ -295,6 +295,131 @@ export function areLikelyDuplicateCoverageFindings(
     correctiveSimilarity >= 0.72 && rootCauseSimilarity >= 0.72;
 }
 
+const COVERAGE_SUBFINDING_GENERIC_TOKENS = new Set([
+  "belirgin",
+  "and",
+  "condition",
+  "durum",
+  "fiziksel",
+  "from",
+  "gorulen",
+  "gorulmektedir",
+  "guvenli",
+  "hazard",
+  "immediately",
+  "into",
+  "mevcut",
+  "observed",
+  "risk",
+  "riski",
+  "safety",
+  "sahada",
+  "sekilde",
+  "should",
+  "that",
+  "tehlike",
+  "tehlikesi",
+  "the",
+  "this",
+  "unsafe",
+  "uygunsuz",
+  "visible",
+  "with",
+]);
+
+function informativeCoverageTokens(value: unknown): string[] {
+  return normalizedTextTokens(value).filter((token) =>
+    !COVERAGE_SUBFINDING_GENERIC_TOKENS.has(token)
+  );
+}
+
+function coverageTokensMatch(left: string, right: string): boolean {
+  if (left === right) return true;
+  const shorterLength = Math.min(left.length, right.length);
+  if (shorterLength < 4) return false;
+
+  let commonPrefixLength = 0;
+  while (
+    commonPrefixLength < shorterLength &&
+    left[commonPrefixLength] === right[commonPrefixLength]
+  ) {
+    commonPrefixLength += 1;
+  }
+
+  return commonPrefixLength >= Math.min(5, shorterLength) &&
+    commonPrefixLength / shorterLength >= 0.7;
+}
+
+function asymmetricCoverageMatch(
+  needle: unknown,
+  haystack: unknown,
+): { matched: number; total: number; ratio: number } {
+  const needleTokens = [...new Set(informativeCoverageTokens(needle))];
+  const haystackTokens = [...new Set(normalizedTextTokens(haystack))];
+  if (needleTokens.length === 0 || haystackTokens.length === 0) {
+    return { matched: 0, total: needleTokens.length, ratio: 0 };
+  }
+
+  const matched =
+    needleTokens.filter((needleToken) =>
+      haystackTokens.some((haystackToken) =>
+        coverageTokensMatch(needleToken, haystackToken)
+      )
+    ).length;
+  return {
+    matched,
+    total: needleTokens.length,
+    ratio: matched / needleTokens.length,
+  };
+}
+
+/**
+ * Detects the asymmetric case where a quality-repair candidate is already
+ * described inside a broader, compound first-pass finding. This deliberately
+ * stays separate from the general duplicate detector: only the repair merge
+ * may use it, with same-photo scope supplied by the caller.
+ */
+export function isCoverageRepairSubfindingAlreadyCovered(
+  existing: FindingRecord,
+  incoming: FindingRecord,
+): boolean {
+  const existingNarrativeScope = [
+    existing.title,
+    existing.observed_evidence,
+    existing.description,
+  ].map(text).filter(Boolean).join(" ");
+  const existingControlScope = [
+    existing.corrective_action,
+    existing.preventive_control,
+  ].map(text).filter(Boolean).join(" ");
+  const existingFullScope = [
+    existingNarrativeScope,
+    existing.root_cause,
+    existingControlScope,
+  ].map(text).filter(Boolean).join(" ");
+  if (!existingNarrativeScope || !existingControlScope) return false;
+
+  const titleCoverage = asymmetricCoverageMatch(
+    incoming.title,
+    existingFullScope,
+  );
+  const evidenceCoverage = asymmetricCoverageMatch(
+    incoming.observed_evidence,
+    existingNarrativeScope,
+  );
+  const actionCoverage = asymmetricCoverageMatch(
+    incoming.corrective_action,
+    existingControlScope,
+  );
+
+  return titleCoverage.total >= 3 &&
+    titleCoverage.matched >= 3 && titleCoverage.ratio >= 0.6 &&
+    evidenceCoverage.total >= 5 &&
+    evidenceCoverage.matched >= 4 && evidenceCoverage.ratio >= 0.45 &&
+    actionCoverage.total >= 3 &&
+    actionCoverage.matched >= 3 && actionCoverage.ratio >= 0.35;
+}
+
 export function findingQualityScore(finding: FindingRecord): number {
   const confidence = Number(finding.confidence);
   const safeConfidence = Number.isFinite(confidence)
