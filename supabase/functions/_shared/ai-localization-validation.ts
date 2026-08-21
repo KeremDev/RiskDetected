@@ -547,7 +547,7 @@ const UNSUPPORTED_CERTAINTY_PATTERN =
   /\b(?:definitely|certainly|guaranteed|without doubt|with certainty)\b|(?<![\p{L}\p{N}_])(?:kesinlikle|kesin olarak|şüphesiz)(?![\p{L}\p{N}_])/iu;
 
 const TURKISH_NEGATIVE_DETERMINATION_PATTERN =
-  /(?:belirlen|tespit\s+edil|do\u{11f}rulan|de\u{11f}erlendiril|anla\u{15f}\u{131}l|saptan|g\u{f6}zlemlen|\u{f6}l\u{e7}\u{fc}l|teyit\s+edil)(?:[ae])?m(?:[ae]z|[ae]|iyor|\u{131}yor|uyor|\u{fc}yor)\p{L}*/iu;
+  /(?:belirlen|belirtil|tespit\s+edil|ifade\s+edil|s\u{f6}ylen|do\u{11f}rulan|de\u{11f}erlendiril|anla\u{15f}\u{131}l|saptan|g\u{f6}zlemlen|\u{f6}l\u{e7}\u{fc}l|teyit\s+edil)(?:[ae])?m(?:[ae]z|[ae]|iyor|\u{131}yor|uyor|\u{fc}yor)\p{L}*/iu;
 const ENGLISH_NEGATIVE_DETERMINATION_PATTERN =
   /\b(?:cannot|can['’]t|could\s+not|couldn['’]t|is\s+not|are\s+not|was\s+not|were\s+not)\s+(?:reliably\s+)?(?:be\s+)?(?:determined|verified|confirmed|assessed|established|observed|measured)\b/iu;
 const TURKISH_NORMATIVE_ACTION_PATTERN =
@@ -1297,6 +1297,40 @@ export async function validateAIOutputWithSingleRepair(params: {
     };
   }
 
+  const validatedDeterministicFallback = (
+    value: unknown,
+    validation: AIOutputValidationResult,
+    repairIntegrity: AIOutputRepairIntegrityResult | null,
+  ): ValidatedAIOutput | null => {
+    const fallback = params.deterministicFallbackCopy
+      ? applyDeterministicAIOutputFallback(
+        value,
+        validation,
+        params.deterministicFallbackCopy,
+      )
+      : null;
+    if (!fallback) return null;
+    const fallbackValidation = validateAIOutputContract(
+      fallback.result,
+      params.snapshot,
+      {
+        allowedUserAuthoredValues: params.allowedUserAuthoredValues,
+        certaintyPolicy: params.certaintyPolicy,
+      },
+    );
+    if (!fallbackValidation.ok) return null;
+    return {
+      result: fallback.result,
+      status: "fallback",
+      attempts: 2,
+      code: initialValidation.code,
+      initialValidation,
+      finalValidation: fallbackValidation,
+      repairIntegrity,
+      deterministicFallback: fallback,
+    };
+  };
+
   let repairedResult: Record<string, unknown>;
   try {
     repairedResult = await params.repair(initialValidation);
@@ -1324,6 +1358,12 @@ export async function validateAIOutputWithSingleRepair(params: {
     )
     : null;
   if (repairIntegrity && !repairIntegrity.ok) {
+    const fallback = validatedDeterministicFallback(
+      params.initialResult,
+      initialValidation,
+      repairIntegrity,
+    );
+    if (fallback) return fallback;
     throw new OutputLanguageContractError(
       params.snapshot.output_language,
       repairIntegrity.code ?? "REPAIR_INTEGRITY_FAILED",
@@ -1340,35 +1380,12 @@ export async function validateAIOutputWithSingleRepair(params: {
     },
   );
   if (!finalValidation.ok) {
-    const fallback = params.deterministicFallbackCopy
-      ? applyDeterministicAIOutputFallback(
-        repairedResult,
-        finalValidation,
-        params.deterministicFallbackCopy,
-      )
-      : null;
-    if (fallback) {
-      const fallbackValidation = validateAIOutputContract(
-        fallback.result,
-        params.snapshot,
-        {
-          allowedUserAuthoredValues: params.allowedUserAuthoredValues,
-          certaintyPolicy: params.certaintyPolicy,
-        },
-      );
-      if (fallbackValidation.ok) {
-        return {
-          result: fallback.result,
-          status: "fallback",
-          attempts: 2,
-          code: initialValidation.code,
-          initialValidation,
-          finalValidation: fallbackValidation,
-          repairIntegrity,
-          deterministicFallback: fallback,
-        };
-      }
-    }
+    const fallback = validatedDeterministicFallback(
+      repairedResult,
+      finalValidation,
+      repairIntegrity,
+    );
+    if (fallback) return fallback;
     throw new OutputLanguageContractError(
       params.snapshot.output_language,
       finalValidation.code ?? OUTPUT_LANGUAGE_CONTRACT_FAILED,

@@ -694,6 +694,21 @@ Deno.test("certainty policy v2 closed hedge and claim matrix covers over forty T
     ],
     [
       "tr-tr-current-v1",
+      "limitations",
+      "Sayısal değerler yerinde ölçüm yapılmadan kesin olarak belirtilememiştir.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Sonuç kesin olarak ifade edilememiştir.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Durum kesin olarak söylenemez.",
+    ],
+    [
+      "tr-tr-current-v1",
       "corrective_action",
       "Baret kesinlikle kullanılmalıdır.",
     ],
@@ -1039,6 +1054,40 @@ Deno.test("deterministic fallback removes an unsupported finding without a third
   assertEquals(result.status, "fallback");
   assertEquals(result.deterministicFallback?.zeroFindings, true);
   assertEquals((result.result.hazards as unknown[]).length, 0);
+  assertEquals(result.finalValidation.ok, true);
+});
+
+Deno.test("deterministic fallback preserves initial findings when repair changes an unaffected finding", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  initial.limitations = "The risk is definitely high.";
+  const originalFinding = structuredClone(
+    (initial.hazards as Array<Record<string, unknown>>)[0],
+  );
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    deterministicFallbackCopy: fallbackCopy,
+    repair: () => {
+      const repaired = structuredClone(initial);
+      (repaired.hazards as Array<Record<string, unknown>>)[0].title =
+        "Unrelated changed title";
+      repaired.limitations = "The risk level requires field verification.";
+      return Promise.resolve(repaired);
+    },
+  });
+  assertEquals(result.status, "fallback");
+  assertEquals(result.repairIntegrity?.ok, false);
+  assertEquals(
+    result.repairIntegrity?.code,
+    "REPAIR_INTEGRITY_UNAFFECTED_FINDING_CHANGED",
+  );
+  assertEquals(
+    (result.result.hazards as Array<Record<string, unknown>>)[0],
+    originalFinding,
+  );
+  assertEquals(result.result.limitations, fallbackCopy.zeroFindingsLimitation);
   assertEquals(result.finalValidation.ok, true);
 });
 
