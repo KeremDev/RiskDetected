@@ -173,3 +173,58 @@ Deno.test("cancelled trial and paid provider isolation branches remain intact", 
     "callFreePaidTrialAIWithFallback",
   );
 });
+
+Deno.test("multi-photo strict schema drops the nested exact layer bounds", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  // Gemini rejected the strict multi-photo schema with 400 "too many states
+  // for serving" on three of five runs, and the retry dropped the exact
+  // coverage bounds too. The cost is `photo_findings` pinned to exactly N
+  // items each carrying `inspection_layers` pinned to exactly twelve. Only
+  // multi-photo requests have the outer bound, so only they lose the inner one.
+  assertStringIncludes(
+    source,
+    "const exactLayerBoundsEnabled = layerAuditEnabled && !exactCoverage.enabled;",
+  );
+  assertStringIncludes(
+    source,
+    "relaxedLayerAuditSchema || !exactLayerBoundsEnabled\n                      ? {}\n                      : { minItems: 12, maxItems: 12 }",
+  );
+
+  // The outer coverage bounds are cheap and are what guarantee one record per
+  // photo, so they stay.
+  assertStringIncludes(source, "minItems: exactCoverage.minItems");
+  assertStringIncludes(source, "? { enum: exactCoverage.photoIndexEnum }");
+
+  // The twelve-layer contract has to keep being stated somewhere, or dropping
+  // the schema bound silently drops the requirement.
+  assertStringIncludes(source, "12 katman tamamlanmadan yanıtı bitirme");
+});
+
+Deno.test("budget telemetry records the pass that did the work", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  // recordRepairPassBudgets used to run only on the two failure paths, so the
+  // success path overwrote thinking_budget with the repair's hard-coded 1024
+  // and every completed multi-photo analysis reported 1024 with
+  // repair_thinking_budget null. The provider-response path routes through the
+  // same helper now.
+  assertStringIncludes(
+    source,
+    '      recordPassBudgets(\n        inputAudit,\n        previousInputAudit,\n        jobMode === "repair",\n        out.thinkingBudget,\n        out.maxOutputTokens,\n      );',
+  );
+  assert(!source.includes("inputAudit.thinking_budget = out.thinkingBudget"));
+  assert(
+    !source.includes("inputAudit.max_output_tokens = out.maxOutputTokens"),
+  );
+  assertStringIncludes(
+    source,
+    "audit.repair_thinking_budget = thinkingBudget;",
+  );
+});

@@ -3361,14 +3361,46 @@ function stripRiskInputsFromVerificationItem(
 }
 
 /**
- * Budget telemetry for a repair pass that fails open onto the first result.
+ * Budget telemetry for one model pass.
  *
- * These two fields used to be overwritten with the repair pass's own numbers,
- * so an analysis whose real model work was the initial call reported
- * thinking_budget 1024 — the hard-coded repair value. Every multi-photo
- * analysis looked thinking-starved, and the multi-photo budget could not be
- * measured or tuned at all. The first pass's values are preserved and the
- * repair's are recorded under their own keys.
+ * `thinking_budget` and `max_output_tokens` describe the call that did the
+ * real work. On a repair pass that is the *initial* call, not the repair: the
+ * repair runs on a hard-coded 1024 thinking budget, and writing that over the
+ * first pass's number made every multi-photo analysis look thinking-starved.
+ * The repair's own numbers get their own keys instead.
+ *
+ * An earlier version of this only ran on the two failure paths, so the success
+ * path still overwrote both fields and the multi-photo budget stayed
+ * unmeasurable — every completed repair reported 1024 with
+ * repair_thinking_budget null. Route every pass through here.
+ */
+function recordPassBudgets(
+  audit: Record<string, unknown>,
+  previousAudit: Record<string, unknown> | null,
+  isRepairPass: boolean,
+  thinkingBudget: unknown,
+  maxOutputTokens: unknown,
+): void {
+  if (!isRepairPass) {
+    audit.thinking_budget = thinkingBudget;
+    audit.max_output_tokens = maxOutputTokens;
+    return;
+  }
+  const priorThinkingBudget = previousAudit?.thinking_budget;
+  const priorMaxOutputTokens = previousAudit?.max_output_tokens;
+  audit.thinking_budget = typeof priorThinkingBudget === "number"
+    ? priorThinkingBudget
+    : thinkingBudget;
+  audit.max_output_tokens = typeof priorMaxOutputTokens === "number"
+    ? priorMaxOutputTokens
+    : maxOutputTokens;
+  audit.repair_thinking_budget = thinkingBudget;
+  audit.repair_max_output_tokens = maxOutputTokens;
+}
+
+/**
+ * The repair pass never reached the provider, so its budgets are the ones it
+ * would have used rather than ones it was told.
  */
 function recordRepairPassBudgets(
   audit: Record<string, unknown>,
@@ -3376,21 +3408,13 @@ function recordRepairPassBudgets(
   repairPhotoCount: number,
   planTier: PlanTier,
 ): void {
-  const repairThinkingBudget = thinkingBudgetFor(true);
-  const repairMaxOutputTokens = maxOutputTokensFor(
-    Math.max(1, repairPhotoCount),
-    planTier,
+  recordPassBudgets(
+    audit,
+    previousAudit,
+    true,
+    thinkingBudgetFor(true),
+    maxOutputTokensFor(Math.max(1, repairPhotoCount), planTier),
   );
-  const priorThinkingBudget = previousAudit?.thinking_budget;
-  const priorMaxOutputTokens = previousAudit?.max_output_tokens;
-  audit.thinking_budget = typeof priorThinkingBudget === "number"
-    ? priorThinkingBudget
-    : repairThinkingBudget;
-  audit.max_output_tokens = typeof priorMaxOutputTokens === "number"
-    ? priorMaxOutputTokens
-    : repairMaxOutputTokens;
-  audit.repair_thinking_budget = repairThinkingBudget;
-  audit.repair_max_output_tokens = repairMaxOutputTokens;
 }
 
 function coverageRecordForPersistence(
@@ -3448,6 +3472,23 @@ function responseSchema(
     originalPhotoCount: coveragePolicy?.photoCount,
     expectedPhotoIndices: options.expectedPhotoIndices,
   });
+  /**
+   * Gemini rejects the strict multi-photo schema with 400 INVALID_ARGUMENT,
+   * "schema produces a constraint that has too many states for serving", and
+   * the request is retried on the relaxed schema. Three of five multi-photo
+   * analyses on 2026-08-21/22 paid for that wasted round trip, and the retry
+   * drops the exact coverage bounds along with everything else.
+   *
+   * The cost is the nesting: `photo_findings` pinned to exactly N items, each
+   * carrying `inspection_layers` pinned to exactly twelve objects. Single-photo
+   * requests have no outer bound and have not been rejected, so they keep the
+   * inner one.
+   *
+   * The twelve-layer contract survives in the prompt and in the server-side
+   * layer audit, which is what actually enforces it: the relaxed retries have
+   * been returning all twelve layers per photo without any schema bound at all.
+   */
+  const exactLayerBoundsEnabled = layerAuditEnabled && !exactCoverage.enabled;
   const hazardProperties: Record<string, unknown> = {
     title: {
       type: "STRING",
@@ -3607,12 +3648,14 @@ function responseSchema(
                 ? {
                   scene_elements: {
                     type: "ARRAY",
-                    ...(relaxedLayerAuditSchema ? {} : { maxItems: 12 }),
+                    ...(relaxedLayerAuditSchema || !exactLayerBoundsEnabled
+                      ? {}
+                      : { maxItems: 12 }),
                     items: { type: "STRING" },
                   },
                   inspection_layers: {
                     type: "ARRAY",
-                    ...(relaxedLayerAuditSchema
+                    ...(relaxedLayerAuditSchema || !exactLayerBoundsEnabled
                       ? {}
                       : { minItems: 12, maxItems: 12 }),
                     items: {
@@ -9890,8 +9933,13 @@ serve(async (req: Request) => {
       inputAudit.provider = providerUsed;
       inputAudit.finish_reason = out.finishReason;
       inputAudit.json_parse_retry_count = out.jsonParseRetryCount;
-      inputAudit.thinking_budget = out.thinkingBudget;
-      inputAudit.max_output_tokens = out.maxOutputTokens;
+      recordPassBudgets(
+        inputAudit,
+        previousInputAudit,
+        jobMode === "repair",
+        out.thinkingBudget,
+        out.maxOutputTokens,
+      );
       inputAudit.layer_audit_schema_fallback_used =
         out.layerAuditSchemaFallbackUsed ?? false;
       inputAudit.layer_audit_schema_fallback_error =
