@@ -273,7 +273,7 @@ Deno.test("keeps the higher-confidence and more complete duplicate", () => {
   assertEquals(preferredCoverageFinding(detailed, brief), detailed);
 });
 
-Deno.test("coverage quality selector covers 30 TR/EN structural scenarios", () => {
+Deno.test("coverage quality selector covers 32 TR/EN structural scenarios", () => {
   const cases: Array<{
     name: string;
     record: Parameters<typeof evaluateCoverageQualityRecord>[0];
@@ -450,15 +450,44 @@ Deno.test("coverage quality selector covers 30 TR/EN structural scenarios", () =
       reason: "record_incomplete",
     },
     {
-      name: "low quality skipped",
+      name: "low quality zero finding still repaired",
       record: qualityRecord({ coverage_status: "low_quality", findings: [] }),
-      repair: false,
+      repair: true,
+      reason: "zero_finding_photo",
     },
     {
-      name: "no actionable skipped",
+      name: "no actionable zero finding still repaired",
       record: qualityRecord({
         coverage_status: "no_actionable_hazard",
         findings: [],
+      }),
+      repair: true,
+      reason: "zero_finding_photo",
+    },
+    {
+      name: "no actionable zero finding on uncertain layers repaired",
+      record: qualityRecord({
+        coverage_status: "no_actionable_hazard",
+        findings: [],
+        candidate_findings_count: 0,
+        inspection_layers: [
+          { layer_key: "ground_housekeeping", status: "uncertain" },
+          { layer_key: "fire_explosion", status: "not_visible" },
+        ],
+      }),
+      repair: true,
+      reason: "zero_finding_photo",
+    },
+    {
+      name: "genuinely clean photo left alone",
+      record: qualityRecord({
+        coverage_status: "no_actionable_hazard",
+        findings: [],
+        candidate_findings_count: 0,
+        inspection_layers: [
+          { layer_key: "ground_housekeeping", status: "checked_no_hazard" },
+          { layer_key: "fire_explosion", status: "not_visible" },
+        ],
       }),
       repair: false,
     },
@@ -566,7 +595,7 @@ Deno.test("coverage quality selector covers 30 TR/EN structural scenarios", () =
     },
   ];
 
-  assertEquals(cases.length, 30);
+  assertEquals(cases.length, 32);
   for (const scenario of cases) {
     const result = evaluateCoverageQualityRecord(scenario.record, {
       candidateSemanticsV2: scenario.semanticsV2 === true,
@@ -726,4 +755,72 @@ Deno.test("incomplete immutable authority blocks a futile quality repair", () =>
   assertEquals(result.repair_authority_complete, false);
   assertEquals(result.repair_blocked_reason, "incomplete_authority");
   assertEquals(result.should_repair, false);
+});
+
+Deno.test("zero-finding photo reaches repair even when the first pass called the scene clean", () => {
+  // The live 2026-08-22 00:01 analysis: photo 3 came back
+  // coverage_status=no_actionable_hazard with zero findings and two uncertain
+  // layers, and the old gate (`coverage_status === "actionable"`) meant it was
+  // never re-examined. The same photo had produced two findings 26 minutes
+  // earlier, so the scene was not clean -- the first pass had simply lost it.
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      photo_index: 3,
+      coverage_status: "no_actionable_hazard",
+      candidate_findings_count: 0,
+      findings: [],
+      inspection_layers: [
+        { layer_key: "ground_housekeeping", status: "uncertain" },
+        { layer_key: "fire_explosion", status: "uncertain" },
+        { layer_key: "machinery_equipment", status: "checked_no_hazard" },
+      ],
+    }),
+    { candidateSemanticsV2: true },
+  );
+
+  assert(result.eligible);
+  assert(result.should_repair);
+  assert(result.trigger_reasons.includes("zero_finding_photo"));
+});
+
+Deno.test("a photo with nothing repairable to attach to is left alone", () => {
+  // Repair may only link a finding to a layer whose prior status is actionable
+  // or uncertain. With none of those the call is guaranteed to add nothing, so
+  // the zero-finding rule must not spend a model call on it.
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      coverage_status: "no_actionable_hazard",
+      candidate_findings_count: 0,
+      findings: [],
+      inspection_layers: [
+        { layer_key: "ground_housekeeping", status: "checked_no_hazard" },
+        { layer_key: "fire_explosion", status: "not_visible" },
+      ],
+    }),
+    { candidateSemanticsV2: true },
+  );
+
+  assertFalse(result.eligible);
+  assertFalse(result.should_repair);
+});
+
+Deno.test("a missing coverage record is not treated as a zero-finding photo", () => {
+  // record_missing means the model returned no record at all, so its layer
+  // statuses are synthetic. `record_incomplete` already covers that path and
+  // repair authority is incomplete either way.
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      coverage_status: "no_actionable_hazard",
+      candidate_findings_count: 0,
+      findings: [],
+      record_missing: true,
+      inspection_layers: [
+        { layer_key: "ground_housekeeping", status: "uncertain" },
+      ],
+    }),
+    { candidateSemanticsV2: true },
+  );
+
+  assertFalse(result.eligible);
+  assertFalse(result.trigger_reasons.includes("zero_finding_photo"));
 });

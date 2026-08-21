@@ -12,6 +12,7 @@ export type CoverageQualityNoAdditionalReasonCode =
   typeof COVERAGE_QUALITY_NO_ADDITIONAL_REASON_CODES[number];
 
 export type CoverageQualityTriggerReason =
+  | "zero_finding_photo"
   | "low_finding_count"
   | "candidate_gap"
   | "multi_layer_finding"
@@ -150,11 +151,30 @@ export function evaluateCoverageQualityRecord(
     record.process_safety_audit?.complete === true;
   const repairAuthorityComplete = layerAuthorityComplete &&
     processAuthorityComplete;
+  /**
+   * A photo the first pass left empty is the strongest signal that something
+   * went wrong, and it used to be the one case repair never looked at: the
+   * gate asked for `coverage_status === "actionable"`, which a zero-finding
+   * photo never has. The first pass's own verdict decided whether it got a
+   * second opinion.
+   *
+   * Repair can only attach a finding to a layer whose prior status is
+   * actionable or uncertain, so a photo with none of those is left alone —
+   * a genuinely clean scene still costs nothing.
+   */
+  const repairableLayerCount =
+    record.inspection_layers.filter((layer) =>
+      layer.status === "actionable" || layer.status === "uncertain"
+    ).length;
+  const zeroFindingPhoto = findings.length === 0 && !record.record_missing &&
+    repairableLayerCount > 0;
   const eligible = record.coverage_status === "actionable" ||
-    actionableProcessChecks.length > 0;
+    actionableProcessChecks.length > 0 ||
+    zeroFindingPhoto;
   const triggerReasons: CoverageQualityTriggerReason[] = [];
 
   if (eligible) {
+    if (zeroFindingPhoto) triggerReasons.push("zero_finding_photo");
     if (findings.length <= 1) triggerReasons.push("low_finding_count");
     if (
       options.candidateSemanticsV2 &&

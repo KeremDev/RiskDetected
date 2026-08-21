@@ -130,3 +130,32 @@ Deno.test("Turkish and English focus blocks remain singular and separate", () =>
   assertEquals((analyzeSource.match(/<focus>/g) ?? []).length, 1);
   assertEquals((analyzeSource.match(/<\/focus>/g) ?? []).length, 1);
 });
+
+Deno.test("a repaired zero-finding photo stops claiming no actionable hazard", () => {
+  // The quality pass deliberately leaves coverage_status alone, which was safe
+  // while only already-actionable photos could be repaired. A zero-finding
+  // photo that gains findings has to be promoted, or its record ships findings
+  // and a `no_actionable_hazard` verdict at the same time.
+  assertStringIncludes(analyzeSource, "const promotedToActionable =");
+  assertStringIncludes(analyzeSource, "addedForPhoto > 0 &&");
+  assertStringIncludes(
+    analyzeSource,
+    'if (promotedToActionable) base.coverage_status = "actionable";',
+  );
+  assertStringIncludes(analyzeSource, "promotedToActionable\n        ? null");
+});
+
+Deno.test("expert depth stays off after shadow degraded hazard detection", async () => {
+  const shadowOffMigration = await Deno.readTextFile(
+    new URL(
+      "../../migrations/20260822011500_ai_expert_depth_v1_shadow_off.sql",
+      import.meta.url,
+    ),
+  );
+  assertStringIncludes(shadowOffMigration, "'rollout_mode', 'off'");
+  assertStringIncludes(shadowOffMigration, "'kill_switch', true");
+  assertStringIncludes(
+    shadowOffMigration,
+    "'shadow_measurement_degraded_hazard_detection'",
+  );
+});

@@ -2809,6 +2809,7 @@ function mergeCoverageRepairRecords(
   for (const repair of repairRecords) {
     const base = baseByPhoto.get(repair.photo_index);
     if (!base) continue;
+    let addedForPhoto = 0;
     if (!options.coverageQualityV2) {
       if (repair.scene_summary) base.scene_summary = repair.scene_summary;
       base.highest_risk_level = repair.highest_risk_level ??
@@ -2922,6 +2923,7 @@ function mergeCoverageRepairRecords(
         remainingTotalBudget -= 1;
       }
       addedCount += 1;
+      addedForPhoto += 1;
     }
     if (!options.coverageQualityV2) {
       base.candidate_findings_count = Math.max(
@@ -2930,9 +2932,21 @@ function mergeCoverageRepairRecords(
         base.findings.length,
       );
     }
+    /**
+     * The quality pass leaves coverage_status alone, which was right while
+     * repair could only run on photos already marked actionable. Now that a
+     * zero-finding photo is repairable, a photo can come out of repair
+     * carrying findings while its first-pass record still says
+     * no_actionable_hazard and its gap reason still says nothing was found.
+     */
+    const promotedToActionable = options.coverageQualityV2 &&
+      addedForPhoto > 0 && base.coverage_status !== "actionable";
+    if (promotedToActionable) base.coverage_status = "actionable";
     base.coverage_gap_reason = normalizeCoverageGapReason(
       base.coverage_status,
-      repair.coverage_gap_reason ?? base.coverage_gap_reason,
+      promotedToActionable
+        ? null
+        : repair.coverage_gap_reason ?? base.coverage_gap_reason,
       coverageProgressCountForRecord(base, policy),
       effectiveCoverageTargetMinForRecord(base, policy),
       false,
