@@ -2302,11 +2302,31 @@ function normalizePhotoFindingCoverage(
       processSafetyGuard.findings,
     ).slice(0, policy.targetMax);
     // A model-emitted verification item is routed to the same place as a
-    // code-generated one, so `findings` only ever holds hazards.
-    const guardedVerificationItems = processSafetyGuard.findings
-      .filter(isFieldVerificationFinding)
-      .slice(0, MAX_FIELD_VERIFICATION_FINDINGS)
-      .map(stripRiskInputsFromVerificationItem);
+    // code-generated one, so `findings` only ever holds hazards. Items already
+    // persisted on the record are read back too: a repair pass re-normalizes
+    // the stored photo_findings, and they no longer travel inside `findings`.
+    const persistedVerificationItems = Array.isArray(
+        record.field_verification_items,
+      )
+      ? record.field_verification_items.filter((item): item is Record<
+        string,
+        unknown
+      > => !!item && typeof item === "object" && !Array.isArray(item))
+      : [];
+    const guardedVerificationItems = [
+      ...persistedVerificationItems,
+      ...processSafetyGuard.findings.filter(isFieldVerificationFinding),
+    ]
+      .map(stripRiskInputsFromVerificationItem)
+      .filter((item, index, all) =>
+        all.findIndex((candidate) =>
+          candidate.equipment_instance_key ===
+            item.equipment_instance_key &&
+          candidate.verification_reason_code ===
+            item.verification_reason_code
+        ) === index
+      )
+      .slice(0, MAX_FIELD_VERIFICATION_FINDINGS);
     const findings = guardedPhysicalFindings;
     const effectiveTargetMin = effectiveCoverageTargetMinForLayers(
       inspection.layers,
@@ -3324,6 +3344,39 @@ function stripRiskInputsFromVerificationItem(
     ...rest
   } = item;
   return { ...rest, display_group: "field_verification" };
+}
+
+/**
+ * Budget telemetry for a repair pass that fails open onto the first result.
+ *
+ * These two fields used to be overwritten with the repair pass's own numbers,
+ * so an analysis whose real model work was the initial call reported
+ * thinking_budget 1024 — the hard-coded repair value. Every multi-photo
+ * analysis looked thinking-starved, and the multi-photo budget could not be
+ * measured or tuned at all. The first pass's values are preserved and the
+ * repair's are recorded under their own keys.
+ */
+function recordRepairPassBudgets(
+  audit: Record<string, unknown>,
+  previousAudit: Record<string, unknown> | null,
+  repairPhotoCount: number,
+  planTier: PlanTier,
+): void {
+  const repairThinkingBudget = thinkingBudgetFor(true);
+  const repairMaxOutputTokens = maxOutputTokensFor(
+    Math.max(1, repairPhotoCount),
+    planTier,
+  );
+  const priorThinkingBudget = previousAudit?.thinking_budget;
+  const priorMaxOutputTokens = previousAudit?.max_output_tokens;
+  audit.thinking_budget = typeof priorThinkingBudget === "number"
+    ? priorThinkingBudget
+    : repairThinkingBudget;
+  audit.max_output_tokens = typeof priorMaxOutputTokens === "number"
+    ? priorMaxOutputTokens
+    : repairMaxOutputTokens;
+  audit.repair_thinking_budget = repairThinkingBudget;
+  audit.repair_max_output_tokens = repairMaxOutputTokens;
 }
 
 function coverageRecordForPersistence(
@@ -9701,9 +9754,10 @@ serve(async (req: Request) => {
     }
     inputAudit.finish_reason = null;
     inputAudit.json_parse_retry_count = 0;
-    inputAudit.thinking_budget = thinkingBudgetFor(true);
-    inputAudit.max_output_tokens = maxOutputTokensFor(
-      Math.max(1, effectiveRepairPhotoIndices.length),
+    recordRepairPassBudgets(
+      inputAudit,
+      previousInputAudit,
+      effectiveRepairPhotoIndices.length,
       planTier,
     );
     languageValidationStatus =
@@ -10361,9 +10415,10 @@ serve(async (req: Request) => {
         }
         inputAudit.finish_reason = null;
         inputAudit.json_parse_retry_count = 0;
-        inputAudit.thinking_budget = thinkingBudgetFor(true);
-        inputAudit.max_output_tokens = maxOutputTokensFor(
-          Math.max(1, effectiveRepairPhotoIndices.length),
+        recordRepairPassBudgets(
+          inputAudit,
+          previousInputAudit,
+          effectiveRepairPhotoIndices.length,
           planTier,
         );
       } else {
@@ -10570,10 +10625,27 @@ serve(async (req: Request) => {
         inputAudit.process_safety_contract_incomplete = coverageRecords.some(
           (record) => !record.process_safety_audit.complete,
         );
-        inputAudit.periodic_verification_candidate_count =
-          periodicVerification.candidateCount;
-        inputAudit.periodic_verification_added_count =
-          periodicVerification.addedCount;
+        // A repair pass re-runs the applier and finds every item already
+        // present, so it would report zero added and erase the first pass's
+        // real count. Keep the higher of the two.
+        const priorAddedCount = jobMode === "repair" &&
+            typeof previousInputAudit?.periodic_verification_added_count ===
+              "number"
+          ? previousInputAudit.periodic_verification_added_count
+          : 0;
+        const priorCandidateCount = jobMode === "repair" &&
+            typeof previousInputAudit?.periodic_verification_candidate_count ===
+              "number"
+          ? previousInputAudit.periodic_verification_candidate_count
+          : 0;
+        inputAudit.periodic_verification_candidate_count = Math.max(
+          periodicVerification.candidateCount,
+          priorCandidateCount,
+        );
+        inputAudit.periodic_verification_added_count = Math.max(
+          periodicVerification.addedCount,
+          priorAddedCount,
+        );
       } else if (expertDepthShadow) {
         inputAudit.expert_depth_shadow_evaluable = false;
       }

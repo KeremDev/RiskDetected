@@ -318,3 +318,43 @@ Deno.test("merged records do not duplicate an equipment instance", () => {
     "existing.equipment_instance_key === item.equipment_instance_key",
   );
 });
+
+// Regression: a repair pass that fails open onto the first result used to
+// overwrite the initial call's budgets with its own hard-coded 1024, so every
+// multi-photo analysis read as thinking-starved and the multi-photo budget
+// could not be measured at all.
+Deno.test("a failed-open repair pass does not overwrite the first pass budgets", () => {
+  assertFalse(
+    analyzeSource.includes(
+      "inputAudit.thinking_budget = thinkingBudgetFor(true)",
+    ),
+  );
+  assertStringIncludes(analyzeSource, "function recordRepairPassBudgets(");
+  assertStringIncludes(analyzeSource, "audit.repair_thinking_budget =");
+  assertStringIncludes(analyzeSource, "audit.repair_max_output_tokens =");
+  assertStringIncludes(
+    analyzeSource,
+    'typeof priorThinkingBudget === "number"',
+  );
+});
+
+Deno.test("a repair pass keeps the first pass verification counters", () => {
+  assertStringIncludes(analyzeSource, "priorAddedCount");
+  assertStringIncludes(analyzeSource, "priorCandidateCount");
+  assertStringIncludes(
+    analyzeSource,
+    "periodicVerification.addedCount,\n          priorAddedCount,",
+  );
+});
+
+Deno.test("persisted verification items survive re-normalization", () => {
+  assertStringIncludes(analyzeSource, "persistedVerificationItems");
+  assertStringIncludes(
+    analyzeSource,
+    "Array.isArray(\n        record.field_verification_items,\n      )",
+  );
+  assertStringIncludes(
+    analyzeSource,
+    "{ field_verification_items: record.field_verification_items }",
+  );
+});
