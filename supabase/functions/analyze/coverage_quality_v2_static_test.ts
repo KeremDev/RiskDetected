@@ -52,6 +52,8 @@ Deno.test("coverage quality has one pinned request and no nested language repair
   assertStringIncludes(analyzeSource, "model_generation_pass_count");
   assertStringIncludes(analyzeSource, "provider_request_count_total");
   assertStringIncludes(workerSource, "forceCoverageQualityFallback");
+  assertStringIncludes(workerSource, "__queue_read_count");
+  assertStringIncludes(analyzeSource, "coverageQualityFallbackAttemptState");
 });
 
 Deno.test("all repair validation failures fail open to the previous valid output", () => {

@@ -89,6 +89,7 @@ import {
   ProviderAttemptTracker,
 } from "./provider-attempt-tracker.ts";
 import { fetchWithDeadline } from "./provider-fetch.ts";
+import { coverageQualityFallbackAttemptState } from "./coverage-quality-attempt-policy.ts";
 import {
   hasLocalizationRequestFields,
   LOCALIZATION_ERROR_CODES,
@@ -6568,6 +6569,10 @@ serve(async (req: Request) => {
     1,
     Math.round(Number(body.__worker_attempt ?? 1) || 1),
   );
+  const workerQueueReadCount = Math.max(
+    1,
+    Math.round(Number(body.__queue_read_count ?? 1) || 1),
+  );
   const isPipelineV2Worker = isWorkerInvocation && pipelineVersion === 2 &&
     Number.isFinite(workerQueueMsgID) && workerQueueMsgID > 0 &&
     Number.isInteger(workerJobGeneration) && workerJobGeneration > 0 &&
@@ -8391,6 +8396,9 @@ serve(async (req: Request) => {
         Number.isFinite(coverageQualityEnqueuedAt)
       ? Math.max(0, startMs - coverageQualityEnqueuedAt)
       : null,
+    quality_repair_queue_read_count: isCoverageQualityRepair
+      ? workerQueueReadCount
+      : null,
     initial_analysis_duration_ms: jobMode === "repair"
       ? Math.max(
         0,
@@ -8409,7 +8417,7 @@ serve(async (req: Request) => {
         Array.isArray(previousInputAudit?.coverage_quality_trigger_reasons)
       ? previousInputAudit.coverage_quality_trigger_reasons
       : [],
-    quality_repair_enqueued: false,
+    quality_repair_enqueued: isCoverageQualityRepair,
     quality_repair_attempted: false,
     quality_repair_added_count: 0,
     quality_repair_duplicate_rejected_count: 0,
@@ -8799,19 +8807,19 @@ serve(async (req: Request) => {
     inputAudit.coverage_repair_error = fallbackReason;
     inputAudit.coverage_repair_failed_but_completed = true;
     if (isCoverageQualityRepair) {
-      const priorQualityAttemptDispatched = workerAttemptNumber > 1;
+      const fallbackAttemptState = coverageQualityFallbackAttemptState({
+        queueReadCount: workerQueueReadCount,
+        priorModelGenerationPassCount,
+      });
       inputAudit.coverage_quality_status = coverageQualityDeadlineExpired
         ? "deadline_skipped"
         : "failed_open";
+      inputAudit.quality_repair_enqueued = fallbackAttemptState.enqueued;
       inputAudit.quality_repair_failed_open = true;
       inputAudit.quality_repair_error_class = fallbackReason;
-      inputAudit.quality_repair_attempted = priorQualityAttemptDispatched;
-      if (priorQualityAttemptDispatched) {
-        inputAudit.model_generation_pass_count = Math.min(
-          3,
-          priorModelGenerationPassCount + 1,
-        );
-      }
+      inputAudit.quality_repair_attempted = fallbackAttemptState.attempted;
+      inputAudit.model_generation_pass_count =
+        fallbackAttemptState.modelGenerationPassCount;
     }
     inputAudit.finish_reason = null;
     inputAudit.json_parse_retry_count = 0;

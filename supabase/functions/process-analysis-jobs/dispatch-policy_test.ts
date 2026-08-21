@@ -6,19 +6,19 @@ import {
   reconcileWithAuthoritativeState,
 } from "./dispatch-policy.ts";
 
-Deno.test("coverage quality retries become fallback-only after one worker attempt", () => {
+Deno.test("coverage quality retries use the repair queue message read count", () => {
   assertEquals(
     forceCoverageQualityFallback({
       repairKind: "coverage_quality_v2",
-      workerAttempt: 1,
+      queueReadCount: 1,
     }),
     false,
   );
-  for (const workerAttempt of [2, 3, 9]) {
+  for (const queueReadCount of [2, 3, 9]) {
     assertEquals(
       forceCoverageQualityFallback({
         repairKind: "coverage_quality_v2",
-        workerAttempt,
+        queueReadCount,
       }),
       true,
     );
@@ -26,7 +26,7 @@ Deno.test("coverage quality retries become fallback-only after one worker attemp
   assertEquals(
     forceCoverageQualityFallback({
       repairKind: "legacy_coverage",
-      workerAttempt: 2,
+      queueReadCount: 2,
     }),
     false,
   );

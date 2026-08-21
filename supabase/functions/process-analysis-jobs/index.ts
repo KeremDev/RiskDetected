@@ -441,6 +441,10 @@ async function drainQueueMessages(params: {
               ? {
                 pipeline_version: 2,
                 __queue_msg_id: Number(message.msg_id),
+                __queue_read_count: Math.max(
+                  1,
+                  Math.round(Number(message.read_ct) || 1),
+                ),
                 __job_generation: generation,
                 __worker_claim_token: claimToken,
                 __worker_attempt: workerAttempt,
@@ -448,7 +452,7 @@ async function drainQueueMessages(params: {
               : {}),
             ...(forceCoverageQualityFallback({
                 repairKind: job.repair_kind,
-                workerAttempt,
+                queueReadCount: Number(message.read_ct),
               })
               ? {
                 coverage_repair_fallback_only: true,
