@@ -110,6 +110,7 @@ import {
   serializeUntrustedPromptValue,
 } from "../_shared/ai-localization-prompt.ts";
 import {
+  type AIOutputValidationResult,
   OutputLanguageContractError,
   validateAIOutputWithSingleRepair,
 } from "../_shared/ai-localization-validation.ts";
@@ -5142,6 +5143,25 @@ function safeLogText(value: unknown, maxLength = 220): string {
   );
 }
 
+/**
+ * Per-layer validator outcome for the input audit.
+ *
+ * Recorded on the failure path too: without it a failed analysis kept only the
+ * single top-level code, so neither the offending field nor whether the repair
+ * failed for the same reason could be reconstructed afterwards.
+ */
+function auditValidationLayers(
+  validation: AIOutputValidationResult,
+): Array<Record<string, unknown>> {
+  return validation.layers.map((layer) => ({
+    id: layer.id,
+    ok: layer.ok,
+    code: layer.code,
+    ...(layer.field ? { field: layer.field } : {}),
+    ...(layer.excerpt ? { excerpt: safeLogText(layer.excerpt, 200) } : {}),
+  }));
+}
+
 function storageObjectURL(
   supabaseUrl: string,
   bucket: string,
@@ -7948,6 +7968,10 @@ serve(async (req: Request) => {
   let languageValidationCode: string | null = null;
   let languageContractRepairUsed = false;
   let initialForbiddenClaimPassed: boolean | null = null;
+  // Kept so the failure path can record what the first attempt rejected; the
+  // thrown error only carries the final validation.
+  let initialValidationSnapshot: AIOutputValidationResult | null = null;
+  let rejectedRepairOutput: Record<string, unknown> | null = null;
   let forbiddenClaimValidationStatus:
     | "not_evaluated"
     | "passed"
@@ -8278,6 +8302,7 @@ serve(async (req: Request) => {
             allowedUserAuthoredValues: company?.name ? [company.name] : [],
             repair: async (validation) => {
               languageContractRepairUsed = true;
+              initialValidationSnapshot = validation;
               initialForbiddenClaimPassed = validation.layers.find(
                 (layer) => layer.id === "forbidden_claim",
               )?.ok ?? null;
@@ -8287,6 +8312,11 @@ serve(async (req: Request) => {
                 buildLanguageContractRepairInstruction(
                   localizationSnapshot,
                   validation.failedLayer ?? "unknown",
+                  {
+                    code: validation.code,
+                    field: validation.failedField,
+                    excerpt: validation.failedExcerpt,
+                  },
                 ),
               ].join("\n\n");
               try {
@@ -8313,6 +8343,10 @@ serve(async (req: Request) => {
                   totalTokens,
                   repaired.totalTokens,
                 );
+                rejectedRepairOutput = repaired.result as Record<
+                  string,
+                  unknown
+                >;
                 return repaired.result as Record<string, unknown>;
               } catch {
                 throw new OutputLanguageContractError(
@@ -8339,18 +8373,12 @@ serve(async (req: Request) => {
             : initialForbiddenClaim?.ok === false
             ? "repaired"
             : "passed";
-          inputAudit.language_validation_initial_layers = validatedOutput
-            .initialValidation.layers.map((layer) => ({
-              id: layer.id,
-              ok: layer.ok,
-              code: layer.code,
-            }));
-          inputAudit.language_validation_final_layers = validatedOutput
-            .finalValidation.layers.map((layer) => ({
-              id: layer.id,
-              ok: layer.ok,
-              code: layer.code,
-            }));
+          inputAudit.language_validation_initial_layers = auditValidationLayers(
+            validatedOutput.initialValidation,
+          );
+          inputAudit.language_validation_final_layers = auditValidationLayers(
+            validatedOutput.finalValidation,
+          );
         } catch (validationError) {
           languageValidationStatus = "failed";
           languageValidationAttempts = validationError instanceof
@@ -8377,6 +8405,24 @@ serve(async (req: Request) => {
             forbiddenClaimValidationStatus = initialForbiddenClaimPassed
               ? "passed"
               : "failed";
+          }
+          if (initialValidationSnapshot) {
+            inputAudit.language_validation_initial_layers =
+              auditValidationLayers(initialValidationSnapshot);
+          }
+          if (
+            validationError instanceof OutputLanguageContractError &&
+            validationError.validation
+          ) {
+            inputAudit.language_validation_final_layers = auditValidationLayers(
+              validationError.validation,
+            );
+            inputAudit.language_validation_failed_field =
+              validationError.validation.failedField;
+            inputAudit.language_validation_failed_excerpt = safeLogText(
+              validationError.validation.failedExcerpt ?? "",
+              200,
+            );
           }
           inputAudit.language_validation_status = languageValidationStatus;
           inputAudit.language_validation_attempts = languageValidationAttempts;
@@ -8603,6 +8649,19 @@ serve(async (req: Request) => {
                 support_id: supportID,
                 request_id: requestID,
               },
+              // Kept under an underscore key, never as top-level hazards or
+              // photo_findings: a failed row must not look like a usable
+              // analysis to the coverage-repair reader. Same 30-day
+              // raw_ai_response retention as a completed analysis, which
+              // already stores strictly more than this.
+              ...(err instanceof OutputLanguageContractError
+                ? {
+                  _rejected_output: {
+                    initial: geminiResult ?? null,
+                    repaired: rejectedRepairOutput,
+                  },
+                }
+                : {}),
             },
           });
         }

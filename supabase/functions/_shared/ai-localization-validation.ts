@@ -19,16 +19,33 @@ export const AI_OUTPUT_VALIDATION_LAYER_IDS = [
 export type AIOutputValidationLayerID =
   (typeof AI_OUTPUT_VALIDATION_LAYER_IDS)[number];
 
+/**
+ * Which user-visible field tripped a layer, plus a short excerpt of it.
+ *
+ * Carried so the single repair attempt can name the exact offending text
+ * instead of asking the model to guess, and so a failed analysis records why
+ * it failed. Layers that cannot attribute a failure to one field omit it.
+ */
+export type AIOutputValidationFailureDetail = {
+  code: string;
+  field?: string;
+  excerpt?: string;
+};
+
 export type AIOutputValidationLayerResult = {
   id: AIOutputValidationLayerID;
   ok: boolean;
   code: string | null;
+  field?: string;
+  excerpt?: string;
 };
 
 export type AIOutputValidationResult = {
   ok: boolean;
   code: string | null;
   failedLayer: AIOutputValidationLayerID | null;
+  failedField: string | null;
+  failedExcerpt: string | null;
   layers: AIOutputValidationLayerResult[];
 };
 
@@ -88,22 +105,60 @@ const USER_VISIBLE_FIELDS = new Set([
   "text",
 ]);
 
+/**
+ * Fields that assert something about the scene, so a certainty adverb in them
+ * is a claim about evidence.
+ *
+ * Deliberately narrower than USER_VISIBLE_FIELDS. `limitations`,
+ * `coverage_gap_reason` and `coverage_conclusion` exist to *express*
+ * uncertainty, and the photo-evidence prompt tells the model to state what it
+ * could not confirm there; in Turkish that is "kesin olarak
+ * belirlenememistir", which the certainty pattern would read as the opposite
+ * of what it is. `corrective_action` and `preventive_control` are imperative
+ * safety copy where "kesinlikle kullanilmalidir" is a recommendation, not an
+ * evidence claim. Scanning those fields made the validator contradict the
+ * contract the same prompt hands the model.
+ */
+const EVIDENCE_CLAIM_FIELDS = new Set([
+  "observed_evidence",
+  "description",
+  "root_cause",
+  "visual_evidence",
+  "observation",
+]);
+
+function collectFieldText(
+  value: unknown,
+  fields: ReadonlySet<string>,
+  key = "",
+  output: Array<{ field: string; text: string }> = [],
+): Array<{ field: string; text: string }> {
+  if (typeof value === "string") {
+    if (fields.has(key) && value.trim()) {
+      output.push({ field: key, text: value.trim() });
+    }
+    return output;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectFieldText(item, fields, key, output);
+    return output;
+  }
+  if (!value || typeof value !== "object") return output;
+  for (const [childKey, childValue] of Object.entries(value)) {
+    collectFieldText(childValue, fields, childKey, output);
+  }
+  return output;
+}
+
 function collectVisibleText(
   value: unknown,
   key = "",
   output: string[] = [],
 ): string[] {
-  if (typeof value === "string") {
-    if (USER_VISIBLE_FIELDS.has(key) && value.trim()) output.push(value.trim());
-    return output;
-  }
-  if (Array.isArray(value)) {
-    for (const item of value) collectVisibleText(item, key, output);
-    return output;
-  }
-  if (!value || typeof value !== "object") return output;
-  for (const [childKey, childValue] of Object.entries(value)) {
-    collectVisibleText(childValue, childKey, output);
+  for (
+    const entry of collectFieldText(value, USER_VISIBLE_FIELDS, key)
+  ) {
+    output.push(entry.text);
   }
   return output;
 }
@@ -414,7 +469,29 @@ const DEFINITIVE_ROOT_CAUSE_PATTERNS = [
   /\b(?:sebebi|nedeni)\s+(?:kesin olarak\s+)?\b/iu,
 ];
 
-function photoEvidenceCode(value: unknown): string | null {
+/**
+ * `\b` is ASCII-only even under the `u` flag, so a word starting with a
+ * non-ASCII letter never forms a boundary against a preceding space. Wrapping
+ * the Turkish alternatives in `\b` therefore failed to match them standalone
+ * while still matching them glued onto an ASCII stem. They are anchored on a
+ * non-letter lookaround instead; the ASCII alternatives keep `\b`.
+ */
+const UNSUPPORTED_CERTAINTY_PATTERN =
+  /\b(?:definitely|certainly|guaranteed|without doubt)\b|(?<![\p{L}\p{N}_])(?:kesinlikle|kesin olarak|şüphesiz)(?![\p{L}\p{N}_])/iu;
+
+function excerptAround(text: string, pattern: RegExp): string {
+  const match = pattern.exec(text);
+  if (!match) return text.slice(0, 160);
+  const start = Math.max(0, match.index - 60);
+  const end = Math.min(text.length, match.index + match[0].length + 60);
+  return `${start > 0 ? "…" : ""}${text.slice(start, end).trim()}${
+    end < text.length ? "…" : ""
+  }`;
+}
+
+function photoEvidenceCode(
+  value: unknown,
+): AIOutputValidationFailureDetail | null {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const findings = findingsFrom(value as Record<string, unknown>) ?? [];
     for (const finding of findings) {
@@ -427,7 +504,10 @@ function photoEvidenceCode(value: unknown): string | null {
         MEASUREMENT_VALUE_PATTERN.test(findingText) &&
         item.needs_field_verification !== true
       ) {
-        return "PHOTO_EVIDENCE_MEASUREMENT_REQUIRES_VERIFICATION";
+        return {
+          code: "PHOTO_EVIDENCE_MEASUREMENT_REQUIRES_VERIFICATION",
+          excerpt: excerptAround(findingText, MEASUREMENT_VALUE_PATTERN),
+        };
       }
       const rootCause = typeof item.root_cause === "string"
         ? item.root_cause
@@ -437,28 +517,45 @@ function photoEvidenceCode(value: unknown): string | null {
           pattern.test(rootCause)
         )
       ) {
-        return "PHOTO_EVIDENCE_DEFINITIVE_ROOT_CAUSE";
+        return {
+          code: "PHOTO_EVIDENCE_DEFINITIVE_ROOT_CAUSE",
+          field: "root_cause",
+          excerpt: rootCause.slice(0, 160),
+        };
       }
       if (UNSUPPORTED_UNSEEN_FACT_PATTERN.test(findingText)) {
-        return "PHOTO_EVIDENCE_UNSEEN_FACT";
+        return {
+          code: "PHOTO_EVIDENCE_UNSEEN_FACT",
+          excerpt: excerptAround(findingText, UNSUPPORTED_UNSEEN_FACT_PATTERN),
+        };
       }
     }
   }
-  const text = collectVisibleText(value).join("\n");
-  if (
-    /\b(?:definitely|certainly|guaranteed|without doubt|kesinlikle|kesin olarak|şüphesiz)\b/iu
-      .test(text)
-  ) {
-    return "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY";
+  for (const entry of collectFieldText(value, EVIDENCE_CLAIM_FIELDS)) {
+    if (UNSUPPORTED_CERTAINTY_PATTERN.test(entry.text)) {
+      return {
+        code: "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY",
+        field: entry.field,
+        excerpt: excerptAround(entry.text, UNSUPPORTED_CERTAINTY_PATTERN),
+      };
+    }
   }
   return null;
 }
 
 function layer(
   id: AIOutputValidationLayerID,
-  code: string | null,
+  outcome: string | AIOutputValidationFailureDetail | null,
 ): AIOutputValidationLayerResult {
-  return { id, ok: code === null, code };
+  if (outcome === null) return { id, ok: true, code: null };
+  if (typeof outcome === "string") return { id, ok: false, code: outcome };
+  return {
+    id,
+    ok: false,
+    code: outcome.code,
+    ...(outcome.field ? { field: outcome.field } : {}),
+    ...(outcome.excerpt ? { excerpt: outcome.excerpt } : {}),
+  };
 }
 
 export function validateAIOutputContract(
@@ -498,6 +595,8 @@ export function validateAIOutputContract(
     ok: failed === null,
     code: failed?.code ?? null,
     failedLayer: failed?.id ?? null,
+    failedField: failed?.field ?? null,
+    failedExcerpt: failed?.excerpt ?? null,
     layers,
   };
 }

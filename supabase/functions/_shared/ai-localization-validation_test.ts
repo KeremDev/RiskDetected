@@ -579,3 +579,79 @@ Deno.test("definitive root-cause claims fail closed", () => {
     "PHOTO_EVIDENCE_DEFINITIVE_ROOT_CAUSE",
   );
 });
+
+// Regression: analysis c42b5bc5 (2026-08-21) failed with
+// PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY after both attempts. The certainty
+// pattern was scanning every user-visible field, so the hedging and imperative
+// phrasing the photo-evidence prompt asks for was read as a certainty claim.
+Deno.test("hedged Turkish uncertainty in limitations is not a certainty claim", () => {
+  const output = validOutput("tr-tr-current-v1");
+  output.limitations =
+    "Koruyucunun yerinde olup olmadığı fotoğraftan kesin olarak belirlenememiştir.";
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("tr-tr-current-v1"),
+  );
+  assertEquals(validation.ok, true, validation.code ?? "");
+});
+
+Deno.test("imperative Turkish safety copy is not a certainty claim", () => {
+  const output = validOutput("tr-tr-current-v1");
+  const finding = (output.hazards as Array<Record<string, unknown>>)[0];
+  finding.corrective_action = "Bu alanda baret kesinlikle kullanılmalıdır.";
+  finding.preventive_control = "Yetkisiz personel kesinlikle girmemelidir.";
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("tr-tr-current-v1"),
+  );
+  assertEquals(validation.ok, true, validation.code ?? "");
+});
+
+Deno.test("certainty asserted about the scene still fails, with the field named", () => {
+  const output = validOutput("tr-tr-current-v1");
+  (output.hazards as Array<Record<string, unknown>>)[0].description =
+    "Bu ekipman kesinlikle arızalıdır ve şüphesiz kazaya yol açacaktır.";
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("tr-tr-current-v1"),
+  );
+  assertEquals(validation.failedLayer, "photo_evidence");
+  assertEquals(validation.code, "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY");
+  assertEquals(validation.failedField, "description");
+  assertEquals(
+    validation.failedExcerpt?.includes("kesinlikle arızalıdır"),
+    true,
+    validation.failedExcerpt ?? "",
+  );
+});
+
+// `\b` is ASCII-only, so the old pattern could not match a Turkish word that
+// starts with a non-ASCII letter after a space.
+Deno.test("standalone şüphesiz is matched despite the leading non-ASCII letter", () => {
+  const output = validOutput("tr-tr-current-v1");
+  (output.hazards as Array<Record<string, unknown>>)[0].observed_evidence =
+    "şüphesiz burada bir düşme tehlikesi vardır.";
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("tr-tr-current-v1"),
+  );
+  assertEquals(validation.code, "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY");
+});
+
+Deno.test("English hedging survives while an English certainty claim fails", () => {
+  const hedged = validOutput("en-gb-generic-v1");
+  hedged.limitations =
+    "Guard position could not be determined with certainty from the photograph.";
+  assertEquals(
+    validateAIOutputContract(hedged, snapshotFor("en-gb-generic-v1")).ok,
+    true,
+  );
+
+  const asserted = validOutput("en-gb-generic-v1");
+  (asserted.hazards as Array<Record<string, unknown>>)[0].description =
+    "This will definitely cause an incident.";
+  assertEquals(
+    validateAIOutputContract(asserted, snapshotFor("en-gb-generic-v1")).code,
+    "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY",
+  );
+});
