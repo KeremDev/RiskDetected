@@ -159,3 +159,30 @@ Deno.test("expert depth stays off after shadow degraded hazard detection", async
     "'shadow_measurement_degraded_hazard_detection'",
   );
 });
+
+Deno.test("repair budget is a flag and image telemetry counts what was sent", async () => {
+  assertStringIncludes(analyzeSource, "const DEFAULT_REPAIR_THINKING_BUDGET =");
+  assertStringIncludes(analyzeSource, "const MINIMAL_REPAIR_THINKING_BUDGET =");
+  assertStringIncludes(
+    analyzeSource,
+    "thinkingBudget: photoCapabilities.featureFlags.repair_thinking_budget,",
+  );
+  // The 1024 floor survives only as a fallback for repairs that request
+  // nothing, such as the language contract repair.
+  assert(!analyzeSource.includes("isRepairPass ? 1024 :"));
+
+  // aiImageParts is narrowed to the repair's target photos; the audit used to
+  // report the full upload count regardless.
+  assertStringIncludes(
+    analyzeSource,
+    "inputAudit.ai_image_part_count = aiImageParts.length;",
+  );
+
+  const migration = await Deno.readTextFile(
+    new URL(
+      "../../migrations/20260822014500_repair_thinking_budget.sql",
+      import.meta.url,
+    ),
+  );
+  assertStringIncludes(migration, "'repair_thinking_budget', 3072");
+});

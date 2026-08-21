@@ -824,3 +824,66 @@ Deno.test("a missing coverage record is not treated as a zero-finding photo", ()
   assertFalse(result.eligible);
   assertFalse(result.trigger_reasons.includes("zero_finding_photo"));
 });
+
+Deno.test("a photo the model mostly declared invisible is flagged for repair", () => {
+  // The not_visible share rises with photo count (30.6% at one photo, 43.9% at
+  // three) while actionable falls (28.7% to 11.7%). Past half the layers it is
+  // triage, not a genuinely obstructed scene.
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      findings: [{ inspection_layer_keys: ["ground_housekeeping"] }],
+      candidate_findings_count: 1,
+      inspection_layers: [
+        { layer_key: "ground_housekeeping", status: "actionable" },
+        { layer_key: "fire_explosion", status: "not_visible" },
+        { layer_key: "machinery_equipment", status: "not_visible" },
+        { layer_key: "electrical_energy", status: "not_visible" },
+      ],
+    }),
+    { candidateSemanticsV2: true },
+  );
+
+  assert(result.trigger_reasons.includes("excessive_not_visible"));
+  assertEquals(result.not_visible_layer_count, 3);
+  assertEquals(result.inspection_layer_count, 4);
+});
+
+Deno.test("an invisible-heavy photo with nothing attachable is not repaired for it", () => {
+  // Repair can only link a finding to an actionable or uncertain layer. Firing
+  // on not_visible alone would buy a model call that cannot add anything.
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      coverage_status: "actionable",
+      findings: [{ inspection_layer_keys: ["ground_housekeeping"] }],
+      candidate_findings_count: 1,
+      inspection_layers: [
+        { layer_key: "ground_housekeeping", status: "checked_no_hazard" },
+        { layer_key: "fire_explosion", status: "not_visible" },
+        { layer_key: "machinery_equipment", status: "not_visible" },
+        { layer_key: "electrical_energy", status: "not_visible" },
+      ],
+    }),
+    { candidateSemanticsV2: true },
+  );
+
+  assertFalse(result.trigger_reasons.includes("excessive_not_visible"));
+  assertEquals(result.not_visible_layer_count, 3);
+});
+
+Deno.test("exactly half invisible is not yet triage", () => {
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      findings: [{ inspection_layer_keys: ["ground_housekeeping"] }],
+      candidate_findings_count: 1,
+      inspection_layers: [
+        { layer_key: "ground_housekeeping", status: "actionable" },
+        { layer_key: "fire_explosion", status: "uncertain" },
+        { layer_key: "machinery_equipment", status: "not_visible" },
+        { layer_key: "electrical_energy", status: "not_visible" },
+      ],
+    }),
+    { candidateSemanticsV2: true },
+  );
+
+  assertFalse(result.trigger_reasons.includes("excessive_not_visible"));
+});

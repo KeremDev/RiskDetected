@@ -517,9 +517,16 @@ Deno.test("AI timeout and token budgets are explicit", async () => {
 
   assertStringIncludes(analyzeSource, "const MAIN_AI_TIMEOUT_MS = 120_000");
   assertStringIncludes(analyzeSource, "const REPAIR_AI_TIMEOUT_MS = 45_000");
+  // The repair budget moved from a hard-coded 1024 to the
+  // `repair_thinking_budget` flag; 1024 remains the floor for repair calls that
+  // request nothing of their own.
   assertStringIncludes(
     analyzeSource,
-    "thinkingBudget: isRepairPass ? 1024 : normalizeThinkingBudget(",
+    "isRepairPass ? MINIMAL_REPAIR_THINKING_BUDGET : 3072,",
+  );
+  assertStringIncludes(
+    analyzeSource,
+    "const MINIMAL_REPAIR_THINKING_BUDGET = 1024;",
   );
   assertStringIncludes(analyzeSource, "return 14_000");
   assertStringIncludes(analyzeSource, "return 16_000");

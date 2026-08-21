@@ -300,6 +300,7 @@ type MultiPhotoFeatureFlags = {
   single_photo_evidence_guard_enabled: boolean;
   single_photo_thinking_budget: number;
   multi_photo_thinking_budget: number;
+  repair_thinking_budget: number;
   multi_photo_thinking_budget_ios_build_overrides: Record<string, number>;
   multi_photo_thinking_budget_min_ios_build: number | null;
   multi_photo_thinking_budget_min_ios_build_value: number | null;
@@ -526,6 +527,18 @@ const PLAN_LIMITS: Record<PlanTier, {
   },
 };
 
+/**
+ * A coverage-quality repair re-reads the photo and looks for hazards the first
+ * pass missed, so it is a fresh visual task rather than a text touch-up. It ran
+ * on a hard-coded 1024 while the analysis pass ran on 6144, and across thirteen
+ * production repairs it added four findings and rejected seventeen duplicates.
+ * The budget is a flag now so it can be tuned without a deploy; 1024 stays the
+ * floor for repairs that carry no requested budget, such as the language
+ * contract repair, which only rewrites text it was already given.
+ */
+const DEFAULT_REPAIR_THINKING_BUDGET = 3072;
+const MINIMAL_REPAIR_THINKING_BUDGET = 1024;
+
 const DEFAULT_MULTI_PHOTO_FLAGS: MultiPhotoFeatureFlags = {
   kill_switch: false,
   rollout_mode: "off",
@@ -552,6 +565,7 @@ const DEFAULT_MULTI_PHOTO_FLAGS: MultiPhotoFeatureFlags = {
   single_photo_evidence_guard_enabled: false,
   single_photo_thinking_budget: 3072,
   multi_photo_thinking_budget: 3072,
+  repair_thinking_budget: DEFAULT_REPAIR_THINKING_BUDGET,
   multi_photo_thinking_budget_ios_build_overrides: {},
   multi_photo_thinking_budget_min_ios_build: null,
   multi_photo_thinking_budget_min_ios_build_value: null,
@@ -609,9 +623,9 @@ function geminiThinkingConfig(
 ): Record<string, string | number> | null {
   if (model === MODEL_FREE || model === MODEL_PAID_FAST) {
     return {
-      thinkingBudget: isRepairPass ? 1024 : normalizeThinkingBudget(
+      thinkingBudget: normalizeThinkingBudget(
         requestedBudget,
-        3072,
+        isRepairPass ? MINIMAL_REPAIR_THINKING_BUDGET : 3072,
       ),
     };
   }
@@ -639,7 +653,10 @@ function thinkingBudgetFor(
   isRepairPass: boolean,
   requestedBudget?: number,
 ): number {
-  return isRepairPass ? 1024 : normalizeThinkingBudget(requestedBudget, 3072);
+  return normalizeThinkingBudget(
+    requestedBudget,
+    isRepairPass ? MINIMAL_REPAIR_THINKING_BUDGET : 3072,
+  );
 }
 
 function maxOutputTokensFor(photoCount: number, tier: PlanTier): number {
@@ -1016,6 +1033,10 @@ function normalizeMultiPhotoFlags(value: unknown): MultiPhotoFeatureFlags {
     multi_photo_thinking_budget: normalizeThinkingBudget(
       record.multi_photo_thinking_budget,
       DEFAULT_MULTI_PHOTO_FLAGS.multi_photo_thinking_budget,
+    ),
+    repair_thinking_budget: normalizeThinkingBudget(
+      record.repair_thinking_budget,
+      DEFAULT_MULTI_PHOTO_FLAGS.repair_thinking_budget,
     ),
     multi_photo_thinking_budget_ios_build_overrides:
       normalizeThinkingBudgetOverrides(
@@ -3407,12 +3428,13 @@ function recordRepairPassBudgets(
   previousAudit: Record<string, unknown> | null,
   repairPhotoCount: number,
   planTier: PlanTier,
+  repairThinkingBudget: number,
 ): void {
   recordPassBudgets(
     audit,
     previousAudit,
     true,
-    thinkingBudgetFor(true),
+    thinkingBudgetFor(true, repairThinkingBudget),
     maxOutputTokensFor(Math.max(1, repairPhotoCount), planTier),
   );
 }
@@ -9652,7 +9674,7 @@ serve(async (req: Request) => {
       apiKeyAlias: pinnedAlias,
       maxProviderRequests: 1,
       requestTimeoutMs: params.timeoutMs,
-      thinkingBudget: undefined,
+      thinkingBudget: photoCapabilities.featureFlags.repair_thinking_budget,
     };
     if (pinnedProvider === "gemini") {
       const keyConfig = [...geminiKeys, ...freeFallbackGeminiKeys].find(
@@ -9741,6 +9763,15 @@ serve(async (req: Request) => {
   const expectedCoveragePhotoIndices = aiImageParts.map((part) =>
     part.photoIndex
   );
+  /**
+   * `aiImageParts` is already narrowed to the photos a repair targets, but the
+   * audit was recording `imageBase64Parts.length`, so a repair that reviewed
+   * one photo still reported three image parts. The upload counts keep their
+   * own keys (`inline_photo_count`, `storage_photo_count`); these two describe
+   * what the provider was actually sent.
+   */
+  inputAudit.ai_image_part_count = aiImageParts.length;
+  inputAudit.gemini_image_part_count = aiImageParts.length;
   const exactCoverageContractEnabled = effectiveCoverageSchemaVersion === 2 &&
     (multiPhotoCoveragePolicy?.photoCount ?? 0) > 1;
   const configuredThinkingBudget = imageBase64Parts.length === 1
@@ -9833,6 +9864,7 @@ serve(async (req: Request) => {
       previousInputAudit,
       effectiveRepairPhotoIndices.length,
       planTier,
+      photoCapabilities.featureFlags.repair_thinking_budget,
     );
     languageValidationStatus =
       ownedAnalysis.language_validation_status === "passed" ||
@@ -10499,6 +10531,7 @@ serve(async (req: Request) => {
           previousInputAudit,
           effectiveRepairPhotoIndices.length,
           planTier,
+          photoCapabilities.featureFlags.repair_thinking_budget,
         );
       } else {
         const retryableProviderFailure =
@@ -10808,6 +10841,8 @@ serve(async (req: Request) => {
             initial_generated_findings_count:
               evaluation.initial_generated_findings_count,
             actionable_layer_count: evaluation.actionable_layer_count,
+            inspection_layer_count: evaluation.inspection_layer_count,
+            not_visible_layer_count: evaluation.not_visible_layer_count,
             represented_actionable_layer_count:
               evaluation.represented_actionable_layer_count,
             unrepresented_actionable_layers:

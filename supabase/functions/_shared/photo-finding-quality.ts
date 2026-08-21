@@ -13,6 +13,7 @@ export type CoverageQualityNoAdditionalReasonCode =
 
 export type CoverageQualityTriggerReason =
   | "zero_finding_photo"
+  | "excessive_not_visible"
   | "low_finding_count"
   | "candidate_gap"
   | "multi_layer_finding"
@@ -59,6 +60,8 @@ export type CoverageQualityEvaluation = {
   initial_candidate_findings_count: number;
   initial_generated_findings_count: number;
   actionable_layer_count: number;
+  inspection_layer_count: number;
+  not_visible_layer_count: number;
   represented_actionable_layer_count: number;
   unrepresented_actionable_layers: string[];
   actionable_process_check_count: number;
@@ -168,6 +171,24 @@ export function evaluateCoverageQualityRecord(
     ).length;
   const zeroFindingPhoto = findings.length === 0 && !record.record_missing &&
     repairableLayerCount > 0;
+  /**
+   * The share of layers the model declares invisible rises with photo count --
+   * 30.6% at one photo, 43.9% at three, measured over thirty days -- while the
+   * actionable share falls from 28.7% to 11.7%. The photos are the same kind of
+   * scene; the model is triaging under load, and every not_visible layer is one
+   * repair is forbidden to revisit.
+   *
+   * Recorded on every record so the rate can be tracked. It only becomes a
+   * repair trigger when the photo still has an actionable or uncertain layer to
+   * hang a finding on, because a repair with nothing attachable is a model call
+   * that cannot add anything.
+   */
+  const notVisibleLayerCount =
+    record.inspection_layers.filter((layer) => layer.status === "not_visible")
+      .length;
+  const excessiveNotVisible = record.inspection_layers.length > 0 &&
+    notVisibleLayerCount * 2 > record.inspection_layers.length &&
+    repairableLayerCount > 0;
   const eligible = record.coverage_status === "actionable" ||
     actionableProcessChecks.length > 0 ||
     zeroFindingPhoto;
@@ -175,6 +196,7 @@ export function evaluateCoverageQualityRecord(
 
   if (eligible) {
     if (zeroFindingPhoto) triggerReasons.push("zero_finding_photo");
+    if (excessiveNotVisible) triggerReasons.push("excessive_not_visible");
     if (findings.length <= 1) triggerReasons.push("low_finding_count");
     if (
       options.candidateSemanticsV2 &&
@@ -234,6 +256,8 @@ export function evaluateCoverageQualityRecord(
     ),
     initial_generated_findings_count: findings.length,
     actionable_layer_count: actionableLayers.length,
+    inspection_layer_count: record.inspection_layers.length,
+    not_visible_layer_count: notVisibleLayerCount,
     represented_actionable_layer_count:
       actionableLayers.filter((layer) => representedLayers.has(layer)).length,
     unrepresented_actionable_layers: unrepresentedActionableLayers,
