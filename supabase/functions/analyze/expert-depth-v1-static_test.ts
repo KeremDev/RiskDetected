@@ -358,3 +358,37 @@ Deno.test("persisted verification items survive re-normalization", () => {
     "{ field_verification_items: record.field_verification_items }",
   );
 });
+
+// Structured output is produced in schema order. v173 put the equipment and
+// process-safety blocks between inspection_layers and findings, and the model
+// arrived at findings already satisfied.
+Deno.test("depth structures are emitted after findings, not before", () => {
+  const findingsAt = analyzeSource.indexOf(
+    '              findings: {\n                type: "ARRAY",\n                items: hazardSchema,',
+  );
+  const equipmentAt = analyzeSource.indexOf(
+    "              equipment_depth_scan: {",
+  );
+  assert(findingsAt > 0, "findings schema property must exist");
+  assert(equipmentAt > 0, "equipment_depth_scan schema property must exist");
+  assert(
+    findingsAt < equipmentAt,
+    "findings must be declared before equipment_depth_scan in the response schema",
+  );
+  // The layer audit deliberately stays ahead of findings; that ordering is
+  // proven and must not be swept along with this move.
+  const layersAt = analyzeSource.indexOf(
+    "                  inspection_layers: {",
+  );
+  assert(layersAt > 0 && layersAt < findingsAt);
+});
+
+Deno.test("the depth prompt puts findings first", () => {
+  assertStringIncludes(
+    analyzeSource,
+    "Her fotoğrafta ÖNCE bulguları tamamla",
+  );
+  assertFalse(
+    analyzeSource.includes("bulgulardan önce equipment_depth_scan üret"),
+  );
+});

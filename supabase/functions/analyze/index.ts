@@ -491,7 +491,7 @@ const COVERAGE_QUALITY_PROMPT_TR =
 const COVERAGE_QUALITY_PROMPT_EN =
   "candidate_findings_count is the number of distinct independently correctable physical conditions after deduplication, never the number of categories, layers or consequences. Treat uncontrolled waste separately from a burned or dry fire-spread area when they have different evidence and controls; treat an improper corroded locking connection separately from a protruding sharp wire end. Keep one finding when the same physical source and same correction merely affect multiple layers.";
 const EXPERT_DEPTH_PROMPT_TR =
-  `UZMAN DERİNLİK v1: Her fotoğrafta bulgulardan önce equipment_depth_scan üret. Basınçlı ekipman, kaldırma/iletme ekipmanı, elektrik tesisatı, makine tezgâhı, endüstriyel raf/kapı, iş makinesi veya başka karmaşık ekipmanı görünür ipuçlarıyla sınıflandır; aynı ekipman çoklu fotoğrafta aynı equipment_instance_key değerini kullansın. recognition_confidence ekipman sınıfına olan güveni göstersin. Risk girdilerini, kontrol kaydının eksik olduğunu varsaymadan, yalnız görünür kullanım ve olası sonuç bağlamına göre temkinli üret. Periyodik kontrol kaydını findings içinde kendin üretme; sunucu güvenle tanınan ekipman için mevcut saha-teyidi bulgusunu ekler.
+  `UZMAN DERİNLİK v1: Her fotoğrafta ÖNCE bulguları tamamla, equipment_depth_scan ve process_safety_checks kayıtlarını bulgulardan SONRA üret. Tehlike tespiti bu görevin çekirdeğidir; ekipman envanteri onun yerine geçmez. Basınçlı ekipman, kaldırma/iletme ekipmanı, elektrik tesisatı, makine tezgâhı, endüstriyel raf/kapı, iş makinesi veya başka karmaşık ekipmanı görünür ipuçlarıyla sınıflandır; aynı ekipman çoklu fotoğrafta aynı equipment_instance_key değerini kullansın. recognition_confidence ekipman sınıfına olan güveni göstersin. Risk girdilerini, kontrol kaydının eksik olduğunu varsaymadan, yalnız görünür kullanım ve olası sonuç bağlamına göre temkinli üret. Periyodik kontrol kaydını findings içinde kendin üretme; sunucu güvenle tanınan ekipman için mevcut saha-teyidi bulgusunu ekler.
 scene_elements veya scene_summary içinde tank, vinç, kaldırma kancası, iş makinesi, ekskavatör, elektrik tesisatı, makine tezgâhı ya da endüstriyel raf/kapı adı geçiyorsa equipment_depth_scan boş OLAMAZ; adı geçen her farklı ekipman grubu için en az bir kayıt döndür. Kapalı iş makinesi kabini içindeki operatör için yalnız fotoğrafa bakarak baret, reflektif yelek veya iş ayakkabısı zorunluluğu ihlali üretme; kabin dışındaki maruziyet veya sahaya özgü kural görüntüden kanıtlanamaz.
 Tank, basınçlı kap, kazan, tüp, reaktör, silo, kompresör, pompa, proses makinesi, boru, vana, flanş, manifold, yakıt/gaz/kimyasal transferi, manometre, emniyet ventili, tahliye hattı, proses hortumu/kaplin/kelepçe, endüstriyel soğutma, buhar, hava veya hidrolik sistem görünürse process_safety_scope=applicable yap ve ${PROCESS_SAFETY_CHECK_KEYS.length} process_safety_checks kaydının her birini tam bir kez döndür. Proses ekipmanı yoksa not_applicable ve boş dizi; ekipman kimliği görünür fakat proses sınıfı güvenle belirlenemiyorsa uncertain_equipment_identity ve yalnız görüntüden desteklenen kontrolleri döndür.
 Proses kontrolleri: ekipman/proses kimliği; muhafaza bütünlüğü; basınç-vakum bütünlüğü; aşırı basınç tahliye yolu; gösterge/enstrümantasyon; izolasyon ve enerji boşaltma; transfer bağlantıları/hortumlar; tutuşturma-statik-patlama kontrolleri; sekonder muhafaza/drenaj; destek-ankraj-çarpma koruması; malzeme uyumluluğu/reaksiyon; acil erişim ve tahliye. applicable ise her check_key tam bir kez bulunmalı ve linked_layer_keys yalnız mevcut 12 kanonik katmandan seçilmeli. actionable kontrol en az bir bulguyla temsil edilmeli; proses bulgusu process_safety_check_keys taşımalı. uncertain yalnız görünür belirti olduğunda kullanılmalı ve bağlı bulguda needs_field_verification=true, confidence<=0.69 olmalı. not_visible, checked_no_hazard veya not_applicable kaydından bulgu üretme.
@@ -3623,113 +3623,6 @@ function responseSchema(
                       required: ["layer_key", "status", "visual_evidence"],
                     },
                   },
-                  ...(expertDepthEnabled
-                    ? {
-                      equipment_depth_scan: {
-                        type: "ARRAY",
-                        description:
-                          "One record for every distinct complex equipment group explicitly named in scene_elements or scene_summary; must not be empty when such equipment is named.",
-                        ...(relaxedLayerAuditSchema ? {} : { maxItems: 8 }),
-                        items: {
-                          type: "OBJECT",
-                          properties: {
-                            equipment_instance_key: { type: "STRING" },
-                            equipment_group_code: {
-                              type: "STRING",
-                              ...(relaxedLayerAuditSchema
-                                ? {}
-                                : { enum: [...EQUIPMENT_DEPTH_GROUPS] }),
-                            },
-                            localized_equipment_name: { type: "STRING" },
-                            recognition_confidence: { type: "NUMBER" },
-                            visible_cues: {
-                              type: "ARRAY",
-                              ...(relaxedLayerAuditSchema
-                                ? {}
-                                : { maxItems: 6 }),
-                              items: { type: "STRING" },
-                            },
-                            source_photo_indices: {
-                              type: "ARRAY",
-                              items: { type: "INTEGER" },
-                            },
-                            fk_probability: { type: "NUMBER" },
-                            fk_frequency: { type: "NUMBER" },
-                            fk_severity: { type: "NUMBER" },
-                            m5_probability: { type: "NUMBER" },
-                            m5_severity: { type: "NUMBER" },
-                          },
-                          required: [
-                            "equipment_instance_key",
-                            "equipment_group_code",
-                            "localized_equipment_name",
-                            "recognition_confidence",
-                            "visible_cues",
-                            "source_photo_indices",
-                            "fk_probability",
-                            "fk_frequency",
-                            "fk_severity",
-                            "m5_probability",
-                            "m5_severity",
-                          ],
-                        },
-                      },
-                      process_safety_scope: {
-                        type: "STRING",
-                        description:
-                          "Use applicable whenever visible tanks, vessels, process piping, valves, pumps, compressors or transfer equipment are named in the scene.",
-                        ...(relaxedLayerAuditSchema
-                          ? {}
-                          : { enum: [...PROCESS_SAFETY_SCOPES] }),
-                      },
-                      process_safety_checks: {
-                        type: "ARRAY",
-                        description:
-                          `When process_safety_scope is applicable, return all ${PROCESS_SAFETY_CHECK_KEYS.length} canonical process checks exactly once; use not_visible instead of omitting a check.`,
-                        ...(relaxedLayerAuditSchema
-                          ? {}
-                          : { maxItems: PROCESS_SAFETY_CHECK_KEYS.length }),
-                        items: {
-                          type: "OBJECT",
-                          properties: {
-                            check_key: {
-                              type: "STRING",
-                              ...(relaxedLayerAuditSchema
-                                ? {}
-                                : { enum: [...PROCESS_SAFETY_CHECK_KEYS] }),
-                            },
-                            status: {
-                              type: "STRING",
-                              ...(relaxedLayerAuditSchema ? {} : {
-                                enum: [...PROCESS_SAFETY_CHECK_STATUSES],
-                              }),
-                            },
-                            visual_evidence: { type: "STRING" },
-                            linked_layer_keys: {
-                              type: "ARRAY",
-                              ...(relaxedLayerAuditSchema
-                                ? {}
-                                : { minItems: 1 }),
-                              items: {
-                                type: "STRING",
-                                ...(relaxedLayerAuditSchema
-                                  ? {}
-                                  : { enum: [...INSPECTION_LAYER_KEYS] }),
-                              },
-                            },
-                            equipment_instance_key: { type: "STRING" },
-                          },
-                          required: [
-                            "check_key",
-                            "status",
-                            "visual_evidence",
-                            "linked_layer_keys",
-                            "equipment_instance_key",
-                          ],
-                        },
-                      },
-                    }
-                    : {}),
                   coverage_conclusion: { type: "STRING" },
                 }
                 : {}),
@@ -3737,6 +3630,119 @@ function responseSchema(
                 type: "ARRAY",
                 items: hazardSchema,
               },
+              // Emitted after `findings`, deliberately.
+              //
+              // Structured output is produced in schema order. When these two
+              // blocks sat between inspection_layers and findings, the model
+              // treated the equipment inventory as the task and arrived at
+              // findings already satisfied: on 2026-08-21 two of three photos
+              // came back with zero actionable layers where the same photos had
+              // scored 240 and 360 minutes earlier. The layer audit stays ahead
+              // of findings because that ordering is proven; only the depth
+              // structures move behind them.
+              ...(expertDepthEnabled
+                ? {
+                  equipment_depth_scan: {
+                    type: "ARRAY",
+                    description:
+                      "One record for every distinct complex equipment group explicitly named in scene_elements or scene_summary; must not be empty when such equipment is named.",
+                    ...(relaxedLayerAuditSchema ? {} : { maxItems: 8 }),
+                    items: {
+                      type: "OBJECT",
+                      properties: {
+                        equipment_instance_key: { type: "STRING" },
+                        equipment_group_code: {
+                          type: "STRING",
+                          ...(relaxedLayerAuditSchema
+                            ? {}
+                            : { enum: [...EQUIPMENT_DEPTH_GROUPS] }),
+                        },
+                        localized_equipment_name: { type: "STRING" },
+                        recognition_confidence: { type: "NUMBER" },
+                        visible_cues: {
+                          type: "ARRAY",
+                          ...(relaxedLayerAuditSchema ? {} : { maxItems: 6 }),
+                          items: { type: "STRING" },
+                        },
+                        source_photo_indices: {
+                          type: "ARRAY",
+                          items: { type: "INTEGER" },
+                        },
+                        fk_probability: { type: "NUMBER" },
+                        fk_frequency: { type: "NUMBER" },
+                        fk_severity: { type: "NUMBER" },
+                        m5_probability: { type: "NUMBER" },
+                        m5_severity: { type: "NUMBER" },
+                      },
+                      required: [
+                        "equipment_instance_key",
+                        "equipment_group_code",
+                        "localized_equipment_name",
+                        "recognition_confidence",
+                        "visible_cues",
+                        "source_photo_indices",
+                        "fk_probability",
+                        "fk_frequency",
+                        "fk_severity",
+                        "m5_probability",
+                        "m5_severity",
+                      ],
+                    },
+                  },
+                  process_safety_scope: {
+                    type: "STRING",
+                    description:
+                      "Use applicable whenever visible tanks, vessels, process piping, valves, pumps, compressors or transfer equipment are named in the scene.",
+                    ...(relaxedLayerAuditSchema
+                      ? {}
+                      : { enum: [...PROCESS_SAFETY_SCOPES] }),
+                  },
+                  process_safety_checks: {
+                    type: "ARRAY",
+                    description:
+                      `When process_safety_scope is applicable, return all ${PROCESS_SAFETY_CHECK_KEYS.length} canonical process checks exactly once; use not_visible instead of omitting a check.`,
+                    ...(relaxedLayerAuditSchema
+                      ? {}
+                      : { maxItems: PROCESS_SAFETY_CHECK_KEYS.length }),
+                    items: {
+                      type: "OBJECT",
+                      properties: {
+                        check_key: {
+                          type: "STRING",
+                          ...(relaxedLayerAuditSchema
+                            ? {}
+                            : { enum: [...PROCESS_SAFETY_CHECK_KEYS] }),
+                        },
+                        status: {
+                          type: "STRING",
+                          ...(relaxedLayerAuditSchema ? {} : {
+                            enum: [...PROCESS_SAFETY_CHECK_STATUSES],
+                          }),
+                        },
+                        visual_evidence: { type: "STRING" },
+                        linked_layer_keys: {
+                          type: "ARRAY",
+                          ...(relaxedLayerAuditSchema ? {} : { minItems: 1 }),
+                          items: {
+                            type: "STRING",
+                            ...(relaxedLayerAuditSchema
+                              ? {}
+                              : { enum: [...INSPECTION_LAYER_KEYS] }),
+                          },
+                        },
+                        equipment_instance_key: { type: "STRING" },
+                      },
+                      required: [
+                        "check_key",
+                        "status",
+                        "visual_evidence",
+                        "linked_layer_keys",
+                        "equipment_instance_key",
+                      ],
+                    },
+                  },
+                }
+                : {}),
             },
             required: [
               "photo_index",
@@ -3747,17 +3753,19 @@ function responseSchema(
                 ? [
                   "scene_elements",
                   "inspection_layers",
-                  ...(expertDepthEnabled
-                    ? [
-                      "equipment_depth_scan",
-                      "process_safety_scope",
-                      "process_safety_checks",
-                    ]
-                    : []),
                   "coverage_conclusion",
                 ]
                 : []),
               "findings",
+              // Required, but listed after `findings` so the ordering matches
+              // the property order above.
+              ...(layerAuditEnabled && expertDepthEnabled
+                ? [
+                  "equipment_depth_scan",
+                  "process_safety_scope",
+                  "process_safety_checks",
+                ]
+                : []),
             ],
           },
         },
