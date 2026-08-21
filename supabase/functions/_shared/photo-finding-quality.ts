@@ -417,7 +417,10 @@ export function isCoverageRepairSubfindingAlreadyCovered(
     evidenceCoverage.total >= 5 &&
     evidenceCoverage.matched >= 4 && evidenceCoverage.ratio >= 0.45 &&
     actionCoverage.total >= 3 &&
-    actionCoverage.matched >= 3 && actionCoverage.ratio >= 0.35;
+    // Repair actions often enumerate safe alternatives (remove, cut, bend,
+    // cap), so the same hazard can be covered with a longer action sentence.
+    // Title and narrative evidence remain the stronger identity gates.
+    actionCoverage.matched >= 3 && actionCoverage.ratio >= 0.30;
 }
 
 export function findingQualityScore(finding: FindingRecord): number {

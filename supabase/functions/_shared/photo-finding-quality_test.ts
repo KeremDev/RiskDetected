@@ -149,6 +149,34 @@ Deno.test("quality repair rejects a sharp-wire subfinding already covered by a c
   assert(isCoverageRepairSubfindingAlreadyCovered(compound, sharpWire));
 });
 
+Deno.test("quality repair rejects the exact live compound-wire regression", () => {
+  const compound = {
+    title: "Paslanmış metal yapı üzerinde keskin kenarlı tel",
+    observed_evidence:
+      "Ağır paslanmış metal bir boru veya yapı üzerinde, keskin ve dışarıya doğru bükülmüş bir telin bulunması.",
+    description:
+      "Metal yapının üzerinde kullanılan telin keskin kenarları ve dışarıya doğru çıkıntısı, çalışanlar için kesilme veya batma riski oluşturmaktadır. Ayrıca yapının genel korozyon durumu da bütünlük açısından risk teşkil edebilir.",
+    corrective_action:
+      "Keskin kenarlı tel derhal çıkarılmalı ve metal yapının bütünlüğü kontrol edilerek uygun onarım veya değişim yapılmalıdır.",
+    preventive_control:
+      "Ekipmanların düzenli bakımı ve kontrolü yapılmalı, geçici uygunsuz onarımlara izin verilmemelidir.",
+    root_cause:
+      "Ekipman üzerinde uygunsuz ve geçici onarım yöntemlerinin kullanılması ve ekipman bakımının yetersizliği.",
+  };
+  const sharpWire = {
+    title: "Dışarı uzanan keskin tel ucu",
+    observed_evidence:
+      "Paslanmış metal bir boru veya yapıya tutturulmuş, ucu dışarı doğru kıvrılmış ve keskin bir şekilde açıkta duran tel görülmektedir.",
+    corrective_action:
+      "Açıkta duran ve keskin olan tel ucunun güvenli bir şekilde kesilmesi, bükülmesi veya uygun bir kapakla kapatılması.",
+    preventive_control: "",
+    root_cause:
+      "Ekipman veya bağlantı elemanlarının uygun olmayan şekilde kullanılması veya bakımsız bırakılması.",
+  };
+
+  assert(isCoverageRepairSubfindingAlreadyCovered(compound, sharpWire));
+});
+
 Deno.test("quality repair rejects an English subfinding covered inside a compound finding", () => {
   const compound = {
     title: "Corroded connector with protruding wire",
