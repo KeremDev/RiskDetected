@@ -40,6 +40,7 @@ Deno.test("every semantic user copy key has complete Turkish and English copy", 
     store: "App Store",
     profileTerm: "workplace safety",
     count: 2,
+    equipment: "pressure vessel",
   };
   for (const key of USER_FACING_COPY_KEYS) {
     for (const language of ["tr", "en"] as const) {

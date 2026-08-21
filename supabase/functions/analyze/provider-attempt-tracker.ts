@@ -2,6 +2,7 @@ export type ProviderAttemptReason =
   | "initial"
   | "coverage_schema_fallback"
   | "layer_schema_fallback"
+  | "layer_schema_json_fallback"
   | "max_tokens_retry"
   | "invalid_json_fallback"
   | "key_fallback"

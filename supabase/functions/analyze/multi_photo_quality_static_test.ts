@@ -492,7 +492,7 @@ Deno.test("analysis schema and policy use single and multi photo targets", async
   );
   assertStringIncludes(
     source,
-    'const LAYER_AUDIT_POLICY_VERSION = "single-pass-12-layer-audit-v4"',
+    'const LAYER_AUDIT_POLICY_VERSION = "single-pass-12-layer-audit-v5"',
   );
   assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MIN = 1");
   assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MAX = 14");
@@ -598,13 +598,17 @@ Deno.test("single-pass layer audit is flag gated and schema bounded", async () =
   assertStringIncludes(source, "options.isRepairPass !== true");
 });
 
-Deno.test("layer audit degrades to legacy schema and audits malformed coverage", async () => {
+Deno.test("layer audit fallback preserves layer and expert contracts", async () => {
   const source = await readTextIfAllowed(
     new URL("./index.ts", import.meta.url),
   );
   if (source == null) return;
 
-  assertStringIncludes(source, "res.status === 400 && schemaAuditEnabled");
+  assertStringIncludes(source, 'layerAuditSchemaMode = "relaxed"');
+  assertStringIncludes(source, 'layerAuditSchemaMode = "json_only"');
+  assertStringIncludes(source, "configuredResponseSchema");
+  assertStringIncludes(source, '"layer_schema_json_fallback"');
+  assert(!source.includes("schemaAuditEnabled = false"));
   assertStringIncludes(source, "layerAuditSchemaFallbackUsed = true");
   assertStringIncludes(source, "layerAuditSchemaFallbackError");
   assertStringIncludes(source, "applyInspectionLayerEvidenceGuard(");
@@ -626,6 +630,11 @@ Deno.test("layer audit degrades to legacy schema and audits malformed coverage",
   assertStringIncludes(
     source,
     "repairEnabled: layerAuditEnabled\n      ? false",
+  );
+  assertStringIncludes(source, "repair_authority_complete");
+  assertStringIncludes(
+    source,
+    "coverage_quality_incomplete_authority_photo_indices",
   );
 });
 

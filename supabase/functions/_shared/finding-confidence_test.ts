@@ -35,6 +35,32 @@ Deno.test("production verification flag covers the 0.5 to 0.7 band", () => {
       confidence: 0.9,
       needs_field_verification: true,
     }),
+    false,
+  );
+  assertEquals(
+    productionFindingNeedsFieldVerification({
+      confidence: 0.69,
+      needs_field_verification: false,
+      verification_reason_code: "periodic_inspection_status",
+      display_group: "field_verification",
+    }),
     true,
+  );
+  assertEquals(
+    productionFindingNeedsFieldVerification({
+      confidence: 0.9,
+      needs_field_verification: true,
+      verification_reason_code: "periodic_inspection_status",
+      display_group: "field_verification",
+    }),
+    true,
+  );
+  assertEquals(
+    productionFindingNeedsFieldVerification({
+      confidence: 0.9,
+      needs_field_verification: true,
+      verification_reason_code: "periodic_inspection_status",
+    }),
+    false,
   );
 });

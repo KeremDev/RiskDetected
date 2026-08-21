@@ -163,16 +163,30 @@ Deno.test("six-profile output validator matrix is green in fixed order", () => {
   }
 });
 
-Deno.test("English output rejects Turkish user-visible leakage", () => {
+Deno.test("Latin-script prose is not classified by language word lists", () => {
   const validation = validateAIOutputContract(
     validOutput("tr-tr-current-v1"),
     snapshotFor("en-intl-generic-v1"),
   );
-  assertEquals(validation.failedLayer, "output_language");
-  assertEquals(validation.code, "OUTPUT_LANGUAGE_TURKISH_LEAK");
+  assertEquals(validation.ok, true);
 });
 
-Deno.test("English output rejects third-language user-visible prose", () => {
+Deno.test("technical English titles do not require a whitelist word", () => {
+  for (
+    const profile of safetyProfiles.filter((item) => item.language === "en")
+  ) {
+    const output = validOutput(profile.id);
+    (output.hazards as Array<Record<string, unknown>>)[0].title =
+      "Inadequate respiratory protection during dust-generating work";
+    const validation = validateAIOutputContract(
+      output,
+      snapshotFor(profile.id),
+    );
+    assertEquals(validation.ok, true, profile.id);
+  }
+});
+
+Deno.test("Latin third-language prose is non-blocking while incompatible scripts are explicit", () => {
   const thirdLanguageCases = [
     {
       language: "French",
@@ -242,20 +256,35 @@ Deno.test("English output rejects third-language user-visible prose", () => {
       output,
       snapshotFor("en-intl-generic-v1"),
     );
-    assertEquals(
-      validation.failedLayer,
-      "output_language",
-      testCase.language,
-    );
-    assertEquals(
-      validation.code,
-      "OUTPUT_LANGUAGE_ENGLISH_REQUIRED",
-      testCase.language,
-    );
+    if (testCase.language === "Japanese") {
+      assertEquals(validation.failedLayer, "output_language");
+      assertEquals(validation.code, "OUTPUT_LANGUAGE_ENGLISH_REQUIRED");
+      assertEquals(validation.failedPath, "hazards[0].title");
+    } else {
+      assertEquals(validation.ok, true, testCase.language);
+    }
   }
 });
 
-Deno.test("a single English profile term cannot mask third-language prose", () => {
+Deno.test("internal process audit prose cannot invalidate an otherwise valid user result", () => {
+  const output = validOutput("en-intl-generic-v1");
+  output.process_safety_checks = [{
+    check_key: "containment_integrity",
+    status: "actionable",
+    visual_evidence: "Определенно видимая внутренняя заметка",
+    linked_layer_keys: ["chemicals"],
+    equipment_instance_key: "tank_1",
+  }];
+
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("en-intl-generic-v1"),
+    { certaintyPolicy: "v2" },
+  );
+  assertEquals(validation.ok, true);
+});
+
+Deno.test("Latin prose does not depend on an English-word ratio", () => {
   const output = validOutput("en-intl-generic-v1");
   const finding = (output.hazards as Array<Record<string, unknown>>)[0];
   finding.category = "Workplace safety";
@@ -276,8 +305,7 @@ Deno.test("a single English profile term cannot mask third-language prose", () =
     output,
     snapshotFor("en-intl-generic-v1"),
   );
-  assertEquals(validation.failedLayer, "output_language");
-  assertEquals(validation.code, "OUTPUT_LANGUAGE_ENGLISH_REQUIRED");
+  assertEquals(validation.ok, true);
 });
 
 Deno.test("English output permits quoted Turkish text only as visible evidence", () => {
@@ -292,7 +320,7 @@ Deno.test("English output permits quoted Turkish text only as visible evidence",
   assertEquals(validation.ok, true);
 });
 
-Deno.test("exact user-owned Turkish proper nouns are excluded from language scoring", () => {
+Deno.test("user-owned Latin proper nouns never need language-score exemptions", () => {
   const companyName = "Çalışan Güvenliği Tehlike Önlem Merkezi";
   const output = validOutput("en-intl-generic-v1");
   (output.hazards as Array<Record<string, unknown>>)[0].title =
@@ -302,7 +330,7 @@ Deno.test("exact user-owned Turkish proper nouns are excluded from language scor
     output,
     snapshotFor("en-intl-generic-v1"),
   );
-  assertEquals(withoutExemption.failedLayer, "output_language");
+  assertEquals(withoutExemption.ok, true);
 
   const withExemption = validateAIOutputContract(
     output,
@@ -312,7 +340,7 @@ Deno.test("exact user-owned Turkish proper nouns are excluded from language scor
   assertEquals(withExemption.ok, true);
 });
 
-Deno.test("quoted system prose outside evidence cannot bypass language validation", () => {
+Deno.test("quoted Latin prose is not rejected by heuristic language scoring", () => {
   const output = validOutput("tr-tr-current-v1");
   const finding = (output.hazards as Array<Record<string, unknown>>)[0];
   for (
@@ -331,8 +359,7 @@ Deno.test("quoted system prose outside evidence cannot bypass language validatio
     output,
     snapshotFor("en-intl-generic-v1"),
   );
-  assertEquals(validation.failedLayer, "output_language");
-  assertEquals(validation.code, "OUTPUT_LANGUAGE_TURKISH_LEAK");
+  assertEquals(validation.ok, true);
 });
 
 Deno.test("country profiles reject cross-terminology before regulatory claims", () => {
@@ -362,7 +389,7 @@ Deno.test("country profiles reject cross-terminology before regulatory claims", 
   }
 });
 
-Deno.test("English profiles require their generated primary domain terminology", () => {
+Deno.test("missing preferred profile wording is not a terminal validator error", () => {
   for (
     const profileID of [
       "en-intl-generic-v1",
@@ -380,16 +407,7 @@ Deno.test("English profiles require their generated primary domain terminology",
       output,
       snapshotFor(profileID),
     );
-    assertEquals(
-      validation.failedLayer,
-      "safety_profile_terminology",
-      profileID,
-    );
-    assertEquals(
-      validation.code,
-      "SAFETY_PROFILE_REQUIRED_TERMINOLOGY_MISSING",
-      profileID,
-    );
+    assertEquals(validation.ok, true, profileID);
   }
 });
 
@@ -451,9 +469,11 @@ Deno.test("broken provider JSON is repaired once through the schema layer", asyn
 });
 
 Deno.test("wrong first language is repaired exactly once", async () => {
+  const incompatible = validOutput("en-ca-generic-v1");
+  incompatible.ai_summary = "画像で確認できる状態には予防措置が必要です。";
   let repairCalls = 0;
   const result = await validateAIOutputWithSingleRepair({
-    initialResult: validOutput("tr-tr-current-v1"),
+    initialResult: incompatible,
     snapshot: snapshotFor("en-ca-generic-v1"),
     repair: (validation) => {
       repairCalls += 1;
@@ -466,7 +486,7 @@ Deno.test("wrong first language is repaired exactly once", async () => {
   assertEquals(result.attempts, 2);
 });
 
-Deno.test("third-language first output is repaired exactly once", async () => {
+Deno.test("Latin third-language prose does not trigger a repair call", async () => {
   const frenchOutput = validOutput("en-intl-generic-v1");
   const finding = (frenchOutput.hazards as Array<Record<string, unknown>>)[0];
   finding.observed_evidence =
@@ -482,31 +502,27 @@ Deno.test("third-language first output is repaired exactly once", async () => {
   frenchOutput.ai_summary =
     "La sécurité au travail exige une mesure corrective avant utilisation.";
 
-  let repairCalls = 0;
   const result = await validateAIOutputWithSingleRepair({
     initialResult: frenchOutput,
     snapshot: snapshotFor("en-intl-generic-v1"),
-    repair: (validation) => {
-      repairCalls += 1;
-      assertEquals(validation.code, "OUTPUT_LANGUAGE_ENGLISH_REQUIRED");
-      return Promise.resolve(validOutput("en-intl-generic-v1"));
-    },
+    repair: () => Promise.reject(new Error("repair must not run")),
   });
-  assertEquals(repairCalls, 1);
-  assertEquals(result.status, "repaired");
-  assertEquals(result.attempts, 2);
+  assertEquals(result.status, "passed");
+  assertEquals(result.attempts, 1);
 });
 
-Deno.test("wrong language after repair returns the stable fail-closed error", async () => {
+Deno.test("unresolved incompatible script without safe copy keeps the stable error", async () => {
+  const incompatible = validOutput("en-us-generic-v1");
+  incompatible.ai_summary = "画像で確認できる状態には予防措置が必要です。";
   let repairCalls = 0;
   const error = await assertRejects(
     () =>
       validateAIOutputWithSingleRepair({
-        initialResult: validOutput("tr-tr-current-v1"),
+        initialResult: incompatible,
         snapshot: snapshotFor("en-us-generic-v1"),
         repair: () => {
           repairCalls += 1;
-          return Promise.resolve(validOutput("tr-tr-current-v1"));
+          return Promise.resolve(structuredClone(incompatible));
         },
       }),
     OutputLanguageContractError,
@@ -1021,6 +1037,143 @@ Deno.test("repair integrity permits translation but protects structure and score
   );
 });
 
+Deno.test("validated semantic repair survives finding-count drift without a user error", async () => {
+  const initial = validOutput("en-us-generic-v1");
+  initial.ai_summary = "画像で確認できる状態には予防措置が必要です。";
+  const initialFinding = (initial.hazards as Array<Record<string, unknown>>)[0];
+  initial.hazards = Array.from({ length: 5 }, (_, index) => ({
+    ...structuredClone(initialFinding),
+    title: `${initialFinding.title} ${index + 1}`,
+  }));
+  const repaired = validOutput("en-us-generic-v1");
+  const repairedFinding =
+    (repaired.hazards as Array<Record<string, unknown>>)[0];
+  repaired.hazards = Array.from({ length: 3 }, (_, index) => ({
+    ...structuredClone(repairedFinding),
+    title: `${repairedFinding.title} ${index + 1}`,
+  }));
+
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-us-generic-v1"),
+    enforceRepairIntegrity: true,
+    repair: () => Promise.resolve(repaired),
+  });
+
+  assertEquals(result.status, "repaired");
+  assertEquals((result.result.hazards as unknown[]).length, 3);
+  assertEquals(result.finalValidation.ok, true);
+  assertEquals(
+    result.repairIntegrity?.code,
+    "REPAIR_INTEGRITY_FINDING_REMOVED",
+  );
+  assertEquals(result.validatedRepairSalvageUsed, true);
+  assertEquals(
+    result.validatedRepairSalvageCode,
+    "REPAIR_INTEGRITY_FINDING_REMOVED",
+  );
+});
+
+Deno.test("validated semantic repair salvage cannot erase every finding", async () => {
+  const initial = validOutput("en-us-generic-v1");
+  initial.ai_summary = "画像で確認できる状態には予防措置が必要です。";
+  const repaired = validOutput("en-us-generic-v1");
+  repaired.hazards = [];
+  const error = await assertRejects(
+    () =>
+      validateAIOutputWithSingleRepair({
+        initialResult: initial,
+        snapshot: snapshotFor("en-us-generic-v1"),
+        enforceRepairIntegrity: true,
+        repair: () => Promise.resolve(repaired),
+      }),
+    OutputLanguageContractError,
+  );
+  assertEquals(error.validationCode, "REPAIR_INTEGRITY_FINDING_REMOVED");
+  assertEquals(error.validation?.ok, true);
+});
+
+Deno.test("validated semantic repair salvage cannot add findings", async () => {
+  const initial = validOutput("en-us-generic-v1");
+  initial.ai_summary = "画像で確認できる状態には予防措置が必要です。";
+  const repaired = validOutput("en-us-generic-v1");
+  const repairedFinding =
+    (repaired.hazards as Array<Record<string, unknown>>)[0];
+  (repaired.hazards as Array<Record<string, unknown>>).push(
+    structuredClone(repairedFinding),
+  );
+  const error = await assertRejects(
+    () =>
+      validateAIOutputWithSingleRepair({
+        initialResult: initial,
+        snapshot: snapshotFor("en-us-generic-v1"),
+        enforceRepairIntegrity: true,
+        repair: () => Promise.resolve(repaired),
+      }),
+    OutputLanguageContractError,
+  );
+  assertEquals(error.validationCode, "REPAIR_INTEGRITY_FINDING_ADDED");
+  assertEquals(error.validation?.ok, true);
+});
+
+Deno.test("validated semantic repair salvage remains closed to added findings", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  (initial.hazards as Array<Record<string, unknown>>)[0].description =
+    "This machine will definitely cause an incident.";
+  const repaired = structuredClone(initial);
+  const repairedFinding =
+    (repaired.hazards as Array<Record<string, unknown>>)[0];
+  repairedFinding.description =
+    "Contact with the exposed part could cause an incident.";
+  (repaired.hazards as Array<Record<string, unknown>>).push(
+    structuredClone(repairedFinding),
+  );
+
+  const error = await assertRejects(
+    () =>
+      validateAIOutputWithSingleRepair({
+        initialResult: initial,
+        snapshot: snapshotFor("en-intl-generic-v1"),
+        certaintyPolicy: "v2",
+        enforceRepairIntegrity: true,
+        repair: () => Promise.resolve(repaired),
+      }),
+    OutputLanguageContractError,
+  );
+  assertEquals(error.validationCode, "REPAIR_INTEGRITY_FINDING_ADDED");
+  assertEquals(error.validation?.ok, true);
+});
+
+Deno.test("validated evidence repair may change prose without failing the analysis", async () => {
+  const initial = validOutput("tr-tr-current-v1");
+  initial.limitations =
+    "Sayısal değerler yerinde ölçüm yapılmadan kesin olarak belirtilememiştir.";
+  const finding = (initial.hazards as Array<Record<string, unknown>>)[0];
+  finding.description = "Bu durum kesinlikle kazaya yol açacaktır.";
+  const repaired = structuredClone(initial);
+  repaired.limitations =
+    "Sayısal değerler için yerinde doğrulama yapılması gerekebilir.";
+  const repairedFinding =
+    (repaired.hazards as Array<Record<string, unknown>>)[0];
+  repairedFinding.description =
+    "Görünür hareketli parçayla temas yaralanmaya yol açabilir.";
+  repairedFinding.title = "Görünür hareketli parçaya temas";
+
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("tr-tr-current-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    repair: () => Promise.resolve(repaired),
+  });
+
+  assertEquals(result.status, "repaired");
+  assertEquals(result.finalValidation.ok, true);
+  assertEquals(result.repairIntegrity?.ok, false);
+  assertEquals(result.validatedRepairSalvageUsed, true);
+  assertEquals((result.result.hazards as unknown[]).length, 1);
+});
+
 const fallbackCopy = {
   summary: "{{count}} visible workplace safety finding(s) remained.",
   zeroFindingsSummary:
@@ -1032,6 +1185,204 @@ const fallbackCopy = {
   coverageGapReason:
     "No actionable risk evidence could be reliably verified from the photo.",
 };
+
+function safeFallbackCopyFor(profileID: SafetyProfileID) {
+  const profile = safetyProfiles.find((item) => item.id === profileID)!;
+  if (profile.language === "tr") {
+    return {
+      summary:
+        "Görsel kanıt doğrulamasından sonra {{count}} iş güvenliği bulgusu kaldı.",
+      zeroFindingsSummary:
+        "Fotoğraftan güvenilir biçimde doğrulanabilen bir iş güvenliği bulgusu oluşturulamadı.",
+      zeroFindingsLimitation:
+        "Görsel kanıt yeterli olmadığından saha doğrulaması gerekebilir.",
+      cautiousRootCause:
+        "Görünür durum, sahada doğrulanması gereken olası bir etkene işaret etmektedir.",
+      coverageGapReason:
+        "Fotoğraftan eyleme dönük risk kanıtı güvenilir biçimde doğrulanamadı.",
+    };
+  }
+  return {
+    summary:
+      `{{count}} visible ${profile.primary_domain_term} finding(s) remained.`,
+    zeroFindingsSummary:
+      `No ${profile.primary_domain_term} finding could be reliably verified from the photo.`,
+    zeroFindingsLimitation:
+      "The photo did not provide enough evidence; field verification may be needed.",
+    cautiousRootCause:
+      "The visible condition suggests a possible contributing factor that requires field verification.",
+    coverageGapReason:
+      "No actionable risk evidence could be reliably verified from the photo.",
+  };
+}
+
+Deno.test("safe semantic fallback completes every TR and English profile", async () => {
+  for (const profile of safetyProfiles) {
+    const initial = validOutput(profile.id);
+    const finding = (initial.hazards as Array<Record<string, unknown>>)[0];
+    finding.description = profile.language === "tr"
+      ? "Bu durum kesinlikle kazaya yol açacaktır."
+      : "This condition will definitely cause an incident.";
+    const result = await validateAIOutputWithSingleRepair({
+      initialResult: initial,
+      snapshot: snapshotFor(profile.id),
+      certaintyPolicy: "v2",
+      enforceRepairIntegrity: true,
+      safeFallbackCopy: safeFallbackCopyFor(profile.id),
+      repair: () => Promise.reject(new TypeError("network unavailable")),
+    });
+    assertEquals(result.status, "fallback", profile.id);
+    assertEquals(result.deterministicFallback?.strategy, "safe_zero");
+    assertEquals(result.finalValidation.ok, true, profile.id);
+    assertEquals((result.result.hazards as unknown[]).length, 0, profile.id);
+  }
+});
+
+Deno.test("every semantic validator layer has a non-terminal safe fallback", async () => {
+  const cases = [
+    {
+      layer: "output_language",
+      mutate(output: Record<string, unknown>) {
+        output.ai_summary = "画像で確認できる状態には予防措置が必要です。";
+      },
+    },
+    {
+      layer: "safety_profile_terminology",
+      mutate(output: Record<string, unknown>) {
+        (output.hazards as Array<Record<string, unknown>>)[0].category =
+          "HSE inspection";
+      },
+    },
+    {
+      layer: "forbidden_claim",
+      mutate(output: Record<string, unknown>) {
+        (output.hazards as Array<Record<string, unknown>>)[0].description =
+          "The workplace is fully compliant.";
+      },
+    },
+    {
+      layer: "regulatory_reference",
+      mutate(output: Record<string, unknown>) {
+        (output.hazards as Array<Record<string, unknown>>)[0].references =
+          "29 CFR citation";
+      },
+    },
+    {
+      layer: "photo_evidence",
+      mutate(output: Record<string, unknown>) {
+        (output.hazards as Array<Record<string, unknown>>)[0].description =
+          "This condition will definitely cause an incident.";
+      },
+    },
+  ] as const;
+
+  for (const testCase of cases) {
+    const initial = validOutput("en-us-generic-v1");
+    testCase.mutate(initial);
+    const result = await validateAIOutputWithSingleRepair({
+      initialResult: initial,
+      snapshot: snapshotFor("en-us-generic-v1"),
+      certaintyPolicy: "v2",
+      enforceRepairIntegrity: true,
+      safeFallbackCopy: safeFallbackCopyFor("en-us-generic-v1"),
+      repair: () => Promise.resolve(structuredClone(initial)),
+    });
+    assertEquals(
+      result.initialValidation.failedLayer,
+      testCase.layer,
+      testCase.layer,
+    );
+    assertEquals(result.status, "fallback", testCase.layer);
+    assertEquals(result.deterministicFallback?.strategy, "safe_zero");
+    assertEquals(result.finalValidation.ok, true, testCase.layer);
+  }
+});
+
+Deno.test("safe zero fallback preserves photo records and clears rejected generated prose", async () => {
+  const base = validOutput("en-us-generic-v1");
+  const finding = structuredClone(
+    (base.hazards as Array<Record<string, unknown>>)[0],
+  );
+  finding.description = "This condition will definitely cause an incident.";
+  const initial = {
+    photo_findings: [{
+      photo_index: 1,
+      coverage_status: "actionable",
+      candidate_findings_count: 1,
+      scene_summary: "画像で確認できる状態には予防措置が必要です。",
+      coverage_gap_reason: "",
+      findings: [finding],
+    }],
+    ai_summary: base.ai_summary,
+    limitations: base.limitations,
+  };
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-us-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    safeFallbackCopy: safeFallbackCopyFor("en-us-generic-v1"),
+    repair: () => Promise.resolve(structuredClone(initial)),
+  });
+  const records = result.result.photo_findings as Array<
+    Record<string, unknown>
+  >;
+  assertEquals(records.length, 1);
+  assertEquals(records[0].photo_index, 1);
+  assertEquals(records[0].coverage_status, "no_actionable_hazard");
+  assertEquals(records[0].candidate_findings_count, 0);
+  assertEquals((records[0].findings as unknown[]).length, 0);
+  assertEquals(result.finalValidation.ok, true);
+});
+
+Deno.test("schema-valid analysis uses safe zero fallback when repair transport fails", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  (initial.hazards as Array<Record<string, unknown>>)[0].description =
+    "This condition will definitely cause an incident.";
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    safeFallbackCopy: fallbackCopy,
+    repair: () => Promise.reject(new TypeError("network unavailable")),
+  });
+
+  assertEquals(result.status, "fallback");
+  assertEquals(result.deterministicFallback?.strategy, "safe_zero");
+  assertEquals(result.deterministicFallback?.zeroFindings, true);
+  assertEquals((result.result.hazards as unknown[]).length, 0);
+  assertEquals(result.repairTransportFailed, true);
+  assertEquals(result.repairTransportErrorClass, "TypeError");
+  assertEquals(result.finalValidation.ok, true);
+});
+
+Deno.test("unsafe repaired topology becomes safe zero instead of a contract error", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  (initial.hazards as Array<Record<string, unknown>>)[0].description =
+    "This condition will definitely cause an incident.";
+  const repaired = validOutput("en-intl-generic-v1");
+  const repairedFinding =
+    (repaired.hazards as Array<Record<string, unknown>>)[0];
+  (repaired.hazards as Array<Record<string, unknown>>).push(
+    structuredClone(repairedFinding),
+  );
+
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    safeFallbackCopy: fallbackCopy,
+    repair: () => Promise.resolve(repaired),
+  });
+
+  assertEquals(result.status, "fallback");
+  assertEquals(result.repairIntegrity?.code, "REPAIR_INTEGRITY_FINDING_ADDED");
+  assertEquals(result.deterministicFallback?.strategy, "safe_zero");
+  assertEquals((result.result.hazards as unknown[]).length, 0);
+  assertEquals(result.finalValidation.ok, true);
+});
 
 Deno.test("deterministic fallback removes an unsupported finding without a third AI call", async () => {
   const initial = validOutput("en-intl-generic-v1");
@@ -1053,16 +1404,14 @@ Deno.test("deterministic fallback removes an unsupported finding without a third
   assertEquals(result.attempts, 2);
   assertEquals(result.status, "fallback");
   assertEquals(result.deterministicFallback?.zeroFindings, true);
+  assertEquals(result.deterministicFallback?.strategy, "targeted");
   assertEquals((result.result.hazards as unknown[]).length, 0);
   assertEquals(result.finalValidation.ok, true);
 });
 
-Deno.test("deterministic fallback preserves initial findings when repair changes an unaffected finding", async () => {
+Deno.test("fully validated repair is preferred over integrity-only rejection", async () => {
   const initial = validOutput("en-intl-generic-v1");
   initial.limitations = "The risk is definitely high.";
-  const originalFinding = structuredClone(
-    (initial.hazards as Array<Record<string, unknown>>)[0],
-  );
   const result = await validateAIOutputWithSingleRepair({
     initialResult: initial,
     snapshot: snapshotFor("en-intl-generic-v1"),
@@ -1077,17 +1426,22 @@ Deno.test("deterministic fallback preserves initial findings when repair changes
       return Promise.resolve(repaired);
     },
   });
-  assertEquals(result.status, "fallback");
+  assertEquals(result.status, "repaired");
   assertEquals(result.repairIntegrity?.ok, false);
   assertEquals(
     result.repairIntegrity?.code,
     "REPAIR_INTEGRITY_UNAFFECTED_FINDING_CHANGED",
   );
+  assertEquals(result.validatedRepairSalvageUsed, true);
   assertEquals(
-    (result.result.hazards as Array<Record<string, unknown>>)[0],
-    originalFinding,
+    (result.result.hazards as Array<Record<string, unknown>>)[0].title,
+    "Unrelated changed title",
   );
-  assertEquals(result.result.limitations, fallbackCopy.zeroFindingsLimitation);
+  assertEquals(
+    result.result.limitations,
+    "The risk level requires field verification.",
+  );
+  assertEquals(result.deterministicFallback, null);
   assertEquals(result.finalValidation.ok, true);
 });
 

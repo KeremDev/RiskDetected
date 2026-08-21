@@ -16,6 +16,7 @@ export type CoverageQualityTriggerReason =
   | "candidate_gap"
   | "multi_layer_finding"
   | "unrepresented_actionable_layer"
+  | "unrepresented_actionable_process_check"
   | "evidence_guard_rejection"
   | "evidence_guard_uncertain"
   | "record_incomplete";
@@ -41,6 +42,11 @@ export type CoverageQualityRecordInput = {
     rejected_non_actionable_count: number;
     marked_uncertain_count: number;
   };
+  process_safety_audit?: {
+    scope: string;
+    complete: boolean;
+    checks: Array<{ check_key: string; status: string }>;
+  };
 };
 
 export type CoverageQualityEvaluation = {
@@ -54,6 +60,11 @@ export type CoverageQualityEvaluation = {
   actionable_layer_count: number;
   represented_actionable_layer_count: number;
   unrepresented_actionable_layers: string[];
+  actionable_process_check_count: number;
+  represented_actionable_process_check_count: number;
+  unrepresented_actionable_process_checks: string[];
+  repair_authority_complete: boolean;
+  repair_blocked_reason: "incomplete_authority" | null;
 };
 
 function text(value: unknown): string {
@@ -77,6 +88,22 @@ function findingLayerKeys(finding: FindingRecord): string[] {
   ];
 }
 
+function findingProcessSafetyCheckKeys(finding: FindingRecord): string[] {
+  if (!Array.isArray(finding.process_safety_check_keys)) return [];
+  return [
+    ...new Set(
+      finding.process_safety_check_keys.map((value) =>
+        text(value).toLowerCase()
+      ).filter(Boolean),
+    ),
+  ];
+}
+
+function isFieldVerificationFinding(finding: FindingRecord): boolean {
+  return finding.verification_reason_code === "periodic_inspection_status" ||
+    finding.display_group === "field_verification";
+}
+
 export function normalizeCoverageQualityNoAdditionalReasonCode(
   value: unknown,
 ): CoverageQualityNoAdditionalReasonCode | null {
@@ -90,9 +117,10 @@ export function normalizeCoverageQualityNoAdditionalReasonCode(
 
 export function evaluateCoverageQualityRecord(
   record: CoverageQualityRecordInput,
-  options: { candidateSemanticsV2: boolean },
+  options: { candidateSemanticsV2: boolean; processSafetyEnabled?: boolean },
 ): CoverageQualityEvaluation {
-  const findings = Array.isArray(record.findings) ? record.findings : [];
+  const findings = (Array.isArray(record.findings) ? record.findings : [])
+    .filter((finding) => !isFieldVerificationFinding(finding));
   const actionableLayers = record.inspection_layers
     .filter((layer) => layer.status === "actionable")
     .map((layer) => layer.layer_key);
@@ -102,7 +130,28 @@ export function evaluateCoverageQualityRecord(
   const unrepresentedActionableLayers = actionableLayers.filter((layer) =>
     !representedLayers.has(layer)
   );
-  const eligible = record.coverage_status === "actionable";
+  const actionableProcessChecks = options.processSafetyEnabled === true
+    ? record.process_safety_audit?.checks
+      .filter((check) => check.status === "actionable")
+      .map((check) => check.check_key) ?? []
+    : [];
+  const representedProcessChecks = new Set(
+    findings.flatMap((finding) => findingProcessSafetyCheckKeys(finding)),
+  );
+  const unrepresentedActionableProcessChecks = actionableProcessChecks.filter(
+    (key) => !representedProcessChecks.has(key),
+  );
+  const layerAuthorityComplete = !record.record_missing &&
+    record.layer_audit.missing_layer_keys.length === 0 &&
+    record.layer_audit.duplicate_layer_keys.length === 0 &&
+    safeNonNegativeCount(record.layer_audit.invalid_layer_keys_count) === 0 &&
+    safeNonNegativeCount(record.layer_audit.invalid_layer_statuses_count) === 0;
+  const processAuthorityComplete = options.processSafetyEnabled !== true ||
+    record.process_safety_audit?.complete === true;
+  const repairAuthorityComplete = layerAuthorityComplete &&
+    processAuthorityComplete;
+  const eligible = record.coverage_status === "actionable" ||
+    actionableProcessChecks.length > 0;
   const triggerReasons: CoverageQualityTriggerReason[] = [];
 
   if (eligible) {
@@ -118,6 +167,9 @@ export function evaluateCoverageQualityRecord(
     }
     if (unrepresentedActionableLayers.length > 0) {
       triggerReasons.push("unrepresented_actionable_layer");
+    }
+    if (unrepresentedActionableProcessChecks.length > 0) {
+      triggerReasons.push("unrepresented_actionable_process_check");
     }
     if (
       safeNonNegativeCount(record.evidence_guard.rejected_unlinked_count) > 0 ||
@@ -137,7 +189,11 @@ export function evaluateCoverageQualityRecord(
       record.layer_audit.missing_layer_keys.length > 0 ||
       record.layer_audit.duplicate_layer_keys.length > 0 ||
       safeNonNegativeCount(record.layer_audit.invalid_layer_keys_count) > 0 ||
-      safeNonNegativeCount(record.layer_audit.invalid_layer_statuses_count) > 0
+      safeNonNegativeCount(record.layer_audit.invalid_layer_statuses_count) >
+        0 ||
+      options.processSafetyEnabled === true &&
+        record.process_safety_audit?.scope === "applicable" &&
+        record.process_safety_audit.complete !== true
     ) {
       triggerReasons.push("record_incomplete");
     }
@@ -146,7 +202,11 @@ export function evaluateCoverageQualityRecord(
   return {
     photo_index: record.photo_index,
     eligible,
-    should_repair: eligible && triggerReasons.length > 0,
+    // Coverage repair treats the first layer/process audit as immutable
+    // authority. If that authority is incomplete, the repair prompt cannot
+    // legally attach a new finding and the call is guaranteed to add nothing.
+    should_repair: eligible && repairAuthorityComplete &&
+      triggerReasons.length > 0,
     trigger_reasons: triggerReasons,
     candidate_semantics_evaluable: options.candidateSemanticsV2,
     initial_candidate_findings_count: safeNonNegativeCount(
@@ -157,12 +217,23 @@ export function evaluateCoverageQualityRecord(
     represented_actionable_layer_count:
       actionableLayers.filter((layer) => representedLayers.has(layer)).length,
     unrepresented_actionable_layers: unrepresentedActionableLayers,
+    actionable_process_check_count: actionableProcessChecks.length,
+    represented_actionable_process_check_count:
+      actionableProcessChecks.filter((key) => representedProcessChecks.has(key))
+        .length,
+    unrepresented_actionable_process_checks:
+      unrepresentedActionableProcessChecks,
+    repair_authority_complete: repairAuthorityComplete,
+    repair_blocked_reason: eligible && triggerReasons.length > 0 &&
+        !repairAuthorityComplete
+      ? "incomplete_authority"
+      : null,
   };
 }
 
 export function evaluateCoverageQualityRecords(
   records: CoverageQualityRecordInput[],
-  options: { candidateSemanticsV2: boolean },
+  options: { candidateSemanticsV2: boolean; processSafetyEnabled?: boolean },
 ): CoverageQualityEvaluation[] {
   return records.map((record) =>
     evaluateCoverageQualityRecord(record, options)

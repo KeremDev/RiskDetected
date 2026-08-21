@@ -151,6 +151,94 @@ const COPY = {
     en:
       "The conditions verified in the image are covered by the existing findings.",
   },
+  analysisEquipmentPressure: {
+    tr: "basınçlı ekipman veya proses kabı",
+    en: "pressure equipment or process vessel",
+  },
+  analysisEquipmentLifting: {
+    tr: "kaldırma ve iletme ekipmanı",
+    en: "lifting or conveying equipment",
+  },
+  analysisEquipmentElectrical: {
+    tr: "elektrik tesisatı veya elektrikli ekipman",
+    en: "electrical installation or equipment",
+  },
+  analysisEquipmentMachineTool: {
+    tr: "makine tezgâhı",
+    en: "machine tool",
+  },
+  analysisEquipmentRackDoor: {
+    tr: "endüstriyel raf veya kapı sistemi",
+    en: "industrial racking or door system",
+  },
+  analysisEquipmentConstructionMachine: {
+    tr: "iş makinesi",
+    en: "construction machine",
+  },
+  analysisPeriodicInspectionTitle: {
+    tr: "{{equipment}} periyodik kontrol geçerliliği — saha teyidi",
+    en: "{{equipment}} periodic inspection validity — field verification",
+  },
+  analysisPeriodicInspectionEvidence: {
+    tr: "Fotoğrafta {{equipment}} sınıfında bir iş ekipmanı görülüyor.",
+    en: "The photograph shows work equipment in the {{equipment}} class.",
+  },
+  analysisPeriodicInspectionDescription: {
+    tr:
+      "Yetkili kişi raporu, ekipman kimliği eşleşmesi ve sonraki kontrol tarihi bu görüntüden doğrulanamıyor.",
+    en:
+      "The competent-person report, equipment identity match and next inspection date cannot be verified from this image.",
+  },
+  analysisPeriodicInspectionRootCause: {
+    tr:
+      "Bu madde bir uygunsuzluk iddiası değildir; kontrol kaydının güncel durumu fotoğraftan belirlenemez.",
+    en:
+      "This item is not a non-conformity claim; the current inspection-record status cannot be determined from the photograph.",
+  },
+  analysisPeriodicInspectionCorrective: {
+    tr:
+      "Ekipman kullanılmadan önce ekipman kimliğini yetkili kişi raporuyla eşleştir ve kontrol geçerliliğini sahada teyit et.",
+    en:
+      "Before use, match the equipment identity to the competent-person report and verify inspection validity on site.",
+  },
+  analysisPeriodicInspectionPreventive: {
+    tr:
+      "Kontrol son tarihini ekipman envanteri ve kullanım öncesi kontrol süreciyle takip et.",
+    en:
+      "Track the inspection due date through the equipment register and pre-use control process.",
+  },
+  analysisApplicableInspectionTitle: {
+    tr: "{{equipment}} kontrol ve bakım durumu — saha teyidi",
+    en: "{{equipment}} inspection and maintenance status — field verification",
+  },
+  analysisApplicableInspectionDescription: {
+    tr:
+      "Ekipmana uygulanabilir yerel kontrol ve bakım kayıtları bu görüntüden doğrulanamıyor.",
+    en:
+      "The locally applicable inspection and maintenance records cannot be verified from this image.",
+  },
+  analysisApplicableInspectionCorrective: {
+    tr:
+      "Ekipman kullanılmadan önce kimlik, kontrol ve bakım kayıtlarını yetkili bir kişiyle sahada doğrula.",
+    en:
+      "Before use, verify the equipment identity and applicable inspection and maintenance records on site with a competent person.",
+  },
+  analysisApplicableInspectionPreventive: {
+    tr:
+      "Uygulanabilir kontrol ve bakım tarihlerini ekipman envanteri ve kullanım öncesi kontrol süreciyle takip et.",
+    en:
+      "Track applicable inspection and maintenance dates through the equipment register and pre-use control process.",
+  },
+  analysisFieldVerificationCategory: {
+    tr: "Saha doğrulaması",
+    en: "Field verification",
+  },
+  analysisProcessCheckNotVisibleEvidence: {
+    tr:
+      "Bu proses güvenliği kontrolünü doğrulamak için gereken ayrıntı görüntüde yeterince görünmüyor.",
+    en:
+      "The detail required to verify this process-safety check is not sufficiently visible in the image.",
+  },
   analysisResultPersistenceFailed: {
     tr: "Analiz sonucu kaydedilemedi.",
     en: "The analysis result could not be saved.",

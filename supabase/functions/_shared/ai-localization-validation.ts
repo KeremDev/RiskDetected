@@ -80,6 +80,7 @@ export type DeterministicFallbackResult = {
   paths: string[];
   removedFindingsCount: number;
   zeroFindings: boolean;
+  strategy: "targeted" | "safe_zero";
 };
 
 export type ValidatedAIOutput = {
@@ -91,6 +92,10 @@ export type ValidatedAIOutput = {
   finalValidation: AIOutputValidationResult;
   repairIntegrity: AIOutputRepairIntegrityResult | null;
   deterministicFallback: DeterministicFallbackResult | null;
+  validatedRepairSalvageUsed: boolean;
+  validatedRepairSalvageCode: string | null;
+  repairTransportFailed: boolean;
+  repairTransportErrorClass: string | null;
 };
 
 export class OutputLanguageContractError extends Error {
@@ -153,6 +158,10 @@ const USER_VISIBLE_FIELDS = new Set([
   "text",
 ]);
 
+const INTERNAL_NON_PRESENTATION_TEXT_CONTAINERS = new Set([
+  "process_safety_checks",
+]);
+
 /**
  * Fields that assert something about the scene, so a certainty adverb in them
  * is a claim about evidence.
@@ -206,6 +215,7 @@ function collectFieldText(
   }
   if (!value || typeof value !== "object") return output;
   for (const [childKey, childValue] of Object.entries(value)) {
+    if (INTERNAL_NON_PRESENTATION_TEXT_CONTAINERS.has(childKey)) continue;
     collectFieldText(
       childValue,
       fields,
@@ -232,27 +242,15 @@ function collectVisibleText(
 
 function collectLanguageContractText(
   value: unknown,
-  key = "",
-  output: string[] = [],
-): string[] {
-  if (typeof value === "string") {
-    if (USER_VISIBLE_FIELDS.has(key) && value.trim()) {
-      const systemText = key === "observed_evidence" || key === "observation"
-        ? value.replace(/"[^"\n]{1,240}"|“[^”\n]{1,240}”/gu, " ")
-        : value;
-      output.push(systemText.trim());
-    }
-    return output;
-  }
-  if (Array.isArray(value)) {
-    for (const item of value) collectLanguageContractText(item, key, output);
-    return output;
-  }
-  if (!value || typeof value !== "object") return output;
-  for (const [childKey, childValue] of Object.entries(value)) {
-    collectLanguageContractText(childValue, childKey, output);
-  }
-  return output;
+): FieldTextEntry[] {
+  return collectFieldText(value, USER_VISIBLE_FIELDS).flatMap((entry) => {
+    const systemText = entry.field === "observed_evidence" ||
+        entry.field === "observation"
+      ? entry.text.replace(/"[^"\n]{1,240}"|“[^”\n]{1,240}”/gu, " ")
+      : entry.text;
+    const text = systemText.trim();
+    return text ? [{ ...entry, text }] : [];
+  });
 }
 
 function findingsFrom(value: Record<string, unknown>): unknown[] | null {
@@ -321,90 +319,41 @@ function validateSchema(value: unknown): string | null {
   return null;
 }
 
-const TURKISH_LEXEMES =
-  /\b(?:tehlike|bulgu|düzelt|önle|çalış|güvenli|uygunsuz|mevzuat|yüksek|yangın|elektrik|görsel|fotoğraf|saha)\p{L}*\b/giu;
-const ENGLISH_LEXEMES =
-  /\b(?:a|an|the|and|or|to|of|in|on|for|from|with|without|is|are|was|were|be|been|being|as|at|by|this|that|these|those|could|may|might|should|must|can|will|not|no|only|one|visible|visibly|requires?|needs?|appears?|hazards?|findings?|corrective|preventive|workers?|safety|controls?|evidence|workplace|inspection|equipment|electrical|fire|height|photo|risk|assessment|guard|machine|action|condition|cause|contact|install|effective|measure)\b/giu;
-const LETTER_TOKEN_PATTERN = /\p{L}+(?:['’\-]\p{L}+)?/gu;
-
-function languageSignals(text: string): {
-  tokenCount: number;
-  englishSignalCount: number;
-} {
-  return {
-    tokenCount: (text.match(LETTER_TOKEN_PATTERN) ?? []).length,
-    englishSignalCount: (text.match(ENGLISH_LEXEMES) ?? []).length,
-  };
-}
+const INCOMPATIBLE_LANGUAGE_SCRIPT_PATTERN =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Cyrillic}\p{Script=Arabic}]/gu;
 
 function languageCode(
-  segments: readonly string[],
+  entries: readonly FieldTextEntry[],
   expectedLanguage: "tr" | "en",
   options: AIOutputValidationOptions,
-): string | null {
+): string | AIOutputValidationFailureDetail | null {
   const userValues = (options.allowedUserAuthoredValues ?? [])
     .filter((value) => typeof value === "string")
     .map((value) => value.normalize("NFC").trim().slice(0, 160))
     .filter((value) => value.length >= 2)
     .sort((left, right) => right.length - left.length)
     .slice(0, 8);
-  const systemSegments = segments.map((segment) => {
-    let systemSegment = segment.normalize("NFC");
+  const systemEntries = entries.map((entry) => {
+    let systemText = entry.text.normalize("NFC");
     for (const userValue of userValues) {
-      systemSegment = systemSegment.split(userValue).join(" ");
+      systemText = systemText.split(userValue).join(" ");
     }
-    return systemSegment;
-  }).filter((segment) => segment.trim().length > 0);
-  const systemText = systemSegments.join("\n");
+    return { ...entry, text: systemText };
+  }).filter((entry) => entry.text.trim().length > 0);
+  const systemText = systemEntries.map((entry) => entry.text).join("\n");
   if (!systemText.trim()) return null;
-  const turkishCharacters = (systemText.match(/[çğıöşüİı]/gu) ?? []).length;
-  const turkishWords = (systemText.match(TURKISH_LEXEMES) ?? []).length;
-  const englishWords = (systemText.match(ENGLISH_LEXEMES) ?? []).length;
-  if (
-    expectedLanguage === "en" &&
-    (turkishWords >= 2 || turkishCharacters >= 8)
-  ) {
-    return "OUTPUT_LANGUAGE_TURKISH_LEAK";
-  }
-  if (expectedLanguage === "en") {
-    const aggregate = languageSignals(systemText);
-    const letterCount = (systemText.match(/\p{L}/gu) ?? []).length;
-    const incompatibleScriptLetters = (
-      systemText.match(
-        /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Cyrillic}\p{Script=Arabic}]/gu,
-      ) ?? []
-    ).length;
-    const requiredSignals = Math.max(
-      4,
-      Math.ceil(aggregate.tokenCount * 0.12),
-    );
-    const hasNonEnglishSubstantiveSegment = systemSegments.some((segment) => {
-      const signals = languageSignals(segment);
-      return signals.tokenCount >= 6 && signals.englishSignalCount === 0;
-    });
-    if (
-      incompatibleScriptLetters >= 4 ||
-      (
-        (aggregate.tokenCount >= 10 || letterCount >= 40) &&
-        (
-          aggregate.englishSignalCount < requiredSignals ||
-          hasNonEnglishSubstantiveSegment
-        )
-      )
-    ) {
-      return "OUTPUT_LANGUAGE_ENGLISH_REQUIRED";
-    }
-  }
-  if (
-    expectedLanguage === "tr" &&
-    systemText.length >= 80 &&
-    englishWords >= 4 &&
-    turkishWords === 0 &&
-    turkishCharacters === 0
-  ) {
-    return "OUTPUT_LANGUAGE_ENGLISH_LEAK";
-  }
-  return null;
+  const offending = systemEntries.find((entry) =>
+    (entry.text.match(INCOMPATIBLE_LANGUAGE_SCRIPT_PATTERN) ?? []).length >= 4
+  );
+  if (!offending) return null;
+  return {
+    code: expectedLanguage === "en"
+      ? "OUTPUT_LANGUAGE_ENGLISH_REQUIRED"
+      : "OUTPUT_LANGUAGE_TURKISH_REQUIRED",
+    field: offending.field,
+    path: offending.path,
+    excerpt: offending.text.slice(0, 160),
+  };
 }
 
 const CROSS_PROFILE_PATTERNS: Record<string, RegExp[]> = {
@@ -453,14 +402,6 @@ function terminologyCode(
   const crossProfile = CROSS_PROFILE_PATTERNS[profile.id] ?? [];
   if (crossProfile.some((pattern) => pattern.test(text))) {
     return "SAFETY_PROFILE_CROSS_TERMINOLOGY_LEAK";
-  }
-  if (
-    profile.language === "en" &&
-    !text.toLocaleLowerCase("en-US").includes(
-      profile.primary_domain_term.toLocaleLowerCase("en-US"),
-    )
-  ) {
-    return "SAFETY_PROFILE_REQUIRED_TERMINOLOGY_MISSING";
   }
   return null;
 }
@@ -952,6 +893,72 @@ function findingContainers(
   });
 }
 
+/**
+ * A semantic repair is allowed to become the user result when it is a valid
+ * standalone analysis but the model removed or rewrote findings while fixing
+ * rejected prose. This is intentionally narrower than the regular integrity
+ * contract: the root/container/photo topology must remain stable, a non-empty
+ * analysis cannot become empty, and the repair cannot add findings.
+ *
+ * The normal path still requires exact repair integrity. This exceptional path
+ * only prevents a fully validated second analysis from becoming a user-facing
+ * 502 because a language repair drifted semantically.
+ */
+function canUseValidatedSemanticRepairSalvage(
+  initialValue: unknown,
+  repairedValue: unknown,
+  initialValidation: AIOutputValidationResult,
+  finalValidation: AIOutputValidationResult,
+  repairIntegrity: AIOutputRepairIntegrityResult,
+): boolean {
+  if (
+    initialValidation.failedLayer === "json_schema" ||
+    initialValidation.failedLayer === null ||
+    !finalValidation.ok || repairIntegrity.ok ||
+    !initialValue || !repairedValue || typeof initialValue !== "object" ||
+    typeof repairedValue !== "object" || Array.isArray(initialValue) ||
+    Array.isArray(repairedValue)
+  ) return false;
+
+  const initial = initialValue as Record<string, unknown>;
+  const repaired = repairedValue as Record<string, unknown>;
+  const initialContainers = findingContainers(initial);
+  const repairedContainers = findingContainers(repaired);
+  if (
+    initialContainers.length === 0 ||
+    initialContainers.length !== repairedContainers.length ||
+    initialContainers.some((container, index) =>
+      container.path !== repairedContainers[index]?.path
+    )
+  ) return false;
+
+  if (Array.isArray(initial.photo_findings)) {
+    if (!Array.isArray(repaired.photo_findings)) return false;
+    for (let index = 0; index < initial.photo_findings.length; index += 1) {
+      const initialPhoto = initial.photo_findings[index];
+      const repairedPhoto = repaired.photo_findings[index];
+      if (
+        !initialPhoto || !repairedPhoto || typeof initialPhoto !== "object" ||
+        typeof repairedPhoto !== "object" || Array.isArray(initialPhoto) ||
+        Array.isArray(repairedPhoto) ||
+        (initialPhoto as Record<string, unknown>).photo_index !==
+          (repairedPhoto as Record<string, unknown>).photo_index
+      ) return false;
+    }
+  }
+
+  const initialFindingCount = initialContainers.reduce(
+    (total, container) => total + container.findings.length,
+    0,
+  );
+  const repairedFindingCount = repairedContainers.reduce(
+    (total, container) => total + container.findings.length,
+    0,
+  );
+  return repairedFindingCount <= initialFindingCount &&
+    (initialFindingCount === 0 || repairedFindingCount > 0);
+}
+
 function allowedFindingDifferencePaths(
   findingPath: string,
   validation: AIOutputValidationResult,
@@ -1262,6 +1269,89 @@ export function applyDeterministicAIOutputFallback(
     paths: [...new Set(validation.violations.map((item) => item.path!))],
     removedFindingsCount,
     zeroFindings,
+    strategy: "targeted",
+  };
+}
+
+function sanitizeUserVisibleTextForSafeZero(
+  value: unknown,
+  copy: DeterministicFallbackCopy,
+): void {
+  if (Array.isArray(value)) {
+    for (const item of value) sanitizeUserVisibleTextForSafeZero(item, copy);
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  const record = value as Record<string, unknown>;
+  for (const [key, child] of Object.entries(record)) {
+    if (key === "references") {
+      record[key] = "";
+    } else if (USER_VISIBLE_FIELDS.has(key) && typeof child === "string") {
+      record[key] = copy.coverageGapReason;
+    } else {
+      sanitizeUserVisibleTextForSafeZero(child, copy);
+    }
+  }
+}
+
+/**
+ * Last-resort semantic fallback for a schema-valid provider response.
+ *
+ * Natural-language validators are necessarily imperfect. If neither the
+ * targeted deterministic repair nor the single model repair yields an
+ * acceptable result, keep the response topology but remove every finding and
+ * replace all generated prose with reviewed locale-bound copy. This makes a
+ * semantic validation problem non-terminal without ever exposing text that a
+ * safety, evidence, terminology or regulatory layer rejected.
+ */
+export function applyDeterministicAIOutputSafeZeroFallback(
+  value: unknown,
+  validation: AIOutputValidationResult,
+  copy: DeterministicFallbackCopy,
+): DeterministicFallbackResult | null {
+  const schemaLayer = validation.layers.find((item) =>
+    item.id === "json_schema"
+  );
+  if (
+    schemaLayer?.ok !== true || !value || typeof value !== "object" ||
+    Array.isArray(value)
+  ) return null;
+  const candidate = jsonClone(value as Record<string, unknown>);
+  const beforeCount = findingLocations(candidate).length;
+  for (const container of findingContainers(candidate)) {
+    setValueAtPath(candidate, container.path, []);
+  }
+  sanitizeUserVisibleTextForSafeZero(candidate, copy);
+  candidate.ai_summary = copy.zeroFindingsSummary;
+  candidate.limitations = copy.zeroFindingsLimitation;
+  if (Array.isArray(candidate.photo_findings)) {
+    for (const photoFinding of candidate.photo_findings) {
+      if (
+        !photoFinding || typeof photoFinding !== "object" ||
+        Array.isArray(photoFinding)
+      ) continue;
+      const record = photoFinding as Record<string, unknown>;
+      record.coverage_status = "no_actionable_hazard";
+      record.coverage_gap_reason = copy.coverageGapReason;
+      if (Object.hasOwn(record, "coverage_conclusion")) {
+        record.coverage_conclusion = copy.coverageGapReason;
+      }
+      if (Object.hasOwn(record, "candidate_findings_count")) {
+        record.candidate_findings_count = 0;
+      }
+    }
+  }
+  return {
+    result: candidate,
+    codes: [...new Set(validation.violations.map((item) => item.code))],
+    paths: [
+      ...new Set(
+        validation.violations.flatMap((item) => item.path ? [item.path] : []),
+      ),
+    ],
+    removedFindingsCount: beforeCount,
+    zeroFindings: true,
+    strategy: "safe_zero",
   };
 }
 
@@ -1272,6 +1362,7 @@ export async function validateAIOutputWithSingleRepair(params: {
   certaintyPolicy?: "legacy" | "v2";
   enforceRepairIntegrity?: boolean;
   deterministicFallbackCopy?: DeterministicFallbackCopy;
+  safeFallbackCopy?: DeterministicFallbackCopy;
   repair: (
     validation: AIOutputValidationResult,
   ) => Promise<Record<string, unknown>>;
@@ -1294,21 +1385,19 @@ export async function validateAIOutputWithSingleRepair(params: {
       finalValidation: initialValidation,
       repairIntegrity: null,
       deterministicFallback: null,
+      validatedRepairSalvageUsed: false,
+      validatedRepairSalvageCode: null,
+      repairTransportFailed: false,
+      repairTransportErrorClass: null,
     };
   }
 
-  const validatedDeterministicFallback = (
-    value: unknown,
-    validation: AIOutputValidationResult,
+  const validatedFallbackResult = (
+    fallback: DeterministicFallbackResult | null,
     repairIntegrity: AIOutputRepairIntegrityResult | null,
+    repairTransportFailed = false,
+    repairTransportErrorClass: string | null = null,
   ): ValidatedAIOutput | null => {
-    const fallback = params.deterministicFallbackCopy
-      ? applyDeterministicAIOutputFallback(
-        value,
-        validation,
-        params.deterministicFallbackCopy,
-      )
-      : null;
     if (!fallback) return null;
     const fallbackValidation = validateAIOutputContract(
       fallback.result,
@@ -1328,13 +1417,72 @@ export async function validateAIOutputWithSingleRepair(params: {
       finalValidation: fallbackValidation,
       repairIntegrity,
       deterministicFallback: fallback,
+      validatedRepairSalvageUsed: false,
+      validatedRepairSalvageCode: null,
+      repairTransportFailed,
+      repairTransportErrorClass,
     };
   };
+
+  const validatedDeterministicFallback = (
+    value: unknown,
+    validation: AIOutputValidationResult,
+    repairIntegrity: AIOutputRepairIntegrityResult | null,
+    repairTransportFailed = false,
+    repairTransportErrorClass: string | null = null,
+  ): ValidatedAIOutput | null =>
+    validatedFallbackResult(
+      params.deterministicFallbackCopy
+        ? applyDeterministicAIOutputFallback(
+          value,
+          validation,
+          params.deterministicFallbackCopy,
+        )
+        : null,
+      repairIntegrity,
+      repairTransportFailed,
+      repairTransportErrorClass,
+    );
+
+  const validatedSafeZeroFallback = (
+    repairIntegrity: AIOutputRepairIntegrityResult | null,
+    repairTransportFailed = false,
+    repairTransportErrorClass: string | null = null,
+  ): ValidatedAIOutput | null =>
+    validatedFallbackResult(
+      params.safeFallbackCopy
+        ? applyDeterministicAIOutputSafeZeroFallback(
+          params.initialResult,
+          initialValidation,
+          params.safeFallbackCopy,
+        )
+        : null,
+      repairIntegrity,
+      repairTransportFailed,
+      repairTransportErrorClass,
+    );
 
   let repairedResult: Record<string, unknown>;
   try {
     repairedResult = await params.repair(initialValidation);
   } catch (error) {
+    const repairTransportErrorClass = error instanceof Error
+      ? error.name
+      : typeof error;
+    const targetedFallback = validatedDeterministicFallback(
+      params.initialResult,
+      initialValidation,
+      null,
+      true,
+      repairTransportErrorClass,
+    );
+    if (targetedFallback) return targetedFallback;
+    const safeFallback = validatedSafeZeroFallback(
+      null,
+      true,
+      repairTransportErrorClass,
+    );
+    if (safeFallback) return safeFallback;
     throw new OutputLanguageContractError(
       params.snapshot.output_language,
       "LANGUAGE_CONTRACT_REPAIR_TRANSPORT_FAILED",
@@ -1343,32 +1491,8 @@ export async function validateAIOutputWithSingleRepair(params: {
         initialValidation,
         finalValidationStatus: "not_run",
         repairTransportFailed: true,
-        repairTransportErrorClass: error instanceof Error
-          ? error.name
-          : typeof error,
+        repairTransportErrorClass,
       },
-    );
-  }
-  const repairIntegrity = params.enforceRepairIntegrity &&
-      initialValidation.failedLayer !== "json_schema"
-    ? validateAIOutputRepairIntegrity(
-      params.initialResult,
-      repairedResult,
-      initialValidation,
-    )
-    : null;
-  if (repairIntegrity && !repairIntegrity.ok) {
-    const fallback = validatedDeterministicFallback(
-      params.initialResult,
-      initialValidation,
-      repairIntegrity,
-    );
-    if (fallback) return fallback;
-    throw new OutputLanguageContractError(
-      params.snapshot.output_language,
-      repairIntegrity.code ?? "REPAIR_INTEGRITY_FAILED",
-      null,
-      { initialValidation, repairIntegrity },
     );
   }
   const finalValidation = validateAIOutputContract(
@@ -1379,16 +1503,70 @@ export async function validateAIOutputWithSingleRepair(params: {
       certaintyPolicy: params.certaintyPolicy,
     },
   );
+  const repairIntegrity = params.enforceRepairIntegrity &&
+      initialValidation.failedLayer !== "json_schema"
+    ? validateAIOutputRepairIntegrity(
+      params.initialResult,
+      repairedResult,
+      initialValidation,
+    )
+    : null;
   if (!finalValidation.ok) {
     const fallback = validatedDeterministicFallback(
-      repairedResult,
-      finalValidation,
+      repairIntegrity && !repairIntegrity.ok
+        ? params.initialResult
+        : repairedResult,
+      repairIntegrity && !repairIntegrity.ok
+        ? initialValidation
+        : finalValidation,
       repairIntegrity,
     );
     if (fallback) return fallback;
+    const safeFallback = validatedSafeZeroFallback(repairIntegrity);
+    if (safeFallback) return safeFallback;
     throw new OutputLanguageContractError(
       params.snapshot.output_language,
       finalValidation.code ?? OUTPUT_LANGUAGE_CONTRACT_FAILED,
+      finalValidation,
+      { initialValidation, repairIntegrity },
+    );
+  }
+  if (repairIntegrity && !repairIntegrity.ok) {
+    if (
+      canUseValidatedSemanticRepairSalvage(
+        params.initialResult,
+        repairedResult,
+        initialValidation,
+        finalValidation,
+        repairIntegrity,
+      )
+    ) {
+      return {
+        result: repairedResult,
+        status: "repaired",
+        attempts: 2,
+        code: initialValidation.code,
+        initialValidation,
+        finalValidation,
+        repairIntegrity,
+        deterministicFallback: null,
+        validatedRepairSalvageUsed: true,
+        validatedRepairSalvageCode: repairIntegrity.code,
+        repairTransportFailed: false,
+        repairTransportErrorClass: null,
+      };
+    }
+    const fallback = validatedDeterministicFallback(
+      params.initialResult,
+      initialValidation,
+      repairIntegrity,
+    );
+    if (fallback) return fallback;
+    const safeFallback = validatedSafeZeroFallback(repairIntegrity);
+    if (safeFallback) return safeFallback;
+    throw new OutputLanguageContractError(
+      params.snapshot.output_language,
+      repairIntegrity.code ?? "REPAIR_INTEGRITY_FAILED",
       finalValidation,
       { initialValidation, repairIntegrity },
     );
@@ -1402,5 +1580,9 @@ export async function validateAIOutputWithSingleRepair(params: {
     finalValidation,
     repairIntegrity,
     deterministicFallback: null,
+    validatedRepairSalvageUsed: false,
+    validatedRepairSalvageCode: null,
+    repairTransportFailed: false,
+    repairTransportErrorClass: null,
   };
 }

@@ -394,7 +394,7 @@ Deno.test("coverage quality selector covers 30 TR/EN structural scenarios", () =
     {
       name: "record missing",
       record: qualityRecord({ record_missing: true }),
-      repair: true,
+      repair: false,
       reason: "record_incomplete",
     },
     {
@@ -407,7 +407,7 @@ Deno.test("coverage quality selector covers 30 TR/EN structural scenarios", () =
           invalid_layer_statuses_count: 0,
         },
       }),
-      repair: true,
+      repair: false,
       reason: "record_incomplete",
     },
     {
@@ -420,7 +420,7 @@ Deno.test("coverage quality selector covers 30 TR/EN structural scenarios", () =
           invalid_layer_statuses_count: 0,
         },
       }),
-      repair: true,
+      repair: false,
       reason: "record_incomplete",
     },
     {
@@ -433,7 +433,7 @@ Deno.test("coverage quality selector covers 30 TR/EN structural scenarios", () =
           invalid_layer_statuses_count: 0,
         },
       }),
-      repair: true,
+      repair: false,
       reason: "record_incomplete",
     },
     {
@@ -446,7 +446,7 @@ Deno.test("coverage quality selector covers 30 TR/EN structural scenarios", () =
           invalid_layer_statuses_count: 1,
         },
       }),
-      repair: true,
+      repair: false,
       reason: "record_incomplete",
     },
     {
@@ -583,6 +583,105 @@ Deno.test("coverage quality selector covers 30 TR/EN structural scenarios", () =
   }
 });
 
+Deno.test("periodic field verification does not inflate physical finding coverage", () => {
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      findings: [
+        {
+          title: "Visible leak",
+          inspection_layer_keys: ["ground_housekeeping", "fire_explosion"],
+        },
+        {
+          title: "Periodic inspection status",
+          display_group: "field_verification",
+          verification_reason_code: "periodic_inspection_status",
+          inspection_layer_keys: ["machinery_equipment"],
+        },
+      ],
+      inspection_layers: [
+        { layer_key: "ground_housekeeping", status: "actionable" },
+        { layer_key: "fire_explosion", status: "actionable" },
+      ],
+    }),
+    { candidateSemanticsV2: true, processSafetyEnabled: true },
+  );
+
+  assertEquals(result.initial_generated_findings_count, 1);
+  assert(result.trigger_reasons.includes("low_finding_count"));
+});
+
+Deno.test("unrepresented actionable process checks trigger the existing repair selector", () => {
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      process_safety_audit: {
+        scope: "applicable",
+        complete: true,
+        checks: [
+          { check_key: "containment_integrity", status: "actionable" },
+          { check_key: "instrumentation_indication", status: "not_visible" },
+        ],
+      },
+    }),
+    { candidateSemanticsV2: true, processSafetyEnabled: true },
+  );
+
+  assert(
+    result.trigger_reasons.includes(
+      "unrepresented_actionable_process_check",
+    ),
+  );
+  assertEquals(result.unrepresented_actionable_process_checks, [
+    "containment_integrity",
+  ]);
+});
+
+Deno.test("shadow mode records no process-driven repair reason", () => {
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      process_safety_audit: {
+        scope: "applicable",
+        complete: true,
+        checks: [{ check_key: "containment_integrity", status: "actionable" }],
+      },
+    }),
+    { candidateSemanticsV2: true, processSafetyEnabled: false },
+  );
+
+  assertFalse(
+    result.trigger_reasons.includes(
+      "unrepresented_actionable_process_check",
+    ),
+  );
+  assertEquals(result.actionable_process_check_count, 0);
+});
+
+Deno.test("represented actionable process check does not trigger process repair", () => {
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      findings: [
+        {
+          inspection_layer_keys: ["ground_housekeeping"],
+          process_safety_check_keys: ["containment_integrity"],
+        },
+        { inspection_layer_keys: ["fire_explosion"] },
+      ],
+      process_safety_audit: {
+        scope: "applicable",
+        complete: true,
+        checks: [{ check_key: "containment_integrity", status: "actionable" }],
+      },
+    }),
+    { candidateSemanticsV2: true, processSafetyEnabled: true },
+  );
+
+  assertFalse(
+    result.trigger_reasons.includes(
+      "unrepresented_actionable_process_check",
+    ),
+  );
+  assertEquals(result.represented_actionable_process_check_count, 1);
+});
+
 Deno.test("quality no-additional reason codes fail closed", () => {
   assertEquals(
     normalizeCoverageQualityNoAdditionalReasonCode(
@@ -606,4 +705,25 @@ Deno.test("quality no-additional reason codes fail closed", () => {
     normalizeCoverageQualityNoAdditionalReasonCode("invented"),
     null,
   );
+});
+
+Deno.test("incomplete immutable authority blocks a futile quality repair", () => {
+  const result = evaluateCoverageQualityRecord(
+    qualityRecord({
+      findings: [{ inspection_layer_keys: ["ground_housekeeping"] }],
+      layer_audit: {
+        missing_layer_keys: ["machinery_equipment"],
+        duplicate_layer_keys: [],
+        invalid_layer_keys_count: 0,
+        invalid_layer_statuses_count: 0,
+      },
+    }),
+    { candidateSemanticsV2: true, processSafetyEnabled: true },
+  );
+
+  assert(result.trigger_reasons.includes("low_finding_count"));
+  assert(result.trigger_reasons.includes("record_incomplete"));
+  assertEquals(result.repair_authority_complete, false);
+  assertEquals(result.repair_blocked_reason, "incomplete_authority");
+  assertEquals(result.should_repair, false);
 });

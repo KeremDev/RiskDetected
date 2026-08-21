@@ -382,7 +382,11 @@ for (const profile of safetyProfiles) {
     let inputTokens = 0;
     let outputTokens = 0;
     const startedAt = performance.now();
-    const callProvider = async ({ prompt, transientRetryLimit }) => {
+    const callProvider = async ({
+      prompt,
+      transientRetryLimit,
+      requestAssets = scenarioAssets,
+    }) => {
       let transientRetriesForCall = 0;
       while (true) {
         requestCount += 1;
@@ -391,7 +395,7 @@ for (const profile of safetyProfiles) {
             apiKey,
             model,
             prompt,
-            assets: scenarioAssets,
+            assets: requestAssets,
           });
         } catch (error) {
           if (
@@ -436,9 +440,18 @@ for (const profile of safetyProfiles) {
               buildLanguageContractRepairInstruction(
                 snapshot,
                 validation.failedLayer ?? "unknown",
+                {
+                  code: validation.code,
+                  field: validation.failedField,
+                  path: validation.failedPath,
+                  excerpt: validation.failedExcerpt,
+                  violations: validation.violations,
+                  rejectedOutput: initial.result,
+                },
               ),
             ].join("\n\n"),
             transientRetryLimit: 0,
+            requestAssets: [],
           });
           inputTokens += repaired.input_tokens;
           outputTokens += repaired.output_tokens;
