@@ -235,16 +235,39 @@ const regionSchema = {
   },
 } as const;
 
+/**
+ * `hazard_facts` is emitted second, not fifth.
+ *
+ * Gemini generates structured output in schema order. With the module audit,
+ * mandatory outcomes and sector evidence ahead of it, the findings were written
+ * last out of an 8192-token budget and production settled at three facts per
+ * photo regardless of what the photograph contained. The same ordering caused
+ * the v173 regression in the previous engine, where two of three photos came
+ * back with zero findings.
+ *
+ * `scene_inventory` stays first because facts reference its entity_refs. The
+ * module sweep still happens -- the prompt asks for it during reasoning, which
+ * is a separate budget -- but its record is written after the findings it was
+ * meant to produce.
+ */
 export const PHOTO_ANALYSIS_JSON_SCHEMA_V3_4 = {
   type: "object",
   additionalProperties: false,
-  required: [
+  propertyOrdering: [
     "scene_inventory",
+    "hazard_facts",
+    "inspection_signals",
     "module_audit",
     "mandatory_module_outcomes",
     "sector_context_evidence",
+  ],
+  required: [
+    "scene_inventory",
     "hazard_facts",
     "inspection_signals",
+    "module_audit",
+    "mandatory_module_outcomes",
+    "sector_context_evidence",
   ],
   properties: {
     scene_inventory: {
@@ -539,13 +562,21 @@ const {
  */
 export const PHOTO_ANALYSIS_JSON_SCHEMA = {
   ...PHOTO_ANALYSIS_JSON_SCHEMA_V3_4,
-  required: [
+  propertyOrdering: [
     "scene_inventory",
+    "hazard_facts",
+    "inspection_signals",
     "scanned_module_ids",
     "mandatory_module_outcomes",
     "sector_context_evidence",
+  ],
+  required: [
+    "scene_inventory",
     "hazard_facts",
     "inspection_signals",
+    "scanned_module_ids",
+    "mandatory_module_outcomes",
+    "sector_context_evidence",
   ],
   properties: {
     ...compactPhotoAnalysisProperties,
