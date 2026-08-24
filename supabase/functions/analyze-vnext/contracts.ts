@@ -236,6 +236,47 @@ const regionSchema = {
 } as const;
 
 /**
+ * Reorders a schema's `properties` to match its declared generation order.
+ *
+ * `propertyOrdering` alone was not enough: the two disagreed on the wire, with
+ * propertyOrdering asking for hazard_facts second while the properties object
+ * still listed it fourth. Serialized JSON follows insertion order, so the model
+ * kept seeing the old layout and raw fact production did not move. Both are
+ * built from one list now, and a test asserts they cannot drift apart again.
+ */
+function orderedProperties<T extends Record<string, unknown>>(
+  properties: T,
+  ordering: readonly string[],
+): T {
+  const ordered: Record<string, unknown> = {};
+  for (const key of ordering) {
+    if (key in properties) ordered[key] = properties[key];
+  }
+  for (const [key, value] of Object.entries(properties)) {
+    if (!(key in ordered)) ordered[key] = value;
+  }
+  return ordered as T;
+}
+
+const PHOTO_ANALYSIS_FIELD_ORDER = [
+  "scene_inventory",
+  "hazard_facts",
+  "inspection_signals",
+  "module_audit",
+  "mandatory_module_outcomes",
+  "sector_context_evidence",
+] as const;
+
+const COMPACT_PHOTO_ANALYSIS_FIELD_ORDER = [
+  "scene_inventory",
+  "hazard_facts",
+  "inspection_signals",
+  "scanned_module_ids",
+  "mandatory_module_outcomes",
+  "sector_context_evidence",
+] as const;
+
+/**
  * `hazard_facts` is emitted second, not fifth.
  *
  * Gemini generates structured output in schema order. With the module audit,
@@ -253,23 +294,9 @@ const regionSchema = {
 export const PHOTO_ANALYSIS_JSON_SCHEMA_V3_4 = {
   type: "object",
   additionalProperties: false,
-  propertyOrdering: [
-    "scene_inventory",
-    "hazard_facts",
-    "inspection_signals",
-    "module_audit",
-    "mandatory_module_outcomes",
-    "sector_context_evidence",
-  ],
-  required: [
-    "scene_inventory",
-    "hazard_facts",
-    "inspection_signals",
-    "module_audit",
-    "mandatory_module_outcomes",
-    "sector_context_evidence",
-  ],
-  properties: {
+  propertyOrdering: [...PHOTO_ANALYSIS_FIELD_ORDER],
+  required: [...PHOTO_ANALYSIS_FIELD_ORDER],
+  properties: orderedProperties({
     scene_inventory: {
       type: "array",
       items: {
@@ -546,7 +573,7 @@ export const PHOTO_ANALYSIS_JSON_SCHEMA_V3_4 = {
         },
       },
     },
-  },
+  }, PHOTO_ANALYSIS_FIELD_ORDER),
 } as const;
 
 const {
@@ -562,27 +589,13 @@ const {
  */
 export const PHOTO_ANALYSIS_JSON_SCHEMA = {
   ...PHOTO_ANALYSIS_JSON_SCHEMA_V3_4,
-  propertyOrdering: [
-    "scene_inventory",
-    "hazard_facts",
-    "inspection_signals",
-    "scanned_module_ids",
-    "mandatory_module_outcomes",
-    "sector_context_evidence",
-  ],
-  required: [
-    "scene_inventory",
-    "hazard_facts",
-    "inspection_signals",
-    "scanned_module_ids",
-    "mandatory_module_outcomes",
-    "sector_context_evidence",
-  ],
-  properties: {
+  propertyOrdering: [...COMPACT_PHOTO_ANALYSIS_FIELD_ORDER],
+  required: [...COMPACT_PHOTO_ANALYSIS_FIELD_ORDER],
+  properties: orderedProperties({
     ...compactPhotoAnalysisProperties,
     scanned_module_ids: {
       type: "array",
       items: { type: "string", enum: [...MODULE_IDS] },
     },
-  },
+  }, COMPACT_PHOTO_ANALYSIS_FIELD_ORDER),
 } as const;

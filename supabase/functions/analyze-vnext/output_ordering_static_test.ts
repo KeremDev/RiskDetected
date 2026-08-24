@@ -37,6 +37,15 @@ Deno.test("hazard_facts is written before the module sweep in both schemas", () 
       required,
       "propertyOrdering and required must not disagree",
     );
+    // The first attempt at this fix set propertyOrdering alone and left the
+    // properties object in its old layout. Serialized JSON follows insertion
+    // order, so the model kept seeing hazard_facts fourth and raw production
+    // did not move. Both orders have to agree on the wire.
+    assertEquals(
+      Object.keys(schema.properties as Record<string, unknown>),
+      ordering,
+      "properties key order must match propertyOrdering",
+    );
 
     // scene_inventory stays first: facts reference its entity_refs.
     assertEquals(orderOf(schema, "scene_inventory"), 0);
