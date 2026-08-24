@@ -1486,13 +1486,21 @@ serve(async (req) => {
     );
     /**
      * A technical retry has already consumed one provider call, so the targeted
-     * pass is normally suppressed to hold the budget. That trade is wrong when
-     * screening rejected a fact whose consequence class reaches permanent
-     * disability or worse: the targeted pass is the only remaining way to
-     * recover it, and a missed fatal hazard costs more than one small call.
+     * pass is normally suppressed to hold the budget. That trade is wrong on
+     * two paths, and both have to be checked: screening may have rejected a
+     * fact whose consequence class reaches permanent disability or worse, or
+     * the sector critical-coverage net may have raised a component the sector
+     * profile treats as critical. Checking only the first left a selected
+     * scaffold-guardrail candidate suppressed with `signal: null` beside a
+     * `candidate_count: 1`.
+     *
+     * The targeted pass runs at 768 thinking tokens. A missed fatal hazard
+     * costs more than that.
      */
     const targetedRescuesHighConsequence = targetedDecision.screened_facts
-      .some((fact) => fact.targeted_eligible === true);
+      .some((fact) => fact.targeted_eligible === true) ||
+      targetedDecision.candidates
+        .some((candidate) => candidate.sector_critical_component === true);
     const suppressTargetedForBudget = schemaRepairUsed &&
       !targetedRescuesHighConsequence;
     const targetedSignal = suppressTargetedForBudget

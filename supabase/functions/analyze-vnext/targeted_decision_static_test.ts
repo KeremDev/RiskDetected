@@ -34,7 +34,14 @@ Deno.test("a high-consequence rejection overrides the retry budget suppression",
   );
   assertStringIncludes(
     indexSource,
-    ".some((fact) => fact.targeted_eligible === true)",
+    ".some((fact) => fact.targeted_eligible === true) ||",
+  );
+  // The sector critical-coverage net raises candidates that no rejected fact
+  // accounts for. Checking only the rejection path left a selected
+  // scaffold-guardrail candidate suppressed beside a candidate_count of 1.
+  assertStringIncludes(
+    indexSource,
+    "targetedDecision.candidates\n        .some((candidate) => candidate.sector_critical_component === true);",
   );
   assertStringIncludes(
     indexSource,
