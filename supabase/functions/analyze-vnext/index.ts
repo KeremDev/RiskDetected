@@ -1033,6 +1033,12 @@ async function analyzePhoto(params: {
           provider: result.provider,
           model: result.model,
           output: result.output,
+          usage: {
+            inputTokens: result.usage.inputTokens,
+            outputTokens: result.usage.outputTokens,
+            reasoningTokens: result.usage.reasoningTokens,
+            maxOutputTokens: params.config.maxProviderOutputTokens,
+          },
         },
         schemaRepairUsed,
         photoRunID,
@@ -1134,6 +1140,12 @@ async function analyzePhoto(params: {
           provider: result.provider,
           model: result.model,
           output: result.output,
+          usage: {
+            inputTokens: result.usage.inputTokens,
+            outputTokens: result.usage.outputTokens,
+            reasoningTokens: result.usage.reasoningTokens,
+            maxOutputTokens: params.config.maxProviderOutputTokens,
+          },
         },
         schemaRepairUsed,
         photoRunID,
@@ -1777,6 +1789,27 @@ serve(async (req) => {
       rejection_ledger: targetedRejections,
     };
     product.qualityTrace.targeted_reinspection = targetedDecisionAudit;
+    /**
+     * Answers one question the trace could not: is the model filling its output
+     * budget or stopping on its own? Raw fact production has been pinned at
+     * three per photo through prompt versions, budget changes and a schema
+     * reordering, and nothing recorded which of the two was happening.
+     */
+    product.qualityTrace.provider_output_budget = photoResults.map((result) => {
+      const usage = result.usage;
+      return {
+        photo_index: result.photoIndex,
+        output_tokens: usage?.outputTokens ?? null,
+        reasoning_tokens: usage?.reasoningTokens ?? null,
+        input_tokens: usage?.inputTokens ?? null,
+        max_output_tokens: usage?.maxOutputTokens ?? null,
+        output_budget_used_pct: usage && usage.maxOutputTokens > 0
+          ? Math.round(1000 * usage.outputTokens / usage.maxOutputTokens) / 10
+          : null,
+        raw_fact_count: result.output.hazard_facts.length,
+        scene_inventory_count: result.output.scene_inventory.length,
+      };
+    });
     product.qualityTrace.thinking_policy = {
       policy_version: config.geminiThinkingPolicyVersion,
       photo_count_policy_enabled: config.geminiThinkingByPhotoEnabled,

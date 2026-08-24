@@ -86,6 +86,21 @@ export type PhotoResult = {
   provider: string;
   model: string;
   output: PhotoAnalysisV3;
+  /**
+   * Optional so checkpoint replays and fixtures need not synthesize it.
+   *
+   * Raw fact production has sat at exactly three per photo across prompt
+   * versions, output budgets and a schema reordering, and nothing recorded
+   * whether the model was filling its output budget or stopping on its own.
+   * vNext writes no row to ai_usage_logs, so the question could not be answered
+   * from production data at all.
+   */
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    reasoningTokens: number;
+    maxOutputTokens: number;
+  };
 };
 
 export type FinalFindingV3 = Record<string, unknown> & {

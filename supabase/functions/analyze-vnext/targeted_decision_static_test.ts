@@ -1,5 +1,6 @@
 import {
   assert,
+  assertEquals,
   assertStringIncludes,
 } from "https://deno.land/std@0.208.0/assert/mod.ts";
 
@@ -57,5 +58,29 @@ Deno.test("a high-consequence rejection overrides the retry budget suppression",
   assertStringIncludes(
     indexSource,
     '| "skipped_schema_repair" = suppressTargetedForBudget',
+  );
+});
+
+Deno.test("provider output budget usage reaches the quality trace", () => {
+  // Raw fact production sat at exactly three per photo across prompt versions,
+  // two output budgets and a schema reordering. Nothing recorded whether the
+  // model was filling its budget or stopping on its own, and vNext writes no
+  // ai_usage_logs row, so the question could not be settled from production.
+  assertStringIncludes(
+    indexSource,
+    "product.qualityTrace.provider_output_budget = photoResults.map((result) => {",
+  );
+  assertStringIncludes(indexSource, "output_budget_used_pct:");
+  assertStringIncludes(
+    indexSource,
+    "raw_fact_count: result.output.hazard_facts.length,",
+  );
+
+  // Both provider paths must carry usage or the primary/fallback split shows up
+  // as missing data rather than as a measurement.
+  assertEquals(
+    indexSource.split("inputTokens: result.usage.inputTokens,").length - 1,
+    2,
+    "usage must be attached on both the primary and fallback result paths",
   );
 });
