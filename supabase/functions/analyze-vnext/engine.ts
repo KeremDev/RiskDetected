@@ -1109,6 +1109,59 @@ export function hasStructuredVisibleBarrierEvidence(
   return fact.barrier_state.startsWith("absent_or_failed_");
 }
 
+/**
+ * Names the conditions a fact failed on the structured barrier gate.
+ *
+ * The gate is eight conjunctive checks and the ledger only recorded
+ * `absence_only_claim`, which says a fact was dropped without saying why. A
+ * live construction photo lost its scaffold guardrail finding while the slab
+ * edge beside it passed, and the trace could not distinguish a wrong
+ * condition_code from a missing person link or a global bounding box. Raw
+ * facts are not persisted, so the diagnosis has to travel with the rejection.
+ *
+ * Diagnostic only: nothing here changes whether a fact is accepted.
+ */
+export function structuredBarrierGateFailures(fact: HazardFactV3): string[] {
+  const failures: string[] = [];
+  if (fact.assessment_basis === "equipment_integrity_verification") {
+    failures.push("assessment_basis_is_verification");
+  }
+  if (fact.evidence.normalized_region.is_global) {
+    failures.push("region_is_global");
+  }
+  if (fact.confidence.entity !== "high") failures.push("entity_confidence");
+  if (fact.confidence.condition !== "high") {
+    failures.push("condition_confidence");
+  }
+  if (fact.confidence.localization !== "high") {
+    failures.push("localization_confidence");
+  }
+  if (fact.confidence.mechanism === "low") {
+    failures.push("mechanism_confidence");
+  }
+  if (factIsOccludedOrOutOfFrame(fact)) {
+    failures.push("occluded_or_out_of_frame");
+  }
+  const canonical = canonicalConditionCode(
+    fact.observed_condition.condition_code,
+  );
+  const expectedMechanism = STRUCTURED_VISIBLE_BARRIER_CONDITIONS.get(
+    canonical,
+  );
+  if (!expectedMechanism) {
+    failures.push(`condition_code_not_whitelisted:${canonical}`);
+  } else if (expectedMechanism !== fact.mechanism_code) {
+    failures.push(
+      `mechanism_mismatch:${canonical}->${fact.mechanism_code}`,
+    );
+  }
+  if (!factHasDirectPersonExposure(fact)) failures.push("no_person_exposure");
+  if (!fact.barrier_state.startsWith("absent_or_failed_")) {
+    failures.push(`barrier_state:${fact.barrier_state}`);
+  }
+  return failures;
+}
+
 function hasStructuredCriticalBarrierFields(fact: HazardFactV3): boolean {
   const expectedMechanism = STRUCTURED_VISIBLE_BARRIER_CONDITIONS.get(
     canonicalConditionCode(fact.observed_condition.condition_code),
@@ -5748,6 +5801,16 @@ export function buildEngineProduct(
         reason_codes: [
           ...new Set([sectorReason, commonReason].filter(Boolean)),
         ],
+        // Only for absence rejections, and only when the fact was aiming at a
+        // safety barrier: says which gate condition it missed.
+        ...(commonReason === "absence_only_claim" &&
+            SAFETY_CRITICAL_HARDWARE_PATTERN.test(
+              normalized(
+                `${fact.entity.equipment_family} ${fact.entity.component} ${fact.observed_condition.condition_code}`,
+              ),
+            )
+          ? { structured_gate_failures: structuredBarrierGateFailures(fact) }
+          : {}),
       });
     } else {
       evidenceValid.push(fact);

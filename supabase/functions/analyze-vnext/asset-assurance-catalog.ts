@@ -35,6 +35,16 @@ export type AssetAssuranceProfile = {
   equipmentFamily: LocalizedCopy;
   include: RegExp;
   exclude?: RegExp;
+  /**
+   * Evidence the visible condition must carry before the profile activates.
+   *
+   * `include`/`exclude` deliberately read only equipment_family and component,
+   * so free-text condition prose cannot invent an equipment class. This runs
+   * the other way: it can only withhold a profile, never create one. A plain
+   * unlabelled bucket on a construction site was raising a chemical inventory
+   * and SDS assurance item purely because the model called it a container.
+   */
+  requiresConditionEvidence?: RegExp;
   templates: AssetAssuranceTemplate[];
 };
 
@@ -1099,6 +1109,11 @@ const CATALOG: AssetAssuranceProfile[] = [
     },
     include:
       /(?:chemical container|kimyasal kap|chemical drum|kimyasal varil|\bibc\b|\breagent\b|\bsolvent\b|\bacid\b|(?:^| )asit(?: |$)|\balkali\b|(?:^| )baz(?: |$)|chemical storage|kimyasal depolama)/u,
+    // A container only becomes a chemical-management subject when something
+    // identifies its contents: a label, a hazard pictogram, a product name, or
+    // a dedicated storage area. An unmarked pail is just a pail.
+    requiresConditionEvidence:
+      /(?:etiket|label|isaretleme|marking|piktogram|pictogram|ghs|tehlike isareti|hazard symbol|urun adi|product name|kimyasal ad|chemical name|ibc|varil|drum|bidon|kimyasal depolama|chemical storage|dokulme tavasi|dokuntu tavasi|toplama havuzu|secondary containment|spill (?:tray|pallet)|sds|gbf)/u,
     templates: [{
       conditionCode: "chemical_information_storage_assurance",
       component: {
@@ -1343,8 +1358,16 @@ export function resolveAssetAssuranceProfiles(
     profile,
     items: inventory.filter((item) => {
       const context = itemContext(item);
-      return profile.include.test(context) &&
-        !(profile.exclude?.test(context) ?? false);
+      if (
+        !profile.include.test(context) ||
+        (profile.exclude?.test(context) ?? false)
+      ) return false;
+      if (!profile.requiresConditionEvidence) return true;
+      return profile.requiresConditionEvidence.test(
+        normalizeAssetText(
+          `${item.equipment_family} ${item.component} ${item.visible_condition_summary}`,
+        ),
+      );
     }),
   })).filter((entry) => entry.items.length > 0).sort((left, right) =>
     right.profile.priority - left.profile.priority

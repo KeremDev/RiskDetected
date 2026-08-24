@@ -22,6 +22,7 @@ import {
   parsePhotoAnalysisV3WithSalvage,
   selectTargetedDecision,
   selectTargetedSignal,
+  structuredBarrierGateFailures,
   targetedSourceFacts,
   targetedSourceSignals,
 } from "./engine.ts";
@@ -5298,4 +5299,79 @@ Deno.test("public narrative removes whole-photo floor addresses and unsupported 
   );
   assertStringIncludes(description, "Zeminde");
   assertStringIncludes(description, "güvenli hareketi zorlaştıran");
+});
+
+Deno.test("structured barrier gate names the condition a guardrail fact missed", () => {
+  // The live 2026-08-24 construction photo lost its scaffold guardrail fact to
+  // `absence_only_claim` while the slab edge beside it passed. The ledger
+  // recorded only the rule name, and raw facts are not persisted, so nothing
+  // said which of the eight conditions failed.
+  const passing = fact({
+    entity: {
+      entity_ref: "scaffolding_guardrail_1",
+      equipment_family: "Iskele",
+      component: "Korkuluk",
+      identity_basis: "ust platform kenari",
+      identity_confidence: "high",
+    },
+    observed_condition: {
+      condition_code: "missing_guardrail",
+      short_text: "Platform kenarinda korkuluk yok",
+    },
+    mechanism_code: "fall_from_height",
+    exposed_entity: "Platformda calisan",
+    barrier_state: "absent_or_failed_event_direct",
+  });
+  assertEquals(structuredBarrierGateFailures(passing), []);
+
+  const wrongCode = fact({
+    ...passing,
+    observed_condition: {
+      condition_code: "guardrail_not_installed",
+      short_text: "Korkuluk yok",
+    },
+  });
+  assert(
+    structuredBarrierGateFailures(wrongCode).some((entry) =>
+      entry.startsWith("condition_code_not_whitelisted:")
+    ),
+  );
+
+  const noPerson = fact({ ...passing, exposed_entity: "Iskele platformu" });
+  assert(
+    structuredBarrierGateFailures(noPerson).includes("no_person_exposure"),
+  );
+
+  const global = fact({
+    ...passing,
+    evidence: {
+      normalized_region: { x: 0, y: 0, width: 1, height: 1, is_global: true },
+      affirmative_cues: ["Korkuluk yok"],
+    },
+  });
+  assert(structuredBarrierGateFailures(global).includes("region_is_global"));
+});
+
+Deno.test("a mechanism that disagrees with the condition code is named", () => {
+  const mismatched = fact({
+    entity: {
+      entity_ref: "platform_edge_1",
+      equipment_family: "Platform",
+      component: "Korkuluk",
+      identity_basis: "kenar",
+      identity_confidence: "high",
+    },
+    observed_condition: {
+      condition_code: "missing_guardrail",
+      short_text: "Korkuluk yok",
+    },
+    mechanism_code: "caught_in_pinch_shear",
+    exposed_entity: "Kenarda calisan",
+    barrier_state: "absent_or_failed_event_direct",
+  });
+  assert(
+    structuredBarrierGateFailures(mismatched).some((entry) =>
+      entry.startsWith("mechanism_mismatch:missing_guardrail->")
+    ),
+  );
 });

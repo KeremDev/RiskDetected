@@ -1473,25 +1473,36 @@ serve(async (req) => {
       userID,
       engineRunID!,
     );
-    const targetedDecision = !schemaRepairUsed
-      ? selectTargetedDecision(
-        photoResults,
-        config.sectorProfileEnabled ? sector : null,
-        config.multiPhotoHighHazardCoverageEnabled,
-      )
-      : {
-        status: "not_needed" as const,
-        signal: null,
-        candidate_count: 0,
-        candidates: [],
-        screened_facts: [],
-      };
-    const targetedSignal = targetedDecision.signal;
+    // Screening is pure computation over facts that were already paid for. It
+    // used to be skipped entirely alongside the targeted provider call, which
+    // meant a rejected critical component left `screened_facts` empty and the
+    // run reported `candidate_count: 0` -- the diagnostic disappeared together
+    // with the remedy. Screening now always runs; only the provider call is
+    // subject to budget suppression.
+    const targetedDecision = selectTargetedDecision(
+      photoResults,
+      config.sectorProfileEnabled ? sector : null,
+      config.multiPhotoHighHazardCoverageEnabled,
+    );
+    /**
+     * A technical retry has already consumed one provider call, so the targeted
+     * pass is normally suppressed to hold the budget. That trade is wrong when
+     * screening rejected a fact whose consequence class reaches permanent
+     * disability or worse: the targeted pass is the only remaining way to
+     * recover it, and a missed fatal hazard costs more than one small call.
+     */
+    const targetedRescuesHighConsequence = targetedDecision.screened_facts
+      .some((fact) => fact.targeted_eligible === true);
+    const suppressTargetedForBudget = schemaRepairUsed &&
+      !targetedRescuesHighConsequence;
+    const targetedSignal = suppressTargetedForBudget
+      ? null
+      : targetedDecision.signal;
     let targetedStatus:
       | "not_needed"
       | "confirmed"
       | "rejected"
-      | "skipped_schema_repair" = schemaRepairUsed
+      | "skipped_schema_repair" = suppressTargetedForBudget
         ? "skipped_schema_repair"
         : "not_needed";
     let effectiveTargetedSignalID = targetedSignal?.signal_id ?? null;
