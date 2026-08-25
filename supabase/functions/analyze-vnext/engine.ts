@@ -3637,6 +3637,22 @@ function turkishTitle(fact: HazardFactV3): string {
       fact.evidence.affirmative_cues.join(" ")
     }`,
   );
+  // The accepted harness fact was published as "Korkuluk sisteminde ara
+  // korkuluk eksikliği": its cue names the collective protection that is also
+  // absent, and the guardrail branch matched on that word. The condition code
+  // says what the finding is about, so it is read before any prose.
+  const canonicalCondition = canonicalConditionCode(
+    fact.observed_condition.condition_code,
+  );
+  if (
+    canonicalCondition === "missing_fall_arrest_system" ||
+    canonicalCondition === "unsecured_worker_at_height"
+  ) {
+    return "Yüksekte çalışanda düşme durdurma sistemi bulunmaması";
+  }
+  if (canonicalCondition === "missing_fall_arrest_anchor") {
+    return "Düşme durdurma sistemi için ankraj veya yaşam hattı bulunmaması";
+  }
   if (fact.assessment_basis === "equipment_integrity_verification") {
     const exact = ASSURANCE_TITLES_TR[
       fact.observed_condition.condition_code.trim().toLowerCase()
@@ -3757,6 +3773,16 @@ function turkishTitle(fact: HazardFactV3): string {
     !hasExcavationContext(context)
   ) {
     return "Üst seviyedeki gevşek malzemenin düşme tehlikesi";
+  }
+  // A water-puddle fact and a scattered-material fact both resolved to the
+  // housekeeping title, because the model wrote equipment_family as the module
+  // id "egress_housekeeping" and the branch matched that word rather than the
+  // condition it was describing.
+  if (
+    /(?:su birikinti|su birikmesi|kaygan|islak zemin|standing water|puddle|wet (?:floor|surface|slippery))/u
+      .test(context)
+  ) {
+    return "Geçiş alanındaki su birikintisi ve kayma riski";
   }
   if (
     /(?:housekeeping|daginik|clutter)/u.test(context) &&
@@ -4567,7 +4593,11 @@ function resolveEquipmentGroupCode(fact: HazardFactV3): EquipmentGroupCode {
     fact.observed_condition.condition_code,
   ].join(" "));
   if (
-    /(?:ppe|kkd|helmet|baret|glove|eldiven|gozluk|respirator)/u.test(context)
+    // Without a word boundary this read wet_slippery_surface as personal
+    // protective equipment, and a puddle was published under the PPE label.
+    /(?:\b(?:ppe|kkd)\b|helmet|baret|glove|eldiven|gozluk|respirator)/u.test(
+      context,
+    )
   ) {
     return "ppe";
   }

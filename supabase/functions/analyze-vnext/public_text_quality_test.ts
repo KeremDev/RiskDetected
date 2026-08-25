@@ -505,3 +505,104 @@ Deno.test("a missing harness at an open edge survives the PPE guard", () => {
   ];
   assertEquals(evidenceRejectionReason(helmet), "contextual_ppe_rejected");
 });
+
+Deno.test("a fall-arrest finding is not titled as a guardrail", () => {
+  // The accepted harness fact was published as "Korkuluk sisteminde ara
+  // korkuluk eksikliği", because its cue names the collective protection that
+  // is also absent and the guardrail branch matched that word.
+  const product = build([
+    fact({
+      entity: {
+        entity_ref: "personel_1",
+        equipment_family: "Personel",
+        component: "Yüksekte çalışan",
+        identity_basis: "açık döşeme kenarına yakın çalışan kişi",
+        identity_confidence: "high",
+      },
+      observed_condition: {
+        condition_code: "missing_fall_arrest_system",
+        short_text: "Yüksekte çalışan için düşme durdurma sistemi eksikliği",
+      },
+      barrier_state: "absent_or_failed_event_active",
+      evidence: {
+        normalized_region: {
+          x: 0.45,
+          y: 0.15,
+          width: 0.1,
+          height: 0.2,
+          is_global: false,
+        },
+        affirmative_cues: [
+          "Çalışanın yakınında herhangi bir toplu düşme koruması (korkuluk, güvenlik ağı) veya kişisel düşme durdurma sistemi görünmüyor",
+          "Çalışan, döşeme kenarına yakın konumda",
+        ],
+      },
+    }),
+  ]);
+  assertEquals(
+    product.findings[0].title,
+    "Yüksekte çalışanda düşme durdurma sistemi bulunmaması",
+  );
+});
+
+Deno.test("standing water is neither clutter nor protective equipment", () => {
+  // Two distinct facts shared the housekeeping title, and the disambiguator
+  // labelled the puddle "Kişisel koruyucu donanım" because the group resolver
+  // found "ppe" inside "wet_slippery_surface".
+  const ground = (
+    ref: string,
+    code: string,
+    text: string,
+    cue: string,
+    x: number,
+  ) =>
+    fact({
+      fact_id: ref,
+      entity: {
+        entity_ref: ref,
+        equipment_family: "egress_housekeeping",
+        component: text,
+        identity_basis: "çalışma alanının zemini",
+        identity_confidence: "high",
+      },
+      observed_condition: { condition_code: code, short_text: text },
+      mechanism_code: "fall_same_level",
+      hazard_mechanism: "Zemin koşulu nedeniyle aynı seviyede düşme",
+      credible_event_path: "Çalışan zeminde kayar veya takılarak düşer",
+      barrier_state: "absent_or_failed_event_direct",
+      consequence_class: "first_aid",
+      evidence: {
+        normalized_region: {
+          x,
+          y: 0.7,
+          width: 0.2,
+          height: 0.2,
+          is_global: false,
+        },
+        affirmative_cues: [cue],
+      },
+    });
+
+  const product = build([
+    ground(
+      "HF003",
+      "poor_housekeeping",
+      "Zeminde dağınık malzemeler",
+      "Zeminde dağınık halde demir çubuklar ve kalıp tahtaları",
+      0.2,
+    ),
+    ground(
+      "HF004",
+      "wet_slippery_surface",
+      "Zeminde su birikintileri ve kaygan yüzey",
+      "Zeminde geniş alanlara yayılmış su birikintileri",
+      0.6,
+    ),
+  ]);
+  const titles = product.findings.map((finding) => String(finding.title));
+  assertEquals(new Set(titles).size, titles.length, titles.join(" | "));
+  assert(titles.includes("Geçiş alanındaki su birikintisi ve kayma riski"));
+  assertFalse(
+    JSON.stringify(product.findings).includes("Kişisel koruyucu donanım"),
+  );
+});
