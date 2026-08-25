@@ -237,6 +237,11 @@ function conciseTitle(candidate: NormalizedCandidate): string {
   if (candidate.module_id === "housekeeping_physical_contact") {
     return "Dağınık malzemeler ve ıslak zeminde takılma veya kayma riski";
   }
+  // Three hooks each missing a latch produced three titles naming a side, and
+  // the one that survived dedup told the reader only about the top hook.
+  if (candidate.module_id === "lifting" && /(?:mandal|latch)/u.test(context)) {
+    return "Vinç kancasında emniyet mandalı eksikliği";
+  }
   if (candidate.module_id === "access_egress") {
     return "Güvenli geçiş yolunun dağınık malzemelerle engellenmesi";
   }
@@ -1102,20 +1107,43 @@ export function routeCandidates(params: {
       )
     }`;
     const previous = deduped.get(key);
-    if (
-      !previous ||
-      priority(item.item_class, item.criticality) <
-        priority(previous.item_class, previous.criticality)
-    ) {
+    if (!previous) {
       deduped.set(key, item);
-    } else {
-      previous.source_photo_indices = [
-        ...new Set([
-          ...previous.source_photo_indices,
-          ...item.source_photo_indices,
-        ]),
-      ].sort();
+      continue;
     }
+    // The loser's identity used to vanish here. Three crane hooks each missing
+    // a latch merged into one finding, and the critical-fate audit reported
+    // two demotions for candidates that had in fact been reported: the alarm
+    // fired on its own dedup.
+    const winner = priority(item.item_class, item.criticality) <
+        priority(previous.item_class, previous.criticality)
+      ? item
+      : previous;
+    const loser = winner === item ? previous : item;
+    winner.source_photo_indices = [
+      ...new Set([
+        ...winner.source_photo_indices,
+        ...loser.source_photo_indices,
+      ]),
+    ].sort();
+    winner.internal_priority.merged_candidate_ids = [
+      ...new Set([
+        ...(winner.internal_priority.merged_candidate_ids as string[] ?? []),
+        ...(loser.internal_priority.merged_candidate_ids as string[] ?? []),
+        ...(loser.candidate_id ? [loser.candidate_id] : []),
+      ]),
+    ];
+    deduped.set(key, winner);
+  }
+  // A merged finding covers more than one point, and the report has to say so
+  // rather than name whichever one survived.
+  for (const item of deduped.values()) {
+    const merged = (item.internal_priority.merged_candidate_ids as string[]) ??
+      [];
+    if (merged.length === 0 || item.item_class !== "observed_finding") continue;
+    item.description = `${item.description} Aynı ekipman veya alanda ${
+      merged.length + 1
+    } ayrı noktada aynı koşul görülmektedir.`.slice(0, 1200);
   }
   const ordered = [...deduped.values()].sort((a, b) =>
     a.display_order - b.display_order || a.title.localeCompare(b.title, "tr")
@@ -1193,9 +1221,13 @@ export function assertCriticalCandidateFates(
       ].includes(entry.to_state)
     ).map((entry) => entry.candidate_id!),
   );
+  // A candidate absorbed by dedup was reported, not demoted.
   const observed = new Set(
     items.filter((item) => item.item_class === "observed_finding")
-      .map((item) => item.candidate_id).filter(Boolean),
+      .flatMap((item) => [
+        item.candidate_id,
+        ...((item.internal_priority.merged_candidate_ids as string[]) ?? []),
+      ]).filter(Boolean),
   );
   const demotions: string[] = [];
   for (const candidate of candidates) {
