@@ -606,3 +606,59 @@ Deno.test("standing water is neither clutter nor protective equipment", () => {
     JSON.stringify(product.findings).includes("Kişisel koruyucu donanım"),
   );
 });
+
+Deno.test('"görünmüyor" beside visible gap geometry is an observation', () => {
+  // The 3-photo run lost a missing mid-rail whose second cue read "korkuluk
+  // sisteminde düşme korumasını azaltan boşluk" - the gap between two visible
+  // posts. It was dropped on the word "görünmüyor" in the first cue.
+  const midRail = fact({
+    entity: {
+      entity_ref: "guardrail_system_upper_right",
+      equipment_family: "Korkuluk sistemi",
+      component: "Ara korkuluk",
+      identity_basis: "üst platform korkuluğunun sağ bölümü",
+      identity_confidence: "high",
+    },
+    observed_condition: {
+      condition_code: "missing_mid_rail",
+      short_text: "Üst platform korkuluğunda eksik ara korkuluk",
+    },
+    barrier_state: "partial_event_direct_or_conditional",
+    consequence_class: "permanent_disability",
+    evidence: {
+      normalized_region: {
+        x: 0.5,
+        y: 0.3,
+        width: 0.2,
+        height: 0.2,
+        is_global: false,
+      },
+      affirmative_cues: [
+        "Üst platform korkuluğunun sağ kısmında, iki dikey direk arasında ara korkuluk elemanı görünmüyor, çalışan platformda",
+        "Korkuluk sisteminde düşme korumasını azaltan boşluk",
+      ],
+    },
+  });
+  assertEquals(evidenceRejectionReason(midRail), null);
+  assertFalse(
+    structuredBarrierGateFailures(midRail).includes("occluded_or_out_of_frame"),
+  );
+
+  // Without the gap geometry the absence is still just a view that failed.
+  const bare = structuredClone(midRail);
+  bare.evidence.affirmative_cues = [
+    "Ara korkuluk elemanı görünmüyor, çalışan platformda",
+  ];
+  assert(
+    structuredBarrierGateFailures(bare).includes("occluded_or_out_of_frame"),
+  );
+
+  // And an explicit admission that it cannot be made out stays occlusion.
+  const unclear = structuredClone(midRail);
+  unclear.evidence.affirmative_cues = [
+    "Korkuluk boşluğu seçilemiyor, çalışan platformda",
+  ];
+  assert(
+    structuredBarrierGateFailures(unclear).includes("occluded_or_out_of_frame"),
+  );
+});

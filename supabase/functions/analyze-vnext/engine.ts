@@ -1263,13 +1263,32 @@ function factHasDirectPersonExposure(fact: HazardFactV3): boolean {
     .test(exposed);
 }
 
+/** Says the component itself could not be assessed. Always occlusion. */
+const HARD_OCCLUSION_PATTERN =
+  /(?:occluded|obscured|out of frame|cannot be seen|kadraj disi|kapali kaldigi|ortulu|arkasinda kaliyor|secilemiyor|net degil)/u;
+
+/**
+ * Says a component is not there. In Turkish "görünmüyor" is the ordinary way
+ * to report an absence, not an admission that the view failed.
+ */
+const SOFT_ABSENCE_PATTERN = /(?:gorunmuyor|not visible)/u;
+
+/** Positive geometry that makes the absence an observation, not a gap in view. */
+const VISIBLE_GAP_GEOMETRY_PATTERN =
+  /(?:bosluk|acik kenar|acikta kalan|iki (?:dikey )?direk arasinda|direkler arasinda|kesinti|araligi acik|open gap|open edge|gap between|discontinuity|unprotected opening|bos yuva|acik delik)/u;
+
 function factIsOccludedOrOutOfFrame(fact: HazardFactV3): boolean {
   const cues = normalized([
     fact.observed_condition.short_text,
     ...fact.evidence.affirmative_cues,
   ].join(" "));
-  return /(?:occluded|obscured|out of frame|not visible|cannot be seen|gorunmuyor|kadraj disi|kapali kaldigi|ortulu)/u
-    .test(cues);
+  if (HARD_OCCLUSION_PATTERN.test(cues)) return true;
+  // A live multi-photo run lost a missing mid-rail whose own second cue read
+  // "korkuluk sisteminde düşme korumasını azaltan boşluk" - the gap between two
+  // visible posts. It was dropped on the word "görünmüyor" in the first cue,
+  // before that geometry could count for anything.
+  return SOFT_ABSENCE_PATTERN.test(cues) &&
+    !VISIBLE_GAP_GEOMETRY_PATTERN.test(cues);
 }
 
 /**
