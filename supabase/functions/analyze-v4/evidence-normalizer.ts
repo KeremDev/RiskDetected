@@ -22,8 +22,15 @@ const IDENTITY_CLAIM =
  */
 const STRUCTURAL_ABSENCE =
   /(?:\beksik|\byok(?:tur|luğu|lugu)?\b|bulunmuyor|bulunmama|bulunmadı|bulunmadi|bulunmaz|görünmüyor|gorunmuyor|görünmeme|gorunmeme|görünmedi|gorunmedi|mevcut değil|mevcut degil|takılı değil|takili degil|\bkorumasız|\bkorumasiz|\bkorunmasız|\bkorunmasiz|açık kenar|acik kenar|kapaksız|kapaksiz|bariyersiz|korkuluksuz|muhafazasız|muhafazasiz)/iu;
+/**
+ * An electrical line whose energization or insulation cannot be read from the
+ * photograph. Cables lying in standing water arrived as fatal at E4 and became
+ * an unscored paperwork item, because the model also ticked
+ * requires_document_or_measurement and this pattern only recognised a
+ * cable/hose mix-up. The counter-cues said exactly what was unresolved.
+ */
 const AMBIGUOUS_ELECTRICAL_IDENTITY =
-  /\b(?:kablo(?:lar)?\s*[\/]\s*hortum(?:lar)?|kablo\s+veya\s+hortum|hat(?:tın)?\s+(?:niteliği|türü)\s+belirsiz)\b/iu;
+  /(?:kablo(?:lar)?\s*[\/]\s*hortum(?:lar)?|kablo\s+veya\s+hortum|hat(?:tın)?\s+(?:niteliği|türü)\s+belirsiz|enerjili\s+olup\s+olmadığı|enerji\s+durumu[^.]{0,40}(?:belirlenemiyor|belirsiz|net\s+değil)|yalıtım(?:ı)?\s+durumu[^.]{0,40}(?:belirlenemiyor|belirsiz|net\s+değil)|yalitim[^.]{0,40}(?:belirlenemiyor|belirsiz))/iu;
 
 function clamp(value: unknown): number {
   const number = Number(value);
@@ -66,11 +73,18 @@ function evidenceLevel(candidate: ProviderCandidate): EvidenceLevel {
 function conditionCode(candidate: ProviderCandidate): string {
   const text = `${candidate.raw_label} ${candidate.affirmative_cues.join(" ")}`
     .toLocaleLowerCase("tr-TR");
-  if (candidate.requires_document_or_measurement) return "assurance_only_topic";
+  // Counter-cues are where the model records what it could not resolve, which
+  // is the whole point of this check.
+  const unresolvedText = `${text} ${
+    candidate.counter_cues.join(" ").toLocaleLowerCase("tr-TR")
+  }`;
+  // An energized line that cannot be identified is a verification topic, not a
+  // document topic, so this is decided before the assurance shortcut.
   if (
     candidate.module_id === "electrical" &&
-    AMBIGUOUS_ELECTRICAL_IDENTITY.test(text)
+    AMBIGUOUS_ELECTRICAL_IDENTITY.test(unresolvedText)
   ) return "electrical_identity_unresolved";
+  if (candidate.requires_document_or_measurement) return "assurance_only_topic";
   if (STRUCTURAL_ABSENCE.test(text)) return "visible_structural_absence";
   const byModule: Record<string, string> = {
     falls_falling_objects: "fall_or_falling_object_path",

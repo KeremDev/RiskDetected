@@ -822,3 +822,106 @@ Deno.test("kritik adayın bulguya dönüşmemesi kayıt altına alınır", () =>
   );
   assertEquals(criticalDemotions.length, 0);
 });
+
+Deno.test("su içindeki kablo belge konusu değil, doğrulama konusudur", () => {
+  // Live run 5093c58b: cables in standing water arrived fatal at E4 with an
+  // accessible path and were published as an unscored "electrical integrity"
+  // paperwork item, because the model also ticked
+  // requires_document_or_measurement. The counter-cues named exactly what was
+  // unresolved.
+  const photo = output([candidate({
+    candidate_key: "electrical_cables_in_puddles",
+    module_id: "electrical",
+    raw_label: "Yerdeki elektrik kablolarının su birikintileriyle teması",
+    asset_ref: "electrical_cables_ground",
+    requires_document_or_measurement: true,
+    affirmative_cues: [
+      "Yerdeki siyah kablolar su birikintilerinin içinden geçiyor",
+    ],
+    counter_cues: [
+      "Kabloların enerjili olup olmadığı görsel olarak belirlenemiyor",
+      "kabloların yalıtım durumu görsel olarak belirlenemiyor",
+    ],
+  })]);
+  const normalized = normalizeCandidates(photo, 1);
+  assertEquals(normalized[0].condition_code, "electrical_identity_unresolved");
+  const routed = routeCandidates({
+    candidates: normalized,
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id)!;
+  assertEquals(item.item_class, "verification_request");
+});
+
+Deno.test("yüksekte kemer eksikliği düşme şiddetini alır, 15'e kırpılmaz", () => {
+  // people_exposure had no mechanism entry, so a worker at an unprotected edge
+  // with no harness capped at 15 while the edge beside it scored 40.
+  const photo = output([candidate({
+    candidate_key: "person_2_no_fall_protection",
+    module_id: "people_exposure",
+    raw_label:
+      "Yüksekte, korumasız kenara yakın çalışanın paraşüt tipi emniyet kemeri kullanmaması",
+    person_ref: "worker-2",
+    affirmative_cues: [
+      "Çatı kenarına yakın çalışanın gövdesinde kemer veya lanyard görünmüyor",
+    ],
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const item = routed.items.find((entry) => entry.is_scored)!;
+  assertEquals(item.fk_severity, 40);
+  assertEquals(
+    item.title,
+    "Yüksekte çalışanda düşme durdurma sistemi bulunmaması",
+  );
+});
+
+Deno.test("iki farklı düşme tehlikesi aynı başlıkla yayınlanmaz", () => {
+  // The roof edge and the scaffold mid-rail were both published as "Çalışma
+  // kenarında düşmeye karşı koruma eksikliği" at FK 1440.
+  const photo = output([
+    candidate({
+      candidate_key: "unprotected_roof_edge",
+      module_id: "falls_falling_objects",
+      raw_label: "Bina çatısında kenar koruması olmadan çalışma",
+      affirmative_cues: ["Çatı kenarı boyunca korkuluk bulunmuyor"],
+    }),
+    candidate({
+      candidate_key: "scaffolding_missing_midrail",
+      module_id: "falls_falling_objects",
+      raw_label: "İskelenin üst platformunda ara korkuluk eksikliği",
+      evidence_region: { x: 0.6, y: 0.3, width: 0.2, height: 0.2 },
+      affirmative_cues: [
+        "İskele platformunda üst korkuluk mevcut, ara korkuluk yok",
+      ],
+      // Distinct event path: the dedup key is semantic, and two hazards that
+      // genuinely share one are meant to merge.
+      event_path: {
+        source: "iskele platformu korkuluk boşluğu",
+        contact_or_failure: "boşluktan düşme",
+        consequence: "ölümcül yaralanma",
+      },
+    }),
+  ]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const titles = routed.items.filter((item) => item.is_scored).map((item) =>
+    String(item.title)
+  );
+  assertEquals(new Set(titles).size, titles.length, titles.join(" | "));
+  assertEquals(
+    titles.includes("Korkuluk sisteminde ara korkuluk eksikliği"),
+    true,
+  );
+  assertEquals(
+    titles.includes("Çatı kenarında düşmeye karşı koruma bulunmaması"),
+    true,
+  );
+});

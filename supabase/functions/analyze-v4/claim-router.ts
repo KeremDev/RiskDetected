@@ -198,10 +198,35 @@ function cleanText(value: string, fallback: string): string {
 
 function conciseTitle(candidate: NormalizedCandidate): string {
   const context = scoringContext(candidate);
+  // A missing mid-rail and a completely unprotected roof edge both resolved to
+  // one fixed string, so the report published the same title twice at FK 1440
+  // for two different hazards.
   if (
     candidate.condition_code === "visible_structural_absence" &&
-    ["falls_falling_objects", "work_at_height"].includes(candidate.module_id)
-  ) return "Çalışma kenarında düşmeye karşı koruma eksikliği";
+    ["falls_falling_objects", "work_at_height", "people_exposure"].includes(
+      candidate.module_id,
+    )
+  ) {
+    if (
+      /(?:kemer|harness|lanyard|yasam hatti|yaşam hattı|ankraj|dusme durdurma|düşme durdurma|kisisel dusme|kişisel düşme)/u
+        .test(context)
+    ) {
+      return "Yüksekte çalışanda düşme durdurma sistemi bulunmaması";
+    }
+    if (/(?:ara korkuluk|orta korkuluk|midrail|mid rail)/u.test(context)) {
+      return "Korkuluk sisteminde ara korkuluk eksikliği";
+    }
+    if (/(?:etek tahtasi|etek tahtası|toeboard|toe board)/u.test(context)) {
+      return "Korkuluk sisteminde etek tahtası eksikliği";
+    }
+    if (/(?:cati|çatı|roof)/u.test(context)) {
+      return "Çatı kenarında düşmeye karşı koruma bulunmaması";
+    }
+    if (/(?:iskele|scaffold)/u.test(context)) {
+      return "İskele platformunda düşmeye karşı koruma eksikliği";
+    }
+    return "Çalışma kenarında düşmeye karşı koruma eksikliği";
+  }
   if (candidate.condition_code === "electrical_identity_unresolved") {
     return "Su birikintisi yakınındaki hat veya kablonun elektriksel durumu";
   }
@@ -424,6 +449,18 @@ function mechanismCode(candidate: NormalizedCandidate): string {
     return "fall_same_level";
   }
   if (candidate.module_id === "combustible_dust") return "fire_explosion";
+  // people_exposure had no entry, so a worker at an unprotected edge with no
+  // harness fell through to other_visible_physical and was capped at 15 while
+  // the edge itself beside it scored 40.
+  if (candidate.module_id === "people_exposure") {
+    if (
+      /(?:yuksek|yüksek|kenar|dusme|düşme|fall|height|kemer|harness|lanyard|yasam hatti|yaşam hattı|ankraj|catı|çatı|platform|iskele|scaffold)/u
+        .test(context)
+    ) return "fall_from_height";
+    if (/(?:tasi|taşı|kaldir|kaldır|zorlan|ergonom)/u.test(context)) {
+      return "ergonomic_overexertion";
+    }
+  }
   return "other_visible_physical";
 }
 
@@ -700,6 +737,16 @@ function routeClass(
       reject: "no_affirmative_visual_evidence",
     };
   }
+  // An energized line that cannot be identified is decided before the
+  // assurance shortcut: the normalizer already judged it a verification topic,
+  // and cables in standing water were published as an unscored paperwork item
+  // because the model had also ticked requires_document_or_measurement.
+  if (candidate.condition_code === "electrical_identity_unresolved") {
+    return {
+      itemClass: "verification_request",
+      reason: "electrical_identity_or_energy_unresolved",
+    };
+  }
   if (candidate.requires_document_or_measurement && candidate.asset_ref) {
     return {
       itemClass: "assurance_requirement",
@@ -708,12 +755,6 @@ function routeClass(
   }
   const critical = candidate.criticality === "fatal" ||
     candidate.criticality === "permanent";
-  if (candidate.condition_code === "electrical_identity_unresolved") {
-    return {
-      itemClass: "verification_request",
-      reason: "electrical_identity_or_energy_unresolved",
-    };
-  }
   // Severity does not raise the evidence bar. The critical check used to run
   // first, so in one live run three ordinary E3 candidates became findings
   // while the single fatal E3 candidate - accessible path, no occlusion - was
@@ -768,6 +809,27 @@ function priority(
     ? 15
     : 40;
   return critical + klass;
+}
+
+/**
+ * A short human noun that separates two hazards sharing one title: the roof,
+ * the scaffold, the platform. Never a scene id.
+ */
+function assetLabel(candidate: NormalizedCandidate): string {
+  const context = scoringContext(candidate);
+  const known: Array<[RegExp, string]> = [
+    [/(?:cati|çatı|roof)/u, "çatı"],
+    [/(?:iskele|scaffold)/u, "iskele"],
+    [/(?:doseme|döşeme|slab|kat kenari|kat kenarı)/u, "döşeme kenarı"],
+    [/(?:kalip|kalıp|formwork)/u, "kalıp kenarı"],
+    [/(?:platform)/u, "platform"],
+    [/(?:merdiven|stair|ladder)/u, "merdiven"],
+    [/(?:bosluk|boşluk|opening|shaft)/u, "boşluk"],
+  ];
+  for (const [pattern, label] of known) {
+    if (pattern.test(context)) return label;
+  }
+  return "";
 }
 
 function semanticEventKey(candidate: NormalizedCandidate): string {
@@ -957,6 +1019,9 @@ export function routeCandidates(params: {
         criticality: candidate.criticality,
         route_reason: route.reason,
         mechanism_code: mechanismCode(candidate),
+        // Distinguishing noun for the title-uniqueness pass, taken from the
+        // hazard's own words rather than a scene id.
+        asset_label: assetLabel(candidate),
         dedup_key: itemClass === "assurance_requirement"
           ? assurance!.id
           : dedupEventKey(candidate),
@@ -1055,6 +1120,21 @@ export function routeCandidates(params: {
   const ordered = [...deduped.values()].sort((a, b) =>
     a.display_order - b.display_order || a.title.localeCompare(b.title, "tr")
   );
+  // Dedup keys are semantic, so two genuinely different hazards may still
+  // resolve to one title. The roof edge and the scaffold mid-rail were both
+  // published as "Çalışma kenarında düşmeye karşı koruma eksikliği" at FK 1440.
+  const titleSeen = new Map<string, number>();
+  for (const item of ordered) {
+    const key = `${item.item_class}:${item.title.toLocaleLowerCase("tr-TR")}`;
+    const count = (titleSeen.get(key) ?? 0) + 1;
+    titleSeen.set(key, count);
+    if (count === 1) continue;
+    const qualifier = cleanText(
+      String(item.internal_priority.asset_label ?? ""),
+      "",
+    ) || `${count}`;
+    item.title = `${item.title} (${qualifier})`.slice(0, 180);
+  }
   ordered.forEach((item, index) => {
     item.ordinal = index + 1;
     item.display_order = index + 1;
