@@ -156,9 +156,15 @@ export function normalizeCandidates(
 ): NormalizedCandidate[] {
   const seen = new Set<string>();
   return output.candidates.flatMap((candidate) => {
-    const key = candidate.candidate_key.trim().slice(0, 200);
-    if (!key || seen.has(key)) return [];
-    seen.add(key);
+    const rawKey = candidate.candidate_key.trim().slice(0, 200);
+    if (!rawKey || seen.has(rawKey)) return [];
+    seen.add(rawKey);
+    // The provider only guarantees the key is unique inside one photo, and
+    // analysis_claim_candidates is unique on (engine_run_id, candidate_key).
+    // A 3-photo run whose photos both produced "unprotected_roof_edge" lost
+    // the entire analysis to v4_finalize_failed after all three model calls
+    // had already been paid for. The photo index makes the key unique per run.
+    const key = `p${photoIndex}:${rawKey}`.slice(0, 200);
     const coreClaim =
       `${candidate.raw_label} ${candidate.event_path.source} ${candidate.event_path.contact_or_failure} ${candidate.event_path.consequence}`;
     const assuranceOnVisibleAsset =

@@ -925,3 +925,20 @@ Deno.test("iki farklı düşme tehlikesi aynı başlıkla yayınlanmaz", () => {
     true,
   );
 });
+
+Deno.test("aynı anahtarı üreten iki fotoğraf koşuyu düşürmez", () => {
+  // analysis_claim_candidates is unique on (engine_run_id, candidate_key), but
+  // the provider only guarantees uniqueness inside one photo. A 3-photo run
+  // whose photos both produced "unprotected_roof_edge" failed the whole
+  // analysis with v4_finalize_failed, after all three model calls were paid.
+  const shared = candidate({ candidate_key: "unprotected_roof_edge" });
+  const photoOne = output([shared]);
+  const photoTwo = output([shared]);
+  const keys = [
+    ...normalizeCandidates(photoOne, 1),
+    ...normalizeCandidates(photoTwo, 2),
+  ].map((item) => item.candidate_key);
+  assertEquals(keys.length, 2);
+  assertEquals(new Set(keys).size, 2, keys.join(" | "));
+  assertStringIncludes(keys[0], "unprotected_roof_edge");
+});
