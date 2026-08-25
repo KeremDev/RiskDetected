@@ -1081,6 +1081,13 @@ const STRUCTURED_VISIBLE_BARRIER_CONDITIONS = new Map<
   ["missing_toeboard", "fall_from_height"],
   ["missing_machine_guard", "caught_in_pinch_shear"],
   ["unguarded_moving_parts", "caught_in_pinch_shear"],
+  // Fall arrest is the last barrier when collective protection is absent, and
+  // it is read from the same distance as the open edge beside it. These codes
+  // are literal rather than inferred so the barrier-geometry path accepts them
+  // even where the alias flag is not in scope.
+  ["missing_fall_arrest_system", "fall_from_height"],
+  ["missing_fall_arrest_anchor", "fall_from_height"],
+  ["unsecured_worker_at_height", "fall_from_height"],
 ]);
 
 const CONTEXTUAL_FALL_BARRIER_ALIAS_CODES = new Set([
@@ -1130,6 +1137,46 @@ function inferredBarrierMechanismFromCode(
   return null;
 }
 
+/**
+ * Codes that describe one missing element of a guardrail that is otherwise
+ * standing, and the mechanisms each may credibly carry.
+ *
+ * The whitelist has accepted missing_mid_rail and missing_toeboard since it was
+ * written, but the gate also demanded barrier_state `absent_or_failed_*`. Those
+ * two conditions contradict each other: if the top rail is up and the mid-rail
+ * is gone, the barrier is partial, which is what the model reported before the
+ * server dropped a scaffold fall fact for saying so. A missing toeboard drops
+ * objects rather than people, so falling_object is accepted alongside the
+ * mapped fall mechanism.
+ */
+const PARTIAL_BARRIER_SUB_COMPONENT_PATTERN =
+  /^(?:missing_)?(?:mid_?rail|midrail|intermediate_rail|toe_?board|toeboard|kick_?plate)$/;
+
+const ALTERNATIVE_BARRIER_MECHANISMS = new Map<string, HazardMechanismCode>([
+  ["missing_toeboard", "falling_object"],
+  ["missing_toe_board", "falling_object"],
+  ["missing_kick_plate", "falling_object"],
+]);
+
+function barrierStateSatisfiesGate(fact: HazardFactV3): boolean {
+  if (fact.barrier_state.startsWith("absent_or_failed_")) return true;
+  return fact.barrier_state === "partial_event_direct_or_conditional" &&
+    PARTIAL_BARRIER_SUB_COMPONENT_PATTERN.test(
+      canonicalConditionCode(fact.observed_condition.condition_code),
+    );
+}
+
+function barrierMechanismAccepted(
+  fact: HazardFactV3,
+  expected: HazardMechanismCode | null,
+): boolean {
+  if (expected === null) return false;
+  if (expected === fact.mechanism_code) return true;
+  return ALTERNATIVE_BARRIER_MECHANISMS.get(
+    canonicalConditionCode(fact.observed_condition.condition_code),
+  ) === fact.mechanism_code;
+}
+
 function canonicalConditionCode(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
@@ -1173,6 +1220,39 @@ function expectedVisibleBarrierMechanism(
     : null;
 }
 
+const FALL_ARREST_COMPONENT_PATTERN =
+  /(?:parasut tipi|parasut tipli|full body harness|emniyet kemeri|safety harness|harness|fall arrest|dusme durdurma|yasam hatti|lifeline|life line|lanyard|halat|ankraj|anchorage|anchor point|yatay hat|horizontal lifeline|kisisel dusme|personal fall)/u;
+
+const WORKING_AT_HEIGHT_CONTEXT_PATTERN =
+  /(?:yuksekte|at height|working at height|kat kenari|doseme kenari|acik kenar|open edge|unprotected edge|platform kenari|iskele|scaffold|cati|roof|kalip kenari|slab edge|ust kat|upper floor)/u;
+
+const INDETERMINACY_PATTERN =
+  /(?:secilemiyor|belirlenemiyor|ayirt edilemiyor|net degil|tespit edilemiyor|kadraj disi|cannot be (?:determined|discerned|made out)|not discernible|indeterminate|occluded|obscured)/u;
+
+/**
+ * True when the claim is that a worker exposed to a fall is not wearing or not
+ * connected to a fall-arrest system.
+ *
+ * Deliberately narrow. The cue itself has to place the worker at the edge or
+ * height and describe the body carrying no harness or line: that is an
+ * affirmative sighting, and it is why this claim may pass the occlusion guard
+ * that "görünmüyor" would otherwise trip. A fact that admits it cannot make
+ * the equipment out - "seçilemiyor", "net değil" - is a visibility failure and
+ * stays rejected, which is the discipline the rest of the gate exists for.
+ */
+function isFallArrestAbsenceClaim(fact: HazardFactV3): boolean {
+  if (fact.mechanism_code !== "fall_from_height") return false;
+  const cues = normalized(fact.evidence.affirmative_cues.join(" "));
+  const context = normalized(
+    `${fact.entity.equipment_family} ${fact.entity.component} ${fact.observed_condition.condition_code} ${fact.observed_condition.short_text} ${cues} ${fact.technical_assessment.observation_narrative}`,
+  );
+  if (INDETERMINACY_PATTERN.test(context)) return false;
+  return FALL_ARREST_COMPONENT_PATTERN.test(context) &&
+    WORKING_AT_HEIGHT_CONTEXT_PATTERN.test(cues) &&
+    /(?:calisan|personel|worker|person|operator|isci)/u.test(cues) &&
+    factHasDirectPersonExposure(fact);
+}
+
 function factHasDirectPersonExposure(fact: HazardFactV3): boolean {
   const exposed = normalized(
     `${fact.exposed_entity} ${fact.initiating_event_state} ${
@@ -1210,10 +1290,10 @@ export function hasStructuredVisibleBarrierEvidence(
     fact.confidence.condition !== "high" ||
     fact.confidence.localization !== "high" ||
     fact.confidence.mechanism === "low" ||
-    factIsOccludedOrOutOfFrame(fact) ||
+    (factIsOccludedOrOutOfFrame(fact) && !isFallArrestAbsenceClaim(fact)) ||
     !hasStructuredCriticalBarrierFields(fact, options)
   ) return false;
-  return fact.barrier_state.startsWith("absent_or_failed_");
+  return barrierStateSatisfiesGate(fact);
 }
 
 /**
@@ -1249,7 +1329,7 @@ export function structuredBarrierGateFailures(
   if (fact.confidence.mechanism === "low") {
     failures.push("mechanism_confidence");
   }
-  if (factIsOccludedOrOutOfFrame(fact)) {
+  if (factIsOccludedOrOutOfFrame(fact) && !isFallArrestAbsenceClaim(fact)) {
     failures.push("occluded_or_out_of_frame");
   }
   const canonical = canonicalConditionCode(
@@ -1258,13 +1338,13 @@ export function structuredBarrierGateFailures(
   const expectedMechanism = expectedVisibleBarrierMechanism(fact, options);
   if (!expectedMechanism) {
     failures.push(`condition_code_not_whitelisted:${canonical}`);
-  } else if (expectedMechanism !== fact.mechanism_code) {
+  } else if (!barrierMechanismAccepted(fact, expectedMechanism)) {
     failures.push(
       `mechanism_mismatch:${canonical}->${fact.mechanism_code}`,
     );
   }
   if (!factHasDirectPersonExposure(fact)) failures.push("no_person_exposure");
-  if (!fact.barrier_state.startsWith("absent_or_failed_")) {
+  if (!barrierStateSatisfiesGate(fact)) {
     failures.push(`barrier_state:${fact.barrier_state}`);
   }
   return failures;
@@ -1275,7 +1355,7 @@ function hasStructuredCriticalBarrierFields(
   options: EvidencePolicyOptions = {},
 ): boolean {
   const expectedMechanism = expectedVisibleBarrierMechanism(fact, options);
-  return expectedMechanism === fact.mechanism_code &&
+  return barrierMechanismAccepted(fact, expectedMechanism) &&
     fact.evidence.normalized_region.is_global !== true &&
     fact.confidence.entity === "high" &&
     fact.confidence.condition === "high" &&
@@ -1613,7 +1693,18 @@ export function evidenceRejectionReason(
   // A flattened, single photograph is not a reliable basis for declaring
   // person-worn PPE absent. Visible misuse/damage may still be reported when
   // expressed as an affirmative condition rather than a visibility claim.
-  if (ppeOnly && hasVisualAbsenceClaim(claim)) {
+  //
+  // Fall arrest is the exception, and it is not a relaxation. A helmet is
+  // judged from a head that may be turned away; a harness with its lanyard and
+  // anchor line is a body-worn rig read at the same distance as the
+  // unprotected edge beside it. When the photograph already establishes a
+  // worker at an open edge, the absence of any harness or lifeline rests on
+  // the same evidence as the missing guardrail, and treating it as ordinary
+  // PPE removed the last line of fall protection from every report.
+  if (
+    ppeOnly && hasVisualAbsenceClaim(claim) &&
+    !isFallArrestAbsenceClaim(fact)
+  ) {
     return "contextual_ppe_rejected";
   }
   if (

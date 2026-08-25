@@ -8,7 +8,11 @@ import {
   MODULE_IDS,
   type PhotoAnalysisV3,
 } from "./contracts.ts";
-import { buildEngineProduct } from "./engine.ts";
+import {
+  buildEngineProduct,
+  evidenceRejectionReason,
+  structuredBarrierGateFailures,
+} from "./engine.ts";
 
 function fact(overrides: Partial<HazardFactV3> = {}): HazardFactV3 {
   return {
@@ -403,4 +407,101 @@ Deno.test("uncapped rebar is scored as a missing barrier, not a reversible cut",
   ]);
   assertEquals(Number(product.findings[0].fk_probability), 6);
   assertEquals(Number(product.findings[0].fk_severity), 15);
+});
+
+Deno.test("a partly failed guardrail is not rejected for saying so", () => {
+  // The live scaffold fact reported missing_mid_rail with barrier_state
+  // partial_event_direct_or_conditional - the top rail is up, the mid-rail is
+  // gone - and the gate dropped it for not claiming total absence, even though
+  // missing_mid_rail is on its own whitelist.
+  const midRail = fact({
+    entity: {
+      entity_ref: "iskele_korkulugu_1",
+      equipment_family: "İskele",
+      component: "İskele korkuluğu",
+      identity_basis: "üst platform korkuluk sistemi",
+      identity_confidence: "high",
+    },
+    observed_condition: {
+      condition_code: "missing_mid_rail",
+      short_text: "Eksik ara korkuluk",
+    },
+    barrier_state: "partial_event_direct_or_conditional",
+    consequence_class: "permanent_disability",
+    evidence: {
+      normalized_region: {
+        x: 0.6,
+        y: 0.3,
+        width: 0.2,
+        height: 0.3,
+        is_global: false,
+      },
+      affirmative_cues: [
+        "İskele platformunda üst korkuluk mevcutken ara korkuluk elemanı eksik, çalışan platformda duruyor",
+      ],
+    },
+  });
+  assertEquals(evidenceRejectionReason(midRail), null);
+  assertFalse(
+    structuredBarrierGateFailures(midRail).some((entry) =>
+      entry.startsWith("barrier_state:")
+    ),
+  );
+
+  // A missing toeboard drops objects rather than people.
+  const toeBoard = structuredClone(midRail);
+  toeBoard.observed_condition = {
+    condition_code: "missing_toeboard",
+    short_text: "Eksik etek tahtası",
+  };
+  toeBoard.mechanism_code = "falling_object";
+  assertFalse(
+    structuredBarrierGateFailures(toeBoard).some((entry) =>
+      entry.startsWith("mechanism_mismatch:")
+    ),
+  );
+});
+
+Deno.test("a missing harness at an open edge survives the PPE guard", () => {
+  // Fall arrest was treated as ordinary person-worn PPE, so the last barrier
+  // left when collective protection is absent could never be reported.
+  const harness = fact({
+    entity: {
+      entity_ref: "personel_1",
+      equipment_family: "Personel",
+      component: "Paraşüt tipi emniyet kemeri",
+      identity_basis: "üst kat döşeme kenarında çalışan personel",
+      identity_confidence: "high",
+    },
+    observed_condition: {
+      condition_code: "missing_fall_arrest_system",
+      short_text: "Yüksekte çalışanda düşme durdurma sistemi bulunmaması",
+    },
+    barrier_state: "absent_or_failed_event_active",
+    evidence: {
+      normalized_region: {
+        x: 0.45,
+        y: 0.15,
+        width: 0.1,
+        height: 0.2,
+        is_global: false,
+      },
+      affirmative_cues: [
+        "Korumasız döşeme kenarında çalışan personelin gövdesinde emniyet kemeri veya bağlı bir yaşam hattı görünmüyor",
+      ],
+    },
+  });
+  assertEquals(evidenceRejectionReason(harness), null);
+
+  // The exception is fall protection only; a helmet claim is still rejected.
+  const helmet = structuredClone(harness);
+  helmet.entity.component = "Baret";
+  helmet.observed_condition = {
+    condition_code: "missing_head_protection",
+    short_text: "Çalışanda baret bulunmaması",
+  };
+  helmet.evidence.affirmative_cues = [
+    "Çalışanın başında baret görünmüyor",
+  ];
+  assertEquals(evidenceRejectionReason(helmet), "contextual_ppe_rejected");
 });
