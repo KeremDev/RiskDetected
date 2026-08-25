@@ -1,13 +1,13 @@
 export const ENGINE_VERSION = "vnext-v3";
 export const SCHEMA_VERSION = "hazard-fact-v3.5";
-export const PROMPT_VERSION = "vnext-photo-expert-v29";
+export const PROMPT_VERSION = "vnext-photo-expert-v30";
 export const POLICY_VERSION = "semantic-risk-v29";
 export const PROMPT_BUNDLE_POLICY_VERSION = "prompt-bundle-sha256-v1";
 // Updated only together with PROMPT_VERSION. prompt_integrity_test.ts computes
 // the canonical primary/targeted/schema bundle and fails when prompt-bearing
 // content changes under the same version.
 export const PROMPT_BUNDLE_SHA256 =
-  "3c6e06ac01f80c4165c8cb420c9d3c78e2cf6a75aa97cee56a520b95d0cb5131";
+  "e064c5c6b0da56fba6f7c1e53a715cdfdf8b798981e88d394dacecd9a5ef080b";
 export const CONTROL_CATALOG_VERSION = "controls-v19";
 
 export const MODULE_IDS = [

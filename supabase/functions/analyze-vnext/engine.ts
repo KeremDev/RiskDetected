@@ -3109,6 +3109,33 @@ const ASSURANCE_CORRECTIVE_COPY: Record<
 const ENGLISH_PUBLIC_LABEL_PATTERN =
   /(?:^|\s)(?:edge|edges|cable|cord|drum|slab|guard|guardrail|railing|hose|pipe|valve|ladder|beam|column|machine|mixer|portable|concrete|steel|wire|box|unit|area|work|site|worker|opening|hole|equipment|structure|surface|barrier|frame|joint|bucket|container|vessel|pump|belt|chain|shaft|hook|latch|plate|sheet|cover|lid|door|gate|stair|step|rack|shelf|load|crane|truck|trench|excavation|ground|floor|wall|roof|ceiling|duct|conduit|outlet|socket|breaker|junction|scaffold|storage|protection|missing|exposed|upper|lower)(?:\s|$)/u;
 
+/**
+ * Rejects a structured identifier the model put in a public entity field.
+ *
+ * The live run wrote equipment_family as module ids - "scaffold_and_ladder",
+ * "structural_mechanical_integrity", "egress_housekeeping" - and components as
+ * diacritic-stripped snake_case ("beton_doseme_kenari"). Underscores are
+ * expanded downstream, so a finding was published as "... - Scaffold and
+ * ladder" and Turkish labels lost their diacritics. Neither is a name a reader
+ * should see, and neither can be repaired here.
+ */
+const STRUCTURED_IDENTIFIER_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)+$/;
+
+function publishableEntityLabel(
+  raw: string,
+  language: string,
+): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const lowered = trimmed.toLocaleLowerCase("en-US");
+  if (
+    STRUCTURED_IDENTIFIER_PATTERN.test(lowered) ||
+    ALLOWED_MODULES.has(lowered.replace(/\s+/g, "_")) ||
+    ENGLISH_PUBLIC_LABEL_PATTERN.test(normalized(trimmed))
+  ) return null;
+  return capitalized(cleanPublicText(trimmed), language);
+}
+
 const EQUIPMENT_GROUP_PUBLIC_LABELS: Record<
   EquipmentGroupCode,
   { tr: string; en: string }
@@ -3181,15 +3208,12 @@ function renderedControlTarget(
   if (/(?:walking surface|walkway|floor|zemin|gecis)/u.test(context)) {
     return tr ? "Geçiş alanı ve zemin" : "Access route and floor";
   }
-  const component = cleanPublicText(fact.entity.component);
-  // A label in the wrong language cannot be translated here, so fall back to
-  // the equipment group's own label rather than publish the English string.
-  if (ENGLISH_PUBLIC_LABEL_PATTERN.test(normalized(component))) {
-    return EQUIPMENT_GROUP_PUBLIC_LABELS[resolveEquipmentGroupCode(fact)][
+  // A label in the wrong language or written as a structured identifier
+  // cannot be repaired here, so the equipment group's own label stands in.
+  return publishableEntityLabel(fact.entity.component, language) ??
+    EQUIPMENT_GROUP_PUBLIC_LABELS[resolveEquipmentGroupCode(fact)][
       tr ? "tr" : "en"
     ];
-  }
-  return capitalized(component, language);
 }
 
 function renderedControlCopy(
@@ -3614,7 +3638,15 @@ function turkishTitle(fact: HazardFactV3): string {
     // A slab edge with no fall protection at all was titled "missing
     // toeboard" at FK 900, because its condition text listed the toeboard
     // among the absent parts. Total absence outranks any named sub-component.
-    if (TOTAL_FALL_PROTECTION_ABSENCE_PATTERN.test(context)) {
+    // A scaffold mid-rail fact inherited the slab-edge title because the
+    // surrounding prose reads like a total absence. A condition code that
+    // names one element settles it: only that element is missing.
+    const namedSubComponent =
+      /^(?:missing_)?(?:mid_?rail|midrail|toe_?board|toeboard|kick_?plate|intermediate_rail)$/
+        .test(canonicalConditionCode(fact.observed_condition.condition_code));
+    if (
+      !namedSubComponent && TOTAL_FALL_PROTECTION_ABSENCE_PATTERN.test(context)
+    ) {
       return /(?:doseme|slab|kat kenari|floor edge|platform)/u.test(context)
         ? "Döşeme kenarında düşme koruması bulunmaması"
         : "Korunmasız kenarda düşme koruması bulunmaması";
@@ -3812,10 +3844,12 @@ function uniqueDisplayTitles(
       return title;
     }
     const fact = facts[index];
-    const identity = capitalized(
-      cleanPublicText(fact.entity.equipment_family),
+    const identity = publishableEntityLabel(
+      fact.entity.equipment_family,
       language,
-    );
+    ) ?? EQUIPMENT_GROUP_PUBLIC_LABELS[resolveEquipmentGroupCode(fact)][
+      isTurkish(language) ? "tr" : "en"
+    ];
     const withIdentity = identity && !normalized(title).includes(
         normalized(identity),
       )
@@ -4858,11 +4892,11 @@ function fieldVerificationReasonCodes(
   if (fact.frequency_basis === "missing_invalid_fallback") {
     reasons.push("frequency_basis_missing");
   }
-  if (frequency?.sectorPriorUsed) {
-    reasons.push("sector_frequency_prior_unverified");
-  }
   return [...new Set(reasons)];
 }
+
+const IMPALEMENT_CONTEXT_PATTERN =
+  /(?:donati|rebar|filiz demir|starter bar|dikey (?:cubuk|demir)|sivri (?:uc|uclu|cubuk|demir)|saplanma|impale|protruding|yukari dogru uzanan)/u;
 
 function resolveProbability(fact: HazardFactV3): NumericPolicyResolution {
   const raw = P_BY_BARRIER[fact.barrier_state];
@@ -4888,6 +4922,17 @@ function resolveProbability(fact: HazardFactV3): NumericPolicyResolution {
         reasonCode: "storage_stacking_probability_normalized",
       };
     }
+  }
+  if (
+    fact.assessment_basis === "visible_inherent_hazard" &&
+    fact.mechanism_code === "sharp_edge_contact" &&
+    fact.barrier_state.startsWith("absent_or_failed_") &&
+    IMPALEMENT_CONTEXT_PATTERN.test(context)
+  ) {
+    // Narrow, named carve-out. Protruding uncapped rebar is a missing-barrier
+    // claim whatever the model labelled the basis, so probability follows the
+    // barrier state instead of the inherent-hazard floor.
+    return { value: raw, reasonCode: "impalement_barrier_absence_probability" };
   }
   if (fact.assessment_basis === "visible_inherent_hazard") {
     const cues = normalized(fact.evidence.affirmative_cues.join(" "));
@@ -4940,7 +4985,10 @@ function resolveSeverity(fact: HazardFactV3): NumericPolicyResolution {
     environmental_release: 15,
     other_visible_physical: 15,
   };
-  const cap = maximumByMechanism[fact.mechanism_code];
+  const cap = fact.mechanism_code === "sharp_edge_contact" &&
+      IMPALEMENT_CONTEXT_PATTERN.test(scorePolicyContext(fact))
+    ? 40
+    : maximumByMechanism[fact.mechanism_code];
   return raw > cap
     ? { value: cap, reasonCode: "severity_capped_by_mechanism_policy" }
     : { value: raw, reasonCode: null };

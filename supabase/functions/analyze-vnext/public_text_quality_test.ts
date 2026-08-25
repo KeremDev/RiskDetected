@@ -282,3 +282,125 @@ Deno.test("an electrical control does not assert an exposed conductor", () => {
     "Kablonun yalıtımı sıyrılmış, açık iletken su birikintisinin içinde görülmektedir.";
   assert(JSON.stringify(build([damaged]).findings[0]).includes("açık iletken"));
 });
+
+Deno.test("a module id in an entity field never reaches a published title", () => {
+  // The live run wrote equipment_family as module ids and components as
+  // diacritic-stripped snake_case, and a finding was published as
+  // "... - Scaffold and ladder".
+  const product = build([
+    fact({
+      fact_id: "HF001",
+      entity: {
+        entity_ref: "beton_yapi_kat_2",
+        equipment_family: "structural_mechanical_integrity",
+        component: "beton_doseme_kenari",
+        identity_basis: "görsel_kanit",
+        identity_confidence: "high",
+      },
+    }),
+    fact({
+      fact_id: "HF002",
+      entity: {
+        entity_ref: "iskele_1",
+        equipment_family: "scaffold_and_ladder",
+        component: "beton_doseme_kenari",
+        identity_basis: "görsel_kanit",
+        identity_confidence: "high",
+      },
+      evidence: {
+        normalized_region: {
+          x: 0.7,
+          y: 0.2,
+          width: 0.2,
+          height: 0.3,
+          is_global: false,
+        },
+        affirmative_cues: ["Kenarda korkuluk bulunmuyor, çalışan duruyor"],
+      },
+      consequence_class: "permanent_disability",
+    }),
+  ]);
+  const published = JSON.stringify(product.findings);
+  for (
+    const leak of [
+      "Scaffold and ladder",
+      "scaffold_and_ladder",
+      "Structural mechanical integrity",
+      "beton_doseme_kenari",
+      "Beton doseme kenari",
+    ]
+  ) {
+    assertFalse(published.includes(leak), leak);
+  }
+  const titles = product.findings.map((finding) => String(finding.title));
+  assertEquals(new Set(titles).size, titles.length, titles.join(" | "));
+});
+
+Deno.test("a named sub-component keeps its own title", () => {
+  // A scaffold mid-rail fact inherited "Döşeme kenarında düşme koruması
+  // bulunmaması" because the surrounding prose reads like a total absence.
+  const product = build([
+    fact({
+      entity: {
+        entity_ref: "iskele_1",
+        equipment_family: "İskele",
+        component: "Ara korkuluk",
+        identity_basis: "üst iskele platformu",
+        identity_confidence: "high",
+      },
+      observed_condition: {
+        condition_code: "missing_mid_rail",
+        short_text:
+          "İskele platformunda ara korkuluk bulunmamaktadır, korumasız kenar oluşmuştur",
+      },
+      consequence_class: "permanent_disability",
+    }),
+  ]);
+  assertEquals(
+    product.findings[0].title,
+    "Korkuluk sisteminde ara korkuluk eksikliği",
+  );
+});
+
+Deno.test("uncapped rebar is scored as a missing barrier, not a reversible cut", () => {
+  // Exposed starter bars over a walked slab published at FK 42: the mechanism
+  // cap clipped severity to 7 and the inherent-hazard rule floored probability
+  // at 1, even though the fact declares an absent barrier.
+  const product = build([
+    fact({
+      assessment_basis: "visible_inherent_hazard",
+      entity: {
+        entity_ref: "donati_1",
+        equipment_family: "Betonarme yapı",
+        component: "Donatı çubukları",
+        identity_basis: "döşemeden yukarı uzanan filiz demirleri",
+        identity_confidence: "high",
+      },
+      observed_condition: {
+        condition_code: "unguarded_sharp_protrusion",
+        short_text: "Korumasız sivri donatı çubukları",
+      },
+      mechanism_code: "sharp_edge_contact",
+      hazard_mechanism: "Başlıksız donatı ucuna saplanma",
+      credible_event_path:
+        "Çalışan dengesini kaybeder ve başlıksız donatı ucuna saplanır",
+      barrier_state: "absent_or_failed_event_direct",
+      consequence_class: "permanent_disability",
+      frequency_basis: "sector_scene_proxy",
+      evidence: {
+        normalized_region: {
+          x: 0.2,
+          y: 0.6,
+          width: 0.3,
+          height: 0.3,
+          is_global: false,
+        },
+        affirmative_cues: [
+          "Betonarme yapıdan yukarı doğru uzanan açıkta donatı çubukları",
+        ],
+      },
+    }),
+  ]);
+  assertEquals(Number(product.findings[0].fk_probability), 6);
+  assertEquals(Number(product.findings[0].fk_severity), 15);
+});

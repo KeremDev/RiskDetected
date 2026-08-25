@@ -279,11 +279,16 @@ Deno.test("same fact changes only F under different sector priors", () => {
   assertEquals(construction.fk_severity, manufacturing.fk_severity);
   assertEquals(construction.fk_frequency, 3);
   assertEquals(manufacturing.fk_frequency, 6);
-  assertEquals(construction.needs_field_verification, true);
+  // The prior estimates how often exposure recurs; it is not a doubt about
+  // what the photo shows. Flagging every finding it touched made
+  // needs_field_verification true on all five findings of a live run, against
+  // the model's own "Görsel kanıt yeterlidir". It stays a score reason code.
+  assertEquals(construction.needs_field_verification, false);
   assert(
-    (construction.field_verification_reason_codes as string[]).includes(
-      "sector_frequency_prior_unverified",
+    (construction.score_policy_reason_codes as string[]).some((code) =>
+      code.includes("sector")
     ),
+    JSON.stringify(construction.score_policy_reason_codes),
   );
 });
 
