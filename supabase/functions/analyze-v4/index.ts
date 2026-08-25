@@ -1,0 +1,1081 @@
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { AnalysisServiceTier } from "../_shared/analysis-compute-profile.ts";
+import { resolveVNextConfig } from "../analyze-vnext/compute-profile.ts";
+import {
+  getSectorProfile,
+  resolveVNextSectorSelection,
+} from "../analyze-vnext/sector-profile.ts";
+import {
+  assertCriticalCandidateFates,
+  criticalDemotions,
+  routeCandidates,
+} from "./claim-router.ts";
+import {
+  type NormalizedCandidate,
+  type ProviderPhotoOutput,
+  type RoutedItem,
+  V4_ASSURANCE_VERSION,
+  V4_COVERAGE_VERSION,
+  V4_DOMAIN_SCHEMA_VERSION,
+  V4_ENGINE_VERSION,
+  V4_PROMPT_VERSION,
+  V4_PROVIDER_CONTRACT_VERSION,
+  V4_QUALITY_TRACE_VERSION,
+  V4_REPORT_PROJECTION_VERSION,
+  V4_ROUTER_VERSION,
+  V4_STANDARDS_VERSION,
+} from "./contracts.ts";
+import {
+  activatedModulesFromScene,
+  initialActiveModules,
+  missingCoreCoverage,
+  recoverCoverageDeterministically,
+} from "./dynamic-modules.ts";
+import { normalizeCandidates } from "./evidence-normalizer.ts";
+import { assertV4PromptIntegrity, sha256Text } from "./prompt-integrity.ts";
+import { buildV4PhotoPrompt, V4_PROMPT_COMMON } from "./prompt.ts";
+import {
+  buildCoverageRepairPrompt,
+  callV4Gemini,
+  V4ProviderError,
+  type V4ProviderResult,
+} from "./provider.ts";
+import {
+  buildTargetedQueue,
+  mergeTargetedOutput,
+  type TargetedGroup,
+  targetedPrompt,
+} from "./targeted-queue.ts";
+
+type JobBody = Record<string, unknown> & {
+  __worker?: boolean;
+  pipeline_version?: number;
+  job_mode?: string;
+  user_id?: string;
+  analysis_id?: string;
+  __queue_msg_id?: number;
+  __job_generation?: number;
+  __worker_claim_token?: string;
+  request_id?: string;
+  support_id?: string;
+  photo_paths?: unknown[];
+};
+
+type PhotoInput = {
+  photoID: string | null;
+  photoIndex: number;
+  storagePath: string;
+  mimeType: string;
+  base64: string;
+};
+
+type PhotoResult = {
+  photo: PhotoInput;
+  output: ProviderPhotoOutput;
+  usage: V4ProviderResult["usage"] | null;
+  attemptCount: number;
+  reused: boolean;
+  coverageRecovery?: {
+    issues: string[];
+    recoveredModules: string[];
+  };
+};
+
+function json(status: number, body: Record<string, unknown>) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.flatMap((item) =>
+      typeof item === "string" && item.trim() ? [item.trim()] : []
+    )
+    : [];
+}
+
+function safe(value: unknown, max = 180): string {
+  return String(value).replace(/Bearer\s+\S+/gi, "Bearer [redacted]").slice(
+    0,
+    max,
+  );
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let index = 0; index < bytes.length; index += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  }
+  return btoa(binary);
+}
+
+function sectorPrompt(sectorID: string | null): string {
+  const profile = getSectorProfile(sectorID);
+  if (!profile) return "";
+  const equipment = profile.criticalEquipment.map((item) =>
+    `${item.labels.tr}: ${item.components.join(", ")} [${
+      item.checkCodes.join(", ")
+    }]`
+  ).join("; ");
+  return [
+    `Sektör=${profile.sectorId}`,
+    `Zorunlu tarama=${profile.mandatoryModules.join(", ")}`,
+    `Öncelikli tarama=${profile.priorityModules.join(", ")}`,
+    `Görünürse kritik ekipman=${equipment}`,
+    `Ölümcül mekanizma çapaları=${profile.fatalMechanismAnchors.join("; ")}`,
+    `Negatif varsayım kodları=${profile.negativeRuleCodes.join(", ")}`,
+    "Bu bilgi yalnız tarama önceliğidir; görünür kanıt, tehlike veya şiddet değildir.",
+  ].join("\n");
+}
+
+function providerKey(): string | null {
+  return Deno.env.get("GEMINI_API_KEY_PAID") ??
+    Deno.env.get("GEMINI_PAID_API_KEY") ?? null;
+}
+
+// deno-lint-ignore no-explicit-any
+async function recordAttempt(supabase: any, params: {
+  attemptID: string;
+  userID: string;
+  engineRunID: string;
+  photoRunID: string | null;
+  kind:
+    | "primary"
+    | "technical_retry"
+    | "provider_fallback"
+    | "targeted_reinspection";
+  number: number;
+  model: string;
+  state: "persisted" | "failed";
+  result?: V4ProviderResult;
+  error?: V4ProviderError;
+  computeProfile: string;
+  providerPool: string;
+  requestedTier: AnalysisServiceTier;
+  fallbackReason?: string | null;
+  promptSHA256: string;
+  promptBundleSHA256: string;
+  maxOutputTokens: number;
+}) {
+  const usage = params.result?.usage ?? params.error?.usage;
+  const payload = {
+    p_attempt_id: params.attemptID,
+    p_user_id: params.userID,
+    p_engine_run_id: params.engineRunID,
+    p_photo_run_id: params.photoRunID,
+    p_attempt_kind: params.kind,
+    p_attempt_number: params.number,
+    p_provider: "gemini",
+    p_model: params.model,
+    p_state: params.state,
+    p_provider_request_id: params.result?.providerRequestID ??
+      params.error?.providerRequestID ?? null,
+    p_input_tokens: usage?.inputTokens ?? 0,
+    p_output_tokens: usage?.outputTokens ?? 0,
+    p_reasoning_tokens: usage?.reasoningTokens ?? 0,
+    p_cached_input_tokens: usage?.cachedInputTokens ?? 0,
+    p_cost_usd: usage?.costUSD ?? 0,
+    p_duration_ms: params.result?.durationMs ?? params.error?.durationMs ??
+      null,
+    p_http_status: params.result?.httpStatus ?? params.error?.httpStatus ??
+      null,
+    p_error_code: params.error?.code ?? null,
+    p_compute_profile: params.computeProfile,
+    p_provider_pool: params.providerPool,
+    p_requested_service_tier: params.requestedTier,
+    p_effective_service_tier: params.result?.effectiveServiceTier ??
+      params.error?.effectiveServiceTier ?? null,
+    p_standard_equivalent_cost_usd: usage?.standardEquivalentCostUSD ?? 0,
+    p_service_tier_fallback_reason: params.fallbackReason ?? null,
+    p_prompt_sha256: params.promptSHA256,
+    p_prompt_bundle_sha256: params.promptBundleSHA256,
+    p_max_output_tokens: params.maxOutputTokens,
+  };
+  let failure = "attempt_record_failed";
+  for (let retry = 0; retry < 2; retry += 1) {
+    const { data, error } = await supabase.rpc(
+      "record_analysis_provider_attempt_v5",
+      payload,
+    );
+    if (!error && data?.ok === true) return;
+    failure = safe(error?.message ?? data?.reason_code ?? data?.state);
+  }
+  throw new Error(`v4_provider_telemetry_failed:${failure}`);
+}
+
+// deno-lint-ignore no-explicit-any
+async function checkpointPhoto(supabase: any, params: {
+  userID: string;
+  engineRunID: string;
+  photo: PhotoInput;
+  model: string;
+  status: "completed" | "failed";
+  attemptCount: number;
+  output?: ProviderPhotoOutput;
+  result?: V4ProviderResult;
+  errorCode?: string;
+}): Promise<string | null> {
+  const serialized = params.output ? JSON.stringify(params.output) : "";
+  const { data, error } = await supabase.rpc(
+    "checkpoint_analysis_photo_run_v3",
+    {
+      p_user_id: params.userID,
+      p_engine_run_id: params.engineRunID,
+      p_photo_id: params.photo.photoID,
+      p_photo_index: params.photo.photoIndex,
+      p_storage_path: params.photo.storagePath,
+      p_provider: "gemini",
+      p_model: params.model,
+      p_status: params.status,
+      p_attempt_count: params.attemptCount,
+      p_normalized_output: params.output ?? null,
+      p_output_sha256: serialized ? await sha256Text(serialized) : null,
+      p_input_tokens: params.result?.usage.inputTokens ?? 0,
+      p_output_tokens: params.result?.usage.outputTokens ?? 0,
+      p_reasoning_tokens: params.result?.usage.reasoningTokens ?? 0,
+      p_cost_usd: params.result?.usage.costUSD ?? 0,
+      p_duration_ms: params.result?.durationMs ?? null,
+      p_error_code: params.errorCode ?? null,
+    },
+  );
+  if (error || data?.ok !== true) {
+    throw new Error(
+      `photo_checkpoint_failed:${safe(error?.message ?? data?.state)}`,
+    );
+  }
+  return typeof data.photo_run_id === "string" ? data.photo_run_id : null;
+}
+
+async function analyzePhoto(params: {
+  // deno-lint-ignore no-explicit-any
+  supabase: any;
+  userID: string;
+  engineRunID: string;
+  photo: PhotoInput;
+  prompt: string;
+  model: string;
+  key: string;
+  computeProfile: "premium" | "economy";
+  providerPool: string;
+  serviceTier: AnalysisServiceTier;
+  thinking: number;
+  retryThinking: number;
+  maxOutput: number;
+  requiredModules: ReturnType<typeof initialActiveModules>;
+  promptSHA256: string;
+  promptBundleSHA256: string;
+}): Promise<PhotoResult> {
+  const attempts: Array<{
+    kind: "primary" | "technical_retry" | "provider_fallback";
+    tier: AnalysisServiceTier;
+    thinking: number;
+    fallbackReason?: string;
+    prompt: string;
+  }> = [{
+    kind: "primary",
+    tier: params.serviceTier,
+    thinking: params.thinking,
+    prompt: params.prompt,
+  }];
+  let attempt = 0;
+  let lastError: V4ProviderError | null = null;
+  let schemaRetryAdded = false;
+  let flexFallbackAdded = false;
+  while (attempt < attempts.length) {
+    const spec = attempts[attempt];
+    attempt += 1;
+    const attemptID = crypto.randomUUID();
+    try {
+      const result = await callV4Gemini({
+        apiKey: params.key,
+        model: params.model,
+        prompt: spec.prompt,
+        imageData: params.photo.base64,
+        mimeType: params.photo.mimeType,
+        timeoutMs: 110_000,
+        thinkingBudget: spec.thinking,
+        maxOutputTokens: params.maxOutput,
+        serviceTier: spec.tier,
+        requiredModules: params.requiredModules,
+      });
+      const photoRunID = await checkpointPhoto(params.supabase, {
+        userID: params.userID,
+        engineRunID: params.engineRunID,
+        photo: params.photo,
+        model: params.model,
+        status: "completed",
+        attemptCount: attempt,
+        output: result.output,
+        result,
+      });
+      await recordAttempt(params.supabase, {
+        attemptID,
+        userID: params.userID,
+        engineRunID: params.engineRunID,
+        photoRunID,
+        kind: spec.kind,
+        number: attempt,
+        model: params.model,
+        state: "persisted",
+        result,
+        computeProfile: params.computeProfile,
+        providerPool: spec.tier === "flex" ? "paid_flex" : "paid_standard",
+        requestedTier: spec.tier,
+        fallbackReason: spec.fallbackReason,
+        promptSHA256: params.promptSHA256,
+        promptBundleSHA256: params.promptBundleSHA256,
+        maxOutputTokens: params.maxOutput,
+      });
+      return {
+        photo: params.photo,
+        output: result.output,
+        usage: result.usage,
+        attemptCount: attempt,
+        reused: false,
+      };
+    } catch (unknownError) {
+      const error = unknownError instanceof V4ProviderError
+        ? unknownError
+        : new V4ProviderError(
+          safe(unknownError),
+          "provider_unknown_error",
+          null,
+          0,
+          false,
+        );
+      lastError = error;
+      // Coverage-only defects do not justify paying for a second vision pass.
+      // The candidate payload already passed the semantic schema; close only
+      // the missing coverage rows deterministically and preserve its facts.
+      if (
+        error.schemaIssues.length > 0 && error.recoverableOutput && error.usage
+      ) {
+        const recovery = recoverCoverageDeterministically(
+          error.recoverableOutput,
+          params.requiredModules,
+        );
+        const recoveredResult: V4ProviderResult = {
+          output: recovery.output,
+          providerRequestID: error.providerRequestID ?? null,
+          durationMs: error.durationMs,
+          httpStatus: error.httpStatus ?? 200,
+          requestedServiceTier: spec.tier,
+          effectiveServiceTier: error.effectiveServiceTier ?? spec.tier,
+          usage: error.usage,
+        };
+        const photoRunID = await checkpointPhoto(params.supabase, {
+          userID: params.userID,
+          engineRunID: params.engineRunID,
+          photo: params.photo,
+          model: params.model,
+          status: "completed",
+          attemptCount: attempt,
+          output: recovery.output,
+          result: recoveredResult,
+        });
+        await recordAttempt(params.supabase, {
+          attemptID,
+          userID: params.userID,
+          engineRunID: params.engineRunID,
+          photoRunID,
+          kind: spec.kind,
+          number: attempt,
+          model: params.model,
+          state: "persisted",
+          result: recoveredResult,
+          computeProfile: params.computeProfile,
+          providerPool: spec.tier === "flex" ? "paid_flex" : "paid_standard",
+          requestedTier: spec.tier,
+          fallbackReason: "deterministic_coverage_recovery",
+          promptSHA256: params.promptSHA256,
+          promptBundleSHA256: params.promptBundleSHA256,
+          maxOutputTokens: params.maxOutput,
+        });
+        return {
+          photo: params.photo,
+          output: recovery.output,
+          usage: recovery.issues.length > 0 ? recoveredResult.usage : null,
+          attemptCount: attempt,
+          reused: false,
+          coverageRecovery: {
+            issues: recovery.issues,
+            recoveredModules: recovery.recoveredModules,
+          },
+        };
+      }
+      await recordAttempt(params.supabase, {
+        attemptID,
+        userID: params.userID,
+        engineRunID: params.engineRunID,
+        photoRunID: null,
+        kind: spec.kind,
+        number: attempt,
+        model: params.model,
+        state: "failed",
+        error,
+        computeProfile: params.computeProfile,
+        providerPool: spec.tier === "flex" ? "paid_flex" : "paid_standard",
+        requestedTier: spec.tier,
+        fallbackReason: spec.fallbackReason,
+        promptSHA256: params.promptSHA256,
+        promptBundleSHA256: params.promptBundleSHA256,
+        maxOutputTokens: params.maxOutput,
+      });
+      if (!schemaRetryAdded && error.code === "provider_schema_invalid") {
+        schemaRetryAdded = true;
+        attempts.push({
+          kind: "technical_retry",
+          tier: spec.tier,
+          thinking: params.retryThinking,
+          prompt: error.schemaIssues.length > 0
+            ? buildCoverageRepairPrompt(
+              params.prompt,
+              error.schemaIssues,
+              params.requiredModules,
+            )
+            : `${params.prompt}\n\nTEKNİK SÖZLEŞME DÜZELTMESİ\n- Önceki JSON şema doğrulamasından geçmedi (${
+              safe(error.message)
+            }). Aynı görsel kanıta bağlı kalarak eksiksiz tek JSON üret.`,
+        });
+      } else if (
+        !flexFallbackAdded && params.computeProfile === "economy" &&
+        spec.tier === "flex" &&
+        [
+          "provider_rate_limited",
+          "provider_unavailable",
+          "provider_transport_error",
+        ].includes(error.code)
+      ) {
+        flexFallbackAdded = true;
+        attempts.push({
+          kind: "provider_fallback",
+          tier: "standard",
+          thinking: params.thinking,
+          fallbackReason: error.code,
+          prompt: spec.prompt,
+        });
+      }
+    }
+  }
+  await checkpointPhoto(params.supabase, {
+    userID: params.userID,
+    engineRunID: params.engineRunID,
+    photo: params.photo,
+    model: params.model,
+    status: "failed",
+    attemptCount: attempt,
+    errorCode: lastError?.code ?? "photo_analysis_failed",
+  });
+  throw lastError ?? new Error("photo_analysis_failed");
+}
+
+function boundedVisibleItems(items: RoutedItem[], maximum = 8): RoutedItem[] {
+  const internal = items.filter((item) =>
+    !["observed_finding", "assurance_requirement", "verification_request"]
+      .includes(item.item_class)
+  );
+  const visible = items.filter((item) => !internal.includes(item));
+  const critical = visible.filter((item) =>
+    ["fatal", "permanent"].includes(item.criticality)
+  );
+  const rest = visible.filter((item) => !critical.includes(item));
+  const kept = [
+    ...critical,
+    ...rest.slice(0, Math.max(0, maximum - critical.length)),
+    ...internal,
+  ]
+    .sort((a, b) => a.display_order - b.display_order);
+  kept.forEach((item, index) => {
+    item.ordinal = index + 1;
+    item.display_order = index + 1;
+  });
+  return kept;
+}
+
+// deno-lint-ignore no-explicit-any
+async function checkpointTargeted(supabase: any, params: {
+  userID: string;
+  engineRunID: string;
+  group: TargetedGroup;
+  status: "queued" | "running" | "completed" | "failed" | "budget_excluded";
+  attemptID?: string | null;
+  result?: unknown;
+}) {
+  const { error } = await supabase.rpc("checkpoint_analysis_targeted_run_v4", {
+    p_user_id: params.userID,
+    p_engine_run_id: params.engineRunID,
+    p_region_key: params.group.regionKey,
+    p_candidate_ids: params.group.candidateIDs,
+    p_photo_index: params.group.photoIndex,
+    p_status: params.status,
+    p_provider_attempt_id: params.attemptID ?? null,
+    p_result: params.result ?? null,
+  });
+  if (error) {
+    console.warn("v4 targeted checkpoint skipped", safe(error.message));
+  }
+}
+
+serve(async (req) => {
+  if (req.method !== "POST") return json(405, { code: "method_not_allowed" });
+  const started = Date.now();
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) {
+    return json(500, { code: "supabase_credentials_missing" });
+  }
+  if (req.headers.get("Authorization") !== `Bearer ${serviceRoleKey}`) {
+    return json(401, { code: "worker_auth_required" });
+  }
+  let body: JobBody;
+  try {
+    body = await req.json();
+  } catch {
+    return json(400, { code: "invalid_json" });
+  }
+  const userID = typeof body.user_id === "string" ? body.user_id : "";
+  const analysisID = typeof body.analysis_id === "string"
+    ? body.analysis_id
+    : "";
+  const msgID = Number(body.__queue_msg_id);
+  const generation = Number(body.__job_generation);
+  const claimToken = typeof body.__worker_claim_token === "string"
+    ? body.__worker_claim_token
+    : "";
+  const requestID = typeof body.request_id === "string"
+    ? body.request_id.slice(0, 120)
+    : crypto.randomUUID();
+  const supportID = typeof body.support_id === "string"
+    ? body.support_id.slice(0, 120)
+    : crypto.randomUUID().slice(0, 12);
+  if (
+    body.__worker !== true || Number(body.pipeline_version) !== 2 ||
+    body.job_mode === "repair" ||
+    !userID || !analysisID || !claimToken || !Number.isInteger(msgID) ||
+    msgID <= 0 ||
+    !Number.isInteger(generation) || generation <= 0
+  ) {
+    return json(400, { code: "v4_worker_contract_invalid" });
+  }
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  let engineRunID: string | null = null;
+  try {
+    const { data: claim, error: claimError } = await supabase.rpc(
+      "validate_analysis_job_claim_v2",
+      {
+        p_user_id: userID,
+        p_analysis_id: analysisID,
+        p_msg_id: msgID,
+        p_generation: generation,
+        p_claim_token: claimToken,
+      },
+    );
+    if (claimError || claim?.ok !== true) {
+      return json(409, { code: String(claim?.state ?? "lost_claim") });
+    }
+    const { data: begin, error: beginError } = await supabase.rpc(
+      "begin_analysis_engine_run_v4",
+      {
+        p_user_id: userID,
+        p_analysis_id: analysisID,
+        p_msg_id: msgID,
+        p_generation: generation,
+        p_claim_token: claimToken,
+        p_job_mode: "analysis",
+      },
+    );
+    if (
+      beginError || begin?.ok !== true ||
+      typeof begin.engine_run_id !== "string"
+    ) {
+      return json(409, {
+        code: String(begin?.state ?? "v4_engine_run_rejected"),
+      });
+    }
+    engineRunID = begin.engine_run_id;
+    if (begin.state === "completed") {
+      return json(200, {
+        ok: true,
+        status: "already_completed",
+        code: "completed",
+      });
+    }
+    const snapshot = record(begin.config_snapshot);
+    const engineConfig = record(snapshot.engine_config);
+    const promptSHA = await assertV4PromptIntegrity(engineConfig.prompt_sha256);
+    if (
+      begin.engine_version !== V4_ENGINE_VERSION ||
+      begin.schema_version !== V4_DOMAIN_SCHEMA_VERSION ||
+      begin.prompt_version !== V4_PROMPT_VERSION ||
+      begin.policy_version !== V4_ROUTER_VERSION
+    ) {
+      throw new Error("v4_runtime_snapshot_mismatch");
+    }
+
+    const { data: analysis, error: analysisError } = await supabase.from(
+      "analyses",
+    )
+      .select(
+        "id,user_id,status,analysis_sector,output_language,plan_at_creation,canvas,localization_snapshot",
+      )
+      .eq("id", analysisID).eq("user_id", userID).maybeSingle();
+    if (analysisError || !analysis) throw new Error("analysis_not_found");
+    const requestedPaths = [...new Set(strings(body.photo_paths))].slice(0, 3);
+    if (requestedPaths.length === 0) throw new Error("photo_required");
+    const { data: rows, error: photoError } = await supabase.from("photos")
+      .select("id,storage_path,mime_type,sequence_index")
+      .eq("analysis_id", analysisID).eq("user_id", userID).in(
+        "storage_path",
+        requestedPaths,
+      );
+    if (photoError) {
+      throw new Error(`photo_metadata_failed:${safe(photoError.message)}`);
+    }
+    const byPath = new Map(
+      (rows ?? []).map((
+        row: Record<string, unknown>,
+      ) => [String(row.storage_path), row]),
+    );
+    const ordered = requestedPaths.sort((a, b) =>
+      Number(byPath.get(a)?.sequence_index ?? 99) -
+      Number(byPath.get(b)?.sequence_index ?? 99)
+    );
+    const photos: PhotoInput[] = await Promise.all(
+      ordered.map(async (path, fallbackIndex) => {
+        const row = byPath.get(path);
+        if (!row) throw new Error("photo_ownership_mismatch");
+        const { data: blob, error } = await supabase.storage.from("photos")
+          .download(path);
+        if (error || !blob) {
+          throw new Error(`photo_download_failed:${safe(error?.message)}`);
+        }
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        if (bytes.byteLength === 0 || bytes.byteLength > 15 * 1024 * 1024) {
+          throw new Error("photo_size_invalid");
+        }
+        return {
+          photoID: typeof row.id === "string" ? row.id : null,
+          photoIndex: Number.isInteger(Number(row.sequence_index))
+            ? Number(row.sequence_index)
+            : fallbackIndex + 1,
+          storagePath: path,
+          mimeType: typeof row.mime_type === "string"
+            ? row.mime_type
+            : "image/jpeg",
+          base64: bytesToBase64(bytes),
+        };
+      }),
+    );
+    if (
+      photos.map((photo) => photo.photoIndex).sort().some((value, index) =>
+        value !== index + 1
+      )
+    ) throw new Error("photo_sequence_invalid");
+    const config = resolveVNextConfig(snapshot, photos.length);
+    if (config.primaryProvider !== "gemini") {
+      throw new Error("v4_gemini_only_contract");
+    }
+    const key = providerKey();
+    if (!key) throw new Error("missing_ai_secret");
+    const sectorSelection = resolveVNextSectorSelection(
+      analysis.analysis_sector,
+      body.analysis_sector,
+    );
+    const sectorID = sectorSelection.sectorID;
+    const language = typeof analysis.output_language === "string"
+      ? analysis.output_language
+      : "tr";
+    const savedRuns: Record<string, unknown>[] = Array.isArray(begin.photo_runs)
+      ? begin.photo_runs.map(record)
+      : [];
+    const saved = new Map<number, ProviderPhotoOutput>(
+      savedRuns.filter((item: Record<string, unknown>) =>
+        item.status === "completed" && item.normalized_output
+      ).map((item: Record<string, unknown>) => [
+        Number(item.photo_index),
+        item.normalized_output as ProviderPhotoOutput,
+      ]),
+    );
+    const results = await Promise.all(
+      photos.map(async (photo): Promise<PhotoResult> => {
+        const checkpoint = saved.get(photo.photoIndex);
+        if (checkpoint) {
+          return {
+            photo,
+            output: checkpoint,
+            usage: null,
+            attemptCount: 0,
+            reused: true,
+          };
+        }
+        const prompt = buildV4PhotoPrompt({
+          photoIndex: photo.photoIndex,
+          photoCount: photos.length,
+          outputLanguage: language,
+          sectorBlock: sectorPrompt(sectorID),
+          analysisContext: String(analysis.canvas ?? "general"),
+          activeModules: initialActiveModules(sectorID),
+        });
+        return await analyzePhoto({
+          supabase,
+          userID,
+          engineRunID: engineRunID!,
+          photo,
+          prompt,
+          model: config.primaryModel,
+          key,
+          computeProfile: config.computeProfile,
+          providerPool: config.providerPool,
+          serviceTier: config.requestedServiceTier,
+          thinking: config.geminiThinkingBudget,
+          retryThinking: config.geminiRetryThinkingBudget,
+          maxOutput: config.maxProviderOutputTokens,
+          requiredModules: initialActiveModules(sectorID),
+          promptSHA256: promptSHA,
+          promptBundleSHA256: promptSHA,
+        });
+      }),
+    );
+
+    let candidates = results.flatMap((result) =>
+      normalizeCandidates(result.output, result.photo.photoIndex)
+    );
+    const targetedQueue = buildTargetedQueue(candidates, config.computeProfile);
+    await Promise.all(
+      targetedQueue.budgetExcluded.map((group) =>
+        checkpointTargeted(supabase, {
+          userID,
+          engineRunID: engineRunID!,
+          group,
+          status: "budget_excluded",
+          result: {
+            preserved_as: "verification_request",
+            reason: "targeted_budget_excluded",
+          },
+        })
+      ),
+    );
+    const targetedOutcomes = await Promise.all(
+      targetedQueue.selected.map(async (group) => {
+        await checkpointTargeted(supabase, {
+          userID,
+          engineRunID: engineRunID!,
+          group,
+          status: "running",
+        });
+        const photo = photos.find((item) =>
+          item.photoIndex === group.photoIndex
+        )!;
+        const attemptID = crypto.randomUUID();
+        try {
+          const result = await callV4Gemini({
+            apiKey: key,
+            model: config.primaryModel,
+            prompt: `${V4_PROMPT_COMMON}\n${targetedPrompt(group)}`,
+            imageData: photo.base64,
+            mimeType: photo.mimeType,
+            timeoutMs: 80_000,
+            thinkingBudget: config.geminiTargetedThinkingBudget,
+            maxOutputTokens: config.targetedMaxProviderOutputTokens,
+            serviceTier: config.requestedServiceTier,
+            // A regional reinspection must close only the module represented
+            // by that target. Requiring Core-7 here turns an otherwise valid
+            // focused answer into a schema failure and wastes the call.
+            requiredModules: [
+              ...new Set(
+                group.candidates.map((candidate) => candidate.module_id),
+              ),
+            ],
+          });
+          await recordAttempt(supabase, {
+            attemptID,
+            userID,
+            engineRunID: engineRunID!,
+            photoRunID: null,
+            kind: "targeted_reinspection",
+            number: 1,
+            model: config.primaryModel,
+            state: "persisted",
+            result,
+            computeProfile: config.computeProfile,
+            providerPool: config.providerPool,
+            requestedTier: config.requestedServiceTier,
+            promptSHA256: promptSHA,
+            promptBundleSHA256: promptSHA,
+            maxOutputTokens: config.targetedMaxProviderOutputTokens,
+          });
+          await checkpointTargeted(supabase, {
+            userID,
+            engineRunID: engineRunID!,
+            group,
+            status: "completed",
+            attemptID,
+            result: result.output,
+          });
+          return {
+            group,
+            candidates: normalizeCandidates(result.output, group.photoIndex),
+            output: result.output,
+            usage: result.usage,
+          };
+        } catch (unknownError) {
+          const error = unknownError instanceof V4ProviderError
+            ? unknownError
+            : new V4ProviderError(
+              safe(unknownError),
+              "targeted_failed",
+              null,
+              0,
+              false,
+            );
+          await recordAttempt(supabase, {
+            attemptID,
+            userID,
+            engineRunID: engineRunID!,
+            photoRunID: null,
+            kind: "targeted_reinspection",
+            number: 1,
+            model: config.primaryModel,
+            state: "failed",
+            error,
+            computeProfile: config.computeProfile,
+            providerPool: config.providerPool,
+            requestedTier: config.requestedServiceTier,
+            promptSHA256: promptSHA,
+            promptBundleSHA256: promptSHA,
+            maxOutputTokens: config.targetedMaxProviderOutputTokens,
+          });
+          await checkpointTargeted(supabase, {
+            userID,
+            engineRunID: engineRunID!,
+            group,
+            status: "failed",
+            attemptID,
+            result: { error_code: error.code },
+          });
+          return {
+            group,
+            candidates: [] as NormalizedCandidate[],
+            output: null,
+            usage: null,
+          };
+        }
+      }),
+    );
+    for (const targeted of targetedOutcomes) {
+      candidates = mergeTargetedOutput(
+        candidates,
+        targeted.group,
+        targeted.candidates,
+        targeted.output,
+      );
+    }
+    const routed = routeCandidates({
+      candidates,
+      photoOutputs: results.map((result) => ({
+        photoIndex: result.photo.photoIndex,
+        output: result.output,
+      })),
+      sectorID,
+    });
+    assertCriticalCandidateFates(
+      candidates,
+      routed.items,
+      routed.hardRejections,
+      routed.ledger,
+    );
+    const items = boundedVisibleItems(routed.items);
+    const coverageMatrix = results.map((result) => ({
+      photo_index: result.photo.photoIndex,
+      core_missing: missingCoreCoverage(result.output),
+      active_modules: activatedModulesFromScene(result.output, sectorID),
+      outcomes: result.output.module_coverage.map((entry) => ({
+        module_id: entry.module_id,
+        outcome: entry.outcome,
+      })),
+      coverage_recovery: result.coverageRecovery ?? null,
+    }));
+    const visible = items.filter((item) =>
+      ["observed_finding", "assurance_requirement", "verification_request"]
+        .includes(item.item_class)
+    );
+    const bundle = {
+      candidates,
+      items,
+      routing_ledger: routed.ledger,
+      hard_rejections: routed.hardRejections,
+      quality_trace: {
+        prompt_sha256: promptSHA,
+        version_snapshot: {
+          engine: V4_ENGINE_VERSION,
+          provider_contract: V4_PROVIDER_CONTRACT_VERSION,
+          domain_schema: V4_DOMAIN_SCHEMA_VERSION,
+          prompt: V4_PROMPT_VERSION,
+          router: V4_ROUTER_VERSION,
+          coverage: V4_COVERAGE_VERSION,
+          assurance: V4_ASSURANCE_VERSION,
+          standards: V4_STANDARDS_VERSION,
+          quality_trace: V4_QUALITY_TRACE_VERSION,
+          report_projection: V4_REPORT_PROJECTION_VERSION,
+        },
+        photo_coverage_matrix: coverageMatrix,
+        candidate_counts: {
+          raw: candidates.length,
+          critical: candidates.filter((item) =>
+            ["fatal", "permanent"].includes(item.criticality)
+          ).length,
+        },
+        routing_counts: Object.fromEntries(
+          [
+            "observed_finding",
+            "assurance_requirement",
+            "verification_request",
+            "positive_control",
+            "not_assessable",
+          ].map((klass) => [
+            klass,
+            items.filter((item) =>
+              item.item_class === klass
+            ).length,
+          ]),
+        ),
+        critical_silent_drop_count: 0,
+        // A critical candidate that had a visible, reachable event path and
+        // still did not become a finding. Zero silent drops used to be
+        // reported while exactly this was happening.
+        critical_demotions: [...criticalDemotions],
+        targeted_queue: {
+          selected: targetedQueue.selected.map((item) => item.regionKey),
+          budget_excluded: targetedQueue.budgetExcluded.map((item) =>
+            item.regionKey
+          ),
+          limit: config.computeProfile === "premium" ? 2 : 1,
+        },
+        standards_trace: {
+          registry_version: V4_STANDARDS_VERSION,
+          free_text_references_allowed: false,
+        },
+        provider_usage: {
+          compute_profile: config.computeProfile,
+          photo_count: photos.length,
+          thinking_budget: config.geminiThinkingBudget,
+          input_tokens: results.reduce(
+            (sum, item) => sum + (item.usage?.inputTokens ?? 0),
+            0,
+          ) + targetedOutcomes.reduce(
+            (sum, item) => sum + (item.usage?.inputTokens ?? 0),
+            0,
+          ),
+          visible_output_tokens: results.reduce(
+            (sum, item) => sum + (item.usage?.outputTokens ?? 0),
+            0,
+          ) + targetedOutcomes.reduce(
+            (sum, item) => sum + (item.usage?.outputTokens ?? 0),
+            0,
+          ),
+          thinking_tokens: results.reduce(
+            (sum, item) => sum + (item.usage?.reasoningTokens ?? 0),
+            0,
+          ) + targetedOutcomes.reduce(
+            (sum, item) => sum + (item.usage?.reasoningTokens ?? 0),
+            0,
+          ),
+          cost_usd: results.reduce(
+            (sum, item) => sum + (item.usage?.costUSD ?? 0),
+            0,
+          ) + targetedOutcomes.reduce(
+            (sum, item) => sum + (item.usage?.costUSD ?? 0),
+            0,
+          ),
+        },
+        quality_flags: [
+          ...(sectorSelection.requestMismatch
+            ? ["sector_request_database_mismatch"]
+            : []),
+          ...(visible.length === 0 ? ["no_visible_items"] : []),
+          ...(results.some((result) => result.coverageRecovery)
+            ? ["deterministic_coverage_recovery_used"]
+            : []),
+        ],
+      },
+      analysis_result: {
+        status_message: `Analiz tamamlandı. Destek kodu: ${supportID}`,
+        ai_summary: visible.length > 0
+          ? `${visible.length} kayıt değerlendirildi; yalnız doğrudan gözlenen bulgular skorlandı.`
+          : "Görüntüde kullanıcıya gösterilecek yeterli kanıt bulunamadı.",
+        duration_ms: Date.now() - started,
+      },
+    };
+    const { data: finalized, error: finalizeError } = await supabase.rpc(
+      "finalize_analysis_result_v4",
+      {
+        p_user_id: userID,
+        p_analysis_id: analysisID,
+        p_msg_id: msgID,
+        p_generation: generation,
+        p_claim_token: claimToken,
+        p_engine_run_id: engineRunID,
+        p_bundle: bundle,
+      },
+    );
+    if (finalizeError || finalized?.ok !== true) {
+      throw new Error(
+        `v4_finalize_failed:${
+          safe(finalizeError?.message ?? finalized?.state)
+        }`,
+      );
+    }
+    return json(200, {
+      ok: true,
+      status: "completed",
+      code: "completed",
+      engine: V4_ENGINE_VERSION,
+      finding_count: finalized.finding_count,
+      request_id: requestID,
+      support_id: supportID,
+    });
+  } catch (error) {
+    const code =
+      safe(error instanceof Error ? error.message.split(":")[0] : error, 120) ||
+      "v4_analysis_failed";
+    console.error(
+      "v4 analysis failed",
+      JSON.stringify({ analysis_id: analysisID, request_id: requestID, code }),
+    );
+    if (engineRunID) {
+      await supabase.rpc("fail_analysis_engine_run_v3", {
+        p_user_id: userID,
+        p_engine_run_id: engineRunID,
+        p_error_code: code,
+      });
+    }
+    await supabase.rpc("record_analysis_job_failure_v2", {
+      p_user_id: userID,
+      p_analysis_id: analysisID,
+      p_msg_id: msgID,
+      p_generation: generation,
+      p_claim_token: claimToken,
+      p_error: code,
+      p_failure_code: code,
+      p_status_message: `Analiz tamamlanamadı. Destek kodu: ${supportID}`,
+      p_terminal: true,
+      p_raw_ai_response: { _engine: V4_ENGINE_VERSION, _support_id: supportID },
+    });
+    return json(500, {
+      ok: false,
+      code: "v4_analysis_failed",
+      support_id: supportID,
+    });
+  }
+});
