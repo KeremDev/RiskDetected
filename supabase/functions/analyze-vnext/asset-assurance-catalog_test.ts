@@ -42,16 +42,35 @@ Deno.test("a labelled container does raise chemical-management assurance", () =>
   );
 });
 
-Deno.test("a drum or IBC carries its own identification", () => {
-  // Drum/IBC geometry is itself a chemical-handling signal, unlike a pail.
+Deno.test("bulk vessels and containment furniture carry their own identification", () => {
   for (
     const summary of [
-      "Paletlenmiş 200 litrelik varil",
       "IBC tank sundurma altında",
       "Dökülme tavası üzerinde duran kap",
+      "Kimyasal depolama dolabında duran kap",
     ]
   ) {
     assert(
+      profileIDs([item({ visible_condition_summary: summary })]).includes(
+        "chemical_material_management",
+      ),
+      summary,
+    );
+  }
+});
+
+Deno.test("an unmarked drum is not a chemical inventory subject", () => {
+  // A plain blue barrel on a construction site produced an SDS and
+  // chemical-storage record whose own text read "kimyasal icerebilecek
+  // kaplar". Drum geometry was being treated as proof of contents.
+  for (
+    const summary of [
+      "Zeminde mavi renkli metal bir varil duruyor",
+      "Paletlenmiş 200 litrelik varil",
+      "Duvar dibinde plastik bidon",
+    ]
+  ) {
+    assertFalse(
       profileIDs([item({ visible_condition_summary: summary })]).includes(
         "chemical_material_management",
       ),

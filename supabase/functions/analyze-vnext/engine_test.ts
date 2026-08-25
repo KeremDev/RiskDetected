@@ -4092,7 +4092,7 @@ Deno.test("live etek sacı wording with an exposed edge is not rejected as absen
     },
     observed_condition: {
       condition_code: "missing_toeboard",
-      short_text: "Üst platform korkuluğunda etek sacı eksikliği",
+      short_text: "Üst platform korkuluğunda etek tahtası eksikliği",
     },
     evidence: {
       normalized_region: fact().evidence.normalized_region,
@@ -4119,7 +4119,7 @@ Deno.test("live etek sacı wording with an exposed edge is not rejected as absen
   assertEquals(product.findings.length, 1);
   assertEquals(
     product.findings[0].title,
-    "Üst platform korkuluğunda etek sacı eksikliği",
+    "Üst platform korkuluğunda etek tahtası eksikliği",
   );
   assertEquals(product.findings[0].fk_frequency, 6);
 });

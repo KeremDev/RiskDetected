@@ -1168,7 +1168,9 @@ function expectedVisibleBarrierMechanism(
   if (options.contextualFallBarrierAliasEnabled !== true) return null;
   const inferred = inferredBarrierMechanismFromCode(canonical);
   if (inferred) return inferred;
-  return hasContextualFallBarrierAliasEvidence(fact) ? "fall_from_height" : null;
+  return hasContextualFallBarrierAliasEvidence(fact)
+    ? "fall_from_height"
+    : null;
 }
 
 function factHasDirectPersonExposure(fact: HazardFactV3): boolean {
@@ -1936,6 +1938,13 @@ const CONTROL_CATALOG: Record<string, ControlCopy> = {
     en:
       "Restore guardrail or barrier continuity around the line penetration using suitable framing, intermediate rail and toe-board elements; verify opening dimensions and joint rigidity in the field.",
   },
+  protect_sharp_ends: {
+    hierarchy: "engineering",
+    tr:
+      "Açıkta kalan keskin uç ve kenarları uygun uç başlığı, kapak veya kenar koruması ile kapat; geçiş ve çalışma alanında korumasız uç bırakma.",
+    en:
+      "Cap exposed sharp ends and edges with suitable end caps, covers or edge protection; leave no unprotected end in access or work areas.",
+  },
   install_guard: {
     hierarchy: "engineering",
     tr:
@@ -2233,9 +2242,9 @@ const CONTROL_CATALOG: Record<string, ControlCopy> = {
   electrical_isolation: {
     hierarchy: "engineering",
     tr:
-      "Enerjiyi kes, gerilimsizliği doğrula ve açık iletken/mahfazayı uygun koruma sınıfıyla kalıcı olarak düzelt.",
+      "Enerjiyi kes, gerilimsizliği doğrula ve besleme hattını uygun koruma sınıfı, mekanik koruma ve güzergâh ile kalıcı olarak düzenle.",
     en:
-      "De-energize, verify absence of voltage, and permanently correct the exposed conductor/enclosure to the required protection class.",
+      "De-energize, verify absence of voltage, and permanently arrange the supply line with the required protection class, mechanical protection and routing.",
   },
   leak_control: {
     hierarchy: "engineering",
@@ -2701,6 +2710,24 @@ function inferredControlPlan(fact: HazardFactV3): ControlPlan {
       selectionReason: "mechanical_connection_condition",
     };
   }
+  // "Zeminde keskin uçları açıkta olan donatı demirleri" reached the fall
+  // branch because its text contains "kenar", and came back with collective
+  // fall protection and a storage-rack target. Mechanism decides this, not a
+  // word that both hazards happen to share.
+  if (fact.mechanism_code === "sharp_edge_contact") {
+    const onWalkingSurface =
+      /(?:zemin|ground|floor|gecis|walkway|yurume|yaya|access route)/u.test(
+        joined,
+      );
+    return {
+      corrective: onWalkingSurface ? "clear_walkway" : "restrict_access",
+      preventive: [
+        "protect_sharp_ends",
+        ...(onWalkingSurface ? ["housekeeping_program"] : []),
+      ],
+      selectionReason: "sharp_edge_exposure_condition",
+    };
+  }
   if (
     /koruyucu|guard|interlock|korkuluk|midrail|mid rail|bariyer|açık kenar|acik kenar/
       .test(joined)
@@ -2725,7 +2752,13 @@ function inferredControlPlan(fact: HazardFactV3): ControlPlan {
       selectionReason: "release_condition",
     };
   }
-  if (/yuksek|yüksek|kenar|fall/.test(joined)) {
+  if (
+    // fall_same_level is already handled by the housekeeping branch above, so
+    // it is unreachable here.
+    (fact.mechanism_code === "fall_from_height" ||
+      /yuksek|yüksek|fall/.test(joined)) &&
+    /yuksek|yüksek|kenar|fall|platform|doseme|döşeme|slab|edge/.test(joined)
+  ) {
     return {
       corrective: "restrict_access",
       preventive: ["install_fall_protection", "engineering_inspection"],
@@ -2920,6 +2953,12 @@ const ALLOWED_INTENTS_BY_REASON: Record<string, Set<string>> = {
     "engineering_inspection",
   ]),
   ppe_condition: new Set(["provide_ppe", "ppe_program"]),
+  sharp_edge_exposure_condition: new Set([
+    "restrict_access",
+    "clear_walkway",
+    "protect_sharp_ends",
+    "housekeeping_program",
+  ]),
   fall_condition: new Set([
     "restrict_access",
     "restore_barrier",
@@ -2931,6 +2970,9 @@ const ALLOWED_INTENTS_BY_REASON: Record<string, Set<string>> = {
     "engineering_inspection",
   ]),
 };
+
+const AGITATOR_EQUIPMENT_PATTERN =
+  /(?:agitator|karistirici|mikser govdesi|tank|reaktor|vessel|silo)/u;
 
 function planWithControlIntents(fact: HazardFactV3): ControlPlan {
   if (fact.assessment_basis === "equipment_integrity_verification") {
@@ -2955,6 +2997,9 @@ function planWithControlIntents(fact: HazardFactV3): ControlPlan {
     };
   }
   const base = inferredControlPlan(fact);
+  const absorbedContext = normalized(
+    `${fact.entity.equipment_family} ${fact.entity.component} ${fact.observed_condition.short_text}`,
+  );
   const allowed = ALLOWED_INTENTS_BY_REASON[base.selectionReason] ?? new Set();
   const accepted = fact.control_intents.flatMap((intent) => {
     let code = CONTROL_INTENT_ALIASES[intent.action_code] ??
@@ -2980,7 +3025,9 @@ function planWithControlIntents(fact: HazardFactV3): ControlPlan {
             "assurance_absorbed_by_observed_finding",
           )
           ? [
-            "agitator_guard_loto_inspection",
+            ...(AGITATOR_EQUIPMENT_PATTERN.test(absorbedContext)
+              ? ["agitator_guard_loto_inspection"]
+              : []),
             "process_equipment_integrity_inspection",
           ]
           : []
@@ -3050,6 +3097,47 @@ const ASSURANCE_CORRECTIVE_COPY: Record<
   },
 };
 
+/**
+ * Marks a public label the model wrote in the wrong language.
+ *
+ * A live Turkish report rendered "Concrete slab edge yetkin kişiyle ölçülü
+ * teknik kontrole al", "Portable cable ..." and a target of "Mixer drum",
+ * because entity.component falls through to the rendered control target
+ * verbatim. Only unambiguously English words are listed: shared spellings
+ * (tank, platform, panel, motor, sistem) would flag correct Turkish labels.
+ */
+const ENGLISH_PUBLIC_LABEL_PATTERN =
+  /(?:^|\s)(?:edge|edges|cable|cord|drum|slab|guard|guardrail|railing|hose|pipe|valve|ladder|beam|column|machine|mixer|portable|concrete|steel|wire|box|unit|area|work|site|worker|opening|hole|equipment|structure|surface|barrier|frame|joint|bucket|container|vessel|pump|belt|chain|shaft|hook|latch|plate|sheet|cover|lid|door|gate|stair|step|rack|shelf|load|crane|truck|trench|excavation|ground|floor|wall|roof|ceiling|duct|conduit|outlet|socket|breaker|junction|scaffold|storage|protection|missing|exposed|upper|lower)(?:\s|$)/u;
+
+const EQUIPMENT_GROUP_PUBLIC_LABELS: Record<
+  EquipmentGroupCode,
+  { tr: string; en: string }
+> = {
+  process_equipment: { tr: "Proses ekipmanı", en: "Process equipment" },
+  lifting_equipment: { tr: "Kaldırma ekipmanı", en: "Lifting equipment" },
+  mobile_equipment: { tr: "Mobil iş ekipmanı", en: "Mobile work equipment" },
+  access_work_area: {
+    tr: "Çalışma ve geçiş alanı",
+    en: "Work and access area",
+  },
+  storage_system: { tr: "Depolama ve istif alanı", en: "Storage area" },
+  machine_equipment: { tr: "Makine ekipmanı", en: "Machine equipment" },
+  pressure_equipment: { tr: "Basınçlı ekipman", en: "Pressure equipment" },
+  electrical_equipment: {
+    tr: "Elektrik tesisatı ve ekipmanı",
+    en: "Electrical installation and equipment",
+  },
+  structural_system: { tr: "Yapısal sistem", en: "Structural system" },
+  chemical_storage: {
+    tr: "Kimyasal depolama alanı",
+    en: "Chemical storage area",
+  },
+  rail_system: { tr: "Raylı sistem", en: "Rail system" },
+  thermal_equipment: { tr: "Termal ekipman", en: "Thermal equipment" },
+  ppe: { tr: "Kişisel koruyucu donanım", en: "Personal protective equipment" },
+  other_equipment: { tr: "İlgili ekipman", en: "The relevant equipment" },
+};
+
 function renderedControlTarget(
   fact: HazardFactV3,
   plan: ControlPlan,
@@ -3093,7 +3181,15 @@ function renderedControlTarget(
   if (/(?:walking surface|walkway|floor|zemin|gecis)/u.test(context)) {
     return tr ? "Geçiş alanı ve zemin" : "Access route and floor";
   }
-  return capitalized(cleanPublicText(fact.entity.component), language);
+  const component = cleanPublicText(fact.entity.component);
+  // A label in the wrong language cannot be translated here, so fall back to
+  // the equipment group's own label rather than publish the English string.
+  if (ENGLISH_PUBLIC_LABEL_PATTERN.test(normalized(component))) {
+    return EQUIPMENT_GROUP_PUBLIC_LABELS[resolveEquipmentGroupCode(fact)][
+      tr ? "tr" : "en"
+    ];
+  }
+  return capitalized(component, language);
 }
 
 function renderedControlCopy(
@@ -3173,8 +3269,20 @@ function renderControls(
     /(?:hook|kanca)/u.test(normalized(
       `${fact.entity.equipment_family} ${fact.entity.component} ${fact.observed_condition.short_text}`,
     ));
+  const exposedConductor =
+    /(?:acik iletken|ciplak iletken|yalitim(?:i)? (?:hasarli|siyrilmis|yirtik)|hasarli yalitim|exposed conductor|bare conductor|damaged insulation|stripped insulation)/u
+      .test(normalized(
+        `${fact.observed_condition.short_text} ${
+          fact.evidence.affirmative_cues.join(" ")
+        } ${fact.technical_assessment.observation_narrative}`,
+      ));
   const preventiveText = preventiveCodes.map((code, index) => {
     let copy = renderedControlCopy(code, target, language);
+    if (code === "electrical_isolation" && exposedConductor) {
+      copy = tr
+        ? "Enerjiyi kes, gerilimsizliği doğrula ve açık iletken/mahfazayı uygun koruma sınıfıyla kalıcı olarak düzelt."
+        : "De-energize, verify absence of voltage, and permanently correct the exposed conductor/enclosure to the required protection class.";
+    }
     if (groupedHooks && tr && code === "restore_hook_latch") {
       copy =
         "Kancaların emniyet mandallarını üretici şartnamesine uygun şekilde onar veya değiştir; mandalların yayla kapanmasını ve kanca ağızlarını tam kapatmasını işlevsel olarak doğrula.";
@@ -3402,6 +3510,9 @@ const ASSURANCE_TITLES_TR: Record<string, string> = {
     "Atölye genelinde makine, enerji ve acil durum denetimi",
 };
 
+const TOTAL_FALL_PROTECTION_ABSENCE_PATTERN =
+  /(?:herhangi bir dusme korumasi|hicbir (?:korkuluk|dusme korumasi)|dusme korumasi (?:yok|bulunmamakta|bulunmuyor|mevcut degil)|korkuluk (?:sistemi )?(?:yok|bulunmamakta|bulunmuyor)|korumasiz (?:kenar|doseme|kat|acik kenar)|korunmasiz (?:kenar|doseme|kat)|unguarded (?:open )?edge|unprotected (?:slab )?edge|no fall protection|fall protection absent|edge protection absent|missing edge protection)/u;
+
 function turkishTitle(fact: HazardFactV3): string {
   const condition = normalized(
     `${fact.observed_condition.condition_code} ${fact.observed_condition.short_text}`,
@@ -3500,10 +3611,18 @@ function turkishTitle(fact: HazardFactV3): string {
     GUARDRAIL_COMPONENT_PATTERN.test(context) &&
     /(?:eksik|missing|acik|open)/u.test(context)
   ) {
+    // A slab edge with no fall protection at all was titled "missing
+    // toeboard" at FK 900, because its condition text listed the toeboard
+    // among the absent parts. Total absence outranks any named sub-component.
+    if (TOTAL_FALL_PROTECTION_ABSENCE_PATTERN.test(context)) {
+      return /(?:doseme|slab|kat kenari|floor edge|platform)/u.test(context)
+        ? "Döşeme kenarında düşme koruması bulunmaması"
+        : "Korunmasız kenarda düşme koruması bulunmaması";
+    }
     if (TOE_BOARD_COMPONENT_PATTERN.test(context)) {
       return /(?:ust platform|upper platform)/u.test(context)
-        ? "Üst platform korkuluğunda etek sacı eksikliği"
-        : "Korkuluk sisteminde etek sacı eksikliği";
+        ? "Üst platform korkuluğunda etek tahtası eksikliği"
+        : "Korkuluk sisteminde etek tahtası eksikliği";
     }
     return /(?:ust platform|upper platform)/u.test(context)
       ? "Üst platform korkuluğunda ara korkuluk eksikliği"
@@ -3666,6 +3785,49 @@ function displayTitles(facts: AggregatedFact[], language: string): string[] {
       qualifier,
       language,
     );
+  });
+}
+
+/**
+ * Guarantees the displayed titles are distinct.
+ *
+ * A slab edge at FK 900 and a scaffold platform at FK 420 both resolved to the
+ * qualifier "üst" and were published under one identical title. The collision
+ * check ran, the disambiguator ran, and the output still collided: nothing
+ * verified the result. Equipment identity is appended next, and a positional
+ * index only as the last resort, so the pass always terminates with distinct
+ * titles.
+ */
+function uniqueDisplayTitles(
+  facts: AggregatedFact[],
+  language: string,
+): string[] {
+  const titles = displayTitles(facts, language);
+  const seen = new Map<string, number>();
+  return titles.map((title, index) => {
+    const key = normalized(title);
+    const previous = seen.get(key);
+    if (previous === undefined) {
+      seen.set(key, index);
+      return title;
+    }
+    const fact = facts[index];
+    const identity = capitalized(
+      cleanPublicText(fact.entity.equipment_family),
+      language,
+    );
+    const withIdentity = identity && !normalized(title).includes(
+        normalized(identity),
+      )
+      ? `${title} - ${identity}`.slice(0, 220)
+      : title;
+    if (!seen.has(normalized(withIdentity))) {
+      seen.set(normalized(withIdentity), index);
+      return withIdentity;
+    }
+    const indexed = `${withIdentity} (${index + 1})`.slice(0, 220);
+    seen.set(normalized(indexed), index);
+    return indexed;
   });
 }
 
@@ -3984,6 +4146,15 @@ function qualifiedRootCause(fact: HazardFactV3, language: string): string {
     ) {
       return "Possible contributing factors: incompatibility between ground or slope conditions and the equipment position, load, or movement.";
     }
+    if (fact.mechanism_code === "caught_in_pinch_shear") {
+      return "Possible contributing factors: the moving zone is not separated by a fixed or interlocked guard and worker access is not restricted.";
+    }
+    if (fact.mechanism_code === "sharp_edge_contact") {
+      return "Possible contributing factors: sharp ends and edges are not capped or covered, and material is left disordered in the access route.";
+    }
+    if (fact.mechanism_code === "electrical_contact_arc") {
+      return "Possible contributing factors: the supply line is not arranged appropriately for routing, mechanical protection, or separation from water contact.";
+    }
     return "Possible contributing factors: degradation, incorrect positioning, or loss of function in the relevant barrier or component.";
   }
   if (/(?:hook|kanca)/u.test(context) && /(?:latch|mandal)/u.test(context)) {
@@ -3993,7 +4164,19 @@ function qualifiedRootCause(fact: HazardFactV3, language: string): string {
     return "Olası temel etkenler: yüklerin kararsız yerleştirilmesi, raf sınırlarının korunmaması veya istifin düşmeye karşı yeterince tutulmaması.";
   }
   if (GUARDRAIL_COMPONENT_PATTERN.test(context)) {
-    return "Olası temel etkenler: korkuluk bileşeninin montaj ve bağlantı bütünlüğü ile bakım durumundaki bozulma.";
+    return /(?:eksik|yok|bulunmamakta|bulunmuyor|missing|absent|kurulmamis|takilmamis)/u
+        .test(context)
+      ? "Olası temel etkenler: kenar koruma planının uygulanmaması ve ilgili korkuluk elemanının montaj aşamasında hiç kurulmamış olması."
+      : "Olası temel etkenler: korkuluk bileşeninin montaj ve bağlantı bütünlüğü ile bakım durumundaki bozulma.";
+  }
+  if (fact.mechanism_code === "caught_in_pinch_shear") {
+    return "Olası temel etkenler: hareketli bölgenin sabit veya kilitlemeli koruyucu ile ayrılmamış olması ve çalışan erişiminin sınırlandırılmaması.";
+  }
+  if (fact.mechanism_code === "sharp_edge_contact") {
+    return "Olası temel etkenler: keskin uç ve kenarların uygun başlık veya kapak ile kapatılmaması ve malzemenin geçiş alanında düzensiz bırakılması.";
+  }
+  if (fact.mechanism_code === "electrical_contact_arc") {
+    return "Olası temel etkenler: besleme hattının güzergâh, mekanik koruma veya su ile temasa karşı ayrım açısından uygun düzenlenmemesi.";
   }
   if (
     fact.mechanism_code === "fall_same_level" &&
@@ -4087,6 +4270,22 @@ function renderCategory(fact: HazardFactV3, language: string): string {
     return tr
       ? "Kaldırma ekipmanları ve yük güvenliği"
       : "Lifting equipment and load safety";
+  }
+  if (
+    fact.assessment_basis !== "equipment_integrity_verification" &&
+    fact.mechanism_code === "caught_in_pinch_shear"
+  ) {
+    return tr
+      ? "Makine koruyucuları ve sıkışma güvenliği"
+      : "Machine guarding and entanglement safety";
+  }
+  if (
+    fact.assessment_basis !== "equipment_integrity_verification" &&
+    fact.mechanism_code === "sharp_edge_contact"
+  ) {
+    return tr
+      ? "Keskin kenar ve saplanma güvenliği"
+      : "Sharp edge and impalement safety";
   }
   if (
     fact.assessment_basis !== "equipment_integrity_verification" &&
@@ -4260,7 +4459,7 @@ function resolveEquipmentGroupCode(fact: HazardFactV3): EquipmentGroupCode {
     return "mobile_equipment";
   }
   if (
-    /(?:walkway|yurume yolu|gecis|floor|zemin|ground|terrain|saha|platform|ladder|merdiven|scaffold|iskele|guardrail|korkuluk|railing|midrail|ara korkuluk|orta korkuluk|toe board|toeboard|kick plate|etek tahtasi|etek saci|etek elemani|topuk levhasi|supurgelik|work area|calisma alani)/u
+    /(?:walkway|yurume yolu|gecis|floor|zemin|ground|terrain|saha|platform|ladder|merdiven|scaffold|iskele|guardrail|korkuluk|railing|midrail|ara korkuluk|orta korkuluk|toe board|toeboard|kick plate|etek tahtasi|etek saci|etek elemani|topuk levhasi|supurgelik|work area|calisma alani|slab|doseme|kat kenari|floor edge|deck|open edge|acik kenar)/u
       .test(context)
   ) {
     return "access_work_area";
@@ -6238,7 +6437,7 @@ export function buildEngineProduct(
         : null,
     ]),
   );
-  const titles = displayTitles(aggregated, language);
+  const titles = uniqueDisplayTitles(aggregated, language);
   const findings = aggregated.map((fact, index): FinalFindingV3 => {
     const probability = resolveProbability(fact);
     const frequency = resolveFrequency(

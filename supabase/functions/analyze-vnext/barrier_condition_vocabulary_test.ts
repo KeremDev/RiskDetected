@@ -1,4 +1,7 @@
-import { assert, assertFalse } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import {
+  assert,
+  assertFalse,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
 import type { HazardFactV3 } from "./contracts.ts";
 import { structuredBarrierGateFailures } from "./engine.ts";
 

@@ -1112,8 +1112,13 @@ const CATALOG: AssetAssuranceProfile[] = [
     // A container only becomes a chemical-management subject when something
     // identifies its contents: a label, a hazard pictogram, a product name, or
     // a dedicated storage area. An unmarked pail is just a pail.
+    // Drum and pail geometry was treated as self-identifying, so a plain blue
+    // barrel on a construction site produced an SDS and chemical-storage
+    // record whose own text read "kimyasal icerebilecek kaplar". Bulk vessels
+    // and containment furniture still identify themselves; a drum needs a
+    // marking like anything else.
     requiresConditionEvidence:
-      /(?:etiket|label|isaretleme|marking|piktogram|pictogram|ghs|tehlike isareti|hazard symbol|urun adi|product name|kimyasal ad|chemical name|ibc|varil|drum|bidon|kimyasal depolama|chemical storage|dokulme tavasi|dokuntu tavasi|toplama havuzu|secondary containment|spill (?:tray|pallet)|sds|gbf)/u,
+      /(?:etiket|label|isaretleme|marking|piktogram|pictogram|ghs|tehlike isareti|hazard symbol|urun adi|product name|kimyasal ad|chemical name|\bibc\b|kimyasal depolama|chemical storage|dokulme tavasi|dokuntu tavasi|toplama havuzu|secondary containment|spill (?:tray|pallet)|sds|gbf)/u,
     templates: [{
       conditionCode: "chemical_information_storage_assurance",
       component: {
