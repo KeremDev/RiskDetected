@@ -73,6 +73,19 @@ Deno.test("provider output budget usage reaches the quality trace", () => {
   assertStringIncludes(indexSource, "output_budget_used_pct:");
   assertStringIncludes(
     indexSource,
+    "const generated = output + reasoning;",
+  );
+  assertStringIncludes(
+    indexSource,
+    "product.qualityTrace.provider_attempt_output_budget =",
+  );
+  assertStringIncludes(indexSource, '"output_cap_exhausted"');
+  assertStringIncludes(
+    indexSource,
+    "promptHash: renderedPromptHash,",
+  );
+  assertStringIncludes(
+    indexSource,
     "raw_fact_count: result.output.hazard_facts.length,",
   );
 

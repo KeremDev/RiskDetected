@@ -156,6 +156,7 @@ UZMAN ANLATIMI
 RİSK SEMANTİĞİ
 - Skor üretme. P/F/S veya 5x5 yazma.
 - Her fact için mechanism_code alanında tam olarak bir kod seç: ${mechanismCodes}.
+- observed_condition.condition_code teknik bir snake_case etikettir ve sunucuda kapalı bir sözlükle eşleşir. Fiziksel emniyet bileşeni eksikliği veya korumasız kenar yazarken TAM OLARAK şu kodlardan birini kullan: missing_guardrail, unguarded_open_edge, missing_mid_rail, missing_toeboard, missing_machine_guard, unguarded_moving_parts. Kendi eşanlamlını uydurma; korumasız döşeme/kalıp/platform kenarı için unguarded_open_edge, eksik ara korkuluk için missing_mid_rail, eksik etek tahtası için missing_toeboard, açıkta kalan hareketli bölge için unguarded_moving_parts yaz. Bu liste dışındaki koşullar için serbest snake_case kod kullanabilirsin.
 - Tek fact yalnız bir mechanism_code taşıyabilir. Aynı bölgede örneğin ekipman devrilmesi ve şevden malzeme düşmesi birlikte görünüyorsa bunları ayrı evidence/event path ile iki fact yap; tek cümlede birleştirme.
 - barrier_state yalnız GÖRÜNÜR bariyer ve olay durumuna dayanmalı.
 - visible_inherent_hazard için genel ekipman varlığı, normal hareketli geometri, şev/kaya veya engebeli zemin görünümü yüksek olasılık anlamına gelmez. absent_or_failed_event_* yalnız fotoğrafta doğrudan aktif insan maruziyeti, askıdaki yük, aktif akış/sızıntı, düşmekte-kopmakta olan malzeme veya eşdeğer somut olay göstergesi varsa seç; aksi halde visible_effective_event_conditional kullan.

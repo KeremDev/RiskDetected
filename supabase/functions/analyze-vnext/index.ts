@@ -21,6 +21,13 @@ import {
 } from "./engine.ts";
 import { buildPrimaryPhotoPrompt, buildTargetedPrompt } from "./prompt.ts";
 import {
+  POLICY_VERSION,
+  PROMPT_BUNDLE_POLICY_VERSION,
+  PROMPT_BUNDLE_SHA256,
+  PROMPT_VERSION,
+} from "./contracts.ts";
+import { sha256Text, verifyPromptBundleIntegrity } from "./prompt-integrity.ts";
+import {
   callPhotoProvider,
   pollOpenAIBackgroundPhotoProvider,
   ProviderCallError,
@@ -86,6 +93,29 @@ type ProviderAttemptKind =
   | "schema_repair"
   | "provider_fallback"
   | "targeted_reinspection";
+
+type ProviderAttemptBudgetTrace = {
+  attempt_id: string;
+  photo_index: number;
+  attempt_kind: ProviderAttemptKind;
+  attempt_number: number;
+  state: "received" | "failed";
+  provider: ProviderName;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  reasoning_tokens: number;
+  generated_tokens: number;
+  max_output_tokens: number;
+  visible_output_budget_used_pct: number;
+  generated_output_budget_used_pct: number;
+  output_budget_used_pct: number;
+  budget_remaining_tokens: number;
+  reason_code: string | null;
+  error_code: string | null;
+  prompt_sha256: string;
+  prompt_bundle_sha256: string;
+};
 
 type OpenAIBackgroundCheckpoint = {
   backgroundID: string;
@@ -243,6 +273,63 @@ async function sha256(value: unknown): Promise<string> {
   ).join("");
 }
 
+function budgetPercent(tokens: number, maximum: number): number {
+  return maximum > 0 ? Math.round(1000 * tokens / maximum) / 10 : 0;
+}
+
+function providerAttemptBudgetTrace(params: {
+  attemptID: string;
+  photoIndex: number;
+  kind: ProviderAttemptKind;
+  attemptNumber: number;
+  provider: ProviderName;
+  model: string;
+  config: Config;
+  promptHash: string;
+  result?: ProviderCallResult;
+  error?: ProviderCallError;
+}): ProviderAttemptBudgetTrace {
+  const usage = params.result?.usage ?? params.error?.usage;
+  const input = Math.max(0, usage?.inputTokens ?? 0);
+  const output = Math.max(0, usage?.outputTokens ?? 0);
+  const reasoning = Math.max(0, usage?.reasoningTokens ?? 0);
+  const generated = output + reasoning;
+  const maximum = Math.max(0, params.config.maxProviderOutputTokens);
+  const generatedPct = budgetPercent(generated, maximum);
+  const exhausted = Boolean(
+    params.error?.schemaError && maximum > 0 &&
+      (generated >= maximum - 32 || generatedPct >= 99.5),
+  );
+  return {
+    attempt_id: params.attemptID,
+    photo_index: params.photoIndex,
+    attempt_kind: params.kind,
+    attempt_number: params.attemptNumber,
+    state: params.error ? "failed" : "received",
+    provider: params.provider,
+    model: params.model,
+    input_tokens: input,
+    output_tokens: output,
+    reasoning_tokens: reasoning,
+    generated_tokens: generated,
+    max_output_tokens: maximum,
+    visible_output_budget_used_pct: budgetPercent(output, maximum),
+    generated_output_budget_used_pct: generatedPct,
+    // Backward-compatible field name now reflects Gemini's real combined
+    // generation budget instead of visible output alone.
+    output_budget_used_pct: generatedPct,
+    budget_remaining_tokens: Math.max(0, maximum - generated),
+    reason_code: exhausted
+      ? "output_cap_exhausted"
+      : generatedPct >= 95
+      ? "output_budget_near_limit"
+      : null,
+    error_code: params.error?.code ?? null,
+    prompt_sha256: params.promptHash,
+    prompt_bundle_sha256: PROMPT_BUNDLE_SHA256,
+  };
+}
+
 function providerKey(provider: ProviderName): string | null {
   if (provider === "openai") return Deno.env.get("OPENAI_API_KEY") ?? null;
   // Both vNext profiles use paid Gemini service. Product entitlement no longer
@@ -269,6 +356,9 @@ async function recordAttempt(
     config?: Config;
     requestedServiceTier?: AnalysisServiceTier;
     serviceTierFallbackReason?: string | null;
+    promptHash?: string | null;
+    promptBundleHash?: string | null;
+    maxOutputTokens?: number | null;
   },
 ) {
   try {
@@ -302,8 +392,8 @@ async function recordAttempt(
           ? "provider_schema_salvaged"
           : null),
     };
-    const v4 = await supabase.rpc(
-      "record_analysis_provider_attempt_v4",
+    const v5 = await supabase.rpc(
+      "record_analysis_provider_attempt_v5",
       {
         ...commonPayload,
         p_compute_profile: params.config?.computeProfile ?? null,
@@ -316,20 +406,44 @@ async function recordAttempt(
             error?.usage?.standardEquivalentCostUSD ?? 0,
         p_service_tier_fallback_reason: params.serviceTierFallbackReason ??
           null,
+        p_prompt_sha256: params.promptHash ?? null,
+        p_prompt_bundle_sha256: params.promptBundleHash ??
+          PROMPT_BUNDLE_SHA256,
+        p_max_output_tokens: params.maxOutputTokens ??
+          params.config?.maxProviderOutputTokens ?? null,
       },
     );
-    if (!v4.error && v4.data?.ok !== true) {
+    if (!v5.error && v5.data?.ok !== true) {
       console.warn(
-        "vNext attempt telemetry v4 rejected",
-        safeText(v4.data?.state ?? "unknown_state"),
+        "vNext attempt telemetry v5 rejected",
+        safeText(v5.data?.state ?? "unknown_state"),
       );
     }
-    const rpcError = v4.error
-      ? (await supabase.rpc(
-        "record_analysis_provider_attempt_v3",
-        commonPayload,
-      )).error
-      : null;
+    let rpcError = null;
+    if (v5.error) {
+      const v4 = await supabase.rpc(
+        "record_analysis_provider_attempt_v4",
+        {
+          ...commonPayload,
+          p_compute_profile: params.config?.computeProfile ?? null,
+          p_provider_pool: params.config?.providerPool ?? null,
+          p_requested_service_tier: result?.requestedServiceTier ??
+            params.requestedServiceTier ?? null,
+          p_effective_service_tier: result?.effectiveServiceTier ?? null,
+          p_standard_equivalent_cost_usd:
+            result?.usage.standardEquivalentCostUSD ??
+              error?.usage?.standardEquivalentCostUSD ?? 0,
+          p_service_tier_fallback_reason: params.serviceTierFallbackReason ??
+            null,
+        },
+      );
+      rpcError = v4.error
+        ? (await supabase.rpc(
+          "record_analysis_provider_attempt_v3",
+          commonPayload,
+        )).error
+        : null;
+    }
     if (rpcError) {
       console.warn(
         "vNext attempt telemetry skipped",
@@ -590,13 +704,15 @@ async function executeOpenAIBackgroundAttempt(params: {
   attemptNumber: number;
   config: Config;
   backgroundLogicalKey?: string;
+  renderedPromptHash: string;
+  attemptBudgetTraces?: Map<string, ProviderAttemptBudgetTrace>;
 }): Promise<ProviderCallResult & { attemptID: string }> {
   const phase = params.kind === "targeted_reinspection"
     ? "targeted"
     : "primary";
   const logicalKey = params.backgroundLogicalKey ??
     `${params.kind}:photo:${params.photo.photoIndex}`;
-  const promptHash = await sha256({
+  const backgroundPromptHash = await sha256({
     phase,
     logicalKey,
     model: params.model,
@@ -616,7 +732,7 @@ async function executeOpenAIBackgroundAttempt(params: {
     kind: params.kind,
     attemptNumber: params.attemptNumber,
     model: params.model,
-    promptHash,
+    promptHash: backgroundPromptHash,
   });
   if (background.created) {
     await recordAttempt(params.supabase, {
@@ -631,6 +747,9 @@ async function executeOpenAIBackgroundAttempt(params: {
       state: "started",
       config: params.config,
       requestedServiceTier: "standard",
+      promptHash: params.renderedPromptHash,
+      promptBundleHash: PROMPT_BUNDLE_SHA256,
+      maxOutputTokens: params.config.maxProviderOutputTokens,
     });
   }
 
@@ -639,7 +758,7 @@ async function executeOpenAIBackgroundAttempt(params: {
       background.providerStatus,
     )
   ) {
-    throw new ProviderCallError(
+    const error = new ProviderCallError(
       "OpenAI Luna background response is terminal",
       background.errorCode ??
         `provider_background_${background.providerStatus}`,
@@ -651,6 +770,21 @@ async function executeOpenAIBackgroundAttempt(params: {
       undefined,
       background.providerRequestID,
     );
+    params.attemptBudgetTraces?.set(
+      background.attemptID,
+      providerAttemptBudgetTrace({
+        attemptID: background.attemptID,
+        photoIndex: params.photo.photoIndex,
+        kind: params.kind,
+        attemptNumber: params.attemptNumber,
+        provider: "openai",
+        model: params.model,
+        config: params.config,
+        promptHash: params.renderedPromptHash,
+        error,
+      }),
+    );
+    throw error;
   }
 
   let observation;
@@ -729,7 +863,24 @@ async function executeOpenAIBackgroundAttempt(params: {
       error,
       config: params.config,
       requestedServiceTier: "standard",
+      promptHash: params.renderedPromptHash,
+      promptBundleHash: PROMPT_BUNDLE_SHA256,
+      maxOutputTokens: params.config.maxProviderOutputTokens,
     });
+    params.attemptBudgetTraces?.set(
+      background.attemptID,
+      providerAttemptBudgetTrace({
+        attemptID: background.attemptID,
+        photoIndex: params.photo.photoIndex,
+        kind: params.kind,
+        attemptNumber: params.attemptNumber,
+        provider: "openai",
+        model: params.model,
+        config: params.config,
+        promptHash: params.renderedPromptHash,
+        error,
+      }),
+    );
     throw error;
   }
 
@@ -777,7 +928,24 @@ async function executeOpenAIBackgroundAttempt(params: {
     result,
     config: params.config,
     requestedServiceTier: "standard",
+    promptHash: params.renderedPromptHash,
+    promptBundleHash: PROMPT_BUNDLE_SHA256,
+    maxOutputTokens: params.config.maxProviderOutputTokens,
   });
+  params.attemptBudgetTraces?.set(
+    background.attemptID,
+    providerAttemptBudgetTrace({
+      attemptID: background.attemptID,
+      photoIndex: params.photo.photoIndex,
+      kind: params.kind,
+      attemptNumber: params.attemptNumber,
+      provider: "openai",
+      model: params.model,
+      config: params.config,
+      promptHash: params.renderedPromptHash,
+      result,
+    }),
+  );
   return { ...result, attemptID: background.attemptID };
 }
 
@@ -799,7 +967,9 @@ async function executeProviderAttempt(params: {
   serviceTier?: AnalysisServiceTier;
   serviceTierFallbackReason?: string | null;
   backgroundLogicalKey?: string;
+  attemptBudgetTraces?: Map<string, ProviderAttemptBudgetTrace>;
 }): Promise<ProviderCallResult & { attemptID: string }> {
+  const renderedPromptHash = await sha256Text(params.prompt);
   if (
     params.photoRunID && shouldUseOpenAILunaBackground({
       provider: params.provider,
@@ -820,6 +990,8 @@ async function executeProviderAttempt(params: {
       attemptNumber: params.attemptNumber,
       config: params.config,
       backgroundLogicalKey: params.backgroundLogicalKey,
+      renderedPromptHash,
+      attemptBudgetTraces: params.attemptBudgetTraces,
     });
   }
   const attemptID = crypto.randomUUID();
@@ -839,6 +1011,9 @@ async function executeProviderAttempt(params: {
     config: params.config,
     requestedServiceTier,
     serviceTierFallbackReason: params.serviceTierFallbackReason,
+    promptHash: renderedPromptHash,
+    promptBundleHash: PROMPT_BUNDLE_SHA256,
+    maxOutputTokens: params.config.maxProviderOutputTokens,
   });
   try {
     const result = await callPhotoProvider({
@@ -870,7 +1045,24 @@ async function executeProviderAttempt(params: {
       config: params.config,
       requestedServiceTier,
       serviceTierFallbackReason: params.serviceTierFallbackReason,
+      promptHash: renderedPromptHash,
+      promptBundleHash: PROMPT_BUNDLE_SHA256,
+      maxOutputTokens: params.config.maxProviderOutputTokens,
     });
+    params.attemptBudgetTraces?.set(
+      attemptID,
+      providerAttemptBudgetTrace({
+        attemptID,
+        photoIndex: params.photo.photoIndex,
+        kind: params.kind,
+        attemptNumber: params.attemptNumber,
+        provider: params.provider,
+        model: params.model,
+        config: params.config,
+        promptHash: renderedPromptHash,
+        result,
+      }),
+    );
     return { ...result, attemptID };
   } catch (rawError) {
     const error = rawError instanceof ProviderCallError
@@ -897,7 +1089,24 @@ async function executeProviderAttempt(params: {
       config: params.config,
       requestedServiceTier,
       serviceTierFallbackReason: params.serviceTierFallbackReason,
+      promptHash: renderedPromptHash,
+      promptBundleHash: PROMPT_BUNDLE_SHA256,
+      maxOutputTokens: params.config.maxProviderOutputTokens,
     });
+    params.attemptBudgetTraces?.set(
+      attemptID,
+      providerAttemptBudgetTrace({
+        attemptID,
+        photoIndex: params.photo.photoIndex,
+        kind: params.kind,
+        attemptNumber: params.attemptNumber,
+        provider: params.provider,
+        model: params.model,
+        config: params.config,
+        promptHash: renderedPromptHash,
+        error,
+      }),
+    );
     throw error;
   }
 }
@@ -914,6 +1123,7 @@ async function analyzePhoto(params: {
   language: string;
   priorAttemptCount?: number;
   priorErrorCode?: string | null;
+  attemptBudgetTraces?: Map<string, ProviderAttemptBudgetTrace>;
 }): Promise<
   { result: PhotoResult; schemaRepairUsed: boolean; photoRunID: string }
 > {
@@ -995,6 +1205,7 @@ async function analyzePhoto(params: {
             params.config.geminiRetryThinkingBudget,
           ),
         },
+        attemptBudgetTraces: params.attemptBudgetTraces,
       });
       photoRunID = await checkpointPhoto(params.supabase, {
         userID: params.userID,
@@ -1104,6 +1315,7 @@ async function analyzePhoto(params: {
         serviceTierFallbackReason: economyStandardFallback
           ? lastError.code
           : null,
+        attemptBudgetTraces: params.attemptBudgetTraces,
       });
       photoRunID = await checkpointPhoto(params.supabase, {
         userID: params.userID,
@@ -1357,6 +1569,22 @@ serve(async (req) => {
       object((begin as Record<string, unknown>).config_snapshot),
       photos.length,
     );
+    const engineConfigSnapshot = object(
+      object((begin as Record<string, unknown>).config_snapshot).engine_config,
+    );
+    if (config.promptBundleIntegrityEnabled) {
+      await verifyPromptBundleIntegrity();
+      if (
+        String(begin.prompt_version ?? "") !== PROMPT_VERSION ||
+        String(begin.policy_version ?? "") !== POLICY_VERSION ||
+        String(engineConfigSnapshot.prompt_bundle_policy_version ?? "") !==
+          PROMPT_BUNDLE_POLICY_VERSION ||
+        String(engineConfigSnapshot.prompt_bundle_sha256 ?? "") !==
+          PROMPT_BUNDLE_SHA256
+      ) {
+        throw new Error("prompt_bundle_contract_mismatch");
+      }
+    }
     const language = typeof analysis.output_language === "string"
       ? analysis.output_language
       : object(analysis.localization_snapshot).output_language === "en"
@@ -1413,6 +1641,7 @@ serve(async (req) => {
     );
     let schemaRepairUsed = false;
     const photoRunIDs = new Map<number, string>();
+    const attemptBudgetTraces = new Map<string, ProviderAttemptBudgetTrace>();
     const settledPhotoResults = await Promise.allSettled(
       photos.map(async (photo) => {
         const saved = savedByIndex.get(photo.photoIndex);
@@ -1449,6 +1678,7 @@ serve(async (req) => {
           priorErrorCode: failedByIndex.get(photo.photoIndex)?.error_code
             ? String(failedByIndex.get(photo.photoIndex)?.error_code)
             : null,
+          attemptBudgetTraces,
         });
         if (completed.schemaRepairUsed) schemaRepairUsed = true;
         photoRunIDs.set(photo.photoIndex, completed.photoRunID);
@@ -1495,6 +1725,10 @@ serve(async (req) => {
       photoResults,
       config.sectorProfileEnabled ? sector : null,
       config.multiPhotoHighHazardCoverageEnabled,
+      {
+        contextualFallBarrierAliasEnabled:
+          config.contextualFallBarrierAliasEnabled,
+      },
     );
     /**
      * A technical retry has already consumed one provider call, so the targeted
@@ -1633,6 +1867,7 @@ serve(async (req) => {
               config: targetedConfig,
               backgroundLogicalKey:
                 `targeted:${photo.photoIndex}:${targetedSignal.signal_id}`,
+              attemptBudgetTraces,
             });
           } catch (rawTargetedError) {
             const targetedError = rawTargetedError instanceof ProviderCallError
@@ -1663,6 +1898,7 @@ serve(async (req) => {
               config: targetedConfig,
               serviceTier: "standard",
               serviceTierFallbackReason: targetedFallbackReason,
+              attemptBudgetTraces,
             });
           }
           const constrained = constrainTargetedFactsWithTrace(
@@ -1754,6 +1990,10 @@ serve(async (req) => {
         controlPreferencesEnabled: config.sectorControlPreferencesEnabled,
         negativeRulesEnabled: config.sectorNegativeRulesEnabled,
         regulationAnchorsEnabled: config.sectorRegulationAnchorsEnabled,
+        contextualFallBarrierAliasEnabled:
+          config.contextualFallBarrierAliasEnabled,
+        personBarrierEquivalentMergeEnabled:
+          config.personBarrierEquivalentMergeEnabled,
       },
     );
     const evidenceAlert = object(
@@ -1797,19 +2037,67 @@ serve(async (req) => {
      */
     product.qualityTrace.provider_output_budget = photoResults.map((result) => {
       const usage = result.usage;
+      const generatedTokens = usage
+        ? usage.outputTokens + usage.reasoningTokens
+        : null;
       return {
         photo_index: result.photoIndex,
         output_tokens: usage?.outputTokens ?? null,
         reasoning_tokens: usage?.reasoningTokens ?? null,
+        generated_tokens: generatedTokens,
         input_tokens: usage?.inputTokens ?? null,
         max_output_tokens: usage?.maxOutputTokens ?? null,
+        visible_output_budget_used_pct: usage && usage.maxOutputTokens > 0
+          ? budgetPercent(usage.outputTokens, usage.maxOutputTokens)
+          : null,
+        generated_output_budget_used_pct: usage &&
+            usage.maxOutputTokens > 0
+          ? budgetPercent(generatedTokens!, usage.maxOutputTokens)
+          : null,
         output_budget_used_pct: usage && usage.maxOutputTokens > 0
-          ? Math.round(1000 * usage.outputTokens / usage.maxOutputTokens) / 10
+          ? budgetPercent(generatedTokens!, usage.maxOutputTokens)
           : null,
         raw_fact_count: result.output.hazard_facts.length,
         scene_inventory_count: result.output.scene_inventory.length,
       };
     });
+    const orderedAttemptBudgetTraces = [...attemptBudgetTraces.values()].sort(
+      (left, right) =>
+        left.photo_index - right.photo_index ||
+        left.attempt_number - right.attempt_number ||
+        left.attempt_kind.localeCompare(right.attempt_kind),
+    );
+    product.qualityTrace.provider_attempt_output_budget =
+      config.providerAttemptBudgetTraceEnabled
+        ? orderedAttemptBudgetTraces
+        : [];
+    product.qualityTrace.provider_attempt_output_budget_summary = {
+      enabled: config.providerAttemptBudgetTraceEnabled,
+      attempt_count: orderedAttemptBudgetTraces.length,
+      primary_attempt_count: orderedAttemptBudgetTraces.filter((attempt) =>
+        attempt.attempt_kind === "primary"
+      ).length,
+      technical_retry_attempt_count: orderedAttemptBudgetTraces.filter(
+        (attempt) =>
+          attempt.attempt_kind === "technical_retry",
+      ).length,
+      output_cap_exhausted_attempt_count: orderedAttemptBudgetTraces.filter(
+        (attempt) => attempt.reason_code === "output_cap_exhausted",
+      ).length,
+    };
+    product.qualityTrace.prompt_integrity = {
+      enabled: config.promptBundleIntegrityEnabled,
+      prompt_version: PROMPT_VERSION,
+      policy_version: POLICY_VERSION,
+      bundle_policy_version: PROMPT_BUNDLE_POLICY_VERSION,
+      prompt_bundle_sha256: PROMPT_BUNDLE_SHA256,
+      rendered_prompt_sha256: orderedAttemptBudgetTraces.map((attempt) => ({
+        attempt_id: attempt.attempt_id,
+        photo_index: attempt.photo_index,
+        attempt_kind: attempt.attempt_kind,
+        sha256: attempt.prompt_sha256,
+      })),
+    };
     product.qualityTrace.thinking_policy = {
       policy_version: config.geminiThinkingPolicyVersion,
       photo_count_policy_enabled: config.geminiThinkingByPhotoEnabled,
@@ -1853,6 +2141,15 @@ serve(async (req) => {
         requested_service_tier: config.requestedServiceTier,
         compact_provider_contract_enabled:
           config.compactProviderContractEnabled,
+        contextual_fall_barrier_alias_enabled:
+          config.contextualFallBarrierAliasEnabled,
+        person_barrier_equivalent_merge_enabled:
+          config.personBarrierEquivalentMergeEnabled,
+        provider_attempt_budget_trace_enabled:
+          config.providerAttemptBudgetTraceEnabled,
+        prompt_bundle_integrity_enabled: config.promptBundleIntegrityEnabled,
+        prompt_bundle_policy_version: PROMPT_BUNDLE_POLICY_VERSION,
+        prompt_bundle_sha256: PROMPT_BUNDLE_SHA256,
         multi_photo_high_hazard_critical_coverage_enabled:
           config.multiPhotoHighHazardCoverageEnabled,
         openai_luna_background_enabled: config.openAILunaBackgroundEnabled,

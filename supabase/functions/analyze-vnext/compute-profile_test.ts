@@ -26,6 +26,10 @@ const engineConfig = {
   openai_luna_background_poll_seconds: 15,
   economy_standard_fallback_enabled: true,
   multi_photo_high_hazard_critical_coverage_enabled: true,
+  contextual_fall_barrier_alias_enabled: true,
+  person_barrier_equivalent_merge_enabled: true,
+  provider_attempt_budget_trace_enabled: true,
+  prompt_bundle_integrity_enabled: true,
   compute_profiles: {
     premium: {
       primary_provider: "gemini",
@@ -37,7 +41,7 @@ const engineConfig = {
       multi_photo_gemini_thinking_budget: 2048,
       technical_retry_gemini_thinking_budget: 1536,
       targeted_gemini_thinking_budget: 768,
-      max_provider_output_tokens: 8192,
+      max_provider_output_tokens: 12288,
       targeted_max_provider_output_tokens: 3072,
     },
     economy: {
@@ -70,6 +74,7 @@ Deno.test("premium single-photo profile uses 3072 with controlled secondary budg
   assertEquals(config.geminiThinkingBudget, 3072);
   assertEquals(config.geminiRetryThinkingBudget, 1536);
   assertEquals(config.geminiTargetedThinkingBudget, 768);
+  assertEquals(config.maxProviderOutputTokens, 12288);
   assertEquals(config.geminiThinkingByPhotoEnabled, true);
   assertEquals(
     config.geminiThinkingPolicyVersion,
@@ -81,6 +86,10 @@ Deno.test("premium single-photo profile uses 3072 with controlled secondary budg
   assertEquals(config.openAILunaBackgroundVersion, "openai-luna-background-v1");
   assertEquals(config.multiPhotoHighHazardCoverageEnabled, true);
   assertEquals(config.openAILunaBackgroundPollSeconds, 15);
+  assertEquals(config.contextualFallBarrierAliasEnabled, true);
+  assertEquals(config.personBarrierEquivalentMergeEnabled, true);
+  assertEquals(config.providerAttemptBudgetTraceEnabled, true);
+  assertEquals(config.promptBundleIntegrityEnabled, true);
 });
 
 Deno.test("all-photo high-hazard coverage flag overrides the legacy multi-photo flag", () => {

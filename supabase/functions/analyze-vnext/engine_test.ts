@@ -5375,3 +5375,159 @@ Deno.test("a mechanism that disagrees with the condition code is named", () => {
     ),
   );
 });
+
+Deno.test("fall-protection alias is accepted only with local slab-edge collective-barrier evidence", () => {
+  const slabEdge = fact({
+    fact_id: "HF-FALL-ALIAS",
+    entity: {
+      entity_ref: "worker_2",
+      equipment_family: "person",
+      component: "worker_at_height",
+      identity_basis: "yüksekteki döşeme sınırında görülen çalışan",
+      identity_confidence: "high",
+    },
+    observed_condition: {
+      condition_code: "FALL_PROTECTION_ABSENT",
+      short_text: "Döşeme sınırında toplu düşme koruması bulunmuyor",
+    },
+    evidence: {
+      normalized_region: {
+        x: 0.14,
+        y: 0.18,
+        width: 0.24,
+        height: 0.55,
+        is_global: false,
+      },
+      affirmative_cues: [
+        "Yüksekteki döşeme sınırında çalışan ile korkuluk ve toplu korumanın bulunmadığı hat birlikte görülüyor",
+      ],
+    },
+    mechanism_code: "fall_from_height",
+    hazard_mechanism: "Döşeme kenarından yüksekten düşme",
+    exposed_entity: "Döşeme sınırındaki çalışan",
+    credible_event_path:
+      "Çalışan dengesini kaybederek korumasız döşeme sınırından alt seviyeye düşebilir.",
+    technical_assessment: {
+      ...fact().technical_assessment,
+      observation_narrative:
+        "Yüksekteki döşeme sınırında çalışan ile eksik korkuluk ve toplu koruma aynı yerel bölgede görülmektedir.",
+    },
+    consequence_class: "single_fatality",
+  });
+  assertEquals(evidenceRejectionReason(slabEdge), "absence_only_claim");
+  assert(
+    structuredBarrierGateFailures(slabEdge).some((entry) =>
+      entry.startsWith("condition_code_not_whitelisted:")
+    ),
+  );
+  const policy = { contextualFallBarrierAliasEnabled: true };
+  assertEquals(evidenceRejectionReason(slabEdge, policy), null);
+  assertEquals(structuredBarrierGateFailures(slabEdge, policy), []);
+
+  const harnessOnly = fact({
+    ...slabEdge,
+    fact_id: "HF-PPE-ALIAS",
+    evidence: {
+      ...slabEdge.evidence,
+      affirmative_cues: [
+        "Çalışanın üzerinde emniyet kemeri görünmüyor",
+      ],
+    },
+    observed_condition: {
+      condition_code: "FALL_PROTECTION_ABSENT",
+      short_text: "Çalışanın emniyet kemeri görünmüyor",
+    },
+    technical_assessment: {
+      ...slabEdge.technical_assessment,
+      observation_narrative:
+        "Çalışanın kişisel düşüş durdurma ekipmanı görüntüde seçilemiyor.",
+    },
+  });
+  assertEquals(
+    evidenceRejectionReason(harnessOnly, policy),
+    "absence_only_claim",
+  );
+});
+
+Deno.test("equivalent worker fall-barrier aliases merge into one actionable finding", () => {
+  const base = fact({
+    fact_id: "HF-003",
+    entity: {
+      entity_ref: "worker_2",
+      equipment_family: "person",
+      component: "worker_at_height",
+      identity_basis: "yüksekteki döşeme sınırındaki ilk çalışan",
+      identity_confidence: "high",
+    },
+    observed_condition: {
+      condition_code: "FALL_PROTECTION_ABSENT",
+      short_text: "Döşeme sınırında toplu düşme koruması bulunmuyor",
+    },
+    evidence: {
+      normalized_region: {
+        x: 0.1,
+        y: 0.15,
+        width: 0.2,
+        height: 0.6,
+        is_global: false,
+      },
+      affirmative_cues: [
+        "Döşeme sınırındaki çalışanın yanında korkuluk ve toplu koruma bulunmuyor",
+      ],
+    },
+    mechanism_code: "fall_from_height",
+    hazard_mechanism: "Döşeme kenarından yüksekten düşme",
+    exposed_entity: "Yüksekte çalışan",
+    credible_event_path:
+      "Çalışan dengesini kaybederek korumasız döşeme sınırından alt seviyeye düşebilir.",
+    technical_assessment: {
+      ...fact().technical_assessment,
+      observation_narrative:
+        "Döşeme sınırında eksik korkuluk ve toplu koruma ile doğrudan çalışan maruziyeti görülmektedir.",
+    },
+    consequence_class: "single_fatality",
+  });
+  const second: HazardFactV3 = {
+    ...base,
+    fact_id: "HF-004",
+    entity: {
+      ...base.entity,
+      entity_ref: "worker_3",
+      identity_basis: "yüksekteki döşeme sınırındaki ikinci çalışan",
+    },
+    evidence: {
+      ...base.evidence,
+      normalized_region: {
+        ...base.evidence.normalized_region,
+        x: 0.55,
+      },
+    },
+  };
+  const product = buildEngineProduct(
+    [photoResult(1, [base, second])],
+    "tr",
+    "plus",
+    [],
+    {},
+    {
+      contextualFallBarrierAliasEnabled: true,
+      personBarrierEquivalentMergeEnabled: true,
+    },
+  );
+  assertEquals(product.findings.length, 1);
+  assertEquals(
+    product.findings[0].title,
+    "Yüksekte çalışanlarda döşeme kenarı korumasının eksikliği",
+  );
+  assertEquals(
+    (product.findings[0].source_photo_observations as unknown[]).length,
+    2,
+  );
+  assert(
+    (product.qualityTrace.merge_ledger as Array<Record<string, unknown>>).some(
+      (entry) =>
+        entry.reason_code ===
+          "same_photo_equivalent_fall_barrier_exposure_merged",
+    ),
+  );
+});

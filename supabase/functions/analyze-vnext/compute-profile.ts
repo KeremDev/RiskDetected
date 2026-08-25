@@ -41,6 +41,10 @@ export type ResolvedVNextConfig = {
   providerExperimentID: string | null;
   providerExperimentLabel: string | null;
   providerExperimentOneShot: boolean;
+  contextualFallBarrierAliasEnabled: boolean;
+  personBarrierEquivalentMergeEnabled: boolean;
+  providerAttemptBudgetTraceEnabled: boolean;
+  promptBundleIntegrityEnabled: boolean;
 };
 
 function record(value: unknown): Record<string, unknown> {
@@ -259,5 +263,13 @@ export function resolveVNextConfig(
         ? routing.provider_experiment_label
         : null,
     providerExperimentOneShot: routing.provider_experiment_one_shot === true,
+    contextualFallBarrierAliasEnabled:
+      engineConfig.contextual_fall_barrier_alias_enabled === true,
+    personBarrierEquivalentMergeEnabled:
+      engineConfig.person_barrier_equivalent_merge_enabled === true,
+    providerAttemptBudgetTraceEnabled:
+      engineConfig.provider_attempt_budget_trace_enabled === true,
+    promptBundleIntegrityEnabled:
+      engineConfig.prompt_bundle_integrity_enabled === true,
   };
 }

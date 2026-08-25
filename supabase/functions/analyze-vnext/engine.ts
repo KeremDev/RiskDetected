@@ -134,6 +134,12 @@ export type EngineSectorContext = {
   controlPreferencesEnabled?: boolean;
   negativeRulesEnabled?: boolean;
   regulationAnchorsEnabled?: boolean;
+  contextualFallBarrierAliasEnabled?: boolean;
+  personBarrierEquivalentMergeEnabled?: boolean;
+};
+
+export type EvidencePolicyOptions = {
+  contextualFallBarrierAliasEnabled?: boolean;
 };
 
 type AggregatedFact = HazardFactV3 & {
@@ -1077,9 +1083,92 @@ const STRUCTURED_VISIBLE_BARRIER_CONDITIONS = new Map<
   ["unguarded_moving_parts", "caught_in_pinch_shear"],
 ]);
 
+const CONTEXTUAL_FALL_BARRIER_ALIAS_CODES = new Set([
+  "fall_protection_absent",
+  "fall_protection_missing",
+  "collective_fall_protection_absent",
+  "edge_protection_absent",
+  "missing_edge_protection",
+  "unprotected_slab_edge",
+]);
+
+/**
+ * The structured barrier gate needs a closed condition vocabulary, but
+ * `condition_code` is a free-text schema field and the prompt never published
+ * the accepted list. The model therefore invents an equivalent code on every
+ * run, and three consecutive live construction analyses lost every
+ * `single_fatality` fall fact to `condition_code_not_whitelisted`:
+ * `fall_protection_absent`, then `unguarded_edge_work` and
+ * `unguarded_edge_work_distant`. Growing the literal set one production
+ * incident at a time never converges.
+ *
+ * These tokens read the code as what it is - an absence word applied to a
+ * barrier subject - so an unseen spelling of the same claim resolves without a
+ * new deploy. Vocabulary only: the gate's other seven conditions (local
+ * region, three high confidences, person exposure, a failed barrier_state and
+ * a non-occluded component) still decide acceptance.
+ */
+const BARRIER_ABSENCE_TOKEN =
+  /(?:^|_)(?:unguarded|unprotected|missing|absent|no|none|open|removed|incomplete|inadequate|insufficient|without|lacking)(?:_|$)/;
+
+const FALL_BARRIER_SUBJECT_TOKEN =
+  /(?:^|_)(?:edge|edges|guardrail|guard_?rail|handrail|railing|rail|midrail|mid_?rail|toeboard|toe_?board|opening|openings|hole|void|slab|platform|deck|floor|parapet|balustrade|scaffold|fall_?protection|fall_?arrest|edge_?protection|lifeline|anchor|anchorage|safety_?net)(?:_|$)/;
+
+const MACHINE_GUARD_SUBJECT_TOKEN =
+  /(?:^|_)(?:guard|guarding|machine_?guard|moving_?parts?|rotating_?parts?|nip_?point|pinch_?point|belt|pulley|sprocket|chain_?drive|shaft|coupling)(?:_|$)/;
+
+function inferredBarrierMechanismFromCode(
+  canonical: string,
+): HazardMechanismCode | null {
+  if (!BARRIER_ABSENCE_TOKEN.test(canonical)) return null;
+  // Fall subjects win ties: "guardrail" must never fall through to the bare
+  // "guard" machine token.
+  if (FALL_BARRIER_SUBJECT_TOKEN.test(canonical)) return "fall_from_height";
+  if (MACHINE_GUARD_SUBJECT_TOKEN.test(canonical)) {
+    return "caught_in_pinch_shear";
+  }
+  return null;
+}
+
 function canonicalConditionCode(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
+}
+
+function hasContextualFallBarrierAliasEvidence(fact: HazardFactV3): boolean {
+  if (
+    fact.mechanism_code !== "fall_from_height" ||
+    !CONTEXTUAL_FALL_BARRIER_ALIAS_CODES.has(
+      canonicalConditionCode(fact.observed_condition.condition_code),
+    )
+  ) return false;
+  const cues = normalized([
+    fact.observed_condition.short_text,
+    ...fact.evidence.affirmative_cues,
+    fact.technical_assessment.observation_narrative,
+  ].join(" "));
+  const edge =
+    /(?:doseme|slab|platform|kat kenari|floor edge|acik kenar|open edge|unprotected edge|dusme boslugu|drop edge|opening)/u;
+  const collectiveBarrier =
+    /(?:korkuluk|guardrail|railing|edge protection|kenar koruma|toplu koruma|collective protection|safety net|guvenlik agi)/u;
+  const absent =
+    /(?:eksik|eksikligi|yok|bulunmamak|olmamak|korumasiz|absent|missing|not present|without|unprotected)/u;
+  return edge.test(cues) && collectiveBarrier.test(cues) && absent.test(cues);
+}
+
+function expectedVisibleBarrierMechanism(
+  fact: HazardFactV3,
+  options: EvidencePolicyOptions = {},
+): HazardMechanismCode | null {
+  const canonical = canonicalConditionCode(
+    fact.observed_condition.condition_code,
+  );
+  const direct = STRUCTURED_VISIBLE_BARRIER_CONDITIONS.get(canonical);
+  if (direct) return direct;
+  if (options.contextualFallBarrierAliasEnabled !== true) return null;
+  const inferred = inferredBarrierMechanismFromCode(canonical);
+  if (inferred) return inferred;
+  return hasContextualFallBarrierAliasEvidence(fact) ? "fall_from_height" : null;
 }
 
 function factHasDirectPersonExposure(fact: HazardFactV3): boolean {
@@ -1110,6 +1199,7 @@ function factIsOccludedOrOutOfFrame(fact: HazardFactV3): boolean {
  */
 export function hasStructuredVisibleBarrierEvidence(
   fact: HazardFactV3,
+  options: EvidencePolicyOptions = {},
 ): boolean {
   if (
     fact.assessment_basis === "equipment_integrity_verification" ||
@@ -1119,7 +1209,7 @@ export function hasStructuredVisibleBarrierEvidence(
     fact.confidence.localization !== "high" ||
     fact.confidence.mechanism === "low" ||
     factIsOccludedOrOutOfFrame(fact) ||
-    !hasStructuredCriticalBarrierFields(fact)
+    !hasStructuredCriticalBarrierFields(fact, options)
   ) return false;
   return fact.barrier_state.startsWith("absent_or_failed_");
 }
@@ -1136,7 +1226,10 @@ export function hasStructuredVisibleBarrierEvidence(
  *
  * Diagnostic only: nothing here changes whether a fact is accepted.
  */
-export function structuredBarrierGateFailures(fact: HazardFactV3): string[] {
+export function structuredBarrierGateFailures(
+  fact: HazardFactV3,
+  options: EvidencePolicyOptions = {},
+): string[] {
   const failures: string[] = [];
   if (fact.assessment_basis === "equipment_integrity_verification") {
     failures.push("assessment_basis_is_verification");
@@ -1160,9 +1253,7 @@ export function structuredBarrierGateFailures(fact: HazardFactV3): string[] {
   const canonical = canonicalConditionCode(
     fact.observed_condition.condition_code,
   );
-  const expectedMechanism = STRUCTURED_VISIBLE_BARRIER_CONDITIONS.get(
-    canonical,
-  );
+  const expectedMechanism = expectedVisibleBarrierMechanism(fact, options);
   if (!expectedMechanism) {
     failures.push(`condition_code_not_whitelisted:${canonical}`);
   } else if (expectedMechanism !== fact.mechanism_code) {
@@ -1177,10 +1268,11 @@ export function structuredBarrierGateFailures(fact: HazardFactV3): string[] {
   return failures;
 }
 
-function hasStructuredCriticalBarrierFields(fact: HazardFactV3): boolean {
-  const expectedMechanism = STRUCTURED_VISIBLE_BARRIER_CONDITIONS.get(
-    canonicalConditionCode(fact.observed_condition.condition_code),
-  );
+function hasStructuredCriticalBarrierFields(
+  fact: HazardFactV3,
+  options: EvidencePolicyOptions = {},
+): boolean {
+  const expectedMechanism = expectedVisibleBarrierMechanism(fact, options);
   return expectedMechanism === fact.mechanism_code &&
     fact.evidence.normalized_region.is_global !== true &&
     fact.confidence.entity === "high" &&
@@ -1428,7 +1520,10 @@ function ordinaryExcavationMaterialHandlingRejection(
     : "ordinary_excavation_material_handling_rejected";
 }
 
-export function evidenceRejectionReason(fact: HazardFactV3): string | null {
+export function evidenceRejectionReason(
+  fact: HazardFactV3,
+  options: EvidencePolicyOptions = {},
+): string | null {
   if (fact.evidence.affirmative_cues.length === 0) return "evidence_unlinked";
   if (
     fact.confidence.entity === "low" || fact.confidence.condition === "low" ||
@@ -1448,7 +1543,7 @@ export function evidenceRejectionReason(fact: HazardFactV3): string | null {
   // A structured, local, high-confidence barrier failure with an exposed
   // person is positive visual evidence. Do not let broad words such as
   // "missing" or "yok" turn it into a document-style absence claim.
-  if (hasStructuredVisibleBarrierEvidence(fact)) return null;
+  if (hasStructuredVisibleBarrierEvidence(fact, options)) return null;
   const claim = [
     ...fact.evidence.affirmative_cues,
     fact.observed_condition.short_text,
@@ -1538,8 +1633,9 @@ export function evidenceRejectionReason(fact: HazardFactV3): string | null {
 
 function targetedEvidenceRejectionReason(
   fact: HazardFactV3,
+  options: EvidencePolicyOptions = {},
 ): string | null {
-  const reason = evidenceRejectionReason(fact);
+  const reason = evidenceRejectionReason(fact, options);
   // Keep the primary pass strict: an absence label alone is never a finding.
   // A targeted crop may confirm safety-critical hardware only through direct,
   // local geometry such as an empty latch pivot/seat. Other rejection reasons
@@ -1629,6 +1725,7 @@ function targetedDuplicatesPrimary(
 function samePhotoEquivalentConditionReason(
   existing: AggregatedFact,
   fact: HazardFactV3,
+  personBarrierEquivalentMergeEnabled = false,
 ): string | null {
   if (!existing.sourcePhotoIndices.includes(fact.photo_index)) return null;
   if (existing.assessment_basis !== fact.assessment_basis) return null;
@@ -1645,6 +1742,20 @@ function samePhotoEquivalentConditionReason(
   const conditionContext = normalized(
     `${existing.observed_condition.condition_code} ${existing.observed_condition.short_text} ${fact.observed_condition.condition_code} ${fact.observed_condition.short_text}`,
   );
+  const samePersonFallBarrierNarrative = personBarrierEquivalentMergeEnabled &&
+    sameCondition &&
+    existing.mechanism_code === "fall_from_height" &&
+    hasContextualFallBarrierAliasEvidence(existing) &&
+    hasContextualFallBarrierAliasEvidence(fact) &&
+    /(?:person|worker|calisan)/u.test(existingContext) &&
+    /(?:person|worker|calisan)/u.test(factContext) &&
+    normalized(existing.observed_condition.short_text) ===
+      normalized(fact.observed_condition.short_text) &&
+    normalized(existing.technical_assessment.observation_narrative) ===
+      normalized(fact.technical_assessment.observation_narrative);
+  if (samePersonFallBarrierNarrative) {
+    return "same_photo_equivalent_fall_barrier_exposure_merged";
+  }
   if (
     sameCondition &&
     normalized(existing.entity.equipment_family) ===
@@ -3442,6 +3553,15 @@ function renderTitle(fact: HazardFactV3, language: string): string {
   const groupedContext = normalized(
     `${fact.entity.equipment_family} ${fact.entity.component} ${fact.observed_condition.condition_code} ${fact.observed_condition.short_text}`,
   );
+  if (hasContextualFallBarrierAliasEvidence(fact)) {
+    return isTurkish(language)
+      ? equivalentCount > 1
+        ? "Yüksekte çalışanlarda döşeme kenarı korumasının eksikliği"
+        : "Döşeme kenarında korkuluk ve toplu düşme koruması eksikliği"
+      : equivalentCount > 1
+      ? "Missing slab-edge protection for workers at height"
+      : "Missing guardrail and collective fall protection at slab edge";
+  }
   if (
     equivalentCount > 1 && /(?:hook|kanca)/u.test(groupedContext) &&
     /(?:latch|mandal)/u.test(groupedContext)
@@ -5750,6 +5870,10 @@ export function buildEngineProduct(
   referenceContext: EngineReferenceContext = {},
   sectorContext: EngineSectorContext = {},
 ): EngineProduct {
+  const evidencePolicy: EvidencePolicyOptions = {
+    contextualFallBarrierAliasEnabled:
+      sectorContext.contextualFallBarrierAliasEnabled === true,
+  };
   const sectorProfile = sectorContext.profileEnabled === false
     ? null
     : getSectorProfile(sectorContext.sectorID);
@@ -5801,7 +5925,7 @@ export function buildEngineProduct(
   };
   for (const fact of parsedFacts) {
     const traceID = allocateTraceID("primary", fact);
-    const commonReason = evidenceRejectionReason(fact);
+    const commonReason = evidenceRejectionReason(fact, evidencePolicy);
     const sectorReason = sectorNegativeRejectionReason(
       fact,
       sectorNegativeRulesEnabled,
@@ -5816,15 +5940,18 @@ export function buildEngineProduct(
         reason_codes: [
           ...new Set([sectorReason, commonReason].filter(Boolean)),
         ],
-        // Only for absence rejections, and only when the fact was aiming at a
-        // safety barrier: says which gate condition it missed.
-        ...(commonReason === "absence_only_claim" &&
-            SAFETY_CRITICAL_HARDWARE_PATTERN.test(
-              normalized(
-                `${fact.entity.equipment_family} ${fact.entity.component} ${fact.observed_condition.condition_code}`,
-              ),
-            )
-          ? { structured_gate_failures: structuredBarrierGateFailures(fact) }
+        // Every absence rejection carries its gate diagnosis. The earlier
+        // SAFETY_CRITICAL_HARDWARE_PATTERN precondition silently skipped facts
+        // whose entity text did not name the hardware: one of three rejected
+        // single_fatality fall facts on 2026-08-24 reached the ledger with no
+        // reason at all, and raw facts are not persisted to recover it.
+        ...(commonReason === "absence_only_claim"
+          ? {
+            structured_gate_failures: structuredBarrierGateFailures(
+              fact,
+              evidencePolicy,
+            ),
+          }
           : {}),
       });
     } else {
@@ -5856,7 +5983,10 @@ export function buildEngineProduct(
 
   for (const fact of targetedConfirmedFacts) {
     const traceID = allocateTraceID("targeted", fact);
-    const commonReason = targetedEvidenceRejectionReason(fact);
+    const commonReason = targetedEvidenceRejectionReason(
+      fact,
+      evidencePolicy,
+    );
     const sectorReason = sectorNegativeRejectionReason(
       fact,
       sectorNegativeRulesEnabled,
@@ -5901,8 +6031,10 @@ export function buildEngineProduct(
     rejected_primary_fact_count: rejectedFactCoverage.length,
     rejection_ratio: Number(evidenceRejectionRatio.toFixed(4)),
     alert_threshold: 0.5,
-    triggered: evidenceRejectionRatio > 0.5,
-    reason_code: evidenceRejectionRatio > 0.5
+    // Inclusive: the 2026-08-24 construction runs landed on exactly 0.5 three
+    // times, losing every fall fact while the alarm stayed silent.
+    triggered: evidenceRejectionRatio >= 0.5,
+    reason_code: evidenceRejectionRatio >= 0.5
       ? "evidence_rejection_ratio_above_threshold"
       : null,
   };
@@ -5979,7 +6111,11 @@ export function buildEngineProduct(
     samePhotoKeys.add(exactKey);
     const equivalentSamePhoto = aggregated.map((item) => ({
       item,
-      reason: samePhotoEquivalentConditionReason(item, fact),
+      reason: samePhotoEquivalentConditionReason(
+        item,
+        fact,
+        sectorContext.personBarrierEquivalentMergeEnabled === true,
+      ),
     })).find((candidate) => candidate.reason !== null);
     if (equivalentSamePhoto?.reason) {
       equivalentSamePhoto.item.evidenceRegions.push({
@@ -6525,7 +6661,11 @@ export function buildEngineProduct(
       provider_json_syntax_repair: 1,
       provider_retry_checkpoint: 1,
       public_copy_renderer: 10,
-      quality_trace_stage: 19,
+      contextual_fall_barrier_alias:
+        sectorContext.contextualFallBarrierAliasEnabled === true ? 1 : 0,
+      person_barrier_equivalent_merge:
+        sectorContext.personBarrierEquivalentMergeEnabled === true ? 1 : 0,
+      quality_trace_stage: 20,
     },
     asset_assurance_catalog_version: ASSET_ASSURANCE_CATALOG_VERSION,
     asset_assurance_identity_rejections: assuranceResult.identityRejections,
@@ -6734,6 +6874,7 @@ const HIGH_HAZARD_GUARDRAIL_COVERAGE_REASON =
 function highHazardGuardrailCoverageCandidate(
   photoResults: PhotoResult[],
   profile: SectorProfileV2 | null,
+  evidencePolicy: EvidencePolicyOptions = {},
 ): InspectionSignalV1 | null {
   if (
     photoResults.length < 1 || !profile ||
@@ -6762,7 +6903,7 @@ function highHazardGuardrailCoverageCandidate(
         /(?:eksik|yok|missing|absent|acik kenar|open edge|bosluk|gap|net degil|unclear|secilemiyor|unresolved|gorunmuyor|not visible)/u
           .test(context);
       const unresolvedLinkedFact = linkedGuardrailFacts.some((fact) =>
-        evidenceRejectionReason(fact) !== null
+        evidenceRejectionReason(fact, evidencePolicy) !== null
       );
       const concreteGuardrailSignal = result.output.inspection_signals.some(
         (signal) =>
@@ -6818,6 +6959,7 @@ export function selectTargetedDecision(
   photoResults: PhotoResult[],
   sectorID: SectorID | null = null,
   multiPhotoHighHazardCoverageEnabled = true,
+  evidencePolicy: EvidencePolicyOptions = {},
 ): TargetedSelectionDecision {
   const sectorProfile = getSectorProfile(sectorID);
   const severity: Record<ConsequenceClass, number> = {
@@ -6836,7 +6978,7 @@ export function selectTargetedDecision(
   const screenedFacts: Array<Record<string, unknown>> = [];
   for (const result of photoResults) {
     const noPrimaryFacts = result.output.hazard_facts.every((fact) =>
-      evidenceRejectionReason(fact) !== null
+      evidenceRejectionReason(fact, evidencePolicy) !== null
     );
     for (const signal of result.output.inspection_signals) {
       const consequenceRank = severity[signal.potential_consequence_class];
@@ -6874,7 +7016,7 @@ export function selectTargetedDecision(
     }
     for (const fact of result.output.hazard_facts) {
       const consequenceRank = severity[fact.consequence_class];
-      const rejectionReason = evidenceRejectionReason(fact);
+      const rejectionReason = evidenceRejectionReason(fact, evidencePolicy);
       const targetedReason =
         rejectionReason && hasStructuredCriticalBarrierFields(fact) &&
           factIsOccludedOrOutOfFrame(fact)
@@ -6939,7 +7081,11 @@ export function selectTargetedDecision(
     }
   }
   const guardrailCoverage = multiPhotoHighHazardCoverageEnabled
-    ? highHazardGuardrailCoverageCandidate(photoResults, sectorProfile)
+    ? highHazardGuardrailCoverageCandidate(
+      photoResults,
+      sectorProfile,
+      evidencePolicy,
+    )
     : null;
   if (guardrailCoverage) {
     candidates.push({
