@@ -209,6 +209,18 @@ function conciseTitle(candidate: NormalizedCandidate): string {
   // A missing mid-rail and a completely unprotected roof edge both resolved to
   // one fixed string, so the report published the same title twice at FK 1440
   // for two different hazards.
+  // An unsecured ladder filed under falls_falling_objects took the edge-
+  // protection title "Çalışma kenarında düşmeye karşı koruma eksikliği", which
+  // collided with the genuine open-edge finding beside it and was disambiguated
+  // to "... (platform)" -- two findings about different things, near-identical
+  // names, and neither naming the ladder.
+  if (
+    /(?:merdiven|ladder|basamak)/u.test(context) &&
+    !/(?:korkuluk|platform kenarı|platform kenari|açık kenar|acik kenar|korumasız kenar|korumasiz kenar)/u
+      .test(context)
+  ) {
+    return "Platforma erişimde uygun olmayan veya sabitlenmemiş merdiven";
+  }
   if (
     candidate.condition_code === "visible_structural_absence" &&
     ["falls_falling_objects", "work_at_height", "people_exposure"].includes(
@@ -308,10 +320,33 @@ function conciseTitle(candidate: NormalizedCandidate): string {
     candidate.module_id === "people_exposure" &&
     /(?:boru|uzun malzeme|taşı)/u.test(context)
   ) return "Uzun malzeme taşınırken görüş ve hareket alanının kısıtlanması";
-  return cleanText(candidate.normalized_label, "Güvenlik koşulu").replace(
-    /[.!?]+$/g,
-    "",
+  return equipmentNeutralTitle(
+    candidate,
+    cleanText(candidate.normalized_label, "Güvenlik koşulu").replace(
+      /[.!?]+$/g,
+      "",
+    ),
   );
+}
+
+// The model named a background machine a "taşlama makinesi". Zoomed in it is the
+// headstock of a second lathe with a rusty faceplate on the spindle -- the
+// exposed rotating part is real, the equipment class was a guess. It said so
+// itself: visibility 0.7, the only candidate in that run below 1.0, over the
+// hedged cue "dönen parça açıkta ve koruyucusuz görünüyor". A title may describe
+// what was seen; it may not name equipment the model is not sure it recognised.
+const EQUIPMENT_CLASS =
+  /\b(?:taşlama|taslama|torna|freze|matkap|pres|testere|giyotin|kaynak|jeneratör|jenerator|kompresör|kompresor|konveyör|konveyor|vinç|vinc|forklift|grinder|lathe|mill|press|saw)\w*\s*(?:makinesi|makinası|makinasi|tezgahı|tezgahi|tezgah|ünitesi|unitesi)?/giu;
+
+function equipmentNeutralTitle(
+  candidate: NormalizedCandidate,
+  title: string,
+): string {
+  if (candidate.confidence.visibility >= 0.8) return title;
+  if (!EQUIPMENT_CLASS.test(title)) return title;
+  const neutral = title.replace(EQUIPMENT_CLASS, "makine").replace(/\s+/g, " ")
+    .trim();
+  return neutral.charAt(0).toLocaleUpperCase("tr-TR") + neutral.slice(1);
 }
 
 function titleFor(
@@ -549,8 +584,17 @@ function mechanismCode(candidate: NormalizedCandidate): string {
   if (candidate.module_id === "falls_falling_objects") {
     // A person falling wins over a load falling when both read as present: the
     // person path carries the higher consequence and its own severity cap.
+    // "korumasız kenardan düşme -> zeminle çarpışma" is a person going over an
+    // edge, but the cue list enumerated everything absent including the
+    // toeboard, and the toeboard shortcut below claimed it as a falling object.
+    // The event path settles it, so it is read first and on its own.
+    const eventPath = `${candidate.event_path.source} ${
+      candidate.event_path.contact_or_failure
+    } ${candidate.event_path.consequence}`.toLocaleLowerCase("tr-TR");
     if (
-      /(?:kişinin düşmesi|kisinin dusmesi|yüksekten düşme|yuksekten dusme|çalışanın düşmesi|calisanin dusmesi|person fall|fall from height)/u
+      /(?:kişinin düşmesi|kisinin dusmesi|yüksekten düşme|yuksekten dusme|çalışanın düşmesi|calisanin dusmesi|kenardan düşme|kenardan dusme|zeminle çarpışma|zeminle carpisma|person fall|fall from height)/u
+        .test(eventPath) ||
+      /(?:kişinin düşmesi|kisinin dusmesi|yüksekten düşme|yuksekten dusme|çalışanın düşmesi|calisanin dusmesi)/u
         .test(context)
     ) return "fall_from_height";
     // "nesne düşmesi ... aşağıdaki kişiye çarpma" resolved to fall_from_height
@@ -1063,6 +1107,18 @@ function semanticEventKey(candidate: NormalizedCandidate): string {
 
 function dedupEventKey(candidate: NormalizedCandidate): string {
   const mechanism = mechanismCode(candidate);
+  // The same ladder produced one candidate under falls_falling_objects and one
+  // under access_egress, and the semantic key carries the module, so both were
+  // published. One ladder is one finding whichever module notices it.
+  if (
+    mechanism === "fall_from_height" && candidate.asset_ref &&
+    /(?:merdiven|ladder|basamak)/u.test(
+      `${candidate.normalized_label} ${candidate.affirmative_cues.join(" ")}`
+        .toLocaleLowerCase("tr-TR"),
+    )
+  ) {
+    return `${candidate.photo_index}:ladder_access:${candidate.asset_ref}`;
+  }
   if (
     mechanism === "fall_same_level" &&
     ["access_egress", "housekeeping_physical_contact"].includes(
@@ -1195,10 +1251,18 @@ const EXISTENCE_SPECULATION =
 const DEFINITE_OBSERVATION =
   /(?:görülüyor|goruluyor|görülmekte|gorulmekte|görünüyor|gorunuyor|görünmekte|gorunmekte|görünen|gorunen|mevcuttur|tespit edil|gözlenmekte|gozlenmekte)/u;
 
+// "tespit edilemiyor" is the negative of "tespit edildi" and was reading as a
+// definite observation, so "elektriksel bileşenler OLABİLİR ancak ... tespit
+// edilemiyor" slipped past the gate on its own negation.
+const NEGATED_OBSERVATION =
+  /\S*(?:edilemiyor|edilememekte|edilemez|edilemedi|görülemiyor|gorulemiyor|görünmüyor|gorunmuyor|çözümlenemem\S*|cozumlenemem\S*|değerlendirilemem\S*|degerlendirilemem\S*|doğrulanamıyor|dogrulanamiyor)\S*/gu;
+
 function coverageIsSpeculative(coverage: ModuleCoverage): boolean {
   const note = (coverage.note ?? "").toLocaleLowerCase("tr-TR");
   if (!note) return false;
-  return EXISTENCE_SPECULATION.test(note) && !DEFINITE_OBSERVATION.test(note);
+  if (!EXISTENCE_SPECULATION.test(note)) return false;
+  const definite = note.replace(NEGATED_OBSERVATION, " ");
+  return !DEFINITE_OBSERVATION.test(definite);
 }
 
 function assuranceModuleForVisibleAsset(

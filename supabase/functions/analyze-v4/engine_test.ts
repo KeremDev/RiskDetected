@@ -2122,3 +2122,159 @@ Deno.test("gerçek gözleme dayanan çözülemeyen modül maddesi korunur", () =
     true,
   );
 });
+
+Deno.test("etek tahtası da yokken kenardan düşme kişi düşmesi kalır", () => {
+  // c42829fa: "korumasız kenardan düşme -> zeminle çarpışma", ama ipuçları her
+  // şeyi saydığı için etek tahtası kestirmesi düşen cisim mekanizmasını verdi.
+  const photo = output([candidate({
+    candidate_key: "open-edge-all",
+    module_id: "falls_falling_objects",
+    raw_label: "Yükseltilmiş platformun kenarında korkuluk eksikliği",
+    affirmative_cues: [
+      "platform kenarı açıkta",
+      "üst korkuluk yok",
+      "ara korkuluk yok",
+      "etek tahtası yok",
+    ],
+    event_path: {
+      source: "yükseltilmiş platform",
+      contact_or_failure: "korumasız kenardan düşme",
+      consequence: "zeminle çarpışma",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routed.items[0].score_payload?.mechanism_code,
+    "fall_from_height",
+  );
+  assertStringIncludes(routed.items[0].root_cause_text, "Açık kenarda");
+});
+
+Deno.test("aynı merdiven iki modülden gelse de tek bulgu olur", () => {
+  const photo = output([
+    candidate({
+      candidate_key: "falls_02",
+      module_id: "falls_falling_objects",
+      asset_ref: "ladder_01",
+      raw_label: "Portatif merdivenin sabitlenmemiş olması",
+      affirmative_cues: [
+        "merdiven platforma yaslanmış",
+        "görünür sabitleme mekanizması yok",
+      ],
+      event_path: {
+        source: "portatif merdiven",
+        contact_or_failure: "merdivenin kayması",
+        consequence: "merdivenden düşme",
+      },
+      potential_consequence: "serious",
+    }),
+    candidate({
+      candidate_key: "access_01",
+      module_id: "access_egress",
+      asset_ref: "ladder_01",
+      raw_label: "Kalıcı platforma erişim için portatif merdiven kullanılması",
+      affirmative_cues: ["platforma tek erişim portatif merdiven"],
+      event_path: {
+        source: "portatif merdiven",
+        contact_or_failure: "yetersiz erişim",
+        consequence: "merdivenden düşme",
+      },
+      potential_consequence: "serious",
+    }),
+  ]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const ladder = routed.items.filter((item) =>
+    item.is_scored && item.title.includes("merdiven")
+  );
+  assertEquals(ladder.length, 1);
+  assertEquals(ladder[0].title.includes("Çalışma kenarında"), false);
+  assertEquals(ladder[0].score_payload?.mechanism_code, "fall_from_height");
+});
+
+Deno.test("düşük görünürlükte model ekipmana isim veremez", () => {
+  const photo = output([candidate({
+    candidate_key: "bg-machine",
+    module_id: "machinery",
+    raw_label: "Arka plandaki taşlama makinesinin dönen parçasında koruyucu eksikliği",
+    affirmative_cues: ["dönen parça açıkta ve koruyucusuz görünüyor"],
+    event_path: {
+      source: "koruyucusuz dönen parça",
+      contact_or_failure: "temas/sıkışma",
+      consequence: "ciddi yaralanma",
+    },
+    potential_consequence: "permanent",
+    confidence: { visibility: 0.7, localization: 0.8, mechanism: 0.9 },
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const title = routed.items[0].title;
+  assertEquals(title.includes("taşlama"), false);
+  assertStringIncludes(title, "makine");
+  assertStringIncludes(title, "dönen parça");
+});
+
+Deno.test("net görülen ekipmanın adı başlıkta kalır", () => {
+  const photo = output([candidate({
+    candidate_key: "clear-lathe",
+    module_id: "machinery",
+    raw_label: "Torna tezgahında ayna alanında koruyucu eksikliği",
+    affirmative_cues: ["ayna alanı tamamen açıkta", "görünür koruyucu yok"],
+    event_path: {
+      source: "dönen ayna",
+      contact_or_failure: "temas/dolama",
+      consequence: "ciddi yaralanma",
+    },
+    potential_consequence: "permanent",
+    confidence: { visibility: 1, localization: 1, mechanism: 1 },
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertStringIncludes(routed.items[0].title, "Torna");
+});
+
+Deno.test("kendi olumsuzuyla kapanan spekülatif not kapıdan geçemez", () => {
+  const photo = output([candidate()]);
+  photo.module_coverage = photo.module_coverage.map((entry) =>
+    entry.module_id === "energy"
+      ? {
+        ...entry,
+        outcome: "unresolved_requires_verification" as const,
+        candidate_keys: [],
+        note:
+          "Proses ekipmanları içinde elektriksel bileşenler olabilir ancak belirgin bir elektriksel tehlike görsel olarak tespit edilemiyor.",
+      }
+      : entry
+  );
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routed.items.some((item) =>
+      item.internal_priority.route_reason === "module_coverage_unresolved"
+    ),
+    false,
+  );
+  assertEquals(
+    routed.ledger.some((entry) =>
+      entry.reason_code === "speculative_module_coverage"
+    ),
+    true,
+  );
+});
