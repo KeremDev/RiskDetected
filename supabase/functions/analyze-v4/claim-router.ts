@@ -157,12 +157,15 @@ function cleanText(value: string, fallback: string): string {
       "görüntüde",
     )
     .replace(/\b\d+\s*(?:numaralı|nolu)\b/giu, "")
+    // The scene graph writes person_2, with an underscore. The generic person
+    // rule already allowed one; these two did not, so "person_2'de" missed them,
+    // fell through to the bare-id rule and published "çalışan'de".
     .replace(
-      /(?:[İi]şçi|[Çç]alışan|[Pp]ersonel|[Ww]orker|[Pp]erson)\s*(?:[Pp])?\d+\s*['’](?:nin|nın|nun|nün|in|ın|un|ün)/gu,
+      /(?:[İi]şçi|[Çç]alışan|[Pp]ersonel|[Ww]orker|[Pp]erson)[\s_-]*(?:[Pp])?\d+\s*['’](?:nin|nın|nun|nün|in|ın|un|ün)/gu,
       "çalışanın",
     )
     .replace(
-      /(?:[İi]şçi|[Çç]alışan|[Pp]ersonel|[Ww]orker|[Pp]erson)\s*(?:[Pp])?\d+\s*['’](?:de|da)/gu,
+      /(?:[İi]şçi|[Çç]alışan|[Pp]ersonel|[Ww]orker|[Pp]erson)[\s_-]*(?:[Pp])?\d+\s*['’](?:de|da|dan|den)/gu,
       "çalışanda",
     )
     .replace(
@@ -173,10 +176,32 @@ function cleanText(value: string, fallback: string): string {
     // titles. Parentheses left behind by the substitution are cleared too.
     .replace(/\b(?:asset|entity|equipment|region|zone)[\s_-]*\d+\b/gu, "")
     .replace(/\(\s*\)/g, "")
+    .replace(/\bP\d+\s*['’](?:de|da|dan|den|nin|nın|nun|nün)\b/gu, "çalışanda")
     .replace(/\bP\d+\b/gu, "çalışan")
+    // Any apostrophe suffix orphaned by an identifier substitution.
+    .replace(/\bçalışan\s*['’](?:de|da|dan|den|nin|nın|nun|nün)\b/gu, "çalışanda")
     .replace(/\bkötü düzenleme\b/giu, "düzensiz malzeme yerleşimi")
     .replace(/\s+/g, " ").trim();
   return (cleaned || fallback).slice(0, 900);
+}
+
+// Rebar appears in two different hazards: protruding starter bars a person can
+// be impaled on, and lengths of rebar lying among site clutter you trip over.
+// Matching the noun alone put a muddy walkway under the title "Açıkta kalan
+// sivri filiz veya donatı uçları" with mechanism sharp_edge_contact. The event
+// path already separates them: one ends in saplanma, the other in a same-level
+// fall.
+function impalementIntent(candidate: NormalizedCandidate): boolean {
+  const path = `${candidate.event_path.source} ${
+    candidate.event_path.contact_or_failure
+  } ${candidate.event_path.consequence}`.toLocaleLowerCase("tr-TR");
+  if (
+    /(?:aynı seviyede düşme|ayni seviyede dusme|takıl|takil|kayma|slip|trip)/u
+      .test(path)
+  ) return false;
+  return /(?:saplan|delin|batma|kesik|yırtıl|yirtil|impale|puncture|laceration)/u
+    .test(path) ||
+    /(?:çıkıntı|cikinti|sivri|keskin|protrud|sharp)/u.test(path);
 }
 
 function conciseTitle(candidate: NormalizedCandidate): string {
@@ -215,7 +240,8 @@ function conciseTitle(candidate: NormalizedCandidate): string {
   }
   if (
     candidate.module_id === "housekeeping_physical_contact" &&
-    /(?:donatı|donati|filiz|rebar|sivri)/u.test(context)
+    /(?:donatı|donati|filiz|rebar|sivri)/u.test(context) &&
+    impalementIntent(candidate)
   ) return "Açıkta kalan sivri filiz veya donatı uçları";
   if (candidate.module_id === "housekeeping_physical_contact") {
     // This used to be one fixed string that always claimed a wet floor, so a
@@ -552,7 +578,7 @@ function mechanismCode(candidate: NormalizedCandidate): string {
     if (
       /(?:sivri|keskin|sharp|çıkıntı|cikinti|filiz|donatı|donati)/u.test(
         context,
-      )
+      ) && impalementIntent(candidate)
     ) {
       return "sharp_edge_contact";
     }
@@ -567,7 +593,17 @@ function mechanismCode(candidate: NormalizedCandidate): string {
       /(?:yuksek|yüksek|kenar|dusme|düşme|fall|height|kemer|harness|lanyard|yasam hatti|yaşam hattı|ankraj|catı|çatı|platform|iskele|scaffold)/u
         .test(context)
     ) return "fall_from_height";
-    if (/(?:tasi|taşı|kaldir|kaldır|zorlan|ergonom)/u.test(context)) {
+    // Carrying was enough to call it overexertion, so a timber swinging into
+    // someone -- consequence "kişinin nesne tarafından çarpılması" -- was capped
+    // at the strain ceiling of 7. Overexertion needs a strain consequence.
+    if (
+      /(?:tasi|taşı|kaldir|kaldır|zorlan|ergonom)/u.test(context) &&
+      /(?:zorlan|incin|bel |kas |ergonom|tutulma|sırt|sirt|strain|sprain)/u
+        .test(
+          `${candidate.event_path.contact_or_failure} ${candidate.event_path.consequence}`
+            .toLocaleLowerCase("tr-TR"),
+        )
+    ) {
       return "ergonomic_overexertion";
     }
   }
@@ -785,7 +821,9 @@ function severityWithMechanismCap(candidate: NormalizedCandidate): {
       .test(context) &&
     /(?:orta korkuluk|ara korkuluk|midrail|etek tahtası|etek tahtasi|toeboard)/u
       .test(context) &&
-    /(?:eksik|yok|bulunmuyor|missing|absent|açık boşluk|acik bosluk|open gap)/u
+    // "görünmüyor" was not in this list, so the same scaffold scored 540 or 202
+    // depending on which verb the model happened to choose.
+    /(?:eksik|yok|bulunmuyor|bulunmama|görünmüyor|gorunmuyor|görülmüyor|gorulmuyor|mevcut değil|mevcut degil|missing|absent|açık boşluk|acik bosluk|open gap)/u
       .test(context)
   ) cap = Math.min(cap, 15);
   const raw = severity(candidate.criticality);
@@ -1558,7 +1596,13 @@ export function assertCriticalCandidateFates(
       candidate.accessible_event_path && !candidate.hard_reject_reason &&
       !observed.has(candidate.id)
     ) {
-      demotions.push(candidate.candidate_key);
+      // Bare keys made every demotion look the same. An electrical line whose
+      // energy state genuinely cannot be read from a photo is a doctrine-driven
+      // field check; an unexplained one is a defect. The reason tells them apart.
+      const reason = routingLedger.find((entry) =>
+        entry.candidate_id === candidate.id
+      )?.reason_code ?? "unknown";
+      demotions.push(`${candidate.candidate_key}:${reason}`);
     }
   }
   criticalDemotions.length = 0;

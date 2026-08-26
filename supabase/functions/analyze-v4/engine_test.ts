@@ -1606,3 +1606,139 @@ Deno.test("aynı cümlede var denen eleman yok sayılmaz", () => {
   assertEquals(item?.item_class, "observed_finding");
   assertEquals(item?.is_scored, true);
 });
+
+Deno.test("zemine dağılmış donatı saplanma bulgusu sayılmaz", () => {
+  // 35264d07: çamurlu zemin, su birikintileri ve dağınık demir donatı,
+  // "Açıkta kalan sivri filiz veya donatı uçları (2)" başlığıyla ve
+  // sharp_edge_contact mekanizmasıyla yayınlanmıştı.
+  const clutter = output([candidate({
+    candidate_key: "ground-rebar",
+    module_id: "housekeeping_physical_contact",
+    raw_label: "Düzensiz zemin, su birikintileri ve dağınık malzemeler",
+    affirmative_cues: [
+      "zemin çamurlu ve düzensiz",
+      "demir donatılar ve diğer inşaat malzemeleri geçiş yollarında dağınık halde",
+    ],
+    event_path: {
+      source: "Düzensiz zemin ve dağınık malzemeler",
+      contact_or_failure: "Takılma, kayma veya düşme",
+      consequence: "Aynı seviyede düşme",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  const routedClutter = routeCandidates({
+    candidates: normalizeCandidates(clutter, 1),
+    photoOutputs: [{ photoIndex: 1, output: clutter }],
+    sectorID: "construction",
+  });
+  assertEquals(
+    routedClutter.items[0].score_payload?.mechanism_code,
+    "fall_same_level",
+  );
+  assertEquals(routedClutter.items[0].title.includes("saplanma"), false);
+  assertEquals(routedClutter.items[0].title.includes("donatı uçları"), false);
+  assertEquals(
+    routedClutter.items[0].root_cause_text.includes("sivri"),
+    false,
+  );
+
+  const protruding = output([candidate({
+    candidate_key: "starter-bars",
+    module_id: "housekeeping_physical_contact",
+    raw_label: "Açıkta kalan sivri filiz/donatı uçları",
+    affirmative_cues: [
+      "beton kolonların üst kısımlarından sivri demir donatı uçları çıkıntı yapıyor",
+    ],
+    event_path: {
+      source: "Açıkta kalan sivri donatı ucu",
+      contact_or_failure: "Düşme veya temas",
+      consequence: "Saplanma yaralanması",
+    },
+    potential_consequence: "permanent",
+  })]);
+  const routedProtruding = routeCandidates({
+    candidates: normalizeCandidates(protruding, 1),
+    photoOutputs: [{ photoIndex: 1, output: protruding }],
+    sectorID: "construction",
+  });
+  assertEquals(
+    routedProtruding.items[0].score_payload?.mechanism_code,
+    "sharp_edge_contact",
+  );
+  assertStringIncludes(routedProtruding.items[0].title, "donatı uçları");
+});
+
+Deno.test("sahne kimliği ekli hâlde de kullanıcı metnine sızmaz", () => {
+  const photo = output([candidate({
+    affirmative_cues: [
+      "person_2 yükseltilmiş döşemede çalışıyor",
+      "person_2'de kişisel düşme önleyici sistem görünmüyor",
+    ],
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const text = routed.items[0].description;
+  assertEquals(text.includes("person"), false);
+  assertEquals(text.includes("'de"), false);
+  assertEquals(text.includes("_2"), false);
+  assertStringIncludes(text, "çalışanda");
+});
+
+Deno.test("kısmi bariyer tavanı fiil seçimine göre değişmez", () => {
+  const build = (cue: string) =>
+    output([candidate({
+      candidate_key: `rail-${cue.length}`,
+      module_id: "falls_falling_objects",
+      raw_label: "İskele platformunda eksik ara korkuluk",
+      affirmative_cues: ["platformda üst korkuluk mevcut", cue],
+      event_path: {
+        source: "iskele platformu kenarı",
+        contact_or_failure: "kişinin denge kaybı",
+        consequence: "yüksekten düşme",
+      },
+      potential_consequence: "fatal",
+    })]);
+  for (
+    const cue of [
+      "ara korkuluk ve etek tahtası görünmüyor",
+      "ara korkuluk ve etek tahtası eksik",
+      "ara korkuluk ve etek tahtası mevcut değil",
+    ]
+  ) {
+    const photo = build(cue);
+    const routed = routeCandidates({
+      candidates: normalizeCandidates(photo, 1),
+      photoOutputs: [{ photoIndex: 1, output: photo }],
+      sectorID: "construction",
+    });
+    assertEquals(routed.items[0].score_payload?.severity_cap, 15);
+    assertEquals(routed.items[0].fk_severity, 15);
+  }
+});
+
+Deno.test("uzun malzeme çarpması zorlanma tavanına kırpılmaz", () => {
+  const photo = output([candidate({
+    candidate_key: "carry-strike",
+    module_id: "people_exposure",
+    raw_label: "Uzun malzeme taşıyan kişinin çevresindeki tehlikeler",
+    affirmative_cues: ["omzunda uzun, sert bir nesne taşıyor"],
+    event_path: {
+      source: "Uzun malzeme taşıma",
+      contact_or_failure: "Malzemenin kayması veya çarpması",
+      consequence: "Kişinin nesne tarafından çarpılması",
+    },
+    potential_consequence: "serious",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  assertEquals(
+    routed.items[0].score_payload?.mechanism_code === "ergonomic_overexertion",
+    false,
+  );
+});
