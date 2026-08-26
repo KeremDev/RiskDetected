@@ -492,7 +492,11 @@ async function analyzePhoto(params: {
 function boundedVisibleItems(
   items: RoutedItem[],
   maxFindings = 8,
-  maxUnscored = 6,
+  // Six was too tight once verification requests joined the same budget: a run
+  // with three of them cut the crane's periodic-inspection assurance and the
+  // machine-guard assurance, both of which are legally required checks, to make
+  // room for barrier claims the photograph did not support.
+  maxUnscored = 8,
 ): { kept: RoutedItem[]; excluded: Array<{ title: string; reason: string }> } {
   const internal = items.filter((item) =>
     !["observed_finding", "assurance_requirement", "verification_request"]

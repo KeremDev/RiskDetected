@@ -1000,38 +1000,67 @@ const BARRIER_COMPONENTS: Array<{ code: string; pattern: RegExp }> = [
   },
 ];
 
+const ABSENCE_WORD =
+  /(?:eksik|yok(?:tur)?|bulunmuyor|bulunmama|bulunmamakta|görünmüyor|gorunmuyor|mevcut değil|mevcut degil|missing|absent)/u;
+const PRESENCE_WORD =
+  /(?:mevcut(?!\s*değil)(?!\s*degil)|var(?:dır)?\b|görülüyor|goruluyor|görünür|gorunur|takılı|takili|present|intact)/u;
+
 function componentsClaimedAbsent(candidate: NormalizedCandidate): string[] {
   if (candidate.condition_code !== "visible_structural_absence") return [];
-  const text = `${candidate.normalized_label} ${
-    candidate.affirmative_cues.join(" ")
+  const text = `${candidate.normalized_label}. ${
+    candidate.affirmative_cues.join(". ")
   }`.toLocaleLowerCase("tr-TR");
-  return BARRIER_COMPONENTS
-    .filter((component) => component.pattern.test(text))
-    .filter((component) => {
-      // Only the component the sentence says is missing, not one it says is there.
-      const match = component.pattern.exec(text);
-      if (!match) return false;
-      const after = text.slice(match.index, match.index + 90);
-      return /(?:eksik|yok|bulunmuyor|bulunmama|mevcut değil|missing|absent)/u
-        .test(after);
-    })
-    .map((component) => component.code);
+  // Clause by clause, never across a boundary: "üst korkuluk mevcut; ara
+  // korkuluk bulunmuyor" states the top rail is there and only the mid-rail is
+  // missing, and a flat window over the whole sentence read both as absent.
+  const clauses = text.split(/[;.,]|\s+ve\s+|\s+ancak\s+|\s+fakat\s+/u)
+    .map((clause) => clause.trim())
+    .filter(Boolean);
+  const absent = new Set<string>();
+  const present = new Set<string>();
+  for (const clause of clauses) {
+    const hasAbsence = ABSENCE_WORD.test(clause);
+    const hasPresence = PRESENCE_WORD.test(clause);
+    for (const component of BARRIER_COMPONENTS) {
+      if (!component.pattern.test(clause)) continue;
+      if (hasPresence && !hasAbsence) present.add(component.code);
+      else if (hasAbsence) absent.add(component.code);
+    }
+  }
+  return [...absent].filter((code) => !present.has(code));
 }
 
+/**
+ * Components the photo's own positive controls say are present.
+ *
+ * A control may carve the flagged candidate out of its own statement -- the
+ * provider writes "Korkuluklarda ara korkuluk mevcut (C1 hariç)" -- and that is
+ * consistency, not contradiction. Reading it as a flat affirmation would demote
+ * a genuine localised defect, so an excluding control is reported separately:
+ * `general` still means the component exists along the run, `flat` means the
+ * control claimed it present with no carve-out at all.
+ */
 function componentsAffirmedPresent(
   output: ProviderPhotoOutput,
   moduleID: string,
-): Set<string> {
-  const affirmed = new Set<string>();
+  candidateKey: string,
+): { flat: Set<string>; general: Set<string> } {
+  const flat = new Set<string>();
+  const general = new Set<string>();
+  const key = candidateKey.replace(/^p\d+:/, "").toLocaleLowerCase("tr-TR");
   for (const control of output.positive_controls) {
     if (control.module_id !== moduleID) continue;
     const text = `${control.description} ${control.affirmative_cues.join(" ")}`
       .toLocaleLowerCase("tr-TR");
+    const carvesOut = /(?:hariç|haric|dışında|disinda|except|excluding)/u
+      .test(text) || (key.length >= 2 && text.includes(key));
     for (const component of BARRIER_COMPONENTS) {
-      if (component.pattern.test(text)) affirmed.add(component.code);
+      if (!component.pattern.test(text)) continue;
+      general.add(component.code);
+      if (!carvesOut) flat.add(component.code);
     }
   }
-  return affirmed;
+  return { flat, general };
 }
 
 function assuranceModuleForVisibleAsset(
@@ -1156,16 +1185,30 @@ export function routeCandidates(params: {
     // scored absence the model itself disputed.
     if (itemClass === "observed_finding") {
       const photoOutput = outputByPhoto.get(candidate.photo_index);
-      if (photoOutput) {
+      const claimedAbsent = photoOutput ? componentsClaimedAbsent(candidate) : [];
+      if (photoOutput && claimedAbsent.length > 0) {
         const affirmed = componentsAffirmedPresent(
           photoOutput,
           candidate.module_id,
+          candidate.candidate_key,
         );
-        const disputed = componentsClaimedAbsent(candidate)
-          .filter((component) => affirmed.has(component));
-        if (disputed.length > 0) {
+        const contradicted = claimedAbsent.filter((component) =>
+          affirmed.flat.has(component)
+        );
+        // The component the model says is present along the run but missing at
+        // this one spot. That is a localised gap, and telling it apart from a
+        // rail seen edge-on or hidden behind plant is finer geometry than a
+        // flattened photo carries -- the engine's own rule for partially
+        // resolved critical geometry is to ask for a field check.
+        const localised = claimedAbsent.filter((component) =>
+          !affirmed.flat.has(component) && affirmed.general.has(component)
+        );
+        if (contradicted.length > 0) {
           itemClass = "verification_request";
-          routeReason = `provider_self_contradiction:${disputed.join("+")}`;
+          routeReason = `provider_self_contradiction:${contradicted.join("+")}`;
+        } else if (localised.length > 0) {
+          itemClass = "verification_request";
+          routeReason = `localized_barrier_gap_unresolved:${localised.join("+")}`;
         }
       }
     }

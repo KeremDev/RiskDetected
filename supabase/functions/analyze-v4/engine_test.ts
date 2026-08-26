@@ -1495,3 +1495,114 @@ Deno.test("engebeli kayalık zemin dağınık malzeme başlığını almaz", () 
   assertStringIncludes(routedClutter.items[0].title, "dağınık");
   assertEquals(routedRocky.items[0].title === routedClutter.items[0].title, false);
 });
+
+Deno.test("olumlu kontrol adayı hariç tutuyorsa bu çelişki sayılmaz", () => {
+  // Model "Korkuluklarda ara korkuluk mevcut (C1 hariç)" yazdığında kendisiyle
+  // çelişmiyor; tutarlı konuşuyor. Bunu düz onay saymak, gerçekten tek gözde
+  // ara korkuluğu eksik olan bir korkuluğu da bastırırdı.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Korkulukta ara korkuluk eksikliği",
+    affirmative_cues: ["üst korkuluk ile etek tahtası arasında ara korkuluk bulunmuyor"],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "kişinin boşluktan düşmesi",
+      consequence: "yüksekten düşme",
+    },
+    potential_consequence: "fatal",
+  })]);
+  photo.positive_controls = [{
+    control_key: "midrail-general",
+    module_id: "falls_falling_objects",
+    description: "Korkuluklarda ara korkuluk mevcut (C1 hariç).",
+    affirmative_cues: ["Sarı metal ara korkuluk görünür"],
+    evidence_region: { x: 0.1, y: 0.2, width: 0.3, height: 0.2 },
+  }];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  // Çelişki değil ama yerel bir boşluk iddiası: düz fotoğraftan çözülemez.
+  assertEquals(item?.item_class, "verification_request");
+  assertStringIncludes(
+    String(item?.internal_priority.route_reason),
+    "localized_barrier_gap_unresolved",
+  );
+  assertEquals(
+    String(item?.internal_priority.route_reason).includes(
+      "provider_self_contradiction",
+    ),
+    false,
+  );
+});
+
+Deno.test("elemanın tamamen yokluğu skorlu bulgu olarak kalır", () => {
+  // Yalnız üst korkuluğu olan korkuluk gerçek ve yaygın bir kusur; hiçbir kapı
+  // bunu doğrulama isteğine düşürmemeli.
+  const photo = output([candidate({
+    candidate_key: "C9",
+    module_id: "falls_falling_objects",
+    raw_label: "Korkulukta ara korkuluk eksikliği",
+    affirmative_cues: ["üst korkuluk mevcut; ara korkuluk hiçbir gözde bulunmuyor"],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "kişinin boşluktan düşmesi",
+      consequence: "yüksekten düşme",
+    },
+    potential_consequence: "fatal",
+  })]);
+  photo.positive_controls = [{
+    control_key: "toprail-only",
+    module_id: "falls_falling_objects",
+    description: "Korkuluklarda üst korkuluk mevcut.",
+    affirmative_cues: ["Sarı metal üst korkuluk görünür"],
+    evidence_region: { x: 0.1, y: 0.2, width: 0.3, height: 0.2 },
+  }];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "observed_finding");
+  assertEquals(item?.is_scored, true);
+});
+
+Deno.test("aynı cümlede var denen eleman yok sayılmaz", () => {
+  // "üst korkuluk mevcut; ara korkuluk bulunmuyor" ifadesinde yalnız ara
+  // korkuluk yokluk iddiasıdır.
+  const photo = output([candidate({
+    candidate_key: "C7",
+    module_id: "falls_falling_objects",
+    raw_label: "Korkulukta ara korkuluk eksikliği",
+    affirmative_cues: [
+      "üst korkuluk mevcut; etek tahtası mevcut; ara korkuluk bulunmuyor",
+    ],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "kişinin boşluktan düşmesi",
+      consequence: "yüksekten düşme",
+    },
+    potential_consequence: "fatal",
+  })]);
+  photo.positive_controls = [{
+    control_key: "toprail",
+    module_id: "falls_falling_objects",
+    description: "Korkuluklarda üst korkuluk ve etek tahtası mevcut.",
+    affirmative_cues: ["üst korkuluk", "etek tahtası"],
+    evidence_region: { x: 0.1, y: 0.2, width: 0.3, height: 0.2 },
+  }];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  // Üst korkuluk ve etek tahtası hakkında çelişki yok; ara korkuluk hakkında
+  // olumlu kontrol de yok. Skorlu kalmalı.
+  assertEquals(item?.item_class, "observed_finding");
+  assertEquals(item?.is_scored, true);
+});
