@@ -46,6 +46,9 @@ Aşağıdaki sahne görünüyorsa listedeki her kalemi birbirinden bağımsız t
 - İmalat/atölye: makine koruyucusu ve erişilebilir sıkışma bölgesi, acil durdurma erişimi, elektrik panosu, geçiş yolu, kaldırma ekipmanı.
 - Depo/lojistik: raf ayağı ve ankraj, istif stabilitesi, forklift-yaya ayrımı, geçiş yolu.
 - Korkuluğu tek parça sayma. Üst korkuluk, ara korkuluk ve etek tahtası ayrı ayrı sonuçlanmalı; üst korkuluk varken ara korkuluk yoksa bunu ayrı aday yap.
+- Korkuluk için yokluk iddiası yazmadan önce üç elemanın her birini tek tek karara bağla: üst korkuluk, ara korkuluk, etek tahtası. GÖRDÜĞÜN her elemanı o adayın counter_cues alanına açıkça yaz (örnek: \"etek tahtası mevcut\", \"ara korkuluk mevcut\"). Gördüğün bir elemanı yazmadan başka bir elemanı yok sayma.
+- Bir korkuluk elemanını ancak bulunması gereken boşluğu görüntüde ayırt edebiliyor ve o boşluğun boş olduğunu görebiliyorsan yok say. Korkuluk hattı profilden, ters ışıkta, uzakta veya başka bir nesnenin arkasında kalıyorsa occlusion alanını partial yap ve modülü unresolved_requires_verification ile kapat; yokluk iddiası yazma.
+- Aynı korkuluğun iki veya daha fazla elemanını aynı anda yok sayıyorsan bunu özellikle sorgula: çoğu korkulukta üst korkuluk görülüyorsa ara korkuluk ve etek tahtası da vardır ve yalnız üst korkuluğu fark etmiş olabilirsin. Emin değilsen unresolved_requires_verification kullan.
 
 SONUÇ SINIFI ÇAPALARI
 - Korumasız kenarda veya yüksekte kemer/yaşam hattı olmadan çalışma: fatal.

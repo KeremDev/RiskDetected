@@ -227,11 +227,22 @@ function conciseTitle(candidate: NormalizedCandidate): string {
     const clutter =
       /(?:dağınık|daginik|malzeme|karton|kablo|hortum|eşya|esya|atık|atik|engel)/u
         .test(context);
+    // Rocky, uneven ground on an excavation site was published under the
+    // clutter title, so a warehouse floor full of cardboard and a boulder field
+    // read as the same finding and the uniqueness pass hid it behind a "(2)".
+    const uneven =
+      /(?:engebeli|kayalık|kayalik|düzensiz zemin|duzensiz zemin|çukur|cukur|bozuk zemin|uneven|rocky)/u
+        .test(context);
     if (wet && clutter) {
       return "Dağınık malzemeler ve ıslak zeminde takılma veya kayma riski";
     }
     if (wet) return "Islak veya kaygan zeminde kayma riski";
-    return "Zemindeki dağınık malzemelerde takılma riski";
+    if (clutter) return "Zemindeki dağınık malzemelerde takılma riski";
+    if (uneven) return "Engebeli ve düzensiz zeminde takılma riski";
+    // Neither pattern matched: the model's own label describes it better than
+    // any canned string.
+    return cleanText(candidate.normalized_label, "Zeminde takılma riski")
+      .replace(/[.!?]+$/g, "");
   }
   // Three hooks each missing a latch produced three titles naming a side, and
   // the one that survived dedup told the reader only about the top hook.
@@ -961,6 +972,68 @@ function dedupEventKey(candidate: NormalizedCandidate): string {
   return semanticEventKey(candidate);
 }
 
+// The provider claimed a missing mid-rail and a missing toeboard on a guardrail
+// whose photograph shows both, four times in one run, with empty counter_cues --
+// so nothing downstream had anything to gate on. It does however publish
+// positive controls, and in an earlier run it asserted "Üst platformda tam
+// korkuluk sistemi (üst korkuluk, ara korkuluk, etek tahtası) mevcuttur" in the
+// same photo as a candidate claiming that system incomplete. When the model
+// contradicts itself about the same component, the honest output is a field
+// check, not a scored finding: nothing is lost, because the engine already held
+// both statements.
+const BARRIER_COMPONENTS: Array<{ code: string; pattern: RegExp }> = [
+  {
+    code: "mid_rail",
+    pattern: /(?:ara korkuluk|orta korkuluk|midrail|mid rail)/u,
+  },
+  {
+    code: "toeboard",
+    pattern: /(?:etek tahtası|etek tahtasi|topuk levhası|topuk levhasi|toeboard|toe board)/u,
+  },
+  {
+    code: "top_rail",
+    pattern: /(?:üst korkuluk|ust korkuluk|ana korkuluk|top rail|handrail)/u,
+  },
+  {
+    code: "guard",
+    pattern: /(?:koruyucu|muhafaza|guard(?:ing)?)/u,
+  },
+];
+
+function componentsClaimedAbsent(candidate: NormalizedCandidate): string[] {
+  if (candidate.condition_code !== "visible_structural_absence") return [];
+  const text = `${candidate.normalized_label} ${
+    candidate.affirmative_cues.join(" ")
+  }`.toLocaleLowerCase("tr-TR");
+  return BARRIER_COMPONENTS
+    .filter((component) => component.pattern.test(text))
+    .filter((component) => {
+      // Only the component the sentence says is missing, not one it says is there.
+      const match = component.pattern.exec(text);
+      if (!match) return false;
+      const after = text.slice(match.index, match.index + 90);
+      return /(?:eksik|yok|bulunmuyor|bulunmama|mevcut değil|missing|absent)/u
+        .test(after);
+    })
+    .map((component) => component.code);
+}
+
+function componentsAffirmedPresent(
+  output: ProviderPhotoOutput,
+  moduleID: string,
+): Set<string> {
+  const affirmed = new Set<string>();
+  for (const control of output.positive_controls) {
+    if (control.module_id !== moduleID) continue;
+    const text = `${control.description} ${control.affirmative_cues.join(" ")}`
+      .toLocaleLowerCase("tr-TR");
+    for (const component of BARRIER_COMPONENTS) {
+      if (component.pattern.test(text)) affirmed.add(component.code);
+    }
+  }
+  return affirmed;
+}
+
 function assuranceModuleForVisibleAsset(
   kind: string,
   label: string,
@@ -1052,6 +1125,9 @@ export function routeCandidates(params: {
   const hardRejections: HardRejection[] = [];
   const referencePolicy = params.referencePolicy ?? null;
   const sectorContext = visibleSectorContext(params.photoOutputs);
+  const outputByPhoto = new Map(
+    params.photoOutputs.map((entry) => [entry.photoIndex, entry.output]),
+  );
   for (const candidate of params.candidates) {
     const route = routeClass(candidate);
     if (route.reject) {
@@ -1073,7 +1149,26 @@ export function routeCandidates(params: {
       });
       continue;
     }
-    const itemClass = route.itemClass!;
+    let itemClass = route.itemClass!;
+    let routeReason = route.reason;
+    // Self-contradiction: the same photo's positive controls affirm the very
+    // component this candidate calls missing. Demote rather than publish a
+    // scored absence the model itself disputed.
+    if (itemClass === "observed_finding") {
+      const photoOutput = outputByPhoto.get(candidate.photo_index);
+      if (photoOutput) {
+        const affirmed = componentsAffirmedPresent(
+          photoOutput,
+          candidate.module_id,
+        );
+        const disputed = componentsClaimedAbsent(candidate)
+          .filter((component) => affirmed.has(component));
+        if (disputed.length > 0) {
+          itemClass = "verification_request";
+          routeReason = `provider_self_contradiction:${disputed.join("+")}`;
+        }
+      }
+    }
     const scored = itemClass === "observed_finding";
     const assurance = itemClass === "assurance_requirement"
       ? assuranceTopic(candidate)
@@ -1121,7 +1216,7 @@ export function routeCandidates(params: {
       score_payload: scoreValues ?? undefined,
       internal_priority: {
         criticality: candidate.criticality,
-        route_reason: route.reason,
+        route_reason: routeReason,
         mechanism_code: mechanismCode(candidate),
         // Distinguishing noun for the title-uniqueness pass, taken from the
         // hazard's own words rather than a scene id.
@@ -1141,7 +1236,7 @@ export function routeCandidates(params: {
       candidate_id: candidate.id,
       from_state: "candidate",
       to_state: itemClass,
-      reason_code: route.reason,
+      reason_code: routeReason,
       evidence_level: candidate.evidence_level,
     });
   }

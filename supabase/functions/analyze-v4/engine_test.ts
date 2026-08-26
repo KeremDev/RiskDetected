@@ -1385,3 +1385,113 @@ Deno.test("her mekanizmanın kök nedeni ve en az üç adımı vardır", () => {
     assertEquals(playbook.preventive.length > 40, true);
   }
 });
+
+Deno.test("modelin olumlu kontrolüyle çelişen yokluk iddiası skorlanmaz", () => {
+  // 4534c158: dört korkuluk adayı da yokluk iddia etti, fotoğrafta üç eleman da
+  // yerindeydi. Model aynı fotoğrafta elemanın varlığını beyan ettiyse kendi
+  // kendisiyle çelişiyordur; doğru çıktı skorlu bulgu değil saha teyididir.
+  const photo = output([candidate({
+    candidate_key: "toeboard-absent",
+    module_id: "falls_falling_objects",
+    raw_label: "Alt platform korkuluğunda etek tahtası eksikliği",
+    affirmative_cues: [
+      "alt platformun kenarındaki sarı korkulukta etek tahtası bulunmamaktadır",
+    ],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "nesne düşmesi",
+      consequence: "alttaki kişiye çarpma",
+    },
+    potential_consequence: "serious",
+  })]);
+  photo.positive_controls = [{
+    control_key: "rail-complete",
+    module_id: "falls_falling_objects",
+    description:
+      "Alt platformda tam korkuluk sistemi (üst korkuluk, ara korkuluk, etek tahtası) mevcuttur.",
+    affirmative_cues: ["sarı üst korkuluk", "ara korkuluk", "etek tahtası"],
+    evidence_region: { x: 0.1, y: 0.2, width: 0.3, height: 0.2 },
+  }];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "verification_request");
+  assertEquals(item?.is_scored, false);
+  assertStringIncludes(
+    String(item?.internal_priority.route_reason),
+    "provider_self_contradiction",
+  );
+});
+
+Deno.test("çelişki yoksa yokluk iddiası skorlu bulgu olarak kalır", () => {
+  const photo = output([candidate({
+    candidate_key: "toeboard-absent-2",
+    module_id: "falls_falling_objects",
+    raw_label: "Platform korkuluğunda etek tahtası eksikliği",
+    affirmative_cues: ["korkulukta etek tahtası bulunmamaktadır"],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "nesne düşmesi",
+      consequence: "alttaki kişiye çarpma",
+    },
+    potential_consequence: "serious",
+  })]);
+  photo.positive_controls = [{
+    control_key: "top-rail-only",
+    module_id: "falls_falling_objects",
+    description: "Platform kenarında sarı üst korkuluk mevcuttur.",
+    affirmative_cues: ["sarı üst korkuluk"],
+    evidence_region: { x: 0.1, y: 0.2, width: 0.3, height: 0.2 },
+  }];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "observed_finding");
+  assertEquals(item?.is_scored, true);
+});
+
+Deno.test("engebeli kayalık zemin dağınık malzeme başlığını almaz", () => {
+  const rocky = output([candidate({
+    candidate_key: "rocky-ground",
+    module_id: "housekeeping_physical_contact",
+    raw_label: "Engebeli, kayalık zemin",
+    affirmative_cues: ["engebeli ve kayalık zemin görülüyor"],
+    event_path: {
+      source: "engebeli zemin",
+      contact_or_failure: "kişinin takılması",
+      consequence: "düşme",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  const routedRocky = routeCandidates({
+    candidates: normalizeCandidates(rocky, 3),
+    photoOutputs: [{ photoIndex: 3, output: rocky }],
+    sectorID: "construction",
+  });
+  const clutter = output([candidate({
+    candidate_key: "clutter-ground",
+    module_id: "housekeeping_physical_contact",
+    raw_label: "Zeminde dağınık malzemeler",
+    affirmative_cues: ["zeminde karton kutular ve dağınık eşyalar"],
+    event_path: {
+      source: "zemindeki malzeme",
+      contact_or_failure: "kişinin takılması",
+      consequence: "düşme",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  const routedClutter = routeCandidates({
+    candidates: normalizeCandidates(clutter, 2),
+    photoOutputs: [{ photoIndex: 2, output: clutter }],
+    sectorID: "manufacturing",
+  });
+  assertStringIncludes(routedRocky.items[0].title, "Engebeli");
+  assertStringIncludes(routedClutter.items[0].title, "dağınık");
+  assertEquals(routedRocky.items[0].title === routedClutter.items[0].title, false);
+});
