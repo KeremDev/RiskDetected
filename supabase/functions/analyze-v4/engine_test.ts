@@ -2278,3 +2278,73 @@ Deno.test("kendi olumsuzuyla kapanan spekülatif not kapıdan geçemez", () => {
     true,
   );
 });
+
+Deno.test("ekipman sıra numarası kullanıcı metnine sızmaz", () => {
+  // 12063bd4: model varlıkları numaralıyor ("Makine 3", "Torna tezgahı 1") ve bu
+  // numaralar başlığa geçiyordu. Okuyucunun eşleştireceği bir numaralandırma yok
+  // -- person_2 sızıntısıyla aynı sınıf. Türkçede rakamı silmek yetmiyor: hâl
+  // eki rakamın üzerinde duruyor, isme yeniden bağlanması gerekiyor.
+  const cases: Array<[string, string, string]> = [
+    [
+      "Torna tezgahı 1'de açıkta bulunan kurşun vida",
+      "Torna tezgahında açıkta bulunan kurşun vida",
+      "vida açıkta",
+    ],
+    [
+      "Torna tezgahı 1'in çalışma noktasında koruyucu eksikliği",
+      "Torna tezgahının çalışma noktasında koruyucu eksikliği",
+      "koruyucu yok",
+    ],
+    [
+      "Makine 3 üzerinde açıkta kalan elektrik kabloları",
+      "Makine üzerinde açıkta kalan elektrik kabloları",
+      "kablolar açıkta",
+    ],
+    ["Pompa 2'de sızıntı", "Pompada sızıntı", "sızıntı var"],
+    // Sert ünsüzle biten isimde ünsüz benzeşmesi: "Tank 4'te" -> "Tankta".
+    ["Tank 4'te korozyon", "Tankta korozyon", "korozyon var"],
+  ];
+  for (const [rawLabel, expected, cue] of cases) {
+    const photo = output([candidate({
+      candidate_key: `ord-${expected.length}`,
+      module_id: "machinery",
+      raw_label: rawLabel,
+      affirmative_cues: [cue],
+      event_path: {
+        source: "dönen parça",
+        contact_or_failure: "temas",
+        consequence: "uzuv kaybı",
+      },
+      potential_consequence: "permanent",
+    })]);
+    const routed = routeCandidates({
+      candidates: normalizeCandidates(photo, 1),
+      photoOutputs: [{ photoIndex: 1, output: photo }],
+      sectorID: "manufacturing",
+    });
+    assertEquals(routed.items[0].title, expected);
+    assertEquals(/\d/.test(routed.items[0].title), false);
+  }
+});
+
+Deno.test("açıklamadaki ekipman numarası da temizlenir", () => {
+  const photo = output([candidate({
+    candidate_key: "ord-descr",
+    module_id: "electrical",
+    raw_label: "Açıkta kalan elektrik kabloları",
+    affirmative_cues: ["Makine 3'ün üst kısmında açıkta kalan kablolar"],
+    event_path: {
+      source: "açıkta kablo",
+      contact_or_failure: "temas",
+      consequence: "elektrik çarpması",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertStringIncludes(routed.items[0].description, "Makinenin üst kısmında");
+  assertEquals(routed.items[0].description.includes("Makine 3"), false);
+});

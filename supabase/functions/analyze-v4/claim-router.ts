@@ -150,8 +150,67 @@ function categoryLabel(moduleID: string): string {
   return MODULE_CATEGORY_TR[moduleID] ?? "Genel fiziksel güvenlik";
 }
 
+// The scene graph numbers equipment -- "Makine 3", "Torna tezgahı 1" -- and those
+// ordinals reached the report titles. A reader has no numbering to match them
+// against, exactly like the person_2 identifiers cleaned earlier. Dropping the
+// digits alone is not enough in Turkish, because the case suffix hangs off the
+// numeral: "Torna tezgahı 1'de" must become "Torna tezgahında", not
+// "Torna tezgahı de". These rebuild the suffix on the noun.
+const EQUIPMENT_ORDINAL_NOUN =
+  "makine|makina|makinesi|tezgah|tezgahı|tezgahi|torna|freze|matkap|pres|pompa|pompası|tank|tankı|vinç|vinc|konveyör|konveyor|pano|panosu|kompresör|kompresor|jeneratör|jenerator|fırın|firin|kazan|silo|bant|robot|ünite|unite|ünitesi|ekipman|forklift|istasyon|hat|hattı|hatti|kabin|kabini";
+
+const VOWELS = "aeıioöuü";
+const BACK_VOWELS = "aıou";
+const ROUNDED_VOWELS = "ouöü";
+const VOICELESS = "fstkçşhp";
+
+function lastVowelOf(word: string): string {
+  for (let index = word.length - 1; index >= 0; index -= 1) {
+    if (VOWELS.includes(word[index])) return word[index];
+  }
+  return "a";
+}
+
+function turkishGenitive(noun: string): string {
+  const vowel = lastVowelOf(noun);
+  const back = BACK_VOWELS.includes(vowel);
+  const rounded = ROUNDED_VOWELS.includes(vowel);
+  const suffix = back ? (rounded ? "un" : "ın") : (rounded ? "ün" : "in");
+  return VOWELS.includes(noun[noun.length - 1])
+    ? `${noun}n${suffix}`
+    : `${noun}${suffix}`;
+}
+
+function turkishLocative(noun: string): string {
+  const vowel = lastVowelOf(noun);
+  const back = BACK_VOWELS.includes(vowel);
+  const final = noun[noun.length - 1];
+  const suffix = VOICELESS.includes(final)
+    ? (back ? "ta" : "te")
+    : (back ? "da" : "de");
+  // A possessive-marked noun ("tezgahı") takes the buffer n before the case.
+  return "ıiuü".includes(final) ? `${noun}n${suffix}` : `${noun}${suffix}`;
+}
+
+function stripEquipmentOrdinals(value: string): string {
+  const noun = `(?:${EQUIPMENT_ORDINAL_NOUN})`;
+  return value
+    .replace(
+      new RegExp(`\\b(${noun})\\s*\\d+\\s*['’](?:de|da|te|ta)\\b`, "giu"),
+      (_match, word: string) => turkishLocative(word),
+    )
+    .replace(
+      new RegExp(
+        `\\b(${noun})\\s*\\d+\\s*['’](?:in|ın|un|ün|nin|nın|nun|nün)\\b`,
+        "giu",
+      ),
+      (_match, word: string) => turkishGenitive(word),
+    )
+    .replace(new RegExp(`\\b(${noun})\\s*\\d+\\b`, "giu"), "$1");
+}
+
 function cleanText(value: string, fallback: string): string {
-  const cleaned = value
+  const cleaned = stripEquipmentOrdinals(value)
     .replace(
       /\b(?:fotoğraf|görsel|resim)\s*\d+\s*(?:'?[dt][ae])?\b/giu,
       "görüntüde",
