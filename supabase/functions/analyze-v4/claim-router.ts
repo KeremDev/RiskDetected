@@ -1178,6 +1178,29 @@ function sceneHasWalkableRoute(output: ProviderPhotoOutput): boolean {
   );
 }
 
+// An unresolved module becomes a published field check, which is right when a
+// visible asset's condition cannot be read from the photograph and wrong when
+// the model is only guessing that a hazard class might exist somewhere. One
+// two-photo report carried four of the second kind out of twelve items:
+//   "Proses ortamında kimyasallar kullanılıyor OLABİLİR, ancak ..."
+//   "Endüstriyel ekipmanların elektrik bağlantıları veya panoları MEVCUT
+//    OLABİLİR, ancak ..."
+// beside one of the first kind, which stays:
+//   "Boru tesisatı ve ekipmanların proses bütünlüğü (sızıntı, korozyon vb.)
+//    görsel olarak tam olarak değerlendirilememektedir."
+// The prompt asks for unresolved when critical geometry is occluded and the
+// consequence is heavy. Speculating that a hazard class exists is not that.
+const EXISTENCE_SPECULATION =
+  /(?:olabilir|olabileceği|olabilecegi|bulunabilir|içerebilir|icerebilir|olası|olasi|may be|might be|could be|possibly)/u;
+const DEFINITE_OBSERVATION =
+  /(?:görülüyor|goruluyor|görülmekte|gorulmekte|görünüyor|gorunuyor|görünmekte|gorunmekte|görünen|gorunen|mevcuttur|tespit edil|gözlenmekte|gozlenmekte)/u;
+
+function coverageIsSpeculative(coverage: ModuleCoverage): boolean {
+  const note = (coverage.note ?? "").toLocaleLowerCase("tr-TR");
+  if (!note) return false;
+  return EXISTENCE_SPECULATION.test(note) && !DEFINITE_OBSERVATION.test(note);
+}
+
 function assuranceModuleForVisibleAsset(
   kind: string,
   label: string,
@@ -1494,6 +1517,19 @@ export function routeCandidates(params: {
         !noCandidates.has(entry.module_id)
       )
     ) {
+      if (coverageIsSpeculative(coverage)) {
+        ledger.push({
+          from_state: "module_coverage",
+          to_state: "hard_reject",
+          reason_code: "speculative_module_coverage",
+          details: {
+            module_id: coverage.module_id,
+            photo_index: photoIndex,
+            note: (coverage.note ?? "").slice(0, 200),
+          },
+        });
+        continue;
+      }
       items.push(
         unresolvedModuleVerificationItem(photoIndex, coverage, referencePolicy),
       );

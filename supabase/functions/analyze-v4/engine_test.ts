@@ -2050,3 +2050,75 @@ Deno.test("gerçekten tıkalı geçiş yolu kendi başlığını korur", () => {
   );
   assertEquals(routed.items[0].score_payload?.mechanism_code, "fall_same_level");
 });
+
+Deno.test("varlık tahmini yapan modül kapsamı saha teyidi üretmez", () => {
+  // 58057767: on iki maddenin dördü "şu tehlike sınıfı burada olabilir"
+  // tahminiydi. Görünen bir varlığın durumu çözülemiyorsa madde kalır.
+  const photo = output([candidate()]);
+  const speculative = [
+    ["chemical", "Proses ortamında kimyasallar kullanılıyor olabilir, ancak dökülme veya diğer kimyasal tehlikeler görsel olarak çözümlenememektedir."],
+    ["electrical", "Endüstriyel ekipmanların elektrik bağlantıları veya panoları mevcut olabilir, ancak açıkta kablo görsel olarak çözümlenememektedir."],
+    ["energy", "Endüstriyel ekipman ve boru tesisatı enerji içeriyor olabilir, ancak yalıtımsız yüzey görsel olarak çözümlenememektedir."],
+  ] as const;
+  const grounded = [
+    "process_integrity",
+    "Boru tesisatı ve ekipmanların proses bütünlüğü (sızıntı, korozyon vb.) görsel olarak tam olarak değerlendirilememektedir.",
+  ] as const;
+
+  photo.module_coverage = [
+    ...photo.module_coverage.filter((entry) =>
+      !["energy"].includes(entry.module_id)
+    ),
+    ...[...speculative, grounded].map(([moduleID, note]) => ({
+      module_id: moduleID,
+      activated_by: ["core"],
+      outcome: "unresolved_requires_verification" as const,
+      entity_refs: ["platform-1"],
+      candidate_keys: [],
+      note,
+    })),
+  ] as never;
+
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const unresolved = routed.items.filter((item) =>
+    item.internal_priority.route_reason === "module_coverage_unresolved"
+  );
+  assertEquals(unresolved.length, 1);
+  assertEquals(unresolved[0].category, "Proses bütünlüğü");
+
+  const dropped = routed.ledger.filter((entry) =>
+    entry.reason_code === "speculative_module_coverage"
+  );
+  assertEquals(dropped.length, 3);
+  assertEquals(dropped.every((entry) => entry.candidate_id === undefined), true);
+});
+
+Deno.test("gerçek gözleme dayanan çözülemeyen modül maddesi korunur", () => {
+  const photo = output([candidate()]);
+  photo.module_coverage = photo.module_coverage.map((entry) =>
+    entry.module_id === "energy"
+      ? {
+        ...entry,
+        outcome: "unresolved_requires_verification" as const,
+        candidate_keys: [],
+        note:
+          "Pano bölgesi kısmen örtülü görünmekte; izolasyon düzeni bu açıdan çözümlenememektedir.",
+      }
+      : entry
+  );
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routed.items.some((item) =>
+      item.internal_priority.route_reason === "module_coverage_unresolved"
+    ),
+    true,
+  );
+});
