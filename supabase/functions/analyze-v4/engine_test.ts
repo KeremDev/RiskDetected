@@ -22,6 +22,7 @@ import {
   recoverCoverageDeterministically,
 } from "./dynamic-modules.ts";
 import { topicConsequenceRank } from "./assurance-playbook.ts";
+import { controlPlaybook } from "./control-playbook.ts";
 import { normalizeCandidates } from "./evidence-normalizer.ts";
 import { buildCoverageRepairPrompt } from "./provider.ts";
 import { buildTargetedQueue, mergeTargetedOutput } from "./targeted-queue.ts";
@@ -1236,4 +1237,151 @@ Deno.test("her skorsuz madde bütçe sıralaması için consequence_rank taşır
       (crane?.internal_priority.consequence_rank as number),
     true,
   );
+});
+
+Deno.test("skorlu bulgu jenerik tek cümle yerine mekanizmaya özgü adım taşır", () => {
+  const photo = output([candidate({
+    candidate_key: "hook-latch",
+    module_id: "lifting",
+    raw_label: "Vinç kancasında emniyet mandalı yok",
+    affirmative_cues: ["Üst vincin kancasında mandal mekanizması görünmüyor"],
+    event_path: {
+      source: "vinç kancası",
+      contact_or_failure: "kancadan yükün ayrılması",
+      consequence: "yükün düşmesi",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items[0];
+  const corrective = item.recommended_measures[0].text;
+  assertEquals(item.recommended_measures[0].kind, "corrective");
+  assertStringIncludes(corrective, "1. ");
+  assertStringIncludes(corrective, "3. ");
+  assertStringIncludes(corrective, "mandal");
+  assertEquals(
+    corrective.includes("görünen fiziksel koşulu güvenli hale getirin"),
+    false,
+  );
+  assertEquals(
+    item.recommended_measures[1].text.includes(
+      "sorumluluk, kontrol sıklığı ve fiziksel koruma standardını belirleyin",
+    ),
+    false,
+  );
+});
+
+Deno.test("kök neden modülden değil mekanizmadan gelir", () => {
+  // Kepçeden düşen malzemeye korkuluk kök nedeni yazılıyordu: aynı modülü
+  // kenar koruması ile paylaşıyor.
+  const bucket = output([candidate({
+    candidate_key: "bucket-spill",
+    module_id: "falls_falling_objects",
+    raw_label: "Ekskavatör kepçesinden düşen malzeme",
+    affirmative_cues: ["Kepçe toprak kazıyor; gevşek taşlar kepçeden düşüyor"],
+    event_path: {
+      source: "ekskavatör kepçesi",
+      contact_or_failure: "malzemenin düşmesi",
+      consequence: "çarpma",
+    },
+    potential_consequence: "serious",
+  })]);
+  const routedBucket = routeCandidates({
+    candidates: normalizeCandidates(bucket, 1),
+    photoOutputs: [{ photoIndex: 1, output: bucket }],
+    sectorID: "construction",
+  });
+  assertEquals(
+    routedBucket.items[0].score_payload?.mechanism_code,
+    "falling_object",
+  );
+  assertEquals(
+    routedBucket.items[0].root_cause_text.includes("çalışma kenarında"),
+    false,
+  );
+  assertStringIncludes(routedBucket.items[0].root_cause_text, "düşme yolu");
+});
+
+Deno.test("etek tahtası eksikken nesne düşmesi kişi düşmesi sayılmaz", () => {
+  const photo = output([candidate({
+    candidate_key: "toeboard-gap",
+    module_id: "falls_falling_objects",
+    raw_label: "Platform kenarında etek tahtası eksik",
+    affirmative_cues: ["Orta korkuluk altında boşluk; etek tahtası yok"],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "nesne düşmesi",
+      consequence: "aşağıdaki kişiye çarpma",
+    },
+    potential_consequence: "serious",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routed.items[0].score_payload?.mechanism_code,
+    "falling_object",
+  );
+});
+
+Deno.test("yüksek basınçlı hidrolik hat enerji modülünde jenerike düşmez", () => {
+  const photo = output([candidate({
+    candidate_key: "hydraulic-line",
+    module_id: "energy",
+    raw_label: "Ekskavatör kolu üzerindeki yüksek basınçlı hidrolik hatlar",
+    affirmative_cues: ["Kol boyunca uzanan hidrolik hortumlar; hidrolik silindirler"],
+    event_path: {
+      source: "hidrolik hat",
+      contact_or_failure: "hattın yırtılması",
+      consequence: "sıvı enjeksiyonu",
+    },
+    potential_consequence: "permanent",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const item = routed.items[0];
+  assertEquals(
+    item.score_payload?.mechanism_code,
+    "hydraulic_pneumatic_release",
+  );
+  assertStringIncludes(item.recommended_measures[0].text, "basınc");
+  assertStringIncludes(item.root_cause_text, "asınçlı akışkan hattının");
+});
+
+Deno.test("her mekanizmanın kök nedeni ve en az üç adımı vardır", () => {
+  const mechanisms = [
+    "fall_from_height",
+    "falling_object",
+    "caught_in_pinch_shear",
+    "vehicle_equipment_strike",
+    "electrical_contact_arc",
+    "hydraulic_pneumatic_release",
+    "mechanical_separation_release",
+    "fire_explosion",
+    "chemical_contact_release",
+    "excavation_collapse_rockfall",
+    "structural_collapse",
+    "equipment_overturn",
+    "thermal_contact",
+    "sharp_edge_contact",
+    "fall_same_level",
+    "ergonomic_overexertion",
+    "environmental_release",
+    "other_visible_physical",
+  ];
+  for (const mechanism of mechanisms) {
+    const playbook = controlPlaybook(mechanism);
+    assertEquals(playbook.corrective.length >= 3, true);
+    assertEquals(playbook.rootCause.length > 40, true);
+    assertEquals(playbook.preventive.length > 40, true);
+  }
 });

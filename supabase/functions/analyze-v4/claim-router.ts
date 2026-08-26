@@ -13,6 +13,7 @@ import {
   assuranceTopic,
   assuranceTopicForModule,
 } from "./assurance-topic-catalog.ts";
+import { controlPlaybook, correctiveSteps } from "./control-playbook.ts";
 import {
   assuranceMeasures,
   moduleConsequenceRank,
@@ -87,60 +88,34 @@ const CONTROL_CATALOG: Record<string, string> = {
     "Kişinin tehlike yoluna erişimini durdurun ve kaynağı fiziksel olarak kontrol altına alın.",
 };
 
-const ROOT_CAUSE_CATALOG: Record<string, string> = {
-  falls_falling_objects:
-    "Görünen çalışma kenarında toplu düşmeye karşı koruma sürekliliği sağlanmamıştır.",
-  work_at_height:
-    "Yüksekte çalışma alanı, düşme olay yolunu kesecek sürekli toplu korumayla düzenlenmemiştir.",
-  electrical:
-    "Hat ve ıslak yüzey arasındaki fiziksel ayrım güvenli temas yolunu koruyacak biçimde sağlanmamıştır.",
-  access_egress:
-    "Çalışma alanı yerleşimi, güvenli ve kesintisiz bir geçiş yolu korunacak biçimde düzenlenmemiştir.",
-  housekeeping_physical_contact:
-    "Malzeme yerleşimi ve yüzey koşulları güvenli yürüme alanı korunacak biçimde düzenlenmemiştir.",
-  people_exposure:
-    "Malzeme taşıma yöntemi, çalışanın görüş ve güvenli hareket alanını koruyacak biçimde düzenlenmemiştir.",
-};
-
-const MEASURE_CATALOG: Record<
+/**
+ * A module says more than the mechanism only where its wording adds a real
+ * detail. Everything else now comes from the mechanism playbook, keyed on the
+ * causal path rather than on which routing bucket the candidate landed in.
+ */
+const MODULE_ROOT_CAUSE_OVERRIDE: Record<
   string,
-  { corrective: string; preventive: string }
+  { mechanisms: string[]; text: string }
 > = {
-  falls_falling_objects: {
-    corrective:
-      "Kenar çevresindeki çalışmayı durdurun, erişimi sınırlandırın ve uygun toplu düşme korumasını tamamlayın.",
-    preventive:
-      "Kenar koruma planını iş sırasına bağlayın; ana korkuluk, ara korkuluk ve topuk levhası sürekliliğini vardiya öncesi kontrol edin.",
-  },
-  work_at_height: {
-    corrective:
-      "Yüksekte çalışmayı durdurun ve platform ile erişim hattını toplu koruma tamamlanana kadar kullanıma kapatın.",
-    preventive:
-      "Yüksekte çalışma planına kenar koruma, güvenli erişim ve değişiklik sonrası yeniden kontrol adımlarını ekleyin.",
-  },
   electrical: {
-    corrective:
-      "Islak alanı ve görünen hattı geçici olarak ayırın; hattın niteliği ile enerji durumunu yetkili kişiyle doğrulayın.",
-    preventive:
-      "Geçici hat güzergâhlarını ıslak yüzeylerden fiziksel olarak ayırın ve saha elektrik kontrollerine güzergâh denetimi ekleyin.",
+    mechanisms: ["electrical_contact_arc"],
+    text:
+      "Hat ve ıslak yüzey arasındaki fiziksel ayrım güvenli temas yolunu koruyacak biçimde sağlanmamıştır.",
   },
   access_egress: {
-    corrective:
-      "Geçiş hattındaki malzemeleri ve su birikimini gidererek kesintisiz, görünür bir yürüme yolu oluşturun.",
-    preventive:
-      "Malzeme depolama alanlarını işaretleyin; geçiş ve drenaj durumunu vardiya başında kontrol edin.",
+    mechanisms: ["fall_same_level"],
+    text:
+      "Çalışma alanı yerleşimi, güvenli ve kesintisiz bir geçiş yolu korunacak biçimde düzenlenmemiştir.",
   },
   housekeeping_physical_contact: {
-    corrective:
-      "Dağınık malzemeleri kaldırın veya sabitleyin; yürüme yüzeyinin düzgün ve kuru kalmasını sağlayın.",
-    preventive:
-      "Günlük düzen-temizlik sorumluluğu belirleyin ve yürüme alanlarını malzeme depolamasından fiziksel olarak ayırın.",
+    mechanisms: ["fall_same_level"],
+    text:
+      "Malzeme yerleşimi ve yüzey koşulları güvenli yürüme alanı korunacak biçimde düzenlenmemiştir.",
   },
   people_exposure: {
-    corrective:
-      "Uzun malzemenin taşınmasını durdurup geçiş yolunu temizleyin; görüşü koruyan uygun taşıma yöntemi kullanın.",
-    preventive:
-      "Uzun ve hacimli malzemeler için mekanik taşıma, ekip halinde taşıma ve önceden belirlenmiş güzergâh yöntemini uygulayın.",
+    mechanisms: ["ergonomic_overexertion"],
+    text:
+      "Malzeme taşıma yöntemi, çalışanın görüş ve güvenli hareket alanını koruyacak biçimde düzenlenmemiştir.",
   },
 };
 
@@ -368,14 +343,23 @@ function verificationAction(candidate: NormalizedCandidate): string {
   return "Kritik fiziksel koşulu farklı açıdan ve sahadaki erişim ilişkisiyle doğrulayın; doğrulanana kadar maruziyeti sınırlandırın.";
 }
 
+// Root cause used to be keyed by module over six of the nineteen modules, so
+// material falling out of an excavator bucket was given the guardrail sentence
+// "Görünen çalışma kenarında toplu düşmeye karşı koruma sürekliliği
+// sağlanmamıştır" -- it shares a module with edge protection. Mechanism is the
+// causal axis; the module catalog stays only as a more specific override where
+// it genuinely says more.
 function rootCauseFor(
   candidate: NormalizedCandidate,
   itemClass: SafetyItemClass,
 ): string {
   if (itemClass !== "observed_finding") return "";
+  const mechanism = mechanismCode(candidate);
+  const moduleSpecific = MODULE_ROOT_CAUSE_OVERRIDE[candidate.module_id];
   return cleanText(
-    ROOT_CAUSE_CATALOG[candidate.module_id] ??
-      "Görünen çalışma koşulu, tehlike yolunu fiziksel olarak kesecek biçimde düzenlenmemiştir.",
+    moduleSpecific?.mechanisms.includes(mechanism)
+      ? moduleSpecific.text
+      : controlPlaybook(mechanism).rootCause,
     "",
   );
 }
@@ -384,12 +368,6 @@ function measuresFor(
   candidate: NormalizedCandidate,
   itemClass: SafetyItemClass,
 ): RoutedItem["recommended_measures"] {
-  const selected = MEASURE_CATALOG[candidate.module_id] ?? {
-    corrective:
-      "Tehlike yoluna erişimi durdurun ve görünen fiziksel koşulu güvenli hale getirin.",
-    preventive:
-      "Aynı koşulun tekrarını önleyecek sorumluluk, kontrol sıklığı ve fiziksel koruma standardını belirleyin.",
-  };
   // An assurance_requirement returned an empty measure list, so the report told
   // the reader a tank's internal integrity could not be confirmed from the photo
   // and then offered no step at all. Unscored items now carry the deterministic
@@ -419,14 +397,15 @@ function measuresFor(
     }];
   }
   if (itemClass !== "observed_finding") return [];
+  const playbook = controlPlaybook(mechanismCode(candidate));
   return [{
     kind: "corrective",
     title: "Acil düzeltme",
-    text: selected.corrective,
+    text: correctiveSteps(playbook),
   }, {
     kind: "preventive",
     title: "Kalıcı önleme",
-    text: selected.preventive,
+    text: playbook.preventive,
   }];
 }
 
@@ -507,8 +486,13 @@ function mechanismCode(candidate: NormalizedCandidate): string {
       /(?:kişinin düşmesi|kisinin dusmesi|yüksekten düşme|yuksekten dusme|çalışanın düşmesi|calisanin dusmesi|person fall|fall from height)/u
         .test(context)
     ) return "fall_from_height";
-    return /(?:düşen|dusen|falling|üstten|yukarıdan|cisim|object|malzeme düşmesi|yük düşmesi)/u
-        .test(context)
+    // "nesne düşmesi ... aşağıdaki kişiye çarpma" resolved to fall_from_height
+    // because the list wanted the exact words "cisim" or "düşen": a missing
+    // toeboard dropping material on someone below was filed as a person falling.
+    return /(?:düşen|dusen|falling|üstten|yukarıdan|cisim|object)/u.test(context) ||
+        /(?:nesne|malzeme|yük|taş|tas|parça|parca|alet|ekipman|moloz|kepçe|kepce)[^.]{0,24}(?:düş|dus|kay|dök|dok|devril)/u
+          .test(context) ||
+        /(?:etek tahtası|etek tahtasi|toeboard|toe board)/u.test(context)
       ? "falling_object"
       : "fall_from_height";
   }
@@ -540,9 +524,17 @@ function mechanismCode(candidate: NormalizedCandidate): string {
       : "mechanical_separation_release";
   }
   if (candidate.module_id === "energy") {
-    return /(?:elektr|electric|pano|kablo|gerilim|volt|arc)/u.test(context)
-      ? "electrical_contact_arc"
-      : "other_visible_physical";
+    if (/(?:elektr|electric|pano|kablo|gerilim|volt|arc)/u.test(context)) {
+      return "electrical_contact_arc";
+    }
+    // High-pressure hydraulic lines arrive under the energy module and fell to
+    // other_visible_physical, which capped a fluid injection injury at 15 and
+    // gave it the generic control text.
+    if (
+      /(?:hidrolik|hydraulic|pnömatik|pnomatik|pneumatic|basınçlı|basincli|hortum|enjeksiyon|injection)/u
+        .test(context)
+    ) return "hydraulic_pneumatic_release";
+    return "other_visible_physical";
   }
   if (candidate.module_id === "access_egress") return "fall_same_level";
   if (candidate.module_id === "housekeeping_physical_contact") {
