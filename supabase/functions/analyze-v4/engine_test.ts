@@ -205,7 +205,14 @@ Deno.test("kablo-hortum belirsizliği enerjili elektrik bulgusu olarak skorlanma
   assertEquals(verification.root_cause_text, "");
   assertEquals(verification.title.includes("enerjili"), false);
   assertStringIncludes(verification.description, "kesinleştirilemiyor");
-  assertEquals(verification.recommended_measures.length, 2);
+  // Unscored items carry the module playbook: temporary protection, numbered
+  // field steps and the standing arrangement.
+  assertEquals(verification.recommended_measures.length, 3);
+  assertStringIncludes(
+    verification.recommended_measures[1].text,
+    "1. ",
+  );
+  assertStringIncludes(verification.references_text, "");
 });
 
 Deno.test("aynı zemindeki düzen ve erişim adayları tek olay yolu olarak birleşir", () => {
@@ -941,4 +948,174 @@ Deno.test("aynı anahtarı üreten iki fotoğraf koşuyu düşürmez", () => {
   assertEquals(keys.length, 2);
   assertEquals(new Set(keys).size, 2, keys.join(" | "));
   assertStringIncludes(keys[0], "unprotected_roof_edge");
+});
+
+Deno.test("falls modülünün kendi adı mekanizmayı düşen cisme çeviremez", () => {
+  // `falls_falling_objects` metni "falling" ve "object" içerdiği için mekanizma
+  // testi her adayda eşleşiyordu; ara korkuluk eksikliği düşen cisim sayılıp
+  // kısmi bariyer tavanını atlıyor ve FK 720 / critical yayınlanıyordu.
+  const photo = output([candidate({
+    candidate_key: "midrail-gap",
+    module_id: "falls_falling_objects",
+    raw_label: "Korumasız kenar",
+    affirmative_cues: [
+      "Üst korkuluk ve etek tahtası mevcutken ara korkuluğun bir kısmı eksik",
+    ],
+    event_path: {
+      source: "korumasız kenar",
+      contact_or_failure: "kişinin düşmesi",
+      consequence: "yüksekten düşme",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items[0];
+  assertEquals(item.score_payload?.mechanism_code, "fall_from_height");
+  assertEquals(item.fk_severity, 15);
+  assertEquals(item.score_payload?.severity_cap, 15);
+  assertEquals(item.fk_band, "high");
+  assertEquals(item.recommended_action.includes("düşen cisim"), false);
+});
+
+Deno.test("gerçek düşen cisim kanıtı düşen cisim mekanizmasını korur", () => {
+  const photo = output([candidate({
+    candidate_key: "falling-load",
+    module_id: "falls_falling_objects",
+    raw_label: "Kenarda istiflenmiş malzeme",
+    affirmative_cues: [
+      "Platform kenarında istiflenmiş malzeme; altta geçiş yolu görülüyor",
+    ],
+    event_path: {
+      source: "kenardaki istif",
+      contact_or_failure: "malzemenin devrilmesi",
+      consequence: "düşen cisim çarpması",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(routed.items[0].score_payload?.mechanism_code, "falling_object");
+});
+
+Deno.test("ıslaklık kanıtı yokken başlık ıslak zemin iddia etmez", () => {
+  const photo = output([candidate({
+    candidate_key: "clutter",
+    module_id: "housekeeping_physical_contact",
+    raw_label: "Zeminde dağınık malzeme",
+    affirmative_cues: [
+      "Zeminde karton parçaları; zeminde çeşitli küçük eşyalar",
+    ],
+    event_path: {
+      source: "zemindeki malzeme",
+      contact_or_failure: "kişinin eşyalara takılması",
+      consequence: "düşme ve yaralanma",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(routed.items[0].title.includes("ıslak"), false);
+  assertEquals(routed.items[0].title.includes("Islak"), false);
+  assertStringIncludes(routed.items[0].title, "takılma");
+});
+
+Deno.test("gözlem açıklaması büyük harfle başlar", () => {
+  const photo = output([candidate({
+    affirmative_cues: ["üst korkuluk görülüyor; ara korkuluk eksik"],
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const first = routed.items[0].description.charAt(0);
+  assertEquals(first, first.toLocaleUpperCase("tr-TR"));
+});
+
+Deno.test("çözülemeyen modül sessizce düşmez, doğrulama isteği olur", () => {
+  const photo = output([candidate()]);
+  photo.module_coverage = photo.module_coverage.map((entry) =>
+    entry.module_id === "energy"
+      ? {
+        ...entry,
+        outcome: "unresolved_requires_verification" as const,
+        candidate_keys: [],
+        note: "Enerji hattı bölgesi kısmen örtülü",
+      }
+      : entry
+  );
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+    referencePolicy: "tr_current",
+  });
+  const unresolved = routed.items.find((item) =>
+    item.internal_priority.route_reason === "module_coverage_unresolved"
+  );
+  assertEquals(unresolved?.item_class, "verification_request");
+  assertEquals(unresolved?.is_scored, false);
+  assertEquals(unresolved?.category, "Tehlikeli enerji");
+  assertEquals(unresolved?.title.includes("energy"), false);
+  assertStringIncludes(unresolved?.recommended_measures[0].text ?? "", "1. ");
+  assertStringIncludes(unresolved?.references_text ?? "", "TS EN ISO 14118");
+});
+
+Deno.test("skorsuz güvence maddesi ayrıntılı saha adımı ve standart taşır", () => {
+  const photo = output([candidate({
+    candidate_key: "tank-integrity",
+    module_id: "process_integrity",
+    raw_label: "Depolama tankı ve borulama",
+    asset_ref: "platform-1",
+    requires_document_or_measurement: true,
+    affirmative_cues: ["Tank gövdesi ve bağlı borulama görülüyor"],
+    event_path: {
+      source: "tank gövdesi",
+      contact_or_failure: "bütünlük kaybı",
+      consequence: "salım",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+    referencePolicy: "tr_current",
+  });
+  const assurance = routed.items.find((item) =>
+    item.item_class === "assurance_requirement"
+  );
+  assertEquals(assurance?.recommended_measures.length, 2);
+  assertStringIncludes(assurance?.recommended_measures[0].text ?? "", "API 653");
+  assertStringIncludes(assurance?.recommended_measures[0].text ?? "", "API 570");
+  assertStringIncludes(assurance?.references_text ?? "", "API 510");
+});
+
+Deno.test("referansa izin vermeyen profilde standart metni boş kalır", () => {
+  const photo = output([candidate({
+    candidate_key: "tank-integrity-en",
+    module_id: "process_integrity",
+    asset_ref: "platform-1",
+    requires_document_or_measurement: true,
+    raw_label: "Depolama tankı",
+    affirmative_cues: ["Tank gövdesi görülüyor"],
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+    referencePolicy: "none",
+  });
+  for (const item of routed.items) assertEquals(item.references_text, "");
 });

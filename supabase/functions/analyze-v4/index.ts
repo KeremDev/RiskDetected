@@ -627,7 +627,7 @@ serve(async (req) => {
       "analyses",
     )
       .select(
-        "id,user_id,status,analysis_sector,output_language,plan_at_creation,canvas,localization_snapshot",
+        "id,user_id,status,analysis_sector,output_language,plan_at_creation,canvas,localization_snapshot,regulatory_reference_policy",
       )
       .eq("id", analysisID).eq("user_id", userID).maybeSingle();
     if (analysisError || !analysis) throw new Error("analysis_not_found");
@@ -888,6 +888,9 @@ serve(async (req) => {
         output: result.output,
       })),
       sectorID,
+      referencePolicy: typeof analysis.regulatory_reference_policy === "string"
+        ? analysis.regulatory_reference_policy
+        : null,
     });
     assertCriticalCandidateFates(
       candidates,

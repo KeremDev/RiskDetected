@@ -13,6 +13,12 @@ import {
   assuranceTopic,
   assuranceTopicForModule,
 } from "./assurance-topic-catalog.ts";
+import {
+  assuranceMeasures,
+  playbookForModule,
+  playbookForTopic,
+  referencesTextFor,
+} from "./assurance-playbook.ts";
 
 const SCORES = {
   probability: [0.2, 0.5, 1, 3, 6, 10],
@@ -124,7 +130,7 @@ const MEASURE_CATALOG: Record<
   },
   housekeeping_physical_contact: {
     corrective:
-      "Dağınık malzemeleri kaldırın veya sabitleyin; ıslak ve düzensiz yüzeyi güvenli hale getirin.",
+      "Dağınık malzemeleri kaldırın veya sabitleyin; yürüme yüzeyinin düzgün ve kuru kalmasını sağlayın.",
     preventive:
       "Günlük düzen-temizlik sorumluluğu belirleyin ve yürüme alanlarını malzeme depolamasından fiziksel olarak ayırın.",
   },
@@ -235,7 +241,20 @@ function conciseTitle(candidate: NormalizedCandidate): string {
     /(?:donatı|donati|filiz|rebar|sivri)/u.test(context)
   ) return "Açıkta kalan sivri filiz veya donatı uçları";
   if (candidate.module_id === "housekeeping_physical_contact") {
-    return "Dağınık malzemeler ve ıslak zeminde takılma veya kayma riski";
+    // This used to be one fixed string that always claimed a wet floor, so a
+    // photo showing only cardboard on the ground was published as "ıslak
+    // zeminde ... kayma riski" with no wet-surface evidence anywhere in it.
+    const wet =
+      /(?:ıslak|islak|kaygan|su birikinti|sıvı döküntü|sivi dokuntu|yağ döküntü|yag dokuntu|wet|slippery)/u
+        .test(context);
+    const clutter =
+      /(?:dağınık|daginik|malzeme|karton|kablo|hortum|eşya|esya|atık|atik|engel)/u
+        .test(context);
+    if (wet && clutter) {
+      return "Dağınık malzemeler ve ıslak zeminde takılma veya kayma riski";
+    }
+    if (wet) return "Islak veya kaygan zeminde kayma riski";
+    return "Zemindeki dağınık malzemelerde takılma riski";
   }
   // Three hooks each missing a latch produced three titles naming a side, and
   // the one that survived dedup told the reader only about the top hook.
@@ -294,14 +313,35 @@ function descriptionFor(
       "Kritik koşul sahada doğrulanmalı.",
     );
   }
-  return cleanText(
+  return sentenceCase(cleanText(
     `${cues}. Bu durum ${
       candidate.event_path.contact_or_failure.toLocaleLowerCase("tr-TR")
     } yoluyla ${
       candidate.event_path.consequence.toLocaleLowerCase("tr-TR")
     } sonucuna neden olabilir.`,
     candidate.normalized_label,
-  );
+  ));
+}
+
+// Observed findings open with the provider's own cue text, which arrives
+// lowercase, so every scored finding in the report started mid-sentence while
+// the assurance items around it started with a capital.
+function sentenceCase(value: string): string {
+  if (!value) return value;
+  return value.charAt(0).toLocaleUpperCase("tr-TR") + value.slice(1);
+}
+
+// The control catalog is keyed by module, so a person falling through a missing
+// mid-rail was told to secure the "düşen cisim yolu". Split the falls module by
+// the mechanism that was actually resolved.
+function controlTextFor(candidate: NormalizedCandidate): string {
+  if (candidate.module_id === "falls_falling_objects") {
+    return mechanismCode(candidate) === "fall_from_height"
+      ? "Kenardaki erişimi durdurun; açık kenarı ana korkuluk, ara korkuluk ve topuk levhası sürekliliğiyle kapatın."
+      : "Alt bölgeyi boşaltın; düşen cisim yolunu topuk levhası, ağ veya kapalı platform ile fiziksel olarak kesin.";
+  }
+  return CONTROL_CATALOG[candidate.module_id] ??
+    "Tehlike yolunu fiziksel olarak kesin ve güvenli durumu sahada doğrulayın.";
 }
 
 function verificationAction(candidate: NormalizedCandidate): string {
@@ -338,15 +378,32 @@ function measuresFor(
     preventive:
       "Aynı koşulun tekrarını önleyecek sorumluluk, kontrol sıklığı ve fiziksel koruma standardını belirleyin.",
   };
+  // An assurance_requirement returned an empty measure list, so the report told
+  // the reader a tank's internal integrity could not be confirmed from the photo
+  // and then offered no step at all. Unscored items now carry the deterministic
+  // field playbook for their topic.
+  if (itemClass === "assurance_requirement") {
+    return assuranceMeasures(
+      playbookForTopic(assuranceTopic(candidate).id),
+      "Saha doğrulama adımları",
+    );
+  }
   if (itemClass === "verification_request") {
+    const playbook = playbookForModule(candidate.module_id);
     return [{
       kind: "corrective",
       title: "Geçici koruma",
       text: verificationAction(candidate),
     }, {
+      kind: "corrective",
+      title: "Saha doğrulama adımları",
+      text: playbook.steps.map((step, index) => `${index + 1}. ${step}`).join(
+        "\n",
+      ),
+    }, {
       kind: "preventive",
       title: "Kalıcı önleme",
-      text: selected.preventive,
+      text: playbook.preventive,
     }];
   }
   if (itemClass !== "observed_finding") return [];
@@ -359,6 +416,20 @@ function measuresFor(
     title: "Kalıcı önleme",
     text: selected.preventive,
   }];
+}
+
+// v4 hard-coded an empty references_text for every item even on profiles whose
+// jurisdiction policy allows references. The list is curated in code, never taken
+// from the provider, and stays empty on any profile that does not allow it.
+function referencesFor(
+  candidate: NormalizedCandidate,
+  itemClass: SafetyItemClass,
+  policy: string | null,
+): string {
+  const playbook = itemClass === "assurance_requirement"
+    ? playbookForTopic(assuranceTopic(candidate).id)
+    : playbookForModule(candidate.module_id);
+  return referencesTextFor(playbook, policy);
 }
 
 function severity(criticality: Criticality): number {
@@ -400,13 +471,32 @@ function scoringContext(candidate: NormalizedCandidate): string {
     .toLocaleLowerCase("tr-TR");
 }
 
+// scoringContext folds module_id into the text it matches against. The module id
+// `falls_falling_objects` literally contains "falling" and "object", so the
+// falling-object test below matched every single candidate of that module and
+// the fall_from_height branch was unreachable. A missing mid-rail was therefore
+// scored as a falling object, which skipped the partial-barrier severity cap and
+// published FK 720 / critical where FK 270 / high was correct. Mechanism has to
+// be decided from the evidence alone, never from the module's own name.
+function mechanismContext(candidate: NormalizedCandidate): string {
+  return `${candidate.normalized_label} ${
+    candidate.affirmative_cues.join(" ")
+  } ${candidate.event_path.source} ${candidate.event_path.contact_or_failure} ${candidate.event_path.consequence}`
+    .toLocaleLowerCase("tr-TR");
+}
+
 function mechanismCode(candidate: NormalizedCandidate): string {
-  const context = scoringContext(candidate);
+  const context = mechanismContext(candidate);
   if (candidate.module_id === "work_at_height") return "fall_from_height";
   if (candidate.module_id === "falls_falling_objects") {
-    return /(?:düşen|dusen|falling|üstten|yukarıdan|cisim|object)/u.test(
-        context,
-      )
+    // A person falling wins over a load falling when both read as present: the
+    // person path carries the higher consequence and its own severity cap.
+    if (
+      /(?:kişinin düşmesi|kisinin dusmesi|yüksekten düşme|yuksekten dusme|çalışanın düşmesi|calisanin dusmesi|person fall|fall from height)/u
+        .test(context)
+    ) return "fall_from_height";
+    return /(?:düşen|dusen|falling|üstten|yukarıdan|cisim|object|malzeme düşmesi|yük düşmesi)/u
+        .test(context)
       ? "falling_object"
       : "fall_from_height";
   }
@@ -908,8 +998,10 @@ function visibleAssetAssuranceItem(params: {
   entityKind: string;
   entityLabel: string;
   moduleID: V4ModuleID;
+  referencePolicy: string | null;
 }): RoutedItem {
   const topic = assuranceTopicForModule(params.moduleID, params.entityLabel);
+  const playbook = playbookForTopic(topic.id);
   return {
     id: crypto.randomUUID(),
     item_class: "assurance_requirement",
@@ -920,8 +1012,8 @@ function visibleAssetAssuranceItem(params: {
     category: categoryLabel(params.moduleID),
     description: topic.description,
     recommended_action: topic.action,
-    recommended_measures: [],
-    references_text: "",
+    recommended_measures: assuranceMeasures(playbook, "Saha doğrulama adımları"),
+    references_text: referencesTextFor(playbook, params.referencePolicy),
     root_cause_text: "",
     confidence: 1,
     ai_confidence: 1,
@@ -943,6 +1035,8 @@ export function routeCandidates(params: {
   candidates: NormalizedCandidate[];
   photoOutputs: Array<{ photoIndex: number; output: ProviderPhotoOutput }>;
   sectorID: string | null;
+  /** `analyses.regulatory_reference_policy`; only "tr_current" emits references. */
+  referencePolicy?: string | null;
 }): {
   items: RoutedItem[];
   ledger: RoutingLedgerEntry[];
@@ -951,6 +1045,7 @@ export function routeCandidates(params: {
   const items: RoutedItem[] = [];
   const ledger: RoutingLedgerEntry[] = [];
   const hardRejections: HardRejection[] = [];
+  const referencePolicy = params.referencePolicy ?? null;
   const sectorContext = visibleSectorContext(params.photoOutputs);
   for (const candidate of params.candidates) {
     const route = routeClass(candidate);
@@ -1006,10 +1101,9 @@ export function routeCandidates(params: {
         ? assurance!.action
         : itemClass === "verification_request"
         ? verificationAction(candidate)
-        : CONTROL_CATALOG[candidate.module_id] ??
-          "Tehlike yolunu fiziksel olarak kesin ve güvenli durumu sahada doğrulayın.",
+        : controlTextFor(candidate),
       recommended_measures: measuresFor(candidate, itemClass),
-      references_text: "",
+      references_text: referencesFor(candidate, itemClass, referencePolicy),
       root_cause_text: rootCauseFor(candidate, itemClass),
       confidence,
       ai_confidence: confidence,
@@ -1055,6 +1149,7 @@ export function routeCandidates(params: {
         entityKind: entity.kind,
         entityLabel: entity.label,
         moduleID,
+        referencePolicy,
       }));
     }
     for (const control of output.positive_controls) {
@@ -1093,6 +1188,21 @@ export function routeCandidates(params: {
       )
     ) {
       items.push(notAssessableItem(photoIndex, coverage));
+    }
+    // The prompt instructs the model to answer unresolved_requires_verification
+    // when critical geometry is occluded but the possible consequence is heavy.
+    // Only not_assessable_due_to_image produced an item, so those answers were
+    // dropped without a trace: one run marked electrical, confined_space and
+    // chemical unresolved on the same photo and the reader saw nothing.
+    for (
+      const coverage of output.module_coverage.filter((entry) =>
+        entry.outcome === "unresolved_requires_verification" &&
+        !noCandidates.has(entry.module_id)
+      )
+    ) {
+      items.push(
+        unresolvedModuleVerificationItem(photoIndex, coverage, referencePolicy),
+      );
     }
   }
 
@@ -1180,7 +1290,9 @@ function notAssessableItem(
     is_scored: false,
     criticality: "ordinary",
     ordinal: 0,
-    title: `${coverage.module_id} değerlendirilemedi`,
+    // The raw routing key used to be the title here. These items are not
+    // published, but nothing should carry an English snake_case id as its name.
+    title: `${categoryLabel(coverage.module_id)} değerlendirilemedi`,
     category: categoryLabel(coverage.module_id),
     description: coverage.note?.trim() ||
       "Görüntü bu modülü değerlendirmeye uygun değil.",
@@ -1195,6 +1307,57 @@ function notAssessableItem(
     display_group: "not_assessable",
     display_order: 950,
     internal_priority: { coverage_outcome: coverage.outcome },
+  };
+}
+
+// A module the model could not resolve becomes a published verification request
+// rather than silence. There is no candidate behind it, so it carries the
+// module's assurance playbook and is never scored.
+function unresolvedModuleVerificationItem(
+  photoIndex: number,
+  coverage: ModuleCoverage,
+  referencePolicy: string | null,
+): RoutedItem {
+  const playbook = playbookForModule(coverage.module_id);
+  const label = categoryLabel(coverage.module_id);
+  return {
+    id: crypto.randomUUID(),
+    item_class: "verification_request",
+    is_scored: false,
+    criticality: "ordinary",
+    ordinal: 0,
+    title: `${label} konusunda saha doğrulaması gerekli`,
+    category: label,
+    description: cleanText(
+      coverage.note?.trim() ?? "",
+      `${label} konusunda kritik geometri görüntüde tam çözülemedi; olası sonuç ağır olduğu için koşul kapatılmadı.`,
+    ),
+    recommended_action:
+      "Maruziyeti sınırlandırın ve koşulu yetkili kişiyle sahada doğrulayın.",
+    recommended_measures: [{
+      kind: "corrective",
+      title: "Saha doğrulama adımları",
+      text: playbook.steps.map((step, index) => `${index + 1}. ${step}`).join(
+        "\n",
+      ),
+    }, {
+      kind: "preventive",
+      title: "Kalıcı önleme",
+      text: playbook.preventive,
+    }],
+    references_text: referencesTextFor(playbook, referencePolicy),
+    root_cause_text: "",
+    confidence: 0.5,
+    ai_confidence: 0.5,
+    needs_field_verification: true,
+    source_photo_indices: [photoIndex],
+    display_group: "verification_request",
+    display_order: priority("verification_request", "ordinary"),
+    internal_priority: {
+      coverage_outcome: coverage.outcome,
+      dedup_key: `unresolved_module:${coverage.module_id}`,
+      route_reason: "module_coverage_unresolved",
+    },
   };
 }
 
