@@ -1962,3 +1962,91 @@ Deno.test("hortum güvencesi tank başlığı taşımaz", () => {
   assertStringIncludes(assurance?.references_text ?? "", "TS EN 853");
   assertEquals((assurance?.references_text ?? "").includes("API 653"), false);
 });
+
+Deno.test("tüm korkuluk yokken başlık tek eleman eksikliği demez", () => {
+  // 58057767: "Platformun kenarında korkuluk, ara korkuluk veya etek tahtası
+  // bulunmamaktadır" tamamen korumasız bir kenar, ama "ara korkuluk" geçtiği
+  // için kısmi eksiklik başlığıyla yayınlanmıştı.
+  const photo = output([candidate({
+    candidate_key: "open-edge",
+    module_id: "falls_falling_objects",
+    raw_label: "Yükseltilmiş platform kenarında toplu koruma eksikliği",
+    affirmative_cues: [
+      "Platformun kenarında korkuluk, ara korkuluk veya etek tahtası bulunmamaktadır",
+      "açıkta kalan kenar",
+    ],
+    event_path: {
+      source: "yükseltilmiş platform kenarı",
+      contact_or_failure: "kişinin düşmesi",
+      consequence: "yere çarpma",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routed.items[0].title,
+    "Çalışma kenarında düşmeye karşı koruma eksikliği",
+  );
+  assertEquals(routed.items[0].fk_severity, 40);
+});
+
+Deno.test("sabitlenmemiş merdiven takılma bulgusu olarak yayınlanmaz", () => {
+  const photo = output([candidate({
+    candidate_key: "ladder-access",
+    module_id: "access_egress",
+    raw_label: "Platforma erişim için uygun olmayan portatif merdiven",
+    affirmative_cues: [
+      "Platforma dayalı portatif alüminyum merdiven",
+      "merdiven üstten sabitlenmemiş",
+    ],
+    event_path: {
+      source: "portatif merdiven",
+      contact_or_failure: "merdivenden düşme",
+      consequence: "yere çarpma",
+    },
+    potential_consequence: "serious",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items[0];
+  assertStringIncludes(item.title, "merdiven");
+  assertEquals(item.title.includes("dağınık malzeme"), false);
+  assertEquals(item.score_payload?.mechanism_code, "fall_from_height");
+  assertEquals(item.score_payload?.severity_cap, 40);
+  assertEquals(
+    item.recommended_action.includes("Geçiş yolundaki malzemeyi"),
+    false,
+  );
+});
+
+Deno.test("gerçekten tıkalı geçiş yolu kendi başlığını korur", () => {
+  const photo = output([candidate({
+    candidate_key: "blocked-route",
+    module_id: "access_egress",
+    raw_label: "Geçiş yolu malzemelerle kapalı",
+    affirmative_cues: ["geçiş yolunda dağınık malzeme yığını"],
+    event_path: {
+      source: "geçiş yolundaki malzeme",
+      contact_or_failure: "kişinin takılması",
+      consequence: "aynı seviyede düşme",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routed.items[0].title,
+    "Güvenli geçiş yolunun dağınık malzemelerle engellenmesi",
+  );
+  assertEquals(routed.items[0].score_payload?.mechanism_code, "fall_same_level");
+});

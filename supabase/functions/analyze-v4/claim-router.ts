@@ -221,10 +221,25 @@ function conciseTitle(candidate: NormalizedCandidate): string {
     ) {
       return "Yüksekte çalışanda düşme durdurma sistemi bulunmaması";
     }
-    if (/(?:ara korkuluk|orta korkuluk|midrail|mid rail)/u.test(context)) {
+    // "korkuluk, ara korkuluk veya etek tahtası bulunmamaktadır" is a wholly
+    // unprotected edge, but it names the mid-rail, so the partial-absence branch
+    // claimed it and the title understated a fatal open edge as one missing
+    // member. Total absence has to be recognised before the members are.
+    const totalAbsence =
+      /(?:toplu koruma|kollektif koruma|korumasız kenar|korumasiz kenar|açıkta kalan kenar|acikta kalan kenar|açık kenar|acik kenar|(?<!ara |orta |üst |ust |ana )korkuluk (?:sistemi )?(?:yok|bulunmuyor|bulunmamakta|mevcut değil))/u
+        .test(context) ||
+      /korkuluk[^.]{0,40}(?:ara korkuluk|orta korkuluk)[^.]{0,40}(?:etek tahtası|etek tahtasi)[^.]{0,30}(?:yok|bulunmuyor|bulunmamakta|eksik|mevcut değil)/u
+        .test(context);
+    if (
+      !totalAbsence &&
+      /(?:ara korkuluk|orta korkuluk|midrail|mid rail)/u.test(context)
+    ) {
       return "Korkuluk sisteminde ara korkuluk eksikliği";
     }
-    if (/(?:etek tahtasi|etek tahtası|toeboard|toe board)/u.test(context)) {
+    if (
+      !totalAbsence &&
+      /(?:etek tahtasi|etek tahtası|toeboard|toe board)/u.test(context)
+    ) {
       return "Korkuluk sisteminde etek tahtası eksikliği";
     }
     if (/(?:cati|çatı|roof)/u.test(context)) {
@@ -276,7 +291,18 @@ function conciseTitle(candidate: NormalizedCandidate): string {
     return "Vinç kancasında emniyet mandalı eksikliği";
   }
   if (candidate.module_id === "access_egress") {
-    return "Güvenli geçiş yolunun dağınık malzemelerle engellenmesi";
+    // Another fixed string that asserted its own evidence: an unsecured
+    // portable ladder used as permanent platform access was published as
+    // "Güvenli geçiş yolunun dağınık malzemelerle engellenmesi", naming clutter
+    // that is nowhere in the photograph.
+    if (/(?:merdiven|ladder|basamak|el merdiveni)/u.test(context)) {
+      return "Platforma erişimde uygun olmayan veya sabitlenmemiş merdiven";
+    }
+    if (/(?:dağınık|daginik|malzeme|engel|kapalı|kapali|blok)/u.test(context)) {
+      return "Güvenli geçiş yolunun dağınık malzemelerle engellenmesi";
+    }
+    return cleanText(candidate.normalized_label, "Erişim yolunda güvenlik koşulu")
+      .replace(/[.!?]+$/g, "");
   }
   if (
     candidate.module_id === "people_exposure" &&
@@ -593,7 +619,23 @@ function mechanismCode(candidate: NormalizedCandidate): string {
     ) return "hydraulic_pneumatic_release";
     return "other_visible_physical";
   }
-  if (candidate.module_id === "access_egress") return "fall_same_level";
+  if (candidate.module_id === "access_egress") {
+    // Unconditional same-level capped a ladder fall at severity 7 and handed it
+    // the housekeeping playbook: "Geçiş yolundaki malzemeyi kaldırın". The
+    // event path said "merdivenden düşme -> yere çarpma".
+    const path = `${candidate.event_path.source} ${
+      candidate.event_path.contact_or_failure
+    } ${candidate.event_path.consequence}`.toLocaleLowerCase("tr-TR");
+    if (
+      /(?:aynı seviyede|ayni seviyede|same level|takıl|takil|kayma)/u.test(path)
+    ) return "fall_same_level";
+    if (
+      /(?:merdiven|ladder|basamak|yüksekten|yuksekten|platform|sahanlık|sahanlik)/u
+        .test(path) &&
+      /(?:düş|dus|fall|yere çarpma|yere carpma)/u.test(path)
+    ) return "fall_from_height";
+    return "fall_same_level";
+  }
   if (candidate.module_id === "housekeeping_physical_contact") {
     if (
       /(?:sivri|keskin|sharp|çıkıntı|cikinti|filiz|donatı|donati)/u.test(
