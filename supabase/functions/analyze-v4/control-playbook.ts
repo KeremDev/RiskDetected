@@ -15,6 +15,9 @@
 export type ControlPlaybook = {
   /** Why the condition exists, stated as a control failure, not a restatement. */
   rootCause: string;
+  /** One-line recommended action. Module-keyed text gave a missing safety pin,
+   * a corroded coupling and a cracked hose the same sentence. */
+  control: string;
   /** Immediate steps, published as the corrective measure. */
   corrective: string[];
   /** The standing arrangement that stops the condition returning. */
@@ -24,6 +27,8 @@ export type ControlPlaybook = {
 const GENERIC: ControlPlaybook = {
   rootCause:
     "Görünen çalışma koşulu, tehlike ile çalışan arasındaki yolu fiziksel olarak kesecek biçimde düzenlenmemiştir.",
+  control:
+    "Tehlike yoluna erişimi durdurun ve görünen fiziksel koşulu güvenli hale getirin.",
   corrective: [
     "Tehlike yoluna erişimi durdurun ve alanı fiziksel olarak sınırlandırın.",
     "Görünen koşulu güvenli hale getirecek mühendislik önlemini uygulayın.",
@@ -37,6 +42,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   fall_from_height: {
     rootCause:
       "Açık kenarda toplu koruma sürekliliği sağlanmamış; düşme yolu kesilmeden çalışma alanı erişime açık bırakılmıştır.",
+    control:
+      "Kenardaki erişimi durdurun; açık kenarı ana korkuluk, ara korkuluk ve topuk levhası sürekliliğiyle kapatın.",
     corrective: [
       "Kenar çevresindeki çalışmayı durdurun ve alana girişi fiziksel bariyerle kapatın.",
       "Ana korkuluk, ara korkuluk ve topuk levhasını kenarın tamamında kesintisiz olarak tamamlayın; korkuluk yüksekliğini ve boşluk mesafelerini ölçerek doğrulayın.",
@@ -50,6 +57,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   falling_object: {
     rootCause:
       "Yükün veya malzemenin düşme yolu ile altındaki çalışma alanı arasında fiziksel bir ayrım kurulmamıştır.",
+    control:
+      "Alt bölgeyi boşaltın; düşen cisim yolunu topuk levhası, ağ veya kapalı platform ile fiziksel olarak kesin.",
     corrective: [
       "Yükün altını ve salınım alanını boşaltın; alanı bariyer ve uyarı ile kapatın.",
       "Malzemenin kaynağını emniyete alın: topuk levhası, koruma ağı, kapalı platform veya yük emniyet mandalı ile ayrılma yolunu kesin.",
@@ -63,6 +72,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   caught_in_pinch_shear: {
     rootCause:
       "Tehlikeli hareketin bulunduğu bölge, temas yolunu kesecek sabit veya kilitlemeli koruyucu ile kapatılmamıştır.",
+    control:
+      "Makineyi durdurup enerjisini izole edin; hareketli parçaları sabit veya kilitlemeli koruyucuyla kapatın.",
     corrective: [
       "Makineyi durdurun ve enerjisini izole edin; birikmiş enerjiyi boşaltarak sıfır enerji durumunu doğrulayın.",
       "Dönen ve hareketli parçaların tamamını (şaft, kaplin, kayış, kasnak, dişli) alet gerektiren sabit koruyucu ile kapatın.",
@@ -76,6 +87,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   vehicle_equipment_strike: {
     rootCause:
       "Yaya ile hareketli ekipmanın çalışma alanları fiziksel olarak ayrılmamış; makinenin hareket ve dönüş alanı kontrol altına alınmamıştır.",
+    control:
+      "Ekipmanın hareket ve dönüş alanına yaya girişini fiziksel olarak kapatın; görüş ve iletişim düzenini kurun.",
     corrective: [
       "Ekipmanın hareket ve dönüş alanını bariyer, şerit veya konikle işaretleyip yaya girişini kapatın.",
       "Alanda görev dışı personel varsa çalışmayı durdurun; operatörle görsel veya telsiz iletişimi kurulmadan alana girilmesini yasaklayın.",
@@ -89,6 +102,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   electrical_contact_arc: {
     rootCause:
       "Enerjili bölüm ile çalışana açık temas yolu bırakılmış; koruma, izolasyon ve topraklama düzeninin sürekliliği sağlanmamıştır.",
+    control:
+      "Enerjili bölgeye erişimi engelleyin; yetkili kişiyle kapatma, izolasyon ve topraklama doğrulaması yaptırın.",
     corrective: [
       "Bölgeye erişimi engelleyin ve işlemi yalnız yetkili elektrik personeline yaptırın.",
       "Mümkünse enerjiyi kesin, kilitleyip etiketleyin ve gerilimsizliği ölçerek doğrulayın.",
@@ -102,6 +117,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   hydraulic_pneumatic_release: {
     rootCause:
       "Basınçlı akışkan hattının bütünlüğü ve basınç boşaltma düzeni, ani salım yolunu kesecek biçimde güvence altına alınmamıştır.",
+    control:
+      "Hattı izole edip basıncı kontrollü boşaltın; sızıntıyı elle aramayın ve hasarlı hortumu değiştirin.",
     corrective: [
       "Ekipmanı durdurun; hattı izole edip basıncı kontrollü biçimde boşaltın ve sıfır basıncı gösterge ile doğrulayın.",
       "Hortum, rakor ve silindirleri aşınma, kabarma, sızıntı ve dış hasar yönünden muayene edin; şüpheli olanı değiştirin.",
@@ -115,6 +132,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   mechanical_separation_release: {
     rootCause:
       "Basınç veya proses içeren ekipmanın bütünlüğü ve koruma katmanları, ani ayrılma ve salım yolunu kesecek biçimde güvence altına alınmamıştır.",
+    control:
+      "Prosesi güvenli duruma alın; hattı izole edip boşaltın ve ayrılma yolunu yetkili muayeneden geçirmeden basınç vermeyin.",
     corrective: [
       "Prosesi güvenli duruma alın; hattı izole edip içeriği kontrollü biçimde boşaltın.",
       "Görünen korozyon, deformasyon, sızıntı veya bağlantı gevşekliğini yetkili kişiye muayene ettirin.",
@@ -128,6 +147,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   fire_explosion: {
     rootCause:
       "Yanıcı madde, tutuşturucu kaynak ve oksijen bir arada bulunurken bunları ayıran fiziksel ve yönetsel kontroller kurulmamıştır.",
+    control:
+      "Tutuşturucu kaynağı kaldırın; yanıcı yükü ayırın ve alanı boşaltarak yangın hazırlığını sağlayın.",
     corrective: [
       "Tutuşturucu kaynağı ortadan kaldırın; sıcak çalışma varsa durdurun.",
       "Yanıcı ve parlayıcı malzemeyi alandan uzaklaştırın veya yanmaz örtü ile ayırın.",
@@ -141,6 +162,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   chemical_contact_release: {
     rootCause:
       "Maddenin yayılma ve temas yolu, muhafaza, havalandırma ve koruyucu donanım katmanlarıyla kesilmemiştir.",
+    control:
+      "Teması ve yayılımı durdurun; kaynağı kapatıp alanı sınırlandırın ve maddeyi güvenlik bilgi formundan tanımlayın.",
     corrective: [
       "Teması ve yayılımı durdurun; kaynağı güvenli biçimde kapatın ve alanı sınırlandırın.",
       "Etiketten ve güvenlik bilgi formundan maddeyi tanımlayın; belirlenmeden müdahale etmeyin.",
@@ -154,6 +177,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   excavation_collapse_rockfall: {
     rootCause:
       "Kazı yüzeyinin stabilitesi zemin özelliğine göre güvence altına alınmamış; göçük ve kaya düşmesi yolu açık bırakılmıştır.",
+    control:
+      "Kazıdaki çalışmayı durdurup personeli tahliye edin; şev veya iksa düzenini yetkili kişiye kurdurun.",
     corrective: [
       "Kazı içindeki çalışmayı durdurun ve personeli tahliye edin.",
       "Zemin sınıfını ve kazı derinliğini yetkili kişiye tespit ettirin; şevi güvenli açıya getirin veya iksa kurun.",
@@ -167,6 +192,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   structural_collapse: {
     rootCause:
       "Taşıyıcı düzenin yük aktarımı ve stabilitesi doğrulanmamış; çökme yolu ile çalışma alanı arasında ayrım kurulmamıştır.",
+    control:
+      "Alanı boşaltıp girişi kapatın; taşıyıcı sistemi mühendis değerlendirmesinden geçirin.",
     corrective: [
       "Alanı boşaltın ve girişi fiziksel olarak kapatın.",
       "Taşıyıcı elemanların durumunu yetkili mühendise değerlendirtin.",
@@ -180,6 +207,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   equipment_overturn: {
     rootCause:
       "Ekipmanın stabilite sınırları zemin, eğim ve yükleme koşuluna göre güvence altına alınmamıştır.",
+    control:
+      "Operasyonu durdurun; ekipmanı taşıma gücü yeterli düz zemine alıp destek ve yük sınırlarını doğrulayın.",
     corrective: [
       "Operasyonu durdurun; ekipmanı düz ve taşıma kapasitesi yeterli zemine alın.",
       "Destek ayaklarını, karşı ağırlığı ve yük diyagramını kontrol edin.",
@@ -193,6 +222,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   thermal_contact: {
     rootCause:
       "Sıcak yüzey veya kıvılcım kaynağı ile çalışan arasındaki temas yolu fiziksel olarak kesilmemiştir.",
+    control:
+      "Isı kaynağını durdurun veya soğutun; sıcak yüzeyi izolasyon ya da koruyucuyla kapatın.",
     corrective: [
       "Isı kaynağını durdurun veya soğumasını bekleyin; alanı işaretleyin.",
       "Sıcak yüzeyi izolasyon veya koruyucu ile kapatın.",
@@ -206,6 +237,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   sharp_edge_contact: {
     rootCause:
       "Açıkta kalan sivri veya keskin uçlar, temas ve saplanma yolunu kesecek biçimde kapatılmamıştır.",
+    control:
+      "Alana girişi sınırlandırın; açıkta kalan sivri uçları uygun başlık veya kapakla kapatın.",
     corrective: [
       "Alana girişi sınırlandırın.",
       "Açıkta kalan donatı, filiz ve sivri uçları uygun başlık, kapak veya bükme ile kapatın.",
@@ -219,6 +252,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   fall_same_level: {
     rootCause:
       "Yürüme yüzeyinin sürekliliği ve temizliği korunmamış; takılma ve kayma yolu açık bırakılmıştır.",
+    control:
+      "Geçiş yolundaki malzemeyi kaldırın veya sabitleyin; ıslak ve düzensiz yüzeyi güvenli hale getirin.",
     corrective: [
       "Geçiş yolundaki malzeme, kablo ve hortumları kaldırın veya kanal ile sabitleyin.",
       "Islak veya kaygan yüzeyi kurutun; kaynağını giderin.",
@@ -232,6 +267,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   ergonomic_overexertion: {
     rootCause:
       "Taşıma ve zorlanma yükü, mekanik yardım ve yöntem düzenlemesiyle azaltılmamıştır.",
+    control:
+      "Elle taşımayı durdurup mekanik taşıma sağlayın; güzergâhı temizleyip görüşü kapatmayan yöntem belirleyin.",
     corrective: [
       "Elle taşımayı durdurun; mekanik taşıma ekipmanı sağlayın.",
       "Yük ağır veya hacimliyse ekip halinde taşıma düzenleyin.",
@@ -244,6 +281,8 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   environmental_release: {
     rootCause:
       "Salımın çevreye yayılma yolu, muhafaza ve toplama düzeniyle kesilmemiştir.",
+    control:
+      "Kaynağı durdurun; drenaja ulaşımı kapatıp dökülen maddeyi uygun ekipmanla toplayın.",
     corrective: [
       "Kaynağı durdurun ve salımı sınırlandırın.",
       "Drenaj ve yağmur suyu hatlarına ulaşımı fiziksel olarak kapatın.",

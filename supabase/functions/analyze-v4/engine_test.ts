@@ -1742,3 +1742,119 @@ Deno.test("uzun malzeme çarpması zorlanma tavanına kırpılmaz", () => {
     false,
   );
 });
+
+Deno.test("kaplin ayrılması hidrolik enjeksiyon tavanına kırpılmaz", () => {
+  // 1e738d1c: en ağır aday (fatal, kaplin ayrılması) 15 tavanını aldı, yanındaki
+  // iki hafif korozyon bulgusu 40 tavanındaydı.
+  const separation = output([candidate({
+    candidate_key: "coupling-pin",
+    module_id: "process_integrity",
+    raw_label: "Hortum bağlantı elemanında emniyet pimi eksik",
+    affirmative_cues: ["bağlantı pimi üzerinde bükülmüş gevşek bir tel parçası var"],
+    event_path: {
+      source: "Basınçlı hortum bağlantısı",
+      contact_or_failure: "Emniyet pimi arızası",
+      consequence: "Bağlantının ayrılması ve basınçlı akışkanın kontrolsüz salınımı",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routedSep = routeCandidates({
+    candidates: normalizeCandidates(separation, 1),
+    photoOutputs: [{ photoIndex: 1, output: separation }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routedSep.items[0].score_payload?.mechanism_code,
+    "mechanical_separation_release",
+  );
+  assertEquals(routedSep.items[0].score_payload?.severity_cap, 40);
+  assertEquals(routedSep.items[0].fk_severity, 40);
+
+  const injection = output([candidate({
+    candidate_key: "pinhole-jet",
+    module_id: "process_integrity",
+    raw_label: "Hidrolik hortumda iğne deliği sızıntısı",
+    affirmative_cues: ["hidrolik hortumda ince püskürme izi"],
+    event_path: {
+      source: "Hidrolik hat",
+      contact_or_failure: "İğne deliğinden püskürme",
+      consequence: "Deri altına sıvı enjeksiyonu",
+    },
+    potential_consequence: "permanent",
+  })]);
+  const routedInj = routeCandidates({
+    candidates: normalizeCandidates(injection, 1),
+    photoOutputs: [{ photoIndex: 1, output: injection }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routedInj.items[0].score_payload?.mechanism_code,
+    "hydraulic_pneumatic_release",
+  );
+});
+
+Deno.test("görünen hortum ve kaplin güvence maddesi üretir", () => {
+  const photo = output([candidate()]);
+  photo.scene_entities = [
+    ...photo.scene_entities,
+    {
+      id: "hose-1",
+      kind: "asset",
+      label: "Hortum",
+      visible: true,
+      accessible: true,
+    },
+    {
+      id: "coupling-1",
+      kind: "asset",
+      label: "Paslı bağlantı elemanı",
+      visible: true,
+      accessible: true,
+    },
+  ];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+    referencePolicy: "tr_current",
+  });
+  const assurance = routed.items.find((item) =>
+    item.internal_priority.assurance_topic_id === "process_containment_integrity"
+  );
+  assertEquals(assurance?.item_class, "assurance_requirement");
+  assertStringIncludes(assurance?.references_text ?? "", "API 570");
+});
+
+Deno.test("aynı modüldeki farklı mekanizmalar aynı öneriyi almaz", () => {
+  const build = (key: string, cons: string, path: Record<string, string>) =>
+    output([candidate({
+      candidate_key: key,
+      module_id: "process_integrity",
+      raw_label: key,
+      affirmative_cues: [cons],
+      event_path: path as never,
+      potential_consequence: "serious",
+    })]);
+  const sep = build("ayrilma", "kaplin gevşek", {
+    source: "hortum bağlantısı",
+    contact_or_failure: "bağlantının ayrılması",
+    consequence: "basıncın boşalması",
+  });
+  const inj = build("enjeksiyon", "ince püskürme", {
+    source: "hidrolik hat",
+    contact_or_failure: "püskürme",
+    consequence: "deri altına enjeksiyon",
+  });
+  const a = routeCandidates({
+    candidates: normalizeCandidates(sep, 1),
+    photoOutputs: [{ photoIndex: 1, output: sep }],
+    sectorID: "manufacturing",
+  }).items[0];
+  const b = routeCandidates({
+    candidates: normalizeCandidates(inj, 1),
+    photoOutputs: [{ photoIndex: 1, output: inj }],
+    sectorID: "manufacturing",
+  }).items[0];
+  assertEquals(a.recommended_action === b.recommended_action, false);
+  assertStringIncludes(b.recommended_action, "basıncı kontrollü boşaltın");
+});

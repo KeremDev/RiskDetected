@@ -358,14 +358,18 @@ function endSentence(value: string): string {
 // The control catalog is keyed by module, so a person falling through a missing
 // mid-rail was told to secure the "düşen cisim yolu". Split the falls module by
 // the mechanism that was actually resolved.
+// Only the falls module was split by mechanism here, so a missing safety pin, a
+// corroded coupling and a cracked hose -- three different failures in one
+// report -- all published CONTROL_CATALOG["process_integrity"] word for word.
+// The mechanism playbook already carries a line per mechanism; the module
+// catalog stays as the fallback for anything it does not cover.
 function controlTextFor(candidate: NormalizedCandidate): string {
-  if (candidate.module_id === "falls_falling_objects") {
-    return mechanismCode(candidate) === "fall_from_height"
-      ? "Kenardaki erişimi durdurun; açık kenarı ana korkuluk, ara korkuluk ve topuk levhası sürekliliğiyle kapatın."
-      : "Alt bölgeyi boşaltın; düşen cisim yolunu topuk levhası, ağ veya kapalı platform ile fiziksel olarak kesin.";
+  const mechanism = mechanismCode(candidate);
+  if (mechanism !== "other_visible_physical") {
+    return controlPlaybook(mechanism).control;
   }
   return CONTROL_CATALOG[candidate.module_id] ??
-    "Tehlike yolunu fiziksel olarak kesin ve güvenli durumu sahada doğrulayın.";
+    controlPlaybook(mechanism).control;
 }
 
 function verificationAction(candidate: NormalizedCandidate): string {
@@ -554,6 +558,22 @@ function mechanismCode(candidate: NormalizedCandidate): string {
       : "thermal_contact";
   }
   if (candidate.module_id === "process_integrity") {
+    // The hydraulic cap of 15 exists for fluid injected into tissue. A coupling
+    // letting go, a hose whipping or a line bursting is stored energy released
+    // as a whole and belongs at 40. Matching the phrase "basınçlı akışkan"
+    // alone put the fatal coupling-separation candidate under the lower cap
+    // while the two lesser corrosion findings beside it kept the higher one.
+    const path = `${candidate.event_path.source} ${
+      candidate.event_path.contact_or_failure
+    } ${candidate.event_path.consequence}`.toLocaleLowerCase("tr-TR");
+    if (
+      /(?:ayrıl|ayril|kopma|kopar|fırla|firla|savrul|kamçı|kamci|whip|patla|burst|separat)/u
+        .test(path)
+    ) return "mechanical_separation_release";
+    if (
+      /(?:enjeksiyon|injection|deri altı|deri alti|dokuya|jet|püskür|puskur)/u
+        .test(path)
+    ) return "hydraulic_pneumatic_release";
     return /(?:hidrolik|hydraulic|pnömatik|pneumatic|basınçlı akışkan)/u.test(
         context,
       )
@@ -1122,7 +1142,13 @@ function assuranceModuleForVisibleAsset(
   if (
     /(?:tank|vessel|basınçlı kap|basincli kap|proses boru|process pipe)/u.test(
       text,
-    )
+    ) ||
+    // A pressurised hose assembly and its coupling carry the same
+    // non-visual assurance as fixed piping -- pressure rating, test
+    // certificate, inspection date, whip restraint -- and matched nothing, so a
+    // close-up of a hose coupling produced no assurance item at all.
+    /(?:hortum|hose|kaplin|kaplın|coupling|rakor|rakör|kelepçe|kelepce|flanş|flans|fitting|bağlantı elemanı|baglanti elemani)/u
+      .test(text)
   ) {
     return "process_integrity";
   }
