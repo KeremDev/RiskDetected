@@ -21,6 +21,7 @@ import {
   missingCoreCoverage,
   recoverCoverageDeterministically,
 } from "./dynamic-modules.ts";
+import { topicConsequenceRank } from "./assurance-playbook.ts";
 import { normalizeCandidates } from "./evidence-normalizer.ts";
 import { buildCoverageRepairPrompt } from "./provider.ts";
 import { buildTargetedQueue, mergeTargetedOutput } from "./targeted-queue.ts";
@@ -1118,4 +1119,121 @@ Deno.test("referansa izin vermeyen profilde standart metni boş kalır", () => {
     referencePolicy: "none",
   });
   for (const item of routed.items) assertEquals(item.references_text, "");
+});
+
+Deno.test("skorsuz madde başlıkları sınıf etiketini tekrarlamaz", () => {
+  const photo = output([candidate()]);
+  photo.scene_entities = [
+    ...photo.scene_entities,
+    {
+      id: "tank-1",
+      kind: "process_vessel",
+      label: "Sol proses tankı",
+      visible: true,
+      accessible: true,
+    },
+  ];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const assurance = routed.items.find((item) =>
+    item.item_class === "assurance_requirement"
+  );
+  assertEquals(assurance?.title, "Proses tankı ve borulama bütünlüğü");
+  for (const item of routed.items) {
+    assertEquals(item.title.includes("saha teyidi"), false);
+    assertEquals(item.title.includes("saha doğrulaması gerekli"), false);
+    assertEquals(item.title.includes("saha güvencesi gerekli"), false);
+  }
+});
+
+Deno.test("ipucu metni noktayla bitse de açıklamada çift nokta olmaz", () => {
+  const photo = output([candidate({
+    affirmative_cues: [
+      "Üst platformun sağ tarafındaki makinede açıkta dönen şaft görülmektedir.",
+    ],
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(routed.items[0].description.includes(".."), false);
+});
+
+Deno.test("rapor bütçesi tank güvencesini alfabeye göre atmaz", () => {
+  // abeb5b5b'nin birebir şekli: dört gözlem, bir doğrulama isteği ve dört
+  // güvence. Eski bütçe dokuzuncu maddeyi kesiyordu ve kesilen, adı Türk
+  // alfabesinde sona düşen "Proses bütünlüğü" oluyordu.
+  const unscored = [
+    { topic: "process_containment_integrity", title: "Proses tankı" },
+    { topic: "lifting_inspection", title: "Kaldırma ekipmanı" },
+    { topic: "machine_protective_systems", title: "Makine koruyucuları" },
+    { topic: "mobile_equipment_controls", title: "Hareketli ekipman" },
+    { topic: "biosecurity_controls", title: "Biyogüvenlik" },
+    { topic: "fire_emergency_readiness", title: "Yangın hazırlığı" },
+    { topic: "asset_assurance_generic", title: "Genel varlık" },
+  ];
+  const ranked = [...unscored].sort((a, b) =>
+    topicConsequenceRank(a.topic) - topicConsequenceRank(b.topic)
+  );
+  assertEquals(ranked[0].title, "Proses tankı");
+  assertEquals(ranked[ranked.length - 1].title, "Genel varlık");
+  assertEquals(
+    topicConsequenceRank("process_containment_integrity") <
+      topicConsequenceRank("machine_protective_systems"),
+    true,
+  );
+  assertEquals(
+    topicConsequenceRank("lifting_inspection") <
+      topicConsequenceRank("mobile_equipment_controls"),
+    true,
+  );
+});
+
+Deno.test("her skorsuz madde bütçe sıralaması için consequence_rank taşır", () => {
+  const photo = output([candidate()]);
+  photo.scene_entities = [
+    ...photo.scene_entities,
+    {
+      id: "tank-1",
+      kind: "process_vessel",
+      label: "Sol proses tankı",
+      visible: true,
+      accessible: true,
+    },
+    {
+      id: "crane-1",
+      kind: "asset",
+      label: "gezer köprülü vinç",
+      visible: true,
+      accessible: true,
+    },
+  ];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const unscored = routed.items.filter((item) =>
+    ["assurance_requirement", "verification_request"].includes(item.item_class)
+  );
+  assertEquals(unscored.length > 0, true);
+  for (const item of unscored) {
+    assertEquals(typeof item.internal_priority.consequence_rank, "number");
+  }
+  const tank = unscored.find((item) =>
+    item.internal_priority.assurance_topic_id ===
+      "process_containment_integrity"
+  );
+  const crane = unscored.find((item) =>
+    item.internal_priority.assurance_topic_id === "lifting_inspection"
+  );
+  assertEquals(
+    (tank?.internal_priority.consequence_rank as number) <
+      (crane?.internal_priority.consequence_rank as number),
+    true,
+  );
 });

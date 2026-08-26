@@ -290,6 +290,39 @@ const MODULE_TO_TOPIC: Partial<Record<V4ModuleID, string>> = {
   fire_explosion_release: "fire_emergency_readiness",
 };
 
+// When the report has to shed an unscored item, the choice must follow the
+// consequence of the thing being left unverified. It used to follow the Turkish
+// alphabet: "Proses bütünlüğü" simply sorted after "Kaldırma" and "Makine", so
+// the storage tank was the one dropped.
+const TOPIC_CONSEQUENCE_RANK: Record<string, number> = {
+  process_containment_integrity: 0,
+  confined_space_controls: 1,
+  combustible_dust_controls: 2,
+  hot_work_controls: 3,
+  energy_isolation_controls: 4,
+  electrical_internal_integrity: 5,
+  chemical_identity_and_exposure: 6,
+  excavation_stability_controls: 7,
+  lifting_inspection: 8,
+  working_at_height_access: 9,
+  fire_emergency_readiness: 10,
+  machine_protective_systems: 11,
+  mobile_equipment_controls: 12,
+  biosecurity_controls: 13,
+  asset_assurance_generic: 14,
+};
+
+export function topicConsequenceRank(topicID: string | null): number {
+  if (!topicID) return 99;
+  return TOPIC_CONSEQUENCE_RANK[topicID] ?? 90;
+}
+
+export function moduleConsequenceRank(moduleID: V4ModuleID): number {
+  return topicConsequenceRank(
+    MODULE_TO_TOPIC[moduleID] ?? "asset_assurance_generic",
+  );
+}
+
 export function playbookForTopic(topicID: string): AssurancePlaybook {
   return BY_TOPIC[topicID] ?? GENERIC;
 }

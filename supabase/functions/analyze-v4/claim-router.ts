@@ -15,9 +15,11 @@ import {
 } from "./assurance-topic-catalog.ts";
 import {
   assuranceMeasures,
+  moduleConsequenceRank,
   playbookForModule,
   playbookForTopic,
   referencesTextFor,
+  topicConsequenceRank,
 } from "./assurance-playbook.ts";
 
 const SCORES = {
@@ -280,7 +282,10 @@ function titleFor(
 ): string {
   const raw = conciseTitle(candidate);
   if (itemClass === "assurance_requirement") {
-    return `${raw} için saha güvencesi gerekli`.slice(0, 180);
+    // The item class is already labelled in the report, so a "saha teyidi" /
+    // "saha güvencesi gerekli" suffix on every title was pure repetition -- and
+    // it pushed the distinguishing part of the name past the truncation point.
+    return raw.slice(0, 180);
   }
   return raw.charAt(0).toLocaleUpperCase("tr-TR") + raw.slice(1, 180);
 }
@@ -302,19 +307,19 @@ function descriptionFor(
   if (itemClass === "verification_request") {
     if (candidate.condition_code === "electrical_identity_unresolved") {
       return cleanText(
-        `${cues}. Görünen hattın elektrik kablosu olup olmadığı ve enerji durumu görüntüden kesinleştirilemiyor.`,
+        `${endSentence(cues)} Görünen hattın elektrik kablosu olup olmadığı ve enerji durumu görüntüden kesinleştirilemiyor.`,
         "Görünen hattın niteliği ve enerji durumu sahada doğrulanmalı.",
       );
     }
     return cleanText(
       `${
-        cues || "Kritik geometri kısmen görünür"
-      }. Görünen fiziksel koşulun sürekliliği ve erişim ilişkisi sahada doğrulanmalı.`,
+        endSentence(cues || "Kritik geometri kısmen görünür")
+      } Görünen fiziksel koşulun sürekliliği ve erişim ilişkisi sahada doğrulanmalı.`,
       "Kritik koşul sahada doğrulanmalı.",
     );
   }
   return sentenceCase(cleanText(
-    `${cues}. Bu durum ${
+    `${endSentence(cues)} Bu durum ${
       candidate.event_path.contact_or_failure.toLocaleLowerCase("tr-TR")
     } yoluyla ${
       candidate.event_path.consequence.toLocaleLowerCase("tr-TR")
@@ -329,6 +334,13 @@ function descriptionFor(
 function sentenceCase(value: string): string {
   if (!value) return value;
   return value.charAt(0).toLocaleUpperCase("tr-TR") + value.slice(1);
+}
+
+// Cue text sometimes already ends in a full stop, and the sentence template
+// appended a second one: "...görülmektedir.. Bu durum ...".
+function endSentence(value: string): string {
+  const trimmed = value.trim().replace(/[.;,\s]+$/u, "");
+  return trimmed ? `${trimmed}.` : "";
 }
 
 // The control catalog is keyed by module, so a person falling through a missing
@@ -1026,6 +1038,7 @@ function visibleAssetAssuranceItem(params: {
       visible_entity_id: params.entityID,
       visible_entity_kind: params.entityKind,
       dedup_key: topic.id,
+      consequence_rank: topicConsequenceRank(topic.id),
       route_reason: "visible_asset_deterministic_assurance",
     },
   };
@@ -1124,6 +1137,11 @@ export function routeCandidates(params: {
         dedup_key: itemClass === "assurance_requirement"
           ? assurance!.id
           : dedupEventKey(candidate),
+        // Drives which unscored item survives the report budget. Without it the
+        // tie-break fell through to the Turkish alphabet.
+        consequence_rank: assurance
+          ? topicConsequenceRank(assurance.id)
+          : moduleConsequenceRank(candidate.module_id),
         ...(assurance ? { assurance_topic_id: assurance.id } : {}),
       },
     });
@@ -1326,7 +1344,7 @@ function unresolvedModuleVerificationItem(
     is_scored: false,
     criticality: "ordinary",
     ordinal: 0,
-    title: `${label} konusunda saha doğrulaması gerekli`,
+    title: label,
     category: label,
     description: cleanText(
       coverage.note?.trim() ?? "",
@@ -1356,6 +1374,7 @@ function unresolvedModuleVerificationItem(
     internal_priority: {
       coverage_outcome: coverage.outcome,
       dedup_key: `unresolved_module:${coverage.module_id}`,
+      consequence_rank: moduleConsequenceRank(coverage.module_id),
       route_reason: "module_coverage_unresolved",
     },
   };

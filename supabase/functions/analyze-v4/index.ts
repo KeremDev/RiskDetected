@@ -478,27 +478,84 @@ async function analyzePhoto(params: {
   throw lastError ?? new Error("photo_analysis_failed");
 }
 
-function boundedVisibleItems(items: RoutedItem[], maximum = 8): RoutedItem[] {
+/**
+ * Scored findings and unscored assurance/verification items used to compete for
+ * the same eight slots, and whatever lost was decided by display_order, whose
+ * final tie-break is the Turkish alphabet. On a three-photo run that produced
+ * four findings, one verification request and four assurance items, the storage
+ * tank's "Proses bütünlüğü" assurance was cut purely because P sorts after K and
+ * M -- and nothing anywhere recorded that it had been cut.
+ *
+ * Findings keep their own budget, unscored items get a separate one, and within
+ * each group the survivors are chosen by consequence, never by name.
+ */
+function boundedVisibleItems(
+  items: RoutedItem[],
+  maxFindings = 8,
+  maxUnscored = 6,
+): { kept: RoutedItem[]; excluded: Array<{ title: string; reason: string }> } {
   const internal = items.filter((item) =>
     !["observed_finding", "assurance_requirement", "verification_request"]
       .includes(item.item_class)
   );
-  const visible = items.filter((item) => !internal.includes(item));
-  const critical = visible.filter((item) =>
-    ["fatal", "permanent"].includes(item.criticality)
+  const findings = items.filter((item) => item.item_class === "observed_finding");
+  const unscored = items.filter((item) =>
+    ["assurance_requirement", "verification_request"].includes(item.item_class)
   );
-  const rest = visible.filter((item) => !critical.includes(item));
+
+  const fkScore = (item: RoutedItem) => {
+    const raw = item.score_payload?.fk_score ??
+      (item.fk_probability ?? 0) * (item.fk_frequency ?? 0) *
+        (item.fk_severity ?? 0);
+    return typeof raw === "number" ? raw : 0;
+  };
+  const criticality = (item: RoutedItem) =>
+    item.criticality === "fatal"
+      ? 0
+      : item.criticality === "permanent"
+      ? 1
+      : item.criticality === "serious"
+      ? 2
+      : 3;
+
+  const keptFindings = [...findings].sort((a, b) =>
+    criticality(a) - criticality(b) ||
+    fkScore(b) - fkScore(a) ||
+    a.display_order - b.display_order
+  );
+  const consequence = (item: RoutedItem) =>
+    typeof item.internal_priority?.consequence_rank === "number"
+      ? item.internal_priority.consequence_rank as number
+      : 99;
+  const keptUnscored = [...unscored].sort((a, b) =>
+    criticality(a) - criticality(b) ||
+    consequence(a) - consequence(b) ||
+    a.display_order - b.display_order
+  );
+
+  const droppedFindings = keptFindings.slice(maxFindings);
+  const droppedUnscored = keptUnscored.slice(maxUnscored);
+  const excluded = [
+    ...droppedFindings.map((item) => ({
+      title: item.title,
+      reason: "finding_budget",
+    })),
+    ...droppedUnscored.map((item) => ({
+      title: item.title,
+      reason: "unscored_budget",
+    })),
+  ];
+
   const kept = [
-    ...critical,
-    ...rest.slice(0, Math.max(0, maximum - critical.length)),
+    ...keptFindings.slice(0, maxFindings),
+    ...keptUnscored.slice(0, maxUnscored),
     ...internal,
-  ]
-    .sort((a, b) => a.display_order - b.display_order);
+  ].sort((a, b) => a.display_order - b.display_order);
   kept.forEach((item, index) => {
     item.ordinal = index + 1;
     item.display_order = index + 1;
   });
-  return kept;
+  return { kept, excluded };
 }
 
 // deno-lint-ignore no-explicit-any
@@ -898,7 +955,8 @@ serve(async (req) => {
       routed.hardRejections,
       routed.ledger,
     );
-    const items = boundedVisibleItems(routed.items);
+    const bounded = boundedVisibleItems(routed.items);
+    const items = bounded.kept;
     const coverageMatrix = results.map((result) => ({
       photo_index: result.photo.photoIndex,
       core_missing: missingCoreCoverage(result.output),
@@ -958,6 +1016,10 @@ serve(async (req) => {
         // still did not become a finding. Zero silent drops used to be
         // reported while exactly this was happening.
         critical_demotions: [...criticalDemotions],
+        // The report budget used to cut items with no record at all, so a
+        // dropped tank assurance was indistinguishable from one the engine
+        // never produced.
+        report_budget_excluded: bounded.excluded,
         targeted_queue: {
           selected: targetedQueue.selected.map((item) => item.regionKey),
           budget_excluded: targetedQueue.budgetExcluded.map((item) =>

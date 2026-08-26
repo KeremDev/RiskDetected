@@ -10,7 +10,7 @@ export type AssuranceTopic = {
 const BY_MODULE: Record<string, AssuranceTopic> = {
   falls_falling_objects: {
     id: "working_at_height_access",
-    title: "Düşme ve düşen cisim güvenceleri saha teyidi",
+    title: "Kenar koruması ve düşen cisim güvenceleri",
     description:
       "Görünen çalışma alanının tüm kenar, platform, sabitleme ve düşen cisim koruma düzeni fotoğraftan kesinleştirilemiyor.",
     action:
@@ -18,7 +18,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   work_at_height: {
     id: "working_at_height_access",
-    title: "Yüksekte çalışma erişimi ve koruması saha teyidi",
+    title: "Yüksekte çalışma erişimi ve koruması",
     description:
       "Görünen çalışma alanında erişim ve koruma düzeninin tüm geometrisi fotoğraftan kesinleştirilemiyor.",
     action:
@@ -26,7 +26,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   machinery: {
     id: "machine_protective_systems",
-    title: "Makine koruyucu sistemleri saha teyidi",
+    title: "Makine koruyucu ve durdurma sistemleri",
     description:
       "Makinenin koruyucu düzeni, kilitlemeleri veya durdurma işlevi görüntüden bütünüyle doğrulanamıyor.",
     action:
@@ -34,7 +34,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   electrical: {
     id: "electrical_internal_integrity",
-    title: "Elektriksel iç bütünlük saha teyidi",
+    title: "Elektriksel iç bütünlük ve topraklama",
     description:
       "Görünen elektrik ekipmanının iç bağlantıları, koruma düzeni ve test durumu fotoğraftan doğrulanamaz.",
     action:
@@ -42,7 +42,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   energy: {
     id: "energy_isolation_controls",
-    title: "Tehlikeli enerji izolasyonu saha teyidi",
+    title: "Tehlikeli enerji izolasyonu",
     description:
       "İzolasyon noktaları, birikmiş enerji ve yeniden enerjilenmeyi önleyen güvenceler görüntüden bütünüyle doğrulanamaz.",
     action:
@@ -50,7 +50,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   vehicles_mobile_equipment: {
     id: "mobile_equipment_controls",
-    title: "Hareketli ekipman güvenceleri saha teyidi",
+    title: "Hareketli ekipman kapasitesi ve kontrol durumu",
     description:
       "Görünen hareketli ekipmanın kapasitesi, kör nokta kontrolleri, bakım ve yetkilendirme durumu fotoğraftan kesinleştirilemez.",
     action:
@@ -58,7 +58,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   logistics: {
     id: "mobile_equipment_controls",
-    title: "Lojistik hareket ve ekipman güvenceleri saha teyidi",
+    title: "Lojistik trafik düzeni ve ekipman güvenceleri",
     description:
       "Görünen trafik düzeninin işletim kuralları, kör nokta kontrolleri ve ekipman güvenceleri fotoğraftan bütünüyle doğrulanamaz.",
     action:
@@ -66,7 +66,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   lifting: {
     id: "lifting_inspection",
-    title: "Kaldırma ekipmanı güvencesi saha teyidi",
+    title: "Kaldırma ekipmanı kapasitesi ve periyodik kontrolü",
     description:
       "Görünen kaldırma ekipmanının kapasitesi, iç bütünlüğü ve kontrol durumu fotoğraftan belirlenemez.",
     action:
@@ -74,7 +74,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   process_integrity: {
     id: "process_containment_integrity",
-    title: "Proses bütünlüğü saha teyidi",
+    title: "Proses tankı ve borulama bütünlüğü",
     description:
       "Görünen tank veya borulama sisteminin iç bütünlüğü, proses koşulları ve koruma katmanları görüntüden kesinleştirilemez.",
     action:
@@ -82,7 +82,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   chemical: {
     id: "chemical_identity_and_exposure",
-    title: "Kimyasal kimlik ve maruziyet saha teyidi",
+    title: "Kimyasal kimlik ve maruziyet düzeyi",
     description:
       "Maddenin kimliği, konsantrasyonu veya maruziyet düzeyi görüntüden güvenilir biçimde belirlenemez.",
     action:
@@ -90,7 +90,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   confined_space: {
     id: "confined_space_controls",
-    title: "Kapalı alan güvenceleri saha teyidi",
+    title: "Kapalı alan giriş güvenceleri",
     description:
       "Atmosfer, izolasyon, kurtarma ve izin düzeni tek görüntüyle doğrulanamaz.",
     action:
@@ -98,7 +98,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   excavation: {
     id: "excavation_stability_controls",
-    title: "Kazı ve zemin stabilitesi saha teyidi",
+    title: "Kazı ve zemin stabilitesi",
     description:
       "Zemin özellikleri, iksa yeterliliği, yeraltı hizmetleri ve stabilite hesabı tek görüntüyle doğrulanamaz.",
     action:
@@ -106,7 +106,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   hot_work: {
     id: "hot_work_controls",
-    title: "Sıcak çalışma güvenceleri saha teyidi",
+    title: "Sıcak çalışma izin ve gözetim düzeni",
     description:
       "İzin, gaz ölçümü, yangın gözcüsü ve çalışma sonrası izleme görüntüden doğrulanamaz.",
     action:
@@ -114,7 +114,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   biosecurity: {
     id: "biosecurity_controls",
-    title: "Biyogüvenlik güvenceleri saha teyidi",
+    title: "Biyolojik etken maruziyeti kontrolleri",
     description:
       "Maruziyet sınıfı, dekontaminasyon ve prosedürel kontroller fotoğraftan bütünüyle doğrulanamaz.",
     action:
@@ -122,7 +122,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   combustible_dust: {
     id: "combustible_dust_controls",
-    title: "Yanıcı toz güvenceleri saha teyidi",
+    title: "Yanıcı toz patlama güvenceleri",
     description:
       "Tozun patlayıcılık özellikleri, konsantrasyonu, zon sınıflandırması ve koruma performansı fotoğraftan belirlenemez.",
     action:
@@ -130,7 +130,7 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
   fire_explosion_release: {
     id: "fire_emergency_readiness",
-    title: "Yangın, patlama ve acil durum güvenceleri saha teyidi",
+    title: "Yangın, patlama ve acil durum hazırlığı",
     description:
       "Bakım, kapasite, organizasyonel hazırlık ve görünmeyen koruma işlevleri tek görüntüyle doğrulanamaz.",
     action:
@@ -144,7 +144,7 @@ export function assuranceTopicForModule(
 ): AssuranceTopic {
   return BY_MODULE[moduleID] ?? {
     id: "asset_assurance_generic",
-    title: `${fallbackLabel} saha teyidi`,
+    title: fallbackLabel,
     description:
       "Görünen varlığın belge, ölçüm, test veya iç bütünlük gerektiren yönü fotoğraftan kesinleştirilemez.",
     action: "Varlığa özgü güvenceyi yetkili kişiyle sahada doğrulayın.",
