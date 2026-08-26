@@ -138,10 +138,35 @@ const BY_MODULE: Record<string, AssuranceTopic> = {
   },
 };
 
+// The process containment topic is written for tanks and fixed piping. Routing a
+// hose assembly to the same module -- correct, it carries the same non-visual
+// assurance -- published "Proses tankı ve borulama bütünlüğü" over a close-up of
+// a hose coupling lying in gravel, naming equipment that is not in the frame.
+const PROCESS_HOSE_TOPIC: AssuranceTopic = {
+  // Its own id, not the tank topic's: a photo showing both a vessel and a hose
+  // line needs both assurances, and dedup keys on this id.
+  id: "hose_assembly_integrity",
+  title: "Hortum ve bağlantı elemanı bütünlüğü",
+  description:
+    "Görünen hortum hattının basınç sınıfı, üretim ve test kayıtları, bağlantı elemanı uygunluğu ve kamçı emniyeti fotoğraftan belirlenemez.",
+  action:
+    "Hortum kimliğini, basınç sınıfını, test tarihini, bağlantı elemanı uygunluğunu ve kamçı emniyetini sahada doğrulayın.",
+};
+
+const HOSE_ASSET =
+  /(?:hortum|hose|kaplin|kaplın|coupling|rakor|rakör|kelepçe|kelepce|bağlantı eleman|baglanti eleman)/u;
+
 export function assuranceTopicForModule(
   moduleID: V4ModuleID,
   fallbackLabel = "Görünen varlık",
 ): AssuranceTopic {
+  if (
+    moduleID === "process_integrity" &&
+    HOSE_ASSET.test(fallbackLabel.toLocaleLowerCase("tr-TR")) &&
+    !/(?:tank|vessel|basınçlı kap|basincli kap)/u.test(
+      fallbackLabel.toLocaleLowerCase("tr-TR"),
+    )
+  ) return PROCESS_HOSE_TOPIC;
   return BY_MODULE[moduleID] ?? {
     id: "asset_assurance_generic",
     title: fallbackLabel,

@@ -1818,11 +1818,13 @@ Deno.test("görünen hortum ve kaplin güvence maddesi üretir", () => {
     sectorID: "manufacturing",
     referencePolicy: "tr_current",
   });
+  // Hose assemblies carry their own topic: same non-visual assurance, but the
+  // tank copy and the API tank standards do not describe them.
   const assurance = routed.items.find((item) =>
-    item.internal_priority.assurance_topic_id === "process_containment_integrity"
+    item.internal_priority.assurance_topic_id === "hose_assembly_integrity"
   );
   assertEquals(assurance?.item_class, "assurance_requirement");
-  assertStringIncludes(assurance?.references_text ?? "", "API 570");
+  assertStringIncludes(assurance?.references_text ?? "", "TS EN ISO 4413");
 });
 
 Deno.test("aynı modüldeki farklı mekanizmalar aynı öneriyi almaz", () => {
@@ -1857,4 +1859,106 @@ Deno.test("aynı modüldeki farklı mekanizmalar aynı öneriyi almaz", () => {
   }).items[0];
   assertEquals(a.recommended_action === b.recommended_action, false);
   assertStringIncludes(b.recommended_action, "basıncı kontrollü boşaltın");
+});
+
+Deno.test("yürüme güzergâhı olmayan yakın çekimde takılma bulgusu üretilmez", () => {
+  // 41f14e70: hortum kaplininin makro çekiminde, çakıl içindeki bir tel parçası
+  // ve kuru otlar "takılma tehlikesi" olarak yayınlanmıştı.
+  const photo = output([candidate({
+    candidate_key: "debris-trip",
+    module_id: "housekeeping_physical_contact",
+    raw_label: "Yerdeki gevşek tel ve döküntülerden kaynaklanan takılma tehlikesi",
+    affirmative_cues: ["yerde gevşek tel parçası", "yerde kuru otlar ve yapraklar"],
+    event_path: {
+      source: "gevşek döküntüler",
+      contact_or_failure: "kişinin takılması",
+      consequence: "düşme",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  photo.people = [];
+  photo.accessible_regions = [{
+    id: "ground_1",
+    kind: "surface",
+    label: "zemin",
+    visible: true,
+    accessible: true,
+    region: { x: 0, y: 0, width: 1, height: 1, is_global: true },
+  }] as never;
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routed.items.some((item) => item.item_class === "observed_finding"),
+    false,
+  );
+  assertEquals(
+    routed.hardRejections[0].reason_code,
+    "no_walkable_route_in_scene",
+  );
+});
+
+Deno.test("adlandırılmış geçiş yolu varsa takılma bulgusu korunur", () => {
+  const photo = output([candidate({
+    candidate_key: "site-trip",
+    module_id: "housekeeping_physical_contact",
+    raw_label: "Geçiş yolunda dağınık malzemeler",
+    affirmative_cues: ["geçiş yolunda kutular ve ekipman parçaları"],
+    event_path: {
+      source: "zemindeki malzeme",
+      contact_or_failure: "kişinin takılması",
+      consequence: "düşme",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  photo.people = [];
+  photo.accessible_regions = [{
+    id: "path_1",
+    kind: "path",
+    label: "Zemin geçiş yolu",
+    visible: true,
+    accessible: true,
+    region: { x: 0.1, y: 0.6, width: 0.8, height: 0.3 },
+  }] as never;
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(routed.items[0].item_class, "observed_finding");
+  assertEquals(routed.items[0].recommended_action.includes("ıslak"), false);
+});
+
+Deno.test("hortum güvencesi tank başlığı taşımaz", () => {
+  const photo = output([candidate()]);
+  photo.scene_entities = [
+    ...photo.scene_entities,
+    {
+      id: "coupling_1",
+      kind: "component",
+      label: "hortum bağlantısı",
+      visible: true,
+      accessible: true,
+    },
+  ];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+    referencePolicy: "tr_current",
+  });
+  const assurance = routed.items.find((item) =>
+    item.internal_priority.assurance_topic_id === "hose_assembly_integrity"
+  );
+  assertEquals(assurance?.title, "Hortum ve bağlantı elemanı bütünlüğü");
+  assertEquals(assurance?.title.includes("tank"), false);
+  assertEquals(assurance?.description.includes("tank"), false);
+  assertStringIncludes(
+    assurance?.recommended_measures[0].text ?? "",
+    "kamçı emniyeti",
+  );
+  assertStringIncludes(assurance?.references_text ?? "", "TS EN 853");
+  assertEquals((assurance?.references_text ?? "").includes("API 653"), false);
 });

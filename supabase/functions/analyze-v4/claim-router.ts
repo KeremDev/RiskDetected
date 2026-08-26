@@ -1121,6 +1121,21 @@ function componentsAffirmedPresent(
   return { flat, general };
 }
 
+// A macro close-up of a hose coupling produced "Yerdeki gevşek tel ve
+// döküntülerden kaynaklanan takılma tehlikesi" from an offcut of wire and some
+// dry grass in the gravel. There is no walking route in that frame: the model
+// declared a single accessible region covering the whole image with
+// is_global set, which says "ground is everywhere", not "people walk here".
+// Scenes with a real trip hazard look different -- the construction photos carry
+// four people and named routes ("Zemin geçiş yolu", "İskele platformu"), none of
+// them global.
+function sceneHasWalkableRoute(output: ProviderPhotoOutput): boolean {
+  if (output.people.length > 0) return true;
+  return output.accessible_regions.some((region) =>
+    region.visible && region.region?.is_global !== true
+  );
+}
+
 function assuranceModuleForVisibleAsset(
   kind: string,
   label: string,
@@ -1244,11 +1259,36 @@ export function routeCandidates(params: {
     }
     let itemClass = route.itemClass!;
     let routeReason = route.reason;
+    const photoForCandidate = outputByPhoto.get(candidate.photo_index);
+    if (
+      itemClass === "observed_finding" &&
+      mechanismCode(candidate) === "fall_same_level" &&
+      photoForCandidate && !sceneHasWalkableRoute(photoForCandidate)
+    ) {
+      hardRejections.push({
+        candidate_id: candidate.id,
+        reason_code: "no_walkable_route_in_scene",
+        criticality: candidate.criticality,
+        evidence_snapshot: {
+          label: candidate.normalized_label,
+          people_in_scene: photoForCandidate.people.length,
+          accessible_regions: photoForCandidate.accessible_regions.length,
+        },
+      });
+      ledger.push({
+        candidate_id: candidate.id,
+        from_state: "candidate",
+        to_state: "hard_reject",
+        reason_code: "no_walkable_route_in_scene",
+        evidence_level: candidate.evidence_level,
+      });
+      continue;
+    }
     // Self-contradiction: the same photo's positive controls affirm the very
     // component this candidate calls missing. Demote rather than publish a
     // scored absence the model itself disputed.
     if (itemClass === "observed_finding") {
-      const photoOutput = outputByPhoto.get(candidate.photo_index);
+      const photoOutput = photoForCandidate;
       const claimedAbsent = photoOutput ? componentsClaimedAbsent(candidate) : [];
       if (photoOutput && claimedAbsent.length > 0) {
         const affirmed = componentsAffirmedPresent(

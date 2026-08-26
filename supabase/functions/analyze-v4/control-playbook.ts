@@ -252,8 +252,10 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   fall_same_level: {
     rootCause:
       "Yürüme yüzeyinin sürekliliği ve temizliği korunmamış; takılma ve kayma yolu açık bırakılmıştır.",
+    // Asserting a wet surface in every same-level finding repeats the
+    // over-claim the housekeeping title already had to lose.
     control:
-      "Geçiş yolundaki malzemeyi kaldırın veya sabitleyin; ıslak ve düzensiz yüzeyi güvenli hale getirin.",
+      "Geçiş yolundaki malzemeyi kaldırın veya sabitleyin; yürüme yüzeyini düzgün ve kaymaz durumda tutun.",
     corrective: [
       "Geçiş yolundaki malzeme, kablo ve hortumları kaldırın veya kanal ile sabitleyin.",
       "Islak veya kaygan yüzeyi kurutun; kaynağını giderin.",

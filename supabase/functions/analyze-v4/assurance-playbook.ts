@@ -52,6 +52,25 @@ const BY_TOPIC: Record<string, AssurancePlaybook> = {
       "İş Ekipmanlarının Kullanımında Sağlık ve Güvenlik Şartları Yönetmeliği — periyodik kontroller",
     ],
   },
+  hose_assembly_integrity: {
+    steps: [
+      "Hortumun üzerindeki üretici, tip, anma çapı, basınç sınıfı ve üretim tarihi damgasını okuyun; okunamıyorsa hattı servis dışı bırakın.",
+      "Hortum grubunun basınç test kaydını ve bir sonraki test tarihini belge üzerinden doğrulayın.",
+      "Bağlantı elemanının hortum ve akışkanla uyumlu tipte olduğunu, emniyet pimi veya kilidinin üreticinin öngördüğü parça olduğunu kontrol edin; tel, çivi veya benzeri geçici çözümleri derhal kaldırın.",
+      "Kaplin, rakor ve kelepçelerde korozyon, deformasyon ve kesit kaybı arayın; şüpheli parçayı değiştirin.",
+      "Ayrılma hâlinde hortumun savrulmasını önleyecek kamçı emniyetini (whip check) veya bağlama halatını takın ve basınçlı hat güzergâhından geçişi sınırlandırın.",
+      "Hortumu keskin kenar, ezilme ve araç geçişinden koruyacak biçimde yerleştirin; kullanılmadığında basıncı boşaltın.",
+    ],
+    preventive:
+      "Hortum grupları için envanter ve ömür takibi kurun; basınç testi, kullanım öncesi gözle muayene ve planlı değiştirme aralığını yazılı hale getirip yalnız üretici onaylı bağlantı elemanı kullanımını zorunlu kılın.",
+    references: [
+      "TS EN 853 / TS EN 856 — Kauçuk hortumlar: tel örgülü ve tel sarımlı hidrolik hortumlar",
+      "TS EN ISO 4413 — Hidrolik akışkan gücü: sistemler için genel kurallar",
+      "TS EN ISO 4414 — Pnömatik akışkan gücü: sistemler için genel kurallar",
+      "İş Ekipmanlarının Kullanımında Sağlık ve Güvenlik Şartları Yönetmeliği — basınçlı ekipman periyodik kontrolleri",
+      "Basınçlı Ekipmanlar Yönetmeliği (2014/68/AB)",
+    ],
+  },
   machine_protective_systems: {
     steps: [
       "Makinenin sabit ve hareketli koruyucularının yerinde, sağlam ve alet gerektirmeden sökülemez olduğunu kontrol edin.",
@@ -296,20 +315,21 @@ const MODULE_TO_TOPIC: Partial<Record<V4ModuleID, string>> = {
 // the storage tank was the one dropped.
 const TOPIC_CONSEQUENCE_RANK: Record<string, number> = {
   process_containment_integrity: 0,
-  confined_space_controls: 1,
-  combustible_dust_controls: 2,
-  hot_work_controls: 3,
-  energy_isolation_controls: 4,
-  electrical_internal_integrity: 5,
-  chemical_identity_and_exposure: 6,
-  excavation_stability_controls: 7,
-  lifting_inspection: 8,
-  working_at_height_access: 9,
-  fire_emergency_readiness: 10,
-  machine_protective_systems: 11,
-  mobile_equipment_controls: 12,
-  biosecurity_controls: 13,
-  asset_assurance_generic: 14,
+  hose_assembly_integrity: 1,
+  confined_space_controls: 2,
+  combustible_dust_controls: 3,
+  hot_work_controls: 4,
+  energy_isolation_controls: 5,
+  electrical_internal_integrity: 6,
+  chemical_identity_and_exposure: 7,
+  excavation_stability_controls: 8,
+  lifting_inspection: 9,
+  working_at_height_access: 10,
+  fire_emergency_readiness: 11,
+  machine_protective_systems: 12,
+  mobile_equipment_controls: 13,
+  biosecurity_controls: 14,
+  asset_assurance_generic: 15,
 };
 
 export function topicConsequenceRank(topicID: string | null): number {
