@@ -801,48 +801,52 @@ struct PaywallDesignFeatureMarquee: View {
     var accent: Color
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var rowWidth: CGFloat = 0
     @State private var rowHeight: CGFloat = 27
-    @State private var offset: CGFloat = 0
+    @State private var cycleAnchor = Date()
 
     private let spacing: CGFloat = 8
     /// Saniyede ~34pt: okunacak kadar yavaş, duruyor izlenimi vermeyecek kadar canlı.
     private var duration: Double { max(6, Double(rowWidth + spacing) / 34) }
 
     var body: some View {
-        // Kaydırılan içerik `overlay` içinde durur: ekrandan geniş olduğu için doğrudan
-        // yerleştirilseydi kendi genişliğini ebeveyne dayatır ve tüm sayfayı yana kaydırırdı.
-        // `Color.clear` ölçüyü verir, overlay yalnızca çizer.
-        Color.clear
-            .frame(height: rowHeight)
-            .frame(maxWidth: .infinity)
-            .overlay(alignment: .leading) {
-                HStack(spacing: spacing) {
-                    row
-                        .background(
-                            GeometryReader { geometry in
-                                Color.clear.preference(
-                                    key: PaywallDesignMarqueeWidthKey.self,
-                                    value: geometry.size.width
-                                )
-                            }
-                        )
-                    // İkinci kopya yalnızca görsel süreklilik için; ekran okuyucu tekrar etmesin.
-                    row.accessibilityHidden(true)
+        Group {
+            if reduceMotion {
+                // Otomatik hareket erişilebilirlik ayarı gereği kapalıdır; kırpılmış ve
+                // "bozuk" görünen sabit bir kare yerine bütün etiketler elle kaydırılabilir.
+                ScrollView(.horizontal, showsIndicators: false) {
+                    measuredRow
                 }
-                .offset(x: offset)
-                .fixedSize()
+                .frame(height: rowHeight)
+            } else {
+                // Tek seferlik `onAppear + repeatForever` bazı cihazlarda görünüm yeniden
+                // kurulduğunda animasyonu başlatmıyordu. Ofseti mutlak zamandan hesaplamak
+                // yaşam döngüsünden bağımsızdır ve ön planda her zaman yeniden akar.
+                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+                    movingStrip(at: timeline.date)
+                }
             }
-            .clipped()
-            .padding(.top, 12)
-            .onPreferenceChange(PaywallDesignMarqueeWidthKey.self) { width in
-                guard width > 0, abs(width - rowWidth) > 0.5 else { return }
-                rowWidth = width
-                restartAnimation()
+        }
+        .clipped()
+        .padding(.top, 12)
+        .onPreferenceChange(PaywallDesignMarqueeWidthKey.self) { width in
+            guard width > 0, abs(width - rowWidth) > 0.5 else { return }
+            rowWidth = width
+            cycleAnchor = Date()
+        }
+        .onChange(of: reduceMotion) { _ in
+            cycleAnchor = Date()
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active {
+                // Arka planda geçen süreyi atlayıp dönüşte görünür bir sıçrama yapma.
+                cycleAnchor = Date()
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("in_app_paywall.feature_marquee")
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("in_app_paywall.feature_marquee")
     }
 
     private var row: some View {
@@ -878,16 +882,41 @@ struct PaywallDesignFeatureMarquee: View {
         )
     }
 
-    private func restartAnimation() {
-        // Hareket azaltma açıksa şerit sabit kalır; içerik yine tamamen okunur.
-        guard !reduceMotion else {
-            offset = 0
-            return
-        }
-        offset = 0
-        withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
-            offset = -(rowWidth + spacing)
-        }
+    private var measuredRow: some View {
+        row
+            .background(
+                GeometryReader { geometry in
+                    Color.clear.preference(
+                        key: PaywallDesignMarqueeWidthKey.self,
+                        value: geometry.size.width
+                    )
+                }
+            )
+            .fixedSize()
+    }
+
+    private func movingStrip(at date: Date) -> some View {
+        // Kaydırılan içerik `overlay` içinde durur: ekrandan geniş olduğu için doğrudan
+        // yerleştirilseydi kendi genişliğini ebeveyne dayatır ve tüm sayfayı yana kaydırırdı.
+        Color.clear
+            .frame(height: rowHeight)
+            .frame(maxWidth: .infinity)
+            .overlay(alignment: .leading) {
+                HStack(spacing: spacing) {
+                    measuredRow
+                    // İkinci kopya yalnızca görsel süreklilik için; ekran okuyucu tekrar etmesin.
+                    row.accessibilityHidden(true)
+                }
+                .offset(x: motionOffset(at: date))
+                .fixedSize()
+            }
+    }
+
+    private func motionOffset(at date: Date) -> CGFloat {
+        guard rowWidth > 0 else { return 0 }
+        let elapsed = max(0, date.timeIntervalSince(cycleAnchor))
+        let progress = elapsed.truncatingRemainder(dividingBy: duration) / duration
+        return -CGFloat(progress) * (rowWidth + spacing)
     }
 }
 

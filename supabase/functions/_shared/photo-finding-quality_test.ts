@@ -5,6 +5,7 @@ import {
 } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
   areLikelyDuplicateCoverageFindings,
+  coverageDuplicateReason,
   evaluateCoverageQualityRecord,
   isCoverageRepairSubfindingAlreadyCovered,
   normalizeCoverageQualityNoAdditionalReasonCode,
@@ -57,6 +58,8 @@ Deno.test("merges the reported title suffix variation with identical evidence", 
   };
 
   assert(areLikelyDuplicateCoverageFindings(first, second));
+  assertEquals(coverageDuplicateReason(first, first), "duplicate_exact");
+  assertEquals(coverageDuplicateReason(first, second), "duplicate_fuzzy");
 });
 
 Deno.test("does not merge distinct findings that share generic evidence and category", () => {

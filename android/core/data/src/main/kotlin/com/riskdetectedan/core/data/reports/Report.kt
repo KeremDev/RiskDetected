@@ -93,6 +93,7 @@ private data class GenerateExcelReportBody(
     @SerialName("prepared_title_override") val preparedTitleOverride: String? = null,
     @SerialName("certificate_number_override") val certificateNumberOverride: String? = null,
     @SerialName("company_logo_base64") val companyLogoBase64: String? = null,
+    @SerialName("export_intent_id") val exportIntentId: String? = null,
     @SerialName("request_id") val requestId: String,
     @SerialName("support_id") val supportId: String,
     @SerialName("client_app_version") val clientAppVersion: String,
@@ -147,6 +148,9 @@ private data class RegisterReportBody(
     @SerialName("safety_profile_version") val safetyProfileVersion: Int,
     @SerialName("request_id") val requestId: String,
     @SerialName("support_id") val supportId: String,
+    @SerialName("export_intent_id") val exportIntentId: String? = null,
+    @SerialName("content_scope") val contentScope: String? = null,
+    @SerialName("selected_item_keys") val selectedItemKeys: List<String>? = null,
 )
 
 @Singleton
@@ -209,6 +213,8 @@ class ReportsRepository @Inject constructor(
     suspend fun generateExcelReport(
         analysisId: String,
         method: String = "fine_kinney",
+        reportKind: String = "risk_analysis",
+        exportIntentId: String? = null,
         companyId: String? = null,
         reportLanguage: String = "tr",
         companyNameOverride: String? = null,
@@ -223,7 +229,7 @@ class ReportsRepository @Inject constructor(
             body = GenerateExcelReportBody(
                 analysisId = analysisId,
                 method = method,
-                reportKind = "risk_analysis",
+                reportKind = reportKind,
                 reportLanguage = reportLanguage,
                 companyId = companyId,
                 companyNameOverride = companyNameOverride?.takeIf { it.isNotBlank() },
@@ -234,6 +240,7 @@ class ReportsRepository @Inject constructor(
                 companyLogoBase64 = companyLogoOverrideBytes?.let {
                     android.util.Base64.encodeToString(it, android.util.Base64.NO_WRAP)
                 },
+                exportIntentId = exportIntentId,
                 requestId = UUID.randomUUID().toString(),
                 supportId = UUID.randomUUID().toString(),
                 clientAppVersion = environmentConfig.appVersionName,
@@ -311,6 +318,9 @@ class ReportsRepository @Inject constructor(
         pageCount: Int,
         companyId: String? = null,
         reportLanguage: String = "tr",
+        exportIntentId: String? = null,
+        contentScope: String? = null,
+        selectedItemKeys: List<String>? = null,
     ): RdResult<Report> {
         val storagePath = "${userId.lowercase()}/${analysisId.lowercase()}/$fileNameSlug"
         try {
@@ -350,6 +360,9 @@ class ReportsRepository @Inject constructor(
                     safetyProfileVersion = RdClientMetadata.SAFETY_PROFILE_VERSION,
                     requestId = requestId,
                     supportId = supportId,
+                    exportIntentId = exportIntentId,
+                    contentScope = contentScope,
+                    selectedItemKeys = selectedItemKeys,
                 ),
             ).body<Report>()
             RdResult.Success(row)

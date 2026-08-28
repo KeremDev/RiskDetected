@@ -14,6 +14,7 @@ struct PaywallDesignFlowView: View {
     var onClose: () -> Void
     var onSubscribe: () -> Void
     var notice: String?
+    var resultHubContext: AnalysisResultPaywallContext? = nil
 
     @State private var screenOverride: InAppPaywallScreen?
     @State private var plusBilling: InAppPaywallBilling = .yearly
@@ -91,6 +92,10 @@ struct PaywallDesignFlowView: View {
             }
         }
         .task {
+            if let resultHubContext {
+                funnelSessionID = resultHubContext.funnelSessionID
+                await recordResultHubEvent("paywall_viewed")
+            }
             logPaywallViewIfNeeded()
             await app.refreshSubscriptionOfferings()
             alignBillingWithAvailablePackage()
@@ -501,6 +506,7 @@ struct PaywallDesignFlowView: View {
 
         Task {
             do {
+                await recordResultHubEvent("checkout_started")
                 let purchasedState = try await app.purchaseSubscription(
                     packageID: package.id,
                     expectedTier: purchaseScreen.tier
@@ -512,6 +518,7 @@ struct PaywallDesignFlowView: View {
 
                 if purchasedState.tier == purchaseScreen.tier {
                     logPaywallEvent(.purchaseSucceeded, screen: purchaseScreen, billing: purchaseBilling)
+                    await recordResultHubEvent("purchase_completed")
                     onSubscribe()
                 } else {
                     errorMessage = RDLocalization.format("paywall.in.app.paywall.view.abonelik.dogrulanamadi.secilen.plan.1.dogrulanan.715caf2d", table: .paywall, fallback: "Abonelik doğrulanamadı. Seçilen plan %1$@, doğrulanan plan %2$@.", arguments: [String(describing: purchaseScreen.tier.title), String(describing: purchasedState.tier.title)])
@@ -679,6 +686,17 @@ struct PaywallDesignFlowView: View {
                 contextHeadline: nil,
                 purchaseError: purchaseError
             )
+        )
+    }
+
+    private func recordResultHubEvent(_ name: String) async {
+        guard let resultHubContext else { return }
+        await AnalysisResultHubService.shared.recordEvent(
+            analysisID: resultHubContext.analysisID,
+            language: resultHubContext.language,
+            name: name,
+            section: resultHubContext.section,
+            funnelSessionID: resultHubContext.funnelSessionID
         )
     }
 

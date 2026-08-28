@@ -66,4 +66,9 @@ import kotlinx.serialization.Serializable
 @Serializable data class AnalysisResult(val analysisId: String)
 @Serializable object DeleteAccount
 @Serializable object Paywall
-@Serializable data class PaywallForTier(val tier: String)
+@Serializable data class PaywallForTier(
+    val tier: String,
+    val resultAnalysisId: String? = null,
+    val resultSection: String? = null,
+    val resultFunnelSessionId: String? = null,
+)

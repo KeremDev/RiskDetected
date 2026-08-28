@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.analysis.Finding
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubRepository
+import com.riskdetectedan.core.data.analysis.AnalysisResultSectionId
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.company.CompanyRepository
 import com.riskdetectedan.core.data.company.Company
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import javax.inject.Inject
 
 enum class ResultReportFormat { Pdf, Excel }
@@ -48,6 +51,9 @@ data class ResultReportRequest(
     val preparedByOverride: String? = null,
     val preparedTitleOverride: String? = null,
     val certificateNumberOverride: String? = null,
+    val contentScope: AnalysisResultSectionId? = null,
+    val selectedItemKeys: List<String> = emptyList(),
+    val exportIntentId: String? = null,
 )
 
 data class ResultReportSetup(
@@ -86,6 +92,7 @@ class ResultReportViewModel @Inject constructor(
     private val releasePolicyRepository: ReleasePolicyRepository,
     private val pdfReportGenerator: PdfReportGenerator,
     private val reviewEligibilityRepository: ReviewEligibilityRepository,
+    private val resultHubRepository: AnalysisResultHubRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ResultReportUiState>(ResultReportUiState.Idle)
@@ -93,6 +100,7 @@ class ResultReportViewModel @Inject constructor(
     private val _setup = MutableStateFlow(ResultReportSetup())
     val setup: StateFlow<ResultReportSetup> = _setup.asStateFlow()
     private var progressJob: Job? = null
+    private val reportFunnelSessionId = UUID.randomUUID().toString()
 
     fun loadSetup() {
         val userId = authRepository.currentUserId ?: return
@@ -109,25 +117,75 @@ class ResultReportViewModel @Inject constructor(
         _state.value = ResultReportUiState.Generating(format, 0.07f)
         startProgress(format)
         viewModelScope.launch {
+            request.contentScope?.let { section ->
+                resultHubRepository.recordEvent(
+                    analysisId = request.analysisId,
+                    name = "report_create_started",
+                    section = section,
+                    funnelSessionId = reportFunnelSessionId,
+                )
+            }
+            val authoritativeRequest = if (request.contentScope != null) {
+                when (val intent = resultHubRepository.createReportIntent(
+                    analysisId = request.analysisId,
+                    section = request.contentScope,
+                    format = if (format == ResultReportFormat.Pdf) "pdf" else "xlsx",
+                    selected = request.selectedItemKeys,
+                )) {
+                    is RdResult.Success -> request.copy(exportIntentId = intent.value.id)
+                    is RdResult.Failure -> {
+                        resultHubRepository.recordEvent(
+                            analysisId = request.analysisId,
+                            name = "report_create_failed",
+                            section = request.contentScope,
+                            funnelSessionId = reportFunnelSessionId,
+                        )
+                        progressJob?.cancel()
+                        progressJob = null
+                        _state.value = ResultReportUiState.Failed(
+                            AppErrorMessages.make(intent.message, context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi)),
+                        )
+                        return@launch
+                    }
+                }
+            } else request
             val result = when (format) {
-                ResultReportFormat.Pdf -> generatePdf(request, kind, method)
-                ResultReportFormat.Excel -> generateExcel(request, method)
+                ResultReportFormat.Pdf -> generatePdf(authoritativeRequest, kind, method)
+                ResultReportFormat.Excel -> generateExcel(authoritativeRequest, method)
             }
             progressJob?.cancel()
             progressJob = null
             when (result) {
                 is RdResult.Success -> {
+                    authoritativeRequest.contentScope?.let { section ->
+                        resultHubRepository.recordEvent(
+                            analysisId = authoritativeRequest.analysisId,
+                            name = "report_create_completed",
+                            section = section,
+                            funnelSessionId = reportFunnelSessionId,
+                        )
+                    }
                     reviewEligibilityRepository.recordSuccessfulReport(result.value.reportId)
                     _state.value = ResultReportUiState.Generating(format, 1f)
                     delay(480)
                     _state.value = ResultReportUiState.Ready(result.value)
                 }
-                is RdResult.Failure -> _state.value = ResultReportUiState.Failed(
-                    AppErrorMessages.make(
-                        result.message,
-                        context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
-                    ),
-                )
+                is RdResult.Failure -> {
+                    authoritativeRequest.contentScope?.let { section ->
+                        resultHubRepository.recordEvent(
+                            analysisId = authoritativeRequest.analysisId,
+                            name = "report_create_failed",
+                            section = section,
+                            funnelSessionId = reportFunnelSessionId,
+                        )
+                    }
+                    _state.value = ResultReportUiState.Failed(
+                        AppErrorMessages.make(
+                            result.message,
+                            context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                        ),
+                    )
+                }
             }
         }
     }
@@ -211,6 +269,7 @@ class ResultReportViewModel @Inject constructor(
         }
 
         val fileName = PdfReportFileName.build(request.title, request.analysisId, kind, method)
+        val contentScope = request.contentScope?.wireValue()
         return when (
             val registered = reportsRepository.uploadAndRegisterPdfReport(
                 userId = userId,
@@ -222,6 +281,9 @@ class ResultReportViewModel @Inject constructor(
                 title = request.title,
                 pageCount = generated.pageCount,
                 companyId = request.companyId,
+                exportIntentId = request.exportIntentId,
+                contentScope = contentScope,
+                selectedItemKeys = request.selectedItemKeys.takeIf { request.contentScope != null },
             )
         ) {
             is RdResult.Success -> RdResult.Success(
@@ -241,6 +303,8 @@ class ResultReportViewModel @Inject constructor(
             val generated = reportsRepository.generateExcelReport(
                 analysisId = request.analysisId,
                 method = method,
+                reportKind = request.contentScope?.wireValue() ?: "risk_analysis",
+                exportIntentId = request.exportIntentId,
                 companyId = request.companyId,
                 companyNameOverride = request.companyNameOverride,
                 companyInfoOverride = request.companyInfoOverride,
@@ -265,5 +329,11 @@ class ResultReportViewModel @Inject constructor(
             )
             is RdResult.Failure -> RdResult.Failure(downloaded.code, downloaded.message, downloaded.cause)
         }
+    }
+
+    private fun AnalysisResultSectionId.wireValue(): String = when (this) {
+        AnalysisResultSectionId.RiskAnalysis -> "risk_analysis"
+        AnalysisResultSectionId.ExpertRecommendations -> "expert_recommendations"
+        AnalysisResultSectionId.ApprovedNotebook -> "approved_notebook"
     }
 }

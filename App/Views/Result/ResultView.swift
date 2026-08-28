@@ -50,6 +50,12 @@ struct ResultView: View {
     }
     private var sortedFindingRows: [FindingRow] {
         findingRows.sorted { leftRow, rightRow in
+            if findingRows.contains(where: { $0.isScored == false }),
+               let leftOrder = leftRow.displayOrder,
+               let rightOrder = rightRow.displayOrder,
+               leftOrder != rightOrder {
+                return leftOrder < rightOrder
+            }
             let left = leftRow.asFinding
             let right = rightRow.asFinding
             let leftBand = left.band(for: method).level
@@ -95,6 +101,27 @@ struct ResultView: View {
         let localImages = reportPreviewImages
         let itemCount = max(rows.count, localImages.count)
         guard itemCount > 0 else {
+            return [ResultPhotoItem(index: 0, image: localPreviewImage, path: photoPath)]
+        }
+
+        return (0..<itemCount).map { index in
+            ResultPhotoItem(
+                index: index,
+                image: localImages.indices.contains(index) ? localImages[index] : nil,
+                path: rows.indices.contains(index) ? rows[index].storagePath : nil
+            )
+        }
+    }
+    /// Result hub metadata must reflect the user's actual upload count. Unlike
+    /// the legacy photo card, this list deliberately has no synthetic
+    /// placeholder item when an analysis has no persisted photo.
+    private var resultHubPhotoItems: [ResultPhotoItem] {
+        let rows = orderedPhotoRowsForReport()
+        let localImages = reportPreviewImages
+        let itemCount = min(3, max(rows.count, localImages.count))
+
+        guard itemCount > 0 else {
+            guard localPreviewImage != nil || photoPath != nil else { return [] }
             return [ResultPhotoItem(index: 0, image: localPreviewImage, path: photoPath)]
         }
 
@@ -163,6 +190,9 @@ struct ResultView: View {
     @State private var freeRiskAnalysisTrialUsed: Bool = false
     @State private var reportSettingsDetent: PresentationDetent = .height(430)
     @State private var expandedPhotoPreview: ResultPhotoPreview?
+    @State private var resultHub: AnalysisResultHubResponse?
+    @State private var resultHubLoadError: String?
+    @State private var resultHubPaywallContext: AnalysisResultPaywallContext?
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
     }
@@ -172,32 +202,81 @@ struct ResultView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
-
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 14) {
-                    if showsHistoricalLanguageBadge {
-                        historicalLanguageBadge
+            if let resultHub, resultHub.enabled,
+               let analysisID = currentBundle?.analysis.id {
+                resultHubHeader
+                AnalysisResultHubView(
+                    hub: resultHub,
+                    analysisID: analysisID,
+                    language: analysisOutputLanguage,
+                    analysisTitle: analysisTitle,
+                    analysisSector: analysisSectorLabel,
+                    analysisPhotos: resultHubPhotoItems,
+                    method: $method,
+                    onOpenAnalysisPhoto: { image in
+                        expandedPhotoPreview = ResultPhotoPreview(image: image)
+                    },
+                    onOpenFinding: { row in
+                        selectedFindingDetail = detailSelection(for: row)
+                    },
+                    onEditFinding: { row in
+                        selectedFindingRowForEdit = row
+                    },
+                    onDeleteFinding: { row in
+                        pendingDeleteFindingRow = row
+                    },
+                    onPaywall: { section, funnelSessionID in
+                        resultHubPaywallContext = AnalysisResultPaywallContext(
+                            analysisID: analysisID,
+                            section: section,
+                            funnelSessionID: funnelSessionID,
+                            language: analysisOutputLanguage
+                        )
+                        showPaywall = true
+                    },
+                    onCreateReport: { section, ids, format in
+                        createHubReport(section: section, selectedIDs: ids, format: format)
+                    },
+                    onEditNotebook: { item, findingText, recommendationText in
+                        mutateNotebook(
+                            item: item,
+                            action: "edit",
+                            findingText: findingText,
+                            recommendationText: recommendationText
+                        )
+                    },
+                    onSuppressNotebook: { item in
+                        mutateNotebook(item: item, action: "suppress")
                     }
-                    photoMetaCard
-                    methodSelector
-                    methodologySummary
-                    if findings.isEmpty {
-                        emptyFindingsCard
-                    } else {
-                        findingsSection
+                )
+                .zIndex(0)
+            } else {
+                header
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 14) {
+                        if showsHistoricalLanguageBadge {
+                            historicalLanguageBadge
+                        }
+                        photoMetaCard
+                        methodSelector
+                        methodologySummary
+                        if findings.isEmpty {
+                            emptyFindingsCard
+                        } else {
+                            findingsSection
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, findings.isEmpty ? 110 : 16)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, findings.isEmpty ? 110 : 16)
-            }
-            .clipped()
-            .zIndex(0)
+                .clipped()
+                .zIndex(0)
 
-            if !findings.isEmpty {
-                stickyReportCTA
-                    .zIndex(1)
+                if !findings.isEmpty {
+                    stickyReportCTA
+                        .zIndex(1)
+                }
             }
         }
         .background(Color.rdPaper)
@@ -208,18 +287,57 @@ struct ResultView: View {
             }
         }
         .animation(.easeInOut(duration: 0.22), value: pdfGeneration.isActive)
-        .sheet(item: $selectedFindingDetail) { selection in
+        .fullScreenCover(item: $selectedFindingDetail) { selection in
+            let sourceRow = findingRows.first(where: { $0.id == selection.rowID })
+            let hubItem = resultHub?
+                .sections
+                .first(where: { $0.id == .riskAnalysis })?
+                .items
+                .first(where: { $0.id == selection.rowID })
             RiskDetailView(
                 finding: selection.finding,
                 method: method,
                 photoPath: selection.photoPath,
                 localPreviewImage: selection.localPreviewImage,
                 photoIndex: selection.photoIndex,
-                showsRegulatoryReferences: showsRegulatoryReferences
+                showsRegulatoryReferences: showsRegulatoryReferences,
+                analysisTitle: analysisTitle,
+                analysisSector: analysisSectorLabel,
+                initialReaction: hubItem?.userReaction ?? AnalysisItemReaction.none,
+                onReaction: { reaction in
+                    guard let hubItem else { return }
+                    Task {
+                        try? await AnalysisResultHubService.shared.setFeedback(
+                            analysisID: currentBundle?.analysis.id ?? selection.rowID,
+                            language: analysisOutputLanguage,
+                            section: .riskAnalysis,
+                            item: hubItem,
+                            reaction: reaction
+                        )
+                    }
+                },
+                onEdit: {
+                    guard let sourceRow else { return }
+                    selectedFindingDetail = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                        selectedFindingRowForEdit = sourceRow
+                    }
+                },
+                onDelete: {
+                    guard let sourceRow else { return }
+                    selectedFindingDetail = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                        pendingDeleteFindingRow = sourceRow
+                    }
+                },
+                onGenerateReport: {
+                    guard let hubItem else { return }
+                    selectedFindingDetail = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                        createHubReport(section: .riskAnalysis, selectedIDs: [hubItem.id], format: "pdf")
+                    }
+                }
             )
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(item: $selectedFindingRowForEdit) { row in
             FindingEditorSheet(
@@ -311,12 +429,15 @@ struct ResultView: View {
         } message: {
             Text(RDLocalization.string("analysis.result.view.bu.bulgu.yeni.raporlara.dahil.edilmeyecek.eski.r.74c5aa32", table: .analysis, fallback: "Bu bulgu yeni raporlara dahil edilmeyecek. Eski rapor snapshotları ve audit kaydı korunur."))
         }
-        .fullScreenCover(isPresented: $showPaywall) {
+        .fullScreenCover(isPresented: $showPaywall, onDismiss: {
+            resultHubPaywallContext = nil
+        }) {
             FreeAwarePaywallView(onClose: { showPaywall = false },
                         onSubscribe: {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }
-                        })
+                        },
+                        resultHubContext: resultHubPaywallContext)
             .preferredColorScheme(preferredModalColorScheme)
         }
         .fullScreenCover(item: $expandedPhotoPreview) { preview in
@@ -333,6 +454,9 @@ struct ResultView: View {
         .task(id: currentBundle?.analysis.companyID) {
             await loadInitialReportCompanyIfNeeded()
         }
+        .task(id: currentBundle?.analysis.id) {
+            await loadResultHubIfNeeded()
+        }
 #if DEBUG
         .task(id: currentBundle?.analysis.id) {
             await openUITestFindingEditorIfNeeded()
@@ -343,6 +467,8 @@ struct ResultView: View {
             selectedFindingDetail = nil
             selectedFindingRowForEdit = nil
             pendingDeleteFindingRow = nil
+            resultHub = nil
+            resultHubLoadError = nil
 #if DEBUG
             didOpenUITestFindingEditor = false
 #endif
@@ -353,6 +479,37 @@ struct ResultView: View {
     }
 
     // MARK: - Header
+
+    private var resultHubHeader: some View {
+        HStack {
+            Button {
+                app.activeTab = .home
+                onClose()
+            } label: {
+                RDLogo(size: 18)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(RDLocalization.string(
+                "localizable.rdlogo.ana.sayfaya.don.8c68021b",
+                table: .localizable,
+                fallback: "Ana sayfaya dön"
+            ))
+
+            Spacer()
+
+            RDHeaderAccountCTA {
+                showPaywall = true
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 8)
+        .background(Color.rdPaper)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("result.hub.header")
+        .zIndex(100)
+    }
 
     private var header: some View {
         HStack {
@@ -665,8 +822,8 @@ struct ResultView: View {
     // MARK: - Methodology summary
 
     private var methodologySummary: some View {
-        let topScore = findings.map { $0.score(for: method) }.max() ?? 0
-        let topBand = findings.map { $0.band(for: method) }
+        let topScore = findings.filter(\.isScored).map { $0.score(for: method) }.max() ?? 0
+        let topBand = findings.filter(\.isScored).map { $0.band(for: method) }
             .max(by: { rankFor($0.level) < rankFor($1.level) }) ?? RiskBands.fineKinney(0)
         let counts = countsByLevel(method: method)
 
@@ -769,7 +926,9 @@ struct ResultView: View {
 
     private var findingsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(RDLocalization.uppercased(RDLocalization.string("analysis.result.view.tespit.edilen.tehlikeler.risk.hesaplamasi.f60bde3e", table: .analysis, fallback: "Tespit edilen tehlikeler · risk hesaplaması")))
+            Text(findingRows.contains(where: { $0.isScored == false })
+                 ? RDLocalization.uppercased(RDLocalization.string("analysis.result.view.analiz.bulgulari.11d57f5a", table: .analysis, fallback: "Analiz bulguları"))
+                 : RDLocalization.uppercased(RDLocalization.string("analysis.result.view.tespit.edilen.tehlikeler.risk.hesaplamasi.f60bde3e", table: .analysis, fallback: "Tespit edilen tehlikeler · risk hesaplaması")))
                 .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .tracking(0.6)
                 .foregroundStyle(Color.rdSlate)
@@ -1015,6 +1174,153 @@ struct ResultView: View {
         case .medium:   return 2
         case .low:      return 1
         case .unknown:  return 0
+        }
+    }
+
+    private func loadResultHubIfNeeded() async {
+        guard let analysisID = currentBundle?.analysis.id else {
+            resultHub = nil
+            return
+        }
+        do {
+            let response = try await AnalysisResultHubService.shared.load(
+                analysisID: analysisID,
+                language: analysisOutputLanguage
+            )
+            resultHub = response.enabled ? response : nil
+            resultHubLoadError = nil
+        } catch {
+            resultHub = nil
+            resultHubLoadError = error.localizedDescription
+            Self.logger.warning("Result hub fallback analysis=\(analysisID.uuidString, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func mutateNotebook(
+        item: AnalysisResultHubItem,
+        action: String,
+        findingText: String? = nil,
+        recommendationText: String? = nil
+    ) {
+        guard let analysisID = currentBundle?.analysis.id else { return }
+        Task {
+            do {
+                try await AnalysisResultHubService.shared.mutateNotebook(
+                    analysisID: analysisID,
+                    language: analysisOutputLanguage,
+                    entryID: item.id,
+                    mutation: action,
+                    findingText: findingText,
+                    recommendationText: recommendationText
+                )
+                await loadResultHubIfNeeded()
+            } catch {
+                findingMutationError = error.localizedDescription
+            }
+        }
+    }
+
+    private func createHubReport(
+        section: AnalysisResultSectionID,
+        selectedIDs: [UUID],
+        format: String
+    ) {
+        guard !selectedIDs.isEmpty,
+              let hub = resultHub,
+              let bundle = currentBundle,
+              let sectionPayload = hub.sections.first(where: { $0.id == section })
+        else { return }
+        let selectedSet = Set(selectedIDs)
+        let selectedItems = sectionPayload.items.filter { selectedSet.contains($0.id) }
+        let requestID = UUID()
+        let supportID = AppErrorMessage.newSupportID()
+        if format == "pdf" { pdfGeneration.start() } else { isExcelGenerating = true }
+
+        Task {
+            await AnalysisResultHubService.shared.recordEvent(
+                analysisID: bundle.analysis.id,
+                language: analysisOutputLanguage,
+                name: "report_create_started",
+                section: section,
+                funnelSessionID: requestID
+            )
+            do {
+                let intent = try await AnalysisResultHubService.shared.createReportIntent(
+                    analysisID: bundle.analysis.id,
+                    language: analysisOutputLanguage,
+                    section: section,
+                    format: format,
+                    selectedIDs: selectedIDs,
+                    requestID: requestID
+                )
+                if format == "xlsx" {
+                    let report = try await AnalysisService.shared.generateExcelReport(
+                        analysisID: bundle.analysis.id,
+                        method: method,
+                        language: analysisOutputLanguage,
+                        companyID: selectedReportCompany?.id,
+                        exportIntentID: intent.id,
+                        requestID: requestID.uuidString,
+                        supportID: supportID
+                    )
+                    let url = try await AnalysisService.shared.reportFileURL(
+                        for: report,
+                        requestID: requestID.uuidString,
+                        supportID: supportID
+                    )
+                    shareItem = ShareItem(url: url)
+                } else {
+                    pdfGeneration.advance(to: 0.28)
+                    let url = try AnalysisResultHubPDFService.shared.generate(
+                        section: section,
+                        items: selectedItems,
+                        analysisTitle: bundle.analysis.title,
+                        method: method,
+                        language: analysisOutputLanguage
+                    )
+                    pdfGeneration.advance(to: 0.68)
+                    guard let userID = app.auth.session?.user.id else {
+                        throw AnalysisService.AnalysisError.notAuthenticated
+                    }
+                    _ = try await AnalysisService.shared.storeReport(
+                        userID: userID,
+                        bundle: bundle,
+                        fileURL: url,
+                        kind: section == .riskAnalysis ? .riskAnalysis : .standard,
+                        method: method,
+                        company: selectedReportCompany,
+                        exportIntentID: intent.id,
+                        contentScope: section,
+                        selectedItemKeys: selectedIDs,
+                        requestID: requestID.uuidString,
+                        supportID: supportID
+                    )
+                    await pdfGeneration.complete()
+                    shareItem = ShareItem(url: url)
+                }
+                await AnalysisResultHubService.shared.recordEvent(
+                    analysisID: bundle.analysis.id,
+                    language: analysisOutputLanguage,
+                    name: "report_create_completed",
+                    section: section,
+                    funnelSessionID: requestID
+                )
+            } catch {
+                pdfGeneration.stop()
+                pdfError = AppErrorMessage.make(
+                    error,
+                    context: "Rapor oluşturulamadı",
+                    fallbackTitle: "Rapor oluşturulamadı"
+                ).fullText
+                await AnalysisResultHubService.shared.recordEvent(
+                    analysisID: bundle.analysis.id,
+                    language: analysisOutputLanguage,
+                    name: "report_create_failed",
+                    section: section,
+                    funnelSessionID: requestID
+                )
+            }
+            isExcelGenerating = false
         }
     }
 
@@ -1346,6 +1652,7 @@ struct ResultView: View {
 
     private func sortedFindings(for reportMethod: RiskMethod) -> [Finding] {
         findings.sorted {
+            if $0.isScored != $1.isScored { return $0.isScored }
             let leftBand = $0.band(for: reportMethod).level
             let rightBand = $1.band(for: reportMethod).level
             let leftRank = rankFor(leftBand)
@@ -2547,11 +2854,11 @@ private struct FindingEditorSheet: View {
         _rootCauseText = State(initialValue: row.rootCauseText ?? "")
         let sourceIndices = row.sourcePhotoIndices?.isEmpty == false ? row.sourcePhotoIndices! : [1]
         _selectedPhotoIndices = State(initialValue: Set(sourceIndices))
-        _fkProbability = State(initialValue: row.fkProbability)
-        _fkFrequency = State(initialValue: row.fkFrequency)
-        _fkSeverity = State(initialValue: row.fkSeverity)
-        _m5Probability = State(initialValue: row.m5Probability)
-        _m5Severity = State(initialValue: row.m5Severity)
+        _fkProbability = State(initialValue: row.fkProbability ?? 0.2)
+        _fkFrequency = State(initialValue: row.fkFrequency ?? 0.5)
+        _fkSeverity = State(initialValue: row.fkSeverity ?? 1)
+        _m5Probability = State(initialValue: row.m5Probability ?? 1)
+        _m5Severity = State(initialValue: row.m5Severity ?? 1)
     }
 
     private var fkScore: Double { fkProbability * fkFrequency * fkSeverity }
@@ -2571,7 +2878,7 @@ private struct FindingEditorSheet: View {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !correctiveText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && !preventiveText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && (row.isScored == false || !preventiveText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             && !selectedPhotoIndices.isEmpty
     }
     private var isDarkMode: Bool { colorScheme == .dark }
@@ -2600,7 +2907,9 @@ private struct FindingEditorSheet: View {
                         .background(editorControlSurface)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    riskScoreEditor
+                    if row.isScored != false {
+                        riskScoreEditor
+                    }
 
                     editorField(title: RDLocalization.string("analysis.result.view.bulgu.938e4cbc", table: .analysis, fallback: "Bulgu"), icon: "exclamationmark.triangle.fill", text: $title, lineLimit: 2)
                     editorTextArea(title: RDLocalization.string("analysis.result.view.aciklama.dff7dc0e", table: .analysis, fallback: "Açıklama"), icon: "text.alignleft", text: $description, minLines: 2, maxLines: 4)
@@ -2738,7 +3047,7 @@ private struct FindingEditorSheet: View {
         let measures = [
             FindingMeasure(kind: .corrective, title: RDLocalization.string("analysis.result.view.duzeltici.onlem.f93bb22e", table: .analysis, fallback: "Düzeltici Önlem"), text: cleanCorrective),
             FindingMeasure(kind: .preventive, title: RDLocalization.string("analysis.result.view.onleyici.kontrol.480c3433", table: .analysis, fallback: "Önleyici Kontrol"), text: cleanPreventive)
-        ]
+        ].filter { !$0.text.isEmpty }
         return FindingMutationPatch(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             category: row.category,
@@ -2747,11 +3056,11 @@ private struct FindingEditorSheet: View {
             recommendedMeasures: measures,
             referencesText: referencesText.trimmingCharacters(in: .whitespacesAndNewlines),
             rootCauseText: rootCauseText.trimmingCharacters(in: .whitespacesAndNewlines),
-            fkProbability: fkProbability,
-            fkFrequency: fkFrequency,
-            fkSeverity: fkSeverity,
-            m5Probability: m5Probability,
-            m5Severity: m5Severity,
+            fkProbability: row.isScored == false ? nil : fkProbability,
+            fkFrequency: row.isScored == false ? nil : fkFrequency,
+            fkSeverity: row.isScored == false ? nil : fkSeverity,
+            m5Probability: row.isScored == false ? nil : m5Probability,
+            m5Severity: row.isScored == false ? nil : m5Severity,
             sourcePhotoIndices: selectedPhotoIndices.sorted()
         )
     }
@@ -3033,7 +3342,9 @@ struct FindingCard: View {
                         }
 
                         HStack(spacing: 6) {
-                            RDChip(level: band.level, label: band.label)
+                            if finding.isScored {
+                                RDChip(level: band.level, label: band.label)
+                            }
                             if finding.needsFieldVerification {
                                 HStack(spacing: 5) {
                                     Image(systemName: "checkmark.shield")
@@ -3108,7 +3419,9 @@ struct FindingCard: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
 
-                scoreBlock(band: band, score: score, max: max)
+                if finding.isScored {
+                    scoreBlock(band: band, score: score, max: max)
+                }
 
                 actionBlock
 
@@ -3117,7 +3430,9 @@ struct FindingCard: View {
             .contentShape(Rectangle())
             .onTapGesture(perform: action)
 
-            findingMetaCards(band: band)
+            if finding.isScored {
+                findingMetaCards(band: band)
+            }
         }
         .padding(14)
         .background(
@@ -3308,7 +3623,7 @@ struct FindingCard: View {
     }
 }
 
-private struct ResultPhotoItem: Identifiable {
+struct ResultPhotoItem: Identifiable {
     let index: Int
     let image: UIImage?
     let path: String?
@@ -3388,7 +3703,7 @@ private struct ResultPhotoMosaic: View {
     }
 }
 
-private struct ResultPhotoThumbnail: View {
+struct ResultPhotoThumbnail: View {
     let image: UIImage?
     let path: String?
     let isTextAnalysis: Bool

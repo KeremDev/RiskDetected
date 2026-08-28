@@ -161,7 +161,7 @@ private extension DateFormatter {
 }
 
 enum AppClientMetadata {
-    static let apiContractVersion = 2
+    static let apiContractVersion = 3
     static let platform = "ios"
 
     static var appVersion: String {
@@ -178,6 +178,8 @@ enum AppClientMetadata {
             "multi_photo_coverage_v2": true,
             "editable_findings": true,
             "report_snapshot_v2": true,
+            "safety_claim_v4_scoreless": true,
+            "analysis_result_hub_v1": true,
             "global_localization_wave1":
                 RDGlobalLocalizationBuildGate.isCompiledIn
         ]
@@ -694,6 +696,7 @@ final class AnalysisService {
         method: RiskMethod,
         language: RDLanguage = .turkish,
         companyID: UUID? = nil,
+        exportIntentID: UUID? = nil,
         requestID: String,
         supportID: String
     ) async throws -> ReportRow {
@@ -703,6 +706,7 @@ final class AnalysisService {
             let report_kind: String
             let report_language: String
             let company_id: String?
+            let export_intent_id: String?
             let client_app_version: String
             let client_app_build: String
             let client_platform: String
@@ -730,6 +734,7 @@ final class AnalysisService {
             report_kind: PDFReportKind.riskAnalysis.rawValue,
             report_language: language.rawValue,
             company_id: companyID?.uuidString,
+            export_intent_id: exportIntentID?.uuidString,
             client_app_version: Self.clientAppVersion,
             client_app_build: AppClientMetadata.appBuild,
             client_platform: AppClientMetadata.platform,
@@ -766,6 +771,9 @@ final class AnalysisService {
         kind: PDFReportKind,
         method: RiskMethod,
         company: Company? = nil,
+        exportIntentID: UUID? = nil,
+        contentScope: AnalysisResultSectionID? = nil,
+        selectedItemKeys: [UUID] = [],
         requestID: String,
         supportID: String
     ) async throws -> ReportRow {
@@ -866,6 +874,9 @@ final class AnalysisService {
             let client_capabilities: [String: Bool]
             let request_id: String
             let support_id: String
+            let export_intent_id: String?
+            let content_scope: String?
+            let selected_item_keys: [String]
         }
 
         let fileSize = data.count
@@ -894,7 +905,10 @@ final class AnalysisService {
             api_contract_version: AppClientMetadata.apiContractVersion,
             client_capabilities: AppClientMetadata.capabilities,
             request_id: requestID,
-            support_id: supportID
+            support_id: supportID,
+            export_intent_id: exportIntentID?.uuidString,
+            content_scope: contentScope?.rawValue,
+            selected_item_keys: selectedItemKeys.map(\.uuidString)
         )
 
         if ReportFailureSimulation.isEnabled(.metadataInsert) {
@@ -3261,14 +3275,14 @@ struct FindingRow: Codable, Identifiable, Equatable {
     let rootCauseText: String?
     var needsFieldVerification: Bool? = nil
     let confidence: Double
-    let fkProbability: Double
-    let fkFrequency: Double
-    let fkSeverity: Double
-    let fkScore: Double
+    let fkProbability: Double?
+    let fkFrequency: Double?
+    let fkSeverity: Double?
+    let fkScore: Double?
     let fkBand: String
-    let m5Probability: Int
-    let m5Severity: Int
-    let m5Score: Int
+    let m5Probability: Int?
+    let m5Severity: Int?
+    let m5Score: Int?
     let m5Band: String
     var origin: String? = nil
     var sourcePhotoIndices: [Int]? = nil
@@ -3277,6 +3291,8 @@ struct FindingRow: Codable, Identifiable, Equatable {
     var userEditCount: Int? = nil
     var findingVersion: Int? = nil
     var displayOrder: Int? = nil
+    var itemClass: String? = nil
+    var isScored: Bool? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -3307,6 +3323,8 @@ struct FindingRow: Codable, Identifiable, Equatable {
         case userEditCount = "user_edit_count"
         case findingVersion = "finding_version"
         case displayOrder = "display_order"
+        case itemClass = "item_class"
+        case isScored = "is_scored"
     }
 
     /// FindingRow → UI tarafının Finding modeline projeksiyon.
@@ -3322,14 +3340,15 @@ struct FindingRow: Codable, Identifiable, Equatable {
             references: referencesText ?? "",
             rootCause: rootCauseText ?? "",
             needsFieldVerification: needsFieldVerification == true,
+            isScored: isScored != false,
             fk: FineKinneyParams(
-                probability: fkProbability,
-                frequency: fkFrequency,
-                severity: fkSeverity
+                probability: fkProbability ?? 0.2,
+                frequency: fkFrequency ?? 0.5,
+                severity: fkSeverity ?? 1
             ),
             m5: FiveByFiveParams(
-                probability: m5Probability,
-                severity: m5Severity
+                probability: m5Probability ?? 1,
+                severity: m5Severity ?? 1
             )
         )
     }

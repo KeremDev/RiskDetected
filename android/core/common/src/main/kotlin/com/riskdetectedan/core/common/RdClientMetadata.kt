@@ -10,7 +10,7 @@ package com.riskdetectedan.core.common
  * a source-code fact, not a per-environment config fact.
  */
 object RdClientMetadata {
-    const val API_CONTRACT_VERSION = 2
+    const val API_CONTRACT_VERSION = 3
     const val PLATFORM = "android"
 
     // The first Android release is deliberately Turkish-only. Keep these values together so
@@ -33,6 +33,8 @@ object RdClientMetadata {
         "multi_photo_coverage_v2" to true,
         "editable_findings" to true,
         "report_snapshot_v2" to true,
+        "safety_claim_v4_scoreless" to true,
+        "analysis_result_hub_v1" to true,
         "global_localization_wave1" to false,
     )
 }

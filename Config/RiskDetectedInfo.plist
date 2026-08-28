@@ -79,13 +79,20 @@
 	<true/>
 	<key>UIFileSharingEnabled</key>
 	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Mulish-Regular.ttf</string>
+		<string>Mulish-Medium.ttf</string>
+		<string>Mulish-SemiBold.ttf</string>
+		<string>Mulish-Bold.ttf</string>
+		<string>Mulish-ExtraBold.ttf</string>
+		<string>Mulish-Black.ttf</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>

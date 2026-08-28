@@ -214,7 +214,7 @@ class PdfReportGenerator @Inject constructor(
         y += 30f
 
         // Summary counts by band
-        val counts = input.findings.groupingBy { it.fkBand.ifBlank { it.m5Band } }.eachCount()
+        val counts = input.findings.filter { it.isScored }.groupingBy { it.fkBand.ifBlank { it.m5Band } }.eachCount()
         val summaryPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 22f; isFakeBoldText = true }
         canvas.drawText(context.getString(R.string.rd_pdf_finding_count, input.findings.size), MARGIN, y, summaryPaint)
         y += 40f
@@ -277,12 +277,14 @@ class PdfReportGenerator @Inject constructor(
             val titlePaint = TextPaint().apply { color = COLOR_ONYX; textSize = 22f; isFakeBoldText = true }
             canvas.drawText(context.getString(R.string.rd_pdf_finding_title, index + 1, finding.title), MARGIN, y, titlePaint)
 
-            val chipPaint = Paint().apply { color = bandColor(band) }
-            val chipLabel = "${bandLabel(band)}${score?.let { context.getString(R.string.rd_pdf_score_suffix, it) } ?: ""}"
-            val chipWidth = 40f + chipLabel.length * 11f
-            canvas.drawRoundRect(RectF(PAGE_WIDTH - MARGIN - chipWidth, y - 28f, PAGE_WIDTH - MARGIN, y + 4f), 8f, 8f, chipPaint)
-            val chipText = TextPaint().apply { color = COLOR_WHITE; textSize = 16f; isFakeBoldText = true; textAlign = Paint.Align.CENTER }
-            canvas.drawText(chipLabel, PAGE_WIDTH - MARGIN - chipWidth / 2f, y - 8f, chipText)
+            if (finding.isScored) {
+                val chipPaint = Paint().apply { color = bandColor(band) }
+                val chipLabel = "${bandLabel(band)}${score?.let { context.getString(R.string.rd_pdf_score_suffix, it) } ?: ""}"
+                val chipWidth = 40f + chipLabel.length * 11f
+                canvas.drawRoundRect(RectF(PAGE_WIDTH - MARGIN - chipWidth, y - 28f, PAGE_WIDTH - MARGIN, y + 4f), 8f, 8f, chipPaint)
+                val chipText = TextPaint().apply { color = COLOR_WHITE; textSize = 16f; isFakeBoldText = true; textAlign = Paint.Align.CENTER }
+                canvas.drawText(chipLabel, PAGE_WIDTH - MARGIN - chipWidth / 2f, y - 8f, chipText)
+            }
             y += 34f
 
             finding.category?.takeIf { it.isNotBlank() }?.let {

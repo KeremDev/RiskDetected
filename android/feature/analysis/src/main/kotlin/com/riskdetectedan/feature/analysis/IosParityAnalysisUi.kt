@@ -14,12 +14,14 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -49,6 +51,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FactCheck
@@ -63,6 +66,8 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.ThumbDown
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VerifiedUser
@@ -92,11 +97,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -111,6 +119,12 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.riskdetectedan.core.data.analysis.AnalysisCanvas
 import com.riskdetectedan.core.data.analysis.AnalysisResultSummary
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubResponse
+import com.riskdetectedan.core.data.analysis.AnalysisResultSection
+import com.riskdetectedan.core.data.analysis.AnalysisResultSectionId
+import com.riskdetectedan.core.data.analysis.AnalysisResultAccess
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubItem
+import com.riskdetectedan.core.data.analysis.AnalysisItemReaction
 import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.analysis.FindingMeasure
@@ -370,6 +384,7 @@ internal fun IosParityResultView(
     findings: List<Finding>,
     summary: AnalysisResultSummary?,
     photoBytes: List<ByteArray>,
+    resultHub: AnalysisResultHubResponse? = null,
     capabilities: PlanCapabilities,
     reportState: ResultReportUiState,
     reportSetup: ResultReportSetup,
@@ -381,6 +396,11 @@ internal fun IosParityResultView(
     onUpdate: (Finding, FindingPatch) -> Unit,
     onOpenCompanies: () -> Unit,
     onUpgradeTier: (SubscriptionTier) -> Unit,
+    onResultHubUpgrade: (AnalysisResultSectionId) -> Unit = { onUpgradeTier(SubscriptionTier.Plus) },
+    onFeedback: (AnalysisResultSectionId, AnalysisResultHubItem, AnalysisItemReaction, String?) -> Unit = { _, _, _, _ -> },
+    onResultEvent: (String, AnalysisResultSectionId?, String?) -> Unit = { _, _, _ -> },
+    onEditNotebook: (AnalysisResultHubItem, String, String) -> Unit = { _, _, _ -> },
+    onSuppressNotebook: (AnalysisResultHubItem) -> Unit = {},
 ) {
     val colors = RdTheme.colors
     var method by remember { mutableStateOf(ParityRiskMethod.FineKinney) }
@@ -388,10 +408,19 @@ internal fun IosParityResultView(
     var editingFinding by remember { mutableStateOf<Finding?>(null) }
     var deletingFinding by remember { mutableStateOf<Finding?>(null) }
     var selectedFinding by remember { mutableStateOf<Finding?>(null) }
+    var hubSection by remember { mutableStateOf(AnalysisResultSectionId.RiskAnalysis) }
+    var hubSelections by remember { mutableStateOf<Map<AnalysisResultSectionId, Set<String>>>(emptyMap()) }
     val context = LocalContext.current
     val chooserTitle = stringResource(RdR.string.rd_raporu_paylas)
     val fallbackAnalysisTitle = stringResource(RdR.string.rd_adsiz_analiz)
     val canvasLabel = summary?.canvas?.let { id -> AnalysisCanvas.all.firstOrNull { it.id == id }?.title ?: id } ?: stringResource(RdR.string.rd_genel)
+
+    LaunchedEffect(resultHub?.analysisId) {
+        val hub = resultHub ?: return@LaunchedEffect
+        hubSelections = hub.sections.associate { section ->
+            section.id to if (section.access == AnalysisResultAccess.Full) section.items.map { it.id }.toSet() else emptySet()
+        }
+    }
 
     LaunchedEffect(reportState) {
         val ready = reportState as? ResultReportUiState.Ready ?: return@LaunchedEffect
@@ -412,7 +441,37 @@ internal fun IosParityResultView(
     Box(Modifier.fillMaxSize().background(colors.paper)) {
         Column(Modifier.fillMaxSize()) {
             ParityResultHeader(onBack, onReport = { showReportSheet = true })
-            LazyColumn(
+            if (resultHub?.enabled == true) {
+                ResultHubSurface(
+                    hub = resultHub,
+                    selectedSection = hubSection,
+                    onSectionSelected = {
+                        hubSection = it
+                        onResultEvent("result_section_selected", it, null)
+                        if (resultHub.sections.firstOrNull { section -> section.id == it }?.access == AnalysisResultAccess.Teaser) {
+                            onResultEvent("locked_teaser_impression", it, null)
+                        }
+                    },
+                    selections = hubSelections,
+                    onSelectionsChanged = { hubSelections = it },
+                    method = method,
+                    canEdit = capabilities.canEditAIFindings,
+                    onEdit = { editingFinding = it.toFinding(analysisId) },
+                    onDelete = { deletingFinding = it.toFinding(analysisId) },
+                    onDetail = { item ->
+                        if (hubSection == AnalysisResultSectionId.RiskAnalysis) selectedFinding = item.toFinding(analysisId)
+                    },
+                    onFeedback = onFeedback,
+                    onUpgrade = {
+                        onResultEvent("locked_teaser_cta_tapped", hubSection, null)
+                        onResultHubUpgrade(hubSection)
+                    },
+                    onReport = { showReportSheet = true },
+                    onEvent = onResultEvent,
+                    onEditNotebook = onEditNotebook,
+                    onSuppressNotebook = onSuppressNotebook,
+                )
+            } else LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, bottom = 108.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -458,7 +517,7 @@ internal fun IosParityResultView(
             }
         }
 
-        Box(
+        if (resultHub?.enabled != true) Box(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                 .background(Brush.verticalGradient(listOf(Color.Transparent, colors.paper, colors.paper)))
                 .padding(horizontal = 20.dp, vertical = 14.dp),
@@ -506,13 +565,16 @@ internal fun IosParityResultView(
             initialCompanyId = summary?.companyId,
             onGenerate = { kind, output, customization ->
                 showReportSheet = false
+                val activeHubSection = resultHub?.takeIf { it.enabled }?.sections?.firstOrNull { it.id == hubSection }
+                val selectedHubIds = hubSelections[hubSection].orEmpty()
+                val selectedHubItems = activeHubSection?.items?.filter { it.id in selectedHubIds }.orEmpty()
                 val request = ResultReportRequest(
                     analysisId = analysisId,
                     title = summary?.title ?: fallbackAnalysisTitle,
                     canvasLabel = canvasLabel,
                     createdAt = summary?.createdAt,
                     companyId = customization.companyId,
-                    findings = findings,
+                    findings = if (activeHubSection != null) selectedHubItems.map { it.toFinding(analysisId) } else findings,
                     coverPhotoBytes = photoBytes.firstOrNull(),
                     companyNameOverride = customization.companyName,
                     companyInfoOverride = customization.companyInfo,
@@ -520,10 +582,18 @@ internal fun IosParityResultView(
                     preparedByOverride = customization.preparedBy,
                     preparedTitleOverride = customization.preparedTitle,
                     certificateNumberOverride = customization.certificateNumber,
+                    contentScope = activeHubSection?.id,
+                    selectedItemKeys = selectedHubIds.toList(),
                 )
                 onGenerateReport(
                     request,
-                    if (kind == ParityReportKind.Standard) "standard" else "risk_analysis",
+                    activeHubSection?.id?.let {
+                        when (it) {
+                            AnalysisResultSectionId.RiskAnalysis -> "risk_analysis"
+                            AnalysisResultSectionId.ExpertRecommendations -> "expert_recommendations"
+                            AnalysisResultSectionId.ApprovedNotebook -> "approved_notebook"
+                        }
+                    } ?: if (kind == ParityReportKind.Standard) "standard" else "risk_analysis",
                     method.wire,
                     output,
                 )
@@ -562,6 +632,501 @@ internal fun IosParityResultView(
     }
     (reportState as? ResultReportUiState.Generating)?.let { generating ->
         ReportGenerationOverlay(generating.format, generating.progress)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ResultHubSurface(
+    hub: AnalysisResultHubResponse,
+    selectedSection: AnalysisResultSectionId,
+    onSectionSelected: (AnalysisResultSectionId) -> Unit,
+    selections: Map<AnalysisResultSectionId, Set<String>>,
+    onSelectionsChanged: (Map<AnalysisResultSectionId, Set<String>>) -> Unit,
+    method: ParityRiskMethod,
+    canEdit: Boolean,
+    onEdit: (AnalysisResultHubItem) -> Unit,
+    onDelete: (AnalysisResultHubItem) -> Unit,
+    onDetail: (AnalysisResultHubItem) -> Unit,
+    onFeedback: (AnalysisResultSectionId, AnalysisResultHubItem, AnalysisItemReaction, String?) -> Unit,
+    onUpgrade: () -> Unit,
+    onReport: () -> Unit,
+    onEvent: (String, AnalysisResultSectionId?, String?) -> Unit,
+    onEditNotebook: (AnalysisResultHubItem, String, String) -> Unit,
+    onSuppressNotebook: (AnalysisResultHubItem) -> Unit,
+) {
+    val colors = RdTheme.colors
+    val section = hub.sections.firstOrNull { it.id == selectedSection } ?: hub.sections.firstOrNull()
+    val selected = selections[selectedSection].orEmpty()
+    var detailItem by remember { mutableStateOf<AnalysisResultHubItem?>(null) }
+    var editingNotebook by remember { mutableStateOf<AnalysisResultHubItem?>(null) }
+    var notebookFindingDraft by remember { mutableStateOf("") }
+    var notebookRecommendationDraft by remember { mutableStateOf("") }
+    var pendingNotebookSuppression by remember { mutableStateOf<AnalysisResultHubItem?>(null) }
+    var pendingDislike by remember { mutableStateOf<AnalysisResultHubItem?>(null) }
+
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, bottom = 102.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            stickyHeader {
+                ResultHubSectionTabs(hub.sections, selectedSection, onSectionSelected)
+            }
+
+            if (section == null || section.items.isEmpty()) {
+                item {
+                    Column(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(colors.white).padding(vertical = 34.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(Icons.Filled.FactCheck, null, tint = colors.greenDark)
+                        Text("Bu bölümde kayıt bulunmuyor", style = iosRounded(14f, FontWeight.Bold), color = colors.black)
+                    }
+                }
+            } else {
+                if (selectedSection == AnalysisResultSectionId.RiskAnalysis) {
+                    item { ResultHubRiskSummary(section.items, method) }
+                } else {
+                    val disclaimer = if (selectedSection == AnalysisResultSectionId.ApprovedNotebook) hub.disclaimers?.notebook else hub.disclaimers?.expert
+                    if (!disclaimer.isNullOrBlank()) item {
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(colors.greenSoft).padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(9.dp),
+                        ) {
+                            Icon(Icons.Filled.Info, null, tint = colors.greenDark, modifier = Modifier.size(18.dp))
+                            Text(disclaimer, style = iosRounded(11.5f), color = colors.slate, modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+
+                items(section.items, key = { it.id }) { item ->
+                    ResultHubItemCard(
+                        item = item,
+                        sectionId = selectedSection,
+                        access = section.access,
+                        selected = item.id in selected,
+                        method = method,
+                        canEdit = canEdit && section.canEdit,
+                        onToggleSelected = {
+                            val next = selected.toMutableSet().also { set -> if (!set.add(item.id)) set.remove(item.id) }
+                            onSelectionsChanged(selections + (selectedSection to next))
+                            onEvent("report_selection_changed", selectedSection, item.id)
+                        },
+                        onLike = {
+                            val next = if (item.userReaction == AnalysisItemReaction.Like) AnalysisItemReaction.None else AnalysisItemReaction.Like
+                            onFeedback(selectedSection, item, next, null)
+                        },
+                        onDislike = {
+                            if (item.userReaction == AnalysisItemReaction.Dislike) {
+                                onFeedback(selectedSection, item, AnalysisItemReaction.None, null)
+                            } else {
+                                onFeedback(selectedSection, item, AnalysisItemReaction.Dislike, null)
+                                pendingDislike = item
+                            }
+                        },
+                        onEdit = {
+                            if (selectedSection == AnalysisResultSectionId.ApprovedNotebook) {
+                                notebookFindingDraft = item.findingText.orEmpty()
+                                notebookRecommendationDraft = item.recommendationText.orEmpty()
+                                editingNotebook = item
+                            } else onEdit(item)
+                        },
+                        onDelete = {
+                            if (selectedSection == AnalysisResultSectionId.ApprovedNotebook) pendingNotebookSuppression = item else onDelete(item)
+                        },
+                        onDetail = {
+                            onEvent("result_item_detail_opened", selectedSection, item.id)
+                            if (selectedSection == AnalysisResultSectionId.RiskAnalysis) onDetail(item) else detailItem = item
+                        },
+                        onUpgrade = onUpgrade,
+                    )
+                }
+            }
+        }
+
+        Button(
+            onClick = if (section?.access == AnalysisResultAccess.Teaser) onUpgrade else onReport,
+            enabled = section?.access == AnalysisResultAccess.Teaser || selected.isNotEmpty(),
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(54.dp),
+            shape = RoundedCornerShape(15.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = colors.greenDark, contentColor = Color.White, disabledContainerColor = colors.slate),
+        ) {
+            Icon(if (section?.access == AnalysisResultAccess.Teaser) Icons.Filled.Lock else Icons.Filled.Description, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                if (section?.access == AnalysisResultAccess.Teaser) "Plus / Pro ile Aç" else "Rapor Oluştur · ${selected.size}/${section?.count ?: 0}",
+                style = iosRounded(14f, FontWeight.Bold),
+                modifier = Modifier.weight(1f),
+            )
+            Icon(Icons.Filled.KeyboardArrowRight, null)
+        }
+    }
+
+    detailItem?.let { item ->
+        ModalBottomSheet(
+            onDismissRequest = { detailItem = null },
+            containerColor = colors.paper,
+        ) {
+            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    if (selectedSection == AnalysisResultSectionId.ApprovedNotebook) "Onaylı Defter Önerisi" else "Uzman Görüşü Önerisi",
+                    style = iosRounded(11f, FontWeight.Bold), color = colors.greenDark,
+                )
+                Text(item.displayTitle, style = iosRounded(21f, FontWeight.Bold), color = colors.black)
+                if (item.displayBody.isNotBlank()) Text(item.displayBody, style = iosRounded(13f), color = colors.graphite)
+                item.recommendedAction?.takeIf(String::isNotBlank)?.let {
+                    Text("Öneri", style = iosRounded(11f, FontWeight.Bold), color = colors.greenDark)
+                    Text(it, style = iosRounded(13f), color = colors.graphite)
+                }
+                item.referenceText?.takeIf(String::isNotBlank)?.let {
+                    Text("Dayanak", style = iosRounded(11f, FontWeight.Bold), color = colors.greenDark)
+                    Text(it, style = iosRounded(12f), color = colors.slate)
+                }
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+
+    editingNotebook?.let { item ->
+        AlertDialog(
+            onDismissRequest = { editingNotebook = null },
+            title = { Text("Defter Taslağını Düzenle") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = notebookFindingDraft,
+                        onValueChange = { notebookFindingDraft = it },
+                        label = { Text("Tespit") },
+                        minLines = 4,
+                    )
+                    OutlinedTextField(
+                        value = notebookRecommendationDraft,
+                        onValueChange = { notebookRecommendationDraft = it },
+                        label = { Text("Öneri") },
+                        minLines = 5,
+                    )
+                    Text("Bu içerik Onaylı Defter taslağıdır; uzman değerlendirmesi gerekir.", style = iosRounded(11f), color = colors.slate)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = notebookFindingDraft.isNotBlank() && notebookRecommendationDraft.isNotBlank(),
+                    onClick = {
+                        onEditNotebook(item, notebookFindingDraft.trim(), notebookRecommendationDraft.trim())
+                        editingNotebook = null
+                    },
+                ) { Text("Kaydet") }
+            },
+            dismissButton = { TextButton(onClick = { editingNotebook = null }) { Text("Vazgeç") } },
+        )
+    }
+    pendingNotebookSuppression?.let { item ->
+        AlertDialog(
+            onDismissRequest = { pendingNotebookSuppression = null },
+            title = { Text("Defter kaydı gizlensin mi?") },
+            text = { Text("Kayıt geri alınabilir biçimde gizlenecek; geçmiş raporlar değişmeyecek.") },
+            confirmButton = {
+                TextButton(onClick = { pendingNotebookSuppression = null; onSuppressNotebook(item) }) { Text("Gizle") }
+            },
+            dismissButton = { TextButton(onClick = { pendingNotebookSuppression = null }) { Text("Vazgeç") } },
+        )
+    }
+    pendingDislike?.let { item ->
+        val reasons = listOf(
+            "Yanlış tespit" to "incorrect_detection",
+            "Eksik bağlam" to "missing_context",
+            "Yanlış skor" to "wrong_score",
+            "Yetersiz / yanlış önlem" to "wrong_recommendation",
+            "Tekrar içerik" to "duplicate",
+            "İlgisiz öneri" to "irrelevant",
+            "Metin anlaşılır değil" to "unclear_text",
+            "Diğer" to "other",
+        )
+        AlertDialog(
+            onDismissRequest = { pendingDislike = null },
+            title = { Text("Neyi geliştirebiliriz?") },
+            text = {
+                Column { reasons.forEach { (label, code) ->
+                    TextButton(onClick = { pendingDislike = null; onFeedback(selectedSection, item, AnalysisItemReaction.Dislike, code) }) {
+                        Text(label, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                    }
+                } }
+            },
+            confirmButton = { TextButton(onClick = { pendingDislike = null }) { Text("Kapat") } },
+        )
+    }
+}
+
+@Composable
+private fun ResultHubSectionTabs(
+    sections: List<AnalysisResultSection>,
+    selectedSection: AnalysisResultSectionId,
+    onSectionSelected: (AnalysisResultSectionId) -> Unit,
+) {
+    val colors = RdTheme.colors
+    val referenceGreen = Color(0xFF337A4D)
+    val referenceTabFill = Color(0xFFE9F8CB)
+    BoxWithConstraints(Modifier.fillMaxWidth().background(colors.paper.copy(.985f)).padding(top = 10.dp)) {
+        val gap = 8.dp
+        val fittedWidth = (maxWidth - gap * 2) / 3
+        val scrollable = sections.size > 3
+        Box(Modifier.fillMaxWidth().height(90.dp)) {
+            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(1.5.dp).background(referenceGreen))
+            Row(
+                Modifier.fillMaxWidth().then(if (scrollable) Modifier.horizontalScroll(rememberScrollState()) else Modifier),
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                sections.forEach { target ->
+                    val active = target.id == selectedSection
+                    val title = when (target.id) {
+                        AnalysisResultSectionId.RiskAnalysis -> "Risk Analizi"
+                        AnalysisResultSectionId.ExpertRecommendations -> "Uzman Görüşü Önerileri"
+                        AnalysisResultSectionId.ApprovedNotebook -> "Onaylı Defter Önerisi"
+                    }
+                    val countName = when (target.id) {
+                        AnalysisResultSectionId.RiskAnalysis -> "Bulgu"
+                        AnalysisResultSectionId.ExpertRecommendations -> "Öneri"
+                        AnalysisResultSectionId.ApprovedNotebook -> "Kayıt"
+                    }
+                    val icon = when (target.id) {
+                        AnalysisResultSectionId.RiskAnalysis -> Icons.Filled.GppGood
+                        AnalysisResultSectionId.ExpertRecommendations -> Icons.Filled.VerifiedUser
+                        AnalysisResultSectionId.ApprovedNotebook -> Icons.Filled.Book
+                    }
+                    val borderModifier = if (active) {
+                        Modifier.drawBehind {
+                            val line = 1.5.dp.toPx()
+                            val radius = 16.dp.toPx()
+                            val path = Path().apply {
+                                moveTo(line / 2, size.height)
+                                lineTo(line / 2, radius)
+                                quadraticBezierTo(line / 2, line / 2, radius, line / 2)
+                                lineTo(size.width - radius, line / 2)
+                                quadraticBezierTo(size.width - line / 2, line / 2, size.width - line / 2, radius)
+                                lineTo(size.width - line / 2, size.height)
+                            }
+                            drawPath(path, referenceGreen, style = Stroke(line))
+                        }
+                    } else {
+                        Modifier.clip(RoundedCornerShape(14.dp))
+                            .border(1.dp, referenceGreen.copy(.10f), RoundedCornerShape(14.dp))
+                    }
+                    Column(
+                        Modifier.width(if (scrollable) 128.dp else fittedWidth)
+                            .height(if (active) 90.dp else 78.dp)
+                            .background(
+                                if (active) colors.white else referenceTabFill,
+                                RoundedCornerShape(
+                                    topStart = 14.dp,
+                                    topEnd = 14.dp,
+                                    bottomStart = if (active) 0.dp else 14.dp,
+                                    bottomEnd = if (active) 0.dp else 14.dp,
+                                ),
+                            )
+                            .then(borderModifier)
+                            .clickable { onSectionSelected(target.id) }
+                            .padding(horizontal = 5.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(icon, null, tint = if (active) referenceGreen else colors.graphite, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.height(3.dp))
+                        Text(title, style = iosRounded(11f, FontWeight.Bold), color = if (active) referenceGreen else colors.graphite, maxLines = 2, textAlign = TextAlign.Center)
+                        Text("${target.count} $countName", style = iosRounded(10f, FontWeight.SemiBold), color = referenceGreen)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResultHubRiskSummary(items: List<AnalysisResultHubItem>, method: ParityRiskMethod) {
+    val colors = RdTheme.colors
+    val levels = listOf(RiskLevel.Critical, RiskLevel.High, RiskLevel.Medium, RiskLevel.Low)
+    val levelColors = levels.associateWith { it.color() }
+    val counts = levels.associateWith { level ->
+        items.count {
+            riskLevelFromRaw(if (method == ParityRiskMethod.FineKinney) it.fkBand ?: "unknown" else it.m5Band ?: "unknown") == level
+        }
+    }
+    val actualTotal = counts.values.sum()
+    val total = actualTotal.coerceAtLeast(1)
+    Column(
+        Modifier.fillMaxWidth()
+            .shadow(10.dp, RoundedCornerShape(22.dp), ambientColor = colors.greenDark.copy(.10f), spotColor = colors.greenDark.copy(.10f))
+            .clip(RoundedCornerShape(22.dp)).background(colors.white)
+            .border(1.dp, colors.greenDark.copy(.18f), RoundedCornerShape(22.dp)).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("RİSK DAĞILIMI", style = iosRounded(10.5f, FontWeight.Black, tracking = .9f), color = colors.greenDark)
+                Text("Öncelik görünümü", style = iosRounded(20f, FontWeight.Black), color = colors.black)
+            }
+            Row(
+                Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFFE9F8CB)).padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(Icons.Filled.GppGood, null, tint = colors.greenDark, modifier = Modifier.size(17.dp))
+                Text("$actualTotal bulgu", style = iosRounded(11.5f, FontWeight.Bold), color = colors.greenDark)
+            }
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+            Box(Modifier.size(116.dp), contentAlignment = Alignment.Center) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val stroke = 12.dp.toPx()
+                    var start = -90f
+                    levels.forEach { level ->
+                        val sweep = ((counts[level] ?: 0).toFloat() / total.toFloat()) * 360f
+                        if (sweep > 0f) drawArc(levelColors.getValue(level), start, sweep, false, style = Stroke(stroke))
+                        start += sweep
+                    }
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(actualTotal.toString(), style = iosRounded(25f, FontWeight.Black), color = colors.black)
+                    Text("TOPLAM", style = iosRounded(8.5f, FontWeight.Black, tracking = 1.1f), color = colors.slate)
+                }
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                levels.chunked(2).forEach { rowLevels ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        rowLevels.forEach { level ->
+                            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                                Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(level.color().copy(.10f)), contentAlignment = Alignment.Center) {
+                                    Icon(if (level == RiskLevel.Low) Icons.Filled.GppGood else Icons.Filled.Warning, null, tint = level.color(), modifier = Modifier.size(17.dp))
+                                }
+                                Column {
+                                    Text((counts[level] ?: 0).toString(), style = iosRounded(17f, FontWeight.Black), color = colors.black)
+                                    Text(riskShortLabel(level), style = iosRounded(9.5f, FontWeight.Bold), color = colors.slate)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth().height(7.dp).clip(RoundedCornerShape(5.dp))) {
+            levels.forEach { level ->
+                val count = counts[level] ?: 0
+                if (count > 0) Box(Modifier.weight(count.toFloat()).fillMaxHeight().background(level.color()))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResultHubItemCard(
+    item: AnalysisResultHubItem,
+    sectionId: AnalysisResultSectionId,
+    access: AnalysisResultAccess,
+    selected: Boolean,
+    method: ParityRiskMethod,
+    canEdit: Boolean,
+    onToggleSelected: () -> Unit,
+    onLike: () -> Unit,
+    onDislike: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onDetail: () -> Unit,
+    onUpgrade: () -> Unit,
+) {
+    val colors = RdTheme.colors
+    val referenceGreen = Color(0xFF337A4D)
+    val referenceGreenDeep = Color(0xFF2C7045)
+    Column(
+        Modifier.fillMaxWidth()
+            .shadow(9.dp, RoundedCornerShape(18.dp), ambientColor = Color.Black.copy(.08f), spotColor = Color.Black.copy(.08f))
+            .clip(RoundedCornerShape(18.dp)).background(colors.white)
+            .border(1.2.dp, referenceGreen.copy(.55f), RoundedCornerShape(18.dp)),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (access == AnalysisResultAccess.Full) {
+                    Box(
+                        Modifier.size(28.dp).clip(RoundedCornerShape(6.dp))
+                            .background(if (selected) referenceGreen else colors.fog)
+                            .clickable(onClick = onToggleSelected),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            if (selected) Icons.Filled.Check else Icons.Filled.FactCheck,
+                            if (selected) "Rapordan çıkar" else "Rapora ekle",
+                            tint = if (selected) Color.White else colors.slate,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+                Text(
+                    when (sectionId) {
+                        AnalysisResultSectionId.RiskAnalysis -> "RİSK BULGUSU"
+                        AnalysisResultSectionId.ExpertRecommendations -> "UZMAN ÖNERİSİ"
+                        AnalysisResultSectionId.ApprovedNotebook -> "DEFTER TASLAĞI"
+                    },
+                    style = iosRounded(10.5f, FontWeight.Black, tracking = .7f),
+                    color = referenceGreen,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFFE9F8CB)).padding(horizontal = 10.dp, vertical = 7.dp),
+                )
+                Spacer(Modifier.weight(1f))
+                val level = riskLevelFromRaw(if (method == ParityRiskMethod.FineKinney) item.fkBand ?: "unknown" else item.m5Band ?: "unknown")
+                val chipText = if (sectionId == AnalysisResultSectionId.RiskAnalysis) {
+                    val score = if (method == ParityRiskMethod.FineKinney) item.fkScore else item.m5Score?.toDouble()
+                    "${score?.toInt() ?: 0} ${riskShortLabel(level)}"
+                } else "Saha teyidi"
+                Text(
+                    chipText,
+                    style = iosRounded(10.5f, FontWeight.Bold),
+                    color = if (sectionId == AnalysisResultSectionId.RiskAnalysis) level.color() else referenceGreen,
+                    modifier = Modifier.clip(RoundedCornerShape(16.dp))
+                        .background(if (sectionId == AnalysisResultSectionId.RiskAnalysis) level.color().copy(.10f) else Color(0xFFE9F8CB))
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                )
+            }
+            if (sectionId == AnalysisResultSectionId.ApprovedNotebook) {
+                Text("TESPİT", style = iosRounded(10.5f, FontWeight.Black), color = colors.greenDark)
+                Text(item.findingText.orEmpty(), style = iosRounded(15f, FontWeight.Bold), color = colors.black)
+                if (access == AnalysisResultAccess.Full) {
+                    Text("ÖNERİ", style = iosRounded(10.5f, FontWeight.Black), color = colors.greenDark)
+                    Text(item.recommendationText.orEmpty(), style = iosRounded(13f), color = colors.slate)
+                }
+            } else {
+                Text(item.displayTitle, style = iosRounded(18f, FontWeight.Bold), color = colors.black)
+                Text(item.displayBody, style = iosRounded(13.5f), color = colors.slate, maxLines = if (access == AnalysisResultAccess.Teaser) 2 else 4, overflow = TextOverflow.Ellipsis)
+            }
+            if (access == AnalysisResultAccess.Teaser) {
+                Column(Modifier.fillMaxWidth().blur(3.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(Modifier.fillMaxWidth().height(11.dp).clip(RoundedCornerShape(4.dp)).background(colors.line))
+                    Box(Modifier.fillMaxWidth(.66f).height(11.dp).clip(RoundedCornerShape(4.dp)).background(colors.line.copy(.7f)))
+                }
+                Button(onClick = onUpgrade, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = colors.greenDark)) {
+                    Icon(Icons.Filled.Lock, null, Modifier.size(16.dp)); Spacer(Modifier.width(7.dp)); Text("Plus / Pro ile tamamını aç")
+                }
+            }
+        }
+
+        if (access == AnalysisResultAccess.Full) {
+            Row(
+                Modifier.fillMaxWidth().height(58.dp).background(referenceGreenDeep).padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onLike) { Icon(Icons.Filled.ThumbUp, "Beğen", tint = if (item.userReaction == AnalysisItemReaction.Like) colors.greenSoft else Color.White) }
+                IconButton(onClick = onDislike) { Icon(Icons.Filled.ThumbDown, "Beğenme", tint = if (item.userReaction == AnalysisItemReaction.Dislike) colors.greenSoft else Color.White) }
+                if (canEdit) {
+                    IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, stringResource(RdR.string.rd_duzenle), tint = Color.White) }
+                    IconButton(onClick = onDelete) { Icon(Icons.Filled.DeleteOutline, stringResource(RdR.string.rd_sil), tint = Color.White) }
+                }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onDetail) {
+                    Text("Ayrıntıları Gör", style = iosRounded(11.5f, FontWeight.Bold), color = Color.White)
+                    Icon(Icons.Filled.KeyboardArrowRight, null, tint = Color.White)
+                }
+            }
+        }
     }
 }
 

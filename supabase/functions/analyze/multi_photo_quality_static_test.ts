@@ -43,7 +43,8 @@ Deno.test("iOS sends dynamic build metadata without hardcoded build gate", async
     source,
     'object(forInfoDictionaryKey: "CFBundleVersion")',
   );
-  assertStringIncludes(source, "static let apiContractVersion = 2");
+  assertStringIncludes(source, "static let apiContractVersion = 3");
+  assertStringIncludes(source, '"safety_claim_v4_scoreless": true');
   assertStringIncludes(source, "let client_app_build: String");
   assertStringIncludes(source, "let api_contract_version: Int");
   assert(!source.includes("build == 63"));
@@ -513,7 +514,13 @@ Deno.test("AI timeout and token budgets are explicit", async () => {
   const workerSource = await readTextIfAllowed(
     new URL("../process-analysis-jobs/index.ts", import.meta.url),
   );
-  if (analyzeSource == null || workerSource == null) return;
+  const providerPolicySource = await readTextIfAllowed(
+    new URL("../_shared/provider-execution-policy.ts", import.meta.url),
+  );
+  if (
+    analyzeSource == null || workerSource == null ||
+    providerPolicySource == null
+  ) return;
 
   assertStringIncludes(analyzeSource, "const MAIN_AI_TIMEOUT_MS = 120_000");
   assertStringIncludes(analyzeSource, "const REPAIR_AI_TIMEOUT_MS = 45_000");
@@ -538,11 +545,19 @@ Deno.test("AI timeout and token budgets are explicit", async () => {
   assertStringIncludes(analyzeSource, 'finishReason === "MAX_TOKENS"');
   assertStringIncludes(
     workerSource,
-    "const ANALYZE_WORKER_TIMEOUT_MS = 135_000",
+    "const LEGACY_ANALYZE_WORKER_TIMEOUT_MS = 210_000",
+  );
+  assertStringIncludes(
+    providerPolicySource,
+    "export const ANALYZE_NESTED_REQUEST_TIMEOUT_MS = 145_000",
   );
   assertStringIncludes(
     workerSource,
-    "const ANALYSIS_JOB_VISIBILITY_TIMEOUT_SECONDS = 180",
+    "nestedAnalysisTimeoutMs(analysisFunctionName)",
+  );
+  assertStringIncludes(
+    workerSource,
+    "const ANALYSIS_JOB_VISIBILITY_TIMEOUT_SECONDS = 240",
   );
   assertStringIncludes(
     workerSource,

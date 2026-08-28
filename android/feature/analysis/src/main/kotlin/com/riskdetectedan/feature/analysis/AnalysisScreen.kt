@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.analysis.AnalysisCanvas
 import com.riskdetectedan.core.data.analysis.AnalysisSector
+import com.riskdetectedan.core.data.analysis.AnalysisResultSectionId
 import com.riskdetectedan.core.data.analysis.AnalysisResultSummary
 import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.analysis.FindingMeasure
@@ -116,6 +117,8 @@ fun AnalysisScreen(
     onOpenCompanies: () -> Unit = {},
     onUpgrade: () -> Unit = {},
     onUpgradeTier: (SubscriptionTier) -> Unit = { onUpgrade() },
+    onResultHubUpgrade: (SubscriptionTier, String, AnalysisResultSectionId, String) -> Unit =
+        { tier, _, _, _ -> onUpgradeTier(tier) },
     viewModel: AnalysisViewModel = hiltViewModel(),
     reportViewModel: ResultReportViewModel = hiltViewModel(),
 ) {
@@ -124,6 +127,7 @@ fun AnalysisScreen(
     val capabilities by viewModel.capabilities.collectAsState()
     val resultSummary by viewModel.resultSummary.collectAsState()
     val resultPhotoBytes by viewModel.resultPhotoBytes.collectAsState()
+    val resultHub by viewModel.resultHub.collectAsState()
     val reportState by reportViewModel.state.collectAsState()
     val reportSetup by reportViewModel.setup.collectAsState()
     val preSelectedSector = remember(preSelectedSectorId) { preSelectedSectorId?.let(AnalysisSector::fromId) }
@@ -165,6 +169,7 @@ fun AnalysisScreen(
             findings = findings,
             summary = resultSummary,
             photoBytes = resultPhotoBytes,
+            resultHub = resultHub,
             capabilities = capabilities,
             reportState = reportState,
             reportSetup = reportSetup,
@@ -176,6 +181,32 @@ fun AnalysisScreen(
             onUpdate = { finding, patch -> viewModel.updateFinding(completed.analysisId, finding, patch) },
             onOpenCompanies = onOpenCompanies,
             onUpgradeTier = onUpgradeTier,
+            onResultHubUpgrade = { section ->
+                onResultHubUpgrade(
+                    SubscriptionTier.Plus,
+                    completed.analysisId,
+                    section,
+                    viewModel.currentResultHubFunnelSessionId(),
+                )
+            },
+            onFeedback = { section, item, reaction, reason ->
+                viewModel.setResultFeedback(completed.analysisId, section, item, reaction, reason)
+            },
+            onResultEvent = { name, section, itemId ->
+                viewModel.recordResultEvent(completed.analysisId, name, section, itemId)
+            },
+            onEditNotebook = { item, findingText, recommendationText ->
+                viewModel.mutateNotebookEntry(
+                    analysisId = completed.analysisId,
+                    item = item,
+                    mutation = "edit",
+                    findingText = findingText,
+                    recommendationText = recommendationText,
+                )
+            },
+            onSuppressNotebook = { item ->
+                viewModel.mutateNotebookEntry(completed.analysisId, item, "suppress")
+            },
         )
         deleteError?.let { error ->
             AlertDialog(
@@ -402,7 +433,8 @@ private fun FindingsList(
     val colors = RdTheme.colors
     var method by remember { mutableStateOf(ResultRiskMethod.FineKinney) }
     val sortedFindings = remember(findings, method) {
-        findings.sortedWith(
+        if (findings.any { !it.isScored }) findings.sortedBy { it.displayOrder ?: it.ordinal }
+        else findings.sortedWith(
             compareByDescending<Finding> { riskRank(resultRiskLevel(it, method)) }
                 .thenByDescending { resultScore(it, method) }
                 .thenByDescending { it.confidence },
@@ -424,11 +456,13 @@ private fun FindingsList(
                     onUpgrade = onUpgrade,
                 )
             }
-            item {
-                ResultMethodSelector(method = method, onSelect = { method = it })
-            }
-            item {
-                ResultDistributionCard(findings = findings, method = method)
+            if (findings.any { it.isScored }) {
+                item {
+                    ResultMethodSelector(method = method, onSelect = { method = it })
+                }
+                item {
+                    ResultDistributionCard(findings = findings.filter { it.isScored }, method = method)
+                }
             }
 
             if (findings.isEmpty()) {
@@ -442,7 +476,8 @@ private fun FindingsList(
             } else {
                 item {
                     Text(
-                        stringResource(RdR.string.rd_tespit_tehlikeler_risk),
+                        if (findings.any { !it.isScored }) stringResource(RdR.string.rd_analiz_bulgulari)
+                        else stringResource(RdR.string.rd_tespit_tehlikeler_risk),
                         style = RdFontStyle.Caption.toTextStyle(),
                         color = colors.slate,
                         modifier = Modifier.padding(start = RdSpacing.xxs, top = RdSpacing.xs),
@@ -680,23 +715,37 @@ private fun FindingRow(
                     .padding(top = 5.dp),
             )
             Spacer(Modifier.width(RdSpacing.xs))
-            RdRiskChip(level = level)
-            Spacer(Modifier.width(RdSpacing.xs))
+            if (finding.isScored) {
+                RdRiskChip(level = level)
+                Spacer(Modifier.width(RdSpacing.xs))
+            }
             Text(finding.title, style = RdFontStyle.Callout.toTextStyle(), color = colors.black, modifier = Modifier.weight(1f))
         }
         finding.description?.let {
             Text(it, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, modifier = Modifier.padding(top = RdSpacing.xxs))
         }
-        Text(
-            stringResource(
-                RdR.string.rd_risk_score_format,
-                stringResource(if (method == ResultRiskMethod.FineKinney) RdR.string.rd_fine_kinney else RdR.string.rd_bes_carp_bes_matris),
-                if (score % 1.0 == 0.0) score.toInt().toString() else score.toString(),
-            ),
-            style = RdFontStyle.Caption.toTextStyle(),
-            color = colors.slate,
-            modifier = Modifier.padding(top = RdSpacing.xs),
-        )
+        if (finding.isScored) {
+            Text(
+                stringResource(
+                    RdR.string.rd_risk_score_format,
+                    stringResource(if (method == ResultRiskMethod.FineKinney) RdR.string.rd_fine_kinney else RdR.string.rd_bes_carp_bes_matris),
+                    if (score % 1.0 == 0.0) score.toInt().toString() else score.toString(),
+                ),
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate,
+                modifier = Modifier.padding(top = RdSpacing.xs),
+            )
+        }
+        if (finding.needsFieldVerification) {
+            Text(
+                stringResource(RdR.string.rd_saha_teyidi),
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = colors.slate,
+                modifier = Modifier.padding(top = RdSpacing.xs)
+                    .clip(RoundedCornerShape(6.dp)).background(colors.fog)
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            )
+        }
         if (finding.sourcePhotoIndices.isNotEmpty()) {
             Row(
                 modifier = Modifier.padding(top = RdSpacing.xs),
@@ -819,20 +868,22 @@ internal fun FindingEditDialog(finding: Finding, onDismiss: () -> Unit, onSave: 
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                Text(stringResource(RdR.string.rd_fine_kinney_olasilik_o), modifier = Modifier.padding(top = RdSpacing.md))
-                NumberOptionRow(FineKinneyValues.PROBABILITY, fkProbability) { fkProbability = it }
-                Text(stringResource(RdR.string.rd_fine_kinney_frekans_f), modifier = Modifier.padding(top = RdSpacing.sm))
-                NumberOptionRow(FineKinneyValues.FREQUENCY, fkFrequency) { fkFrequency = it }
-                Text(stringResource(RdR.string.rd_fine_kinney_siddet_s), modifier = Modifier.padding(top = RdSpacing.sm))
-                NumberOptionRow(FineKinneyValues.SEVERITY, fkSeverity) { fkSeverity = it }
+                if (finding.isScored) {
+                    Text(stringResource(RdR.string.rd_fine_kinney_olasilik_o), modifier = Modifier.padding(top = RdSpacing.md))
+                    NumberOptionRow(FineKinneyValues.PROBABILITY, fkProbability) { fkProbability = it }
+                    Text(stringResource(RdR.string.rd_fine_kinney_frekans_f), modifier = Modifier.padding(top = RdSpacing.sm))
+                    NumberOptionRow(FineKinneyValues.FREQUENCY, fkFrequency) { fkFrequency = it }
+                    Text(stringResource(RdR.string.rd_fine_kinney_siddet_s), modifier = Modifier.padding(top = RdSpacing.sm))
+                    NumberOptionRow(FineKinneyValues.SEVERITY, fkSeverity) { fkSeverity = it }
 
-                Text(stringResource(RdR.string.rd_5x5_matris_olasilik), modifier = Modifier.padding(top = RdSpacing.md))
-                NumberOptionRow((1..5).map { it.toDouble() }, m5Probability?.toDouble()) {
-                    m5Probability = it.toInt()
-                }
-                Text(stringResource(RdR.string.rd_5x5_matris_siddet), modifier = Modifier.padding(top = RdSpacing.sm))
-                NumberOptionRow((1..5).map { it.toDouble() }, m5Severity?.toDouble()) {
-                    m5Severity = it.toInt()
+                    Text(stringResource(RdR.string.rd_5x5_matris_olasilik), modifier = Modifier.padding(top = RdSpacing.md))
+                    NumberOptionRow((1..5).map { it.toDouble() }, m5Probability?.toDouble()) {
+                        m5Probability = it.toInt()
+                    }
+                    Text(stringResource(RdR.string.rd_5x5_matris_siddet), modifier = Modifier.padding(top = RdSpacing.sm))
+                    NumberOptionRow((1..5).map { it.toDouble() }, m5Severity?.toDouble()) {
+                        m5Severity = it.toInt()
+                    }
                 }
 
                 Text(
@@ -861,11 +912,11 @@ internal fun FindingEditDialog(finding: Finding, onDismiss: () -> Unit, onSave: 
                             description = description,
                             recommendedAction = recommendedAction,
                             recommendedMeasures = measures.ifEmpty { null },
-                            fkProbability = fkProbability,
-                            fkFrequency = fkFrequency,
-                            fkSeverity = fkSeverity,
-                            m5Probability = m5Probability,
-                            m5Severity = m5Severity,
+                            fkProbability = if (finding.isScored) fkProbability else null,
+                            fkFrequency = if (finding.isScored) fkFrequency else null,
+                            fkSeverity = if (finding.isScored) fkSeverity else null,
+                            m5Probability = if (finding.isScored) m5Probability else null,
+                            m5Severity = if (finding.isScored) m5Severity else null,
                         ),
                     )
                 },

@@ -1,0 +1,67 @@
+evaluation_version: 1
+created_at: null
+expert_role: product_owner_isg_expert
+shared_conditions:
+  plan: null
+  safety_profile_id: null
+  safety_profile_version: null
+  output_language: null
+  canvas_ids: []
+  app_build: null
+  provider: null
+  model: null
+runs:
+  - run_key: fixed_repeat_1
+    set_type: fixed_repeat
+  - run_key: fixed_repeat_2
+    set_type: fixed_repeat
+  - run_key: fixed_repeat_3
+    set_type: fixed_repeat
+  - run_key: fixed_repeat_4
+    set_type: fixed_repeat
+  - run_key: different_single_1
+    set_type: different_single_photo
+  - run_key: different_single_2
+    set_type: different_single_photo
+  - run_key: different_multi_1
+    set_type: different_three_photo
+  - run_key: different_multi_2
+    set_type: different_three_photo
+
+# Her runs öğesi değerlendirme sırasında aşağıdaki alanlarla genişletilir.
+run_review_schema:
+  analysis_id: null
+  support_id: null
+  photo_sha256: []
+  quality_rpc_captured_at: null
+  expected_independent_hazards:
+    - photo_index: null
+      expert_hazard_key: null
+      description: null
+      criticality: critical_or_other
+  missed_hazards:
+    - expert_hazard_key: null
+      criticality: critical_or_other
+  unsupported_findings:
+    - finding_ordinal: null
+      reason: null
+  incorrectly_merged_findings:
+    - finding_ordinal: null
+      should_be_hazard_keys: []
+  finding_reviews:
+    - finding_ordinal: null
+      accepted_fk:
+        probability: null
+        frequency: null
+        severity: null
+      model_frequency_fallback_observed: false
+      corrective_action: suitable_or_revise_or_unusable
+      preventive_control: suitable_or_revise_or_unusable
+      note: null
+  overall_result: usable_or_partial_or_unusable
+  expert_note: null
+
+decision_report:
+  route: improve_current_or_ablation_or_clean_room_vnext
+  evidence: []
+  next_experiment: null

@@ -29,11 +29,11 @@ struct CameraPicker: UIViewControllerRepresentable {
         func imagePickerController(_ picker: UIImagePickerController,
                                    didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             let image = info[.originalImage] as? UIImage
-            picker.dismiss(animated: true) { self.onPick(image) }
+            onPick(image)
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true) { self.onPick(nil) }
+            onPick(nil)
         }
     }
 }
@@ -64,7 +64,7 @@ struct GalleryPicker: UIViewControllerRepresentable {
 
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             guard let result = results.first else {
-                picker.dismiss(animated: true) { self.onPick(nil) }
+                onPick(nil)
                 return
             }
             let provider = result.itemProvider
@@ -72,11 +72,11 @@ struct GalleryPicker: UIViewControllerRepresentable {
                 provider.loadObject(ofClass: UIImage.self) { object, _ in
                     let img = object as? UIImage
                     DispatchQueue.main.async {
-                        picker.dismiss(animated: true) { self.onPick(img) }
+                        self.onPick(img)
                     }
                 }
             } else {
-                picker.dismiss(animated: true) { self.onPick(nil) }
+                onPick(nil)
             }
         }
     }
@@ -112,7 +112,7 @@ struct MultiGalleryPicker: UIViewControllerRepresentable {
 
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             guard !results.isEmpty else {
-                picker.dismiss(animated: true) { self.onPick([]) }
+                onPick([])
                 return
             }
 
@@ -129,9 +129,7 @@ struct MultiGalleryPicker: UIViewControllerRepresentable {
             }
 
             group.notify(queue: .main) {
-                picker.dismiss(animated: true) {
-                    self.onPick(images.compactMap { $0 })
-                }
+                self.onPick(images.compactMap { $0 })
             }
         }
     }

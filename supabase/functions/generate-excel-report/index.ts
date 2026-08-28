@@ -55,6 +55,25 @@ type RequestBody = {
   client_capabilities?: Record<string, unknown>;
   request_id?: string;
   support_id?: string;
+  export_intent_id?: string;
+};
+
+type ReportContentScope =
+  | "risk_analysis"
+  | "expert_recommendations"
+  | "approved_notebook";
+
+type ReportIntent = {
+  id: string;
+  user_id: string;
+  analysis_id: string;
+  content_scope: ReportContentScope;
+  format: "pdf" | "xlsx";
+  selected_item_keys: string[];
+  content_snapshot: Record<string, unknown>;
+  source_edit_version: number;
+  projection_version: string | null;
+  tier_snapshot: PlanTier;
 };
 
 type AnalysisRow = Record<string, unknown> & {
@@ -373,6 +392,21 @@ async function sendReportReadyPush(params: {
 function safeText(value: unknown, fallback = ""): string {
   if (value === null || value === undefined) return fallback;
   return String(value);
+}
+
+function isUUID(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      .test(value);
+}
+
+function snapshotItems(intent: ReportIntent | null): Record<string, unknown>[] {
+  const items = intent?.content_snapshot?.items;
+  return Array.isArray(items)
+    ? items.filter((item): item is Record<string, unknown> =>
+      item != null && typeof item === "object" && !Array.isArray(item)
+    )
+    : [];
 }
 
 function bool(value: unknown, fallback: boolean): boolean {
@@ -1136,6 +1170,83 @@ function appendSheet(
   const sheet = XLSX.utils.aoa_to_sheet(rows);
   XLSX.utils.book_append_sheet(workbook, sheet, name);
   return sheet;
+}
+
+function makeResultSectionWorkbook(
+  intent: ReportIntent,
+  analysis: AnalysisRow,
+  localization: ReportLocalizationContext,
+  documentNo: string,
+): XLSX.WorkBook {
+  const workbook = XLSX.utils.book_new();
+  applyWorkbookDefaults(workbook);
+  const isTR = localization.language === "tr";
+  const notebook = intent.content_scope === "approved_notebook";
+  const sectionTitle = notebook
+    ? (isTR ? "Onaylı Defter Önerisi" : "Safety Log Recommendation")
+    : (isTR ? "Uzman Görüşü Önerileri" : "Expert Recommendations");
+  const disclaimer = notebook
+    ? (isTR
+      ? "Taslak çıktıdır; iş güvenliği uzmanı değerlendirmesi ve resmî deftere aktarım gerekir."
+      : "Draft output; expert review and transfer to the applicable official record are required.")
+    : (isTR
+      ? "Bağlayıcı uzman görüşü değildir; saha teyidi ve uzman değerlendirmesi gerekir."
+      : "Not a binding expert opinion; field verification and expert review are required.");
+  const items = snapshotItems(intent);
+  const headers = notebook
+    ? (isTR
+      ? ["Sıra", "Tespit", "Öneri", "Dayanak", "Kaynak Bulgu"]
+      : ["No.", "Finding", "Recommendation", "Basis", "Source Items"])
+    : (isTR
+      ? ["Sıra", "Başlık", "Açıklama", "Öneri", "Durum"]
+      : ["No.", "Title", "Description", "Recommendation", "Status"]);
+  const rows: unknown[][] = [
+    [sectionTitle],
+    [safeText(analysis.title, sectionTitle)],
+    [documentNo],
+    [disclaimer],
+    [],
+    headers,
+  ];
+  for (const [index, item] of items.entries()) {
+    rows.push(
+      notebook
+        ? [
+          index + 1,
+          safeText(item.finding_text),
+          safeText(item.recommendation_text),
+          safeText(item.reference_text),
+          Array.isArray(item.source_finding_ids)
+            ? item.source_finding_ids.length
+            : 0,
+        ]
+        : [
+          index + 1,
+          safeText(item.title),
+          safeText(item.description),
+          safeText(item.recommended_action) ||
+          (Array.isArray(item.recommended_measures)
+            ? item.recommended_measures.map(String).join("\n")
+            : safeText(item.recommended_measures)),
+          isTR ? "Saha teyidi" : "Field verification",
+        ],
+    );
+  }
+  const sheet = appendSheet(
+    workbook,
+    isTR ? (notebook ? "Defter Taslağı" : "Uzman Görüşü") : sectionTitle,
+    rows,
+  );
+  setCols(sheet, [8, 34, 58, 58, 18]);
+  addMerges(sheet, ["A1:E1", "A2:E2", "A3:E3", "A4:E4"]);
+  setStyle(sheet, "A1:E1", styles.title);
+  setStyle(sheet, "A2:E4", styles.subtitle);
+  setStyle(sheet, "A6:E6", styles.tableHeader);
+  if (items.length > 0) {
+    setStyle(sheet, `A7:E${items.length + 6}`, styles.tableCell);
+  }
+  sheet["!autofilter"] = { ref: `A6:E${Math.max(6, items.length + 6)}` };
+  return workbook;
 }
 
 function setCols(sheet: XLSX.WorkSheet, widths: number[]) {
@@ -3085,6 +3196,33 @@ export async function handleGenerateExcelReportRequest(req: Request) {
     });
   }
 
+  let reportIntent: ReportIntent | null = null;
+  if (body.export_intent_id != null) {
+    if (!isUUID(body.export_intent_id)) {
+      return json(400, { error: "invalid_report_intent" });
+    }
+    const { data: intentData, error: intentError } = await supabase.rpc(
+      "result_hub_get_report_intent",
+      { p_user_id: user.id, p_intent_id: body.export_intent_id },
+    );
+    if (intentError || !intentData) {
+      return json(404, { error: "report_intent_not_found" });
+    }
+    reportIntent = intentData as ReportIntent;
+    if (
+      reportIntent.analysis_id !== analysisID ||
+      reportIntent.format !== "xlsx"
+    ) {
+      return json(409, { error: "report_intent_mismatch" });
+    }
+    const { data: existingReport } = await supabase.from("reports")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("export_intent_id", reportIntent.id)
+      .maybeSingle();
+    if (existingReport) return json(200, existingReport);
+  }
+
   const reportLocalization = resolveReportLocalization({
     localizationSnapshot: (analysis as AnalysisRow).localization_snapshot,
     requestedLanguage: body.report_language,
@@ -3207,8 +3345,35 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       companyProfile?.certificate_number ?? null,
   };
 
+  if (reportIntent) {
+    const { data: quota, error: quotaError } = await supabase.rpc(
+      "check_report_quota_eligibility_v2",
+      {
+        p_user_id: user.id,
+        p_kind: reportIntent.content_scope === "risk_analysis"
+          ? "riskAnalysis"
+          : "standard",
+        p_format: "xlsx",
+        p_content_scope: reportIntent.content_scope,
+      },
+    );
+    const decision = quota as Record<string, unknown> | null;
+    if (quotaError || !decision) {
+      return json(500, { error: "report_quota_check_failed" });
+    }
+    if (decision.allowed !== true) {
+      const code = safeText(decision.error_code, "report_quota_exceeded");
+      return json(code === "premium_required" ? 403 : 429, {
+        error: code,
+        message: code === "premium_required"
+          ? "Bu rapor Plus veya Pro aboneliği gerektirir."
+          : "Rapor kotan doldu.",
+      });
+    }
+  }
+
   let freeRiskAnalysisTrialAvailable = false;
-  if (planTier === "free") {
+  if (!reportIntent && planTier === "free") {
     const { count: trialCount, error: trialCountError } = await supabase
       .from("usage_events")
       .select("id", { count: "exact", head: true })
@@ -3238,7 +3403,9 @@ export async function handleGenerateExcelReportRequest(req: Request) {
   }
 
   const reportLimit = monthlyReportLimit(planTier);
-  if (reportLimit !== null && !freeRiskAnalysisTrialAvailable) {
+  if (
+    !reportIntent && reportLimit !== null && !freeRiskAnalysisTrialAvailable
+  ) {
     const { count: reportCount, error: reportCountError } = await supabase
       .from("usage_events")
       .select("id", { count: "exact", head: true })
@@ -3268,13 +3435,34 @@ export async function handleGenerateExcelReportRequest(req: Request) {
 
   const archiveSuffix = archiveFileSuffix(requestID);
   const methodCode = method === "matrix_5x5" ? "5X5" : "FK";
-  const documentNo = `XLSX-${methodCode}-${
+  let documentNo = `XLSX-${methodCode}-${
     analysisID.slice(0, 8).toUpperCase()
   }-${archiveSuffix.slice(-8).toUpperCase()}`;
-  const workbook = reportLocalization.context.language === "en"
+  if (reportIntent) {
+    const { data, error } = await supabase.rpc("next_report_document_no_v2", {
+      p_user_id: user.id,
+      p_content_scope: reportIntent.content_scope,
+    });
+    if (error || typeof data !== "string") {
+      return json(500, { error: "document_no_failed" });
+    }
+    documentNo = data;
+  }
+  const reportFindings = reportIntent?.content_scope === "risk_analysis"
+    ? snapshotItems(reportIntent) as FindingRow[]
+    : (findings ?? []) as FindingRow[];
+  const workbook = reportIntent &&
+      reportIntent.content_scope !== "risk_analysis"
+    ? makeResultSectionWorkbook(
+      reportIntent,
+      analysis as AnalysisRow,
+      reportLocalization.context,
+      documentNo,
+    )
+    : reportLocalization.context.language === "en"
     ? makeEnglishWorkbook(
       analysis as AnalysisRow,
-      (findings ?? []) as FindingRow[],
+      reportFindings,
       effectiveProfile,
       method,
       requestID,
@@ -3284,7 +3472,7 @@ export async function handleGenerateExcelReportRequest(req: Request) {
     )
     : makeWorkbook(
       analysis as AnalysisRow,
-      (findings ?? []) as FindingRow[],
+      reportFindings,
       effectiveProfile,
       method,
       requestID,
@@ -3295,9 +3483,17 @@ export async function handleGenerateExcelReportRequest(req: Request) {
     await loadCompanyLogo(supabase, effectiveProfile, user.id);
   const rawBytes = workbookBuffer(workbook);
   const bytes = logo ? await embedCompanyLogo(rawBytes, logo) : rawBytes;
-  const fileStem = reportLocalization.context.language === "en"
-    ? "risk-assessment"
-    : "risk-analizi";
+  const fileStem = reportIntent?.content_scope === "expert_recommendations"
+    ? (reportLocalization.context.language === "en"
+      ? "expert-recommendations"
+      : "uzman-gorusu")
+    : reportIntent?.content_scope === "approved_notebook"
+    ? (reportLocalization.context.language === "en"
+      ? "safety-log"
+      : "onayli-defter-taslagi")
+    : (reportLocalization.context.language === "en"
+      ? "risk-assessment"
+      : "risk-analizi");
   const fileName = `${
     safeFilePart(safeText((analysis as AnalysisRow).title, fileStem))
   }-${method}-${fileStem}-${archiveSuffix}.xlsx`;
@@ -3330,7 +3526,22 @@ export async function handleGenerateExcelReportRequest(req: Request) {
   }
 
   const shouldStoreSnapshot = await reportSnapshotV2Enabled(supabase, body);
-  const snapshotColumns = shouldStoreSnapshot
+  const snapshotColumns = reportIntent
+    ? {
+      findings_snapshot_json: snapshotItems(reportIntent),
+      analysis_edit_version: reportIntent.source_edit_version,
+      generated_from_user_edited_findings: reportIntent.source_edit_version > 0,
+      visible_findings_count: reportIntent.selected_item_keys.length,
+      report_page_count: 1,
+      content_scope: reportIntent.content_scope,
+      projection_version: reportIntent.projection_version,
+      selected_item_keys: reportIntent.selected_item_keys,
+      content_snapshot_json: reportIntent.content_snapshot,
+      entitlement_tier_snapshot: reportIntent.tier_snapshot,
+      selection_count: reportIntent.selected_item_keys.length,
+      export_intent_id: reportIntent.id,
+    }
+    : shouldStoreSnapshot
     ? {
       findings_snapshot_json: findings ?? [],
       photos_snapshot_json: photos ?? [],
@@ -3347,8 +3558,9 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       source_photo_count: Array.isArray(photos) ? photos.length : null,
       visible_findings_count: Array.isArray(findings) ? findings.length : null,
       report_page_count: 1,
+      content_scope: "legacy_combined",
     }
-    : {};
+    : { content_scope: "legacy_combined" };
 
   const { data: report, error: reportError } = await supabase
     .from("reports")
@@ -3357,9 +3569,24 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       analysis_id: analysisID,
       document_no: documentNo,
       format: "xlsx",
-      kind: "risk_analysis",
+      kind: reportIntent?.content_scope === "risk_analysis"
+        ? "risk_analysis"
+        : "standard",
       method,
-      title: safeText((analysis as AnalysisRow).title, "Risk Analizi"),
+      title: safeText(
+        (analysis as AnalysisRow).title,
+        reportIntent?.content_scope === "expert_recommendations"
+          ? (reportLocalization.context.language === "en"
+            ? "Expert Recommendations"
+            : "Uzman Görüşü Önerileri")
+          : reportIntent?.content_scope === "approved_notebook"
+          ? (reportLocalization.context.language === "en"
+            ? "Safety Log Recommendation"
+            : "Onaylı Defter Önerisi")
+          : (reportLocalization.context.language === "en"
+            ? "Risk Analysis"
+            : "Risk Analizi"),
+      ),
       storage_path: storagePath,
       file_name: fileName,
       mime_type: XLSX_MIME,
@@ -3428,6 +3655,23 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       request_id: requestID,
       support_id: supportID,
     });
+  }
+
+  if (reportIntent) {
+    const { error: consumeError } = await supabase.rpc(
+      "result_hub_consume_report_intent",
+      {
+        p_user_id: user.id,
+        p_intent_id: reportIntent.id,
+        p_status: "consumed",
+      },
+    );
+    if (consumeError) {
+      console.warn(
+        "XLSX report intent consume failed",
+        JSON.stringify({ report_id: report.id, intent_id: reportIntent.id }),
+      );
+    }
   }
 
   if (company && !(analysis as AnalysisRow).company_id) {

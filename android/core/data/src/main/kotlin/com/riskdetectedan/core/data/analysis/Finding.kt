@@ -47,6 +47,8 @@ data class Finding(
     @SerialName("recommended_action") val recommendedAction: String? = null,
     @SerialName("recommended_measures") val recommendedMeasures: List<FindingMeasure>? = null,
     val confidence: Double = 0.0,
+    @SerialName("item_class") val itemClass: String = "observed_finding",
+    @SerialName("is_scored") val isScored: Boolean = true,
     @SerialName("needs_field_verification") val needsFieldVerification: Boolean = false,
     @SerialName("source_photo_indices") val sourcePhotoIndices: List<Int> = emptyList(),
     @SerialName("fk_probability") val fkProbability: Double? = null,
@@ -61,6 +63,7 @@ data class Finding(
     @SerialName("references_text") val referencesText: String? = null,
     @SerialName("root_cause_text") val rootCauseText: String? = null,
     @SerialName("finding_version") val findingVersion: Int = 1,
+    @SerialName("display_order") val displayOrder: Int? = null,
 )
 
 /**

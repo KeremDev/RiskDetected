@@ -1,5 +1,10 @@
 package com.riskdetectedan.core.designsystem
 
+import android.animation.ValueAnimator
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import androidx.compose.foundation.Canvas
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -11,6 +16,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +34,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
@@ -35,8 +42,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -61,6 +70,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.imageResource
@@ -931,6 +941,7 @@ fun RdPaywallDesignFeatureMarquee(
     modifier: Modifier = Modifier,
 ) {
     val spacing = 8.dp
+    val animationsEnabled = rememberSystemAnimationsEnabled()
     var rowWidthPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
     val spacingPx = with(density) { spacing.roundToPx() }
@@ -942,17 +953,6 @@ fun RdPaywallDesignFeatureMarquee(
         ((travelDp / 34f) * 1000f).toInt().coerceAtLeast(6_000)
     }
 
-    val transition = rememberInfiniteTransition(label = "paywall-feature-marquee")
-    val progress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "paywall-feature-marquee-offset",
-    )
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -960,22 +960,72 @@ fun RdPaywallDesignFeatureMarquee(
             .clipToBounds()
             .testTag(RdPaywallDesignTag.FeatureMarquee),
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(spacing),
-            modifier = Modifier.offset { IntOffset(-(progress * travelPx).toInt(), 0) },
-        ) {
+        if (!animationsEnabled) {
+            // Android'in "animasyonları kaldır" ayarı açıkken sonsuz geçiş doğal olarak
+            // durur. Kırpılmış sabit bir satır yerine tüm özellikler elle kaydırılabilir.
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing),
-                modifier = Modifier.onSizeChanged { rowWidthPx = it.width },
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
             ) {
                 features.forEach { MarqueeChip(it, accent) }
             }
-            // İkinci kopya yalnızca görsel süreklilik için.
-            Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                features.forEach { MarqueeChip(it, accent) }
+        } else {
+            val transition = rememberInfiniteTransition(label = "paywall-feature-marquee")
+            val progress by transition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+                label = "paywall-feature-marquee-offset",
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(spacing),
+                modifier = Modifier.offset { IntOffset(-(progress * travelPx).toInt(), 0) },
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing),
+                    modifier = Modifier.onSizeChanged { rowWidthPx = it.width },
+                ) {
+                    features.forEach { MarqueeChip(it, accent) }
+                }
+                // İkinci kopya yalnızca görsel süreklilik için.
+                Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                    features.forEach { MarqueeChip(it, accent) }
+                }
             }
         }
     }
+}
+
+/**
+ * Sistem animasyon ölçeğini izler. Bazı üretici arayüzlerinde bu ayar geliştirici
+ * seçeneklerinden veya erişilebilirlik menüsünden değiştirilebildiği için yalnız ilk
+ * composition'da okumak paywall açıkken yanlış durumda kalabiliyordu.
+ */
+@Composable
+private fun rememberSystemAnimationsEnabled(): Boolean {
+    val context = LocalContext.current
+    var enabled by remember { mutableStateOf(ValueAnimator.areAnimatorsEnabled()) }
+
+    DisposableEffect(context) {
+        val resolver = context.contentResolver
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                enabled = ValueAnimator.areAnimatorsEnabled()
+            }
+        }
+        resolver.registerContentObserver(
+            Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE),
+            false,
+            observer,
+        )
+        onDispose { resolver.unregisterContentObserver(observer) }
+    }
+
+    return enabled
 }
 
 @Composable

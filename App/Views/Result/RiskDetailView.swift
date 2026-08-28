@@ -1,17 +1,32 @@
 import SwiftUI
 import UIKit
 
+/// Finding detail copied from the supplied 440 × 956 HTML reference.
 struct RiskDetailView: View {
     let finding: Finding
     var photoPath: String? = nil
     var localPreviewImage: UIImage? = nil
     var photoIndex: Int = 1
     var showsRegulatoryReferences: Bool = true
+    var analysisTitle: String = ""
+    var analysisSector: String? = nil
+    var initialReaction: AnalysisItemReaction = .none
+    var onReaction: ((AnalysisItemReaction) -> Void)? = nil
+    var onEdit: (() -> Void)? = nil
+    var onDelete: (() -> Void)? = nil
+    var onGenerateReport: (() -> Void)? = nil
+
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State private var method: RiskMethod
+    @State private var reaction: AnalysisItemReaction
     @State private var showPaywall = false
+
+    private let green = Color(hex: "#35774A")
+    private let greenDark = Color(hex: "#2E6B41")
+    private let ink = Color(hex: "#1A1A1A")
+
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
     }
@@ -22,43 +37,53 @@ struct RiskDetailView: View {
         photoPath: String? = nil,
         localPreviewImage: UIImage? = nil,
         photoIndex: Int = 1,
-        showsRegulatoryReferences: Bool = true
+        showsRegulatoryReferences: Bool = true,
+        analysisTitle: String = "",
+        analysisSector: String? = nil,
+        initialReaction: AnalysisItemReaction = .none,
+        onReaction: ((AnalysisItemReaction) -> Void)? = nil,
+        onEdit: (() -> Void)? = nil,
+        onDelete: (() -> Void)? = nil,
+        onGenerateReport: (() -> Void)? = nil
     ) {
         self.finding = finding
         self.photoPath = photoPath
         self.localPreviewImage = localPreviewImage
         self.photoIndex = max(1, photoIndex)
         self.showsRegulatoryReferences = showsRegulatoryReferences
+        self.analysisTitle = analysisTitle
+        self.analysisSector = analysisSector
+        self.initialReaction = initialReaction
+        self.onReaction = onReaction
+        self.onEdit = onEdit
+        self.onDelete = onDelete
+        self.onGenerateReport = onGenerateReport
         _method = State(initialValue: method)
+        _reaction = State(initialValue: initialReaction)
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            detailTopBar
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    header
-
-                    photoScoreCard
-                    comparisonCard
-
-                    section(RDLocalization.string("analysis.risk.detail.view.tehlike.aciklamasi.31eca15b", table: .analysis, fallback: "Tehlike açıklaması"), body: finding.description)
-                    controlMeasuresSection
-                    rootCauseSection
-                    if showsRegulatoryReferences {
-                        referenceSection
-                    }
-
-                    Color.clear.frame(height: 12)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    hero
+                    floatingActions
+                    scoreBanner
+                    hazardCard
+                    detailBlocks
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 6)
-                .padding(.bottom, 28)
             }
-            .background(Color.rdPaper)
+            .background(Color.white)
+
+            Capsule()
+                .fill(ink)
+                .frame(width: 145, height: 5)
+                .padding(.vertical, 11)
+                .background(Color.white)
         }
-        .background(Color.rdPaper.ignoresSafeArea())
+        .background(Color.white.ignoresSafeArea())
+        .ignoresSafeArea(edges: .top)
+        .preferredColorScheme(.dark)
         .fullScreenCover(isPresented: $showPaywall) {
             FreeAwarePaywallView(
                 onClose: { showPaywall = false },
@@ -71,393 +96,384 @@ struct RiskDetailView: View {
         }
     }
 
-    private var detailTopBar: some View {
-        HStack {
-            Spacer()
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdBlack)
-                    .frame(width: 38, height: 38)
-                    .background(Color.rdWhite.opacity(0.96))
-                    .clipShape(Circle())
-                    .shadow(color: Color.rdOnyx.opacity(0.14), radius: 10, x: 0, y: 5)
-            }
-            .buttonStyle(RDPressableButtonStyle())
-            .accessibilityLabel(RDLocalization.string("analysis.risk.detail.view.pencereyi.kapat.cde23dc0", table: .analysis, fallback: "Pencereyi kapat"))
-            .accessibilityIdentifier("result.detail.close")
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
-        .padding(.bottom, 6)
-        .background(Color.rdPaper)
-    }
-
-    // MARK: - Header
-
-    private var header: some View {
+    private var hero: some View {
         let band = finding.band(for: method)
-        return VStack(alignment: .leading, spacing: 8) {
-            Text(RDLocalization.uppercased(finding.category))
-                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
-                .tracking(0.6)
-                .foregroundStyle(Color.rdSlate)
+        return ZStack {
+            ResultDetailPhoto(image: localPreviewImage, path: photoPath, cornerRadius: 0)
+            LinearGradient(
+                colors: [
+                    Color(hex: "#0C140E").opacity(0.62),
+                    Color(hex: "#0C140E").opacity(0.12),
+                    Color(hex: "#0C140E").opacity(0.20),
+                    Color(hex: "#0C140E").opacity(0.82)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
 
-            Text(finding.displayTitle)
-                .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
-                .tracking(-0.4)
-                .foregroundStyle(Color.rdBlack)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 6) {
-                RDChip(level: band.level, label: band.label)
-                Text(RDLocalization.format("analysis.risk.detail.view.ai.guveni.1.3c5aa13f", table: .analysis, fallback: "AI güveni %%%1$@", arguments: [String(describing: Int(finding.confidence * 100))]))
-                    .rdMono(size: 11, weight: .semibold)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .foregroundStyle(Color.rdGreenDark)
-                    .background(Color.rdGreenSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            .padding(.top, 4)
-        }
-    }
-
-    private var photoScoreCard: some View {
-        ZStack(alignment: .bottom) {
-            ResultDetailPhoto(image: localPreviewImage, path: photoPath)
-                .frame(height: 238)
-
-            methodologyOverlay
+            VStack(spacing: 0) {
+                HStack {
+                    roundHeroButton("arrow.left") { dismiss() }
+                        .accessibilityLabel(RDLocalization.string("analysis.risk.detail.view.pencereyi.kapat.cde23dc0", table: .analysis, fallback: "Pencereyi kapat"))
+                        .accessibilityIdentifier("result.detail.close")
+                    Spacer()
+                    roundReactionButton("hand.thumbsup", active: reaction == .like) { toggleReaction(.like) }
+                    roundReactionButton("hand.thumbsdown", active: reaction == .dislike) { toggleReaction(.dislike) }
+                }
                 .padding(.horizontal, 14)
-                .padding(.bottom, 12)
+                .padding(.top, 58)
+
+                Spacer()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text(methodRiskBandLabel(band))
+                            .font(referenceFont(8.5, .heavy))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(referenceRiskColor(band.level))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                        Text("BULGU #F-\(String(format: "%04d", finding.id))")
+                            .font(referenceFont(9, .bold))
+                            .tracking(0.3)
+                            .foregroundStyle(.white.opacity(0.72))
+                        Spacer()
+                        Text(scoreText(finding.score(for: method)))
+                            .font(referenceFont(15, .heavy))
+                            .foregroundStyle(.white)
+                        Text(method == .fineKinney ? "PUAN" : "RİSK")
+                            .font(referenceFont(9, .bold))
+                            .foregroundStyle(.white.opacity(0.72))
+                    }
+
+                    Text(finding.displayTitle)
+                        .font(referenceFont(13, .heavy))
+                        .foregroundStyle(.white)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(heroMeta)
+                        .font(referenceFont(10, .medium))
+                        .foregroundStyle(.white.opacity(0.70))
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 30)
+            }
         }
-        .overlay(alignment: .topLeading) {
-            photoIndexBadge
-                .padding(12)
-        }
+        // The HTML's 252 pt hero includes the status-bar region. SwiftUI shifts
+        // ignored-safe-area content upward, so the safe-area allowance keeps
+        // the visible hero at the reference height on Dynamic Island devices.
+        .frame(height: 296)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("result.detail.photo_card")
-    }
-
-    private var photoIndexBadge: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "photo.on.rectangle")
-                .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
-            Text(RDLocalization.format("analysis.risk.detail.view.foto.1.51048e36", table: .analysis, fallback: "Foto %1$@", arguments: [String(describing: photoIndex)]))
-                .rdMono(size: 11, weight: .bold)
+        .overlay(alignment: .bottomTrailing) {
+            Text("Foto \(photoIndex)")
+                .font(referenceFont(1, .regular))
+                .foregroundStyle(Color.clear)
+                .accessibilityLabel(RDLocalization.format("analysis.risk.detail.view.kaynak.fotograf.1.1bb24334", table: .analysis, fallback: "Kaynak fotoğraf %1$@", arguments: [String(photoIndex)]))
+                .accessibilityIdentifier("result.detail.photo_index.\(photoIndex)")
         }
-        .foregroundStyle(Color.rdOnyx)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Color.rdWhite.opacity(0.92))
-        .clipShape(RoundedRectangle(cornerRadius: 9))
-        .shadow(color: Color.rdOnyx.opacity(0.12), radius: 8, x: 0, y: 4)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(RDLocalization.format("analysis.risk.detail.view.kaynak.fotograf.1.1bb24334", table: .analysis, fallback: "Kaynak fotoğraf %1$@", arguments: [String(describing: photoIndex)]))
-        .accessibilityIdentifier("result.detail.photo_index.\(photoIndex)")
     }
 
-    // MARK: - Methodology
-
-    private var methodologyOverlay: some View {
-        let band = finding.band(for: method)
-        let score = finding.score(for: method)
-
-        return HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .lastTextBaseline, spacing: 8) {
-                    Text(scoreDisplay(score))
-                        .font(.system(size: RDFontScale.size(26), weight: .heavy, design: .monospaced))
-                        .foregroundStyle(band.color)
-                        .tracking(-0.6)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-
-                Text(band.action)
-                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                    .foregroundStyle(band.color)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.82)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Spacer(minLength: 6)
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(RDLocalization.uppercased(method.fullName))
-                    .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
-                    .tracking(0.6)
-                    .foregroundStyle(Color.rdBlack.opacity(0.72))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.trailing)
-                Text(RDLocalization.format("analysis.risk.detail.view.r.1.a6bbb494", table: .analysis, fallback: "r = %1$@", arguments: [String(describing: finding.formula(for: method))]))
-                    .rdMono(size: 10.5, weight: .semibold)
-                    .foregroundStyle(Color.rdBlack.opacity(0.78))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.62)
-                    .allowsTightening(true)
-            }
-            .frame(maxWidth: 190, alignment: .trailing)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
-        .frame(maxWidth: .infinity)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.50))
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.ultraThinMaterial)
-                    .opacity(0.82)
-            }
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.72), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.16), radius: 14, x: 0, y: 8)
-    }
-
-    private func scoreDisplay(_ score: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.locale = .autoupdatingCurrent
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: Int(score))) ?? "\(Int(score))"
-    }
-
-    private var comparisonCard: some View {
-        RDCard(showsShadow: false) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(RDLocalization.uppercased(RDLocalization.string("analysis.risk.detail.view.yontem.karsilastirmasi.62bb4353", table: .analysis, fallback: "Yöntem karşılaştırması")))
-                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
-                    .tracking(0.6)
-                    .foregroundStyle(Color.rdSlate)
-
+    private var floatingActions: some View {
+        HStack(spacing: 9) {
+            Button { onGenerateReport?() } label: {
                 HStack(spacing: 10) {
-                    methodBox(
-                        title: RDLocalization.string("analysis.risk.detail.view.fine.kinney.dd5a1c46", table: .analysis, fallback: "Fine-Kinney"),
-                        formula: RDLocalization.string("analysis.risk.detail.view.o.f.s.d293e41e", table: .analysis, fallback: "O × F × Ş"),
-                        score: Int(finding.fkScore),
-                        band: finding.fkBand,
-                        active: method == .fineKinney,
-                        targetMethod: .fineKinney
-                    )
-                    methodBox(
-                        title: RDLocalization.string("analysis.risk.detail.view.5.5.l.tipi.3cb7030d", table: .analysis, fallback: "5×5 L-Tipi"),
-                        formula: RDLocalization.string("analysis.risk.detail.view.o.s.ed0493f9", table: .analysis, fallback: "O × Ş"),
-                        score: finding.m5Score,
-                        band: finding.m5Band,
-                        active: method == .matrix5x5,
-                        targetMethod: .matrix5x5
-                    )
-                }
-            }
-        }
-        .padding(.top, 2)
-    }
-
-    private func methodBox(title: String, formula: String, score: Int, band: RiskBand, active: Bool, targetMethod: RiskMethod) -> some View {
-        Button {
-            UISelectionFeedbackGenerator().selectionChanged()
-            withAnimation(.spring(response: 0.22, dampingFraction: 0.86)) {
-                method = targetMethod
-            }
-        } label: {
-            ZStack(alignment: .topTrailing) {
-                VStack(spacing: 6) {
-                    Text(title)
-                        .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                        .foregroundStyle(active ? Color.rdBlack : Color.rdSlate)
-                    Text(RDLocalization.format("analysis.risk.detail.view.r.1.957c43b4", table: .analysis, fallback: "r = %1$@", arguments: [String(describing: formula)]))
-                        .rdMono(size: 10)
-                        .foregroundStyle(Color.rdSlate)
-
-                    Text(scoreDisplay(Double(score)))
-                        .font(.system(size: RDFontScale.size(23), weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(band.color)
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(greenDark)
+                        .frame(width: 34, height: 34)
+                        .background(Color(hex: "#EAF6EE"))
                         .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                    Text(band.label)
-                        .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
-                        .foregroundStyle(band.color)
-                }
-                .padding(10)
-                .frame(maxWidth: .infinity)
-
-                if active {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdGreen)
-                        .background(Circle().fill(Color.rdWhite))
-                        .offset(x: -8, y: 8)
-                }
-            }
-            .background(Color.rdWhite)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(active ? Color.rdSelected : Color.rdLine, lineWidth: active ? 1.5 : 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(RDPressableButtonStyle())
-    }
-
-    private var controlMeasuresSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(RDLocalization.uppercased(RDLocalization.string("analysis.risk.detail.view.onlem.kontrol.tedbirleri.98bd1b89", table: .analysis, fallback: "Önlem / Kontrol tedbirleri")))
-                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
-                .tracking(0.6)
-                .foregroundStyle(Color.rdSlate)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(finding.controlMeasures.indices, id: \.self) { index in
-                    let measure = finding.controlMeasures[index]
-                    (
-                        Text("\(measure.displayTitle): ")
-                            .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded)) +
-                        Text(measure.text)
-                            .font(.system(size: RDFontScale.size(14), design: .rounded))
-                    )
-                    .foregroundStyle(Color.rdGraphite)
-                    .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.rdGreenSoft)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-    }
-
-    // MARK: - Section
-
-    private func section(_ title: String, body: String,
-                         accent: Color = .rdFog, accentText: Color = .rdGraphite,
-                         icon: String = "info.circle") -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(RDLocalization.uppercased(title))
-                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
-                .tracking(0.6)
-                .foregroundStyle(Color.rdSlate)
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
-                    .foregroundStyle(accentText)
-                    .padding(.top, 1)
-                Text(body)
-                    .font(.system(size: RDFontScale.size(14), design: .rounded))
-                    .foregroundStyle(accentText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(accent)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-    }
-
-    @ViewBuilder
-    private var referenceSection: some View {
-        if app.currentTier.isPaid {
-            section(RDLocalization.string("analysis.risk.detail.view.mevzuat.referanslari.648830a6", table: .analysis, fallback: "Mevzuat referansları"), body: finding.references.isEmpty ? RDLocalization.string("analysis.risk.detail.view.kontrol.edilmeli.ada69d9f", table: .analysis, fallback: "Kontrol edilmeli") : finding.references,
-                    accent: Color.rdFog, accentText: Color.rdGraphite,
-                    icon: "books.vertical")
-        } else {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    Text(RDLocalization.uppercased(RDLocalization.string("analysis.risk.detail.view.mevzuat.referanslari.cd352b19", table: .analysis, fallback: "Mevzuat referansları")))
-                        .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
-                        .tracking(0.6)
-                        .foregroundStyle(Color.rdSlate)
-                    RDTierBadge(tier: .plus, small: true)
-                }
-
-                Button {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    showPaywall = true
-                } label: {
-                    HStack(alignment: .center, spacing: 10) {
-                        Image(systemName: "books.vertical")
-                            .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(RDLocalization.string("analysis.risk.detail.view.mevzuat.referanslari.plus.ta.aciktir.11771944", table: .analysis, fallback: "Mevzuat Referansları Plus'ta Açıktır"))
-                                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
-                                .foregroundStyle(Color.rdBlack)
-                            Text(RDLocalization.string("analysis.risk.detail.view.ilgili.kanun.yonetmelik.ve.standart.karsiliklari.8b679e34", table: .analysis, fallback: "İlgili kanun, yönetmelik ve standart karşılıklarını görmek için Plus veya Pro'ya geç."))
-                                .font(.system(size: RDFontScale.size(11), design: .rounded))
-                                .foregroundStyle(Color.rdSlate)
-                                .lineLimit(2)
-                        }
-
-                        Spacer(minLength: 8)
-
-                        RDTierBadge(tier: .plus, small: true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(copy("Rapor Oluştur", "Create Report"))
+                            .font(referenceFont(13.5, .heavy)).foregroundStyle(ink)
+                        Text(copy("Bu tehlikeye ait rapor oluşturulur", "Creates a report for this hazard"))
+                            .font(referenceFont(9.5, .medium)).foregroundStyle(Color(hex: "#9A9A9A"))
+                            .lineLimit(1).minimumScaleFactor(0.72)
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.rdFog)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: "#C4C4C4"))
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 13)
+                .frame(maxWidth: .infinity, minHeight: 56)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .shadow(color: ink.opacity(0.18), radius: 8, x: 3, y: 5)
             }
+            .buttonStyle(.plain)
+
+            actionSquare("pencil", color: greenDark) { onEdit?() }
+            actionSquare("trash", color: Color(hex: "#C9352B")) { onDelete?() }
+            ShareLink(item: "\(finding.displayTitle)\n\n\(finding.description)") {
+                actionSquareLabel("square.and.arrow.up", color: greenDark)
+            }
+            .buttonStyle(.plain)
         }
+        .padding(.horizontal, 20)
+        .offset(y: -20)
+        .padding(.bottom, -20)
+    }
+
+    private var scoreBanner: some View {
+        let score = finding.score(for: method)
+        let band = finding.band(for: method)
+        return ZStack {
+            LinearGradient(
+                colors: [referenceRiskColor(band.level), referenceRiskColor(band.level).opacity(0.76)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            Circle().fill(Color.white.opacity(0.09)).frame(width: 74, height: 74).offset(x: 155, y: -24)
+            Circle().fill(Color.white.opacity(0.06)).frame(width: 56, height: 56).offset(x: 95, y: 35)
+
+            HStack(spacing: 10) {
+                HStack(alignment: .lastTextBaseline, spacing: 4) {
+                    Text(scoreText(score)).font(referenceFont(26, .heavy)).tracking(-1.2)
+                    Text(method == .fineKinney ? "PUAN" : "RİSK").font(referenceFont(8.5, .heavy)).opacity(0.78)
+                }
+                Rectangle().fill(Color.white.opacity(0.28)).frame(width: 1, height: 26)
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        Text(method.fullName).font(referenceFont(10.5, .heavy))
+                        Text(method.formula).font(referenceFont(9, .bold)).opacity(0.60)
+                    }
+                    factorRow(score: score)
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 13)
+        }
+        .frame(height: 66)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, 20)
+        .padding(.top, 18)
+    }
+
+    private var hazardCard: some View {
+        let band = finding.band(for: method)
+        return HStack(spacing: 0) {
+            Rectangle().fill(referenceRiskColor(band.level)).frame(width: 4)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 6) {
+                    Text(methodRiskBandLabel(band))
+                        .font(referenceFont(8.5, .heavy)).foregroundStyle(.white)
+                        .padding(.horizontal, 7).padding(.vertical, 4)
+                        .background(referenceRiskColor(band.level)).clipShape(RoundedRectangle(cornerRadius: 4))
+                    Text(copy("BULGU BAŞLIĞI", "FINDING TITLE"))
+                        .font(referenceFont(9, .heavy)).tracking(0.3).foregroundStyle(Color(hex: "#A0A0A0"))
+                }
+                Text(finding.displayTitle)
+                    .font(referenceFont(15, .heavy)).foregroundStyle(ink).lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true).padding(.top, 8)
+                HStack(spacing: 6) {
+                    Text(copy("TEHLİKE AÇIKLAMASI", "HAZARD DESCRIPTION"))
+                        .font(referenceFont(9, .heavy)).tracking(0.3).foregroundStyle(Color(hex: "#A0A0A0"))
+                    Rectangle().fill(Color(hex: "#ECECEC")).frame(height: 1)
+                }
+                .padding(.top, 12)
+                Text(finding.description)
+                    .font(referenceFont(12.5, .medium)).foregroundStyle(Color(hex: "#4D4D4D"))
+                    .lineSpacing(5).fixedSize(horizontal: false, vertical: true).padding(.top, 7)
+            }
+            .padding(.leading, 11).padding(.trailing, 13).padding(.vertical, 13)
+        }
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "#E6E6E6"), lineWidth: 1))
+        .padding(.horizontal, 20).padding(.top, 18)
+    }
+
+    private var detailBlocks: some View {
+        VStack(spacing: 10) {
+            if !finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                detailBlock(
+                    icon: "magnifyingglass", title: copy("KÖK NEDEN", "ROOT CAUSE"), tag: copy("Tespit", "Finding"),
+                    lead: copy("Tehlikenin temel nedeni", "Underlying cause of the hazard"), text: finding.rootCause,
+                    color: Color(hex: "#A66A13"), background: Color(hex: "#FFF8E8")
+                )
+            }
+
+            let corrective = finding.controlMeasures.filter { $0.kind != .preventive }
+            if !corrective.isEmpty {
+                detailBlock(
+                    icon: "wrench.and.screwdriver", title: copy("DÜZELTİCİ ÖNLEM", "CORRECTIVE ACTION"), tag: copy("Öncelikli", "Priority"),
+                    lead: copy("Mevcut tehlikenin giderilmesi", "Eliminate the current hazard"), text: corrective.map(\.text).joined(separator: "\n"),
+                    color: greenDark, background: Color(hex: "#EDF8F0")
+                )
+            }
+
+            let preventive = finding.controlMeasures.filter { $0.kind == .preventive }
+            if !preventive.isEmpty {
+                detailBlock(
+                    icon: "shield.checkered", title: copy("ÖNLEYİCİ FAALİYET", "PREVENTIVE ACTION"), tag: copy("Kalıcı", "Permanent"),
+                    lead: copy("Tekrarını engelleyecek kontroller", "Controls to prevent recurrence"), text: preventive.map(\.text).joined(separator: "\n"),
+                    color: Color(hex: "#2F6C55"), background: Color(hex: "#EFF8F4")
+                )
+            }
+
+            if showsRegulatoryReferences { referenceBlock }
+        }
+        .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 26)
     }
 
     @ViewBuilder
-    private var rootCauseSection: some View {
-        if app.currentTier.isPaid, !finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            section(RDLocalization.string("analysis.risk.detail.view.kok.neden.ec433ba8", table: .analysis, fallback: "Kök neden"), body: finding.rootCause,
-                    accent: Color.rdPlanPlusSoft, accentText: Color.rdPlanPlusDark,
-                    icon: "point.3.connected.trianglepath.dotted")
+    private var referenceBlock: some View {
+        if app.currentTier.isPaid {
+            detailBlock(
+                icon: "building.columns", title: copy("MEVZUAT", "REGULATORY REFERENCES"), tag: copy("Dayanak", "Basis"),
+                lead: copy("İlgili yasal dayanaklar", "Applicable regulatory basis"),
+                text: finding.references.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? copy("Doğrulanmış dayanak bulunmuyor.", "No verified reference available.") : finding.references,
+                color: Color(hex: "#316A92"), background: Color(hex: "#EFF6FB")
+            )
+        } else {
+            Button { showPaywall = true } label: {
+                detailBlock(
+                    icon: "lock.fill", title: copy("MEVZUAT", "REGULATORY REFERENCES"), tag: "PLUS",
+                    lead: copy("Mevzuat referansları Plus ve Pro’da", "References are available with Plus and Pro"),
+                    text: copy("İlgili doğrulanmış mevzuat dayanaklarını görmek için planını yükselt.", "Upgrade to view applicable verified references."),
+                    color: Color(hex: "#316A92"), background: Color(hex: "#EFF6FB")
+                )
+            }
+            .buttonStyle(.plain)
         }
+    }
+
+    private func detailBlock(icon: String, title: String, tag: String, lead: String, text: String, color: Color, background: Color) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: icon).font(.system(size: 15, weight: .semibold)).foregroundStyle(color)
+                Text(title).font(referenceFont(10, .heavy)).tracking(0.25).foregroundStyle(color)
+                Text(tag).font(referenceFont(8.5, .heavy)).foregroundStyle(color)
+                    .padding(.horizontal, 7).padding(.vertical, 3).background(color.opacity(0.10)).clipShape(Capsule())
+                Spacer()
+            }
+            Text(lead).font(referenceFont(12.5, .heavy)).foregroundStyle(ink).lineSpacing(2).padding(.top, 9)
+            Text(text).font(referenceFont(12, .regular)).foregroundStyle(Color(hex: "#575757"))
+                .lineSpacing(5).fixedSize(horizontal: false, vertical: true).padding(.top, 5)
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(background)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(color.opacity(0.17), lineWidth: 1))
+    }
+
+    private func factorRow(score: Double) -> some View {
+        HStack(spacing: 4) {
+            if method == .fineKinney {
+                factor("O", finding.fk.probability); Text("×").opacity(0.5)
+                factor("F", finding.fk.frequency); Text("×").opacity(0.5)
+                factor("Ş", finding.fk.severity); Text("=").opacity(0.5)
+            } else {
+                factor("O", Double(finding.m5.probability)); Text("×").opacity(0.5)
+                factor("Ş", Double(finding.m5.severity)); Text("=").opacity(0.5)
+            }
+            Text(scoreText(score)).font(referenceFont(11.5, .heavy))
+        }
+        .font(referenceFont(10, .heavy))
+    }
+
+    private func factor(_ short: String, _ value: Double) -> some View {
+        HStack(spacing: 3) {
+            Text(short).font(referenceFont(8.5, .heavy)).opacity(0.75)
+            Text(scoreText(value)).font(referenceFont(11, .heavy))
+        }
+        .padding(.horizontal, 6).padding(.vertical, 2)
+        .background(Color.white.opacity(0.16)).clipShape(RoundedRectangle(cornerRadius: 5))
+    }
+
+    private func roundHeroButton(_ icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon).font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
+                .frame(width: 36, height: 36).background(Color(hex: "#0C140E").opacity(0.45)).clipShape(Circle())
+        }.buttonStyle(.plain)
+    }
+
+    private func roundReactionButton(_ icon: String, active: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: active ? "\(icon).fill" : icon)
+                .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .background(active ? green : Color(hex: "#0C140E").opacity(0.45)).clipShape(Circle())
+        }.buttonStyle(.plain)
+    }
+
+    private func actionSquare(_ icon: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) { actionSquareLabel(icon, color: color) }.buttonStyle(.plain)
+    }
+
+    private func actionSquareLabel(_ icon: String, color: Color) -> some View {
+        Image(systemName: icon).font(.system(size: 17, weight: .semibold)).foregroundStyle(color)
+            .frame(width: 48, height: 56).background(Color.white).clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: ink.opacity(0.18), radius: 8, x: 3, y: 5)
+    }
+
+    private func toggleReaction(_ value: AnalysisItemReaction) {
+        let next: AnalysisItemReaction = reaction == value ? .none : value
+        reaction = next
+        onReaction?(next)
+    }
+
+    private var heroMeta: String {
+        [analysisSector?.trimmingCharacters(in: .whitespacesAndNewlines), analysisTitle.trimmingCharacters(in: .whitespacesAndNewlines)]
+            .compactMap { value in guard let value, !value.isEmpty else { return nil }; return value }
+            .joined(separator: " · ")
+    }
+
+    private func referenceRiskColor(_ level: RiskLevel) -> Color {
+        switch level {
+        case .critical: return Color(hex: "#C9352B")
+        case .high: return Color(hex: "#DD6B20")
+        case .medium: return Color(hex: "#C9A227")
+        case .low: return green
+        case .unknown: return Color(hex: "#8A8A8A")
+        }
+    }
+
+    private func methodRiskBandLabel(_ band: RiskBand) -> String {
+        let locale = Locale(identifier: RDLanguage.current == .turkish ? "tr_TR" : "en_US")
+        return band.label.uppercased(with: locale)
+    }
+
+    private func scoreText(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+
+    private func copy(_ tr: String, _ en: String) -> String { RDLanguage.current == .turkish ? tr : en }
+    private func referenceFont(_ size: CGFloat, _ weight: Font.Weight) -> Font {
+        ResultTypography.font(size, weight)
     }
 }
 
 #Preview {
-    RiskDetailView(finding: Finding.mock[0], method: .fineKinney)
+    RiskDetailView(finding: Finding.mock[0], method: .fineKinney, analysisTitle: "Şantiye Alanı", analysisSector: "İnşaat")
         .environmentObject(AppState())
 }
 
 private struct ResultDetailPhoto: View {
     let image: UIImage?
     let path: String?
+    var cornerRadius: CGFloat = 16
     @State private var remoteImage: UIImage?
     @State private var loadedPath: String?
 
     var body: some View {
         ZStack {
             if let remoteImage {
-                Image(uiImage: remoteImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Image(uiImage: remoteImage).resizable().scaledToFill().frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Image(uiImage: image).resizable().scaledToFill().frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                AnalysisThumbnail(path: nil, cornerRadius: 16)
+                AnalysisThumbnail(path: nil, cornerRadius: cornerRadius)
             }
         }
         .clipped()
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .task(id: path) {
-            await loadRemoteIfNeeded()
-        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .task(id: path) { await loadRemoteIfNeeded() }
     }
 
     private func loadRemoteIfNeeded() async {
@@ -467,9 +483,7 @@ private struct ResultDetailPhoto: View {
         guard let path else { return }
         do {
             let data = try await AnalysisService.shared.photoData(path: path)
-            if let downloaded = UIImage(data: data) {
-                remoteImage = downloaded
-            }
+            if let downloaded = UIImage(data: data) { remoteImage = downloaded }
         } catch {
             remoteImage = nil
         }

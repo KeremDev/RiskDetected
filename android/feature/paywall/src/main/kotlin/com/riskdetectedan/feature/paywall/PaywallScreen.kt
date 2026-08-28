@@ -55,6 +55,9 @@ private const val PLAY_SUBSCRIPTIONS_URL = "https://play.google.com/store/accoun
 fun PaywallScreen(
     onBack: (() -> Unit)? = null,
     initialPlan: PaywallPlan? = null,
+    resultAnalysisId: String? = null,
+    resultSection: String? = null,
+    resultFunnelSessionId: String? = null,
     viewModel: PaywallViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
@@ -68,6 +71,14 @@ fun PaywallScreen(
     val uriHandler = LocalUriHandler.current
     var legalDocumentKind by remember { mutableStateOf<String?>(null) }
     var didApplyInitialPlan by remember(initialPlan) { mutableStateOf(false) }
+
+    LaunchedEffect(resultAnalysisId, resultSection, resultFunnelSessionId) {
+        viewModel.begin(
+            resultAnalysisId = resultAnalysisId,
+            resultSection = resultSection,
+            inheritedFunnelSessionId = resultFunnelSessionId,
+        )
+    }
 
     LaunchedEffect(state, initialPlan) {
         if (!didApplyInitialPlan && initialPlan != null && state is PaywallUiState.Loaded) {

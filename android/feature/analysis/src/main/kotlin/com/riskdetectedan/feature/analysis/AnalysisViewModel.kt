@@ -7,6 +7,11 @@ import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.analysis.AnalysisRepository
 import com.riskdetectedan.core.data.analysis.AnalysisResultSummary
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubRepository
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubResponse
+import com.riskdetectedan.core.data.analysis.AnalysisResultSectionId
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubItem
+import com.riskdetectedan.core.data.analysis.AnalysisItemReaction
 import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.data.analysis.AnalysisStatus
 import com.riskdetectedan.core.data.analysis.CreateAnalysisRequest
@@ -69,6 +74,7 @@ class AnalysisViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val planCapabilitiesRepository: PlanCapabilitiesRepository,
     private val releasePolicyRepository: ReleasePolicyRepository,
+    private val resultHubRepository: AnalysisResultHubRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<CreateAnalysisUiState>(CreateAnalysisUiState.Idle)
@@ -99,6 +105,10 @@ class AnalysisViewModel @Inject constructor(
 
     private val _resultPhotoBytes = MutableStateFlow<List<ByteArray>>(emptyList())
     val resultPhotoBytes: StateFlow<List<ByteArray>> = _resultPhotoBytes.asStateFlow()
+
+    private val _resultHub = MutableStateFlow<AnalysisResultHubResponse?>(null)
+    val resultHub: StateFlow<AnalysisResultHubResponse?> = _resultHub.asStateFlow()
+    private val resultHubFunnelSessionId = UUID.randomUUID().toString()
 
     /**
      * Full submit flow, mirroring AnalysisService.swift's sequence: create -> upload photo(s)
@@ -390,6 +400,87 @@ class AnalysisViewModel @Inject constructor(
         val photos = (photoRepository.listPhotos(analysisId) as? RdResult.Success)?.value.orEmpty()
         _resultPhotoBytes.value = photos.mapNotNull { photo ->
             (photoRepository.downloadPhoto(photo.storagePath) as? RdResult.Success)?.value
+        }
+        _resultHub.value = (resultHubRepository.load(analysisId) as? RdResult.Success)
+            ?.value
+            ?.takeIf { it.enabled }
+        if (_resultHub.value != null) {
+            resultHubRepository.recordEvent(
+                analysisId = analysisId,
+                name = "result_screen_viewed",
+                section = AnalysisResultSectionId.RiskAnalysis,
+                funnelSessionId = resultHubFunnelSessionId,
+            )
+        }
+    }
+
+    fun setResultFeedback(
+        analysisId: String,
+        section: AnalysisResultSectionId,
+        item: AnalysisResultHubItem,
+        reaction: AnalysisItemReaction,
+        reasonCode: String? = null,
+    ) {
+        _resultHub.value = _resultHub.value?.copy(
+            sections = _resultHub.value?.sections.orEmpty().map { current ->
+                if (current.id != section) current else current.copy(
+                    items = current.items.map { if (it.id == item.id) it.copy(userReaction = reaction) else it },
+                )
+            },
+        )
+        viewModelScope.launch {
+            resultHubRepository.setFeedback(analysisId, section, item, reaction, reasonCode)
+            resultHubRepository.recordEvent(
+                analysisId = analysisId,
+                name = if (reaction == AnalysisItemReaction.None) "result_feedback_cleared" else "result_feedback_set",
+                section = section,
+                funnelSessionId = resultHubFunnelSessionId,
+                itemId = item.id,
+            )
+        }
+    }
+
+    fun recordResultEvent(
+        analysisId: String,
+        name: String,
+        section: AnalysisResultSectionId?,
+        itemId: String? = null,
+    ) {
+        viewModelScope.launch {
+            resultHubRepository.recordEvent(
+                analysisId = analysisId,
+                name = name,
+                section = section,
+                funnelSessionId = resultHubFunnelSessionId,
+                itemId = itemId,
+            )
+        }
+    }
+
+    fun currentResultHubFunnelSessionId(): String = resultHubFunnelSessionId
+
+    fun mutateNotebookEntry(
+        analysisId: String,
+        item: AnalysisResultHubItem,
+        mutation: String,
+        findingText: String? = null,
+        recommendationText: String? = null,
+    ) {
+        viewModelScope.launch {
+            when (resultHubRepository.mutateNotebook(
+                analysisId = analysisId,
+                entryId = item.id,
+                mutation = mutation,
+                findingText = findingText,
+                recommendationText = recommendationText,
+            )) {
+                is RdResult.Success -> {
+                    _resultHub.value = (resultHubRepository.load(analysisId) as? RdResult.Success)
+                        ?.value
+                        ?.takeIf { it.enabled }
+                }
+                is RdResult.Failure -> Unit
+            }
         }
     }
 

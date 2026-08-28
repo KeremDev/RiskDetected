@@ -159,10 +159,9 @@ struct AuthView: View {
 
     private var optionsForm: some View {
         VStack(spacing: 10) {
-            RDButton(title: RDLocalization.string("auth.auth.view.e.posta.ile.giris.yap.ff1b3d8b", table: .auth, fallback: "E-posta ile giriş yap"), style: .secondary, icon: "envelope.fill") {
+            emailSignInButton {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
-            .accessibilityIdentifier("auth.email.start")
 
             HStack(spacing: 12) {
                 Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
@@ -210,6 +209,42 @@ struct AuthView: View {
         }
     }
 
+    private func emailSignInButton(action: @escaping () -> Void) -> some View {
+        let localizedTitle = RDLocalization.string(
+            "auth.auth.view.e.posta.ile.giris.yap.ff1b3d8b",
+            table: .auth,
+            fallback: "E-posta ile giriş yap"
+        )
+
+        return Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: "envelope.fill")
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdGreenDark)
+
+                Text(localizedTitle)
+                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdOnyx)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .padding(.horizontal, 18)
+            .background(Color.rdWhite.opacity(0.98))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.rdOnyx, lineWidth: 1.5)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .shadow(color: Color.rdOnyx.opacity(0.08), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(localizedTitle)
+        .accessibilityIdentifier("auth.email.start")
+    }
+
     private func googleButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 9) {
@@ -237,11 +272,18 @@ struct AuthView: View {
             .background(Color.rdWhite)
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.rdLine, lineWidth: 1)
+                    .stroke(Color.rdOnyx, lineWidth: 1.5)
             )
             .clipShape(RoundedRectangle(cornerRadius: 14))
+            .shadow(color: Color.rdOnyx.opacity(0.08), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(RDPressableButtonStyle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            isSigningInWithGoogle
+                ? RDLocalization.string("auth.auth.view.google.ile.baglaniyor.d73e6d77", table: .auth, fallback: "Google ile bağlanıyor...")
+                : GoogleWordmark.localizedTitle
+        )
     }
 
     private var legalNotice: some View {
@@ -653,17 +695,43 @@ private struct GoogleMark: View {
 }
 
 private struct GoogleWordmark: View {
-    var body: some View {
-        Text(
-            RDLocalization.string(
-                "auth.google.continue",
-                table: .auth,
-                fallback: "Google ile devam et"
-            )
+    static var localizedTitle: String {
+        RDLocalization.string(
+            "auth.google.continue",
+            table: .auth,
+            fallback: "Google ile devam et"
         )
-        .foregroundStyle(Color.rdBlack)
+    }
+
+    var body: some View {
+        localizedText
         .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
         .tracking(-0.2)
+        .lineLimit(1)
+        .minimumScaleFactor(0.82)
+        .accessibilityHidden(true)
+    }
+
+    private var localizedText: Text {
+        let title = Self.localizedTitle
+        guard let range = title.range(of: "Google", options: [.caseInsensitive]) else {
+            return Text(title).foregroundColor(Color.rdOnyx)
+        }
+
+        let prefix = String(title[..<range.lowerBound])
+        let suffix = String(title[range.upperBound...])
+        return Text(prefix).foregroundColor(Color.rdOnyx)
+            + googleBrandText
+            + Text(suffix).foregroundColor(Color.rdOnyx)
+    }
+
+    private var googleBrandText: Text {
+        Text("G").foregroundColor(Color(hex: "#4285F4"))
+            + Text("o").foregroundColor(Color(hex: "#EA4335"))
+            + Text("o").foregroundColor(Color(hex: "#FBBC05"))
+            + Text("g").foregroundColor(Color(hex: "#4285F4"))
+            + Text("l").foregroundColor(Color(hex: "#34A853"))
+            + Text("e").foregroundColor(Color(hex: "#EA4335"))
     }
 }
 

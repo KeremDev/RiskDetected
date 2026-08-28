@@ -370,19 +370,21 @@ export function coverageFindingKey(hazard: FindingRecord): string {
     .join("|");
 }
 
-export function areLikelyDuplicateCoverageFindings(
+export type CoverageDuplicateReason = "duplicate_exact" | "duplicate_fuzzy";
+
+export function coverageDuplicateReason(
   left: FindingRecord,
   right: FindingRecord,
-): boolean {
+): CoverageDuplicateReason | null {
   const leftKey = coverageFindingKey(left);
   const rightKey = coverageFindingKey(right);
-  if (leftKey && leftKey === rightKey) return true;
+  if (leftKey && leftKey === rightKey) return "duplicate_exact";
 
   const leftEvidence = normalizedTextKey(left.observed_evidence);
   const rightEvidence = normalizedTextKey(right.observed_evidence);
   const evidenceHasDetail = normalizedTextTokens(leftEvidence).length >= 5 &&
     normalizedTextTokens(rightEvidence).length >= 5;
-  if (!evidenceHasDetail) return false;
+  if (!evidenceHasDetail) return null;
 
   const leftTitle = normalizedTextKey(left.title);
   const rightTitle = normalizedTextKey(right.title);
@@ -393,9 +395,11 @@ export function areLikelyDuplicateCoverageFindings(
   );
 
   if (leftTitle && leftTitle === rightTitle && evidenceSimilarity >= 0.65) {
-    return true;
+    return "duplicate_fuzzy";
   }
-  if (titleSimilarity >= 0.7 && evidenceSimilarity >= 0.72) return true;
+  if (titleSimilarity >= 0.7 && evidenceSimilarity >= 0.72) {
+    return "duplicate_fuzzy";
+  }
 
   const correctiveSimilarity = tokenJaccardSimilarity(
     left.corrective_action,
@@ -407,7 +411,16 @@ export function areLikelyDuplicateCoverageFindings(
   );
 
   return evidenceSimilarity >= 0.8 &&
-    correctiveSimilarity >= 0.72 && rootCauseSimilarity >= 0.72;
+      correctiveSimilarity >= 0.72 && rootCauseSimilarity >= 0.72
+    ? "duplicate_fuzzy"
+    : null;
+}
+
+export function areLikelyDuplicateCoverageFindings(
+  left: FindingRecord,
+  right: FindingRecord,
+): boolean {
+  return coverageDuplicateReason(left, right) !== null;
 }
 
 const COVERAGE_SUBFINDING_GENERIC_TOKENS = new Set([

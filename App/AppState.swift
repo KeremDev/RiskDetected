@@ -423,6 +423,13 @@ final class AppState: ObservableObject {
             Task { await resolved.resetLocalSessionForUITests() }
             return
         }
+        if Self.isUITestAuthLaunch {
+            hasSeenOnboarding = true
+            UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
+            flow = .auth
+            Task { await resolved.resetLocalSessionForUITests() }
+            return
+        }
         if Self.isUITestMainLaunch {
             let testTier: SubscriptionTier = Self.isUITestFreeTierLaunch
                 ? .free
@@ -925,6 +932,11 @@ final class AppState: ObservableObject {
             || ProcessInfo.processInfo.environment["RD_UI_TEST_MAIN"] == "1"
     }
 
+    private static var isUITestAuthLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_AUTH")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_AUTH"] == "1"
+    }
+
     private static var isUITestFreeTierLaunch: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_FREE_TIER")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_FREE_TIER"] == "1"
@@ -946,7 +958,7 @@ final class AppState: ObservableObject {
     }
 
     private static func prepareForUITestLaunchIfNeeded() {
-        guard isUITestResetLaunch || isUITestMainLaunch else { return }
+        guard isUITestResetLaunch || isUITestAuthLaunch || isUITestMainLaunch else { return }
         let defaults = UserDefaults.standard
         if isUITestResetLaunch {
             [

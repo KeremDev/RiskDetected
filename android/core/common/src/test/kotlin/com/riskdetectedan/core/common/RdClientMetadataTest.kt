@@ -8,7 +8,7 @@ class RdClientMetadataTest {
     @Test
     fun `first Android release sends the frozen Turkish Turkey context`() {
         assertEquals("android", RdClientMetadata.PLATFORM)
-        assertEquals(2, RdClientMetadata.API_CONTRACT_VERSION)
+        assertEquals(3, RdClientMetadata.API_CONTRACT_VERSION)
         assertEquals("tr", RdClientMetadata.APP_LANGUAGE)
         assertEquals("tr-TR", RdClientMetadata.CONTENT_LOCALE)
         assertEquals("TR", RdClientMetadata.WORK_JURISDICTION_COUNTRY)

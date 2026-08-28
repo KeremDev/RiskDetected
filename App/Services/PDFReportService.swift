@@ -376,7 +376,8 @@ final class PDFReportService: @unchecked Sendable {
     }
 
     private func riskAssessmentPages(input: ReportInput, pageRect: CGRect) -> [[AssessmentTableRow]] {
-        guard !input.findings.isEmpty else { return [] }
+        let scoredFindings = input.findings.filter(\.isScored)
+        guard !scoredFindings.isEmpty else { return [] }
 
         let headerH: CGFloat = 44
         let topY: CGFloat = 82 + headerH
@@ -386,7 +387,7 @@ final class PDFReportService: @unchecked Sendable {
         var currentRows: [AssessmentTableRow] = []
         var usedHeight: CGFloat = 0
 
-        for (index, finding) in input.findings.enumerated() {
+        for (index, finding) in scoredFindings.enumerated() {
             let rowHeight = min(assessmentRowHeight(input: input, finding: finding, ordinal: index + 1), maxRowHeight)
             if !currentRows.isEmpty, usedHeight + rowHeight > maxRowHeight {
                 pages.append(currentRows)
@@ -505,7 +506,7 @@ final class PDFReportService: @unchecked Sendable {
         let gap: CGFloat = 10
 
         for (index, level) in levels.enumerated() {
-            let count = input.findings.filter { $0.band(for: input.options.method).level == level }.count
+            let count = input.findings.filter { $0.isScored && $0.band(for: input.options.method).level == level }.count
             let rect = CGRect(x: origin.x + CGFloat(index) * (width + gap), y: origin.y, width: width, height: 72)
             roundedFill(rect, radius: 12, color: level.pdfBackground)
             drawText("\(count)", in: CGRect(x: rect.minX + 12, y: rect.minY + 10, width: 60, height: 26), font: .monospacedSystemFont(ofSize: 24, weight: .bold), color: level.pdfColor)
@@ -715,8 +716,9 @@ final class PDFReportService: @unchecked Sendable {
 
     private func drawMethodLegend(input: ReportInput, rect: CGRect) {
         roundedStroke(rect, radius: 10, stroke: .rdPDFLine, fill: .white)
-        let total = input.findings.reduce(0) { $0 + $1.score(for: input.options.method) }
-        let top = input.findings.map { $0.score(for: input.options.method) }.max() ?? 0
+        let scoredFindings = input.findings.filter(\.isScored)
+        let total = scoredFindings.reduce(0) { $0 + $1.score(for: input.options.method) }
+        let top = scoredFindings.map { $0.score(for: input.options.method) }.max() ?? 0
         let language = input.options.language
         drawText(copy(language: language, tr: "Metodoloji", en: "Methodology"), in: CGRect(x: rect.minX + 14, y: rect.minY + 7, width: 120, height: 16), font: .systemFont(ofSize: 11, weight: .bold), color: .rdPDFSlate)
         drawText("\(methodName(input.options.method, language: language)) · R = \(methodFormula(input.options.method, language: language))", in: CGRect(x: rect.minX + 14, y: rect.minY + 25, width: 250, height: 16), font: .systemFont(ofSize: 11, weight: .medium), color: .rdPDFBlack)
@@ -1096,11 +1098,15 @@ final class PDFReportService: @unchecked Sendable {
             color: .rdPDFSlate
         )
 
-        let band = finding.band(for: method)
-        roundedFill(CGRect(x: x + 370, y: y + 14, width: 70, height: 34), radius: 8, color: band.level.pdfColor)
-        let score = finding.score(for: method)
-        drawText(scoreText(score, language: language), in: CGRect(x: x + 370, y: y + 19, width: 70, height: 20), font: .monospacedSystemFont(ofSize: 16, weight: .bold), color: .white, alignment: .center)
-        drawText(riskBandLabel(band.level, method: method, score: score, language: language), in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
+        if finding.isScored {
+            let band = finding.band(for: method)
+            roundedFill(CGRect(x: x + 370, y: y + 14, width: 70, height: 34), radius: 8, color: band.level.pdfColor)
+            let score = finding.score(for: method)
+            drawText(scoreText(score, language: language), in: CGRect(x: x + 370, y: y + 19, width: 70, height: 20), font: .monospacedSystemFont(ofSize: 16, weight: .bold), color: .white, alignment: .center)
+            drawText(riskBandLabel(band.level, method: method, score: score, language: language), in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
+        } else {
+            drawText(copy(language: language, tr: "Saha teyidi", en: "Field verification"), in: CGRect(x: x + 360, y: y + 24, width: 90, height: 20), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate, alignment: .center)
+        }
 
         drawFittingText(
             actionTextWithRootCause(for: finding, language: language),
@@ -1415,7 +1421,7 @@ extension PDFReportService {
           "created_at": "2026-07-30T12:00:00Z",
           "analysis_sector": "logistics_warehouse",
           "analysis_sector_source": "user_selected",
-          "analysis_sector_prompt_version": "active-sector-v1",
+          "analysis_sector_prompt_version": "sector-profile-v2",
           "output_language": "en",
           "output_locale": "en-GB",
           "work_jurisdiction_country": "ZZ",

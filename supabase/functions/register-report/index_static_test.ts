@@ -113,7 +113,7 @@ Deno.test("register-report rejects exhausted quota before Storage download", asy
   if (source == null) return;
 
   const quotaIndex = source.indexOf(
-    '.rpc("check_report_quota_eligibility"',
+    '.rpc("check_report_quota_eligibility_v2"',
   );
   const downloadIndex = source.indexOf(".download(storagePath)");
   assert(quotaIndex >= 0 && quotaIndex < downloadIndex);

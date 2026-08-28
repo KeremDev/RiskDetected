@@ -10,6 +10,41 @@ export type QueueReconciliationDecision = {
   reason: string;
 };
 
+export function isProviderBackgroundPendingResponse(params: {
+  httpStatus: number | null;
+  responseBodyParsed: boolean;
+  responseCode: string | null;
+}): boolean {
+  return params.httpStatus === 202 && params.responseBodyParsed &&
+    params.responseCode === "provider_background_pending";
+}
+
+export function providerBackgroundRetrySeconds(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(5, Math.min(120, parsed)) : 15;
+}
+
+/**
+ * A parsed vNext response with one of these codes proves that the nested
+ * function finished and did not commit finalization. It is therefore not an
+ * ambiguous transport loss: the worker may safely release the claim and
+ * retry the checkpointed job without waiting for the full lease.
+ */
+export function isExplicitVNextFailure(params: {
+  httpStatus: number | null;
+  responseBodyParsed: boolean;
+  responseCode: string | null;
+}): boolean {
+  if (
+    !params.responseBodyParsed || params.httpStatus === null ||
+    params.httpStatus < 500 || !params.responseCode
+  ) return false;
+  return /^(?:provider_|vnext_analysis_failed$|v4_analysis_failed$|photo_analysis_failed$)/
+    .test(
+      params.responseCode,
+    );
+}
+
 export function forceCoverageQualityFallback(params: {
   repairKind: unknown;
   queueReadCount: number;

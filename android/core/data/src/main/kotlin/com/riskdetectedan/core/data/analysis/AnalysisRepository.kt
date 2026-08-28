@@ -463,6 +463,6 @@ class AnalysisRepository @Inject constructor(
     private companion object {
         // Must match AnalysisSectorID.activeAnalysisPromptVersion in App/Models/AnalysisSector.swift
         // exactly — this is a real value read by the backend, not a placeholder.
-        const val ANALYSIS_SECTOR_PROMPT_VERSION = "active-sector-v1"
+        const val ANALYSIS_SECTOR_PROMPT_VERSION = "sector-profile-v2"
     }
 }

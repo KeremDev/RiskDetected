@@ -11,13 +11,31 @@ import {
   classifyDispatchObservation,
   DispatchObservation,
   forceCoverageQualityFallback,
+  isExplicitVNextFailure,
+  isProviderBackgroundPendingResponse,
+  providerBackgroundRetrySeconds,
   reconcileQueueAfterDispatch,
 } from "./dispatch-policy.ts";
+import { analysisFunctionForJob } from "./analysis-engine-route.ts";
+import { ANALYZE_NESTED_REQUEST_TIMEOUT_MS } from "../_shared/provider-execution-policy.ts";
 
 const QUEUE_NAME = "analysis_jobs";
 const MAX_READ_COUNT = 3;
-const ANALYZE_WORKER_TIMEOUT_MS = 135_000;
-const ANALYSIS_JOB_VISIBILITY_TIMEOUT_SECONDS = 180;
+const LEGACY_ANALYZE_WORKER_TIMEOUT_MS = 210_000;
+
+function nestedAnalysisTimeoutMs(
+  functionName: "analyze" | "analyze-vnext" | "analyze-v4",
+): number {
+  // vNext stops before Supabase's hosted 150s request idle limit so the
+  // durable queue records a real application timeout instead of an opaque
+  // platform 504. Keep the established legacy worker behavior unchanged.
+  return functionName === "analyze-vnext" || functionName === "analyze-v4"
+    ? ANALYZE_NESTED_REQUEST_TIMEOUT_MS
+    : LEGACY_ANALYZE_WORKER_TIMEOUT_MS;
+}
+// Keep the queue message invisible longer than the nested analysis timeout so
+// another worker cannot pick up the same job while the first dispatch is live.
+const ANALYSIS_JOB_VISIBILITY_TIMEOUT_SECONDS = 240;
 const ANALYSIS_JOB_LEASE_SECONDS = 300;
 
 type QueueMessage = {
@@ -332,8 +350,11 @@ async function drainQueueMessages(params: {
     let workerAttempt = message.read_ct;
     let responseStatus: number | null = null;
     let responseCode: string | null = null;
+    let responseRetryAfterSeconds: number | null = null;
     let responseBodyParsed = false;
     let guardedDispatchReconciled = false;
+    let analysisFunctionName: "analyze" | "analyze-vnext" | "analyze-v4" =
+      "analyze";
 
     try {
       if (isPipelineV2) {
@@ -424,8 +445,59 @@ async function drainQueueMessages(params: {
         }
       }
 
+      if (isPipelineV2 && !isRepairJob && analysisID && userID) {
+        let { data: route, error: routeError } = await params.supabase.rpc(
+          "resolve_analysis_engine_route_v5",
+          {
+            p_user_id: userID,
+            p_analysis_id: analysisID,
+            p_compute_routing: job.analysis_compute_routing ?? {},
+            p_client_routing: job.analysis_engine_client_routing ?? {},
+          },
+        );
+        // Deploy-order compatibility: v5 is the isolated v4 router. If its
+        // migration has not reached a region, the unchanged v3 resolver chain
+        // remains authoritative.
+        if (routeError) {
+          const legacyResolution = await params.supabase.rpc(
+            "resolve_analysis_engine_route_v4",
+            {
+              p_user_id: userID,
+              p_analysis_id: analysisID,
+              p_compute_routing: job.analysis_compute_routing ?? {},
+            },
+          );
+          route = legacyResolution.data;
+          routeError = legacyResolution.error;
+        }
+        if (routeError) {
+          console.warn(
+            "Analysis engine route resolution failed; using legacy",
+            JSON.stringify({
+              analysis_id: analysisID,
+              error: safeText(routeError.message),
+            }),
+          );
+        }
+        analysisFunctionName = analysisFunctionForJob({
+          pipelineV2: true,
+          repairJob: false,
+          resolvedEngine: route?.ok === true && route?.engine === "vnext"
+            ? "vnext"
+            : route?.ok === true && route?.engine === "legacy"
+            ? "legacy"
+            : null,
+          resolvedVariant: route?.ok === true &&
+              route?.engine_variant === "vnext-v4"
+            ? "vnext-v4"
+            : route?.ok === true && route?.engine === "vnext"
+            ? "vnext-v3"
+            : null,
+        });
+      }
+
       const response = await fetchWithTimeout(
-        `${params.supabaseUrl}/functions/v1/analyze`,
+        `${params.supabaseUrl}/functions/v1/${analysisFunctionName}`,
         {
           method: "POST",
           headers: {
@@ -462,7 +534,7 @@ async function drainQueueMessages(params: {
               : {}),
           }),
         },
-        ANALYZE_WORKER_TIMEOUT_MS,
+        nestedAnalysisTimeoutMs(analysisFunctionName),
       );
       responseStatus = response.status;
       const responseText = await response.text();
@@ -473,15 +545,92 @@ async function drainQueueMessages(params: {
         responseCode = typeof responseBody?.code === "string"
           ? responseBody.code
           : null;
+        responseRetryAfterSeconds = providerBackgroundRetrySeconds(
+          responseBody?.retry_after_seconds,
+        );
       } catch {
         responseBodyParsed = false;
         responseCode = null;
       }
 
       if (
+        isPipelineV2 && analysisID && userID && generation !== null &&
+        claimToken && isProviderBackgroundPendingResponse({
+          httpStatus: responseStatus,
+          responseBodyParsed,
+          responseCode,
+        })
+      ) {
+        const { data: released, error: releaseError } = await params.supabase
+          .rpc("release_analysis_job_background_wait_v1", {
+            p_user_id: userID,
+            p_analysis_id: analysisID,
+            p_msg_id: message.msg_id,
+            p_generation: generation,
+            p_claim_token: claimToken,
+          });
+        if (releaseError || released?.ok !== true) {
+          throw new Error(
+            `background_wait_release_failed:${
+              safeText(releaseError?.message ?? released?.state)
+            }`,
+          );
+        }
+        const retryAfterSeconds = responseRetryAfterSeconds ?? 15;
+        await deferAnalysisJobMessage(
+          params.supabase,
+          message.msg_id,
+          retryAfterSeconds,
+        );
+        await recordV2JobEvent({
+          supabase: params.supabase,
+          userID,
+          analysisID,
+          msgID: message.msg_id,
+          generation,
+          workerAttempt,
+          jobMode: isRepairJob ? "repair" : "analysis",
+          eventType: "provider_background_pending",
+          httpStatus: responseStatus,
+          responseCode,
+          claimAction: `release_and_defer_${retryAfterSeconds}s`,
+        });
+        guardedDispatchReconciled = true;
+        retainedForRetry += 1;
+        continue;
+      }
+
+      if (
         isGuardedV2 && analysisID && userID && generation !== null &&
         claimToken
       ) {
+        if (
+          isExplicitVNextFailure({
+            httpStatus: responseStatus,
+            responseBodyParsed,
+            responseCode,
+          })
+        ) {
+          // The nested function returned a parsed, explicit failure and its
+          // engine run is terminal. This is not response loss: persist the
+          // retry state below so the claim can be released immediately.
+          await recordV2JobEvent({
+            supabase: params.supabase,
+            userID,
+            analysisID,
+            msgID: message.msg_id,
+            generation,
+            workerAttempt,
+            jobMode: isRepairJob ? "repair" : "analysis",
+            eventType: "dispatch_application_error",
+            httpStatus: responseStatus,
+            responseCode,
+            claimAction: "release_for_checkpoint_retry",
+            errorText: safeText(responseText, 500),
+          });
+          guardedDispatchReconciled = true;
+          throw new Error(`${responseStatus}:${safeText(responseText)}`);
+        }
         const observation = classifyDispatchObservation({
           transportError: false,
           httpStatus: responseStatus,
@@ -614,7 +763,7 @@ async function drainQueueMessages(params: {
                   coverage_repair_fallback_reason: errorText,
                 }),
               },
-              ANALYZE_WORKER_TIMEOUT_MS,
+              LEGACY_ANALYZE_WORKER_TIMEOUT_MS,
             );
             const fallbackText = await fallbackResponse.text();
             if (!fallbackResponse.ok) {
@@ -657,6 +806,13 @@ async function drainQueueMessages(params: {
         } else if (responseCode === "superseded") {
           await deleteAnalysisJobMessage(params.supabase, message.msg_id);
         } else {
+          if (failureResult?.ok === true) {
+            await deferAnalysisJobMessage(
+              params.supabase,
+              message.msg_id,
+              1,
+            );
+          }
           retainedForRetry += 1;
         }
         failed += 1;
@@ -682,7 +838,7 @@ async function drainQueueMessages(params: {
                 coverage_repair_fallback_reason: errorText,
               }),
             },
-            ANALYZE_WORKER_TIMEOUT_MS,
+            LEGACY_ANALYZE_WORKER_TIMEOUT_MS,
           );
           const fallbackText = await fallbackResponse.text();
           if (!fallbackResponse.ok) {

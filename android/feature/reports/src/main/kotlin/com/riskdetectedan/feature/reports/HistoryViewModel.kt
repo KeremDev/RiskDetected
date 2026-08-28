@@ -193,7 +193,11 @@ class HistoryViewModel @Inject constructor(
         _generatingReportForId.value = item.id
         _reportError.value = null
         viewModelScope.launch {
-            val report = when (val result = reportsRepository.generateExcelReport(item.id, method, companyId)) {
+            val report = when (val result = reportsRepository.generateExcelReport(
+                analysisId = item.id,
+                method = method,
+                companyId = companyId,
+            )) {
                 is RdResult.Success -> result.value
                 is RdResult.Failure -> {
                     _reportError.value = AppErrorMessages.make(

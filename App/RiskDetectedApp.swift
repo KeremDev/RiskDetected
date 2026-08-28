@@ -23,7 +23,9 @@ struct RiskDetectedApp: App {
         WindowGroup {
             Group {
                 #if DEBUG
-                if Self.isPDFReportLocalizationSelfTestLaunch {
+                if Self.isResultHubPDFSelfTestLaunch {
+                    ResultHubPDFSelfTestView()
+                } else if Self.isPDFReportLocalizationSelfTestLaunch {
                     PDFReportLocalizationSelfTestView()
                 } else {
                     RootView()
@@ -60,6 +62,11 @@ struct RiskDetectedApp: App {
         CommandLine.arguments.contains("RD_UI_TEST_PDF_REPORT_LOCALIZATION")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_PDF_REPORT_LOCALIZATION"] == "1"
     }
+
+    private static var isResultHubPDFSelfTestLaunch: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_RESULT_HUB_PDF")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_RESULT_HUB_PDF"] == "1"
+    }
     #endif
 }
 
@@ -81,6 +88,28 @@ private struct PDFReportLocalizationSelfTestView: View {
                     status = "PDF_REPORT_LOCALIZATION_OK"
                 } catch {
                     status = "PDF_REPORT_LOCALIZATION_FAILED: \(error.localizedDescription)"
+                }
+            }
+    }
+}
+
+private struct ResultHubPDFSelfTestView: View {
+    @State private var status = "RESULT_HUB_PDF_RUNNING"
+
+    var body: some View {
+        Text(status)
+            .font(.system(.body, design: .monospaced))
+            .multilineTextAlignment(.center)
+            .padding()
+            .accessibilityIdentifier("result_hub_pdf.status")
+            .task {
+                do {
+                    let urls = try await Task.detached(priority: .userInitiated) {
+                        try AnalysisResultHubPDFService.runResultHubVisualSelfTest()
+                    }.value
+                    status = urls.count == 4 ? "RESULT_HUB_PDF_OK" : "RESULT_HUB_PDF_FAILED: count"
+                } catch {
+                    status = "RESULT_HUB_PDF_FAILED: \(error.localizedDescription)"
                 }
             }
     }

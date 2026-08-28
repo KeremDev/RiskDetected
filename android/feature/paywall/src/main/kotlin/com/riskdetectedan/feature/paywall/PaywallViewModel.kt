@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.revenuecat.purchases.PurchasesTransactionException
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.auth.AuthRepository
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubRepository
+import com.riskdetectedan.core.data.analysis.AnalysisResultSectionId
 import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.billing.BillingSubscriptionState
@@ -79,6 +81,7 @@ class PaywallViewModel @Inject constructor(
     private val billingRepository: BillingRepository,
     private val profileRepository: ProfileRepository,
     private val paywallEventRepository: PaywallEventRepository,
+    private val resultHubRepository: AnalysisResultHubRepository,
     private val releasePolicyRepository: ReleasePolicyRepository,
 ) : ViewModel() {
 
@@ -114,9 +117,22 @@ class PaywallViewModel @Inject constructor(
     // One funnel session per ViewModel instance — mirrors iOS's per-presentation
     // funnel_session_id (a fresh UUID each time the paywall is shown, reused by every event
     // fired during that visit).
-    private val funnelSessionId = UUID.randomUUID().toString()
+    private var funnelSessionId = UUID.randomUUID().toString()
+    private var resultHubAnalysisId: String? = null
+    private var resultHubSection: AnalysisResultSectionId? = null
+    private var didBegin = false
 
-    init {
+    fun begin(
+        resultAnalysisId: String? = null,
+        resultSection: String? = null,
+        inheritedFunnelSessionId: String? = null,
+    ) {
+        if (didBegin) return
+        didBegin = true
+        funnelSessionId = inheritedFunnelSessionId?.takeIf { it.isNotBlank() } ?: funnelSessionId
+        resultHubAnalysisId = resultAnalysisId?.takeIf { it.isNotBlank() }
+        resultHubSection = resultSection.toResultSectionOrNull()
+        recordResultHubEvent("paywall_viewed")
         load()
     }
 
@@ -248,6 +264,7 @@ class PaywallViewModel @Inject constructor(
         _purchaseError.value = null
         viewModelScope.launch {
             if (!ensurePaymentsGateOpen()) return@launch
+            recordResultHubEvent("checkout_started")
             recordEvent(
                 userId,
                 PaywallEventName.PurchaseStarted,
@@ -271,6 +288,7 @@ class PaywallViewModel @Inject constructor(
                         selectedTier = result.value,
                         billingPackage = billingPackage,
                     )
+                    recordResultHubEvent("purchase_completed")
                 }
                 is RdResult.Failure -> {
                     _isPurchasing.value = false
@@ -371,6 +389,26 @@ class PaywallViewModel @Inject constructor(
                 ),
             )
         }
+    }
+
+    private fun recordResultHubEvent(name: String) {
+        val analysisId = resultHubAnalysisId ?: return
+        val section = resultHubSection ?: return
+        viewModelScope.launch {
+            resultHubRepository.recordEvent(
+                analysisId = analysisId,
+                name = name,
+                section = section,
+                funnelSessionId = funnelSessionId,
+            )
+        }
+    }
+
+    private fun String?.toResultSectionOrNull(): AnalysisResultSectionId? = when (this) {
+        "risk_analysis" -> AnalysisResultSectionId.RiskAnalysis
+        "expert_recommendations" -> AnalysisResultSectionId.ExpertRecommendations
+        "approved_notebook" -> AnalysisResultSectionId.ApprovedNotebook
+        else -> null
     }
 
     fun clearPurchaseError() {

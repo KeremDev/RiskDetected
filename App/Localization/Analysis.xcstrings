@@ -1,6 +1,24 @@
 {
   "sourceLanguage": "tr",
   "strings": {
+    "analysis.result.view.analiz.bulgulari.11d57f5a": {
+      "comment": "swiftui_text; App/Views/Result/ResultView.swift; v4 neutral finding heading; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz bulguları"
+          }
+        }
+      }
+    },
     "analysis.analysis.canvas.atik.sizinti.dokulme.cevresel.maruziyet.ve.saha..cb35673c": {
       "comment": "swift_user_copy; App/Models/AnalysisCanvas.swift:82; placeholders: none; review: machine_draft",
       "extractionState": "manual",

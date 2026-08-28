@@ -160,6 +160,16 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 onOpenCompanies = { navController.navigate(Companies) },
                 onUpgrade = { navController.navigate(Paywall) },
                 onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+                onResultHubUpgrade = { tier, analysisId, section, funnelSessionId ->
+                    navController.navigate(
+                        PaywallForTier(
+                            tier = tier.name.lowercase(),
+                            resultAnalysisId = analysisId,
+                            resultSection = section.wireValue,
+                            resultFunnelSessionId = funnelSessionId,
+                        ),
+                    )
+                },
             )
         }
         composable<AnalysisReports> { backStackEntry ->
@@ -178,6 +188,16 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 onOpenCompanies = { navController.navigate(Companies) },
                 onUpgrade = { navController.navigate(Paywall) },
                 onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+                onResultHubUpgrade = { tier, analysisId, section, funnelSessionId ->
+                    navController.navigate(
+                        PaywallForTier(
+                            tier = tier.name.lowercase(),
+                            resultAnalysisId = analysisId,
+                            resultSection = section.wireValue,
+                            resultFunnelSessionId = funnelSessionId,
+                        ),
+                    )
+                },
             )
         }
         composable<Companies> { CompanyListScreen(onBack = { navController.popBackStack() }) }
@@ -205,8 +225,18 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 PaywallScreen(
                     onBack = { navController.popBackStack() },
                     initialPlan = if (args.tier == "pro") PaywallPlan.Pro else PaywallPlan.Plus,
+                    resultAnalysisId = args.resultAnalysisId,
+                    resultSection = args.resultSection,
+                    resultFunnelSessionId = args.resultFunnelSessionId,
                 )
             }
         }
     }
 }
+
+private val com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.wireValue: String
+    get() = when (this) {
+        com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.RiskAnalysis -> "risk_analysis"
+        com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.ExpertRecommendations -> "expert_recommendations"
+        com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.ApprovedNotebook -> "approved_notebook"
+    }

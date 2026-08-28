@@ -51,7 +51,8 @@ Deno.test("Android client fixture matches the frozen Kotlin request contract", a
   if (metadata == null || analysis == null) return;
 
   assertStringIncludes(metadata, 'const val PLATFORM = "android"');
-  assertStringIncludes(metadata, "const val API_CONTRACT_VERSION = 2");
+  assertStringIncludes(metadata, "const val API_CONTRACT_VERSION = 3");
+  assertStringIncludes(metadata, '"safety_claim_v4_scoreless" to true');
   assertStringIncludes(metadata, 'const val APP_LANGUAGE = "tr"');
   assertStringIncludes(metadata, 'const val CONTENT_LOCALE = "tr-TR"');
   assertStringIncludes(metadata, 'const val WORK_JURISDICTION_COUNTRY = "TR"');

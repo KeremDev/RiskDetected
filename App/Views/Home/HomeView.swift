@@ -17,10 +17,38 @@ private struct PaywallPresentation: Identifiable {
     let id = UUID()
 }
 
-private enum PhotoTrayPickerRequest {
+private enum PhotoTrayDismissDestination {
     case camera
     case gallery
+    case annotation(UUID)
+    case preAnalysis
+    case paywall
 }
+
+private struct PendingPhotoImport {
+    let images: [UIImage]
+    let shouldAnnotate: Bool
+    let returnToPhotoTrayAfterAnnotate: Bool
+}
+
+#if DEBUG
+private struct GalleryPickerDismissFixtureView: View {
+    let onPick: () -> Void
+    @State private var didPick = false
+
+    var body: some View {
+        Color.black
+            .ignoresSafeArea()
+            .onAppear {
+                guard !didPick else { return }
+                didPick = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    onPick()
+                }
+            }
+    }
+}
+#endif
 
 private struct AnalysisPhotoDraft: Identifiable {
     let id: UUID
@@ -56,7 +84,9 @@ struct HomeView: View {
     @State private var annotatingPhotoID: UUID?
     @State private var queuedAnnotatePhotoIDs: [UUID] = []
     @State private var returnToPhotoTrayAfterAnnotation = false
-    @State private var pendingPhotoTrayPickerRequest: PhotoTrayPickerRequest?
+    @State private var pendingPhotoTrayDismissDestination: PhotoTrayDismissDestination?
+    @State private var pendingPhotoImport: PendingPhotoImport?
+    @State private var continueAfterAnnotationDismiss = false
 
     // Analiz state
     @State private var analysisResult: AnalysisResultBundle? = nil
@@ -193,7 +223,7 @@ struct HomeView: View {
         .onChange(of: app.quickScanRequestID) { _ in
             handleQuickScanRequest()
         }
-        .sheet(isPresented: $showSourceDialog, onDismiss: presentPendingPhotoTrayPickerIfNeeded) {
+        .sheet(isPresented: $showSourceDialog, onDismiss: presentPendingPhotoTrayDestinationIfNeeded) {
             PhotoMediaTraySheet(
                 photos: selectedPhotos,
                 maxPhotoCount: maxSelectablePhotos,
@@ -207,16 +237,12 @@ struct HomeView: View {
                 onRemove: removePhoto,
                 onMove: movePhoto,
                 onLockedSlot: {
+                    pendingPhotoTrayDismissDestination = .paywall
                     showSourceDialog = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        showPlainPaywall()
-                    }
                 },
                 onStartAnalysis: {
+                    pendingPhotoTrayDismissDestination = .preAnalysis
                     showSourceDialog = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                        continueFromPhotoTrayToAnalysis()
-                    }
                 },
                 onClose: { showSourceDialog = false }
             )
@@ -267,16 +293,19 @@ struct HomeView: View {
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
-        .fullScreenCover(isPresented: $showCameraPicker) {
+        .fullScreenCover(
+            isPresented: $showCameraPicker,
+            onDismiss: consumePendingPhotoImportAfterPickerDismissal
+        ) {
             CameraPicker { image in
-                showCameraPicker = false
                 if let image {
-                    appendPickedPhotos(
-                        [image],
+                    pendingPhotoImport = PendingPhotoImport(
+                        images: [image],
                         shouldAnnotate: true,
                         returnToPhotoTrayAfterAnnotate: true
                     )
                 }
+                showCameraPicker = false
             }
             .ignoresSafeArea()
             .preferredColorScheme(preferredModalColorScheme)
@@ -284,44 +313,40 @@ struct HomeView: View {
                 showCameraPicker = false
             }
         }
-        .fullScreenCover(isPresented: $showGalleryPicker) {
-            MultiGalleryPicker(selectionLimit: remainingPhotoSlots) { images in
-                showGalleryPicker = false
-                if !images.isEmpty {
-                    appendPickedPhotos(
-                        images,
-                        shouldAnnotate: true,
-                        returnToPhotoTrayAfterAnnotate: true
-                    )
+        .fullScreenCover(
+            isPresented: $showGalleryPicker,
+            onDismiss: consumePendingPhotoImportAfterPickerDismissal
+        ) {
+            #if DEBUG
+            if Self.isUITestSimulatedGalleryImport {
+                GalleryPickerDismissFixtureView {
+                    stageGalleryPhotoImport([
+                        Self.uiTestPhotoFixture(seed: 21),
+                        Self.uiTestPhotoFixture(seed: 22),
+                        Self.uiTestPhotoFixture(seed: 23),
+                    ])
                 }
+            } else {
+                galleryPickerContent
             }
-            .ignoresSafeArea()
-            .preferredColorScheme(preferredModalColorScheme)
-            .onDisappear {
-                showGalleryPicker = false
-            }
+            #else
+            galleryPickerContent
+            #endif
         }
-        .fullScreenCover(isPresented: annotatePresentationBinding) {
+        .fullScreenCover(
+            isPresented: annotatePresentationBinding,
+            onDismiss: continueAfterAnnotationPresentationDismissal
+        ) {
             AnnotateView(
                 initialImage: annotatingPhoto?.image,
                 primaryActionTitle: annotatePrimaryActionTitle,
                 primaryActionIcon: annotatePrimaryActionIcon,
                 onCancel: {
-                    pendingAnnotateRequestID = nil
-                    annotatingPhotoID = nil
-                    showAnnotate = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        continueAfterAnnotationStep()
-                    }
+                    dismissAnnotationAndContinue()
                 },
                 onAnalyze: { annotated in
                     updateAnnotatedPhoto(with: annotated)
-                    pendingAnnotateRequestID = nil
-                    annotatingPhotoID = nil
-                    showAnnotate = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        continueAfterAnnotationStep()
-                    }
+                    dismissAnnotationAndContinue()
                 }
             )
             .preferredColorScheme(preferredModalColorScheme)
@@ -431,6 +456,17 @@ struct HomeView: View {
         app.themePreference.colorScheme ?? colorScheme
     }
 
+    private var galleryPickerContent: some View {
+        MultiGalleryPicker(selectionLimit: remainingPhotoSlots) { images in
+            stageGalleryPhotoImport(images)
+        }
+        .ignoresSafeArea()
+        .preferredColorScheme(preferredModalColorScheme)
+        .onDisappear {
+            showGalleryPicker = false
+        }
+    }
+
     private var scanButtonBackground: Color {
         preferredModalColorScheme == .dark ? .rdGreen : .rdOnyx
     }
@@ -476,6 +512,7 @@ struct HomeView: View {
                 if !newValue {
                     pendingAnnotateRequestID = nil
                     annotatingPhotoID = nil
+                    continueAfterAnnotationDismiss = true
                     showAnnotate = false
                 }
             }
@@ -1128,6 +1165,9 @@ struct HomeView: View {
         pendingAnnotateRequestID = nil
         queuedAnnotatePhotoIDs = []
         returnToPhotoTrayAfterAnnotation = false
+        pendingPhotoTrayDismissDestination = nil
+        pendingPhotoImport = nil
+        continueAfterAnnotationDismiss = false
     }
 
     private func handleQuickScanRequest() {
@@ -1182,7 +1222,7 @@ struct HomeView: View {
         }
         if returnToPhotoTrayAfterAnnotation {
             returnToPhotoTrayAfterAnnotation = false
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            DispatchQueue.main.async {
                 showSourceDialog = true
             }
             return
@@ -1378,21 +1418,25 @@ struct HomeView: View {
     }
 
     private func openCameraFromPhotoTray() {
-        pendingPhotoTrayPickerRequest = .camera
+        pendingPhotoTrayDismissDestination = .camera
         showSourceDialog = false
     }
 
     private func openGalleryFromPhotoTray() {
-        pendingPhotoTrayPickerRequest = .gallery
+        pendingPhotoTrayDismissDestination = .gallery
         showSourceDialog = false
     }
 
-    private func presentPendingPhotoTrayPickerIfNeeded() {
-        guard let request = pendingPhotoTrayPickerRequest else { return }
-        pendingPhotoTrayPickerRequest = nil
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+    private func presentPendingPhotoTrayDestinationIfNeeded() {
+        guard let destination = pendingPhotoTrayDismissDestination else { return }
+        pendingPhotoTrayDismissDestination = nil
+
+        // `onDismiss` tepsinin gerçek kapanış animasyonu tamamlandıktan sonra çağrılır.
+        // Sabit gecikmeyle ikinci bir sheet açmak hızlı simülatörde çalışsa da gerçek
+        // cihazda sunum çakışmasına ve ilk dokunuşun kaybolmasına yol açıyordu.
+        DispatchQueue.main.async {
             guard !showSourceDialog else { return }
-            switch request {
+            switch destination {
             case .camera:
                 if UIImagePickerController.isSourceTypeAvailable(.camera) {
                     presentCameraPicker()
@@ -1401,12 +1445,19 @@ struct HomeView: View {
                 }
             case .gallery:
                 presentGalleryPicker()
+            case let .annotation(photoID):
+                scheduleAnnotatePresentation(for: photoID)
+            case .preAnalysis:
+                continueFromPhotoTrayToAnalysis()
+            case .paywall:
+                showPlainPaywall()
             }
         }
     }
 
     private func presentCameraPicker() {
         showCameraPicker = false
+        pendingPhotoImport = nil
         DispatchQueue.main.async {
             guard !showSourceDialog else { return }
             showCameraPicker = true
@@ -1415,6 +1466,7 @@ struct HomeView: View {
 
     private func presentGalleryPicker() {
         showGalleryPicker = false
+        pendingPhotoImport = nil
         DispatchQueue.main.async {
             guard !showSourceDialog else { return }
             showGalleryPicker = true
@@ -1458,10 +1510,12 @@ struct HomeView: View {
         guard selectedPhotos.contains(where: { $0.id == id }) else { return }
         queuedAnnotatePhotoIDs = []
         returnToPhotoTrayAfterAnnotation = returnToPhotoTray
-        showSourceDialog = false
-        annotatingPhotoID = id
-        pendingAnnotateRequestID = nil
-        showAnnotate = true
+        if showSourceDialog {
+            pendingPhotoTrayDismissDestination = .annotation(id)
+            showSourceDialog = false
+        } else {
+            scheduleAnnotatePresentation(for: id)
+        }
     }
 
     private func updateAnnotatedPhoto(with image: UIImage) {
@@ -1490,7 +1544,9 @@ struct HomeView: View {
         annotatingPhotoID = nil
         pendingAnnotateRequestID = nil
         returnToPhotoTrayAfterAnnotation = false
-        pendingPhotoTrayPickerRequest = nil
+        pendingPhotoTrayDismissDestination = nil
+        pendingPhotoImport = nil
+        continueAfterAnnotationDismiss = false
         showAnnotate = false
         showCameraPicker = false
         showGalleryPicker = false
@@ -1510,12 +1566,50 @@ struct HomeView: View {
         let requestID = UUID()
         annotatingPhotoID = photoID
         pendingAnnotateRequestID = requestID
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        DispatchQueue.main.async {
             guard pendingAnnotateRequestID == requestID,
                   annotatingPhotoID == photoID,
                   selectedPhotos.contains(where: { $0.id == photoID })
             else { return }
             showAnnotate = true
+        }
+    }
+
+    private func consumePendingPhotoImportAfterPickerDismissal() {
+        guard let pendingPhotoImport else { return }
+        self.pendingPhotoImport = nil
+        DispatchQueue.main.async {
+            appendPickedPhotos(
+                pendingPhotoImport.images,
+                shouldAnnotate: pendingPhotoImport.shouldAnnotate,
+                returnToPhotoTrayAfterAnnotate: pendingPhotoImport.returnToPhotoTrayAfterAnnotate
+            )
+        }
+    }
+
+    private func stageGalleryPhotoImport(_ images: [UIImage]) {
+        if !images.isEmpty {
+            pendingPhotoImport = PendingPhotoImport(
+                images: images,
+                shouldAnnotate: true,
+                returnToPhotoTrayAfterAnnotate: true
+            )
+        }
+        showGalleryPicker = false
+    }
+
+    private func dismissAnnotationAndContinue() {
+        pendingAnnotateRequestID = nil
+        annotatingPhotoID = nil
+        continueAfterAnnotationDismiss = true
+        showAnnotate = false
+    }
+
+    private func continueAfterAnnotationPresentationDismissal() {
+        guard continueAfterAnnotationDismiss else { return }
+        continueAfterAnnotationDismiss = false
+        DispatchQueue.main.async {
+            continueAfterAnnotationStep()
         }
     }
 
@@ -1645,6 +1739,11 @@ struct HomeView: View {
     private static var isUITestDirectHomePhotoPick: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_DIRECT_HOME_PHOTO_PICK")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_DIRECT_HOME_PHOTO_PICK"] == "1"
+    }
+
+    private static var isUITestSimulatedGalleryImport: Bool {
+        CommandLine.arguments.contains("RD_UI_TEST_SIMULATED_GALLERY_IMPORT")
+            || ProcessInfo.processInfo.environment["RD_UI_TEST_SIMULATED_GALLERY_IMPORT"] == "1"
     }
 
     private static var isUITestOpenResult: Bool {
@@ -1946,6 +2045,9 @@ struct HomeView: View {
         showCanvasSheet = false
         queuedAnnotatePhotoIDs = []
         returnToPhotoTrayAfterAnnotation = false
+        pendingPhotoTrayDismissDestination = nil
+        pendingPhotoImport = nil
+        continueAfterAnnotationDismiss = false
     }
 
     private func cacheQuotaUsage(_ usage: DailyQuotaUsage) {

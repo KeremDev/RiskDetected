@@ -497,6 +497,8 @@
     <string name="rd_ai_analiz_ediyor">AI analiz ediyor…</string>
     <string name="rd_fotografsiz_analiz_format">Analiz oluşturuldu (fotoğrafsız): %1$s</string>
     <string name="rd_analiz_sonuclari">Analiz Sonuçları</string>
+    <string name="rd_analiz_bulgulari">Analiz bulguları</string>
+    <string name="rd_saha_teyidi">Saha teyidi</string>
     <string name="rd_tehlike_tespit_edilmedi">Tehlike tespit edilmedi</string>
     <string name="rd_tehlike_tespit_edilmedi_aciklama">Bu analiz için raporlanabilir bir uygunsuzluk bulunmadı. Fotoğraf yeterince açık değilse farklı bir açıdan tekrar tara.</string>
     <string name="rd_tespit_tehlikeler_risk">TESPİT EDİLEN TEHLİKELER · RİSK HESAPLAMASI</string>
