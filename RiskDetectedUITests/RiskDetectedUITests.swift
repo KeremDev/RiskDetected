@@ -687,6 +687,14 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("result.hub.analysis_photo.3", timeout: 6).exists)
         XCTAssertFalse(app.descendants(matching: .any)["result.hub.analysis_photo.4"].exists)
 
+        let analysisInfoCard = waitFor("result.hub.analysis_info_card", timeout: 6)
+        let riskSummary = waitFor("result.hub.risk_summary", timeout: 6)
+        XCTAssertLessThan(
+            analysisInfoCard.frame.midY,
+            riskSummary.frame.midY,
+            "Analiz başlığı kartı mavi risk özetinden önce yer almalı"
+        )
+
         let metadataAttachment = XCTAttachment(screenshot: app.screenshot())
         metadataAttachment.name = "result-hub-analysis-info-card"
         metadataAttachment.lifetime = .keepAlways
@@ -716,7 +724,8 @@ final class RiskDetectedUITests: XCTestCase {
 
         let header = waitFor("result.hub.header", timeout: 10)
         let selector = waitFor("result.hub.section_selector", timeout: 10)
-        XCTAssertTrue(waitFor("Ana sayfaya dön", timeout: 4).exists)
+        XCTAssertTrue(waitFor("result.hub.back", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Geri dön", timeout: 4).exists)
         XCTAssertTrue(waitFor("Yükselt", timeout: 4).exists)
 
         app.swipeUp()
@@ -749,6 +758,26 @@ final class RiskDetectedUITests: XCTestCase {
 
         tap("5x5 Matris, R = O × Ş", timeout: 6)
         XCTAssertTrue(waitFor("ORTA RİSK", timeout: 4).exists)
+    }
+
+    func testResultHubRiskCardPreviewsCorrectiveActionAndOpensDetails() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(
+            waitFor(
+                "Üst ve ara korkuluk ile topuk levhasından oluşan uygun kenar koruması kurulmalıdır.",
+                timeout: 10
+            ).exists,
+            "Numaralı düzeltici önlemde liste işareti değil gerçek ilk cümle gösterilmeli"
+        )
+        XCTAssertTrue(waitFor("Devamı için tıklayın", timeout: 4).exists)
+        tapScrolling("result.hub.item.corrective_preview.10000000-0000-4000-8000-000000000001", timeout: 8)
+        XCTAssertTrue(waitFor("result.detail.close", timeout: 8).exists)
     }
 
     func testResultHubReferenceVisualStates() throws {
@@ -813,17 +842,23 @@ final class RiskDetectedUITests: XCTestCase {
                 timeout: 4
             ).exists
         )
-        XCTAssertGreaterThanOrEqual(standardCard.frame.height, 58)
-        XCTAssertGreaterThanOrEqual(riskTableCard.frame.height, 90)
-        XCTAssertGreaterThan(riskTableCard.frame.height, standardCard.frame.height + 20)
+        XCTAssertGreaterThanOrEqual(standardCard.frame.height, 76)
+        XCTAssertGreaterThanOrEqual(riskTableCard.frame.height, 116)
+        XCTAssertGreaterThan(riskTableCard.frame.height, standardCard.frame.height + 32)
 
         let compactGenerateButton = waitFor("Rapor türü seçin", timeout: 4)
         let compactContentGap = compactGenerateButton.frame.minY - riskTableCard.frame.maxY
         XCTAssertGreaterThanOrEqual(compactContentGap, 0)
         XCTAssertLessThan(
             compactContentGap,
-            52,
+            24,
             "The compact report sheet must hug its cards instead of reserving an empty large-detent region"
+        )
+        let compactBottomGap = app.frame.maxY - compactGenerateButton.frame.maxY
+        XCTAssertLessThan(
+            compactBottomGap,
+            20,
+            "The compact footer must not reserve a second blank region below its button"
         )
 
         let compactSheet = XCTAttachment(screenshot: app.screenshot())
@@ -839,8 +874,14 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(expandedContentGap, 0)
         XCTAssertLessThan(
             expandedContentGap,
-            52,
+            24,
             "The expanded risk-table sheet must stop immediately after the visible controls"
+        )
+        let expandedBottomGap = app.frame.maxY - expandedGenerateButton.frame.maxY
+        XCTAssertLessThan(
+            expandedBottomGap,
+            20,
+            "The expanded footer must not reserve a second blank region below its button"
         )
         let expandedSheet = XCTAttachment(screenshot: app.screenshot())
         expandedSheet.name = "risk-report-sheet-expanded"

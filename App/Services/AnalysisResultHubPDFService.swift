@@ -10,7 +10,8 @@ final class AnalysisResultHubPDFService {
         items: [AnalysisResultHubItem],
         analysisTitle: String,
         method: RiskMethod,
-        language: RDLanguage
+        language: RDLanguage,
+        company: Company? = nil
     ) throws -> URL {
         let page = CGRect(x: 0, y: 0, width: 595, height: 842)
         let margin: CGFloat = 42
@@ -91,6 +92,25 @@ final class AnalysisResultHubPDFService {
             beginPage(context)
             y += drawText(title, font: titleFont, color: ink, rect: CGRect(x: margin, y: y, width: contentWidth, height: 80)) + 4
             y += drawText(analysisTitle, font: UIFont.systemFont(ofSize: 11.5, weight: .medium), color: slate, rect: CGRect(x: margin, y: y, width: contentWidth, height: 60)) + 14
+            if let company {
+                y += drawText(
+                    company.name,
+                    font: UIFont.systemFont(ofSize: 11.5, weight: .semibold),
+                    color: ink,
+                    rect: CGRect(x: margin, y: y, width: contentWidth, height: 40)
+                ) + 2
+                let companyInfo = company.reportInfoText.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !companyInfo.isEmpty {
+                    y += drawText(
+                        companyInfo,
+                        font: UIFont.systemFont(ofSize: 9.5, weight: .regular),
+                        color: slate,
+                        rect: CGRect(x: margin, y: y, width: contentWidth, height: 60)
+                    ) + 10
+                } else {
+                    y += 8
+                }
+            }
             if let disclaimer {
                 let height = measuredTextHeight(
                     disclaimer,

@@ -212,7 +212,9 @@ struct ResultView: View {
                     analysisTitle: analysisTitle,
                     analysisSector: analysisSectorLabel,
                     analysisPhotos: resultHubPhotoItems,
+                    freeRiskAnalysisTrialRemaining: freeRiskAnalysisTrialRemaining,
                     method: $method,
+                    selectedCompany: $selectedReportCompany,
                     onOpenAnalysisPhoto: { image in
                         expandedPhotoPreview = ResultPhotoPreview(image: image)
                     },
@@ -482,19 +484,14 @@ struct ResultView: View {
 
     private var resultHubHeader: some View {
         HStack {
-            Button {
-                app.activeTab = .home
-                onClose()
-            } label: {
-                RDLogo(size: 18)
-                    .contentShape(Rectangle())
+            HStack(spacing: 10) {
+                roundIconButton(systemName: "chevron.left", action: onClose)
+                    .accessibilityLabel(analysisOutputLanguage == .turkish ? "Geri dön" : "Go back")
+                    .accessibilityIdentifier("result.hub.back")
+
+                RDLogo(size: 17)
+                    .accessibilityHidden(true)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(RDLocalization.string(
-                "localizable.rdlogo.ana.sayfaya.don.8c68021b",
-                table: .localizable,
-                fallback: "Ana sayfaya dön"
-            ))
 
             Spacer()
 
@@ -1183,10 +1180,12 @@ struct ResultView: View {
             return
         }
         do {
-            let response = try await AnalysisResultHubService.shared.load(
+            async let responseTask = AnalysisResultHubService.shared.load(
                 analysisID: analysisID,
                 language: analysisOutputLanguage
             )
+            async let trialStateTask: Void = refreshFreeRiskAnalysisTrialState()
+            let (response, _) = try await (responseTask, trialStateTask)
             resultHub = response.enabled ? response : nil
             resultHubLoadError = nil
         } catch {
@@ -1276,7 +1275,8 @@ struct ResultView: View {
                         items: selectedItems,
                         analysisTitle: bundle.analysis.title,
                         method: method,
-                        language: analysisOutputLanguage
+                        language: analysisOutputLanguage,
+                        company: selectedReportCompany
                     )
                     pdfGeneration.advance(to: 0.68)
                     guard let userID = app.auth.session?.user.id else {
@@ -1305,6 +1305,9 @@ struct ResultView: View {
                     section: section,
                     funnelSessionID: requestID
                 )
+                if section == .riskAnalysis {
+                    await refreshFreeRiskAnalysisTrialState()
+                }
             } catch {
                 pdfGeneration.stop()
                 pdfError = AppErrorMessage.make(

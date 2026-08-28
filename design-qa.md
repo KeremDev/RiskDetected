@@ -42,6 +42,139 @@ final result: passed
 
 ---
 
+# iOS Rapor Türü Sheet'i — Kart Ölçeği ve Boşluk QA (2026-08-28)
+
+## Kaynak, uygulama ve normalizasyon
+
+- Kaynak görsel gerçekliği: `/var/folders/b8/1ntgctld0x9_wm3ms9cxkdtr0000gn/T/codex-clipboard-a069c904-abe2-4f0c-9bf5-67e2fd1c22c4.png`
+- Son uygulama görüntüsü: `/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/output/result-report-sheet-final-v3/6529907B-FCA3-4071-AA71-74C21913A2B4.png`
+- Tam ekran yan yana karşılaştırma: `/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/output/result-report-sheet-final-v3/source-vs-implementation.png`
+- Odaklanmış sheet karşılaştırması: `/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/output/result-report-sheet-final-v3/source-vs-implementation-focused.png`
+- Kaynak ve uygulama piksel boyutu: `1320 × 2868 px`; iPhone Pro Max `440 × 956 pt`, `@3x`. Yoğunluk ve viewport birebir olduğundan yeniden ölçekleme yapılmadı.
+- Durum: Türkçe, açık tema, Risk Analizi bölümü, rapor türü henüz seçilmemiş kompakt sheet. Genişletilmiş Risk Analizi Tablosu durumu ayrıca `D42695D5-9260-436D-85B1-6AF9C52EC90C.png` ile doğrulandı.
+
+## Karşılaştırma geçmişi
+
+1. P1 — İlk uygulamada Standart Rapor ve Risk Analizi Tablosu kartları ile başlık/açıklama ikonografisi kaynak ve kullanıcı beklentisine göre küçük kalıyordu. Kart minimumları `78/120 pt`, başlıklar `14.5 pt`, açıklamalar `11.5 pt`, ikonlar `46/48 pt` ve seçim kontrolü `26 pt` olacak şekilde büyütüldü.
+2. P2 — Risk Analizi Tablosu yeterince ayrışmıyordu. Kartın dört kenarına turuncu–sarı–yeşil–turkuaz geçişli gerçek SwiftUI stroke uygulandı; seçili durumda kalınlık ve açık yeşil yüzeyle durum korunuyor.
+3. P1 — Risk kartının altında ve alt eylemin altında iki ayrı gereksiz boşluk oluşuyordu. Kompakt/genişletilmiş detent içerik yükseklikleri güvenli alan davranışıyla birlikte yeniden hesaplandı; içerik–footer aralığı `<24 pt`, buton altı erişilebilirlik çerçevesi `<20 pt` olarak otomatik teste bağlandı.
+4. İlk düzeltmede alt güvenli alanı tamamen kullanmak butonun görselini ekran kenarında kırpıyordu. Footer alt payı artırıldı ve son görselde buton, köşeleri ve gölgesi eksiksiz görünürken ikinci beyaz footer alanı kaldırıldı.
+
+## Zorunlu yüzey kontrolü
+
+- Font ve tipografi: Mevcut Mulish ailesi ve ağırlık hiyerarşisi korundu; büyüyen başlık/açıklamalar kırpılmadan okunuyor.
+- Boşluk ve yerleşim: Kart–kart, kart–footer ve buton–sheet tabanı ritmi hem kompakt hem genişletilmiş durumda ölçüldü; görünür gereksiz büyük boşluk kalmadı.
+- Renk ve tokenlar: Mevcut marka yeşilleri korundu; yalnız vurgulu kartta referanstaki çok renkli vurguya karşılık gelen gradient kontur eklendi.
+- Görsel/ikon kalitesi: SF Symbols vektör ikonları daha büyük optik boyutta keskin; yeni raster veya sahte varlık kullanılmadı.
+- Metin/içerik: Kullanıcının istediği Standart Rapor ve Risk Analizi Tablosu metinleri değiştirilmedi; satır kırılımları kart genişliğinde doğal kaldı.
+- Etkileşim: Rapor türü seçimi kompakt detent'ten genişletilmiş detent'e geçiyor; yöntem ve çıktı biçimi görünür oluyor; eylem butonu seçime göre etkinleşiyor.
+- Hedefli UI testi `testResultHubRiskReportSheetIsCompactAndEmphasizesRiskTable` geçti; `git diff --check` ile kaynak biçimi ayrıca doğrulanacak.
+- Yan yana tam ve odak karşılaştırmasında açık P0/P1/P2 fark kalmadı. Kaynak görseldeki eski geniş boşluk kullanıcı isteği doğrultusunda bilinçli olarak azaltıldı.
+
+final result: passed
+
+---
+
+# iOS Risk Kartı — Numaralı Düzeltici Önlem Ayrıştırması QA (2026-08-28)
+
+## Kanıt ve normalizasyon
+
+- Hatalı gerçek cihaz görüntüsü: `/var/folders/b8/1ntgctld0x9_wm3ms9cxkdtr0000gn/T/codex-clipboard-16388d1e-be58-4305-a261-fbc9b232bff7.png`
+- Düzeltilmiş uygulama görüntüsü: `/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/output/result-hub-numbered-corrective-final/E6C54B7B-26D4-41E1-8E4A-D32B545AE1B0.png`
+- Tek yüzey karşılaştırması: `/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/output/result-hub-numbered-corrective-final/before-vs-after.png`
+- İki görüntü de `1320 × 2868 px`; iPhone 17 Pro Max, `440 × 956 pt`, `@3x`, açık tema. Piksel yoğunluğu değiştirilmeden yan yana karşılaştırıldı.
+- Sol taraf gerçek analiz, sağ taraf numaralı önlem içeren Pro UI-test fixture'ıdır. Bulguların sayısal/veri içeriği farklı; hedef yüzey olan düzeltici önlem önizlemesi aynı kart durumunda karşılaştırıldı.
+
+## Bulgu, düzeltme ve kanıt
+
+1. P1 — Gerçek önlem metni `1. …` ile başladığında cümle ayırıcı ilk noktayı cümle sonu kabul ediyor ve kullanıcıya yalnız `1.` gösteriyordu.
+2. Düzeltme — Metin tek satırda normalize edildikten sonra baştaki `1.`, `1)`, `1:`, `1-`, `(1)`, `-`, `•` veya `*` liste işareti kaldırılıyor; ardından gerçek ilk cümle seçiliyor. Metinde yalnız işaret varsa güvenli fallback korunuyor.
+3. Regresyon fixture'ı özellikle `1. Üst ve ara korkuluk…` biçimine geçirildi. UI testi tam ilk cümlenin ekranda bulunmasını ve CTA'nın detay ekranını açmasını doğruluyor.
+4. Son görsel kanıtta `1.` kayboldu; gerçek önlem cümlesi ve kalın `Devamı için tıklayın` çağrısı kart sınırları içinde eksiksiz görünüyor.
+
+## Zorunlu yüzey kontrolü
+
+- Tipografi: mevcut Mulish boyutları/ağırlıkları değişmedi; gerçek cümle iki satıra doğal biçimde sarılıyor.
+- Yerleşim: önizleme yüksekliği içerik kadar büyüyor; yatay taşma, kırpılma veya alt şerit çakışması yok.
+- Renkler: mevcut yeşil önlem yüzeyi ve kontrast tokenları değişmedi.
+- Görseller/ikonlar: mevcut SF Symbols korunuyor; yeni veya yaklaşık raster varlık eklenmedi.
+- Metin: uydurma içerik yok; sunucudan gelen gerçek önlemin yalnız öndeki liste işareti temizleniyor.
+- Etkileşim: önizleme CTA'sı aynı detay sayfasını açmaya devam ediyor.
+- Test: hedefli iki UI testi `2 passed, 0 failed`; simulator build başarılı.
+- Açık P0/P1/P2 bulgu kalmadı.
+
+final result: passed
+
+---
+
+# iOS Risk Bulgu Kartı — Düzeltici Önlem Önizlemesi QA (2026-08-28)
+
+## Kanıt ve normalizasyon
+
+- Kaynak görsel: `/var/folders/b8/1ntgctld0x9_wm3ms9cxkdtr0000gn/T/codex-clipboard-0576c145-af6b-4fbd-9edd-8fa7be19ebb5.png`
+- Uygulama görüntüsü: `/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/output/result-hub-corrective-preview-final/99D341D3-ACCE-4391-8DE9-695C3DBC445E.png`
+- Tam görünüm karşılaştırması: `/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/output/result-hub-corrective-preview-final/source-vs-implementation.png`
+- Odak kart karşılaştırması: `/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/output/result-hub-corrective-preview-final/source-vs-implementation-card.png`
+- Kaynak ve uygulama `1320 × 2868 px`; iPhone 17 Pro Max, açık tema, `440 × 956 pt`, `@3x`. Eşit piksel yoğunluğunda yan yana karşılaştırıldı.
+- Kaynak gerçek analiz, uygulama Pro UI-test fixture'ıdır. Başlık, puan, sayaç, fotoğraf ve kullanıcı rozeti veri farklarıdır; hedeflenen bulgu kartı hiyerarşisi ve detay etkileşimi aynı durumda değerlendirildi.
+
+## Karşılaştırma geçmişi ve düzeltmeler
+
+1. P1 — Kart yalnız bulgu açıklamasını ve ayrıntı alanlarının varlığını belirten küçük rozetleri gösteriyordu; kullanıcı hangi ek içeriği göreceğini anlamadan `Detaylar` eylemine güvenmek zorundaydı.
+2. Düzeltme — Yetkili `corrective` ölçü, yoksa `recommendedAction` kaynağından ilk cümle deterministik biçimde çıkarılarak yeşil tonlu `DÜZELTİCİ ÖNLEM` önizlemesine eklendi. Altına kalın `Devamı için tıklayın` metni ve yön ikonu yerleştirildi.
+3. P2 — İlk uygulamada yeni önizleme ile eski `Düzeltici Önlem` rozeti aynı bilgiyi iki kez gösteriyordu. Tekrarlanan rozet kaldırıldı; kök neden, önleyici faaliyet ve mevzuat rozetleri yalnız veri varsa korunuyor.
+4. P1 — İlk erişilebilirlik turunda CTA görünür olmasına rağmen kart kapsayıcısının kimliği alt buton kimliğini eziyor, CTA otomasyonda dokunulamaz görünüyordu. Kart `.contain` erişilebilirlik kapsayıcısına geçirildi; hem kart dokunuşu hem CTA aynı detay sayfasını güvenilir biçimde açıyor.
+5. Son kanıt — Önizleme, açıklama ile tamamlayıcı rozetler arasında açık bir bilgi seviyesi oluşturuyor; birinci cümle okunuyor, devam eylemi görsel ve metinsel olarak belirgin, kartın mevcut düzenleme/geri bildirim/Detaylar şeridi korunuyor.
+
+## Zorunlu yüzey kontrolü
+
+- Tipografi: mevcut Mulish hiyerarşisi korunuyor; bölüm etiketi `9.5 pt`, önizleme `11.5 pt`, CTA `10.5 pt` ve ağır ağırlıkta. Türkçe metin kırılmadan okunuyor.
+- Yerleşim: önizleme kartın yatay iç boşluğuna uyuyor, açıklamadan `12 pt` sonra geliyor; karta yeni yatay taşma veya sabit alt CTA çakışması eklenmedi.
+- Renkler: mevcut sonuç merkezi yeşil tokenları ve `#F1FAEA` destek yüzeyi kullanıldı; kontrast ve bölüm ayrımı yeterli.
+- Görsel/ikon kalitesi: yeni raster varlık veya yer tutucu eklenmedi; sistemin keskin SF Symbols onay ve yön ikonları kullanıldı.
+- Metin: önizleme gerçek düzeltici önlem verisinden gelir; yeni içerik uydurulmaz. Türkçe `Devamı için tıklayın`, İngilizce `Tap to continue` karşılığı mevcut.
+- Etkileşim: kart gövdesi, önizleme CTA'sı ve alt `Detaylar` eylemi aynı bulgu detay ekranını açıyor; seçim ve geri bildirim kontrolleri korunuyor.
+- Otomasyon: yeni CTA/detay testi ve beş durumlu sonuç merkezi referans testi birlikte `2 passed, 0 failed`; yöntem risk etiketi testi ayrı turda geçti.
+- Açık P0/P1/P2 bulgu kalmadı.
+
+final result: passed
+
+---
+
+# iOS Sonuç Merkezi — Bilgi Kartı Sırası, Geri Dönüş ve Risk Yoğunluğu QA (2026-08-28)
+
+## Kanıt ve normalizasyon
+
+- Kaynak görsel: `/var/folders/b8/1ntgctld0x9_wm3ms9cxkdtr0000gn/T/codex-clipboard-b2d6902c-ec9d-4a9e-854f-5e346493ecf0.png`
+- Son uygulama görüntüsü: `/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/output/result-hub-layout-final/C0D5E8DB-3884-4A10-A7E6-D7232ACF9D7A.png`
+- Birleşik karşılaştırma: `/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/output/result-hub-layout-final/source-vs-implementation.png`
+- Kaynak ve uygulama: `1320 × 2868 px`, iPhone 17 Pro Max, açık tema, `3x`; ölçekleme yapılmadan eşit piksel boyutunda yan yana karşılaştırıldı.
+- Kaynak gerçek analiz, uygulama Pro UI-test fixture'ıdır; bulgu sayıları, fotoğraflar ve kullanıcı rozeti veri farkıdır. Yerleşim, tipografi ve etkileşim yüzeyleri aynı durumda karşılaştırıldı.
+
+## Karşılaştırma geçmişi ve düzeltmeler
+
+1. P1 — Tam ekran sonuç sayfasında anlaşılır bir geri dönüş kontrolü bulunmuyordu. Header'a 44 pt dokunma alanını koruyan, geldiği Home/History bağlamını `onClose` ile kapatan görünür geri oku eklendi. X işareti kullanılmadı; ekran modal değil gerçek sayfa olduğundan geri oku doğru semantiktir.
+2. P1 — Analiz başlığı/sektör/fotoğraf kartı mavi risk özeti ve yöntem seçiminin altında kalıyordu. Kart, sekmelerin hemen altına ve mavi özetin üstüne taşındı; gerçek fotoğraf ve sektör davranışı korunuyor.
+3. P2 — `DAĞILIM` başlığı ile en yüksek sütun sayısı çakışıyordu. Başlık `8.5 pt` yapıldı, başlık–grafik aralığı ayrıldı; sayaç, çubuk ve kısa etiket ölçeği 43 pt grafik alanına sığdırıldı.
+4. P2 — Bulgu kartındaki yöntem bandı ve puan birlikte gereğinden baskındı. Band `9.25 pt`, puan `14 pt`, birim `9.5 pt` yapıldı; renk ve Fine-Kinney/5x5 yöntem adı korunuyor.
+5. P2 — Kart eylemi uzun `Ayrıntıları Gör` metniyle alt şeridi yoruyordu. Aynı detay akışını açan kısa `Detaylar` metnine geçirildi.
+6. İlk otomasyon turunda görsel sıralama doğruyken gölge/accessibility çerçevesine dayanan sınır testi yanlış alarm verdi. Test görünür kart merkezlerinin sırasını ölçmek üzere düzeltildi; ikinci turda dört testin tamamı geçti.
+
+## Zorunlu yüzey kontrolü
+
+- Tipografi: Mulish ailesi, ağırlık hiyerarşisi ve satır kırılımları korunuyor; yalnız kullanıcının istediği risk bandı, puan ve dağılım başlığı küçültüldü.
+- Yerleşim: header, bağlı sekme rayı, bilgi kartı, özet, yöntem seçimi, bulgu seçimi ve sabit rapor alanı kesintisiz dikey sırada.
+- Renkler: mevcut yeşil, lime ve mavi özet tokenları değişmedi; yeni renk üretilmedi.
+- Görseller: kullanıcının yüklediği küçük fotoğraflar aynı önbellekli thumbnail bileşeniyle çiziliyor; yer tutucu veya yeni yapay varlık eklenmedi.
+- Metin: yalnız `Ayrıntıları Gör` → `Detaylar` ve İngilizce `View Details` → `Details` değişti.
+- Etkileşim: geri oku `onClose`, detay eylemi mevcut detay rotası, sekmeler ve rapor CTA mevcut davranışlarıyla çalışıyor.
+- Otomasyon: sonuç merkezi yerleşim, sabit header, yöntem bandı ve referans görsel durum testleri `4 passed, 0 failed`.
+- Açık P0/P1/P2 bulgu kalmadı.
+
+final result: passed
+
+---
+
 # iOS Sonuç Merkezi — Analiz Bilgi Kartı ve Fotoğraf Sayısı QA (2026-08-28)
 
 ## Kaynak ve çalışma zamanı kanıtı
