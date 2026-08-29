@@ -261,9 +261,6 @@ struct ResultView: View {
                     },
                     onSuppressNotebook: { item in
                         mutateNotebook(item: item, action: "suppress")
-                    },
-                    onSetObservationBasis: { basis in
-                        setObservationBasis(basis)
                     }
                 )
                 .zIndex(0)
@@ -1325,27 +1322,6 @@ struct ResultView: View {
                     recommendationText: recommendationText
                 )
                 await loadResultHubIfNeeded()
-            } catch {
-                findingMutationError = error.localizedDescription
-            }
-        }
-    }
-
-    /// Kaydeder ve sonucu doğrudan uygular.
-    ///
-    /// Sunucu dayanağı yazdıktan sonra bölümü yeniden üretip döndürüyor, bu
-    /// yüzden ikinci bir yükleme turu gerekmiyor: seçim ile metnin değişmesi
-    /// arasında kullanıcı boş bir aralık görmüyor.
-    private func setObservationBasis(_ basis: ObservationBasis?) {
-        guard let analysisID = currentBundle?.analysis.id else { return }
-        Task {
-            do {
-                let response = try await AnalysisResultHubService.shared.setObservationBasis(
-                    analysisID: analysisID,
-                    language: analysisOutputLanguage,
-                    basis: basis?.rawValue
-                )
-                await MainActor.run { resultHub = response }
             } catch {
                 findingMutationError = error.localizedDescription
             }

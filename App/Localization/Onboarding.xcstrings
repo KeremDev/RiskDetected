@@ -397,6 +397,222 @@
         }
       }
     },
+    "onboarding.obloading.testimonial.elif.body.77713b0d": {
+      "comment": "onboarding loading testimonial body",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turning risks from photos into structured reports saves me significant time during site work."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riskleri fotoğraftan düzenli bir rapora dönüştürmek saha çalışmalarımda ciddi zaman kazandırıyor."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.elif.headline.c1de84e8": {
+      "comment": "onboarding loading testimonial headline",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Field reports are much faster now."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha raporları artık çok daha hızlı."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.elif.name.e52e0716": {
+      "comment": "onboarding loading testimonial display name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elif Yılmaz"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elif Yılmaz"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.elif.role.7019432c": {
+      "comment": "onboarding loading testimonial role",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Class A Occupational Safety Specialist"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Sınıfı İş Güvenliği Uzmanı"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.mert.body.c7672046": {
+      "comment": "onboarding loading testimonial body",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can see priority risks clearly and share the actions with my team immediately."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öncelikli riskleri net görüyor, alınacak önlemleri ekibimle aynı anda paylaşabiliyorum."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.mert.headline.75a23da9": {
+      "comment": "onboarding loading testimonial headline",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sharing findings with the team is easy."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulguları ekiple paylaşmak çok kolay."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.mert.name.a7c05fb2": {
+      "comment": "onboarding loading testimonial display name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mert Kaya"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mert Kaya"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.mert.role.0fdf6df8": {
+      "comment": "onboarding loading testimonial role",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Construction Site Supervisor"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şantiye Saha Sorumlusu"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.selin.body.d190c795": {
+      "comment": "onboarding loading testimonial body",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With corrective actions and risk scores in one flow, my site assessments are more consistent."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzeltici önlemler ve risk skorları tek akışta olduğu için saha değerlendirmelerim daha tutarlı ilerliyor."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.selin.headline.15a94ce8": {
+      "comment": "onboarding loading testimonial headline",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk priorities are clear."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk önceliklerini net görüyorum."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.selin.name.e6db2340": {
+      "comment": "onboarding loading testimonial display name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selin Demir"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selin Demir"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.selin.role.a69649f2": {
+      "comment": "onboarding loading testimonial role",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Occupational Safety Consultant"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG Danışmanı"
+          }
+        }
+      }
+    },
     "onboarding.obloading.view.icin.rapor.formati.kisisellestiriliyor.34aea260": {
       "comment": "onboarding loading step; placeholders: %1$@ = certificate class label",
       "extractionState": "manual",
@@ -451,6 +667,24 @@
         }
       }
     },
+    "onboarding.obloading.view.risk.analizi.hazirlaniyor.fbb92976": {
+      "comment": "label inside onboarding loading progress ring",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analizi"
+          }
+        }
+      }
+    },
     "onboarding.obloading.view.sana.ozel.kurulum.hazirlaniyor.a7043077": {
       "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:7; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
       "extractionState": "manual",
@@ -469,6 +703,24 @@
         }
       }
     },
+    "onboarding.obloading.view.sahadaki.profesyoneller.ne.diyor.9bf3d77a": {
+      "comment": "heading above onboarding loading testimonial carousel",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What do field professionals say?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sahadaki profesyoneller ne diyor?"
+          }
+        }
+      }
+    },
     "onboarding.obloading.view.sinifi.icin.kontrol.listesi.hazirlaniyor.85dc6c38": {
       "comment": "onboarding loading step; placeholders: %1$@ = selected hazard class label",
       "extractionState": "manual",
@@ -483,6 +735,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ sınıfı için kontrol listesi hazırlanıyor..."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.view.yukleme.ilerlemesi.97991bbf": {
+      "comment": "accessibility label for onboarding loading progress",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading progress"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yükleme ilerlemesi"
           }
         }
       }

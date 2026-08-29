@@ -127,41 +127,6 @@ final class AnalysisResultHubService {
         )
     }
 
-    /// Records how the specialist observed the site, then reloads.
-    ///
-    /// Setting a basis is what turns the deterministic Onaylı Defter text on for
-    /// this analysis; passing nil clears it and restores the previous entries.
-    /// The server never infers it from the upload, so this call is the only way
-    /// it can be set.
-    func setObservationBasis(
-        analysisID: UUID,
-        language: RDLanguage,
-        basis: String?
-    ) async throws -> AnalysisResultHubResponse {
-        struct Body: Encodable {
-            let action = "set_observation_basis"
-            let analysis_id: String
-            let language: String
-            let client_capabilities: [String: Bool]
-            let client_platform: String
-            let client_app_version: String
-            let client_app_build: String
-            let observation_basis: String?
-        }
-        return try await functions.invoke(
-            "analysis-result-sections",
-            options: FunctionInvokeOptions(body: Body(
-                analysis_id: analysisID.uuidString.lowercased(),
-                language: language.rawValue,
-                client_capabilities: AppClientMetadata.capabilities,
-                client_platform: AppClientMetadata.platform,
-                client_app_version: AppClientMetadata.appVersion,
-                client_app_build: AppClientMetadata.appBuild,
-                observation_basis: basis
-            ))
-        )
-    }
-
     func createReportIntent(
         analysisID: UUID,
         language: RDLanguage,

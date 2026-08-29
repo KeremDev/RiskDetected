@@ -136,14 +136,12 @@ struct AnalysisResultSection: Decodable, Identifiable {
     let canReport: Bool
     let items: [AnalysisResultHubItem]
     let observationBasis: ObservationBasis?
-    let observationBasisOptions: [ObservationBasis]
 
     enum CodingKeys: String, CodingKey {
         case id, access, count, items
         case canEdit = "can_edit"
         case canReport = "can_report"
         case observationBasis = "observation_basis"
-        case observationBasisOptions = "observation_basis_options"
     }
 
     /// A custom `init(from:)` removes the memberwise initialiser, and the view
@@ -155,8 +153,7 @@ struct AnalysisResultSection: Decodable, Identifiable {
         canEdit: Bool,
         canReport: Bool,
         items: [AnalysisResultHubItem],
-        observationBasis: ObservationBasis? = nil,
-        observationBasisOptions: [ObservationBasis] = []
+        observationBasis: ObservationBasis? = nil
     ) {
         self.id = id
         self.access = access
@@ -165,7 +162,6 @@ struct AnalysisResultSection: Decodable, Identifiable {
         self.canReport = canReport
         self.items = items
         self.observationBasis = observationBasis
-        self.observationBasisOptions = observationBasisOptions
     }
 
     init(from decoder: Decoder) throws {
@@ -177,7 +173,6 @@ struct AnalysisResultSection: Decodable, Identifiable {
         canReport = try container.decodeIfPresent(Bool.self, forKey: .canReport) ?? false
         items = try container.decodeIfPresent([AnalysisResultHubItem].self, forKey: .items) ?? []
         observationBasis = try container.decodeIfPresent(ObservationBasis.self, forKey: .observationBasis)
-        observationBasisOptions = try container.decodeIfPresent([ObservationBasis].self, forKey: .observationBasisOptions) ?? []
     }
 }
 

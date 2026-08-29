@@ -27,7 +27,6 @@ struct AnalysisResultHubView: View {
     let onCreateReport: (AnalysisResultSectionID, [UUID], String) -> Void
     let onEditNotebook: (AnalysisResultHubItem, String, String) -> Void
     let onSuppressNotebook: (AnalysisResultHubItem) -> Void
-    let onSetObservationBasis: (ObservationBasis?) -> Void
 
     @State private var selectedSection: AnalysisResultSectionID = .riskAnalysis
     @State private var selections: [AnalysisResultSectionID: Set<UUID>] = [:]
@@ -65,8 +64,7 @@ struct AnalysisResultHubView: View {
                 canEdit: false,
                 canReport: false,
                 items: [],
-                observationBasis: nil,
-                observationBasisOptions: []
+                observationBasis: nil
             )
     }
 
@@ -405,68 +403,36 @@ struct AnalysisResultHubView: View {
     private var notebookContent: some View {
         VStack(spacing: 0) {
             nonRiskSummary.padding(.top, 12)
-            if activeSection.access == .full, !activeSection.observationBasisOptions.isEmpty {
-                observationBasisPicker.padding(.top, 16)
+            if activeSection.access == .full, activeSection.observationBasis != nil {
+                observationBasisNote.padding(.top, 14)
             }
             notebookPaper.padding(.top, 16)
         }
     }
 
-    /// Gözlem dayanağı seçici.
+    /// Kayıtların hangi dayanakla yazıldığını söyleyen tek satır.
     ///
-    /// Motorun "saha incelemesinde gözlenmiştir" yazabilmesi buna bağlı ve
-    /// bunu sistem varsayamaz: fotoğraf yüklendi diye sahaya gidilmiş olmaz.
-    /// Seçim yapılmadan defter metni üretilmez, mevcut kayıtlar aynen kalır.
-    private var observationBasisPicker: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            Text(copy("GÖZLEM DAYANAĞI", "OBSERVATION BASIS"))
-                .font(referenceFont(9.5, .heavy)).tracking(0.5)
-                .foregroundStyle(muted)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(activeSection.observationBasisOptions) { option in
-                        // Nil means the specialist has not stated a basis, and the
-                        // server wrote the text under the default. Showing that
-                        // default as selected keeps the chip and the paragraph
-                        // telling the reader the same thing.
-                        let effective = activeSection.observationBasis ?? .directSiteObservation
-                        let selected = effective == option
-                        Button {
-                            guard !selected else { return }
-                            onSetObservationBasis(option)
-                        } label: {
-                            Text(option.label(language: language))
-                                .font(referenceFont(11.5, selected ? .heavy : .medium))
-                                .foregroundStyle(selected ? .white : ink)
-                                .padding(.horizontal, 12)
-                                .frame(height: 32)
-                                .background(selected ? green : Color.rdResultKhakiTint)
-                                .clipShape(Capsule())
-                                .overlay(
-                                    Capsule().stroke(
-                                        selected ? .clear : Color.rdResultLine,
-                                        lineWidth: 1
-                                    )
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("result.hub.notebook.basis.\(option.rawValue)")
-                        .accessibilityAddTraits(selected ? [.isSelected] : [])
-                    }
-                }
-                .padding(.horizontal, 2)
-            }
-
+    /// Seçim değil, beyan. Bu üründeki her fotoğrafı sahayı gezen uzmanın
+    /// kendisi çekiyor; diğer dayanaklar kimsenin vermesi gerekmeyen bir karardı
+    /// ve yalnızca yanlışlıkla yanlış şey söylemenin yolunu açıyordu. Yine de
+    /// yazılı: cümleler uzmanın sahada olduğunu iddia ediyor, okuyucu bunu
+    /// görmeli.
+    private var observationBasisNote: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "mappin.and.ellipse")
+                .font(RDTypography.font(size: 11, weight: .semibold))
+                .foregroundStyle(green)
             Text(copy(
-                "Metin bu dayanağa göre yazıldı. Gözlem farklı şekilde yapıldıysa değiştirin.",
-                "The text is written for this basis. Change it if you observed the site differently."
+                "Kayıtlar saha incelemesi dayanağıyla yazılmıştır.",
+                "Entries are written on the basis of a site inspection."
             ))
-            .font(referenceFont(10.5, .medium))
+            .font(referenceFont(11, .medium))
             .foregroundStyle(muted)
             .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
+        .accessibilityIdentifier("result.hub.notebook.basis_note")
     }
 
     // MARK: Reference summaries

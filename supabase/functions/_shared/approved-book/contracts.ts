@@ -30,17 +30,17 @@ export type ObservationBasis =
   | "follow_up_check";
 
 /**
- * What the section assumes when the specialist has not said otherwise.
+ * The single basis this product writes under.
  *
- * These photographs are taken by the specialist walking the site, so a site
- * inspection is the true basis in the ordinary case and asking for a tap before
- * showing anything would be friction over a question already answered.
+ * Every photograph here is taken by the specialist walking the site, so the
+ * other three bases described choices nobody needed to make. Offering them only
+ * created a way to state something untrue by mistake.
  *
- * The stored column stays null while this default applies, so "defaulted" and
- * "explicitly stated" remain distinguishable in the record for free -- which
- * matters, because the sentence this produces asserts the specialist was there.
+ * The type keeps all four because the engine still has to be able to word them,
+ * and a document review or a follow-up check is a real thing this could serve
+ * later. What is fixed is which one the product uses today.
  */
-export const DEFAULT_OBSERVATION_BASIS: ObservationBasis =
+export const FIXED_OBSERVATION_BASIS: ObservationBasis =
   "direct_site_observation";
 
 export const OBSERVATION_BASES: ObservationBasis[] = [

@@ -29,9 +29,7 @@ import {
   APPROVED_BOOK_PROJECTION_VERSION,
   APPROVED_BOOK_TEMPLATE_VERSION,
   buildApprovedBookDrafts,
-  DEFAULT_OBSERVATION_BASIS,
-  OBSERVATION_BASES,
-  type ObservationBasis,
+  FIXED_OBSERVATION_BASIS,
   type V4ItemRow,
 } from "../_shared/approved-book/index.ts";
 
@@ -107,12 +105,10 @@ type Body = {
     | "mutate_notebook"
     | "feedback"
     | "event"
-    | "create_report_intent"
-    | "set_observation_basis";
+    | "create_report_intent";
   analysis_id?: string;
   language?: string;
   client_capabilities?: Record<string, unknown>;
-  observation_basis?: string;
   client_platform?: string;
   client_app_version?: string;
   client_app_build?: string;
@@ -220,32 +216,15 @@ function withReaction(
  * paragraph; the finding/recommendation split belongs to v2 and reproducing it
  * here would let a reader mistake half a paragraph for a whole record.
  */
-/**
- * The basis this analysis is written under.
- *
- * A stored value is the specialist's own statement. Null falls back to the
- * default rather than withholding the text: these photographs are taken on site
- * by the person writing the entry, so a site inspection is the ordinary truth
- * and the column stays null to record that nobody was asked.
- */
-function effectiveObservationBasis(context: Context): ObservationBasis | null {
-  const stored = cleanString(
-    context.analysis.approved_book_observation_basis,
-    64,
-  );
-  if (OBSERVATION_BASES.includes(stored as ObservationBasis)) {
-    return stored as ObservationBasis;
-  }
-  return stored.length === 0 ? DEFAULT_OBSERVATION_BASIS : null;
-}
-
 async function buildApprovedBookSection(
   context: Context,
   metadata: V4ResultMetadata[],
 ): Promise<Record<string, unknown>[]> {
   if (context.language !== "tr") return [];
-  const basis = effectiveObservationBasis(context);
-  if (!basis) return [];
+  // One basis, fixed. Every photograph in this product is taken by the
+  // specialist walking the site, so the other three were choices nobody needed
+  // to make; offering them invited a wrong answer for no gain.
+  const basis = FIXED_OBSERVATION_BASIS;
 
   try {
     const result = await buildApprovedBookDrafts(
@@ -408,9 +387,9 @@ async function loadAuthoritativeSections(context: Context) {
     expert: paid ? expertFull : expertFull.map(redactFindingForFree),
     notebook: paid ? notebookFull : notebookFull.map(redactNotebookForFree),
     templateVersion,
-    // The effective basis, so the picker shows what the text was actually
-    // written under rather than an empty state the reader has to resolve.
-    observationBasis: book.length > 0 ? effectiveObservationBasis(context) : null,
+    // Reported so the section can tell the reader what the entries assume,
+    // not so anything can be picked.
+    observationBasis: book.length > 0 ? FIXED_OBSERVATION_BASIS : null,
   };
 }
 
@@ -486,45 +465,12 @@ async function handleLoad(context: Context) {
       sectionPayload("expert_recommendations", context.tier, sections.expert),
       {
         ...sectionPayload("approved_notebook", context.tier, sections.notebook),
-        // The reader has to state how they observed the site before the engine
-        // will write "gözlenmiştir" about it, so the section carries both the
-        // current choice and the options rather than the app hard-coding them.
+        // Stated, not offered: the entries assume a site inspection and the
+        // reader is told so, but there is nothing here to choose.
         observation_basis: sections.observationBasis,
-        observation_basis_options: OBSERVATION_BASES,
       },
     ],
   });
-}
-
-/**
- * Record how the specialist observed the site.
- *
- * Setting it turns the deterministic book text on for this analysis; clearing it
- * (null) returns the section to the v2 projection. Both directions are the
- * reader's to choose, and neither is inferred from the upload.
- */
-async function handleObservationBasis(context: Context) {
-  const raw = cleanString(context.body.observation_basis, 64);
-  const basis = raw.length === 0 ? null : raw;
-  if (basis !== null && !OBSERVATION_BASES.includes(basis as ObservationBasis)) {
-    return json(400, { error: "invalid_observation_basis" });
-  }
-  if (!isPaidTier(context.tier)) {
-    return json(403, { error: "paid_tier_required" });
-  }
-  const { error } = await context.supabase.rpc(
-    "result_hub_set_observation_basis",
-    {
-      p_user_id: context.userID,
-      p_analysis_id: context.analysis.id,
-      p_basis: basis,
-    },
-  );
-  if (error) {
-    return json(400, { error: "observation_basis_update_failed" });
-  }
-  context.analysis.approved_book_observation_basis = basis;
-  return await handleLoad(context);
 }
 
 async function handleNotebookMutation(context: Context) {
@@ -871,8 +817,6 @@ serve(async (req) => {
         return await handleEvent(context);
       case "create_report_intent":
         return await handleReportIntent(context);
-      case "set_observation_basis":
-        return await handleObservationBasis(context);
     }
   } catch (error) {
     console.error("analysis-result-sections failed", String(error));
