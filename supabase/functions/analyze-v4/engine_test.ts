@@ -3138,3 +3138,152 @@ Deno.test("kısa Türkçe metin diakritiksiz olsa da yanlış alarm vermez", () 
   })]);
   assertEquals(outputLanguageFailure(short, "tr"), null);
 });
+
+Deno.test("çözünürlüğün altında kalan eksiklik iddiası skorlanmaz", () => {
+  // 031d5068: iki tavan vincinin bulunduğu atölye, salonun dibinden çekilmiş.
+  // Skorlanan bulgu ölümcül, FK 720, güven her eksende 0.9 -- ve kanıt bölgesi
+  // karenin 0.03'e 0.05'i, yani içinde on iki piksellik bir kanca. Mandal o
+  // ölçekte tek piksel. Kare ayrıca üç değil iki kanca içeriyor.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "lifting",
+    raw_label: "Vinç kancasında emniyet mandalı eksikliği",
+    asset_ref: "hook_1",
+    affirmative_cues: [
+      "Üst tavan vincinin kancasında güvenlik mandalı görünmüyor.",
+      "Alt tavan vincinin sol kancasında güvenlik mandalı görünmüyor.",
+      "Alt tavan vincinin sağ kancasında güvenlik mandalı görünmüyor.",
+    ],
+    evidence_region: { x: 0.49, y: 0.42, width: 0.03, height: 0.05 },
+    event_path: {
+      source: "asılı yük",
+      contact_or_failure: "kancadan yükün ayrılması",
+      consequence: "yükün düşmesi",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "verification_request");
+  assertEquals(item?.is_scored, false);
+  assertStringIncludes(
+    String(item?.internal_priority.route_reason),
+    "absence_claim_below_resolution_floor",
+  );
+});
+
+Deno.test("makul büyüklükteki bölgede eksiklik iddiası skorlu kalır", () => {
+  // Zemin taban alanı gibi geniş bölgeler ile kanca gibi noktasal bölgeler
+  // arasındaki fark bir büyüklük mertebesi: aynı analizde dağınık zemin 0.05,
+  // elektrik hattı 0.02 idi, kanca 0.0015.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "work_at_height",
+    raw_label: "Platform kenarında etek tahtası eksik",
+    affirmative_cues: ["Döşeme kenarında etek tahtası yok, boşluk açık"],
+    evidence_region: { x: 0.2, y: 0.3, width: 0.2, height: 0.15 },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.is_scored, true);
+});
+
+Deno.test("görülemiyor diyen kanıt yokluk kanıtı sayılmaz", () => {
+  // Türkçe "görünmüyor" ile "görülemiyor"u ayırır; yalnız ikincisi gözlemciyi
+  // anlatır. Kapı yalnız -eme- ekli biçimlere bakar, çünkü "etek tahtası
+  // görünmüyor" gerçek bir yokluğun yazılış biçimidir.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "machinery",
+    raw_label: "Makine koruyucularının durumu",
+    affirmative_cues: [
+      "Koruyucuların takılı olup olmadığı bu mesafeden seçilemiyor",
+    ],
+    potential_consequence: "serious",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.is_scored, false);
+  assertStringIncludes(
+    String(item?.internal_priority.route_reason),
+    "non_visibility_is_not_absence",
+  );
+});
+
+Deno.test("olumlu görülen bir ayrıntı varsa iddia skorlu kalır", () => {
+  // Gerçek bir eksiklik olumlu yazılır. Kanıtlardan biri görülen bir ayrıntı
+  // taşıyorsa kapı açılmaz; yoksa her gerçek eksikliği saha kontrolüne düşürür.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "machinery",
+    raw_label: "Torna aynasında koruyucu bulunmuyor",
+    affirmative_cues: [
+      "Koruyucu kapak menteşesinden sökülmüş, yanına dayanmış duruyor",
+      "Dönen ayna tamamen açık",
+    ],
+    event_path: {
+      source: "dönen ayna",
+      contact_or_failure: "temas",
+      consequence: "uzuv kaybı",
+    },
+    potential_consequence: "permanent",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.is_scored, true);
+});
+
+Deno.test("model görsel olarak çözülemez dediyse iddia skorlanmaz", () => {
+  // Aynı analizin ikinci skorlu bulgusu: "Sol taraftaki makinelerin
+  // koruyucularının durumu uzaktan net olarak görülemiyor", ciddi, FK 126 --
+  // ve önerisi makineyi durdurup hareketli parçaları kapatmak. Aday kaydında
+  // visually_resolvable false, occlusion partial, mekanizma güveni 0.5 ve tek
+  // kanıt "Sol tarafta çeşitli makineler mevcut". Durduracak her sinyal
+  // kayıttaydı, hiçbiri okunmuyordu.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "machinery",
+    raw_label: "Sol taraftaki makinelerin koruyucuları",
+    asset_ref: "entity_5",
+    affirmative_cues: ["Sol tarafta çeşitli makineler mevcut"],
+    counter_cues: ["Makinelerin genel hatları görülebiliyor"],
+    occlusion: "partial",
+    visually_resolvable: false,
+    confidence: { visibility: 0.7, localization: 0.8, mechanism: 0.5 },
+    event_path: {
+      source: "makine",
+      contact_or_failure: "temas/sıkışma",
+      consequence: "yaralanma",
+    },
+    potential_consequence: "serious",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "verification_request");
+  assertEquals(item?.is_scored, false);
+  assertStringIncludes(
+    String(item?.internal_priority.route_reason),
+    "unresolvable_claim_cannot_be_scored",
+  );
+});

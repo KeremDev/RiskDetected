@@ -220,6 +220,8 @@ const YEAR_WORD_TR: Record<number, string> = {
   3: "üç yılda bir",
 };
 
+const NUMBER_WORD_TR: Record<number, string> = { 1: "bir", 2: "iki", 3: "üç" };
+
 const CLASS_ORDER: HazardClass[] = ["low", "medium", "high"];
 
 /**
@@ -268,10 +270,15 @@ export function renderDuration(
   const value = CLASS_ORDER
     .map((code) => `${HAZARD_CLASS_TR[code]} ${hours[code]}`)
     .join(" · ") + " saat";
+  // "üç yılda bir, iki yılda bir, yılda bir" says "bir" three times for no
+  // reason. The interval word is shared, so factor it out and list the numbers.
   const note = refresh
     ? `Yenileme: sırasıyla ${
-      CLASS_ORDER.map((code) => YEAR_WORD_TR[refresh[code]] ?? "").join(", ")
-    }`
+      CLASS_ORDER.slice(0, -1).map((code) => NUMBER_WORD_TR[refresh[code]] ?? "")
+        .join(", ")
+    } ve ${
+      NUMBER_WORD_TR[refresh[CLASS_ORDER[CLASS_ORDER.length - 1]]] ?? ""
+    } yılda bir`
     : undefined;
   return { label, value, ...(note ? { note } : {}) };
 }

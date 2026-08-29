@@ -1357,6 +1357,71 @@ function claimHedgesItsOwnEvidence(candidate: NormalizedCandidate): boolean {
   return HEDGED_EXISTENCE.test(text);
 }
 
+// Turkish separates "does not appear" from "cannot be seen", and only the
+// second is about the observer.
+//
+// `görünmüyor` is a plain negative and it is how an inspector writes a real
+// absence: "etek tahtası görünmüyor" means there is none. `görülemiyor` carries
+// the impotential -eme-, and it can only mean the viewer was unable to tell.
+// The router already reads the first as absence, correctly, and this gate is
+// careful not to disturb that -- it matches the impotential forms alone.
+const NON_VISIBILITY_PHRASE =
+  /(?:görülemiyor|gorulemiyor|görülemedi|gorulemedi|görülememekte|gorulememekte|seçilemiyor|secilemiyor|seçilemedi|secilemedi|ayırt edilemiyor|ayirt edilemiyor|ayırt edilemedi|ayirt edilemedi|belirlenemiyor|belirlenemedi|kesinleştirilemiyor|kesinlestirilemiyor|kesinleştirilemedi|kesinlestirilemedi|tespit edilemiyor|teyit edilemiyor|değerlendirilemiyor|degerlendirilemiyor|anlaşılamıyor|anlasilamiyor|okunamıyor|okunamiyor|net değil|net degil|cannot be seen|can not be seen|could not be seen|not discernible|indiscernible|illegible)/u;
+
+/**
+ * Is this claim's affirmative evidence made entirely of what could not be seen?
+ *
+ * Cue by cue rather than over the joined string: one cue reporting a real
+ * detail is what separates an absence somebody saw from an absence nobody
+ * could see, and joining the cues would let a single impotential speak for all
+ * of them or be drowned out by the others.
+ */
+function evidenceIsOnlyNonVisibility(candidate: NormalizedCandidate): boolean {
+  const cues = candidate.affirmative_cues
+    .map((cue) => cleanText(cue, "").toLocaleLowerCase("tr-TR"))
+    .filter((cue) => cue.length > 0);
+  if (cues.length === 0) return false;
+  return cues.every((cue) => NON_VISIBILITY_PHRASE.test(cue));
+}
+
+// A component too small in the frame to have been resolved.
+//
+// Analysis 031d5068, a workshop with two overhead cranes photographed from the
+// far end of the bay. The scored finding was "Vinç kancasında emniyet mandalı
+// eksikliği" -- fatal, FK 720, confidence 0.9 across the board, and the single
+// worst item in the report. Its evidence region was 0.03 by 0.05 of the frame:
+// about thirty by seventy pixels, holding a hook some twelve pixels across. A
+// hook latch is a thin tongue across the throat, so at that scale it is one
+// pixel and JPEG noise. The frame also holds two hooks, while the claim's three
+// cues enumerate three.
+//
+// The latch is not missing in that photograph. It is not depicted. Nothing in
+// the wording gives this away -- each cue is literally true -- so the gate goes
+// after the geometry instead, which the model reported honestly even as its
+// confidence did not.
+//
+// Scoped to absence claims about a component. A small region is perfectly good
+// evidence for a puddle or a cable, where the region IS the thing; it is not
+// evidence for a part missing FROM the thing, which is necessarily smaller
+// still. The floor sits well clear of every genuine claim in that same run:
+// the clutter region was 0.05 of the frame and the electrical one 0.02, both
+// an order of magnitude above it.
+const ABSENCE_RESOLUTION_FLOOR = 0.004;
+
+function absenceRegionTooSmallToResolve(
+  candidate: NormalizedCandidate,
+): number | null {
+  if (candidate.condition_code !== "visible_structural_absence") return null;
+  const region = candidate.evidence_region;
+  if (!region) return null;
+  const width = Number(region.width);
+  const height = Number(region.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return null;
+  const area = width * height;
+  if (area <= 0 || area >= ABSENCE_RESOLUTION_FLOOR) return null;
+  return area;
+}
+
 // A guardrail claim that names no member at all.
 //
 // The member-specific gates closed one door and analysis 09e812b0 walked through
@@ -1717,6 +1782,41 @@ export function routeCandidates(params: {
     ) {
       itemClass = "verification_request";
       routeReason = "hedged_evidence_not_an_observation";
+    }
+    // The claim's whole case is that the camera did not show something. That is
+    // a reason to go and look, not a finding to score.
+    if (
+      itemClass === "observed_finding" && evidenceIsOnlyNonVisibility(candidate)
+    ) {
+      itemClass = "verification_request";
+      routeReason = "non_visibility_is_not_absence";
+    }
+    // The component this claim calls missing occupies too little of the frame
+    // to have been resolved at all.
+    if (itemClass === "observed_finding") {
+      const area = absenceRegionTooSmallToResolve(candidate);
+      if (area !== null) {
+        itemClass = "verification_request";
+        routeReason = `absence_claim_below_resolution_floor:${area.toFixed(4)}`;
+      }
+    }
+    // The model's own resolvability flag says this could not be resolved
+    // visually. Scoring it anyway contradicts the record the same output wrote.
+    //
+    // Same analysis, second scored finding: "Sol taraftaki makinelerin
+    // koruyucularının durumu uzaktan net olarak görülemiyor", serious, FK 126,
+    // recommending that the machine be stopped and its moving parts enclosed --
+    // a remedy for a deficiency the item's title says was never established.
+    // The candidate carried visually_resolvable false, occlusion partial, a
+    // mechanism confidence of 0.5 and one affirmative cue reading "Sol tarafta
+    // çeşitli makineler mevcut", which affirms that machines exist and nothing
+    // about their guards. Every signal needed to stop this was already on the
+    // record and nothing read it.
+    if (
+      itemClass === "observed_finding" && candidate.visually_resolvable === false
+    ) {
+      itemClass = "verification_request";
+      routeReason = "unresolvable_claim_cannot_be_scored";
     }
     // The photo's own controls describe a barrier running along this edge with
     // more than one member affirmed. A claim that the same barrier is broken --
