@@ -1219,6 +1219,14 @@ const ABSENCE_WORD =
   /(?:eksik|yok(?:tur)?|bulunmuyor|bulunmama|bulunmamakta|görünmüyor|gorunmuyor|mevcut değil|mevcut degil|missing|absent)/u;
 const PRESENCE_WORD =
   /(?:mevcut(?!\s*değil)(?!\s*degil)|var(?:dır)?\b|görülüyor|goruluyor|görünür|gorunur|takılı|takili|present|intact)/u;
+// "ara korkuluk bulunması gereken boşluk açıkça görünür" is an absence written
+// as a sighting: what is visible is the gap, not the rail. Without this the
+// presence words in the clause cancelled the label's own "eksikliği" and the
+// candidate reached the report ungated, scored fatal, in analysis d32d23f8.
+// Gap nouns only. Absence verbs stay in ABSENCE_WORD, where their word forms
+// are handled -- "eksik" here would also fire on "eksiksiz".
+const GAP_WORD =
+  /(?:boşluk|bosluk|açıklık|aciklik|gap\b|opening|open space)/u;
 
 function componentsClaimedAbsent(candidate: NormalizedCandidate): string[] {
   if (candidate.condition_code !== "visible_structural_absence") return [];
@@ -1234,8 +1242,8 @@ function componentsClaimedAbsent(candidate: NormalizedCandidate): string[] {
   const absent = new Set<string>();
   const present = new Set<string>();
   for (const clause of clauses) {
-    const hasAbsence = ABSENCE_WORD.test(clause);
-    const hasPresence = PRESENCE_WORD.test(clause);
+    const hasAbsence = ABSENCE_WORD.test(clause) || GAP_WORD.test(clause);
+    const hasPresence = PRESENCE_WORD.test(clause) && !GAP_WORD.test(clause);
     for (const component of BARRIER_COMPONENTS) {
       if (!component.pattern.test(clause)) continue;
       if (hasPresence && !hasAbsence) present.add(component.code);
@@ -1518,6 +1526,26 @@ export function routeCandidates(params: {
       continue;
     }
 
+    // A guardrail is a welded assembly, not three parts bolted on separately.
+    // When the photo's own positive controls affirm the member ABOVE and the
+    // member BELOW the one this claim calls missing, the claim is asking the
+    // reader to believe the middle bar was cut out of a factory rail whose top
+    // rail and toeboard are both still there.
+    //
+    // Four consecutive runs of the same process-tank photograph each named a
+    // different missing member -- toeboard, then top rail, then mid rail at
+    // fatal, FK 972 -- while every platform in the frame carries all three. The
+    // element rotates run to run, which is what a guess looks like. It stays a
+    // field check rather than a drop, because a genuinely cut-out mid rail is
+    // rare, not impossible.
+    if (itemClass === "observed_finding" && claimedAbsent.includes("mid_rail")) {
+      const sandwiched = selfAffirmed.flat.has("top_rail") &&
+        selfAffirmed.flat.has("toeboard");
+      if (sandwiched) {
+        itemClass = "verification_request";
+        routeReason = "barrier_member_sandwiched_between_affirmed:mid_rail";
+      }
+    }
     // Two independent looks at the same photograph disagreed about whether the
     // thing this claim says is missing is actually missing. Neither look wins;
     // the report asks for a field check instead of scoring a coin toss.

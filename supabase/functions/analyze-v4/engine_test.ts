@@ -1575,7 +1575,8 @@ Deno.test("elemanın tamamen yokluğu skorlu bulgu olarak kalır", () => {
 
 Deno.test("aynı cümlede var denen eleman yok sayılmaz", () => {
   // "üst korkuluk mevcut; ara korkuluk bulunmuyor" ifadesinde yalnız ara
-  // korkuluk yokluk iddiasıdır.
+  // korkuluk yokluk iddiasıdır. Ayrıştırma doğru; ancak üstü ve altı teyitli
+  // bir ara korkuluk iddiası artık skorlanmaz, saha teyidine iner (d32d23f8).
   const photo = output([candidate({
     candidate_key: "C7",
     module_id: "falls_falling_objects",
@@ -1603,10 +1604,85 @@ Deno.test("aynı cümlede var denen eleman yok sayılmaz", () => {
     sectorID: "manufacturing",
   });
   const item = routed.items.find((entry) => entry.candidate_id);
-  // Üst korkuluk ve etek tahtası hakkında çelişki yok; ara korkuluk hakkında
-  // olumlu kontrol de yok. Skorlu kalmalı.
+  // Ara korkuluk hakkında olumlu kontrol yok, yani çelişki yok: iddia
+  // korunuyor, düşmüyor. Ama üstündeki ve altındaki eleman görüldüğü hâlde
+  // ortadakinin kesilmiş olması modelin dört koşudur ürettiği tahmin biçimi;
+  // skorlanmadan sahaya soruluyor.
+  assertEquals(item?.item_class, "verification_request");
+  assertEquals(item?.is_scored, false);
+  assertStringIncludes(
+    String(item?.internal_priority.route_reason),
+    "barrier_member_sandwiched_between_affirmed:mid_rail",
+  );
+});
+
+Deno.test("üstü teyitli, altı teyitsiz ara korkuluk iddiası skorlu kalır", () => {
+  // Sandviç kuralı yalnız iki komşusu da görülmüşken uygular. Etek tahtası
+  // hakkında hiçbir teyit yoksa iddia normal yolundan geçer.
+  const photo = output([candidate({
+    candidate_key: "C8",
+    module_id: "falls_falling_objects",
+    raw_label: "Korkulukta ara korkuluk eksikliği",
+    affirmative_cues: ["üst korkuluk mevcut; ara korkuluk bulunmuyor"],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "kişinin boşluktan düşmesi",
+      consequence: "yüksekten düşme",
+    },
+    potential_consequence: "fatal",
+  })]);
+  photo.positive_controls = [{
+    control_key: "toprail-only",
+    module_id: "falls_falling_objects",
+    description: "Korkuluklarda üst korkuluk mevcut.",
+    affirmative_cues: ["üst korkuluk"],
+    evidence_region: { x: 0.1, y: 0.2, width: 0.3, height: 0.2 },
+  }];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
   assertEquals(item?.item_class, "observed_finding");
   assertEquals(item?.is_scored, true);
+});
+
+Deno.test("boşluğun görünmesi elemanın görünmesi sayılmaz", () => {
+  // d32d23f8: "ara korkuluk bulunması gereken boşluk açıkça görünür" cümlesi
+  // varlık ifadesi gibi ayrıştırıldı, başlığın "eksikliği" sözünü sildi ve
+  // aday hiçbir kapıya uğramadan fatal skorlandı.
+  const photo = output([candidate({
+    candidate_key: "C9",
+    module_id: "falls_falling_objects",
+    raw_label: "Korkuluk sisteminde ara korkuluk eksikliği",
+    affirmative_cues: [
+      "korkuluk üst korkuluğu mevcut",
+      "korkuluk etek tahtası mevcut",
+      "ara korkuluk bulunması gereken boşluk açıkça görünür",
+    ],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "kişinin düşmesi",
+      consequence: "yüksekten düşme",
+    },
+    potential_consequence: "fatal",
+  })]);
+  photo.positive_controls = [{
+    control_key: "rails",
+    module_id: "falls_falling_objects",
+    description: "Platformlarda üst korkuluk ve etek tahtası görülüyor.",
+    affirmative_cues: ["sarı üst korkuluk", "sarı etek tahtası"],
+    evidence_region: { x: 0, y: 0.4, width: 1, height: 0.2 },
+  }];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "verification_request");
+  assertEquals(item?.is_scored, false);
 });
 
 Deno.test("zemine dağılmış donatı saplanma bulgusu sayılmaz", () => {
@@ -2664,6 +2740,44 @@ Deno.test("İngilizce cevap Türkçe sözleşmesini ihlal eder", () => {
   );
   // Only Turkish is judged; an English analysis must pass untouched.
   assertEquals(outputLanguageFailure(english, "en"), null);
+});
+
+Deno.test("karışık dilli cevapta İngilizce bloklar yakalanır", () => {
+  // d32d23f8: birinci aday Türkçe, sonrakiler İngilizceydi. Tüm çıktıyı tek
+  // metin sayan denetim ilk bloğun ünlü işaretlerini görüp geçiyordu; rapor
+  // Türkçe bir bulgunun altına "Missing mid-rail on the foreground right
+  // platform guardrail" bastı.
+  const mixed = output([
+    candidate({
+      candidate_key: "C1",
+      module_id: "falls_falling_objects",
+      raw_label: "Korkuluk sisteminde ara korkuluk eksikliği",
+      affirmative_cues: ["korkuluk üst korkuluğu mevcut; ara korkuluk yok"],
+      event_path: {
+        source: "platform kenarı",
+        contact_or_failure: "kişinin düşmesi",
+        consequence: "yüksekten düşme yaralanması",
+      },
+    }),
+    candidate({
+      candidate_key: "C2",
+      module_id: "falls_falling_objects",
+      raw_label: "Missing mid-rail on the foreground right platform guardrail",
+      affirmative_cues: [
+        "Visible open space between the top rail and the toe board",
+        "gap in the guardrail structure is clearly visible from the walkway",
+      ],
+      event_path: {
+        source: "person on the platform",
+        contact_or_failure: "person falls through missing mid-rail",
+        consequence: "impact with lower level or ground",
+      },
+    }),
+  ]);
+  assertStringIncludes(
+    String(outputLanguageFailure(mixed, "tr")),
+    "output_language_not_turkish",
+  );
 });
 
 Deno.test("Türkçe cevap dil denetiminden geçer", () => {

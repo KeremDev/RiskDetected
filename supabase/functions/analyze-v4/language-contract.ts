@@ -25,22 +25,46 @@ const TURKISH_LETTERS = /[çğıöşüÇĞİÖŞÜ]/u;
 const ENGLISH_MARKERS =
   /\b(?:the|of|and|with|from|for|is|are|was|were|to|on|in|at|by|between|below|above|near|missing|exposed|unguarded|rotating|falling|contact|injury|person|worker|platform|edge|guard(?:rail)?|machinery|equipment|surface|visible|no|not)\b/giu;
 
-/** User-facing text the provider authored, in the order a reader would meet it. */
-function providerText(output: ProviderPhotoOutput): string {
-  const parts: string[] = [];
+/**
+ * User-facing text the provider authored, one block per claim.
+ *
+ * Per claim, not one pooled string: analysis d32d23f8 answered in BOTH
+ * languages -- one Turkish candidate, then three English ones, with English
+ * field checks and an English positive control -- and a whole-output test sees
+ * the first block's diacritics and passes the rest. The report published
+ * "Missing mid-rail on the foreground right platform guardrail" underneath a
+ * Turkish finding.
+ */
+function providerTextBlocks(output: ProviderPhotoOutput): string[] {
+  const blocks: string[] = [];
   for (const candidate of output.candidates) {
-    parts.push(candidate.raw_label ?? "");
-    parts.push(...(candidate.affirmative_cues ?? []));
-    parts.push(...(candidate.counter_cues ?? []));
-    parts.push(candidate.event_path?.source ?? "");
-    parts.push(candidate.event_path?.contact_or_failure ?? "");
-    parts.push(candidate.event_path?.consequence ?? "");
+    blocks.push(
+      [
+        candidate.raw_label ?? "",
+        ...(candidate.affirmative_cues ?? []),
+        ...(candidate.counter_cues ?? []),
+        candidate.event_path?.source ?? "",
+        candidate.event_path?.contact_or_failure ?? "",
+        candidate.event_path?.consequence ?? "",
+      ].filter((part) => part.trim().length > 0).join(" ").trim(),
+    );
   }
   for (const control of output.positive_controls) {
-    parts.push(control.description ?? "");
-    parts.push(...(control.affirmative_cues ?? []));
+    blocks.push(
+      [control.description ?? "", ...(control.affirmative_cues ?? [])]
+        .filter((part) => part.trim().length > 0).join(" ").trim(),
+    );
   }
-  return parts.filter((part) => part.trim().length > 0).join(" ").trim();
+  return blocks.filter((block) => block.length > 0);
+}
+
+/** Non-null when this one block is English. */
+function blockIsEnglish(block: string): boolean {
+  // Short blocks are never judged: a label like "motor kaplini" can legitimately
+  // carry no diacritic, and a false alarm costs a retry on a correct answer.
+  if (block.length < 60) return false;
+  if (TURKISH_LETTERS.test(block)) return false;
+  return (block.match(ENGLISH_MARKERS) ?? []).length >= 3;
 }
 
 /**
@@ -54,14 +78,13 @@ export function outputLanguageFailure(
   expectedLanguage: string,
 ): string | null {
   if (expectedLanguage !== "tr") return null;
-  const text = providerText(output);
-  // Too short to judge. A three-word label can legitimately lack Turkish
-  // letters ("motor kaplini"), and guessing on it would burn retries.
-  if (text.length < 120) return null;
-  if (TURKISH_LETTERS.test(text)) return null;
-  const englishHits = (text.match(ENGLISH_MARKERS) ?? []).length;
-  if (englishHits < 4) return null;
-  return `output_language_not_turkish:markers=${englishHits}:len=${text.length}`;
+  const blocks = providerTextBlocks(output);
+  if (blocks.length === 0) return null;
+  const english = blocks.filter(blockIsEnglish);
+  if (english.length === 0) return null;
+  return `output_language_not_turkish:blocks=${english.length}/${blocks.length}:len=${
+    english[0].length
+  }`;
 }
 
 /**

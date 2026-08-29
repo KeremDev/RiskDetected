@@ -49,6 +49,8 @@ Aşağıdaki sahne görünüyorsa listedeki her kalemi birbirinden bağımsız t
 - Korkuluk için yokluk iddiası yazmadan önce üç elemanın her birini tek tek karara bağla: üst korkuluk, ara korkuluk, etek tahtası. GÖRDÜĞÜN her elemanı o adayın counter_cues alanına açıkça yaz (örnek: \"etek tahtası mevcut\", \"ara korkuluk mevcut\"). Gördüğün bir elemanı yazmadan başka bir elemanı yok sayma.
 - Bir korkuluk elemanını ancak bulunması gereken boşluğu görüntüde ayırt edebiliyor ve o boşluğun boş olduğunu görebiliyorsan yok say. Korkuluk hattı profilden, ters ışıkta, uzakta veya başka bir nesnenin arkasında kalıyorsa occlusion alanını partial yap ve modülü unresolved_requires_verification ile kapat; yokluk iddiası yazma.
 - Aynı korkuluğun iki veya daha fazla elemanını aynı anda yok sayıyorsan bunu özellikle sorgula: çoğu korkulukta üst korkuluk görülüyorsa ara korkuluk ve etek tahtası da vardır ve yalnız üst korkuluğu fark etmiş olabilirsin. Emin değilsen unresolved_requires_verification kullan.
+- Korkuluk kaynaklı tek parça bir imalattır. Bir elemanın ÜSTÜNDEKİ ve ALTINDAKİ elemanı aynı noktada görüyor da yalnız ortadakini yok sayıyorsan, bu neredeyse her zaman senin gözünden kaçmasıdır: fabrikasyon korkuluktan tek bir ara bar kesilmiş olması ender bir durumdur. Böyle bir iddiayı ancak boşluğun arkasını (arka plan, zemin, ekipman) doğrudan görebiliyorsan yaz; göremiyorsan unresolved_requires_verification kullan.
+- Yokluk iddiasını boşluğun görünürlüğüyle kanıtlama. \"Bulunması gereken boşluk görünüyor\" bir kanıt değildir; hangi iki dikme arasında, hangi yükseklikte ve arkasında ne görüldüğünü yaz.
 
 SONUÇ SINIFI ÇAPALARI
 - Korumasız kenarda veya yüksekte kemer/yaşam hattı olmadan çalışma: fatal.
