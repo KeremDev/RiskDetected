@@ -3553,3 +3553,95 @@ Deno.test("raftan düşen malzeme önerisi istifi anlatır, topuk levhasını de
   assertEquals(action.includes("topuk levhası"), false);
   assertStringIncludes(action, "Raf kenarından");
 });
+
+// --------------------------------------------------------------------------
+// d54b5165 -- the demotion has to reach the title
+// --------------------------------------------------------------------------
+
+Deno.test("saha kontrolüne düşen madde başlığında eksiklik iddia etmez", () => {
+  // d54b5165: "Vinç kancasında emniyet mandalı eksikliği" saha kontrolü olarak
+  // yayımlandı; açıklaması "mandal net olarak görünmüyor" diyordu. Kapı sınıfı
+  // değiştirmiş, adı bırakmıştı -- başlıkları tarayan okuyucu bulgu görüyor.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "lifting",
+    raw_label: "Vinç kancasında emniyet mandalı eksikliği",
+    asset_ref: "crane_hook_1",
+    affirmative_cues: [
+      "Üst tavan vincinin kancasının ağzında mandal net olarak görünmüyor.",
+    ],
+    evidence_region: { x: 0.48, y: 0.35, width: 0.03, height: 0.05 },
+    event_path: {
+      source: "asılı yük",
+      contact_or_failure: "kancadan yükün ayrılması",
+      consequence: "yükün düşmesi",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "verification_request");
+  assertEquals(String(item?.title).includes("eksikliği"), false);
+  assertStringIncludes(String(item?.title), "durumu");
+  // Geçici koruma adımı da kancayı anlatmalı, korkuluk sürekliliğini değil.
+  const temporary = String(
+    item?.recommended_measures?.find((measure) =>
+      measure.title === "Geçici koruma"
+    )?.text,
+  );
+  assertStringIncludes(temporary, "mandal");
+});
+
+Deno.test("skorlu bulgunun başlığı yumuşatılmaz", () => {
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "work_at_height",
+    raw_label: "Platform kenarında etek tahtası eksikliği",
+    affirmative_cues: ["Döşeme kenarında etek tahtası yok, boşluk açık"],
+    evidence_region: { x: 0.2, y: 0.3, width: 0.2, height: 0.15 },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.is_scored, true);
+  assertStringIncludes(String(item?.title), "eksikliği");
+});
+
+Deno.test("raf saha kontrolü korkuluk sürekliliğinden söz etmez", () => {
+  // d54b5165: raf istifi için "toplu korumanın sürekliliğini doğrulayın"
+  // önerildi. Rafta sürekliliği doğrulanacak bir toplu koruma yok.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Raf üzerinde düzensiz veya dengesiz istiflenmiş malzemeler",
+    asset_ref: "storage_rack_1",
+    affirmative_cues: [
+      "Sağdaki mavi rafın üst katmanlarında bazı malzemeler düzensiz duruyor gibi görünmektedir.",
+    ],
+    evidence_region: { x: 0.7, y: 0.45, width: 0.2, height: 0.3 },
+    visually_resolvable: false,
+    potential_consequence: "serious",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "verification_request");
+  const temporary = String(
+    item?.recommended_measures?.find((measure) =>
+      measure.title === "Geçici koruma"
+    )?.text,
+  );
+  assertEquals(temporary.includes("toplu koruma"), false);
+  assertStringIncludes(temporary, "istif");
+});

@@ -431,11 +431,32 @@ function equipmentNeutralTitle(
   return neutral.charAt(0).toLocaleUpperCase("tr-TR") + neutral.slice(1);
 }
 
+// A title that still asserts the deficiency the item was demoted for asserting.
+//
+// Run d54b5165 published "Vinç kancasında emniyet mandalı eksikliği" as a
+// verification_request whose own description read "mandal net olarak
+// görünmüyor". The gate had changed the class and left the name alone, so a
+// reader scanning titles sees a finding where the item says go and look. The
+// demotion has to reach the title or it only half happened.
+//
+// Only the absence nouns are rewritten, and into "durumu" -- the thing to check
+// rather than the thing concluded. A title that asserts nothing is left alone.
+const TITLE_ABSENCE_TAIL =
+  /\s*(?:eksikli[gğ]i|bulunmamas[ıi]|bulunmuyor|yoklu[gğ]u|mevcut de[gğ]il|olmamas[ıi])\s*$/u;
+
+function askingTitle(raw: string): string {
+  return TITLE_ABSENCE_TAIL.test(raw)
+    ? raw.replace(TITLE_ABSENCE_TAIL, " durumu")
+    : raw;
+}
+
 function titleFor(
   candidate: NormalizedCandidate,
   itemClass: SafetyItemClass,
 ): string {
-  const raw = conciseTitle(candidate);
+  const raw = itemClass === "verification_request"
+    ? askingTitle(conciseTitle(candidate))
+    : conciseTitle(candidate);
   if (itemClass === "assurance_requirement") {
     // The item class is already labelled in the report, so a "saha teyidi" /
     // "saha güvencesi gerekli" suffix on every title was pure repetition -- and
@@ -519,6 +540,19 @@ function controlTextFor(candidate: NormalizedCandidate): string {
 function verificationAction(candidate: NormalizedCandidate): string {
   if (candidate.condition_code === "electrical_identity_unresolved") {
     return "Alanı geçici olarak sınırlandırın; görünen hattın niteliğini, bağlantısını ve enerji durumunu yetkili kişiyle sahada doğrulayın.";
+  }
+  // Asset before module, for the same reason the control playbook needs it: a
+  // rack and a slab edge share this module, and run d54b5165 told a warehouse
+  // to check the continuity of its collective edge protection. Racking has no
+  // edge protection to be continuous.
+  const asset = (candidate.asset_ref ?? "").toLocaleLowerCase("tr-TR");
+  if (/(?:kanca|hook|vin[cç]|crane|sapan|sling|caraskal|hoist)/u.test(asset)) {
+    return "Kaldırmayı durdurup kancayı yakından inceleyin; emniyet mandalının varlığını ve işlevini sahada doğrulayın.";
+  }
+  if (
+    /(?:raf|rack|shelv|istif|stack|palet|pallet|depolama|storage)/u.test(asset)
+  ) {
+    return "Rafın önündeki geçişi sınırlandırın; istif düzenini, kenardan taşmayı ve göz kapasitesini sahada doğrulayın.";
   }
   if (
     ["falls_falling_objects", "work_at_height"].includes(candidate.module_id)
