@@ -162,27 +162,30 @@ Deno.test("gözlem dayanağı seçilmeden metin üretilmez", async () => {
   assertEquals(result.blocked[0].reason, "BOOK_OBSERVATION_BASIS_REQUIRED");
 });
 
-Deno.test("kritik dil ayrı onay olmadan açılmaz", async () => {
+Deno.test("kritik sınıf, dil kapalıyken de deftere yazılır", async () => {
+  // Durdurma dili onaya bağlı ve o onay henüz uygulamada yok. Kapalı olması
+  // kaydın düşmesi anlamına GELMEZ: en ağır bulgunun deftere hiç girmemesi
+  // buradaki en kötü sonuçtur. Standart dille yazılır.
   const critical = item({
     id: "F-6",
     criticality: "fatal",
     people: 1,
     barriers: ["top_rail", "mid_rail", "toeboard"],
   });
-  const blockedRun = await buildApprovedBookDrafts([critical], SITE);
-  assertEquals(blockedRun.drafts.length, 0);
-  assertEquals(
-    blockedRun.blocked[0].reason,
-    "BOOK_CRITICAL_LANGUAGE_APPROVAL_REQUIRED",
-  );
+  const result = await buildApprovedBookDrafts([critical], SITE);
+  assertEquals(result.blocked.length, 0, JSON.stringify(result.blocked));
+  assertEquals(result.drafts.length, 1);
 
-  const clusterId = blockedRun.clusters[0].clusterId;
-  const approved = await buildApprovedBookDrafts([critical], {
-    ...SITE,
-    criticalLanguageApprovals: [clusterId],
-  });
-  assertEquals(approved.drafts.length, 1);
-  assertStringIncludes(approved.drafts[0].copyText, "derhal durdurulmalı");
+  const text = result.drafts[0].copyText;
+  // Durdurma cümlesi yok.
+  assertEquals(text.includes("durdurulmalı"), false, text);
+  // Maruziyet cümlesi var: ağırlık kayboluyor değil, dili yumuşuyor.
+  assertStringIncludes(text, "Alanda çalışan bulunması nedeniyle");
+  // İkinci koruma katmanı şiddete bağlı, dil katmanına değil.
+  assertStringIncludes(text, "kişisel düşme durdurma sistemi");
+  assertEquals(result.drafts[0].templateId, "observed-standard-v1");
+  // Sınıflandırma kayıtta duruyor; gölge izinde kaç tane olduğu görülebilsin.
+  assertEquals(result.clusters[0].entryClass, "critical_immediate");
 });
 
 // --------------------------------------------------------------------------
@@ -437,7 +440,7 @@ Deno.test("şablon paketi sürüm artmadan değişemez", async () => {
   // SIRA: önce APPROVED_BOOK_TEMPLATE_VERSION artır, sonra hash'i buradan oku.
   // Ters sırada okunan değer yapısal olarak bayattır; prompt paketinde bu üç
   // tur "önbellek sorunu" sanıldı ve değildi.
-  assertEquals(APPROVED_BOOK_TEMPLATE_VERSION, "book-tr-templates-v2");
+  assertEquals(APPROVED_BOOK_TEMPLATE_VERSION, "book-tr-templates-v3");
   const sha = await computeApprovedBookBundleSHA256();
   if (RELEASED_BUNDLE_SHA256 !== "PLACEHOLDER") {
     assertEquals(sha, RELEASED_BUNDLE_SHA256);

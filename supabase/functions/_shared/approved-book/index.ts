@@ -19,7 +19,11 @@ import type {
 import { adaptV4Items, type V4ItemRow } from "./analysis-adapter.ts";
 import { eligibleItems } from "./eligibility.ts";
 import { clusterItems } from "./clusterer.ts";
-import { planSentences, renderParagraph } from "./renderer.ts";
+import {
+  CRITICAL_LANGUAGE_ENABLED,
+  planSentences,
+  renderParagraph,
+} from "./renderer.ts";
 import { lint } from "./linter.ts";
 import {
   APPROVED_BOOK_ENGINE_VERSION,
@@ -64,11 +68,14 @@ export async function buildApprovedBookDrafts(
       continue;
     }
 
-    // Critical wording is the wording an employer acts on within the hour. It
-    // stays behind an explicit, per-cluster approval, and silence is a block,
-    // never a downgrade to softer language: quietly rewriting a stop-work entry
-    // as routine is the more dangerous failure.
+    // Critical wording is the wording an employer acts on within the hour, so it
+    // stays behind an explicit per-cluster approval. That approval has no
+    // control in the app yet, so the language is switched off in the renderer
+    // and these clusters are written in standard language instead -- they are
+    // never withheld. Blocking them would take the most severe findings out of
+    // the record entirely, which is the one outcome worth avoiding above all.
     if (
+      CRITICAL_LANGUAGE_ENABLED &&
       cluster.entryClass === "critical_immediate" &&
       !context.criticalLanguageApprovals.includes(cluster.clusterId)
     ) {

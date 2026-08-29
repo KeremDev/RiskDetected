@@ -32,6 +32,23 @@ import {
   VERIFICATION_BY_TOPIC,
 } from "./catalogs.tr.ts";
 
+/**
+ * Stop-work wording, off for now.
+ *
+ * "Alana erişim derhal durdurulmalı" is the sentence an employer acts on within
+ * the hour, and the plan puts it behind a separate specialist approval. Until
+ * that approval exists in the app there is nothing to approve it with, so the
+ * language stays off.
+ *
+ * Off means the entry is written in standard language -- never that it
+ * disappears. A fatal finding missing from the book because the engine could not
+ * word it strongly enough would be the worst failure available here, and it is
+ * the one the plan warns about: "kritiği sessiz bırakma". Eligibility still
+ * classifies these clusters, so the shadow trace shows how many there are and
+ * turning the language back on is this constant plus the approval control.
+ */
+export const CRITICAL_LANGUAGE_ENABLED = false;
+
 export type SentencePlan = {
   templateId: string;
   sentences: string[];
@@ -135,12 +152,19 @@ function actionSentence(cluster: ApprovedBookCluster): string | null {
   const parts = [`${surface.primary.charAt(0).toLocaleUpperCase("tr-TR")}${
     surface.primary.slice(1)
   }dır`];
-  if (surface.supporting && cluster.entryClass === "critical_immediate") {
+  // The second control layer belongs to the severity, not to the wording tier.
+  // A fatal fall still earns the anchor sentence with the stop-work language
+  // switched off; that layer is what the reader acts on.
+  if (
+    surface.supporting &&
+    (cluster.criticality === "fatal" || cluster.criticality === "permanent")
+  ) {
     parts.push(`${surface.supporting}dır`);
   }
-  const prefix = cluster.entryClass === "critical_immediate"
-    ? `Alana erişim ${urgency} durdurulmalı; `
-    : "";
+  const prefix =
+    CRITICAL_LANGUAGE_ENABLED && cluster.entryClass === "critical_immediate"
+      ? `Alana erişim ${urgency} durdurulmalı; `
+      : "";
   const joined = parts.join("; ");
   return collapse(
     prefix
@@ -185,7 +209,7 @@ export function planSentences(
   if (!action) return null;
   const closure = closureSentence(cluster);
 
-  if (cluster.entryClass === "critical_immediate") {
+  if (cluster.entryClass === "critical_immediate" && CRITICAL_LANGUAGE_ENABLED) {
     const exposure = exposureSentence(cluster);
     if (!exposure || !closure) return null;
     return {
@@ -194,7 +218,10 @@ export function planSentences(
     };
   }
 
-  if (cluster.entryClass === "observed_corrective") {
+  if (
+    cluster.entryClass === "observed_corrective" ||
+    cluster.entryClass === "critical_immediate"
+  ) {
     const exposure = exposureSentence(cluster);
     const sentences = [observation];
     if (exposure && cluster.urgency !== "planned") sentences.push(exposure);

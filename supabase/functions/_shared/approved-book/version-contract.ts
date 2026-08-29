@@ -22,7 +22,7 @@ import {
 
 export const APPROVED_BOOK_ENGINE_VERSION = "approved-book-v1";
 export const APPROVED_BOOK_ADAPTER_VERSION = "book-source-v1";
-export const APPROVED_BOOK_TEMPLATE_VERSION = "book-tr-templates-v2";
+export const APPROVED_BOOK_TEMPLATE_VERSION = "book-tr-templates-v3";
 export const APPROVED_BOOK_LANGUAGE_CATALOG_VERSION = "book-tr-catalog-v2";
 
 /**
