@@ -440,7 +440,7 @@ Deno.test("şablon paketi sürüm artmadan değişemez", async () => {
   // SIRA: önce APPROVED_BOOK_TEMPLATE_VERSION artır, sonra hash'i buradan oku.
   // Ters sırada okunan değer yapısal olarak bayattır; prompt paketinde bu üç
   // tur "önbellek sorunu" sanıldı ve değildi.
-  assertEquals(APPROVED_BOOK_TEMPLATE_VERSION, "book-tr-templates-v3");
+  assertEquals(APPROVED_BOOK_TEMPLATE_VERSION, "book-tr-templates-v4");
   const sha = await computeApprovedBookBundleSHA256();
   if (RELEASED_BUNDLE_SHA256 !== "PLACEHOLDER") {
     assertEquals(sha, RELEASED_BUNDLE_SHA256);

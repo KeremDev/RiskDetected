@@ -124,8 +124,11 @@ export function lintParagraph(text: string): LintFinding[] {
  */
 export function lintClaimActionConsistency(text: string): LintFinding[] {
   const findings: LintFinding[] = [];
+  // "kesinleştirilememiştir" is an observation verb too: it states what the
+  // specialist looked at and could not settle, which is exactly the claim a
+  // field-check entry makes.
   const hasObservation =
-    /(?:gözlenmiştir|gozlenmistir|tespit edilmiştir|tespit edilmistir|incelenmiştir|incelenmistir|yapılamamıştır|yapilamamistir)/u
+    /(?:gözlenmiştir|gozlenmistir|tespit edilmiştir|tespit edilmistir|incelenmiştir|incelenmistir|yapılamamıştır|yapilamamistir|kesinleştirilememiştir|kesinlestirilememistir|belirlenememiştir|belirlenememistir)/u
       .test(text);
   const hasRequirement =
     /(?:sağlanmalıdır|saglanmalidir|doğrulanmalıdır|dogrulanmalidir|alınmalıdır|alinmalidir|takılmalıdır|takilmalidir|kaldırılmalıdır|kaldirilmalidir|onarılmalıdır|onarilmalidir|yapılmalıdır|yapilmalidir|geçirilmelidir|gecirilmelidir|edilmelidir|kapatılmalıdır|kapatilmalidir|ayrılmalıdır|ayrilmalidir|durdurulmalı|izlenmelidir|bulundurulmalıdır|işlenmelidir|islenmelidir|dosyalanmalıdır|dosyalanmalidir|imzalanmalıdır|imzalanmalidir|tutulmalıdır|tutulmalidir|kullandırılmalı|kullandirilmali)/u

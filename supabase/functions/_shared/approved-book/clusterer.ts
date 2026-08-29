@@ -67,7 +67,11 @@ function clusterKey(
       item.assetRef ?? "-"
     }`;
   }
-  return `observed:${item.mechanismCode ?? item.moduleId}:${item.assetFamily}:${
+  // Mechanism and asset only. The module is a routing key, not a hazard: one
+  // unprotected edge arrives under falls_falling_objects, work_at_height and
+  // people_exposure at once, and keying on the module wrote the same paragraph
+  // three times (bb1f64be).
+  return `observed:${item.mechanismCode ?? item.moduleId}:${
     item.assetRef ?? "-"
   }`;
 }

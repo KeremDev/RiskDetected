@@ -123,84 +123,84 @@ export const BARRIER_MEMBER_ORDER = ["top_rail", "mid_rail", "toeboard", "guard"
 export const ACTION_BY_MECHANISM: Record<string, ActionSurface> = {
   fall_from_height: {
     primary:
-      "açık kenar boyunca ana korkuluk, ara korkuluk ve topuk levhasından oluşan toplu koruma kesintisiz olarak sağlanmalı",
+      "açık kenar boyunca ana korkuluk, ara korkuluk ve topuk levhasından oluşan toplu koruma kesintisiz olarak sağlanmalıdır",
     supporting:
-      "toplu koruma teknik olarak uygulanamayan bölümlerde hesaplanmış ankraj noktası üzerinden kişisel düşme durdurma sistemi kullandırılmalı",
+      "toplu koruma teknik olarak uygulanamayan bölümlerde hesaplanmış ankraj noktası üzerinden kişisel düşme durdurma sistemi kullandırılmalıdır",
     closure:
       "korumanın tamamlandığı yetkili kişi tarafından yerinde görülerek tutanağa bağlanmalıdır",
   },
   falling_object: {
     primary:
-      "çalışma yüzeyinin kenarında topuk levhası ve gerektiğinde malzeme tutucu ağ sağlanmalı",
-    supporting: "alt kottaki geçiş alanı fiziksel olarak kapatılmalı",
+      "çalışma yüzeyinin kenarında topuk levhası ve gerektiğinde malzeme tutucu ağ sağlanmalıdır",
+    supporting: "alt kottaki geçiş alanı fiziksel olarak kapatılmalıdır",
     closure:
       "uygulamanın tamamlandığı yerinde görülerek tutanağa bağlanmalıdır",
   },
   caught_in_pinch_shear: {
     primary:
-      "hareketli parçalara erişimi engelleyen sabit veya kilitlemeli koruyucu takılmalı",
+      "hareketli parçalara erişimi engelleyen sabit veya kilitlemeli koruyucu takılmalıdır",
     supporting:
-      "koruyucu sökülmeden makinenin çalışmasını engelleyen kilitleme düzeni işler hâle getirilmeli",
+      "koruyucu sökülmeden makinenin çalışmasını engelleyen kilitleme düzeni işler hâle getirilmelidir",
     closure:
       "koruyucunun takıldığı ve kilitlemenin çalıştığı işlevsel deneme ile doğrulanıp kayda geçirilmelidir",
   },
   sharp_edge_contact: {
     primary:
-      "açıkta kalan uçlar kesilerek kaldırılmalı veya darbe emici başlıkla kapatılmalı",
-    supporting: "alan geçiş güzergâhından fiziksel olarak ayrılmalı",
+      "açıkta kalan uçlar kesilerek kaldırılmalı veya darbe emici başlıkla kapatılmalıdır",
+    supporting: "alan geçiş güzergâhından fiziksel olarak ayrılmalıdır",
     closure: "uygulamanın tamamlandığı yerinde görülerek kayda geçirilmelidir",
   },
   electrical_contact_arc: {
     primary:
-      "hat enerjisiz hâle getirilerek yalıtımı onarılmalı, güzergâh temas ve mekanik hasar riski bulunmayan biçimde yeniden düzenlenmeli",
+      "hat enerjisiz hâle getirilerek yalıtımı onarılmalı, güzergâh temas ve mekanik hasar riski bulunmayan biçimde yeniden düzenlenmelidir",
     supporting:
-      "onarım tamamlanana kadar alana erişim fiziksel olarak engellenmeli",
+      "onarım tamamlanana kadar alana erişim fiziksel olarak engellenmelidir",
     closure:
       "yalıtım ve topraklama sürekliliği yetkili kişi tarafından ölçülerek kayda geçirilmelidir",
   },
   mechanical_separation_release: {
     primary:
-      "geçici emniyet düzeni kaldırılarak üreticinin öngördüğü emniyet pimi veya kilit takılmalı",
+      "geçici emniyet düzeni kaldırılarak üreticinin öngördüğü emniyet pimi veya kilit takılmalıdır",
     supporting:
-      "bağlantı elemanı ile hortumun tip ve basınç sınıfı uyumu sağlanmalı",
+      "bağlantı elemanı ile hortumun tip ve basınç sınıfı uyumu sağlanmalıdır",
     closure:
       "değişimin yapıldığı ve hattın basınç altında sızdırmazlığının denendiği kayda geçirilmelidir",
   },
   hydraulic_pneumatic_release: {
     primary:
-      "hat basıncı boşaltılarak hasarlı bölüm değiştirilmeli, bağlantılar üretici talimatına göre yeniden yapılmalı",
-    supporting: "hat üzerinde kamçı emniyeti sağlanmalı",
+      "hat basıncı boşaltılarak hasarlı bölüm değiştirilmeli, bağlantılar üretici talimatına göre yeniden yapılmalıdır",
+    supporting: "hat üzerinde kamçı emniyeti sağlanmalıdır",
     closure: "basınç denemesi sonucu kayda geçirilmelidir",
   },
   fall_same_level: {
     primary:
-      "geçiş güzergâhı üzerindeki malzeme kaldırılarak yüzey düzgün ve kuru hâle getirilmeli",
+      "geçiş güzergâhı üzerindeki malzeme kaldırılarak yüzey düzgün ve kuru hâle getirilmelidir",
     supporting:
-      "malzeme için belirlenmiş istif alanı tanımlanmalı ve güzergâh işaretlenmeli",
+      "malzeme için belirlenmiş istif alanı tanımlanmalı ve güzergâh işaretlenmelidir",
     closure: "düzenlemenin sürekliliği vardiya kontrolüyle izlenmelidir",
   },
   vehicle_equipment_strike: {
     primary:
-      "yaya güzergâhı araç güzergâhından fiziksel bariyerle ayrılmalı",
-    supporting: "geçiş noktalarında görüş ve öncelik düzeni tanımlanmalı",
+      "yaya güzergâhı araç güzergâhından fiziksel bariyerle ayrılmalıdır",
+    supporting: "geçiş noktalarında görüş ve öncelik düzeni tanımlanmalıdır",
     closure: "ayrımın uygulandığı yerinde görülerek kayda geçirilmelidir",
   },
   structural_collapse: {
     primary:
-      "taşıyıcı düzenin yeterliliği yetkili kişi tarafından değerlendirilerek gerekli destekleme yapılmalı",
-    supporting: "değerlendirme tamamlanana kadar alan boşaltılmalı",
+      "taşıyıcı düzenin yeterliliği yetkili kişi tarafından değerlendirilerek gerekli destekleme yapılmalıdır",
+    supporting: "değerlendirme tamamlanana kadar alan boşaltılmalıdır",
     closure: "destekleme sonrası kabul yetkili kişi tarafından kayda geçirilmelidir",
   },
   thermal_contact: {
-    primary: "sıcak yüzey yalıtılmalı veya erişim fiziksel olarak engellenmeli",
-    supporting: "uyarı işaretlemesi tamamlanmalı",
+    primary: "sıcak yüzey yalıtılmalı veya erişim fiziksel olarak engellenmelidir",
+    supporting: "uyarı işaretlemesi tamamlanmalıdır",
     closure: "uygulamanın tamamlandığı yerinde görülerek kayda geçirilmelidir",
   },
   chemical_contact_release: {
     primary:
-      "kimyasal madde kapalı sistemde tutulmalı, dökülme toplama düzeni sağlanmalı",
+      "kimyasal madde kapalı sistemde tutulmalı, dökülme toplama düzeni sağlanmalıdır",
     supporting:
-      "malzeme güvenlik bilgi formuna uygun kişisel koruyucu donanım kullandırılmalı",
+      "malzeme güvenlik bilgi formuna uygun kişisel koruyucu donanım kullandırılmalıdır",
     closure: "düzenlemenin tamamlandığı kayda geçirilmelidir",
   },
 };

@@ -100,6 +100,20 @@ function observationSentence(
   }
 
   if (cluster.entryClass === "measurement_or_test_request") {
+    // A field check that names a mechanism is about that condition, not about
+    // paperwork. Analysis bb1f64be asked for "periyodik kontrol, bakım ve
+    // uygunluk kayıtları" over a missing scaffold toeboard and over a cable of
+    // unknown identity, because both fell through to the records surface.
+    const mechanism = OBSERVATION_BY_MECHANISM[cluster.mechanismCode ?? ""];
+    if (!cluster.assuranceTopicId && mechanism) {
+      const barrier = barrierPhrase(cluster.barrierComponentsAbsent);
+      const subject = barrier
+        ? `korkuluk sisteminde ${barrier} bulunup bulunmadığı`
+        : mechanism.condition.replace(/(?:ğı|ği|du|dı|di)$/u, "up bulunmadığı");
+      return `${basis} ${
+        locationClause(cluster, context)
+      }${subject} görüntüden kesinleştirilememiştir.`;
+    }
     const surface = VERIFICATION_BY_TOPIC[cluster.assuranceTopicId ?? ""] ??
       VERIFICATION_BY_TOPIC.asset_assurance_generic;
     return `${basis} ${
@@ -149,9 +163,13 @@ function actionSentence(cluster: ApprovedBookCluster): string | null {
 
   const surface = ACTION_BY_MECHANISM[cluster.mechanismCode ?? ""];
   if (!surface) return null;
-  const parts = [`${surface.primary.charAt(0).toLocaleUpperCase("tr-TR")}${
-    surface.primary.slice(1)
-  }dır`];
+  // Surfaces are stored fully inflected. A runtime "+dır" ignored vowel
+  // harmony and produced "getirilmelidır" where Turkish wants "getirilmelidir".
+  const parts = [
+    `${surface.primary.charAt(0).toLocaleUpperCase("tr-TR")}${
+      surface.primary.slice(1)
+    }`,
+  ];
   // The second control layer belongs to the severity, not to the wording tier.
   // A fatal fall still earns the anchor sentence with the stop-work language
   // switched off; that layer is what the reader acts on.
@@ -159,7 +177,7 @@ function actionSentence(cluster: ApprovedBookCluster): string | null {
     surface.supporting &&
     (cluster.criticality === "fatal" || cluster.criticality === "permanent")
   ) {
-    parts.push(`${surface.supporting}dır`);
+    parts.push(surface.supporting);
   }
   const prefix =
     CRITICAL_LANGUAGE_ENABLED && cluster.entryClass === "critical_immediate"
