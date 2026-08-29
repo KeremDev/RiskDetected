@@ -3460,3 +3460,96 @@ Deno.test("görünen raf ünitesi lojistik modülünü cevaplar", () => {
     false,
   );
 });
+
+// --------------------------------------------------------------------------
+// 3e76e187 -- the same photograph, the opposite claim
+// --------------------------------------------------------------------------
+
+Deno.test("çözünürlüğün altındaki olumlu kontrol yayımlanmaz", () => {
+  // 031d5068 kanca mandalını 0.0015'lik bir bölgede eksik ilan etti ve
+  // skorlandı. Aynı fotoğrafın bir sonraki çalışması, aynı ölçekte, mandalın
+  // MEVCUT olduğunu olumlu kontrol olarak yayımladı: "Kancaların ağız kısmında
+  // mandallar açıkça görülüyor." On iki pikselde hiçbir şey açıkça görülmez.
+  //
+  // Olumlu kontrol ikisinin daha tehlikelisi: okuyucuya "bakıldı, iyi" der ve
+  // gidip bakmasını engelleyebilir.
+  const photo = output([candidate()]);
+  photo.positive_controls.push({
+    module_id: "lifting",
+    control_key: "control_1",
+    asset_ref: "crane_1",
+    description: "Her iki tavan vincinin kancalarında güvenlik mandalları mevcut.",
+    affirmative_cues: ["Kancaların ağız kısmında mandallar açıkça görülüyor."],
+    evidence_region: { x: 0.48, y: 0.45, width: 0.03, height: 0.05 },
+  });
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routed.items.some((item) =>
+      item.item_class === "positive_control" &&
+      String(item.title).includes("mandal")
+    ),
+    false,
+  );
+});
+
+Deno.test("okunabilir büyüklükteki olumlu kontrol yayımlanır", () => {
+  // Aynı çalışmadaki vinç uyarı etiketi 0.1 x 0.05 = 0.005 ile tabanın üstünde
+  // ve büyütüldüğünde gerçekten okunuyor.
+  const photo = output([candidate()]);
+  photo.positive_controls.push({
+    module_id: "lifting",
+    control_key: "control_2",
+    asset_ref: "crane_1",
+    description: 'Tavan vinçleri üzerinde "DİKKAT!" etiketleri mevcut.',
+    affirmative_cues: ['Vinç kirişleri üzerinde "DİKKAT!" yazılı etiketler görülüyor.'],
+    evidence_region: { x: 0.62, y: 0.29, width: 0.1, height: 0.05 },
+  });
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routed.items.some((item) =>
+      item.item_class === "positive_control" &&
+      String(item.title).includes("DİKKAT")
+    ),
+    true,
+  );
+});
+
+Deno.test("raftan düşen malzeme önerisi istifi anlatır, topuk levhasını değil", () => {
+  // 3e76e187: raf kenarından taşan kutular için "topuk levhası, ağ veya kapalı
+  // platform" önerildi. Topuk levhası rafa takılan bir şey değil.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Depolama raflarındaki malzemeler düşme riski taşıyor",
+    asset_ref: "storage_racks",
+    affirmative_cues: [
+      "Raflarda üst üste istiflenmiş, sabitlenmemiş kutular ve diğer malzemeler görülüyor.",
+      "Malzemelerin raf kenarlarından dışarı taştığı görülüyor.",
+    ],
+    evidence_region: { x: 0.73, y: 0.45, width: 0.27, height: 0.35 },
+    event_path: {
+      source: "raftaki malzeme",
+      contact_or_failure: "raftan düşme",
+      consequence: "alttaki kişiye çarpma",
+    },
+    potential_consequence: "serious",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.is_scored, true);
+  const action = String(item?.recommended_action);
+  assertEquals(action.includes("topuk levhası"), false);
+  assertStringIncludes(action, "Raf kenarından");
+});

@@ -1,5 +1,6 @@
 import type {
   Criticality,
+  EvidenceRegion,
   HardRejection,
   ModuleCoverage,
   NormalizedCandidate,
@@ -508,10 +509,11 @@ function endSentence(value: string): string {
 function controlTextFor(candidate: NormalizedCandidate): string {
   const mechanism = mechanismCode(candidate);
   if (mechanism !== "other_visible_physical") {
-    return controlPlaybook(mechanism, candidate.module_id).control;
+    return controlPlaybook(mechanism, candidate.module_id, candidate.asset_ref)
+      .control;
   }
   return CONTROL_CATALOG[candidate.module_id] ??
-    controlPlaybook(mechanism, candidate.module_id).control;
+    controlPlaybook(mechanism, candidate.module_id, candidate.asset_ref).control;
 }
 
 function verificationAction(candidate: NormalizedCandidate): string {
@@ -542,7 +544,8 @@ function rootCauseFor(
   return cleanText(
     moduleSpecific?.mechanisms.includes(mechanism)
       ? moduleSpecific.text
-      : controlPlaybook(mechanism, candidate.module_id).rootCause,
+      : controlPlaybook(mechanism, candidate.module_id, candidate.asset_ref)
+        .rootCause,
     "",
   );
 }
@@ -583,6 +586,7 @@ function measuresFor(
   const playbook = controlPlaybook(
     mechanismCode(candidate),
     candidate.module_id,
+    candidate.asset_ref,
   );
   return [{
     kind: "corrective",
@@ -1433,6 +1437,33 @@ function evidenceIsOnlyNonVisibility(candidate: NormalizedCandidate): boolean {
 // an order of magnitude above it.
 const ABSENCE_RESOLUTION_FLOOR = 0.004;
 
+/**
+ * The same floor, applied to a claim that something IS there.
+ *
+ * Run 031d5068 scored a missing hook latch on a region of 0.0015. The very next
+ * run of the same photograph published, as a positive control, "Her iki tavan
+ * vincinin kancalarında güvenlik mandalları mevcut" -- evidence region 0.03 by
+ * 0.05, cue "Kancaların ağız kısmında mandallar açıkça görülüyor". Nothing is
+ * açıkça görülüyor in twelve pixels. The absence flipped to a presence between
+ * two runs of one image and neither reading was available to the camera.
+ *
+ * A positive control is the more dangerous of the two, because it tells a
+ * reader the thing was checked and is fine, and an inspector who reads that may
+ * not go and look. So the floor is mirrored: below it, say nothing.
+ */
+function controlRegionTooSmallToResolve(
+  control: { evidence_region?: EvidenceRegion },
+): number | null {
+  const region = control.evidence_region;
+  if (!region) return null;
+  const width = Number(region.width);
+  const height = Number(region.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return null;
+  const area = width * height;
+  if (area <= 0 || area >= ABSENCE_RESOLUTION_FLOOR) return null;
+  return area;
+}
+
 function absenceRegionTooSmallToResolve(
   candidate: NormalizedCandidate,
 ): number | null {
@@ -2036,6 +2067,20 @@ export function routeCandidates(params: {
       }));
     }
     for (const control of output.positive_controls) {
+      const tooSmall = controlRegionTooSmallToResolve(control);
+      if (tooSmall !== null) {
+        ledger.push({
+          from_state: "positive_control",
+          to_state: "hard_reject",
+          reason_code: `control_below_resolution_floor:${tooSmall.toFixed(4)}`,
+          details: {
+            module_id: control.module_id,
+            photo_index: photoIndex,
+            description: cleanText(control.description, "").slice(0, 120),
+          },
+        });
+        continue;
+      }
       items.push({
         id: crypto.randomUUID(),
         item_class: "positive_control",

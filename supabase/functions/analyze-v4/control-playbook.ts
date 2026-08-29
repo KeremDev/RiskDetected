@@ -327,10 +327,52 @@ const BY_MECHANISM_AND_MODULE: Record<string, ControlPlaybook> = {
   },
 };
 
+// Module is not always fine enough. Material overhanging a pallet rack and a
+// brick on a slab edge share both the mechanism and the module, and analysis
+// 3e76e187 told a warehouse to fit a toeboard to its racking. A toeboard is an
+// edge-protection member for a platform; the control for an overhanging rack
+// load is the stacking, the restraint and the beam capacity.
+//
+// Matched against the asset the model named, so it discriminates where the
+// module cannot, and consulted before the module table.
+const BY_MECHANISM_AND_ASSET: Array<{
+  mechanism: string;
+  pattern: RegExp;
+  playbook: ControlPlaybook;
+}> = [
+  {
+    mechanism: "falling_object",
+    pattern: /(?:raf|rack|shelv|istif|stack|palet|pallet|depolama|storage)/u,
+    playbook: {
+      rootCause:
+        "Rafta depolanan malzeme, kenardan kayma ve devrilme yolunu kesecek biçimde istiflenmemiş ve sabitlenmemiştir.",
+      control:
+        "Raf kenarından taşan ve sabitlenmemiş malzemeyi düzeltin; göz kapasitesini aşan yükü indirin.",
+      corrective: [
+        "Rafın önündeki geçişi kapatın; kenardan taşan malzemeyi güvenli biçimde geri alın.",
+        "Malzemeyi göz derinliğini aşmayacak biçimde istifleyin; kenardan taşmayı ve dengesiz üst üste yığmayı ortadan kaldırın.",
+        "Ambalajı bozulmuş veya kaymaya açık yükleri streç, bant ya da kafes ile birim yük hâline getirin.",
+        "Raf gözlerine arka tutucu veya kenar bariyeri takarak düşme yolunu kesin.",
+        "Göz ve ayak taşıma kapasitesi etiketini yerine asın; etiketsiz gözde depolamayı durdurun.",
+      ],
+      preventive:
+        "Raf yerleşim planını ve göz kapasitelerini yazılı hâle getirin; istif kurallarını depo talimatına bağlayın, raf ayağı ve kirişlerinin hasar kontrolünü periyodik listeye ekleyin.",
+    },
+  },
+];
+
 export function controlPlaybook(
   mechanism: string,
   moduleID?: string,
+  assetHint?: string,
 ): ControlPlaybook {
+  if (assetHint) {
+    const hint = assetHint.toLocaleLowerCase("tr-TR");
+    const byAsset = BY_MECHANISM_AND_ASSET.find((entry) =>
+      entry.mechanism === mechanism && entry.pattern.test(hint)
+    );
+    if (byAsset) return byAsset.playbook;
+  }
   const specific = moduleID
     ? BY_MECHANISM_AND_MODULE[`${mechanism}@${moduleID}`]
     : undefined;
