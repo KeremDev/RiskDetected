@@ -45,6 +45,7 @@ struct AnalysisResultHubView: View {
     @State private var reportSheetHeight = ReferenceReportSheetLayout.initialHeight
     @State private var reportSheetDetent: PresentationDetent = .height(ReferenceReportSheetLayout.compactHeight)
     @State private var funnelSessionID = UUID()
+    @State private var selectedTrainingGroup: String?
 
     private let green = Color.rdResultGreen
     private let greenDark = Color.rdResultGreenDark
@@ -222,8 +223,13 @@ struct AnalysisResultHubView: View {
         GeometryReader { proxy in
             let count = max(1, hub.sections.count)
             let gaps = CGFloat(max(0, count - 1)) * 6.7
-            let fitted = (proxy.size.width - 40 - gaps) / CGFloat(min(count, 3))
-            let tabWidth = count <= 3 ? fitted : max(116, fitted)
+            // Three tabs fill the width; a fourth has to announce itself. Sizing
+            // for 3.5 leaves the last tab half on screen, which is what tells a
+            // reader the strip scrolls -- a tab entirely past the edge is a tab
+            // nobody finds. The gutter narrows to 14 to buy that half back.
+            let visibleTabs: CGFloat = count <= 3 ? CGFloat(count) : 3.5
+            let fitted = (proxy.size.width - 28 - gaps) / visibleTabs
+            let tabWidth = max(88, fitted)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .bottom, spacing: 6.7) {
@@ -231,7 +237,7 @@ struct AnalysisResultHubView: View {
                         sectionTab(section, width: tabWidth)
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 14)
                 .frame(minWidth: proxy.size.width, minHeight: 96, alignment: .bottomLeading)
             }
             // Keep the shared rail behind the tabs. The selected tab's white
@@ -443,116 +449,203 @@ struct AnalysisResultHubView: View {
     /// Analizde görülen tehlike mekanizmalarına ve ekipmana göre, ilgili
     /// çalışan gruplarına hangi eğitimlerin anlamlı olduğunu söyler. Onay,
     /// seçim veya form beklemez; analiz tamamlandığında hazırdır.
-    ///
-    /// Kartlar gruplanır çünkü sıra bilgi taşıyor: sahada görülene dayanan
-    /// öneriler üstte, her işyeri için doğru olan temel eğitimler altta.
     private var trainingContent: some View {
-        let grouped = groupedTrainingItems
+        let groups = trainingGroups
+        let active = activeTrainingGroup(in: groups)
+        let items = groups.first(where: { $0.code == active })?.items ?? []
 
         return VStack(spacing: 0) {
             nonRiskSummary.padding(.top, 12)
-            LazyVStack(alignment: .leading, spacing: 26) {
-                ForEach(grouped, id: \.title) { group in
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(group.title.localizedUppercase)
-                            .font(referenceFont(9.5, .heavy)).tracking(0.5)
-                            .foregroundStyle(muted)
-                            .padding(.horizontal, 16)
-                        ForEach(group.items) { item in
-                            trainingCard(item)
-                        }
-                    }
+            if groups.count > 1 {
+                trainingGroupFilter(groups: groups, active: active)
+                    .padding(.top, 14)
+            }
+            LazyVStack(spacing: 34) {
+                ForEach(items) { item in
+                    trainingCard(item)
                 }
             }
-            .padding(.top, 20)
+            .padding(.top, 26)
         }
     }
 
-    private var groupedTrainingItems: [(title: String, items: [AnalysisResultHubItem])] {
-        let titles: [(code: String, tr: String, en: String)] = [
-            ("task_and_equipment", "Göreve ve ekipmana özgü", "Task and equipment"),
-            ("qualification_and_authorization", "Yeterlilik ve yetki", "Qualification and authorisation"),
-            ("emergency_and_rescue", "Acil durum ve kurtarma", "Emergency and rescue"),
-            ("general_and_induction", "Genel ve uyum", "General and induction"),
-            ("toolbox", "Saha bilgilendirmesi", "Toolbox"),
+    private struct TrainingGroup {
+        let code: String
+        let label: String
+        let icon: String
+        let items: [AnalysisResultHubItem]
+    }
+
+    /// Gruplar, kart taşıyanlar sırasıyla.
+    ///
+    /// Sıra bilgi taşıyor: sahada görülene dayanan öneriler önce, her işyeri
+    /// için doğru olan temel eğitimler sonra.
+    private var trainingGroups: [TrainingGroup] {
+        let definitions: [(code: String, tr: String, en: String, icon: String)] = [
+            ("task_and_equipment", "Görev ve ekipman", "Task and equipment", "wrench.and.screwdriver.fill"),
+            ("qualification_and_authorization", "Yeterlilik ve yetki", "Qualification", "checkmark.seal.fill"),
+            ("emergency_and_rescue", "Acil durum", "Emergency", "cross.case.fill"),
+            ("general_and_induction", "Genel ve uyum", "General", "person.badge.plus"),
+            ("toolbox", "Saha bilgilendirmesi", "Toolbox", "megaphone.fill"),
         ]
-        return titles.compactMap { group in
-            let items = activeSection.items.filter { $0.groupCode == group.code }
+        return definitions.compactMap { definition in
+            let items = activeSection.items.filter { $0.groupCode == definition.code }
             guard !items.isEmpty else { return nil }
-            return (copy(group.tr, group.en), items)
+            return TrainingGroup(
+                code: definition.code,
+                label: copy(definition.tr, definition.en),
+                icon: definition.icon,
+                items: items
+            )
         }
     }
 
-    private func trainingCard(_ item: AnalysisResultHubItem) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(item.title ?? "")
-                .font(referenceFont(14, .black)).foregroundStyle(ink)
-                .fixedSize(horizontal: false, vertical: true)
-
-            if let category = item.categoryLabel, !category.isEmpty {
-                Text(category)
-                    .font(referenceFont(10, .heavy)).tracking(0.3)
-                    .foregroundStyle(greenDark)
-                    .padding(.horizontal, 7).padding(.vertical, 3)
-                    .background(greenMuted.opacity(0.35))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
-                    .padding(.top, 8)
-            }
-
-            if let audience = item.audienceLabel, !audience.isEmpty {
-                HStack(spacing: 5) {
-                    Image(systemName: "person.2.fill")
-                        .font(RDTypography.font(size: 10, weight: .semibold))
-                    Text(audience)
-                }
-                .font(referenceFont(11, .medium))
-                .foregroundStyle(muted)
-                .padding(.top, 9)
-            }
-
-            if activeSection.access == .full {
-                Text(item.text ?? "")
-                    .font(referenceFont(12, .regular))
-                    .foregroundStyle(Color.rdResultSecondaryText)
-                    .lineSpacing(4)
-                    .padding(.top, 11)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else {
-                trainingTeaserBody(item)
-            }
+    /// Seçili grup, yoksa ilk grup.
+    ///
+    /// Seçim boşta kalırsa liste de boş kalırdı; ilk gruba düşmek kullanıcının
+    /// hiçbir şey görmediği bir durum bırakmıyor.
+    private func activeTrainingGroup(in groups: [TrainingGroup]) -> String {
+        if let selected = selectedTrainingGroup,
+           groups.contains(where: { $0.code == selected }) {
+            return selected
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
+        return groups.first?.code ?? ""
+    }
+
+    private func trainingGroupFilter(
+        groups: [TrainingGroup],
+        active: String
+    ) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(groups, id: \.code) { group in
+                    let selected = group.code == active
+                    Button {
+                        withAnimation(.easeOut(duration: 0.16)) {
+                            selectedTrainingGroup = group.code
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: group.icon)
+                                .font(RDTypography.font(size: 11, weight: .semibold))
+                            Text(group.label)
+                                .font(referenceFont(11.5, selected ? .heavy : .semibold))
+                                .lineLimit(1)
+                            // Kaç kart olduğu görünmezse, kullanıcı seçtiği
+                            // grubun dışında başka öneri kalmadığını sanır.
+                            Text("\(group.items.count)")
+                                .font(referenceFont(10, .heavy))
+                                .foregroundStyle(selected ? Color.white.opacity(0.85) : muted)
+                        }
+                        .foregroundStyle(selected ? .white : ink)
+                        .padding(.horizontal, 12)
+                        .frame(height: 34)
+                        .background(selected ? green : Color.rdResultSurface)
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule().stroke(
+                                selected ? .clear : Color.rdResultLine,
+                                lineWidth: 1
+                            )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("result.hub.training.group.\(group.code)")
+                    .accessibilityAddTraits(selected ? [.isSelected] : [])
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    /// Eğitim kartı.
+    ///
+    /// Uzman görüşü kartıyla aynı gövde: aynı yüzey, aynı yeşil çerçeve, aynı
+    /// köşedeki rozet. Farklı olan tek şey rozetin simgesi ve üst satırın
+    /// bulgu numarası yerine kategoriyi taşıması -- burada numaralanacak bir
+    /// bulgu yok, öneriyi tanımlayan şey türü.
+    private func trainingCard(_ item: AnalysisResultHubItem) -> some View {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 7) {
+                    if let category = item.categoryLabel, !category.isEmpty {
+                        Text(category.localizedUppercase)
+                            .font(referenceFont(10, .heavy)).tracking(0.4)
+                            .foregroundStyle(muted)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    Spacer(minLength: 0)
+                }
+                if activeSection.access == .full {
+                    Text(item.title ?? "")
+                        .font(referenceFont(14, .black)).foregroundStyle(ink).padding(.top, 10)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let audience = item.audienceLabel, !audience.isEmpty {
+                        HStack(spacing: 5) {
+                            Image(systemName: "person.2.fill")
+                                .font(RDTypography.font(size: 10, weight: .semibold))
+                            Text(audience)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .font(referenceFont(11, .medium))
+                        .foregroundStyle(greenDark)
+                        .padding(.top, 7)
+                    }
+                    Text(item.text ?? "")
+                        .font(referenceFont(12, .regular))
+                        .foregroundStyle(Color.rdResultSecondaryText)
+                        .lineSpacing(3)
+                        .padding(.top, 11)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    trainingTeaserBody(item)
+                }
+            }
+            .padding(.horizontal, 13).padding(.top, 26).padding(.bottom, 16)
+        }
         .background(Color.rdResultSurface)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.rdResultLine, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(green, lineWidth: 1.5))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .shadow(color: Color.black.opacity(0.10), radius: 7, x: 4, y: 6)
+        .overlay(alignment: .topLeading) {
+            Image(systemName: "graduationcap.fill")
+                .font(RDTypography.font(size: 20, weight: .regular)).foregroundStyle(greenDark)
+                .frame(width: 36, height: 36).background(Color.rdResultSurface).clipShape(Circle()).offset(x: 15, y: -18)
+        }
         .padding(.horizontal, 16)
         .contentShape(Rectangle())
         .onTapGesture {
             guard activeSection.access == .teaser else { return }
             openLockedTeaser(item)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("result.hub.training.card.\(item.id.uuidString)")
     }
 
     @ViewBuilder
     private func trainingTeaserBody(_ item: AnalysisResultHubItem) -> some View {
-        ZStack {
-            Text(item.text ?? "")
-                .font(referenceFont(12, .regular))
-                .foregroundStyle(Color.rdResultSecondaryText)
-                .lineSpacing(4)
-                .frame(maxWidth: .infinity, minHeight: 54, alignment: .topLeading)
-                .blur(radius: 4.5)
-                .opacity(0.76)
-                .accessibilityHidden(true)
-            premiumTeaserCallout
+        VStack(alignment: .leading, spacing: 0) {
+            Text(item.title ?? "")
+                .font(referenceFont(14, .black)).foregroundStyle(ink).padding(.top, 10)
+                .fixedSize(horizontal: false, vertical: true)
+            ZStack {
+                Text(item.text ?? "")
+                    .font(referenceFont(12, .regular))
+                    .foregroundStyle(Color.rdResultSecondaryText)
+                    .lineSpacing(3)
+                    .frame(maxWidth: .infinity, minHeight: 58, alignment: .topLeading)
+                    .blur(radius: 4.5)
+                    .opacity(0.76)
+                    .accessibilityHidden(true)
+                premiumTeaserCallout
+            }
+            .padding(.top, 11)
+            .clipped()
         }
-        .padding(.top, 11)
-        .clipped()
     }
 
-    // MARK: Reference summaries
+    // MARK: Reference summaries    // MARK: Reference summaries
 
     private var riskSummary: some View {
         let counts = riskCounts
@@ -620,19 +713,28 @@ struct AnalysisResultHubView: View {
 
     private var nonRiskSummary: some View {
         let isExpert = selectedSection == .expertRecommendations
+        let isTraining = selectedSection == .trainingRecommendations
         return HStack(alignment: .top, spacing: 11) {
-            Image(systemName: isExpert ? "lightbulb" : "book.closed")
+            Image(systemName: isTraining
+                  ? "graduationcap"
+                  : isExpert ? "lightbulb" : "book.closed")
                 .font(RDTypography.font(size: 20, weight: .regular)).foregroundStyle(.white)
                 .frame(width: 38, height: 38).background(.white.opacity(0.16))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             VStack(alignment: .leading, spacing: 5) {
-                Text(isExpert ? copy("Uzman Görüşü", "Expert Advice") : copy("Onaylı Defter", "Safety Log"))
+                Text(isTraining
+                     ? copy("Eğitim Önerileri", "Training Recommendations")
+                     : isExpert ? copy("Uzman Görüşü", "Expert Advice") : copy("Onaylı Defter", "Safety Log"))
                     .font(referenceFont(16, .black))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                 premiumPill
-                Text(isExpert
+                Text(isTraining
                      ? copy(
+                        "Analizde görülen tehlike ve ekipmanlara göre, ilgili çalışan gruplarına hangi eğitimlerin anlamlı olduğunu gösterir. Kişilerin mevcut belgeleri hakkında bir tespit içermez.",
+                        "Shows which training is meaningful for each group of workers, based on the hazards and equipment seen in the analysis. It makes no claim about anyone's existing certificates."
+                     )
+                     : isExpert ? copy(
                         "Analiz yaptığınız fotoğraflar özelinde uzmanlık gerektiren bilgilerin yer aldığı alandır. İşyerinize uygunluğunu kontrol ediniz. PLUS ve PRO üyelerine özeldir.",
                         "This area contains expert information specific to the photos you analyzed. Check that it is suitable for your workplace. Available exclusively to PLUS and PRO members."
                      )
@@ -644,7 +746,9 @@ struct AnalysisResultHubView: View {
             Spacer(minLength: 0)
             VStack(spacing: 3) {
                 Text("\(activeSection.count)").font(referenceFont(26, .black)).tracking(-1.2)
-                Text(selectedSection == .expertRecommendations
+                Text(isTraining
+                     ? copy("TOPLAM ÖNERİ", "TOTAL RECOMMENDATIONS")
+                     : isExpert
                      ? copy("TOPLAM GÖRÜŞ", "TOTAL ADVICE")
                      : copy("TOPLAM KAYIT", "TOTAL ENTRIES"))
                     .font(referenceFont(9, .heavy)).tracking(0.4).foregroundStyle(.white.opacity(0.78))
