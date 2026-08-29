@@ -729,14 +729,24 @@ function mechanismCode(candidate: NormalizedCandidate): string {
     const path = `${candidate.event_path.source} ${
       candidate.event_path.contact_or_failure
     } ${candidate.event_path.consequence}`.toLocaleLowerCase("tr-TR");
-    if (
-      /(?:aynı seviyede|ayni seviyede|same level|takıl|takil|kayma)/u.test(path)
-    ) return "fall_same_level";
-    if (
-      /(?:merdiven|ladder|basamak|yüksekten|yuksekten|platform|sahanlık|sahanlik)/u
+    const elevatedAccess =
+      /(?:merdiven|ladder|basamak|yüksekten|yuksekten|platform|sahanlık|sahanlik|asma kat|mezanin)/u
         .test(path) &&
-      /(?:düş|dus|fall|yere çarpma|yere carpma)/u.test(path)
-    ) return "fall_from_height";
+      /(?:düş|dus|fall|yere çarpma|yere carpma)/u.test(path);
+    // Tripping is a same-level word wherever it appears -- a ladder lying
+    // across a walkway is a trip hazard, not a fall from height.
+    const groundLevel =
+      /(?:aynı seviyede|ayni seviyede|same level|takıl|takil)/u.test(path);
+    // "kayma" used to sit in that list and it does not belong there. Analysis
+    // 3faeb7fb wrote "merdivenden KAYMA/düşme yoluyla ciddi yaralanma" about a
+    // portable ladder leaning on a mezzanine, unsecured at the top and not
+    // extending past the landing. The slip word matched first, so the claim was
+    // capped at severity 7 (FK 126 instead of 720) and given the walkway root
+    // cause: "güvenli ve kesintisiz bir geçiş yolu korunacak biçimde
+    // düzenlenmemiştir". Slipping off a ladder is a fall from height.
+    if (elevatedAccess && !groundLevel) return "fall_from_height";
+    if (groundLevel) return "fall_same_level";
+    if (/(?:kayma|slip)/u.test(path)) return "fall_same_level";
     return "fall_same_level";
   }
   if (candidate.module_id === "housekeeping_physical_contact") {

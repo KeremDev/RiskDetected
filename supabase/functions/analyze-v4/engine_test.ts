@@ -1616,6 +1616,61 @@ Deno.test("aynı cümlede var denen eleman yok sayılmaz", () => {
   );
 });
 
+Deno.test("merdivenden kayma yüksekten düşmedir", () => {
+  // 3faeb7fb: asma kata yaslanmış, üstü sabitlenmemiş ve sahanlığı aşmayan
+  // portatif merdiven. Olay yolu "merdivenden kayma/düşme" yazıyordu; kayma
+  // sözcüğü aynı seviye dalını önce tetikleyip şiddeti 7'ye kırpmıştı
+  // (FK 126, olması gereken 720) ve geçiş yolu kök nedenini vermişti.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "access_egress",
+    raw_label: "Platforma erişimde sabitlenmemiş merdiven",
+    affirmative_cues: [
+      "Portatif merdiven platforma yaslanmış durumda",
+      "merdivenin üst kısmı platforma sabitlenmemiş",
+      "merdiven platform seviyesinin üzerine uzanmıyor",
+    ],
+    event_path: {
+      source: "portatif merdiven",
+      contact_or_failure: "merdivenden kayma/düşme",
+      consequence: "ciddi yaralanma",
+    },
+    potential_consequence: "serious",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.score_payload?.mechanism_code, "fall_from_height");
+  assertEquals(item?.score_payload?.severity_cap, 40);
+});
+
+Deno.test("geçiş yoluna serilmiş merdiven aynı seviyede kalır", () => {
+  // Kural yalnız erişim merdivenine uygular: yerde duran bir merdiven takılma
+  // tehlikesidir, yüksekten düşme değil.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "access_egress",
+    raw_label: "Geçiş yolunda yatan merdiven",
+    affirmative_cues: ["merdiven zeminde geçiş yolunun üzerinde duruyor"],
+    event_path: {
+      source: "zemindeki merdiven",
+      contact_or_failure: "merdivene takılma ve düşme",
+      consequence: "burkulma",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.score_payload?.mechanism_code, "fall_same_level");
+});
+
 Deno.test("iki eleman arasındaki boşluk o elemanları yok saymaz", () => {
   // 12d20568: "üst korkuluk ile etek tahtası arasında boşluk var; ara korkuluk
   // bulunmuyor" cümlesinde eksik olan yalnız ara korkuluktur; diğer ikisi
