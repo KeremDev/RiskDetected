@@ -41,7 +41,7 @@ export const V4_VERIFICATION_PROMPT_COMMON =
   `İKİNCİ İNCELEME GÖREVİ
 - Bu, aynı fotoğrafın ikinci ve bağımsız incelemesidir. Birinci incelemenin ne iddia ettiği aşağıda özetlenmiştir.
 - Görevin birinci incelemeyi onaylamak değil; kaçırdığını bulmak ve dayanaksız iddiasını göstermektir.
-- Fotoğrafa sıfırdan bak. Birinci incelemenin bulduğu bir koşulu tekrar yazma; yalnızca onun görmediği tehlikeler için aday üret.
+- Fotoğrafa sıfırdan bak ve GÖRDÜĞÜN HER TEHLİKE İÇİN aday üret. Birinci incelemenin de bulduğu bir koşulu atlama; tekrarları motor kendisi eşleştirir. Aday üretmemek bir cevap değildir.
 - Birinci incelemenin bir yokluk iddiası varsa (bir korkuluk elemanı, bir koruyucu, bir emniyet parçası yok deniyorsa) o noktaya özellikle bak. Elemanı GÖRÜYORSAN bunu ilgili modülün positive_controls kaydına açık biçimde yaz.
 - module_coverage alanına yalnız yeniden incelediğin modülleri yaz; bu geçişte tam kapsam beklenmiyor, kapsam birinci geçişte belirlenmiştir. Boş bırakabilirsin.
 - Uydurma yapma. Görmediğin bir ekipmana isim verme, görmediğin bir koşulu rapor etme.`;
@@ -164,6 +164,34 @@ export type VerificationReconciliation = {
   /** Second-pass candidates dropped as duplicates of a first-pass claim. */
   duplicateCount: number;
 };
+
+/**
+ * What the second pass actually returned, small enough for the quality trace.
+ *
+ * Without this the pass could only be diagnosed by inference: one run failed
+ * schema validation with the message discarded, the next returned zero
+ * candidates and there was no way to see whether it had looked and found
+ * nothing or simply been told not to answer.
+ */
+export function summarizeSecondPass(
+  second: ProviderPhotoOutput,
+  secondCandidates: NormalizedCandidate[],
+): Record<string, unknown> {
+  return {
+    candidate_count: second.candidates.length,
+    entity_count: second.scene_entities.length,
+    coverage_count: second.module_coverage.length,
+    positive_controls: second.positive_controls.slice(0, 8).map((control) => ({
+      module_id: control.module_id,
+      description: control.description.slice(0, 140),
+    })),
+    candidates: secondCandidates.slice(0, 10).map((candidate) => ({
+      module_id: candidate.module_id,
+      label: candidate.normalized_label.slice(0, 140),
+      consequence: candidate.potential_consequence,
+    })),
+  };
+}
 
 export function reconcileVerificationPass(params: {
   primaryCandidates: NormalizedCandidate[];

@@ -38,6 +38,7 @@ import { buildV4PhotoPrompt, V4_PROMPT_COMMON } from "./prompt.ts";
 import {
   reconcileVerificationPass,
   summarizePrimaryPass,
+  summarizeSecondPass,
   V4_VERIFICATION_PROMPT_COMMON,
 } from "./verification-pass.ts";
 import {
@@ -830,6 +831,7 @@ serve(async (req) => {
       duplicates: number;
       error?: string;
       errorDetail?: string;
+      secondPass?: Record<string, unknown>;
     } = { ran: false, added: 0, disputed: [], duplicates: 0 };
     if (photos.length === 1 && results.length === 1) {
       const primary = results[0];
@@ -873,10 +875,14 @@ serve(async (req) => {
           promptBundleSHA256: promptSHA,
           maxOutputTokens: config.maxProviderOutputTokens,
         });
+        const secondCandidates = normalizeCandidates(
+          second.output,
+          photo.photoIndex,
+        );
         const reconciled = reconcileVerificationPass({
           primaryCandidates: candidates,
           second: second.output,
-          secondCandidates: normalizeCandidates(second.output, photo.photoIndex),
+          secondCandidates,
         });
         candidates = [...candidates, ...reconciled.added];
         verification = {
@@ -884,6 +890,7 @@ serve(async (req) => {
           added: reconciled.added.length,
           disputed: reconciled.disputed,
           duplicates: reconciled.duplicateCount,
+          secondPass: summarizeSecondPass(second.output, secondCandidates),
         };
       } catch (unknownError) {
         // The second look is an improvement, not a dependency. A failure here

@@ -1,8 +1,8 @@
 export const V4_ENGINE_VERSION = "vnext-v4";
 export const V4_PROVIDER_CONTRACT_VERSION = "visual-claim-candidate-v1";
 export const V4_DOMAIN_SCHEMA_VERSION = "safety-claim-v4.0";
-export const V4_PROMPT_VERSION = "v4-vision-core-v7";
-export const V4_ROUTER_VERSION = "claim-routing-v17";
+export const V4_PROMPT_VERSION = "v4-vision-core-v8";
+export const V4_ROUTER_VERSION = "claim-routing-v18";
 export const V4_COVERAGE_VERSION = "critical-coverage-v3";
 export const V4_ASSURANCE_VERSION = "assurance-topic-v2";
 export const V4_STANDARDS_VERSION = "standards-registry-v1";
