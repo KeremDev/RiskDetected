@@ -32,6 +32,16 @@ const FORBIDDEN: Array<{ rule: string; pattern: RegExp }> = [
       /\b\d+(?:[.,]\d+)?\s*(?:mm|cm|m|kg|bar|volt|v\b|amper|lux|db|ppm|°c)\b/iu,
   },
   {
+    // A book entry is a general recommendation. Who does the work and by when
+    // is the specialist's to write in the book itself, and a system-proposed
+    // deadline reads as an instruction the employer was given. The v2 notebook
+    // projector strips these from model prose; here they are forbidden outright,
+    // because our own catalogue has no business producing them.
+    rule: "deadline_or_assignment_leaked",
+    pattern:
+      /(?:\btermin\b|son tarih|tamamlanma süresi|sorumlu birim|sorumlu kişi|sorumlusuyla|\bsorumlu\s*[:=]|\d+\s*(?:gün|iş günü|hafta|ay)\s*(?:içinde|içerisinde))/iu,
+  },
+  {
     rule: "internal_score_leaked",
     pattern:
       /\b(?:fine[ -]?kinney|fk\s*(?:skor|puan)|5\s*[x×]\s*5|risk\s*(?:skoru|puanı|puani))\b/iu,

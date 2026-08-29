@@ -110,15 +110,24 @@ function exposureSentence(cluster: ApprovedBookCluster): string | null {
   return `${presence}bu durum ${surface.consequence} ile sonuçlanabilecek bir maruziyet oluşturmaktadır.`;
 }
 
+/** Urgency is empty for everything but the immediate class; tidy the gap. */
+function collapse(sentence: string): string {
+  return sentence.replace(/\s{2,}/g, " ").trim();
+}
+
 function actionSentence(cluster: ApprovedBookCluster): string | null {
   const urgency = URGENCY_TR[cluster.urgency] ?? "";
   if (cluster.entryClass === "assurance_verification") {
     const surface = VERIFICATION_BY_TOPIC[cluster.assuranceTopicId ?? ""];
     if (!surface) return null;
-    return `Söz konusu kayıt ve ölçümler yetkili kişi tarafından ${urgency} doğrulanmalıdır.`;
+    return collapse(
+      `Söz konusu kayıt ve ölçümler yetkili kişi tarafından ${urgency} doğrulanmalıdır.`,
+    );
   }
   if (cluster.entryClass === "measurement_or_test_request") {
-    return `Konu ${urgency} sahada yetkili kişi tarafından incelenmeli ve uygunsuzluk belirlenmesi hâlinde gerekli tedbir alınmalıdır.`;
+    return collapse(
+      `Konu ${urgency} sahada yetkili kişi tarafından incelenmeli ve uygunsuzluk belirlenmesi hâlinde gerekli tedbir alınmalıdır.`,
+    );
   }
 
   const surface = ACTION_BY_MECHANISM[cluster.mechanismCode ?? ""];
@@ -133,9 +142,11 @@ function actionSentence(cluster: ApprovedBookCluster): string | null {
     ? `Alana erişim ${urgency} durdurulmalı; `
     : "";
   const joined = parts.join("; ");
-  return prefix
-    ? `${prefix}${joined.charAt(0).toLocaleLowerCase("tr-TR")}${joined.slice(1)}.`
-    : `${joined}.`;
+  return collapse(
+    prefix
+      ? `${prefix}${joined.charAt(0).toLocaleLowerCase("tr-TR")}${joined.slice(1)}.`
+      : `${joined}.`,
+  );
 }
 
 function closureSentence(cluster: ApprovedBookCluster): string | null {

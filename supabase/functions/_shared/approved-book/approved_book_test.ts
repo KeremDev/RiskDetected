@@ -340,6 +340,64 @@ Deno.test("üretilen her paragraf linter'dan geçer", async () => {
   }
 });
 
+Deno.test("defter metni termin ve sorumlu birim taşımaz", () => {
+  // Onaylı defter genel bir öneri metnidir. İşi kimin, ne zaman yapacağını
+  // uzman deftere kendisi yazar; sistemin önerdiği bir süre, işverene verilmiş
+  // bir talimat gibi okunur.
+  for (
+    const text of [
+      "Saha incelemesinde açık kenar gözlenmiştir. Koruma 3 gün içinde sağlanmalıdır.",
+      "Saha incelemesinde açık kenar gözlenmiştir. Sorumlu birim: Şantiye Şefliği. Koruma sağlanmalıdır.",
+      "Saha incelemesinde açık kenar gözlenmiştir. Termin belirlenerek koruma sağlanmalıdır.",
+    ]
+  ) {
+    assert(
+      lint(text).some((entry) => entry.rule === "deadline_or_assignment_leaked"),
+      text,
+    );
+  }
+});
+
+Deno.test("üretilen hiçbir paragraf termin, sorumlu veya skor taşımaz", async () => {
+  const rows = [
+    item({ id: "F-30", barriers: ["mid_rail"] }),
+    item({
+      id: "F-31",
+      moduleId: "machinery",
+      mechanism: "caught_in_pinch_shear",
+      assetRef: "MIKSER-1",
+      criticality: "permanent",
+    }),
+    item({
+      id: "F-32",
+      itemClass: "assurance_requirement",
+      moduleId: "machinery",
+      conditionCode: "visible_asset_assurance",
+      mechanism: null,
+      assuranceTopic: "machine_protective_systems",
+      criticality: "ordinary",
+    }),
+    item({
+      id: "F-33",
+      itemClass: "assurance_requirement",
+      moduleId: "lifting",
+      conditionCode: "visible_asset_assurance",
+      mechanism: null,
+      assuranceTopic: "asset_assurance_generic",
+      criticality: "ordinary",
+    }),
+  ];
+  const result = await buildApprovedBookDrafts(rows, SITE);
+  assertEquals(result.blocked.length, 0, JSON.stringify(result.blocked));
+  for (const draft of result.drafts) {
+    assertEquals(
+      /sorumlu|termin|son tarih|gün içinde/iu.test(draft.copyText),
+      false,
+      draft.copyText,
+    );
+  }
+});
+
 Deno.test("linter fotoğraftan belge yokluğu iddiasını yakalar", () => {
   const findings = lint(
     "Saha incelemesinde periyodik kontrol yapılmamıştır. Gerekli tedbir alınmalıdır.",
@@ -379,7 +437,7 @@ Deno.test("şablon paketi sürüm artmadan değişemez", async () => {
   // SIRA: önce APPROVED_BOOK_TEMPLATE_VERSION artır, sonra hash'i buradan oku.
   // Ters sırada okunan değer yapısal olarak bayattır; prompt paketinde bu üç
   // tur "önbellek sorunu" sanıldı ve değildi.
-  assertEquals(APPROVED_BOOK_TEMPLATE_VERSION, "book-tr-templates-v1");
+  assertEquals(APPROVED_BOOK_TEMPLATE_VERSION, "book-tr-templates-v2");
   const sha = await computeApprovedBookBundleSHA256();
   if (RELEASED_BUNDLE_SHA256 !== "PLACEHOLDER") {
     assertEquals(sha, RELEASED_BUNDLE_SHA256);

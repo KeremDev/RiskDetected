@@ -226,7 +226,7 @@ export const VERIFICATION_BY_TOPIC: Record<string, VerificationSurface> = {
     subject:
       "makinenin koruyucu düzeni, kilitleme işlevi ve acil durdurma erişilebilirliği",
     closure:
-      "işlevsel deneme sonucu tarih ve sorumlusuyla kayda geçirilmelidir",
+      "işlevsel deneme sonucu kayda geçirilmelidir",
   },
   electrical_internal_integrity: {
     subject:
@@ -271,7 +271,7 @@ export const VERIFICATION_BY_TOPIC: Record<string, VerificationSurface> = {
     subject:
       "görülen ekipmanın periyodik kontrol, bakım ve uygunluk kayıtları",
     closure:
-      "doğrulama sonucu tarih, sorumlu ve kabul ölçütüyle kayda geçirilmelidir",
+      "doğrulama sonucu ve kabul ölçütü kayda geçirilmelidir",
   },
 };
 
@@ -286,8 +286,17 @@ export const OBSERVATION_BASIS_TR: Record<string, string> = {
   follow_up_check: "takip kontrolünde",
 };
 
+/**
+ * Urgency wording.
+ *
+ * Only the immediate class says anything, and what it says is a safety
+ * statement rather than a schedule. "gecikmeksizin" and "planlanarak" were
+ * scheduling adverbs in all but name, and a book entry does not set timing:
+ * the specialist decides when the work happens and writes that themselves.
+ * Empty strings collapse in the renderer.
+ */
 export const URGENCY_TR: Record<string, string> = {
   immediate: "derhal",
-  short_term: "gecikmeksizin",
-  planned: "planlanarak",
+  short_term: "",
+  planned: "",
 };
