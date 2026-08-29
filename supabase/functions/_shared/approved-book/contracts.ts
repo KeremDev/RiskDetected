@@ -29,6 +29,20 @@ export type ObservationBasis =
   | "document_review"
   | "follow_up_check";
 
+/**
+ * What the section assumes when the specialist has not said otherwise.
+ *
+ * These photographs are taken by the specialist walking the site, so a site
+ * inspection is the true basis in the ordinary case and asking for a tap before
+ * showing anything would be friction over a question already answered.
+ *
+ * The stored column stays null while this default applies, so "defaulted" and
+ * "explicitly stated" remain distinguishable in the record for free -- which
+ * matters, because the sentence this produces asserts the specialist was there.
+ */
+export const DEFAULT_OBSERVATION_BASIS: ObservationBasis =
+  "direct_site_observation";
+
 export const OBSERVATION_BASES: ObservationBasis[] = [
   "direct_site_observation",
   "employer_supplied_visual_record",

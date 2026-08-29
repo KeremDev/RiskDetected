@@ -426,9 +426,15 @@ struct AnalysisResultHubView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 7) {
                     ForEach(activeSection.observationBasisOptions) { option in
-                        let selected = activeSection.observationBasis == option
+                        // Nil means the specialist has not stated a basis, and the
+                        // server wrote the text under the default. Showing that
+                        // default as selected keeps the chip and the paragraph
+                        // telling the reader the same thing.
+                        let effective = activeSection.observationBasis ?? .directSiteObservation
+                        let selected = effective == option
                         Button {
-                            onSetObservationBasis(selected ? nil : option)
+                            guard !selected else { return }
+                            onSetObservationBasis(option)
                         } label: {
                             Text(option.label(language: language))
                                 .font(referenceFont(11.5, selected ? .heavy : .medium))
@@ -452,17 +458,10 @@ struct AnalysisResultHubView: View {
                 .padding(.horizontal, 2)
             }
 
-            Text(
-                activeSection.observationBasis == nil
-                    ? copy(
-                        "Dayanağı seçtiğinizde kayıt metni bu dayanağa göre yeniden yazılır.",
-                        "Choosing a basis rewrites the entry text to match it."
-                    )
-                    : copy(
-                        "Metin bu dayanağa göre yazıldı. Değiştirmek için tekrar dokunun.",
-                        "The text is written for this basis. Tap again to change it."
-                    )
-            )
+            Text(copy(
+                "Metin bu dayanağa göre yazıldı. Gözlem farklı şekilde yapıldıysa değiştirin.",
+                "The text is written for this basis. Change it if you observed the site differently."
+            ))
             .font(referenceFont(10.5, .medium))
             .foregroundStyle(muted)
             .fixedSize(horizontal: false, vertical: true)

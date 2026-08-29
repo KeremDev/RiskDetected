@@ -29,6 +29,7 @@ import {
   APPROVED_BOOK_PROJECTION_VERSION,
   APPROVED_BOOK_TEMPLATE_VERSION,
   buildApprovedBookDrafts,
+  DEFAULT_OBSERVATION_BASIS,
   OBSERVATION_BASES,
   type ObservationBasis,
   type V4ItemRow,
@@ -219,22 +220,38 @@ function withReaction(
  * paragraph; the finding/recommendation split belongs to v2 and reproducing it
  * here would let a reader mistake half a paragraph for a whole record.
  */
+/**
+ * The basis this analysis is written under.
+ *
+ * A stored value is the specialist's own statement. Null falls back to the
+ * default rather than withholding the text: these photographs are taken on site
+ * by the person writing the entry, so a site inspection is the ordinary truth
+ * and the column stays null to record that nobody was asked.
+ */
+function effectiveObservationBasis(context: Context): ObservationBasis | null {
+  const stored = cleanString(
+    context.analysis.approved_book_observation_basis,
+    64,
+  );
+  if (OBSERVATION_BASES.includes(stored as ObservationBasis)) {
+    return stored as ObservationBasis;
+  }
+  return stored.length === 0 ? DEFAULT_OBSERVATION_BASIS : null;
+}
+
 async function buildApprovedBookSection(
   context: Context,
   metadata: V4ResultMetadata[],
 ): Promise<Record<string, unknown>[]> {
   if (context.language !== "tr") return [];
-  const basis = cleanString(
-    context.analysis.approved_book_observation_basis,
-    64,
-  );
-  if (!OBSERVATION_BASES.includes(basis as ObservationBasis)) return [];
+  const basis = effectiveObservationBasis(context);
+  if (!basis) return [];
 
   try {
     const result = await buildApprovedBookDrafts(
       metadata as unknown as V4ItemRow[],
       {
-        observationBasis: basis as ObservationBasis,
+        observationBasis: basis,
         criticalLanguageApprovals: [],
         locationByCluster: {},
         legalReferenceMode: "title_only",
@@ -391,10 +408,9 @@ async function loadAuthoritativeSections(context: Context) {
     expert: paid ? expertFull : expertFull.map(redactFindingForFree),
     notebook: paid ? notebookFull : notebookFull.map(redactNotebookForFree),
     templateVersion,
-    observationBasis: cleanString(
-      context.analysis.approved_book_observation_basis,
-      64,
-    ) || null,
+    // The effective basis, so the picker shows what the text was actually
+    // written under rather than an empty state the reader has to resolve.
+    observationBasis: book.length > 0 ? effectiveObservationBasis(context) : null,
   };
 }
 
